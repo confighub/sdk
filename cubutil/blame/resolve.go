@@ -39,8 +39,9 @@ type Resolver struct {
 	revisions map[uuid.UUID]map[int64]*goclientnew.ExtendedRevision
 	// units caches the upstream units Links name, nil for one that cannot be read.
 	units map[uuid.UUID]*goclientnew.Unit
-	// targets caches the names TargetName reads.
+	// targets and links cache the names TargetName and LinkName read.
 	targets map[uuid.UUID]string
+	links   map[uuid.UUID]string
 	// revisionSources maps a unit to every Revision's MutationSources, oldest first, read
 	// only for a unit with an entry that names no Mutation.
 	revisionSources map[uuid.UUID][]*goclientnew.RevisionMutationSources
@@ -82,6 +83,7 @@ func NewResolver(client *cubapi.Client, opts Options) *Resolver {
 		revisionSources: map[uuid.UUID][]*goclientnew.RevisionMutationSources{},
 		units:           map[uuid.UUID]*goclientnew.Unit{},
 		targets:         map[uuid.UUID]string{},
+		links:           map[uuid.UUID]string{},
 		spaces:          map[uuid.UUID]spaceInfo{},
 		users:           map[string]string{},
 	}

@@ -325,6 +325,9 @@
       "RestoredSpaceIDs": {
         "dataType": "[]uuid"
       },
+      "ReviewRequests": {
+        "dataType": "JSON"
+      },
       "SkippedUnits": {
         "dataType": "map[uuid]string",
         "references": "Unit"

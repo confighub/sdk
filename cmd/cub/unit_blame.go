@@ -76,10 +76,15 @@ Flags:
   N  not released: the value changed after the unit's last release, or the unit has never
      been released. Never shown in a space with no release target, which has nothing to
      release
+  n  needed: the value is to come from an upstream unit, through a NeedsProvides link,
+     whether or not a link has bound it yet
+  p  provided: the value is offered to downstream units, through NeedsProvides links
 
-The last five are about the change in this unit, which for a value set upstream is the
-merge that brought it here rather than the change SET BY names. --verbose prints the guard
-reasons, conflicts, findings, and failed checks under each field.
+U, L, T, C and N are about the change in this unit, which for a value set upstream is the
+merge that brought it here rather than the change SET BY names. n and p are lowercase
+because they are informational: they say what part the field plays in NeedsProvides links,
+not that anything is wrong or pending. --verbose prints the guard reasons, conflicts,
+findings, failed checks, and needed and provided attributes under each field.
 
 Every toolchain is read: a Kubernetes manifest, and equally an AppConfig JSON, YAML,
 TOML, INI, Properties, or Env unit, or a ConfigHub one. The unit's data is read in its

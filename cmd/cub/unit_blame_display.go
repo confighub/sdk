@@ -287,6 +287,12 @@ func displayBlameDetail(f *blame.Field) {
 	for _, finding := range f.Findings {
 		tprintRaw(fmt.Sprintf("    %sfinding: %s%s", colorDim, formatBlameFinding(finding), colorReset))
 	}
+	for _, attribute := range f.Needed {
+		tprintRaw(fmt.Sprintf("    %sneeded: %s%s", colorDim, blame.FormatNeeded(attribute), colorReset))
+	}
+	for _, attribute := range f.Provided {
+		tprintRaw(fmt.Sprintf("    %sprovided: %s%s", colorDim, blame.FormatProvided(attribute), colorReset))
+	}
 	for i, origin := range f.Chain {
 		indent := strings.Repeat("  ", i+1)
 		who := origin.User

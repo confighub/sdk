@@ -107,13 +107,13 @@ func TestBlameFlags(t *testing.T) {
 }
 
 func TestBlameFlagsUsedListsOnlyWhatAppears(t *testing.T) {
-	legend := FlagsUsed([]*Field{{Flags: "LN"}, {Flags: "P"}, {Flags: "U"}})
+	legend := FlagsUsed([]*Field{{Flags: "LNp"}, {Flags: "P"}, {Flags: "U"}})
 	var letters []string
 	for _, flag := range legend {
 		letters = append(letters, flag.Letter)
 	}
-	if got := strings.Join(letters, ""); got != "PULN" {
-		t.Errorf("legend letters = %q, want PULN in column order", got)
+	if got := strings.Join(letters, ""); got != "PULNp" {
+		t.Errorf("legend letters = %q, want PULNp in column order", got)
 	}
 }
 

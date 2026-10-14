@@ -365,6 +365,15 @@ func awaitPromotedUnits(result *goclientnew.PromoteResult) error {
 	return nil
 }
 
+// reasonMessage is what to show for a reason given as a code and in words: the words, or the code
+// from a server that sent only that.
+func reasonMessage(message, reason string) string {
+	if message != "" {
+		return message
+	}
+	return reason
+}
+
 // displayPromoteResult prints what the promotion did, or on a dry run would do: the stage it
 // entered, and for each space the units it upgraded, added, and left out.
 func displayPromoteResult(result *goclientnew.PromoteResult) {
@@ -386,6 +395,18 @@ func displayPromoteResult(result *goclientnew.PromoteResult) {
 		if showText {
 			tprint("Change order %s has reached every stage of its ChangeWorkflow; nothing to promote",
 				promoteChangeOrderSlug)
+			var waiting []string
+			for _, gate := range result.Final {
+				if !gate.Satisfied {
+					waiting = append(waiting, gate.Message)
+				}
+			}
+			if len(waiting) > 0 {
+				tprint("It is not complete until its final prerequisites hold:")
+				for _, message := range waiting {
+					tprint("  - %s", message)
+				}
+			}
 		}
 		return
 	}
@@ -396,12 +417,12 @@ func displayPromoteResult(result *goclientnew.PromoteResult) {
 		switch space.Action {
 		case promoteSpaceActionSkipped:
 			if showText {
-				tprint("Skipping %s, %s", space.SpaceSlug, space.Reason)
+				tprint("Skipping %s, %s", space.SpaceSlug, reasonMessage(space.Message, space.Reason))
 			}
 			continue
 		case promoteSpaceActionBlocked:
 			if showText {
-				tprint("Not promoting %s: %s", space.SpaceSlug, space.Reason)
+				tprint("Not promoting %s: %s", space.SpaceSlug, reasonMessage(space.Message, space.Reason))
 			}
 			continue
 		case promoteSpaceActionFailed:
@@ -513,7 +534,7 @@ func displayPromoteSpaceSummary(space *goclientnew.PromoteSpaceResult, withChang
 		case link.Action == promoteLinkActionUnchanged && link.Reason == "Adopted":
 			adopted++
 		case link.Action == promoteLinkActionSkip:
-			skippedLinks = append(skippedLinks, fmt.Sprintf("%s: %s", link.Slug, link.Reason))
+			skippedLinks = append(skippedLinks, fmt.Sprintf("%s: %s", link.Slug, reasonMessage(link.Message, link.Reason)))
 		case link.Action == promoteLinkActionOrphaned:
 			orphaned = append(orphaned, link.Slug)
 		}
@@ -586,13 +607,13 @@ func promoteResultError(result *goclientnew.PromoteResult, namedSpace bool) erro
 		switch space.Action {
 		case promoteSpaceActionSkipped, promoteSpaceActionBlocked:
 			if namedSpace {
-				return errors.Newf("not promoting %s: %s", space.SpaceSlug, space.Reason)
+				return errors.Newf("not promoting %s: %s", space.SpaceSlug, reasonMessage(space.Message, space.Reason))
 			}
 			if space.Action == promoteSpaceActionSkipped {
 				continue
 			}
 			failed = true
-			errs = append(errs, errors.Newf("not promoting %s: %s", space.SpaceSlug, space.Reason))
+			errs = append(errs, errors.Newf("not promoting %s: %s", space.SpaceSlug, reasonMessage(space.Message, space.Reason)))
 		case promoteSpaceActionFailed:
 			failed = true
 			if space.Error != nil {

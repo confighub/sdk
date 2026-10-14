@@ -368,8 +368,91 @@ type AttestationCreateResponse struct {
 	Subjects     []AttestationSubject     `json:"Subjects,omitempty" yaml:"Subjects,omitempty"`
 }
 
+// AttestationGateCaller defines model for AttestationGateCaller.
+type AttestationGateCaller struct {
+	// AuthoredRevisions How many of the Revisions evaluated the caller wrote part of.
+	AuthoredRevisions int `json:"AuthoredRevisions,omitempty" yaml:"AuthoredRevisions,omitempty"`
+
+	// Counts A Pass the caller records would count on every Revision evaluated.
+	Counts bool `json:"Counts,omitempty" yaml:"Counts,omitempty"`
+
+	// Reason Why it would not: NotEligible, when the prerequisite names neither the caller nor a Group of theirs, or Author, when the caller wrote part of the change on some Revision.
+	Reason string `json:"Reason,omitempty" yaml:"Reason,omitempty"`
+}
+
+// AttestationGateEntry defines model for AttestationGateEntry.
+type AttestationGateEntry struct {
+	AttestationID openapi_types.UUID `json:"AttestationID,omitempty" yaml:"AttestationID,omitempty"`
+
+	// CountedOn How many of the Revisions evaluated it counts on. A Fail that counts rejects them.
+	CountedOn int       `json:"CountedOn,omitempty" yaml:"CountedOn,omitempty"`
+	CreatedAt time.Time `json:"CreatedAt,omitempty" yaml:"CreatedAt,omitempty"`
+
+	// Reason Why it counts on none of the Revisions it covers: Revoked, Expired, TooOld (older than MaxAge), NotEligible, Author, or FailIgnored (a Fail, under IgnoreFail).
+	Reason string `json:"Reason,omitempty" yaml:"Reason,omitempty"`
+
+	// Result Pass or Fail.
+	Result string             `json:"Result,omitempty" yaml:"Result,omitempty"`
+	UserID openapi_types.UUID `json:"UserID,omitempty" yaml:"UserID,omitempty"`
+
+	// ValidUntil When it stops counting: the earlier of its ExpiresAt and its CreatedAt plus the prerequisite's MaxAge. Absent when neither is set.
+	ValidUntil time.Time `json:"ValidUntil" yaml:"ValidUntil"`
+}
+
+// AttestationGateResult defines model for AttestationGateResult.
+type AttestationGateResult struct {
+	// Attestations Every Attestation of Type covering a Revision evaluated, directly or carried forward from an earlier Revision of the same Unit with the same DataHash, and what became of it.
+	Attestations []AttestationGateEntry `json:"Attestations,omitempty" yaml:"Attestations,omitempty"`
+
+	// AuthorUserIDs Users excluded from counting on some Revision because they wrote part of the change there. Empty with AllowAuthors.
+	AuthorUserIDs []UUID `json:"AuthorUserIDs,omitempty" yaml:"AuthorUserIDs,omitempty"`
+
+	// Caller Whether a Pass recorded by the caller would count here.
+	Caller *AttestationGateCaller `json:"Caller,omitempty" yaml:"Caller,omitempty"`
+
+	// Counted The fewest attesters counted on any Revision evaluated: the gate's progress toward Required.
+	Counted int `json:"Counted,omitempty" yaml:"Counted,omitempty"`
+
+	// Required How many distinct attesters each Revision needs: Count, or the number of FromGroupIDs with DistinctGroups.
+	Required int `json:"Required,omitempty" yaml:"Required,omitempty"`
+
+	// Revisions How many Revisions were evaluated: one of each Unit the change changed in the Space, or each Revision a Release bundles.
+	Revisions int `json:"Revisions,omitempty" yaml:"Revisions,omitempty"`
+
+	// SatisfiedRevisions How many of them have what the prerequisite asks for.
+	SatisfiedRevisions int `json:"SatisfiedRevisions,omitempty" yaml:"SatisfiedRevisions,omitempty"`
+
+	// Truncated More Revisions fall short than Unsatisfied lists.
+	Truncated bool `json:"Truncated,omitempty" yaml:"Truncated,omitempty"`
+
+	// Type The Attestation Type the prerequisite counts.
+	Type string `json:"Type,omitempty" yaml:"Type,omitempty"`
+
+	// Unsatisfied The Revisions that fall short, at most 100.
+	Unsatisfied []AttestationGateRevision `json:"Unsatisfied,omitempty" yaml:"Unsatisfied,omitempty"`
+}
+
+// AttestationGateRevision defines model for AttestationGateRevision.
+type AttestationGateRevision struct {
+	// AuthorUserIDs Users excluded from counting on this Revision because they wrote part of the change on this Unit. Empty with AllowAuthors.
+	AuthorUserIDs []UUID `json:"AuthorUserIDs,omitempty" yaml:"AuthorUserIDs,omitempty"`
+
+	// Counted Distinct attesters counted on this Revision.
+	Counted int `json:"Counted,omitempty" yaml:"Counted,omitempty"`
+
+	// Reason AttestationsMissing or AttestationRejected.
+	Reason      string             `json:"Reason,omitempty" yaml:"Reason,omitempty"`
+	RevisionNum int64              `json:"RevisionNum,omitempty" yaml:"RevisionNum,omitempty"`
+	UnitID      openapi_types.UUID `json:"UnitID,omitempty" yaml:"UnitID,omitempty"`
+	UnitSlug    string             `json:"UnitSlug,omitempty" yaml:"UnitSlug,omitempty"`
+}
+
 // AttestationSkippedUnit defines model for AttestationSkippedUnit.
 type AttestationSkippedUnit struct {
+	// Message Why the Unit is not covered, in words.
+	Message string `json:"Message,omitempty" yaml:"Message,omitempty"`
+
+	// Reason Why the Unit is not covered, as a code: NoTarget or NoRevision.
 	Reason   string             `json:"Reason,omitempty" yaml:"Reason,omitempty"`
 	UnitID   openapi_types.UUID `json:"UnitID,omitempty" yaml:"UnitID,omitempty"`
 	UnitSlug string             `json:"UnitSlug,omitempty" yaml:"UnitSlug,omitempty"`
@@ -377,6 +460,8 @@ type AttestationSkippedUnit struct {
 
 // AttestationSubject defines model for AttestationSubject.
 type AttestationSubject struct {
+	// Authored With a ChangeOrder, the caller wrote one of the Revisions of the change on this Unit in this Space, so the Attestation does not count here for a prerequisite that excludes authors.
+	Authored    bool               `json:"Authored,omitempty" yaml:"Authored,omitempty"`
 	RevisionID  openapi_types.UUID `json:"RevisionID,omitempty" yaml:"RevisionID,omitempty"`
 	RevisionNum int64              `json:"RevisionNum,omitempty" yaml:"RevisionNum,omitempty"`
 	UnitID      openapi_types.UUID `json:"UnitID,omitempty" yaml:"UnitID,omitempty"`
@@ -845,7 +930,10 @@ type ChangeOrder struct {
 	// RestoredSpaceIDs RestoredSpaceIDs is where the ChangeOrder has been undone: the Spaces whose Units all carry the restore Tag. Derived when the ChangeOrder is read.
 	RestoredSpaceIDs []UUID `json:"RestoredSpaceIDs,omitempty" yaml:"RestoredSpaceIDs,omitempty"`
 
-	// SkippedUnits SkippedUnits names the Units of the ChangeOrder's Space that it carries no Revisions of, mapped to the reason. Written when the scope is derived. A skipped Unit may still be marked by the ChangeOrder's Tags, when the Spaces in scope had already taken it.
+	// ReviewRequests ReviewRequests records whose review the change is waiting for: for each, the stage whose Spaces are to be reviewed (empty for the change order's own Space), the User, and when and by whom the review was requested. A request is not cleared when the review is given; whether a reviewer has reviewed is read from their Attestations. A merge patch replaces the list whole. At most 256.
+	ReviewRequests []ChangeOrderReviewRequest `json:"ReviewRequests,omitempty" yaml:"ReviewRequests,omitempty"`
+
+	// SkippedUnits SkippedUnits names the Units of the ChangeOrder's Space that it carries no Revisions of, mapped to the reason as a code: NotFollowed (nothing follows the Unit by Links of the change order's UpdateType, and it was never cloned), FollowedByOtherLinks (it is followed downstream, but not by Links of that UpdateType), NotMarked (the end Tag marks no Revision of it), NoStartRevision (a Link to it has never merged or resolved, and it predates empty start Revisions), AlreadyTaken (the Spaces in scope have already taken it as far as the end, so it is marked, carrying no Revisions), or TakenPastEnd (the Spaces in scope have taken it past the end, so it is not marked). Written when the scope is derived.
 	SkippedUnits map[string]string `json:"SkippedUnits,omitempty" yaml:"SkippedUnits,omitempty"`
 
 	// Slug Unique URL-safe identifier for the entity.
@@ -998,6 +1086,7 @@ type ChangeOrderPromotionFailureSpace struct {
 	Action    string                            `json:"Action,omitempty" yaml:"Action,omitempty"`
 	Error     string                            `json:"Error,omitempty" yaml:"Error,omitempty"`
 	Links     []ChangeOrderPromotionFailureLink `json:"Links,omitempty" yaml:"Links,omitempty"`
+	Message   string                            `json:"Message,omitempty" yaml:"Message,omitempty"`
 	Reason    string                            `json:"Reason,omitempty" yaml:"Reason,omitempty"`
 	SpaceID   openapi_types.UUID                `json:"SpaceID,omitempty" yaml:"SpaceID,omitempty"`
 	SpaceSlug string                            `json:"SpaceSlug,omitempty" yaml:"SpaceSlug,omitempty"`
@@ -1032,6 +1121,21 @@ type ChangeOrderRelease struct {
 
 	// SpaceID The Space the Release was published from.
 	SpaceID openapi_types.UUID `json:"SpaceID,omitempty" yaml:"SpaceID,omitempty"`
+}
+
+// ChangeOrderReviewRequest defines model for ChangeOrderReviewRequest.
+type ChangeOrderReviewRequest struct {
+	// RequestedAt When the review was requested, by the server's clock. A new request is stamped with the current time, and an existing one keeps its time; sending a later time than the one recorded re-requests the review, and stamps it with the current time.
+	RequestedAt time.Time `json:"RequestedAt,omitempty" yaml:"RequestedAt,omitempty"`
+
+	// RequestedByUserID Who requested the review, or last re-requested it. Set by the server.
+	RequestedByUserID openapi_types.UUID `json:"RequestedByUserID,omitempty" yaml:"RequestedByUserID,omitempty"`
+
+	// Stage The stage whose Spaces are to be reviewed, which is where an Attestation recorded with that TargetStage goes. Empty is the change order's own Space.
+	Stage string `json:"Stage,omitempty" yaml:"Stage,omitempty"`
+
+	// UserID The User asked to review.
+	UserID openapi_types.UUID `json:"UserID" yaml:"UserID"`
 }
 
 // ChangeOrderSpaceContainerImages defines model for ChangeOrderSpaceContainerImages.
@@ -1649,7 +1753,7 @@ type DemoteSpaceResult struct {
 	Action string         `json:"Action,omitempty" yaml:"Action,omitempty"`
 	Error  *ResponseError `json:"Error,omitempty" yaml:"Error,omitempty"`
 
-	// Reason Why the Space was Skipped.
+	// Reason For Skipped: NotMarked, when the change order marks no Unit of the Space.
 	Reason    string             `json:"Reason,omitempty" yaml:"Reason,omitempty"`
 	SpaceID   openapi_types.UUID `json:"SpaceID,omitempty" yaml:"SpaceID,omitempty"`
 	SpaceSlug string             `json:"SpaceSlug,omitempty" yaml:"SpaceSlug,omitempty"`
@@ -3394,14 +3498,20 @@ type Permissions map[string]Subjects
 
 // PromoteGateResult defines model for PromoteGateResult.
 type PromoteGateResult struct {
+	// Attestation For an attestation prerequisite, what was counted, whether or not the gate holds.
+	Attestation *AttestationGateResult `json:"Attestation,omitempty" yaml:"Attestation,omitempty"`
+
 	// Message Why the gate does not hold.
 	Message string `json:"Message,omitempty" yaml:"Message,omitempty"`
 
-	// Prerequisite Promoted, Validated, Released, Healthy, or a custom prerequisite's name.
-	Prerequisite string             `json:"Prerequisite,omitempty" yaml:"Prerequisite,omitempty"`
-	Satisfied    bool               `json:"Satisfied,omitempty" yaml:"Satisfied,omitempty"`
-	SpaceID      openapi_types.UUID `json:"SpaceID,omitempty" yaml:"SpaceID,omitempty"`
-	SpaceSlug    string             `json:"SpaceSlug,omitempty" yaml:"SpaceSlug,omitempty"`
+	// Prerequisite Promoted, Validated, Released, Healthy, or the name of a custom or attestation prerequisite.
+	Prerequisite string `json:"Prerequisite,omitempty" yaml:"Prerequisite,omitempty"`
+
+	// Reason Why the gate does not hold, as a code: NotPromoted, PreviousStageEmpty, NotReleased, ValidationErrors, NotMarked, NoReleaseTarget, NoRelease, NoLiveStatus, NotSynced, Deploying, DeployFailed, Unhealthy, AttestationsMissing, AttestationRejected, ExpressionFalse, EvaluationFailed, or UnknownPrerequisite. A client that does not know a code shows Message.
+	Reason    string             `json:"Reason,omitempty" yaml:"Reason,omitempty"`
+	Satisfied bool               `json:"Satisfied,omitempty" yaml:"Satisfied,omitempty"`
+	SpaceID   openapi_types.UUID `json:"SpaceID,omitempty" yaml:"SpaceID,omitempty"`
+	SpaceSlug string             `json:"SpaceSlug,omitempty" yaml:"SpaceSlug,omitempty"`
 }
 
 // PromoteLinkResult defines model for PromoteLinkResult.
@@ -3412,7 +3522,12 @@ type PromoteLinkResult struct {
 	FromUnitSlug string         `json:"FromUnitSlug,omitempty" yaml:"FromUnitSlug,omitempty"`
 
 	// LinkID Absent for a Link a dry run would create.
-	LinkID         *openapi_types.UUID `json:"LinkID,omitempty" yaml:"LinkID,omitempty"`
+	LinkID *openapi_types.UUID `json:"LinkID,omitempty" yaml:"LinkID,omitempty"`
+
+	// Message Why the Link was skipped or orphaned, in words.
+	Message string `json:"Message,omitempty" yaml:"Message,omitempty"`
+
+	// Reason Adopted for an Unchanged Link, TargetUnitMissing for a Skip, or UpstreamLinkDeleted for an Orphaned one.
 	Reason         string              `json:"Reason,omitempty" yaml:"Reason,omitempty"`
 	Slug           string              `json:"Slug,omitempty" yaml:"Slug,omitempty"`
 	ToSpaceSlug    string              `json:"ToSpaceSlug,omitempty" yaml:"ToSpaceSlug,omitempty"`
@@ -3487,6 +3602,12 @@ type PromoteResult struct {
 	// DryRun True when nothing was written.
 	DryRun bool `json:"DryRun,omitempty" yaml:"DryRun,omitempty"`
 
+	// Error Set when the gates refused the promotion: why, with each failed gate's message among its Details.
+	Error *ResponseError `json:"Error,omitempty" yaml:"Error,omitempty"`
+
+	// Final When Complete, the gates of the ChangeWorkflow's Final, evaluated over each Space of the last Stage. The ChangeOrder's Stage becomes Completed once they all hold.
+	Final []PromoteGateResult `json:"Final,omitempty" yaml:"Final,omitempty"`
+
 	// Plan Digest of the planned actions. Send it as ExpectedPlan to apply exactly this plan.
 	Plan string `json:"Plan,omitempty" yaml:"Plan,omitempty"`
 
@@ -3504,10 +3625,13 @@ type PromoteSpaceResult struct {
 	Error  *ResponseError      `json:"Error,omitempty" yaml:"Error,omitempty"`
 	Links  []PromoteLinkResult `json:"Links,omitempty" yaml:"Links,omitempty"`
 
+	// Message Why the Space was Skipped or Blocked, in words.
+	Message string `json:"Message,omitempty" yaml:"Message,omitempty"`
+
 	// PreviewedAgainstCurrentUpstream A dry run previewed this Space against its upstream as it is now, although the same request promotes that upstream first.
 	PreviewedAgainstCurrentUpstream bool `json:"PreviewedAgainstCurrentUpstream,omitempty" yaml:"PreviewedAgainstCurrentUpstream,omitempty"`
 
-	// Reason Why the Space was Skipped or Blocked.
+	// Reason Why the Space was Skipped or Blocked, as a code: ChangeOrderSpace, NotInScope, UpstreamPromotedFirst, or UpstreamFailed.
 	Reason            string              `json:"Reason,omitempty" yaml:"Reason,omitempty"`
 	SpaceID           openapi_types.UUID  `json:"SpaceID,omitempty" yaml:"SpaceID,omitempty"`
 	SpaceSlug         string              `json:"SpaceSlug,omitempty" yaml:"SpaceSlug,omitempty"`
@@ -3527,7 +3651,7 @@ type PromoteStageResult struct {
 	Gates  []PromoteGateResult `json:"Gates,omitempty" yaml:"Gates,omitempty"`
 	Name   string              `json:"Name,omitempty" yaml:"Name,omitempty"`
 
-	// PreviousStage The Stage whose Spaces the gates are evaluated over. Empty for the first Stage, which has no gates.
+	// PreviousStage The Stage whose Spaces the gates are evaluated over. Empty for the first Stage, whose gates are evaluated over the change order's own Space.
 	PreviousStage string `json:"PreviousStage,omitempty" yaml:"PreviousStage,omitempty"`
 }
 
@@ -3685,7 +3809,7 @@ type Release struct {
 	// ReleaseNum Monotonically increasing sequence number of the Release within its Target, assigned at publish time. The highest ReleaseNum is the latest Release for the Target.
 	ReleaseNum int64 `json:"ReleaseNum,omitempty" yaml:"ReleaseNum,omitempty"`
 
-	// SkippedUnits SkippedUnits names the Units assigned to the Release's Target that the Release does not bundle, mapped to the reason. Publishing with a TagID leaves out a Unit that has never been released and that the Tag marks no Revision of; a Unit that has been released must be marked. (readonly)
+	// SkippedUnits SkippedUnits names the Units assigned to the Release's Target that the Release does not bundle, mapped to the reason as a code. NotMarked: publishing with a TagID leaves out a Unit that has never been released and that the Tag marks no Revision of; a Unit that has been released must be marked. (readonly)
 	SkippedUnits map[string]string  `json:"SkippedUnits,omitempty" yaml:"SkippedUnits,omitempty"`
 	SpaceID      openapi_types.UUID `json:"SpaceID,omitempty" yaml:"SpaceID,omitempty"`
 
@@ -3786,7 +3910,13 @@ type ReleasePublishRequestPriorRevisions string
 
 // ReleasePublishResponse defines model for ReleasePublishResponse.
 type ReleasePublishResponse struct {
-	// Message Set when nothing changed since the latest published Release, so no Release was created.
+	// Error Why the Release was not published.
+	Error *ResponseError `json:"Error,omitempty" yaml:"Error,omitempty"`
+
+	// Gates For a change order, each ReleasePrerequisite of the stage the Space belongs to, evaluated over the Revisions the Release bundles, whether or not it holds.
+	Gates []PromoteGateResult `json:"Gates,omitempty" yaml:"Gates,omitempty"`
+
+	// Message Why no Release was created: nothing changed since the latest published Release, or, on a refusal, the error as one string.
 	Message string `json:"Message,omitempty" yaml:"Message,omitempty"`
 
 	// Release The published Release, or the latest published Release when no Release was created.
@@ -4001,9 +4131,6 @@ type ResponseError struct {
 	// Details Additional context messages
 	Details []string `json:"Details,omitempty" yaml:"Details,omitempty"`
 
-	// ErrorCategory The type of error (e.g., validation, not-found)
-	ErrorCategory string `json:"ErrorCategory,omitempty" yaml:"ErrorCategory,omitempty"`
-
 	// ErrorMetadata Structured error details like field violations
 	ErrorMetadata *ErrorMetadata `json:"ErrorMetadata,omitempty" yaml:"ErrorMetadata,omitempty"`
 
@@ -4013,7 +4140,7 @@ type ResponseError struct {
 	// Status HTTP status code
 	Status int `json:"Status,omitempty" yaml:"Status,omitempty"`
 
-	// Type The type of error (e.g., validation, not-found)
+	// Type The category of the error, as a code: UserInput, Validation, Data, Authentication, Permission, NotFound, Conflict, AlreadyExists, Unprocessable, Locked, PreconditionFailed, TooManyRequests, Unexpected, GatewayTimeout, or ServiceUnavailable
 	Type string `json:"Type,omitempty" yaml:"Type,omitempty"`
 }
 
@@ -4455,13 +4582,13 @@ type SpaceCreateOrUpdateResponse struct {
 	Space *Space `json:"Space,omitempty" yaml:"Space,omitempty"`
 }
 
-// StandardErrorResponse Error response details.
+// StandardErrorResponse The body of an error response: the error as data (Error), and as one string (message) for clients written before Error.
 type StandardErrorResponse struct {
-	// Code HTTP status code of the response.
-	Code string `json:"Code,omitempty" yaml:"Code,omitempty"`
+	// Error The error: its message, category (Type), HTTP status, details, and structured items.
+	Error *ResponseError `json:"Error,omitempty" yaml:"Error,omitempty"`
 
-	// Message Message returned with the response.
-	Message string `json:"Message,omitempty" yaml:"Message,omitempty"`
+	// Message The error as one string: its message, with any details, items, and individual errors appended. Kept for clients written before Error; new clients read Error.
+	Message string `json:"message,omitempty" yaml:"message,omitempty"`
 }
 
 // Subjects defines model for Subjects.
@@ -7910,7 +8037,7 @@ type BulkDeleteChangeOrdersParams struct {
 	// An example conjunction is:
 	// `CreatedAt >= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.
 	//
-	// Supported attributes for filtering on ChangeOrder: AbortedReason, AdoptedEndTagID, Annotations, ChangeOrderID, ChangeWorkflow, ChangeWorkflowID, CreatedAt, DeleteGates, Description, DisplayName, EndTagID, HiddenReason, InScopeSpaceIDs, InvocationID, Labels, OrganizationID, Parameters, Permissions, PriorRevisions, PromotionFailures, PromotionOverrides, Promotions, ReleasePriorRevisions, ReleaseTagID, ReleasedRestoredSpaceIDs, ReleasedSpaceIDs, Releases, ResolvedSpaceIDs, RestoreTagID, RestoredSpaceIDs, SkippedUnits, Slug, SpaceFilterID, SpaceID, Stage, StartTagID, State, UnitFilterID, UpdateType, UpdatedAt, UserID, WhereSpace, WhereUnit.
+	// Supported attributes for filtering on ChangeOrder: AbortedReason, AdoptedEndTagID, Annotations, ChangeOrderID, ChangeWorkflow, ChangeWorkflowID, CreatedAt, DeleteGates, Description, DisplayName, EndTagID, HiddenReason, InScopeSpaceIDs, InvocationID, Labels, OrganizationID, Parameters, Permissions, PriorRevisions, PromotionFailures, PromotionOverrides, Promotions, ReleasePriorRevisions, ReleaseTagID, ReleasedRestoredSpaceIDs, ReleasedSpaceIDs, Releases, ResolvedSpaceIDs, RestoreTagID, RestoredSpaceIDs, ReviewRequests, SkippedUnits, Slug, SpaceFilterID, SpaceID, Stage, StartTagID, State, UnitFilterID, UpdateType, UpdatedAt, UserID, WhereSpace, WhereUnit.
 	//
 	// The whole string must be query-encoded.
 	Where *string `form:"where,omitempty" json:"where,omitempty" yaml:"where,omitempty"`
@@ -8009,7 +8136,7 @@ type ListAllChangeOrdersParams struct {
 	// An example conjunction is:
 	// `CreatedAt >= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.
 	//
-	// Supported attributes for filtering on ChangeOrder: AbortedReason, AdoptedEndTagID, Annotations, ChangeOrderID, ChangeWorkflow, ChangeWorkflowID, CreatedAt, DeleteGates, Description, DisplayName, EndTagID, HiddenReason, InScopeSpaceIDs, InvocationID, Labels, OrganizationID, Parameters, Permissions, PriorRevisions, PromotionFailures, PromotionOverrides, Promotions, ReleasePriorRevisions, ReleaseTagID, ReleasedRestoredSpaceIDs, ReleasedSpaceIDs, Releases, ResolvedSpaceIDs, RestoreTagID, RestoredSpaceIDs, SkippedUnits, Slug, SpaceFilterID, SpaceID, Stage, StartTagID, State, UnitFilterID, UpdateType, UpdatedAt, UserID, WhereSpace, WhereUnit.
+	// Supported attributes for filtering on ChangeOrder: AbortedReason, AdoptedEndTagID, Annotations, ChangeOrderID, ChangeWorkflow, ChangeWorkflowID, CreatedAt, DeleteGates, Description, DisplayName, EndTagID, HiddenReason, InScopeSpaceIDs, InvocationID, Labels, OrganizationID, Parameters, Permissions, PriorRevisions, PromotionFailures, PromotionOverrides, Promotions, ReleasePriorRevisions, ReleaseTagID, ReleasedRestoredSpaceIDs, ReleasedSpaceIDs, Releases, ResolvedSpaceIDs, RestoreTagID, RestoredSpaceIDs, ReviewRequests, SkippedUnits, Slug, SpaceFilterID, SpaceID, Stage, StartTagID, State, UnitFilterID, UpdateType, UpdatedAt, UserID, WhereSpace, WhereUnit.
 	//
 	// The whole string must be query-encoded.
 	Where *string `form:"where,omitempty" json:"where,omitempty" yaml:"where,omitempty"`
@@ -8123,6 +8250,7 @@ type BulkPatchChangeOrdersApplicationMergePatchPlusJSONBody struct {
 	Permissions           *map[string]*map[string]interface{} `json:"Permissions" yaml:"Permissions"`
 	PriorRevisions        *string                             `json:"PriorRevisions" yaml:"PriorRevisions"`
 	ReleasePriorRevisions *string                             `json:"ReleasePriorRevisions" yaml:"ReleasePriorRevisions"`
+	ReviewRequests        *[]map[string]interface{}           `json:"ReviewRequests" yaml:"ReviewRequests"`
 
 	// Slug Unique URL-safe identifier for the entity.
 	Slug          *string             `json:"Slug" yaml:"Slug"`
@@ -8172,7 +8300,7 @@ type BulkPatchChangeOrdersParams struct {
 	// An example conjunction is:
 	// `CreatedAt >= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.
 	//
-	// Supported attributes for filtering on ChangeOrder: AbortedReason, AdoptedEndTagID, Annotations, ChangeOrderID, ChangeWorkflow, ChangeWorkflowID, CreatedAt, DeleteGates, Description, DisplayName, EndTagID, HiddenReason, InScopeSpaceIDs, InvocationID, Labels, OrganizationID, Parameters, Permissions, PriorRevisions, PromotionFailures, PromotionOverrides, Promotions, ReleasePriorRevisions, ReleaseTagID, ReleasedRestoredSpaceIDs, ReleasedSpaceIDs, Releases, ResolvedSpaceIDs, RestoreTagID, RestoredSpaceIDs, SkippedUnits, Slug, SpaceFilterID, SpaceID, Stage, StartTagID, State, UnitFilterID, UpdateType, UpdatedAt, UserID, WhereSpace, WhereUnit.
+	// Supported attributes for filtering on ChangeOrder: AbortedReason, AdoptedEndTagID, Annotations, ChangeOrderID, ChangeWorkflow, ChangeWorkflowID, CreatedAt, DeleteGates, Description, DisplayName, EndTagID, HiddenReason, InScopeSpaceIDs, InvocationID, Labels, OrganizationID, Parameters, Permissions, PriorRevisions, PromotionFailures, PromotionOverrides, Promotions, ReleasePriorRevisions, ReleaseTagID, ReleasedRestoredSpaceIDs, ReleasedSpaceIDs, Releases, ResolvedSpaceIDs, RestoreTagID, RestoredSpaceIDs, ReviewRequests, SkippedUnits, Slug, SpaceFilterID, SpaceID, Stage, StartTagID, State, UnitFilterID, UpdateType, UpdatedAt, UserID, WhereSpace, WhereUnit.
 	//
 	// The whole string must be query-encoded.
 	Where *string `form:"where,omitempty" json:"where,omitempty" yaml:"where,omitempty"`
@@ -8265,6 +8393,7 @@ type BulkCreateChangeOrdersApplicationMergePatchPlusJSONBody struct {
 	Permissions           *map[string]*map[string]interface{} `json:"Permissions" yaml:"Permissions"`
 	PriorRevisions        *string                             `json:"PriorRevisions" yaml:"PriorRevisions"`
 	ReleasePriorRevisions *string                             `json:"ReleasePriorRevisions" yaml:"ReleasePriorRevisions"`
+	ReviewRequests        *[]map[string]interface{}           `json:"ReviewRequests" yaml:"ReviewRequests"`
 
 	// Slug Unique URL-safe identifier for the entity.
 	Slug          *string             `json:"Slug" yaml:"Slug"`
@@ -8314,7 +8443,7 @@ type BulkCreateChangeOrdersParams struct {
 	// An example conjunction is:
 	// `CreatedAt >= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.
 	//
-	// Supported attributes for filtering on ChangeOrder: AbortedReason, AdoptedEndTagID, Annotations, ChangeOrderID, ChangeWorkflow, ChangeWorkflowID, CreatedAt, DeleteGates, Description, DisplayName, EndTagID, HiddenReason, InScopeSpaceIDs, InvocationID, Labels, OrganizationID, Parameters, Permissions, PriorRevisions, PromotionFailures, PromotionOverrides, Promotions, ReleasePriorRevisions, ReleaseTagID, ReleasedRestoredSpaceIDs, ReleasedSpaceIDs, Releases, ResolvedSpaceIDs, RestoreTagID, RestoredSpaceIDs, SkippedUnits, Slug, SpaceFilterID, SpaceID, Stage, StartTagID, State, UnitFilterID, UpdateType, UpdatedAt, UserID, WhereSpace, WhereUnit.
+	// Supported attributes for filtering on ChangeOrder: AbortedReason, AdoptedEndTagID, Annotations, ChangeOrderID, ChangeWorkflow, ChangeWorkflowID, CreatedAt, DeleteGates, Description, DisplayName, EndTagID, HiddenReason, InScopeSpaceIDs, InvocationID, Labels, OrganizationID, Parameters, Permissions, PriorRevisions, PromotionFailures, PromotionOverrides, Promotions, ReleasePriorRevisions, ReleaseTagID, ReleasedRestoredSpaceIDs, ReleasedSpaceIDs, Releases, ResolvedSpaceIDs, RestoreTagID, RestoredSpaceIDs, ReviewRequests, SkippedUnits, Slug, SpaceFilterID, SpaceID, Stage, StartTagID, State, UnitFilterID, UpdateType, UpdatedAt, UserID, WhereSpace, WhereUnit.
 	//
 	// The whole string must be query-encoded.
 	Where *string `form:"where,omitempty" json:"where,omitempty" yaml:"where,omitempty"`
@@ -15060,7 +15189,7 @@ type ListChangeOrdersParams struct {
 	// An example conjunction is:
 	// `CreatedAt >= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.
 	//
-	// Supported attributes for filtering on ChangeOrder: AbortedReason, AdoptedEndTagID, Annotations, ChangeOrderID, ChangeWorkflow, ChangeWorkflowID, CreatedAt, DeleteGates, Description, DisplayName, EndTagID, HiddenReason, InScopeSpaceIDs, InvocationID, Labels, OrganizationID, Parameters, Permissions, PriorRevisions, PromotionFailures, PromotionOverrides, Promotions, ReleasePriorRevisions, ReleaseTagID, ReleasedRestoredSpaceIDs, ReleasedSpaceIDs, Releases, ResolvedSpaceIDs, RestoreTagID, RestoredSpaceIDs, SkippedUnits, Slug, SpaceFilterID, SpaceID, Stage, StartTagID, State, UnitFilterID, UpdateType, UpdatedAt, UserID, WhereSpace, WhereUnit.
+	// Supported attributes for filtering on ChangeOrder: AbortedReason, AdoptedEndTagID, Annotations, ChangeOrderID, ChangeWorkflow, ChangeWorkflowID, CreatedAt, DeleteGates, Description, DisplayName, EndTagID, HiddenReason, InScopeSpaceIDs, InvocationID, Labels, OrganizationID, Parameters, Permissions, PriorRevisions, PromotionFailures, PromotionOverrides, Promotions, ReleasePriorRevisions, ReleaseTagID, ReleasedRestoredSpaceIDs, ReleasedSpaceIDs, Releases, ResolvedSpaceIDs, RestoreTagID, RestoredSpaceIDs, ReviewRequests, SkippedUnits, Slug, SpaceFilterID, SpaceID, Stage, StartTagID, State, UnitFilterID, UpdateType, UpdatedAt, UserID, WhereSpace, WhereUnit.
 	//
 	// The whole string must be query-encoded.
 	Where *string `form:"where,omitempty" json:"where,omitempty" yaml:"where,omitempty"`
@@ -15214,6 +15343,7 @@ type PatchChangeOrderApplicationMergePatchPlusJSONBody struct {
 	Permissions           *map[string]*map[string]interface{} `json:"Permissions" yaml:"Permissions"`
 	PriorRevisions        *string                             `json:"PriorRevisions" yaml:"PriorRevisions"`
 	ReleasePriorRevisions *string                             `json:"ReleasePriorRevisions" yaml:"ReleasePriorRevisions"`
+	ReviewRequests        *[]map[string]interface{}           `json:"ReviewRequests" yaml:"ReviewRequests"`
 
 	// Slug Unique URL-safe identifier for the entity.
 	Slug          *string             `json:"Slug" yaml:"Slug"`

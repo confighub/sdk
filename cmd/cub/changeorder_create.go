@@ -144,6 +144,7 @@ func init() {
 	// Single create specific flags
 	changeorderCreateCmd.Flags().StringVar(&changeorderCreateArgs.changeWorkflow, "change-workflow", "", "identifier (slug, space/slug, or UUID) of the ChangeWorkflow to promote the ChangeOrder under")
 	changeorderCreateCmd.Flags().StringVar(&changeorderCreateArgs.description, "description", "", "human-readable description of the change")
+	enableRequestReviewFlag(changeorderCreateCmd)
 	changeorderCreateCmd.Flags().StringSliceVar(&changeorderCreateArgs.inScopeSpaces, "in-scope-space", []string{}, "spaces (slug or UUID) this change order propagates into, stored on it as InScopeSpaceIDs (can be repeated or comma-separated); without any, wherever its links reach is where it is headed")
 	changeorderCreateCmd.Flags().StringVar(&changeorderCreateArgs.whereSpaceField, "where-space-field", "", "where expression over Spaces selecting where this change order is headed, stored on it as WhereSpace and ANDed with --space-filter; the server records the spaces they select as its in-scope spaces")
 	changeorderCreateCmd.Flags().StringVar(&changeorderCreateArgs.spaceFilter, "space-filter", "", "filter over Spaces (slug, space/slug, or UUID) selecting where this change order is headed, ANDed with --where-space-field")
@@ -205,6 +206,9 @@ func checkChangeOrderCreateConflictingArgs(args []string) (bool, error) {
 
 		if changeorderCreateArgs.component != "" {
 			return false, errors.New("--component can only be used with single changeorder creation")
+		}
+		if len(changeorderRequestReviews) > 0 {
+			return false, errors.New("--request-review can only be used with single changeorder creation")
 		}
 	} else {
 		// Single create mode validation
@@ -311,6 +315,13 @@ func runSingleChangeOrderCreate(args []string) error {
 	// Set description if provided
 	if changeorderCreateArgs.description != "" {
 		newBody.Description = changeorderCreateArgs.description
+	}
+	if len(changeorderRequestReviews) > 0 {
+		requests, err := applyReviewRequestFlags(newBody.ReviewRequests)
+		if err != nil {
+			return err
+		}
+		newBody.ReviewRequests = requests
 	}
 	if changeorderCreateArgs.updateType != "" {
 		newBody.UpdateType = changeorderCreateArgs.updateType

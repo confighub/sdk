@@ -167,7 +167,16 @@ func displayAttestationCreateResult(spaceSlug string, result *goclientnew.Attest
 		}
 	}
 	for _, skipped := range result.SkippedUnits {
-		tprint("  skipped %s: %s", skipped.UnitSlug, skipped.Reason)
+		tprint("  skipped %s: %s", skipped.UnitSlug, reasonMessage(skipped.Message, skipped.Reason))
+	}
+	authored := 0
+	for _, subject := range result.Subjects {
+		if subject.Authored {
+			authored++
+		}
+	}
+	if authored > 0 {
+		tprint("  you wrote part of the change on %d of these units, so it does not count there for a prerequisite that excludes authors", authored)
 	}
 }
 

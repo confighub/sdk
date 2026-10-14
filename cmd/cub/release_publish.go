@@ -176,6 +176,10 @@ func releasePublishCmdRun(cmd *cobra.Command, args []string) error {
 
 	res, err := cubClientNew.PublishReleaseWithResponse(ctx, space.Space.SpaceID, body)
 	if cubapi.IsAPIError(err, res) {
+		// A refusal carries the release gates evaluated; a structured output shows them.
+		if err == nil && res.JSON422 != nil && isAlternativeOutput() {
+			renderPayload(res.JSON422)
+		}
 		return cubapi.InterpretErrorGeneric(err, res)
 	}
 	if releasePublishDryRun && res.JSON200.Message == "" {

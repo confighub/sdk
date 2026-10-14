@@ -136,7 +136,10 @@ func readDocument[R cubapi.APIResponse](res R, err error, document func(R) *gocl
 func documentUpdated[E ModelConstraint, R cubapi.APIResponse](entityName string, res R, err error, written func(R) *E,
 	name func(*E) (slug, id string), display func(*E)) (bool, error) {
 	if cubapi.IsAPIError(err, res) {
-		return err == nil && res.StatusCode() == http.StatusConflict, cubapi.InterpretErrorGeneric(err, res)
+		// A 409 is also a slug another entity has, which editing the same document again would
+		// not resolve.
+		stale := err == nil && res.StatusCode() == http.StatusConflict && cubapi.ErrorType(res) != "AlreadyExists"
+		return stale, cubapi.InterpretErrorGeneric(err, res)
 	}
 	entity := written(res)
 	slug, id := name(entity)

@@ -60,6 +60,13 @@ Examples:
   # Clear both, keeping the spaces they last selected and handing the list back to --in-scope-space
   cub changeorder update my-changeorder --where-space-field "-" --space-filter "-"
 
+  # Ask for reviews: of alice where the change stands in the staging stage, and of bob in the
+  # change order's own space. Asking again re-requests a review
+  cub changeorder update my-changeorder --request-review staging:alice,bob
+
+  # Withdraw a review request
+  cub changeorder update my-changeorder --withdraw-review-request staging:alice
+
   # Update tags for changeorders using JSON patch
   echo '{"StartTagID": "new-tag-uuid", "EndTagID": "another-tag-uuid"}' | cub changeorder update --patch --where "Description LIKE 'Release%'" --from-stdin
 `+"```"+`
@@ -101,6 +108,8 @@ func init() {
 	changeorderUpdateCmd.Flags().StringVar(&changeorderUpdateArgs.spaceFilter, "space-filter", "", "filter over Spaces (slug, space/slug, or UUID) selecting where this change order is headed, ANDed with its where expression (use '-' to clear)")
 	changeorderUpdateCmd.Flags().BoolVar(&changeorderUpdateArgs.refreshSpaces, "refresh-spaces", false, "re-evaluate the where expression and/or space filter into the change order's in-scope spaces even if neither has changed, re-deriving what it covers if the spaces moved")
 	changeorderUpdateCmd.Flags().StringVar(&changeorderUpdateArgs.abortedReason, "aborted-reason", "", "why the change order was given up on; setting it aborts the change order, and passing an empty value puts it back on its way")
+	enableRequestReviewFlag(changeorderUpdateCmd)
+	enableWithdrawReviewRequestFlag(changeorderUpdateCmd)
 
 	changeorderCmd.AddCommand(changeorderUpdateCmd)
 }
@@ -180,6 +189,10 @@ func checkChangeOrderUpdateConflictingArgs(args []string) bool {
 		// Check for mutual exclusivity between --changeorder and --where flags
 		if len(changeorderIdentifiers) > 0 && where != "" {
 			failOnError(fmt.Errorf("--changeorder and --where flags are mutually exclusive"))
+		}
+		// Each change order has its own list, which a merge patch would replace whole.
+		if reviewRequestFlagsGiven() {
+			failOnError(errors.New("--request-review and --withdraw-review-request update one changeorder at a time"))
 		}
 
 	} else {
@@ -325,6 +338,17 @@ func changeorderUpdateCmdRun(cmd *cobra.Command, args []string) error {
 			return err
 		}
 
+		var reviewRequests []goclientnew.ChangeOrderReviewRequest
+		if reviewRequestFlagsGiven() {
+			reviewRequests, err = applyReviewRequestFlags(currentChangeOrder.ReviewRequests)
+			if err != nil {
+				return err
+			}
+			if reviewRequests == nil {
+				reviewRequests = []goclientnew.ChangeOrderReviewRequest{}
+			}
+		}
+
 		// Build patch data using BuildPatchData with changeorder enhancer
 		changeorderEnhancer := func(patchData map[string]interface{}) {
 			// Add changeorder-specific fields
@@ -334,6 +358,12 @@ func changeorderUpdateCmdRun(cmd *cobra.Command, args []string) error {
 			addChangeOrderInScopeSpacesToPatch(patchData, inScopeSpaceIDs, inScopeSpacesGiven)
 			addChangeOrderSpaceSelectionToPatch(patchData, spaceFilterID)
 			addChangeOrderAbortedReasonToPatch(patchData)
+			// A merge patch replaces the list whole, so it is sent whole, with the Version it was
+			// read at, so that a request somebody else added meanwhile is not dropped.
+			if reviewRequests != nil {
+				patchData["ReviewRequests"] = reviewRequests
+				patchData["Version"] = currentChangeOrder.Version
+			}
 		}
 
 		patchData, err := BuildPatchDataWithPermissions(changeorderEnhancer, permissionFlag)
@@ -415,6 +445,13 @@ func changeorderUpdateCmdRun(cmd *cobra.Command, args []string) error {
 	}
 	if changeorderUpdateArgs.abortedReasonSet {
 		currentChangeOrder.AbortedReason = changeorderUpdateArgs.abortedReason
+	}
+	if reviewRequestFlagsGiven() {
+		requests, err := applyReviewRequestFlags(currentChangeOrder.ReviewRequests)
+		if err != nil {
+			return err
+		}
+		currentChangeOrder.ReviewRequests = requests
 	}
 
 	updateParams := &goclientnew.UpdateChangeOrderParams{}

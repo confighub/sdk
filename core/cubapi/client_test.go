@@ -142,3 +142,29 @@ func TestVerifyAuthRejectsUnauthorized(t *testing.T) {
 		t.Fatal("VerifyAuth against 401 = nil, want error")
 	}
 }
+
+// Each warning a response carries is handed to the WarningHandler, as its text.
+func TestClientHandsOnWarnings(t *testing.T) {
+	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Add("Warning", `299 - "unknown field \"Bogus\""`)
+		w.Header().Add("Warning", "not in the RFC's form")
+		w.Header().Set("Content-Type", "application/json")
+		w.WriteHeader(http.StatusOK)
+		_, _ = w.Write([]byte(`{"OrganizationID":"00000000-0000-0000-0000-000000000000"}`))
+	}))
+	defer srv.Close()
+
+	var warnings []string
+	c, err := NewClient(ClientOptions{ServerURL: srv.URL, Token: "secret-token",
+		WarningHandler: func(warning string) { warnings = append(warnings, warning) }})
+	if err != nil {
+		t.Fatalf("NewClient: %v", err)
+	}
+	if _, err := c.VerifyAuth(context.Background()); err != nil {
+		t.Fatalf("VerifyAuth: %v", err)
+	}
+	want := []string{`unknown field "Bogus"`, "not in the RFC's form"}
+	if len(warnings) != len(want) || warnings[0] != want[0] || warnings[1] != want[1] {
+		t.Fatalf("warnings = %q, want %q", warnings, want)
+	}
+}

@@ -287,10 +287,6 @@ func displayResponseErrorDetails(respError *goclientnew.ResponseError) {
 		table.Append([]string{"Type:", respError.Type})
 	}
 
-	if respError.ErrorCategory != "" {
-		table.Append([]string{"Category:", respError.ErrorCategory})
-	}
-
 	if respError.ErrorMetadata != nil {
 		if respError.ErrorMetadata.EntityType != "" {
 			table.Append([]string{"Entity Type:", respError.ErrorMetadata.EntityType})

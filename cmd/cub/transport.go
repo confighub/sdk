@@ -5,6 +5,9 @@ package main
 
 import (
 	"context"
+	"fmt"
+	"os"
+	"sync"
 
 	"github.com/confighub/sdk/core/cubapi"
 	goclientnew "github.com/confighub/sdk/core/openapi/goclient-new"
@@ -43,6 +46,7 @@ func InitializeClient(ctx *Context) (*goclientnew.ClientWithResponses, error) {
 		// A --where bulk command acts on any number of entities, more than one request can
 		// within the server's timeout.
 		PageBulkOperations: true,
+		WarningHandler:     printWarning,
 	}
 	// A missing token is not fatal: some commands run unauthenticated, and the
 	// client simply omits the Authorization header in that case.
@@ -57,4 +61,22 @@ func InitializeClient(ctx *Context) (*goclientnew.ClientWithResponses, error) {
 	// shares the same underlying client as the returned *ClientWithResponses.
 	cubClient = c
 	return c.API, nil
+}
+
+var (
+	printedWarnings   = map[string]bool{}
+	printedWarningsMu sync.Mutex
+)
+
+// printWarning prints a warning the server sent, such as that it ignored a field of the request
+// it does not have, to stderr, as kubectl does. A command that makes many requests, such as a
+// bulk one sent in pages, prints each warning once.
+func printWarning(warning string) {
+	printedWarningsMu.Lock()
+	defer printedWarningsMu.Unlock()
+	if printedWarnings[warning] {
+		return
+	}
+	printedWarnings[warning] = true
+	fmt.Fprintf(os.Stderr, "Warning: %s\n", warning)
 }

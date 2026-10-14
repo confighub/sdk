@@ -4558,7 +4558,7 @@
           {
             "name": "where",
             "in": "query",
-            "description": "The specified string is an expression for the purpose of filtering\nthe list of ChangeOrders returned. The expression syntax was inspired by SQL.\nIt supports conjunctions using `AND` of relational expressions of the form *attribute*\n*operator* *attribute_or_literal*. The attribute names are case-sensitive and PascalCase,\nas in the JSON encoding.\nStrings support the following operators: `\u003c`, `\u003e`, `\u003c=`, `\u003e=`, `=`, `!=`, `LIKE`, `NOT LIKE`, `ILIKE`, `~~`, `!~~`, `~`, `~*`, `!~`, `!~*`, `IN`, `NOT IN`.\nString pattern operators: `LIKE` and `~~` for pattern matching with `%` and `_` wildcards,\n`ILIKE` for case-insensitive pattern matching, `NOT LIKE` and `!~~` for negated pattern matching.\nString regex operators: `~` for regex matching, `~*` for case-insensitive regex,\n`!~` and `!~*` for regex not matching (case-sensitive and insensitive).\nIntegers support the following operators: `\u003c`, `\u003e`, `\u003c=`, `\u003e=`, `=`, `!=`, `IN`, `NOT IN`.\nUUIDs and boolean attributes support equality and inequality only.\nUUID and time literals must be quoted as string literals.\nString literals are quoted with single quotes, such as `'string'`.\nTime literals use the same form as when serialized as JSON,\nsuch as: `CreatedAt \u003e '2025-02-18T23:16:34'`.\nInteger and boolean literals are also supported for attributes of those types.\nArrays support the `?` operator to to match any element of the array,\nas in `FromLinkID ? '7c61626f-ddbe-41af-93f6-b69f4ab6d308'`.\nArrays can perform LEN() to check for length, as in `LEN(FromLinkID) \u003e 0`.\nAn attribute naming a list of other entities can be filtered on their attributes with a `*` segment,\nas in `FromLink.*.Slug = 'upgrade-app'`, which holds when any element satisfies it.\nWithout the `*` such a reference is an error, since it names no single value to compare.\nMap support the dot notation to specify a particular map key, as in `Labels.tier = 'Backend'`.\nMaps support `IS NULL` and `IS NOT NULL` with dot notation to check for key absence or presence,\nas in `Labels.tier IS NULL` (key doesn't exist) or `Labels.tier IS NOT NULL` (key exists).\nComparison results can be tested with `IS TRUE`, `IS FALSE`, `IS NOT TRUE`, and `IS NOT FALSE`.\nThese are useful for nullable columns: `MergeSourceID = '\u003cuuid\u003e' IS NOT FALSE` matches rows where MergeSourceID equals the value OR is NULL.\nThe `IN` and `NOT IN` operators accept a comma-separated list of values in parentheses,\nsuch as `Slug IN ('slugone', 'slugtwo')` or `Labels.environment IN ('prod', 'staging')`.\nConjunctions are supported using the `AND` operator.\nAn example conjunction is:\n`CreatedAt \u003e= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.\n\nSupported attributes for filtering on ChangeOrder: AbortedReason, AdoptedEndTagID, Annotations, ChangeOrderID, ChangeWorkflow, ChangeWorkflowID, CreatedAt, DeleteGates, Description, DisplayName, EndTagID, HiddenReason, InScopeSpaceIDs, InvocationID, Labels, OrganizationID, Parameters, Permissions, PriorRevisions, PromotionFailures, PromotionOverrides, Promotions, ReleasePriorRevisions, ReleaseTagID, ReleasedRestoredSpaceIDs, ReleasedSpaceIDs, Releases, ResolvedSpaceIDs, RestoreTagID, RestoredSpaceIDs, SkippedUnits, Slug, SpaceFilterID, SpaceID, Stage, StartTagID, State, UnitFilterID, UpdateType, UpdatedAt, UserID, WhereSpace, WhereUnit.\n\nThe whole string must be query-encoded.",
+            "description": "The specified string is an expression for the purpose of filtering\nthe list of ChangeOrders returned. The expression syntax was inspired by SQL.\nIt supports conjunctions using `AND` of relational expressions of the form *attribute*\n*operator* *attribute_or_literal*. The attribute names are case-sensitive and PascalCase,\nas in the JSON encoding.\nStrings support the following operators: `\u003c`, `\u003e`, `\u003c=`, `\u003e=`, `=`, `!=`, `LIKE`, `NOT LIKE`, `ILIKE`, `~~`, `!~~`, `~`, `~*`, `!~`, `!~*`, `IN`, `NOT IN`.\nString pattern operators: `LIKE` and `~~` for pattern matching with `%` and `_` wildcards,\n`ILIKE` for case-insensitive pattern matching, `NOT LIKE` and `!~~` for negated pattern matching.\nString regex operators: `~` for regex matching, `~*` for case-insensitive regex,\n`!~` and `!~*` for regex not matching (case-sensitive and insensitive).\nIntegers support the following operators: `\u003c`, `\u003e`, `\u003c=`, `\u003e=`, `=`, `!=`, `IN`, `NOT IN`.\nUUIDs and boolean attributes support equality and inequality only.\nUUID and time literals must be quoted as string literals.\nString literals are quoted with single quotes, such as `'string'`.\nTime literals use the same form as when serialized as JSON,\nsuch as: `CreatedAt \u003e '2025-02-18T23:16:34'`.\nInteger and boolean literals are also supported for attributes of those types.\nArrays support the `?` operator to to match any element of the array,\nas in `FromLinkID ? '7c61626f-ddbe-41af-93f6-b69f4ab6d308'`.\nArrays can perform LEN() to check for length, as in `LEN(FromLinkID) \u003e 0`.\nAn attribute naming a list of other entities can be filtered on their attributes with a `*` segment,\nas in `FromLink.*.Slug = 'upgrade-app'`, which holds when any element satisfies it.\nWithout the `*` such a reference is an error, since it names no single value to compare.\nMap support the dot notation to specify a particular map key, as in `Labels.tier = 'Backend'`.\nMaps support `IS NULL` and `IS NOT NULL` with dot notation to check for key absence or presence,\nas in `Labels.tier IS NULL` (key doesn't exist) or `Labels.tier IS NOT NULL` (key exists).\nComparison results can be tested with `IS TRUE`, `IS FALSE`, `IS NOT TRUE`, and `IS NOT FALSE`.\nThese are useful for nullable columns: `MergeSourceID = '\u003cuuid\u003e' IS NOT FALSE` matches rows where MergeSourceID equals the value OR is NULL.\nThe `IN` and `NOT IN` operators accept a comma-separated list of values in parentheses,\nsuch as `Slug IN ('slugone', 'slugtwo')` or `Labels.environment IN ('prod', 'staging')`.\nConjunctions are supported using the `AND` operator.\nAn example conjunction is:\n`CreatedAt \u003e= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.\n\nSupported attributes for filtering on ChangeOrder: AbortedReason, AdoptedEndTagID, Annotations, ChangeOrderID, ChangeWorkflow, ChangeWorkflowID, CreatedAt, DeleteGates, Description, DisplayName, EndTagID, HiddenReason, InScopeSpaceIDs, InvocationID, Labels, OrganizationID, Parameters, Permissions, PriorRevisions, PromotionFailures, PromotionOverrides, Promotions, ReleasePriorRevisions, ReleaseTagID, ReleasedRestoredSpaceIDs, ReleasedSpaceIDs, Releases, ResolvedSpaceIDs, RestoreTagID, RestoredSpaceIDs, ReviewRequests, SkippedUnits, Slug, SpaceFilterID, SpaceID, Stage, StartTagID, State, UnitFilterID, UpdateType, UpdatedAt, UserID, WhereSpace, WhereUnit.\n\nThe whole string must be query-encoded.",
             "required": false,
             "schema": {
               "type": "string"
@@ -4759,7 +4759,7 @@
           {
             "name": "where",
             "in": "query",
-            "description": "The specified string is an expression for the purpose of filtering\nthe list of ChangeOrders returned. The expression syntax was inspired by SQL.\nIt supports conjunctions using `AND` of relational expressions of the form *attribute*\n*operator* *attribute_or_literal*. The attribute names are case-sensitive and PascalCase,\nas in the JSON encoding.\nStrings support the following operators: `\u003c`, `\u003e`, `\u003c=`, `\u003e=`, `=`, `!=`, `LIKE`, `NOT LIKE`, `ILIKE`, `~~`, `!~~`, `~`, `~*`, `!~`, `!~*`, `IN`, `NOT IN`.\nString pattern operators: `LIKE` and `~~` for pattern matching with `%` and `_` wildcards,\n`ILIKE` for case-insensitive pattern matching, `NOT LIKE` and `!~~` for negated pattern matching.\nString regex operators: `~` for regex matching, `~*` for case-insensitive regex,\n`!~` and `!~*` for regex not matching (case-sensitive and insensitive).\nIntegers support the following operators: `\u003c`, `\u003e`, `\u003c=`, `\u003e=`, `=`, `!=`, `IN`, `NOT IN`.\nUUIDs and boolean attributes support equality and inequality only.\nUUID and time literals must be quoted as string literals.\nString literals are quoted with single quotes, such as `'string'`.\nTime literals use the same form as when serialized as JSON,\nsuch as: `CreatedAt \u003e '2025-02-18T23:16:34'`.\nInteger and boolean literals are also supported for attributes of those types.\nArrays support the `?` operator to to match any element of the array,\nas in `FromLinkID ? '7c61626f-ddbe-41af-93f6-b69f4ab6d308'`.\nArrays can perform LEN() to check for length, as in `LEN(FromLinkID) \u003e 0`.\nAn attribute naming a list of other entities can be filtered on their attributes with a `*` segment,\nas in `FromLink.*.Slug = 'upgrade-app'`, which holds when any element satisfies it.\nWithout the `*` such a reference is an error, since it names no single value to compare.\nMap support the dot notation to specify a particular map key, as in `Labels.tier = 'Backend'`.\nMaps support `IS NULL` and `IS NOT NULL` with dot notation to check for key absence or presence,\nas in `Labels.tier IS NULL` (key doesn't exist) or `Labels.tier IS NOT NULL` (key exists).\nComparison results can be tested with `IS TRUE`, `IS FALSE`, `IS NOT TRUE`, and `IS NOT FALSE`.\nThese are useful for nullable columns: `MergeSourceID = '\u003cuuid\u003e' IS NOT FALSE` matches rows where MergeSourceID equals the value OR is NULL.\nThe `IN` and `NOT IN` operators accept a comma-separated list of values in parentheses,\nsuch as `Slug IN ('slugone', 'slugtwo')` or `Labels.environment IN ('prod', 'staging')`.\nConjunctions are supported using the `AND` operator.\nAn example conjunction is:\n`CreatedAt \u003e= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.\n\nSupported attributes for filtering on ChangeOrder: AbortedReason, AdoptedEndTagID, Annotations, ChangeOrderID, ChangeWorkflow, ChangeWorkflowID, CreatedAt, DeleteGates, Description, DisplayName, EndTagID, HiddenReason, InScopeSpaceIDs, InvocationID, Labels, OrganizationID, Parameters, Permissions, PriorRevisions, PromotionFailures, PromotionOverrides, Promotions, ReleasePriorRevisions, ReleaseTagID, ReleasedRestoredSpaceIDs, ReleasedSpaceIDs, Releases, ResolvedSpaceIDs, RestoreTagID, RestoredSpaceIDs, SkippedUnits, Slug, SpaceFilterID, SpaceID, Stage, StartTagID, State, UnitFilterID, UpdateType, UpdatedAt, UserID, WhereSpace, WhereUnit.\n\nThe whole string must be query-encoded.",
+            "description": "The specified string is an expression for the purpose of filtering\nthe list of ChangeOrders returned. The expression syntax was inspired by SQL.\nIt supports conjunctions using `AND` of relational expressions of the form *attribute*\n*operator* *attribute_or_literal*. The attribute names are case-sensitive and PascalCase,\nas in the JSON encoding.\nStrings support the following operators: `\u003c`, `\u003e`, `\u003c=`, `\u003e=`, `=`, `!=`, `LIKE`, `NOT LIKE`, `ILIKE`, `~~`, `!~~`, `~`, `~*`, `!~`, `!~*`, `IN`, `NOT IN`.\nString pattern operators: `LIKE` and `~~` for pattern matching with `%` and `_` wildcards,\n`ILIKE` for case-insensitive pattern matching, `NOT LIKE` and `!~~` for negated pattern matching.\nString regex operators: `~` for regex matching, `~*` for case-insensitive regex,\n`!~` and `!~*` for regex not matching (case-sensitive and insensitive).\nIntegers support the following operators: `\u003c`, `\u003e`, `\u003c=`, `\u003e=`, `=`, `!=`, `IN`, `NOT IN`.\nUUIDs and boolean attributes support equality and inequality only.\nUUID and time literals must be quoted as string literals.\nString literals are quoted with single quotes, such as `'string'`.\nTime literals use the same form as when serialized as JSON,\nsuch as: `CreatedAt \u003e '2025-02-18T23:16:34'`.\nInteger and boolean literals are also supported for attributes of those types.\nArrays support the `?` operator to to match any element of the array,\nas in `FromLinkID ? '7c61626f-ddbe-41af-93f6-b69f4ab6d308'`.\nArrays can perform LEN() to check for length, as in `LEN(FromLinkID) \u003e 0`.\nAn attribute naming a list of other entities can be filtered on their attributes with a `*` segment,\nas in `FromLink.*.Slug = 'upgrade-app'`, which holds when any element satisfies it.\nWithout the `*` such a reference is an error, since it names no single value to compare.\nMap support the dot notation to specify a particular map key, as in `Labels.tier = 'Backend'`.\nMaps support `IS NULL` and `IS NOT NULL` with dot notation to check for key absence or presence,\nas in `Labels.tier IS NULL` (key doesn't exist) or `Labels.tier IS NOT NULL` (key exists).\nComparison results can be tested with `IS TRUE`, `IS FALSE`, `IS NOT TRUE`, and `IS NOT FALSE`.\nThese are useful for nullable columns: `MergeSourceID = '\u003cuuid\u003e' IS NOT FALSE` matches rows where MergeSourceID equals the value OR is NULL.\nThe `IN` and `NOT IN` operators accept a comma-separated list of values in parentheses,\nsuch as `Slug IN ('slugone', 'slugtwo')` or `Labels.environment IN ('prod', 'staging')`.\nConjunctions are supported using the `AND` operator.\nAn example conjunction is:\n`CreatedAt \u003e= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.\n\nSupported attributes for filtering on ChangeOrder: AbortedReason, AdoptedEndTagID, Annotations, ChangeOrderID, ChangeWorkflow, ChangeWorkflowID, CreatedAt, DeleteGates, Description, DisplayName, EndTagID, HiddenReason, InScopeSpaceIDs, InvocationID, Labels, OrganizationID, Parameters, Permissions, PriorRevisions, PromotionFailures, PromotionOverrides, Promotions, ReleasePriorRevisions, ReleaseTagID, ReleasedRestoredSpaceIDs, ReleasedSpaceIDs, Releases, ResolvedSpaceIDs, RestoreTagID, RestoredSpaceIDs, ReviewRequests, SkippedUnits, Slug, SpaceFilterID, SpaceID, Stage, StartTagID, State, UnitFilterID, UpdateType, UpdatedAt, UserID, WhereSpace, WhereUnit.\n\nThe whole string must be query-encoded.",
             "required": false,
             "schema": {
               "type": "string"
@@ -4936,7 +4936,7 @@
           {
             "name": "where",
             "in": "query",
-            "description": "The specified string is an expression for the purpose of filtering\nthe list of ChangeOrders returned. The expression syntax was inspired by SQL.\nIt supports conjunctions using `AND` of relational expressions of the form *attribute*\n*operator* *attribute_or_literal*. The attribute names are case-sensitive and PascalCase,\nas in the JSON encoding.\nStrings support the following operators: `\u003c`, `\u003e`, `\u003c=`, `\u003e=`, `=`, `!=`, `LIKE`, `NOT LIKE`, `ILIKE`, `~~`, `!~~`, `~`, `~*`, `!~`, `!~*`, `IN`, `NOT IN`.\nString pattern operators: `LIKE` and `~~` for pattern matching with `%` and `_` wildcards,\n`ILIKE` for case-insensitive pattern matching, `NOT LIKE` and `!~~` for negated pattern matching.\nString regex operators: `~` for regex matching, `~*` for case-insensitive regex,\n`!~` and `!~*` for regex not matching (case-sensitive and insensitive).\nIntegers support the following operators: `\u003c`, `\u003e`, `\u003c=`, `\u003e=`, `=`, `!=`, `IN`, `NOT IN`.\nUUIDs and boolean attributes support equality and inequality only.\nUUID and time literals must be quoted as string literals.\nString literals are quoted with single quotes, such as `'string'`.\nTime literals use the same form as when serialized as JSON,\nsuch as: `CreatedAt \u003e '2025-02-18T23:16:34'`.\nInteger and boolean literals are also supported for attributes of those types.\nArrays support the `?` operator to to match any element of the array,\nas in `FromLinkID ? '7c61626f-ddbe-41af-93f6-b69f4ab6d308'`.\nArrays can perform LEN() to check for length, as in `LEN(FromLinkID) \u003e 0`.\nAn attribute naming a list of other entities can be filtered on their attributes with a `*` segment,\nas in `FromLink.*.Slug = 'upgrade-app'`, which holds when any element satisfies it.\nWithout the `*` such a reference is an error, since it names no single value to compare.\nMap support the dot notation to specify a particular map key, as in `Labels.tier = 'Backend'`.\nMaps support `IS NULL` and `IS NOT NULL` with dot notation to check for key absence or presence,\nas in `Labels.tier IS NULL` (key doesn't exist) or `Labels.tier IS NOT NULL` (key exists).\nComparison results can be tested with `IS TRUE`, `IS FALSE`, `IS NOT TRUE`, and `IS NOT FALSE`.\nThese are useful for nullable columns: `MergeSourceID = '\u003cuuid\u003e' IS NOT FALSE` matches rows where MergeSourceID equals the value OR is NULL.\nThe `IN` and `NOT IN` operators accept a comma-separated list of values in parentheses,\nsuch as `Slug IN ('slugone', 'slugtwo')` or `Labels.environment IN ('prod', 'staging')`.\nConjunctions are supported using the `AND` operator.\nAn example conjunction is:\n`CreatedAt \u003e= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.\n\nSupported attributes for filtering on ChangeOrder: AbortedReason, AdoptedEndTagID, Annotations, ChangeOrderID, ChangeWorkflow, ChangeWorkflowID, CreatedAt, DeleteGates, Description, DisplayName, EndTagID, HiddenReason, InScopeSpaceIDs, InvocationID, Labels, OrganizationID, Parameters, Permissions, PriorRevisions, PromotionFailures, PromotionOverrides, Promotions, ReleasePriorRevisions, ReleaseTagID, ReleasedRestoredSpaceIDs, ReleasedSpaceIDs, Releases, ResolvedSpaceIDs, RestoreTagID, RestoredSpaceIDs, SkippedUnits, Slug, SpaceFilterID, SpaceID, Stage, StartTagID, State, UnitFilterID, UpdateType, UpdatedAt, UserID, WhereSpace, WhereUnit.\n\nThe whole string must be query-encoded.",
+            "description": "The specified string is an expression for the purpose of filtering\nthe list of ChangeOrders returned. The expression syntax was inspired by SQL.\nIt supports conjunctions using `AND` of relational expressions of the form *attribute*\n*operator* *attribute_or_literal*. The attribute names are case-sensitive and PascalCase,\nas in the JSON encoding.\nStrings support the following operators: `\u003c`, `\u003e`, `\u003c=`, `\u003e=`, `=`, `!=`, `LIKE`, `NOT LIKE`, `ILIKE`, `~~`, `!~~`, `~`, `~*`, `!~`, `!~*`, `IN`, `NOT IN`.\nString pattern operators: `LIKE` and `~~` for pattern matching with `%` and `_` wildcards,\n`ILIKE` for case-insensitive pattern matching, `NOT LIKE` and `!~~` for negated pattern matching.\nString regex operators: `~` for regex matching, `~*` for case-insensitive regex,\n`!~` and `!~*` for regex not matching (case-sensitive and insensitive).\nIntegers support the following operators: `\u003c`, `\u003e`, `\u003c=`, `\u003e=`, `=`, `!=`, `IN`, `NOT IN`.\nUUIDs and boolean attributes support equality and inequality only.\nUUID and time literals must be quoted as string literals.\nString literals are quoted with single quotes, such as `'string'`.\nTime literals use the same form as when serialized as JSON,\nsuch as: `CreatedAt \u003e '2025-02-18T23:16:34'`.\nInteger and boolean literals are also supported for attributes of those types.\nArrays support the `?` operator to to match any element of the array,\nas in `FromLinkID ? '7c61626f-ddbe-41af-93f6-b69f4ab6d308'`.\nArrays can perform LEN() to check for length, as in `LEN(FromLinkID) \u003e 0`.\nAn attribute naming a list of other entities can be filtered on their attributes with a `*` segment,\nas in `FromLink.*.Slug = 'upgrade-app'`, which holds when any element satisfies it.\nWithout the `*` such a reference is an error, since it names no single value to compare.\nMap support the dot notation to specify a particular map key, as in `Labels.tier = 'Backend'`.\nMaps support `IS NULL` and `IS NOT NULL` with dot notation to check for key absence or presence,\nas in `Labels.tier IS NULL` (key doesn't exist) or `Labels.tier IS NOT NULL` (key exists).\nComparison results can be tested with `IS TRUE`, `IS FALSE`, `IS NOT TRUE`, and `IS NOT FALSE`.\nThese are useful for nullable columns: `MergeSourceID = '\u003cuuid\u003e' IS NOT FALSE` matches rows where MergeSourceID equals the value OR is NULL.\nThe `IN` and `NOT IN` operators accept a comma-separated list of values in parentheses,\nsuch as `Slug IN ('slugone', 'slugtwo')` or `Labels.environment IN ('prod', 'staging')`.\nConjunctions are supported using the `AND` operator.\nAn example conjunction is:\n`CreatedAt \u003e= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.\n\nSupported attributes for filtering on ChangeOrder: AbortedReason, AdoptedEndTagID, Annotations, ChangeOrderID, ChangeWorkflow, ChangeWorkflowID, CreatedAt, DeleteGates, Description, DisplayName, EndTagID, HiddenReason, InScopeSpaceIDs, InvocationID, Labels, OrganizationID, Parameters, Permissions, PriorRevisions, PromotionFailures, PromotionOverrides, Promotions, ReleasePriorRevisions, ReleaseTagID, ReleasedRestoredSpaceIDs, ReleasedSpaceIDs, Releases, ResolvedSpaceIDs, RestoreTagID, RestoredSpaceIDs, ReviewRequests, SkippedUnits, Slug, SpaceFilterID, SpaceID, Stage, StartTagID, State, UnitFilterID, UpdateType, UpdatedAt, UserID, WhereSpace, WhereUnit.\n\nThe whole string must be query-encoded.",
             "required": false,
             "schema": {
               "type": "string"
@@ -5122,6 +5122,15 @@
                     "description": "",
                     "nullable": true
                   },
+                  "ReviewRequests": {
+                    "type": "array",
+                    "items": {
+                      "type": "object",
+                      "nullable": true
+                    },
+                    "description": "",
+                    "nullable": true
+                  },
                   "Slug": {
                     "type": "string",
                     "description": "Unique URL-safe identifier for the entity.",
@@ -5284,7 +5293,7 @@
           {
             "name": "where",
             "in": "query",
-            "description": "The specified string is an expression for the purpose of filtering\nthe list of ChangeOrders returned. The expression syntax was inspired by SQL.\nIt supports conjunctions using `AND` of relational expressions of the form *attribute*\n*operator* *attribute_or_literal*. The attribute names are case-sensitive and PascalCase,\nas in the JSON encoding.\nStrings support the following operators: `\u003c`, `\u003e`, `\u003c=`, `\u003e=`, `=`, `!=`, `LIKE`, `NOT LIKE`, `ILIKE`, `~~`, `!~~`, `~`, `~*`, `!~`, `!~*`, `IN`, `NOT IN`.\nString pattern operators: `LIKE` and `~~` for pattern matching with `%` and `_` wildcards,\n`ILIKE` for case-insensitive pattern matching, `NOT LIKE` and `!~~` for negated pattern matching.\nString regex operators: `~` for regex matching, `~*` for case-insensitive regex,\n`!~` and `!~*` for regex not matching (case-sensitive and insensitive).\nIntegers support the following operators: `\u003c`, `\u003e`, `\u003c=`, `\u003e=`, `=`, `!=`, `IN`, `NOT IN`.\nUUIDs and boolean attributes support equality and inequality only.\nUUID and time literals must be quoted as string literals.\nString literals are quoted with single quotes, such as `'string'`.\nTime literals use the same form as when serialized as JSON,\nsuch as: `CreatedAt \u003e '2025-02-18T23:16:34'`.\nInteger and boolean literals are also supported for attributes of those types.\nArrays support the `?` operator to to match any element of the array,\nas in `FromLinkID ? '7c61626f-ddbe-41af-93f6-b69f4ab6d308'`.\nArrays can perform LEN() to check for length, as in `LEN(FromLinkID) \u003e 0`.\nAn attribute naming a list of other entities can be filtered on their attributes with a `*` segment,\nas in `FromLink.*.Slug = 'upgrade-app'`, which holds when any element satisfies it.\nWithout the `*` such a reference is an error, since it names no single value to compare.\nMap support the dot notation to specify a particular map key, as in `Labels.tier = 'Backend'`.\nMaps support `IS NULL` and `IS NOT NULL` with dot notation to check for key absence or presence,\nas in `Labels.tier IS NULL` (key doesn't exist) or `Labels.tier IS NOT NULL` (key exists).\nComparison results can be tested with `IS TRUE`, `IS FALSE`, `IS NOT TRUE`, and `IS NOT FALSE`.\nThese are useful for nullable columns: `MergeSourceID = '\u003cuuid\u003e' IS NOT FALSE` matches rows where MergeSourceID equals the value OR is NULL.\nThe `IN` and `NOT IN` operators accept a comma-separated list of values in parentheses,\nsuch as `Slug IN ('slugone', 'slugtwo')` or `Labels.environment IN ('prod', 'staging')`.\nConjunctions are supported using the `AND` operator.\nAn example conjunction is:\n`CreatedAt \u003e= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.\n\nSupported attributes for filtering on ChangeOrder: AbortedReason, AdoptedEndTagID, Annotations, ChangeOrderID, ChangeWorkflow, ChangeWorkflowID, CreatedAt, DeleteGates, Description, DisplayName, EndTagID, HiddenReason, InScopeSpaceIDs, InvocationID, Labels, OrganizationID, Parameters, Permissions, PriorRevisions, PromotionFailures, PromotionOverrides, Promotions, ReleasePriorRevisions, ReleaseTagID, ReleasedRestoredSpaceIDs, ReleasedSpaceIDs, Releases, ResolvedSpaceIDs, RestoreTagID, RestoredSpaceIDs, SkippedUnits, Slug, SpaceFilterID, SpaceID, Stage, StartTagID, State, UnitFilterID, UpdateType, UpdatedAt, UserID, WhereSpace, WhereUnit.\n\nThe whole string must be query-encoded.",
+            "description": "The specified string is an expression for the purpose of filtering\nthe list of ChangeOrders returned. The expression syntax was inspired by SQL.\nIt supports conjunctions using `AND` of relational expressions of the form *attribute*\n*operator* *attribute_or_literal*. The attribute names are case-sensitive and PascalCase,\nas in the JSON encoding.\nStrings support the following operators: `\u003c`, `\u003e`, `\u003c=`, `\u003e=`, `=`, `!=`, `LIKE`, `NOT LIKE`, `ILIKE`, `~~`, `!~~`, `~`, `~*`, `!~`, `!~*`, `IN`, `NOT IN`.\nString pattern operators: `LIKE` and `~~` for pattern matching with `%` and `_` wildcards,\n`ILIKE` for case-insensitive pattern matching, `NOT LIKE` and `!~~` for negated pattern matching.\nString regex operators: `~` for regex matching, `~*` for case-insensitive regex,\n`!~` and `!~*` for regex not matching (case-sensitive and insensitive).\nIntegers support the following operators: `\u003c`, `\u003e`, `\u003c=`, `\u003e=`, `=`, `!=`, `IN`, `NOT IN`.\nUUIDs and boolean attributes support equality and inequality only.\nUUID and time literals must be quoted as string literals.\nString literals are quoted with single quotes, such as `'string'`.\nTime literals use the same form as when serialized as JSON,\nsuch as: `CreatedAt \u003e '2025-02-18T23:16:34'`.\nInteger and boolean literals are also supported for attributes of those types.\nArrays support the `?` operator to to match any element of the array,\nas in `FromLinkID ? '7c61626f-ddbe-41af-93f6-b69f4ab6d308'`.\nArrays can perform LEN() to check for length, as in `LEN(FromLinkID) \u003e 0`.\nAn attribute naming a list of other entities can be filtered on their attributes with a `*` segment,\nas in `FromLink.*.Slug = 'upgrade-app'`, which holds when any element satisfies it.\nWithout the `*` such a reference is an error, since it names no single value to compare.\nMap support the dot notation to specify a particular map key, as in `Labels.tier = 'Backend'`.\nMaps support `IS NULL` and `IS NOT NULL` with dot notation to check for key absence or presence,\nas in `Labels.tier IS NULL` (key doesn't exist) or `Labels.tier IS NOT NULL` (key exists).\nComparison results can be tested with `IS TRUE`, `IS FALSE`, `IS NOT TRUE`, and `IS NOT FALSE`.\nThese are useful for nullable columns: `MergeSourceID = '\u003cuuid\u003e' IS NOT FALSE` matches rows where MergeSourceID equals the value OR is NULL.\nThe `IN` and `NOT IN` operators accept a comma-separated list of values in parentheses,\nsuch as `Slug IN ('slugone', 'slugtwo')` or `Labels.environment IN ('prod', 'staging')`.\nConjunctions are supported using the `AND` operator.\nAn example conjunction is:\n`CreatedAt \u003e= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.\n\nSupported attributes for filtering on ChangeOrder: AbortedReason, AdoptedEndTagID, Annotations, ChangeOrderID, ChangeWorkflow, ChangeWorkflowID, CreatedAt, DeleteGates, Description, DisplayName, EndTagID, HiddenReason, InScopeSpaceIDs, InvocationID, Labels, OrganizationID, Parameters, Permissions, PriorRevisions, PromotionFailures, PromotionOverrides, Promotions, ReleasePriorRevisions, ReleaseTagID, ReleasedRestoredSpaceIDs, ReleasedSpaceIDs, Releases, ResolvedSpaceIDs, RestoreTagID, RestoredSpaceIDs, ReviewRequests, SkippedUnits, Slug, SpaceFilterID, SpaceID, Stage, StartTagID, State, UnitFilterID, UpdateType, UpdatedAt, UserID, WhereSpace, WhereUnit.\n\nThe whole string must be query-encoded.",
             "required": false,
             "schema": {
               "type": "string"
@@ -5512,6 +5521,15 @@
                   },
                   "ReleasePriorRevisions": {
                     "type": "string",
+                    "description": "",
+                    "nullable": true
+                  },
+                  "ReviewRequests": {
+                    "type": "array",
+                    "items": {
+                      "type": "object",
+                      "nullable": true
+                    },
                     "description": "",
                     "nullable": true
                   },
@@ -23685,7 +23703,7 @@
           {
             "name": "where",
             "in": "query",
-            "description": "The specified string is an expression for the purpose of filtering\nthe list of ChangeOrders returned. The expression syntax was inspired by SQL.\nIt supports conjunctions using `AND` of relational expressions of the form *attribute*\n*operator* *attribute_or_literal*. The attribute names are case-sensitive and PascalCase,\nas in the JSON encoding.\nStrings support the following operators: `\u003c`, `\u003e`, `\u003c=`, `\u003e=`, `=`, `!=`, `LIKE`, `NOT LIKE`, `ILIKE`, `~~`, `!~~`, `~`, `~*`, `!~`, `!~*`, `IN`, `NOT IN`.\nString pattern operators: `LIKE` and `~~` for pattern matching with `%` and `_` wildcards,\n`ILIKE` for case-insensitive pattern matching, `NOT LIKE` and `!~~` for negated pattern matching.\nString regex operators: `~` for regex matching, `~*` for case-insensitive regex,\n`!~` and `!~*` for regex not matching (case-sensitive and insensitive).\nIntegers support the following operators: `\u003c`, `\u003e`, `\u003c=`, `\u003e=`, `=`, `!=`, `IN`, `NOT IN`.\nUUIDs and boolean attributes support equality and inequality only.\nUUID and time literals must be quoted as string literals.\nString literals are quoted with single quotes, such as `'string'`.\nTime literals use the same form as when serialized as JSON,\nsuch as: `CreatedAt \u003e '2025-02-18T23:16:34'`.\nInteger and boolean literals are also supported for attributes of those types.\nArrays support the `?` operator to to match any element of the array,\nas in `FromLinkID ? '7c61626f-ddbe-41af-93f6-b69f4ab6d308'`.\nArrays can perform LEN() to check for length, as in `LEN(FromLinkID) \u003e 0`.\nAn attribute naming a list of other entities can be filtered on their attributes with a `*` segment,\nas in `FromLink.*.Slug = 'upgrade-app'`, which holds when any element satisfies it.\nWithout the `*` such a reference is an error, since it names no single value to compare.\nMap support the dot notation to specify a particular map key, as in `Labels.tier = 'Backend'`.\nMaps support `IS NULL` and `IS NOT NULL` with dot notation to check for key absence or presence,\nas in `Labels.tier IS NULL` (key doesn't exist) or `Labels.tier IS NOT NULL` (key exists).\nComparison results can be tested with `IS TRUE`, `IS FALSE`, `IS NOT TRUE`, and `IS NOT FALSE`.\nThese are useful for nullable columns: `MergeSourceID = '\u003cuuid\u003e' IS NOT FALSE` matches rows where MergeSourceID equals the value OR is NULL.\nThe `IN` and `NOT IN` operators accept a comma-separated list of values in parentheses,\nsuch as `Slug IN ('slugone', 'slugtwo')` or `Labels.environment IN ('prod', 'staging')`.\nConjunctions are supported using the `AND` operator.\nAn example conjunction is:\n`CreatedAt \u003e= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.\n\nSupported attributes for filtering on ChangeOrder: AbortedReason, AdoptedEndTagID, Annotations, ChangeOrderID, ChangeWorkflow, ChangeWorkflowID, CreatedAt, DeleteGates, Description, DisplayName, EndTagID, HiddenReason, InScopeSpaceIDs, InvocationID, Labels, OrganizationID, Parameters, Permissions, PriorRevisions, PromotionFailures, PromotionOverrides, Promotions, ReleasePriorRevisions, ReleaseTagID, ReleasedRestoredSpaceIDs, ReleasedSpaceIDs, Releases, ResolvedSpaceIDs, RestoreTagID, RestoredSpaceIDs, SkippedUnits, Slug, SpaceFilterID, SpaceID, Stage, StartTagID, State, UnitFilterID, UpdateType, UpdatedAt, UserID, WhereSpace, WhereUnit.\n\nThe whole string must be query-encoded.",
+            "description": "The specified string is an expression for the purpose of filtering\nthe list of ChangeOrders returned. The expression syntax was inspired by SQL.\nIt supports conjunctions using `AND` of relational expressions of the form *attribute*\n*operator* *attribute_or_literal*. The attribute names are case-sensitive and PascalCase,\nas in the JSON encoding.\nStrings support the following operators: `\u003c`, `\u003e`, `\u003c=`, `\u003e=`, `=`, `!=`, `LIKE`, `NOT LIKE`, `ILIKE`, `~~`, `!~~`, `~`, `~*`, `!~`, `!~*`, `IN`, `NOT IN`.\nString pattern operators: `LIKE` and `~~` for pattern matching with `%` and `_` wildcards,\n`ILIKE` for case-insensitive pattern matching, `NOT LIKE` and `!~~` for negated pattern matching.\nString regex operators: `~` for regex matching, `~*` for case-insensitive regex,\n`!~` and `!~*` for regex not matching (case-sensitive and insensitive).\nIntegers support the following operators: `\u003c`, `\u003e`, `\u003c=`, `\u003e=`, `=`, `!=`, `IN`, `NOT IN`.\nUUIDs and boolean attributes support equality and inequality only.\nUUID and time literals must be quoted as string literals.\nString literals are quoted with single quotes, such as `'string'`.\nTime literals use the same form as when serialized as JSON,\nsuch as: `CreatedAt \u003e '2025-02-18T23:16:34'`.\nInteger and boolean literals are also supported for attributes of those types.\nArrays support the `?` operator to to match any element of the array,\nas in `FromLinkID ? '7c61626f-ddbe-41af-93f6-b69f4ab6d308'`.\nArrays can perform LEN() to check for length, as in `LEN(FromLinkID) \u003e 0`.\nAn attribute naming a list of other entities can be filtered on their attributes with a `*` segment,\nas in `FromLink.*.Slug = 'upgrade-app'`, which holds when any element satisfies it.\nWithout the `*` such a reference is an error, since it names no single value to compare.\nMap support the dot notation to specify a particular map key, as in `Labels.tier = 'Backend'`.\nMaps support `IS NULL` and `IS NOT NULL` with dot notation to check for key absence or presence,\nas in `Labels.tier IS NULL` (key doesn't exist) or `Labels.tier IS NOT NULL` (key exists).\nComparison results can be tested with `IS TRUE`, `IS FALSE`, `IS NOT TRUE`, and `IS NOT FALSE`.\nThese are useful for nullable columns: `MergeSourceID = '\u003cuuid\u003e' IS NOT FALSE` matches rows where MergeSourceID equals the value OR is NULL.\nThe `IN` and `NOT IN` operators accept a comma-separated list of values in parentheses,\nsuch as `Slug IN ('slugone', 'slugtwo')` or `Labels.environment IN ('prod', 'staging')`.\nConjunctions are supported using the `AND` operator.\nAn example conjunction is:\n`CreatedAt \u003e= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.\n\nSupported attributes for filtering on ChangeOrder: AbortedReason, AdoptedEndTagID, Annotations, ChangeOrderID, ChangeWorkflow, ChangeWorkflowID, CreatedAt, DeleteGates, Description, DisplayName, EndTagID, HiddenReason, InScopeSpaceIDs, InvocationID, Labels, OrganizationID, Parameters, Permissions, PriorRevisions, PromotionFailures, PromotionOverrides, Promotions, ReleasePriorRevisions, ReleaseTagID, ReleasedRestoredSpaceIDs, ReleasedSpaceIDs, Releases, ResolvedSpaceIDs, RestoreTagID, RestoredSpaceIDs, ReviewRequests, SkippedUnits, Slug, SpaceFilterID, SpaceID, Stage, StartTagID, State, UnitFilterID, UpdateType, UpdatedAt, UserID, WhereSpace, WhereUnit.\n\nThe whole string must be query-encoded.",
             "required": false,
             "schema": {
               "type": "string"
@@ -24391,6 +24409,15 @@
                   },
                   "ReleasePriorRevisions": {
                     "type": "string",
+                    "description": "",
+                    "nullable": true
+                  },
+                  "ReviewRequests": {
+                    "type": "array",
+                    "items": {
+                      "type": "object",
+                      "nullable": true
+                    },
                     "description": "",
                     "nullable": true
                   },
@@ -33340,11 +33367,11 @@
             }
           },
           "422": {
-            "description": "A Unit to be bundled has outstanding validation errors, or, for a change order, the bundled Revisions do not satisfy the ReleasePrerequisites of the stage the Space belongs to",
+            "description": "A Unit to be bundled has outstanding validation errors, or, for a change order, the bundled Revisions do not satisfy the ReleasePrerequisites of the stage the Space belongs to. Error says why, Message repeats its message, and Gates lists each ReleasePrerequisite evaluated.",
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/StandardErrorResponse"
+                  "$ref": "#/components/schemas/ReleasePublishResponse"
                 }
               }
             }
@@ -53180,11 +53207,187 @@
           }
         }
       },
+      "AttestationGateCaller": {
+        "type": "object",
+        "properties": {
+          "AuthoredRevisions": {
+            "type": "integer",
+            "description": "How many of the Revisions evaluated the caller wrote part of.",
+            "x-go-type-skip-optional-pointer": true
+          },
+          "Counts": {
+            "type": "boolean",
+            "description": "A Pass the caller records would count on every Revision evaluated.",
+            "x-go-type-skip-optional-pointer": true
+          },
+          "Reason": {
+            "type": "string",
+            "description": "Why it would not: NotEligible, when the prerequisite names neither the caller nor a Group of theirs, or Author, when the caller wrote part of the change on some Revision.",
+            "x-go-type-skip-optional-pointer": true
+          }
+        }
+      },
+      "AttestationGateEntry": {
+        "type": "object",
+        "properties": {
+          "AttestationID": {
+            "type": "string",
+            "format": "uuid",
+            "example": "248df4b7-aa70-47b8-a036-33ac447e668d",
+            "x-go-type-skip-optional-pointer": true
+          },
+          "CountedOn": {
+            "type": "integer",
+            "description": "How many of the Revisions evaluated it counts on. A Fail that counts rejects them.",
+            "x-go-type-skip-optional-pointer": true
+          },
+          "CreatedAt": {
+            "type": "string",
+            "format": "date-time",
+            "example": "2006-01-02T15:04:05Z07:00",
+            "x-go-type-skip-optional-pointer": true
+          },
+          "Reason": {
+            "type": "string",
+            "description": "Why it counts on none of the Revisions it covers: Revoked, Expired, TooOld (older than MaxAge), NotEligible, Author, or FailIgnored (a Fail, under IgnoreFail).",
+            "x-go-type-skip-optional-pointer": true
+          },
+          "Result": {
+            "type": "string",
+            "description": "Pass or Fail.",
+            "x-go-type-skip-optional-pointer": true
+          },
+          "UserID": {
+            "type": "string",
+            "format": "uuid",
+            "example": "248df4b7-aa70-47b8-a036-33ac447e668d",
+            "x-go-type-skip-optional-pointer": true
+          },
+          "ValidUntil": {
+            "type": "string",
+            "description": "When it stops counting: the earlier of its ExpiresAt and its CreatedAt plus the prerequisite's MaxAge. Absent when neither is set.",
+            "format": "date-time",
+            "nullable": true,
+            "x-go-type-skip-optional-pointer": true
+          }
+        }
+      },
+      "AttestationGateResult": {
+        "type": "object",
+        "properties": {
+          "Attestations": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/AttestationGateEntry"
+            },
+            "description": "Every Attestation of Type covering a Revision evaluated, directly or carried forward from an earlier Revision of the same Unit with the same DataHash, and what became of it.",
+            "x-go-type-skip-optional-pointer": true
+          },
+          "AuthorUserIDs": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/UUID"
+            },
+            "description": "Users excluded from counting on some Revision because they wrote part of the change there. Empty with AllowAuthors.",
+            "x-go-type-skip-optional-pointer": true
+          },
+          "Caller": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/AttestationGateCaller"
+              }
+            ],
+            "description": "Whether a Pass recorded by the caller would count here."
+          },
+          "Counted": {
+            "type": "integer",
+            "description": "The fewest attesters counted on any Revision evaluated: the gate's progress toward Required.",
+            "x-go-type-skip-optional-pointer": true
+          },
+          "Required": {
+            "type": "integer",
+            "description": "How many distinct attesters each Revision needs: Count, or the number of FromGroupIDs with DistinctGroups.",
+            "x-go-type-skip-optional-pointer": true
+          },
+          "Revisions": {
+            "type": "integer",
+            "description": "How many Revisions were evaluated: one of each Unit the change changed in the Space, or each Revision a Release bundles.",
+            "x-go-type-skip-optional-pointer": true
+          },
+          "SatisfiedRevisions": {
+            "type": "integer",
+            "description": "How many of them have what the prerequisite asks for.",
+            "x-go-type-skip-optional-pointer": true
+          },
+          "Truncated": {
+            "type": "boolean",
+            "description": "More Revisions fall short than Unsatisfied lists.",
+            "x-go-type-skip-optional-pointer": true
+          },
+          "Type": {
+            "type": "string",
+            "description": "The Attestation Type the prerequisite counts.",
+            "x-go-type-skip-optional-pointer": true
+          },
+          "Unsatisfied": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/AttestationGateRevision"
+            },
+            "description": "The Revisions that fall short, at most 100.",
+            "x-go-type-skip-optional-pointer": true
+          }
+        }
+      },
+      "AttestationGateRevision": {
+        "type": "object",
+        "properties": {
+          "AuthorUserIDs": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/UUID"
+            },
+            "description": "Users excluded from counting on this Revision because they wrote part of the change on this Unit. Empty with AllowAuthors.",
+            "x-go-type-skip-optional-pointer": true
+          },
+          "Counted": {
+            "type": "integer",
+            "description": "Distinct attesters counted on this Revision.",
+            "x-go-type-skip-optional-pointer": true
+          },
+          "Reason": {
+            "type": "string",
+            "description": "AttestationsMissing or AttestationRejected.",
+            "x-go-type-skip-optional-pointer": true
+          },
+          "RevisionNum": {
+            "type": "integer",
+            "format": "int64",
+            "x-go-type-skip-optional-pointer": true
+          },
+          "UnitID": {
+            "type": "string",
+            "format": "uuid",
+            "example": "248df4b7-aa70-47b8-a036-33ac447e668d",
+            "x-go-type-skip-optional-pointer": true
+          },
+          "UnitSlug": {
+            "type": "string",
+            "x-go-type-skip-optional-pointer": true
+          }
+        }
+      },
       "AttestationSkippedUnit": {
         "type": "object",
         "properties": {
+          "Message": {
+            "type": "string",
+            "description": "Why the Unit is not covered, in words.",
+            "x-go-type-skip-optional-pointer": true
+          },
           "Reason": {
             "type": "string",
+            "description": "Why the Unit is not covered, as a code: NoTarget or NoRevision.",
             "x-go-type-skip-optional-pointer": true
           },
           "UnitID": {
@@ -53202,6 +53405,11 @@
       "AttestationSubject": {
         "type": "object",
         "properties": {
+          "Authored": {
+            "type": "boolean",
+            "description": "With a ChangeOrder, the caller wrote one of the Revisions of the change on this Unit in this Space, so the Attestation does not count here for a prerequisite that excludes authors.",
+            "x-go-type-skip-optional-pointer": true
+          },
           "RevisionID": {
             "type": "string",
             "format": "uuid",
@@ -54468,12 +54676,23 @@
             },
             "x-go-type-skip-optional-pointer": true
           },
+          "ReviewRequests": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/ChangeOrderReviewRequest"
+            },
+            "description": "ReviewRequests records whose review the change is waiting for: for each, the stage whose Spaces are to be reviewed (empty for the change order's own Space), the User, and when and by whom the review was requested. A request is not cleared when the review is given; whether a reviewer has reviewed is read from their Attestations. A merge patch replaces the list whole. At most 256.",
+            "x-confighub-where": {
+              "dataType": "JSON"
+            },
+            "x-go-type-skip-optional-pointer": true
+          },
           "SkippedUnits": {
             "type": "object",
             "additionalProperties": {
               "type": "string"
             },
-            "description": "SkippedUnits names the Units of the ChangeOrder's Space that it carries no Revisions of, mapped to the reason. Written when the scope is derived. A skipped Unit may still be marked by the ChangeOrder's Tags, when the Spaces in scope had already taken it.",
+            "description": "SkippedUnits names the Units of the ChangeOrder's Space that it carries no Revisions of, mapped to the reason as a code: NotFollowed (nothing follows the Unit by Links of the change order's UpdateType, and it was never cloned), FollowedByOtherLinks (it is followed downstream, but not by Links of that UpdateType), NotMarked (the end Tag marks no Revision of it), NoStartRevision (a Link to it has never merged or resolved, and it predates empty start Revisions), AlreadyTaken (the Spaces in scope have already taken it as far as the end, so it is marked, carrying no Revisions), or TakenPastEnd (the Spaces in scope have taken it past the end, so it is not marked). Written when the scope is derived.",
             "readOnly": true,
             "x-confighub-where": {
               "dataType": "map[uuid]string",
@@ -54775,6 +54994,10 @@
             },
             "x-go-type-skip-optional-pointer": true
           },
+          "Message": {
+            "type": "string",
+            "x-go-type-skip-optional-pointer": true
+          },
           "Reason": {
             "type": "string",
             "x-go-type-skip-optional-pointer": true
@@ -54878,6 +55101,41 @@
           "SpaceID": {
             "type": "string",
             "description": "The Space the Release was published from.",
+            "format": "uuid",
+            "example": "248df4b7-aa70-47b8-a036-33ac447e668d",
+            "x-go-type-skip-optional-pointer": true
+          }
+        }
+      },
+      "ChangeOrderReviewRequest": {
+        "required": [
+          "UserID"
+        ],
+        "type": "object",
+        "properties": {
+          "RequestedAt": {
+            "type": "string",
+            "description": "When the review was requested, by the server's clock. A new request is stamped with the current time, and an existing one keeps its time; sending a later time than the one recorded re-requests the review, and stamps it with the current time.",
+            "format": "date-time",
+            "example": "2006-01-02T15:04:05Z07:00",
+            "x-go-type-skip-optional-pointer": true
+          },
+          "RequestedByUserID": {
+            "type": "string",
+            "description": "Who requested the review, or last re-requested it. Set by the server.",
+            "format": "uuid",
+            "readOnly": true,
+            "example": "248df4b7-aa70-47b8-a036-33ac447e668d",
+            "x-go-type-skip-optional-pointer": true
+          },
+          "Stage": {
+            "type": "string",
+            "description": "The stage whose Spaces are to be reviewed, which is where an Attestation recorded with that TargetStage goes. Empty is the change order's own Space.",
+            "x-go-type-skip-optional-pointer": true
+          },
+          "UserID": {
+            "type": "string",
+            "description": "The User asked to review.",
             "format": "uuid",
             "example": "248df4b7-aa70-47b8-a036-33ac447e668d",
             "x-go-type-skip-optional-pointer": true
@@ -56607,7 +56865,7 @@
           },
           "Reason": {
             "type": "string",
-            "description": "Why the Space was Skipped.",
+            "description": "For Skipped: NotMarked, when the change order marks no Unit of the Space.",
             "x-go-type-skip-optional-pointer": true
           },
           "SpaceID": {
@@ -60523,6 +60781,14 @@
       "PromoteGateResult": {
         "type": "object",
         "properties": {
+          "Attestation": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/AttestationGateResult"
+              }
+            ],
+            "description": "For an attestation prerequisite, what was counted, whether or not the gate holds."
+          },
           "Message": {
             "type": "string",
             "description": "Why the gate does not hold.",
@@ -60530,7 +60796,12 @@
           },
           "Prerequisite": {
             "type": "string",
-            "description": "Promoted, Validated, Released, Healthy, or a custom prerequisite's name.",
+            "description": "Promoted, Validated, Released, Healthy, or the name of a custom or attestation prerequisite.",
+            "x-go-type-skip-optional-pointer": true
+          },
+          "Reason": {
+            "type": "string",
+            "description": "Why the gate does not hold, as a code: NotPromoted, PreviousStageEmpty, NotReleased, ValidationErrors, NotMarked, NoReleaseTarget, NoRelease, NoLiveStatus, NotSynced, Deploying, DeployFailed, Unhealthy, AttestationsMissing, AttestationRejected, ExpressionFalse, EvaluationFailed, or UnknownPrerequisite. A client that does not know a code shows Message.",
             "x-go-type-skip-optional-pointer": true
           },
           "Satisfied": {
@@ -60570,8 +60841,14 @@
             "format": "uuid",
             "example": "248df4b7-aa70-47b8-a036-33ac447e668d"
           },
+          "Message": {
+            "type": "string",
+            "description": "Why the Link was skipped or orphaned, in words.",
+            "x-go-type-skip-optional-pointer": true
+          },
           "Reason": {
             "type": "string",
+            "description": "Adopted for an Unchanged Link, TargetUnitMissing for a Skip, or UpstreamLinkDeleted for an Orphaned one.",
             "x-go-type-skip-optional-pointer": true
           },
           "Slug": {
@@ -60717,6 +60994,22 @@
             "description": "True when nothing was written.",
             "x-go-type-skip-optional-pointer": true
           },
+          "Error": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/ResponseError"
+              }
+            ],
+            "description": "Set when the gates refused the promotion: why, with each failed gate's message among its Details."
+          },
+          "Final": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/PromoteGateResult"
+            },
+            "description": "When Complete, the gates of the ChangeWorkflow's Final, evaluated over each Space of the last Stage. The ChangeOrder's Stage becomes Completed once they all hold.",
+            "x-go-type-skip-optional-pointer": true
+          },
           "Plan": {
             "type": "string",
             "description": "Digest of the planned actions. Send it as ExpectedPlan to apply exactly this plan.",
@@ -60758,6 +61051,11 @@
             },
             "x-go-type-skip-optional-pointer": true
           },
+          "Message": {
+            "type": "string",
+            "description": "Why the Space was Skipped or Blocked, in words.",
+            "x-go-type-skip-optional-pointer": true
+          },
           "PreviewedAgainstCurrentUpstream": {
             "type": "boolean",
             "description": "A dry run previewed this Space against its upstream as it is now, although the same request promotes that upstream first.",
@@ -60765,7 +61063,7 @@
           },
           "Reason": {
             "type": "string",
-            "description": "Why the Space was Skipped or Blocked.",
+            "description": "Why the Space was Skipped or Blocked, as a code: ChangeOrderSpace, NotInScope, UpstreamPromotedFirst, or UpstreamFailed.",
             "x-go-type-skip-optional-pointer": true
           },
           "SpaceID": {
@@ -60826,7 +61124,7 @@
           },
           "PreviousStage": {
             "type": "string",
-            "description": "The Stage whose Spaces the gates are evaluated over. Empty for the first Stage, which has no gates.",
+            "description": "The Stage whose Spaces the gates are evaluated over. Empty for the first Stage, whose gates are evaluated over the change order's own Space.",
             "x-go-type-skip-optional-pointer": true
           }
         }
@@ -61286,7 +61584,7 @@
             "additionalProperties": {
               "type": "string"
             },
-            "description": "SkippedUnits names the Units assigned to the Release's Target that the Release does not bundle, mapped to the reason. Publishing with a TagID leaves out a Unit that has never been released and that the Tag marks no Revision of; a Unit that has been released must be marked. (readonly)",
+            "description": "SkippedUnits names the Units assigned to the Release's Target that the Release does not bundle, mapped to the reason as a code. NotMarked: publishing with a TagID leaves out a Unit that has never been released and that the Tag marks no Revision of; a Unit that has been released must be marked. (readonly)",
             "readOnly": true,
             "x-confighub-where": {
               "dataType": "map[uuid]string",
@@ -61521,9 +61819,25 @@
       "ReleasePublishResponse": {
         "type": "object",
         "properties": {
+          "Error": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/ResponseError"
+              }
+            ],
+            "description": "Why the Release was not published."
+          },
+          "Gates": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/PromoteGateResult"
+            },
+            "description": "For a change order, each ReleasePrerequisite of the stage the Space belongs to, evaluated over the Revisions the Release bundles, whether or not it holds.",
+            "x-go-type-skip-optional-pointer": true
+          },
           "Message": {
             "type": "string",
-            "description": "Set when nothing changed since the latest published Release, so no Release was created.",
+            "description": "Why no Release was created: nothing changed since the latest published Release, or, on a refusal, the error as one string.",
             "x-go-type-skip-optional-pointer": true
           },
           "Release": {
@@ -62048,11 +62362,6 @@
             "description": "Additional context messages",
             "x-go-type-skip-optional-pointer": true
           },
-          "ErrorCategory": {
-            "type": "string",
-            "description": "The type of error (e.g., validation, not-found)",
-            "x-go-type-skip-optional-pointer": true
-          },
           "ErrorMetadata": {
             "allOf": [
               {
@@ -62073,7 +62382,7 @@
           },
           "Type": {
             "type": "string",
-            "description": "The type of error (e.g., validation, not-found)",
+            "description": "The category of the error, as a code: UserInput, Validation, Data, Authentication, Permission, NotFound, Conflict, AlreadyExists, Unprocessable, Locked, PreconditionFailed, TooManyRequests, Unexpected, GatewayTimeout, or ServiceUnavailable",
             "x-go-type-skip-optional-pointer": true
           }
         }
@@ -63217,18 +63526,21 @@
       "StandardErrorResponse": {
         "type": "object",
         "properties": {
-          "Code": {
-            "type": "string",
-            "description": "HTTP status code of the response.",
-            "x-go-type-skip-optional-pointer": true
+          "Error": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/ResponseError"
+              }
+            ],
+            "description": "The error: its message, category (Type), HTTP status, details, and structured items."
           },
-          "Message": {
+          "message": {
             "type": "string",
-            "description": "Message returned with the response.",
+            "description": "The error as one string: its message, with any details, items, and individual errors appended. Kept for clients written before Error; new clients read Error.",
             "x-go-type-skip-optional-pointer": true
           }
         },
-        "description": "Error response details."
+        "description": "The body of an error response: the error as data (Error), and as one string (message) for clients written before Error."
       },
       "Subjects": {
         "type": "object",

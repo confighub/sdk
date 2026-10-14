@@ -43,10 +43,10 @@ func displayUnitPath(report *blame.PathReport, resolver *blame.Resolver) {
 		unitPathLine(0, kind, blame.FormatGuards(report.Annotations[kind]))
 	}
 	for _, attribute := range report.Needed {
-		unitPathLine(0, "Needed", formatUnitPathAttribute(attribute.AttributeName, attribute.Details))
+		unitPathLine(0, "Needed", blame.FormatNeeded(attribute))
 	}
 	for _, attribute := range report.Provided {
-		unitPathLine(0, "Provided", formatUnitPathAttribute(attribute.AttributeName, attribute.Details))
+		unitPathLine(0, "Provided", blame.FormatProvided(attribute))
 	}
 	for _, conflict := range f.Conflicts {
 		text := formatBlameConflict(conflict, 0)
@@ -278,18 +278,4 @@ func unitPathValue(indent int, label, value string) {
 	for _, line := range strings.Split(value, "\n") {
 		tprintRaw(pad + line)
 	}
-}
-
-func formatUnitPathAttribute(name string, details *goclientnew.AttributeDetails) string {
-	text := name
-	if text == "" {
-		text = "(unnamed)"
-	}
-	if details != nil && details.BoundLinkID != uuid.Nil {
-		text += ", bound by link " + details.BoundLinkID.String()
-	}
-	if details != nil && details.Description != "" {
-		text += ": " + details.Description
-	}
-	return text
 }

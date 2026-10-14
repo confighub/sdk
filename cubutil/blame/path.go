@@ -25,8 +25,6 @@ type PathReport struct {
 	// Released says whether the unit's last Release includes the value, in words.
 	Released    string                       `json:",omitempty"`
 	Annotations map[string]map[string]string `json:",omitempty"`
-	Needed      []goclientnew.AttributeValue `json:",omitempty"`
-	Provided    []goclientnew.AttributeInfo  `json:",omitempty"`
 	Changes     []PathChange                 `json:",omitempty"`
 	History     []PathChange                 `json:",omitempty"`
 }
@@ -48,7 +46,6 @@ func (r *Resolver) Path(ctx context.Context, unit *goclientnew.Unit, f *Field, h
 	report := &PathReport{Field: f}
 	report.Released = unitPathReleased(f, unit, r.space(ctx, unit.SpaceID))
 	report.Annotations = unitPathAnnotations(identifier, unit, f)
-	report.Needed, report.Provided = unitPathAttributes(identifier, unit, f)
 	for _, origin := range f.Chain {
 		report.Changes = append(report.Changes, unitPathChangeFor(origin, nil))
 	}
@@ -144,35 +141,6 @@ func unitPathAnnotations(identifier api.ResourceIdentifier, unit *goclientnew.Un
 		return nil
 	}
 	return byKind
-}
-
-// unitPathAttributes returns the needed and provided paths of the unit that are this field.
-func unitPathAttributes(identifier api.ResourceIdentifier, unit *goclientnew.Unit, f *Field) (
-	[]goclientnew.AttributeValue, []goclientnew.AttributeInfo) {
-	matches := func(resourceType, resourceName, resourceNameCore, path string) bool {
-		if AuthoredPath(path) != f.Path {
-			return false
-		}
-		_, found := matchBlameResourceInfo(identifier, []*goclientnew.ResourceInfo{{
-			ResourceType:             resourceType,
-			ResourceName:             resourceName,
-			ResourceNameWithoutScope: resourceNameCore,
-		}}, f.ResourceType, f.ResourceName, f.resourceNameCore)
-		return found
-	}
-	var needed []goclientnew.AttributeValue
-	for _, attribute := range unit.NeededPaths {
-		if matches(attribute.ResourceType, attribute.ResourceName, attribute.ResourceNameWithoutScope, attribute.Path) {
-			needed = append(needed, attribute)
-		}
-	}
-	var provided []goclientnew.AttributeInfo
-	for _, attribute := range unit.ProvidedPaths {
-		if matches(attribute.ResourceType, attribute.ResourceName, attribute.ResourceNameWithoutScope, attribute.Path) {
-			provided = append(provided, attribute)
-		}
-	}
-	return needed, provided
 }
 
 func unitPathChangeFor(origin *Origin, info *goclientnew.MutationInfo) PathChange {

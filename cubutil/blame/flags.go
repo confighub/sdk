@@ -24,10 +24,12 @@ type Flag struct {
 	Meaning string
 }
 
-// FlagLegend is every flag, in the order the column prints them. The first four are about
-// the field as it stands; the last four are about the change in this unit that put the value
-// there, which for a value that arrived from upstream is the merge that brought it, not the
-// upstream change the SET BY column names.
+// FlagLegend is every flag, in the order the column prints them. P through W are about the
+// field as it stands; U through N are about the change in this unit that put the value there,
+// which for a value that arrived from upstream is the merge that brought it, not the upstream
+// change the SET BY column names. The lowercase n and p say what part the field plays in
+// NeedsProvides Links: they are about the field too, but nothing is wrong or pending because
+// of either, so they come last and in lowercase.
 var FlagLegend = []Flag{
 	{"P", "protected: a local override a merge from upstream leaves alone"},
 	{"G", "guarded: reasons are recorded for this value, and an operation must be cleared for them to overwrite it"},
@@ -40,6 +42,8 @@ var FlagLegend = []Flag{
 	{"T", "a Trigger set the value in this unit"},
 	{"C", "the change in this unit was made by a ChangeOrder"},
 	{"N", "not released: the value changed after the unit's last Release, or the unit has none"},
+	{"n", "needed: the value is to come from an upstream unit, through a NeedsProvides Link"},
+	{"p", "provided: the value is offered to downstream units, through NeedsProvides Links"},
 }
 
 // blameFlags computes a field's FLAGS. lastReleasedRevisionNum is the Unit's: a value is
@@ -73,6 +77,8 @@ func blameFlags(f *Field, lastReleasedRevisionNum int64, releasable bool) string
 	set("T", here != nil && here.Trigger != "")
 	set("C", here != nil && len(here.ChangeOrders) > 0)
 	set("N", releasable && blameUnreleased(here, lastReleasedRevisionNum))
+	set("n", len(f.Needed) > 0)
+	set("p", len(f.Provided) > 0)
 	return flags.String()
 }
 

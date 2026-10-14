@@ -142,7 +142,12 @@ type Field struct {
 	Findings  []goclientnew.LinkFinding      `json:",omitempty"`
 	// Validation are the unit's failed validating checks that name this field.
 	Validation []Validation `json:",omitempty"`
-	Chain      []*Origin    `json:",omitempty"`
+	// Needed and Provided are the unit's NeededPaths and ProvidedPaths that are this field:
+	// a value it takes from an upstream unit through a NeedsProvides Link, and one it offers
+	// to downstream units.
+	Needed   []NeededPath                `json:",omitempty"`
+	Provided []goclientnew.AttributeInfo `json:",omitempty"`
+	Chain    []*Origin                   `json:",omitempty"`
 }
 
 // Origin is the hop that actually set the value: the end of the chain.
@@ -155,7 +160,8 @@ func (f *Field) Origin() *Origin {
 
 // Unit builds the field list for one unit, reading its record and its data. The unit
 // has to carry what a full read returns: its toolchain, PathAnnotations, Conflicts,
-// LinkFindings, HeadRevisionNum and LastReleasedRevisionNum.
+// LinkFindings, ValidationResults, NeededPaths, ProvidedPaths, HeadRevisionNum and
+// LastReleasedRevisionNum.
 func (r *Resolver) Unit(ctx context.Context, unit *goclientnew.Unit) ([]*Field, error) {
 	mutationSources, err := r.unitMutationSources(ctx, unit)
 	if err != nil {
@@ -211,6 +217,7 @@ func (r *Resolver) UnitData(ctx context.Context, unit *goclientnew.Unit, mutatio
 		f.Conflicts = blameConflictsForPath(identifier, unit.Conflicts, f.ResourceType, f.ResourceName, f.resourceNameCore, f.Path)
 		f.Findings = blameFindingsForPath(identifier, unit.LinkFindings, f.ResourceType, f.ResourceName, f.resourceNameCore, f.Path)
 		f.Validation = blameValidationsForPath(identifier, unit, f.ResourceType, f.ResourceName, f.resourceNameCore, f.Path, f.storedPath)
+		f.Needed, f.Provided = blameAttributesForPath(identifier, unit, f.ResourceType, f.ResourceName, f.resourceNameCore, f.Path)
 		if info != nil {
 			chain, err := r.walk(ctx, unit, *info, f.ResourceType, f.ResourceName, f.resourceNameCore, f.storedPath,
 				unit.HeadRevisionNum, 0)
@@ -222,6 +229,7 @@ func (r *Resolver) UnitData(ctx context.Context, unit *goclientnew.Unit, mutatio
 		f.Flags = blameFlags(f, unit.LastReleasedRevisionNum, releasable)
 		fields = append(fields, f)
 	}
+	r.nameBoundLinks(ctx, fields)
 	return fields, nil
 }
 

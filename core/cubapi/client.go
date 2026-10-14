@@ -24,6 +24,7 @@ import (
 	"fmt"
 	"net/http"
 	"net/http/httputil"
+	"strconv"
 	"strings"
 	"sync"
 	"sync/atomic"
@@ -61,6 +62,11 @@ type ClientOptions struct {
 	UserAgent  string
 	Debug      bool         // dump requests and responses to stdout
 	HTTPClient *http.Client // base client; defaults to a client using http.DefaultTransport
+
+	// WarningHandler is called with the text of each warning a response carries in a Warning
+	// header, such as the server's naming a field of a request body it does not have and so
+	// ignored. Warnings are dropped when it is nil.
+	WarningHandler func(warning string)
 
 	// PageBulkOperations sends each bulk patch, create and delete in pages, following the
 	// server's continue tokens, and answers with one response for all of them, so that an
@@ -110,7 +116,7 @@ func NewClient(opts ClientOptions) (*Client, error) {
 	if rt == nil {
 		rt = http.DefaultTransport
 	}
-	transport := &clientTransport{base: rt, agent: agent, debug: opts.Debug}
+	transport := &clientTransport{base: rt, agent: agent, debug: opts.Debug, warn: opts.WarningHandler}
 	var outer http.RoundTripper = transport
 	if opts.PageBulkOperations {
 		outer = &bulkPagingTransport{base: transport}
@@ -329,6 +335,7 @@ type clientTransport struct {
 	base    http.RoundTripper
 	agent   string
 	debug   bool
+	warn    func(string)
 	version atomic.Pointer[string]
 }
 
@@ -353,10 +360,33 @@ func (t *clientTransport) RoundTrip(r *http.Request) (*http.Response, error) {
 	if v := res.Header.Get(ServerVersionHeader); v != "" {
 		t.version.Store(&v)
 	}
+	if t.warn != nil {
+		for _, warning := range res.Header.Values("Warning") {
+			t.warn(warningText(warning))
+		}
+	}
 	if t.debug {
 		if dump, derr := httputil.DumpResponse(res, true); derr == nil {
 			fmt.Println(string(dump))
 		}
 	}
 	return res, nil
+}
+
+// warningText is the text of a Warning header's value, which RFC 7234 gives as a code, an agent,
+// and the text quoted: 299 - "unknown field \"Bogus\"". A value of another form is its own text.
+func warningText(value string) string {
+	_, rest, ok := strings.Cut(value, " ")
+	if !ok {
+		return value
+	}
+	_, quoted, ok := strings.Cut(rest, " ")
+	if !ok {
+		return value
+	}
+	text, err := strconv.Unquote(quoted)
+	if err != nil {
+		return value
+	}
+	return text
 }

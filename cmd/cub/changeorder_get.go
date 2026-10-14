@@ -152,6 +152,9 @@ func displayExtendedChangeOrderDetails(extendedChangeOrder *goclientnew.Extended
 	if len(changeorderDetails.SkippedUnits) > 0 {
 		view.Append([]string{"Skipped Units", skippedUnitsSummary(changeorderDetails.SkippedUnits)})
 	}
+	if len(changeorderDetails.ReviewRequests) > 0 {
+		view.Append([]string{"Review Requests", reviewRequestsSummary(changeorderDetails.ReviewRequests)})
+	}
 	// Where the change has got to, which the server derives when it reads the change order.
 	// In-scope first: it is what the other two are measured against.
 	view.Append([]string{"State", changeorderDetails.State})

@@ -50583,7 +50583,7 @@ type PublishReleaseResponse struct {
 	JSON403      *StandardErrorResponse
 	JSON404      *StandardErrorResponse
 	JSON409      *StandardErrorResponse
-	JSON422      *StandardErrorResponse
+	JSON422      *ReleasePublishResponse
 	JSON500      *StandardErrorResponse
 	JSONDefault  *StandardErrorResponse
 }
@@ -72269,7 +72269,7 @@ func ParsePublishReleaseResponse(rsp *http.Response) (*PublishReleaseResponse, e
 		response.JSON409 = &dest
 
 	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 422:
-		var dest StandardErrorResponse
+		var dest ReleasePublishResponse
 		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
 			return nil, err
 		}
