@@ -141,6 +141,9 @@ func displayExtendedChangeWorkflowDetails(extendedChangeWorkflow *goclientnew.Ex
 	for _, required := range changeWorkflowDetails.AttestationPrerequisites {
 		view.Append([]string{"Prerequisite " + required.Name, formatAttestationPrerequisite(required)})
 	}
+	if changeWorkflowDetails.Hash != "" {
+		view.Append([]string{"Hash", changeWorkflowDetails.Hash})
+	}
 
 	view.Render()
 }

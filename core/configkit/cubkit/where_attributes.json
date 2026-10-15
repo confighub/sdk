@@ -22,6 +22,9 @@
       "ExpiresAt": {
         "dataType": "time"
       },
+      "Hash": {
+        "dataType": "string"
+      },
       "HiddenReason": {
         "dataType": "string"
       },
@@ -467,6 +470,9 @@
       },
       "Final": {
         "dataType": "JSON"
+      },
+      "Hash": {
+        "dataType": "string"
       },
       "HiddenReason": {
         "dataType": "string"
@@ -2097,6 +2103,9 @@
         "expandable": true
       },
       "GroupBy": {
+        "dataType": "string"
+      },
+      "Hash": {
         "dataType": "string"
       },
       "HiddenReason": {

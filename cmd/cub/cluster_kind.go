@@ -152,6 +152,26 @@ func clusterKindList(ctx context.Context) ([]string, error) {
 	return names, nil
 }
 
+// clusterKindKubeconfig returns the kubeconfig of an existing kind cluster, as
+// `kind get kubeconfig` prints it: self-contained, with the cluster's
+// certificate inline. A cluster that does not exist is an error naming it.
+func clusterKindKubeconfig(ctx context.Context, name string) ([]byte, error) {
+	if err := clusterKindAvailable(); err != nil {
+		return nil, err
+	}
+	var stdout, stderr bytes.Buffer
+	cmd := exec.CommandContext(ctx, "kind", "get", "kubeconfig", "--name", name)
+	cmd.Stdout = &stdout
+	cmd.Stderr = &stderr
+	if err := cmd.Run(); err != nil {
+		if msg := strings.TrimSpace(stderr.String()); msg != "" {
+			return nil, fmt.Errorf("kind get kubeconfig --name %s: %w\n%s", name, err, msg)
+		}
+		return nil, fmt.Errorf("kind get kubeconfig --name %s: %w", name, err)
+	}
+	return stdout.Bytes(), nil
+}
+
 // clusterKindExists reports whether a kind cluster with the given name exists.
 func clusterKindExists(ctx context.Context, name string) (bool, error) {
 	clusters, err := clusterKindList(ctx)

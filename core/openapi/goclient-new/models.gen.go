@@ -301,6 +301,9 @@ type Attestation struct {
 	// ExpiresAt When the Attestation stops satisfying requirements. Optional.
 	ExpiresAt time.Time `json:"ExpiresAt,omitempty" yaml:"ExpiresAt,omitempty"`
 
+	// Hash SHA256 hash of the claim encoded as hexadecimal: the statement (Type, Result, RevokedAttestationID, ChangeOrderID, ReleaseID, EvidenceAttestationIDs, Note, Claims and ExpiresAt), the User who recorded it, and the Revisions it covers. (readonly)
+	Hash string `json:"Hash,omitempty" yaml:"Hash,omitempty"`
+
 	// HiddenReason The reason the entity is hidden, if it is. A hidden entity is left out of List and Search results, and of what bulk operations act on, unless the include_hidden parameter names its reason or is *, or the where parameter names the entity by Slug or ID. ConfigHub/YAML Units are created hidden with the reason BackingUnit unless given another.
 	HiddenReason string `json:"HiddenReason,omitempty" yaml:"HiddenReason,omitempty"`
 
@@ -1249,6 +1252,9 @@ type ChangeWorkflow struct {
 
 	// Final Final is what the last stage must satisfy for the rollout to read as completed. Nothing is promoted into it: a stage's prerequisites gate entry to the stage after it, so the last stage's gate nothing.
 	Final *ChangeWorkflowFinalStage `json:"Final,omitempty" yaml:"Final,omitempty"`
+
+	// Hash SHA256 hash of the change workflow's Stages, Final, CustomPrerequisites and AttestationPrerequisites encoded as hexadecimal. (readonly)
+	Hash string `json:"Hash,omitempty" yaml:"Hash,omitempty"`
 
 	// HiddenReason The reason the entity is hidden, if it is. A hidden entity is left out of List and Search results, and of what bulk operations act on, unless the include_hidden parameter names its reason or is *, or the where parameter names the entity by Slug or ID. ConfigHub/YAML Units are created hidden with the reason BackingUnit unless given another.
 	HiddenReason string `json:"HiddenReason,omitempty" yaml:"HiddenReason,omitempty"`
@@ -5752,6 +5758,9 @@ type View struct {
 	// GroupBy Column to group by (optional).
 	GroupBy string `json:"GroupBy,omitempty" yaml:"GroupBy,omitempty"`
 
+	// Hash SHA256 hash of the view's specification fields encoded as hexadecimal: FilterID, Of, Columns, GroupBy, OrderBy and OrderByDirection. (readonly)
+	Hash string `json:"Hash,omitempty" yaml:"Hash,omitempty"`
+
 	// HiddenReason The reason the entity is hidden, if it is. A hidden entity is left out of List and Search results, and of what bulk operations act on, unless the include_hidden parameter names its reason or is *, or the where parameter names the entity by Slug or ID. ConfigHub/YAML Units are created hidden with the reason BackingUnit unless given another.
 	HiddenReason string `json:"HiddenReason,omitempty" yaml:"HiddenReason,omitempty"`
 
@@ -6774,7 +6783,7 @@ type ListAllAttestationsParams struct {
 	// An example conjunction is:
 	// `CreatedAt >= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.
 	//
-	// Supported attributes for filtering on Attestation: AttestationID, ChangeOrderID, Claims, CreatedAt, EvidenceAttestationIDs, ExpiresAt, HiddenReason, Note, OrganizationID, Permissions, ReleaseID, Result, RevokedAttestationID, SpaceID, Type, UserID.
+	// Supported attributes for filtering on Attestation: AttestationID, ChangeOrderID, Claims, CreatedAt, EvidenceAttestationIDs, ExpiresAt, Hash, HiddenReason, Note, OrganizationID, Permissions, ReleaseID, Result, RevokedAttestationID, SpaceID, Type, UserID.
 	//
 	// The whole string must be query-encoded.
 	Where *string `form:"where,omitempty" json:"where,omitempty" yaml:"where,omitempty"`
@@ -6844,7 +6853,7 @@ type ListAllAttestationsParams struct {
 	//
 	// Field names are case-sensitive and PascalCase, as in the JSON encoding. Sort direction defaults to ASC when the 'DIRECTION:' prefix is omitted.
 	//
-	// Supported attributes for ordering Attestation: AttestationID, ChangeOrderID, CreatedAt, ExpiresAt, HiddenReason, Note, OrganizationID, ReleaseID, Result, RevokedAttestationID, SpaceID, Type, UserID.
+	// Supported attributes for ordering Attestation: AttestationID, ChangeOrderID, CreatedAt, ExpiresAt, Hash, HiddenReason, Note, OrganizationID, ReleaseID, Result, RevokedAttestationID, SpaceID, Type, UserID.
 	//
 	// Example: 'DESC:CreatedAt' or 'DisplayName,DESC:CreatedAt'.
 	//
@@ -9234,7 +9243,7 @@ type BulkDeleteChangeWorkflowsParams struct {
 	// An example conjunction is:
 	// `CreatedAt >= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.
 	//
-	// Supported attributes for filtering on ChangeWorkflow: Annotations, AttestationPrerequisites, BackingUnitID, ChangeWorkflowID, CreatedAt, CustomPrerequisites, DeleteGates, DisplayName, Final, HiddenReason, Labels, OrganizationID, Permissions, Slug, SpaceID, Stages, UpdatedAt, UpstreamChangeWorkflowID.
+	// Supported attributes for filtering on ChangeWorkflow: Annotations, AttestationPrerequisites, BackingUnitID, ChangeWorkflowID, CreatedAt, CustomPrerequisites, DeleteGates, DisplayName, Final, Hash, HiddenReason, Labels, OrganizationID, Permissions, Slug, SpaceID, Stages, UpdatedAt, UpstreamChangeWorkflowID.
 	//
 	// The whole string must be query-encoded.
 	Where *string `form:"where,omitempty" json:"where,omitempty" yaml:"where,omitempty"`
@@ -9333,7 +9342,7 @@ type ListAllChangeWorkflowsParams struct {
 	// An example conjunction is:
 	// `CreatedAt >= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.
 	//
-	// Supported attributes for filtering on ChangeWorkflow: Annotations, AttestationPrerequisites, BackingUnitID, ChangeWorkflowID, CreatedAt, CustomPrerequisites, DeleteGates, DisplayName, Final, HiddenReason, Labels, OrganizationID, Permissions, Slug, SpaceID, Stages, UpdatedAt, UpstreamChangeWorkflowID.
+	// Supported attributes for filtering on ChangeWorkflow: Annotations, AttestationPrerequisites, BackingUnitID, ChangeWorkflowID, CreatedAt, CustomPrerequisites, DeleteGates, DisplayName, Final, Hash, HiddenReason, Labels, OrganizationID, Permissions, Slug, SpaceID, Stages, UpdatedAt, UpstreamChangeWorkflowID.
 	//
 	// The whole string must be query-encoded.
 	Where *string `form:"where,omitempty" json:"where,omitempty" yaml:"where,omitempty"`
@@ -9403,7 +9412,7 @@ type ListAllChangeWorkflowsParams struct {
 	//
 	// Field names are case-sensitive and PascalCase, as in the JSON encoding. Sort direction defaults to ASC when the 'DIRECTION:' prefix is omitted.
 	//
-	// Supported attributes for ordering ChangeWorkflow: BackingUnitID, ChangeWorkflowID, CreatedAt, DisplayName, HiddenReason, OrganizationID, Slug, SpaceID, UpdatedAt, UpstreamChangeWorkflowID.
+	// Supported attributes for ordering ChangeWorkflow: BackingUnitID, ChangeWorkflowID, CreatedAt, DisplayName, Hash, HiddenReason, OrganizationID, Slug, SpaceID, UpdatedAt, UpstreamChangeWorkflowID.
 	//
 	// Example: 'DESC:CreatedAt' or 'DisplayName,DESC:CreatedAt'.
 	//
@@ -9493,7 +9502,7 @@ type BulkPatchChangeWorkflowsParams struct {
 	// An example conjunction is:
 	// `CreatedAt >= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.
 	//
-	// Supported attributes for filtering on ChangeWorkflow: Annotations, AttestationPrerequisites, BackingUnitID, ChangeWorkflowID, CreatedAt, CustomPrerequisites, DeleteGates, DisplayName, Final, HiddenReason, Labels, OrganizationID, Permissions, Slug, SpaceID, Stages, UpdatedAt, UpstreamChangeWorkflowID.
+	// Supported attributes for filtering on ChangeWorkflow: Annotations, AttestationPrerequisites, BackingUnitID, ChangeWorkflowID, CreatedAt, CustomPrerequisites, DeleteGates, DisplayName, Final, Hash, HiddenReason, Labels, OrganizationID, Permissions, Slug, SpaceID, Stages, UpdatedAt, UpstreamChangeWorkflowID.
 	//
 	// The whole string must be query-encoded.
 	Where *string `form:"where,omitempty" json:"where,omitempty" yaml:"where,omitempty"`
@@ -9635,7 +9644,7 @@ type BulkCreateChangeWorkflowsParams struct {
 	// An example conjunction is:
 	// `CreatedAt >= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.
 	//
-	// Supported attributes for filtering on ChangeWorkflow: Annotations, AttestationPrerequisites, BackingUnitID, ChangeWorkflowID, CreatedAt, CustomPrerequisites, DeleteGates, DisplayName, Final, HiddenReason, Labels, OrganizationID, Permissions, Slug, SpaceID, Stages, UpdatedAt, UpstreamChangeWorkflowID.
+	// Supported attributes for filtering on ChangeWorkflow: Annotations, AttestationPrerequisites, BackingUnitID, ChangeWorkflowID, CreatedAt, CustomPrerequisites, DeleteGates, DisplayName, Final, Hash, HiddenReason, Labels, OrganizationID, Permissions, Slug, SpaceID, Stages, UpdatedAt, UpstreamChangeWorkflowID.
 	//
 	// The whole string must be query-encoded.
 	Where *string `form:"where,omitempty" json:"where,omitempty" yaml:"where,omitempty"`
@@ -9853,7 +9862,7 @@ type BulkMoveChangeWorkflowsParams struct {
 	// An example conjunction is:
 	// `CreatedAt >= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.
 	//
-	// Supported attributes for filtering on ChangeWorkflow: Annotations, AttestationPrerequisites, BackingUnitID, ChangeWorkflowID, CreatedAt, CustomPrerequisites, DeleteGates, DisplayName, Final, HiddenReason, Labels, OrganizationID, Permissions, Slug, SpaceID, Stages, UpdatedAt, UpstreamChangeWorkflowID.
+	// Supported attributes for filtering on ChangeWorkflow: Annotations, AttestationPrerequisites, BackingUnitID, ChangeWorkflowID, CreatedAt, CustomPrerequisites, DeleteGates, DisplayName, Final, Hash, HiddenReason, Labels, OrganizationID, Permissions, Slug, SpaceID, Stages, UpdatedAt, UpstreamChangeWorkflowID.
 	//
 	// The whole string must be query-encoded.
 	Where *string `form:"where,omitempty" json:"where,omitempty" yaml:"where,omitempty"`
@@ -14629,7 +14638,7 @@ type ListExtendedAttestationsParams struct {
 	// An example conjunction is:
 	// `CreatedAt >= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.
 	//
-	// Supported attributes for filtering on Attestation: AttestationID, ChangeOrderID, Claims, CreatedAt, EvidenceAttestationIDs, ExpiresAt, HiddenReason, Note, OrganizationID, Permissions, ReleaseID, Result, RevokedAttestationID, SpaceID, Type, UserID.
+	// Supported attributes for filtering on Attestation: AttestationID, ChangeOrderID, Claims, CreatedAt, EvidenceAttestationIDs, ExpiresAt, Hash, HiddenReason, Note, OrganizationID, Permissions, ReleaseID, Result, RevokedAttestationID, SpaceID, Type, UserID.
 	//
 	// The whole string must be query-encoded.
 	Where *string `form:"where,omitempty" json:"where,omitempty" yaml:"where,omitempty"`
@@ -14699,7 +14708,7 @@ type ListExtendedAttestationsParams struct {
 	//
 	// Field names are case-sensitive and PascalCase, as in the JSON encoding. Sort direction defaults to ASC when the 'DIRECTION:' prefix is omitted.
 	//
-	// Supported attributes for ordering Attestation: AttestationID, ChangeOrderID, CreatedAt, ExpiresAt, HiddenReason, Note, OrganizationID, ReleaseID, Result, RevokedAttestationID, SpaceID, Type, UserID.
+	// Supported attributes for ordering Attestation: AttestationID, ChangeOrderID, CreatedAt, ExpiresAt, Hash, HiddenReason, Note, OrganizationID, ReleaseID, Result, RevokedAttestationID, SpaceID, Type, UserID.
 	//
 	// Example: 'DESC:CreatedAt' or 'DisplayName,DESC:CreatedAt'.
 	//
@@ -15604,7 +15613,7 @@ type ListChangeWorkflowsParams struct {
 	// An example conjunction is:
 	// `CreatedAt >= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.
 	//
-	// Supported attributes for filtering on ChangeWorkflow: Annotations, AttestationPrerequisites, BackingUnitID, ChangeWorkflowID, CreatedAt, CustomPrerequisites, DeleteGates, DisplayName, Final, HiddenReason, Labels, OrganizationID, Permissions, Slug, SpaceID, Stages, UpdatedAt, UpstreamChangeWorkflowID.
+	// Supported attributes for filtering on ChangeWorkflow: Annotations, AttestationPrerequisites, BackingUnitID, ChangeWorkflowID, CreatedAt, CustomPrerequisites, DeleteGates, DisplayName, Final, Hash, HiddenReason, Labels, OrganizationID, Permissions, Slug, SpaceID, Stages, UpdatedAt, UpstreamChangeWorkflowID.
 	//
 	// The whole string must be query-encoded.
 	Where *string `form:"where,omitempty" json:"where,omitempty" yaml:"where,omitempty"`
@@ -15674,7 +15683,7 @@ type ListChangeWorkflowsParams struct {
 	//
 	// Field names are case-sensitive and PascalCase, as in the JSON encoding. Sort direction defaults to ASC when the 'DIRECTION:' prefix is omitted.
 	//
-	// Supported attributes for ordering ChangeWorkflow: BackingUnitID, ChangeWorkflowID, CreatedAt, DisplayName, HiddenReason, OrganizationID, Slug, SpaceID, UpdatedAt, UpstreamChangeWorkflowID.
+	// Supported attributes for ordering ChangeWorkflow: BackingUnitID, ChangeWorkflowID, CreatedAt, DisplayName, Hash, HiddenReason, OrganizationID, Slug, SpaceID, UpdatedAt, UpstreamChangeWorkflowID.
 	//
 	// Example: 'DESC:CreatedAt' or 'DisplayName,DESC:CreatedAt'.
 	//
@@ -19173,7 +19182,7 @@ type ListViewsParams struct {
 	// An example conjunction is:
 	// `CreatedAt >= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.
 	//
-	// Supported attributes for filtering on View: Annotations, BackingUnitID, Columns, CreatedAt, DisplayName, FilterID, GroupBy, HiddenReason, Labels, Of, OrderBy, OrderByDirection, OrganizationID, Permissions, Slug, SpaceID, UpdatedAt, UpstreamViewID, ViewID.
+	// Supported attributes for filtering on View: Annotations, BackingUnitID, Columns, CreatedAt, DisplayName, FilterID, GroupBy, Hash, HiddenReason, Labels, Of, OrderBy, OrderByDirection, OrganizationID, Permissions, Slug, SpaceID, UpdatedAt, UpstreamViewID, ViewID.
 	//
 	// The whole string must be query-encoded.
 	Where *string `form:"where,omitempty" json:"where,omitempty" yaml:"where,omitempty"`
@@ -19243,7 +19252,7 @@ type ListViewsParams struct {
 	//
 	// Field names are case-sensitive and PascalCase, as in the JSON encoding. Sort direction defaults to ASC when the 'DIRECTION:' prefix is omitted.
 	//
-	// Supported attributes for ordering View: BackingUnitID, CreatedAt, DisplayName, FilterID, GroupBy, HiddenReason, Of, OrderBy, OrderByDirection, OrganizationID, Slug, SpaceID, UpdatedAt, UpstreamViewID, ViewID.
+	// Supported attributes for ordering View: BackingUnitID, CreatedAt, DisplayName, FilterID, GroupBy, Hash, HiddenReason, Of, OrderBy, OrderByDirection, OrganizationID, Slug, SpaceID, UpdatedAt, UpstreamViewID, ViewID.
 	//
 	// Example: 'DESC:CreatedAt' or 'DisplayName,DESC:CreatedAt'.
 	//
@@ -23269,7 +23278,7 @@ type BulkDeleteViewsParams struct {
 	// An example conjunction is:
 	// `CreatedAt >= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.
 	//
-	// Supported attributes for filtering on View: Annotations, BackingUnitID, Columns, CreatedAt, DisplayName, FilterID, GroupBy, HiddenReason, Labels, Of, OrderBy, OrderByDirection, OrganizationID, Permissions, Slug, SpaceID, UpdatedAt, UpstreamViewID, ViewID.
+	// Supported attributes for filtering on View: Annotations, BackingUnitID, Columns, CreatedAt, DisplayName, FilterID, GroupBy, Hash, HiddenReason, Labels, Of, OrderBy, OrderByDirection, OrganizationID, Permissions, Slug, SpaceID, UpdatedAt, UpstreamViewID, ViewID.
 	//
 	// The whole string must be query-encoded.
 	Where *string `form:"where,omitempty" json:"where,omitempty" yaml:"where,omitempty"`
@@ -23368,7 +23377,7 @@ type ListAllViewsParams struct {
 	// An example conjunction is:
 	// `CreatedAt >= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.
 	//
-	// Supported attributes for filtering on View: Annotations, BackingUnitID, Columns, CreatedAt, DisplayName, FilterID, GroupBy, HiddenReason, Labels, Of, OrderBy, OrderByDirection, OrganizationID, Permissions, Slug, SpaceID, UpdatedAt, UpstreamViewID, ViewID.
+	// Supported attributes for filtering on View: Annotations, BackingUnitID, Columns, CreatedAt, DisplayName, FilterID, GroupBy, Hash, HiddenReason, Labels, Of, OrderBy, OrderByDirection, OrganizationID, Permissions, Slug, SpaceID, UpdatedAt, UpstreamViewID, ViewID.
 	//
 	// The whole string must be query-encoded.
 	Where *string `form:"where,omitempty" json:"where,omitempty" yaml:"where,omitempty"`
@@ -23438,7 +23447,7 @@ type ListAllViewsParams struct {
 	//
 	// Field names are case-sensitive and PascalCase, as in the JSON encoding. Sort direction defaults to ASC when the 'DIRECTION:' prefix is omitted.
 	//
-	// Supported attributes for ordering View: BackingUnitID, CreatedAt, DisplayName, FilterID, GroupBy, HiddenReason, Of, OrderBy, OrderByDirection, OrganizationID, Slug, SpaceID, UpdatedAt, UpstreamViewID, ViewID.
+	// Supported attributes for ordering View: BackingUnitID, CreatedAt, DisplayName, FilterID, GroupBy, Hash, HiddenReason, Of, OrderBy, OrderByDirection, OrganizationID, Slug, SpaceID, UpdatedAt, UpstreamViewID, ViewID.
 	//
 	// Example: 'DESC:CreatedAt' or 'DisplayName,DESC:CreatedAt'.
 	//
@@ -23522,7 +23531,7 @@ type BulkPatchViewsParams struct {
 	// An example conjunction is:
 	// `CreatedAt >= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.
 	//
-	// Supported attributes for filtering on View: Annotations, BackingUnitID, Columns, CreatedAt, DisplayName, FilterID, GroupBy, HiddenReason, Labels, Of, OrderBy, OrderByDirection, OrganizationID, Permissions, Slug, SpaceID, UpdatedAt, UpstreamViewID, ViewID.
+	// Supported attributes for filtering on View: Annotations, BackingUnitID, Columns, CreatedAt, DisplayName, FilterID, GroupBy, Hash, HiddenReason, Labels, Of, OrderBy, OrderByDirection, OrganizationID, Permissions, Slug, SpaceID, UpdatedAt, UpstreamViewID, ViewID.
 	//
 	// The whole string must be query-encoded.
 	Where *string `form:"where,omitempty" json:"where,omitempty" yaml:"where,omitempty"`
@@ -23658,7 +23667,7 @@ type BulkCreateViewsParams struct {
 	// An example conjunction is:
 	// `CreatedAt >= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.
 	//
-	// Supported attributes for filtering on View: Annotations, BackingUnitID, Columns, CreatedAt, DisplayName, FilterID, GroupBy, HiddenReason, Labels, Of, OrderBy, OrderByDirection, OrganizationID, Permissions, Slug, SpaceID, UpdatedAt, UpstreamViewID, ViewID.
+	// Supported attributes for filtering on View: Annotations, BackingUnitID, Columns, CreatedAt, DisplayName, FilterID, GroupBy, Hash, HiddenReason, Labels, Of, OrderBy, OrderByDirection, OrganizationID, Permissions, Slug, SpaceID, UpdatedAt, UpstreamViewID, ViewID.
 	//
 	// The whole string must be query-encoded.
 	Where *string `form:"where,omitempty" json:"where,omitempty" yaml:"where,omitempty"`
@@ -23876,7 +23885,7 @@ type BulkMoveViewsParams struct {
 	// An example conjunction is:
 	// `CreatedAt >= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.
 	//
-	// Supported attributes for filtering on View: Annotations, BackingUnitID, Columns, CreatedAt, DisplayName, FilterID, GroupBy, HiddenReason, Labels, Of, OrderBy, OrderByDirection, OrganizationID, Permissions, Slug, SpaceID, UpdatedAt, UpstreamViewID, ViewID.
+	// Supported attributes for filtering on View: Annotations, BackingUnitID, Columns, CreatedAt, DisplayName, FilterID, GroupBy, Hash, HiddenReason, Labels, Of, OrderBy, OrderByDirection, OrganizationID, Permissions, Slug, SpaceID, UpdatedAt, UpstreamViewID, ViewID.
 	//
 	// The whole string must be query-encoded.
 	Where *string `form:"where,omitempty" json:"where,omitempty" yaml:"where,omitempty"`

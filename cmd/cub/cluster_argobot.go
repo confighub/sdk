@@ -14,9 +14,10 @@ import (
 	"github.com/google/uuid"
 )
 
-// argobot install for `cub cluster up`. argobot is a ConfigHub bot that watches
-// the event log and force-syncs the corresponding Argo CD Application the moment
-// a deploy happens, closing Argo's reconcile-interval gap. It is delivered like
+// argobot install for `cub cluster attach` (and so `cub cluster up`). argobot
+// is a ConfigHub bot that listens on a Channel and force-syncs the
+// corresponding Argo CD Application the moment a deploy happens, closing Argo's
+// reconcile-interval gap. It is delivered like
 // any other component: a shared base installed from its published OCI config
 // bundle and a per-cluster downstream variant. The child Argo Application that
 // makes argobot live is created by `cub variant create --target` itself — the
@@ -26,9 +27,9 @@ import (
 // of that path.
 //
 // Everything argobot-specific lives in this file; the rest of the cluster
-// package is generic (kind, Argo CD, ConfigHub Spaces/Targets/ServiceAccounts). The one
-// coupling into `cub cluster up` is clusterInstallArgobotStep, called once from
-// clusterUpRun.
+// package is generic (kind, Argo CD, ConfigHub Spaces/Targets/ServiceAccounts).
+// The one coupling into the attachment is clusterInstallArgobotStep, called
+// once from clusterAttach.
 
 // argobot install constants. argobot is installed as a ConfigHub component from
 // its published OCI config bundle, then given a per-cluster downstream variant.
@@ -79,7 +80,7 @@ const (
 const clusterArgobotEventReleasePublished = "release.published"
 
 // clusterArgobotDeps carries the cluster-derived values the argobot install
-// needs from clusterUpRun — the pieces of a freshly created cluster argobot
+// needs from clusterAttach — the pieces of a freshly attached cluster argobot
 // binds to. The child Argo Application is created by `cub variant create` from
 // the OCI target's argo-apps-space annotation, so the install itself only needs
 // the identity argobot runs as (for the Channel grant and the out-of-band
@@ -92,14 +93,15 @@ type clusterArgobotDeps struct {
 	kubeconfigPath       string
 }
 
-// clusterInstallArgobotStep is the single argobot seam into `cub cluster up`.
-// It is a no-op when --no-argobot is set; otherwise it registers the argobot
-// variant Space for rollback (via registerRollback), derives argobot's
-// in-cluster ConfigHub URL, and runs the install. The child Argo Application
-// Unit lands in the apps Space as a side effect of `cub variant create
-// --target` (auto-created from the OCI target's argo-apps-space annotation), so
-// there is nothing for the caller to add to the apps Space's Release.
-func clusterInstallArgobotStep(out io.Writer, opts clusterUpOptions, dep clusterArgobotDeps, registerRollback func(func())) error {
+// clusterInstallArgobotStep is the single argobot seam into clusterAttach (and
+// so into both `cub cluster up` and `cub cluster attach`). It is a no-op when
+// --no-argobot is set; otherwise it registers the argobot variant Space for
+// rollback (via registerRollback), derives argobot's in-cluster ConfigHub URL,
+// and runs the install. The child Argo Application Unit lands in the apps
+// Space as a side effect of `cub variant create --target` (auto-created from
+// the OCI target's apps-space annotation), so there is nothing for the caller
+// to add to the apps Space's Release.
+func clusterInstallArgobotStep(out io.Writer, opts clusterAttachSpec, dep clusterArgobotDeps, registerRollback func(func())) error {
 	if opts.noArgobot {
 		return nil
 	}
@@ -121,7 +123,8 @@ func clusterInstallArgobotStep(out io.Writer, opts clusterUpOptions, dep cluster
 	})
 
 	// ConfigHub API URL as argobot (in-cluster) reaches it — loopback rewritten
-	// to host.docker.internal.
+	// to the docker host address, since a loopback cub server can only be
+	// reached by a cluster on this machine. A remote server passes through.
 	apiURLForContainer, err := clusterAPIEndpointFromContainer(clusterServerURL())
 	if err != nil {
 		return err
@@ -214,7 +217,7 @@ stringData:
 }
 
 // clusterArgobotOptions carries everything the argobot install needs from the
-// surrounding `cub cluster up` run.
+// surrounding attachment.
 type clusterArgobotOptions struct {
 	controller           string          // the cluster's controller; argobot's Sveltos and Flux deployments come from bases of their own
 	clusterName          string          // cluster name; also the argobot variant name
@@ -229,7 +232,7 @@ type clusterArgobotOptions struct {
 	kubeconfigPath       string
 }
 
-// clusterInstallArgobot installs argobot for a freshly created cluster: argobot
+// clusterInstallArgobot installs argobot for a freshly attached cluster: argobot
 // runs as the cluster's service account (the OCI target grants that service
 // account's user the access live-status reporting needs), and the Channel
 // argobot listens on is created in the cluster Space, subscribed to the
@@ -280,8 +283,8 @@ func clusterInstallArgobot(out io.Writer, o clusterArgobotOptions) error {
 	// any deployment variant instead of hand-rolling its own Application.
 	//
 	// No --allow-exists: `cub variant create` is fail-fast on a pre-existing
-	// variant, and clusterUpRun guarantees a fresh argobot Space via its
-	// precondition check, so a lingering argobot-<name> is surfaced rather than
+	// variant, and the attachment's precondition check guarantees a fresh
+	// argobot Space, so a lingering argobot-<name> is surfaced rather than
 	// silently reused.
 	fmt.Fprintf(out, "Creating per-cluster argobot variant %q...\n", argobotSpace)
 	if err := runCub("variant", "create",

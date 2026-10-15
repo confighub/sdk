@@ -11,11 +11,12 @@ import (
 	"strings"
 )
 
-// Per-cluster kubeconfig path conventions for `cub cluster`. There is no state
-// file: "cub knows about this cluster" is implied by the existence of
-// <config-dir>/clusters/<name>.kubeconfig (created by `cub cluster up`, removed
-// by `cub cluster down`). All other per-cluster metadata comes from the
-// corresponding ConfigHub Space's annotations.
+// Per-cluster file path conventions for `cub cluster`. "cub knows about this
+// cluster" is implied by the existence of <config-dir>/clusters/<name>.kubeconfig
+// (written by `cub cluster up` and `cub cluster attach`, removed by `down` and
+// `detach`); the record beside it (cluster_record.go) says where the cluster
+// is wired. All other per-cluster metadata comes from the corresponding
+// ConfigHub Space's annotations.
 
 // clusterConfigDir resolves the ConfigHub config directory: CUB_CONFIG if set,
 // else ~/.confighub. CUB_CONFIG names the directory, so there is nothing to

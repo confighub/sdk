@@ -31,7 +31,20 @@ type clusterSpace struct {
 	Host        string
 	ArgoPort    string
 	SveltosPort string // the Sveltos dashboard's NodePort, from clusterAnnotationSveltosPort
+	Origin      string // clusterOriginKind or clusterOriginAttach; see clusterOriginOf
+	BotSpace    string // the bot's variant Space slug, from clusterAnnotationBotSpace; "" when unrecorded
+	BotChannel  string // the bot's Channel slug in the cluster Space, from clusterAnnotationBotChannel
 	CreatedAt   time.Time
+}
+
+// clusterOriginOf reads the origin annotation, defaulting to kind: every
+// cluster Space written before the annotation existed was created by `cub
+// cluster up`.
+func clusterOriginOf(annotations map[string]string) string {
+	if o := annotations[clusterAnnotationOrigin]; o != "" {
+		return o
+	}
+	return clusterOriginKind
 }
 
 // clusterServerURL returns the active context's bare server URL (no trailing
@@ -92,11 +105,91 @@ func clusterSpaceExists(slug string) (bool, error) {
 	return false, nil
 }
 
-// clusterListSpacesForHost returns all Spaces in the current context that carry
-// the cluster label and whose host annotation matches the given hostname. The
-// label filter runs server-side via --where; the host filter is applied
-// client-side because Annotations.X is not currently queryable in --where.
+// clusterListSpacesForHost returns the cluster Spaces in the current context
+// whose host annotation matches the given hostname: the kind clusters this
+// machine created, in the days before the local record said where each one is
+// wired. Still used for clusters that have no record.
 func clusterListSpacesForHost(hostname string) ([]clusterSpace, error) {
+	all, err := clusterListSpaces()
+	if err != nil {
+		return nil, err
+	}
+	var out []clusterSpace
+	for _, s := range all {
+		if s.Host == hostname {
+			out = append(out, s)
+		}
+	}
+	return out, nil
+}
+
+// clusterSpaceByNameInOrg returns the cluster Space named by the cluster name
+// in the current context's organization, whichever machine created it, or nil.
+// The cluster name is unique within an organization: it names the Space by
+// default and is the annotation every cluster Space carries.
+func clusterSpaceByNameInOrg(name string) (*clusterSpace, error) {
+	all, err := clusterListSpaces()
+	if err != nil {
+		return nil, err
+	}
+	for i := range all {
+		if all[i].ClusterName == name {
+			return &all[i], nil
+		}
+	}
+	return nil, nil
+}
+
+// clusterRequireFreshConfigHub refuses to start when any of the Spaces an
+// attachment creates already exists, so a leftover from an earlier run is
+// surfaced before anything slow or irreversible happens rather than mid-run.
+// argobotSlug is skipped when empty (--no-argobot): its variant Space is created
+// fail-fast, without --allow-exists, during the install. The cluster's service
+// account is org-scoped, so a leftover one is not caught by the Space checks
+// and is checked here too.
+func clusterRequireFreshConfigHub(name, spaceSlug, appsSlug, argobotSlug string) error {
+	for _, slug := range []string{spaceSlug, appsSlug} {
+		if exists, err := clusterSpaceExists(slug); err != nil {
+			return err
+		} else if exists {
+			return fmt.Errorf("ConfigHub space %q already exists", slug)
+		}
+	}
+	if argobotSlug != "" {
+		if exists, err := clusterSpaceExists(argobotSlug); err != nil {
+			return err
+		} else if exists {
+			return fmt.Errorf("ConfigHub space %q already exists (leftover argobot install; delete it with 'cub space delete --recursive %s' or pass --no-argobot)", argobotSlug, argobotSlug)
+		}
+	}
+	saSlug := clusterServiceAccountSlug(name)
+	if exists, err := clusterServiceAccountExists(saSlug); err != nil {
+		return err
+	} else if exists {
+		return fmt.Errorf("ConfigHub service account %q already exists (leftover cluster identity; delete it with 'cub serviceaccount delete %s')", saSlug, saSlug)
+	}
+	return nil
+}
+
+// clusterListUnitSlugs returns the slugs of every Unit in a Space. For the apps
+// Space each slug is also the name of the Argo CD Application the Unit
+// manifests, which is what `cub cluster detach` needs to remove them.
+func clusterListUnitSlugs(spaceID uuid.UUID) ([]string, error) {
+	units, err := apiListUnits(spaceID.String(), "", "UnitID,Slug")
+	if err != nil {
+		return nil, err
+	}
+	slugs := make([]string, 0, len(units))
+	for _, u := range units {
+		slugs = append(slugs, u.Slug)
+	}
+	return slugs, nil
+}
+
+// clusterListSpaces returns every cluster Space in the current context's
+// organization, decoded from its label and annotations. The label filter runs
+// server-side via --where; everything else is read from the annotations.
+func clusterListSpaces() ([]clusterSpace, error) {
 	where := fmt.Sprintf("Labels.%s = 'true'", clusterLabel)
 	spaces, err := apiListSpaces(where, "*")
 	if err != nil {
@@ -104,9 +197,6 @@ func clusterListSpacesForHost(hostname string) ([]clusterSpace, error) {
 	}
 	var out []clusterSpace
 	for _, s := range spaces {
-		if s.Annotations[clusterAnnotationHost] != hostname {
-			continue
-		}
 		name := s.Annotations[clusterAnnotationName]
 		if name == "" {
 			name = s.Slug
@@ -124,6 +214,9 @@ func clusterListSpacesForHost(hostname string) ([]clusterSpace, error) {
 			Host:        s.Annotations[clusterAnnotationHost],
 			ArgoPort:    s.Annotations[clusterAnnotationArgoPort],
 			SveltosPort: s.Annotations[clusterAnnotationSveltosPort],
+			Origin:      clusterOriginOf(s.Annotations),
+			BotSpace:    s.Annotations[clusterAnnotationBotSpace],
+			BotChannel:  s.Annotations[clusterAnnotationBotChannel],
 			CreatedAt:   s.CreatedAt,
 		})
 	}

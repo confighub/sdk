@@ -160,6 +160,9 @@ func displayExtendedViewDetails(extendedView *goclientnew.ExtendedView) {
 			view.Append([]string{"Order By Direction", string(viewDetails.OrderByDirection)})
 		}
 	}
+	if viewDetails.Hash != "" {
+		view.Append([]string{"Hash", viewDetails.Hash})
+	}
 
 	view.Render()
 }

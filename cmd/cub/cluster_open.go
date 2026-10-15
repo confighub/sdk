@@ -36,14 +36,16 @@ for 24 hours. --print-password prints it instead.
 A cluster from "cub cluster up --controller flux" has no UI to open, so this
 prints the commands that show Flux's state instead.
 
-The cluster name may be given as an argument or with --name, and can be omitted
+The cluster name is given as an argument, and can be omitted
 when this host has exactly one cub-managed cluster. `+"`cub cluster list`"+` shows the
 names and Argo endpoints of all of them.
 
 The endpoint and password come from the cluster's env file
 (<config-dir>/clusters/<name>.env, written by `+"`cub cluster up`"+`); if that file is
-gone, the endpoint is read from the cluster's ConfigHub Space annotations and the
-password from the argocd-initial-admin-secret in the live cluster. If no password
+gone, the endpoint is read from the cluster's ConfigHub Space annotations, in
+the context the cluster's record says it is wired to, and the password from the
+argocd-initial-admin-secret in the live cluster. An attached cluster has no
+host port for Argo CD; this prints the port-forward to use instead. If no password
 can be found — an admin who changes it deletes that Secret — the UI is still
 opened and only the username is reported.
 
@@ -54,7 +56,6 @@ Examples:
 
   # Open a specific cluster's Argo CD UI
   cub cluster open my-cluster
-  cub cluster open --name my-cluster
 
   # Print the admin password instead of copying it to the clipboard
   cub cluster open my-cluster --print-password
@@ -68,18 +69,16 @@ Examples:
 
 func init() {
 	enableOpenFlags(clusterOpenCmd)
-	clusterOpenCmd.Flags().StringVar(&clusterOpenArgs.name, "name", "", "cluster name (may also be given as a positional argument)")
+	clusterOpenCmd.Flags().StringVar(&clusterOpenArgs.name, "name", "", "cluster name (the argument; kept as a flag for older scripts)")
+	_ = clusterOpenCmd.Flags().MarkHidden("name")
 	clusterOpenCmd.Flags().BoolVar(&clusterOpenArgs.printPassword, "print-password", false, "print the admin password (for Sveltos, the dashboard token) to the terminal instead of copying it to the clipboard")
 	clusterCmd.AddCommand(clusterOpenCmd)
 }
 
 func clusterOpenCmdRun(cmd *cobra.Command, args []string) error {
-	name := clusterOpenArgs.name
-	if len(args) == 1 {
-		if name != "" && name != args[0] {
-			return fmt.Errorf("cluster named twice: %q as an argument and %q via --name", args[0], name)
-		}
-		name = args[0]
+	name, err := clusterNameArg(args, clusterOpenArgs.name, "open", false)
+	if err != nil {
+		return err
 	}
 	return clusterOpenRun(cmd.OutOrStdout(), name, clusterOpenArgs.printPassword)
 }
@@ -91,8 +90,20 @@ func clusterOpenRun(out io.Writer, name string, printPassword bool) error {
 	}
 
 	// The env file is the local, no-round-trip source for both the endpoint and
-	// the password; each has its own fallback below when it is absent.
+	// the password; each has its own fallback below when it is absent. The
+	// fallbacks ask the cluster's Space, so act in the context it is wired to.
 	env := clusterReadEnvFile(name)
+	if rec, err := clusterReadRecord(name); err != nil {
+		return err
+	} else if env["ARGOCD_SERVER"] == "" && env["SVELTOS_DASHBOARD"] == "" {
+		if rec != nil && rec.Origin == clusterOriginAttach {
+			return fmt.Errorf("cluster %q was attached, and attach does not expose Argo CD on a host port; reach the UI with\n  kubectl --kubeconfig %s port-forward svc/argocd-server -n %s 8080:80\nand open http://localhost:8080",
+				name, clusterKubeconfigPath(name), clusterArgoNamespace)
+		}
+		if err := clusterUseRecordedContext(out, rec); err != nil {
+			return err
+		}
+	}
 
 	controller, space, err := clusterOpenController(name, env)
 	if err != nil {
@@ -259,6 +270,10 @@ func clusterArgoURL(name string, env map[string]string) (string, error) {
 		return "", fmt.Errorf("cluster %q: no env file at %s and no cub-managed Space for it in the current cub context (are you in the right context? see 'cub cluster list')",
 			name, clusterEnvFilePath(name))
 	}
+	if space.Origin == clusterOriginAttach {
+		return "", fmt.Errorf("cluster %q was attached, and attach does not expose Argo CD on a host port; reach the UI with\n  kubectl --kubeconfig %s port-forward svc/argocd-server -n %s 8080:80\nand open http://localhost:8080",
+			name, clusterKubeconfigPath(name), clusterArgoNamespace)
+	}
 	if space.ArgoPort == "" {
 		return "", fmt.Errorf("cluster %q: space %q has no %s annotation, so its Argo CD port is unknown",
 			name, space.SpaceSlug, clusterAnnotationArgoPort)
@@ -286,9 +301,18 @@ func clusterArgoPassword(name string, env map[string]string) (string, error) {
 	return password, nil
 }
 
-// clusterSpaceByName returns the cluster Space for a cluster name on this host,
-// or nil if the current cub context has none.
+// clusterSpaceByName returns the cluster Space for a cluster name, or nil if
+// the active cub context has none. A cluster with a record is looked up in its
+// organization whichever machine created it; one without is matched on this
+// host's annotation, as before records existed.
 func clusterSpaceByName(name string) (*clusterSpace, error) {
+	rec, err := clusterReadRecord(name)
+	if err != nil {
+		return nil, err
+	}
+	if rec != nil {
+		return clusterSpaceByNameInOrg(name)
+	}
 	hostname, _ := os.Hostname()
 	spaces, err := clusterListSpacesForHost(hostname)
 	if err != nil {

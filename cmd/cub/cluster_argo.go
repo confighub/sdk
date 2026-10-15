@@ -4,6 +4,7 @@
 package main
 
 import (
+	"bytes"
 	"context"
 	"encoding/base64"
 	"encoding/json"
@@ -13,54 +14,177 @@ import (
 	"time"
 )
 
-// Argo CD install + configuration inside a kind cluster, so it can pull config
-// from ConfigHub's OCI registry. All operations shell out to kubectl using a
-// per-cluster kubeconfig. The intended caller is `cub cluster up`.
+// Argo CD install + configuration inside a cluster, so it can pull config from
+// ConfigHub's OCI registry. All operations shell out to kubectl using a
+// per-cluster kubeconfig. The caller is clusterAttach, on behalf of both `cub
+// cluster up` and `cub cluster attach`.
 
-// clusterArgoInstallURL is the upstream Argo CD install manifest. Tracks
-// "stable" — currency outweighs an exact version pin for a local kind cluster.
-const clusterArgoInstallURL = "https://raw.githubusercontent.com/argoproj/argo-cd/stable/manifests/install.yaml"
+// clusterArgoDefaultVersion is the Argo CD release installed when none is
+// named. "stable" tracks upstream's stable tag — currency outweighs an exact
+// pin for a cluster cub wires up. Whatever is chosen must be v3.1 or later:
+// earlier releases cannot resolve an oci:// source for plain manifests and fail
+// with `unsupported scheme "oci"` while still reporting the Application
+// Healthy, so the failure is quiet.
+const clusterArgoDefaultVersion = "stable"
 
-// clusterArgoNamespace is the conventional Argo CD namespace.
+// clusterArgoInstallURL returns the upstream Argo CD install manifest for a
+// release tag ("stable", "v3.4.5", ...).
+func clusterArgoInstallURL(version string) string {
+	return "https://raw.githubusercontent.com/argoproj/argo-cd/" + version + "/manifests/install.yaml"
+}
+
+// clusterArgoNamespace is the conventional Argo CD namespace. It is a constant
+// rather than an option: every Argo Application cub writes — the root
+// app-of-apps here and the child Applications `cub variant create` derives from
+// the target annotation — is placed in it, and the latter runs without any
+// cluster in hand to read a per-cluster choice from.
 const clusterArgoNamespace = "argocd"
 
-// clusterArgoInstall applies the Argo CD manifest into the argocd namespace,
-// switches argocd-server to insecure HTTP + NodePort on the given port, applies
-// the argocd-cm ignoreDifferences block needed for the self-referencing root
-// Application, waits for argocd-server to be ready, and returns the
-// auto-generated admin password.
-func clusterArgoInstall(ctx context.Context, kubeconfigPath string, nodePort int, out io.Writer) (string, error) {
-	fmt.Fprintf(out, "Creating namespace %q...\n", clusterArgoNamespace)
-	if err := clusterKubectl(ctx, kubeconfigPath, nil, out,
-		"create", "namespace", clusterArgoNamespace, "--dry-run=client", "-o", "yaml"); err != nil {
-		return "", err
+// clusterArgoOCICredsSecret is the repo-creds Secret carrying the cluster
+// service account's token for ConfigHub's OCI registry.
+const clusterArgoOCICredsSecret = "confighub-oci-creds"
+
+// clusterArgoIgnoreDifferencesKey is the argocd-cm key that makes Argo ignore
+// the bookkeeping annotations on Application resources.
+const clusterArgoIgnoreDifferencesKey = "resource.customizations.ignoreDifferences.argoproj.io_Application"
+
+// clusterArgoOptions says how clusterArgoEnsure should get Argo CD into a
+// cluster.
+type clusterArgoOptions struct {
+	// version is the release tag to install when Argo CD is absent.
+	version string
+	// installIfAbsent installs Argo CD when the namespace has no argocd-server;
+	// false turns its absence into an error (--no-argocd).
+	installIfAbsent bool
+	// nodePort, when positive, exposes argocd-server on that NodePort over plain
+	// HTTP (server.insecure=true). `cub cluster up` sets it to the host port it
+	// mapped into the kind node; an attached cluster leaves it 0 and keeps
+	// whatever exposure Argo already has.
+	nodePort int
+}
+
+// clusterArgoResult reports what clusterArgoEnsure found or did.
+type clusterArgoResult struct {
+	// installed is true when this call installed Argo CD, false when it was
+	// already present and left alone.
+	installed bool
+	// adminPassword is the initial admin password, or "" when it could not be
+	// read — normal for a pre-existing install whose admin rotated it and
+	// deleted the initial Secret, as Argo's docs recommend.
+	adminPassword string
+}
+
+// clusterArgoEnsure makes sure Argo CD is in the cluster and able to run the
+// self-referencing root Application: installs it if absent (per opts), and
+// applies the argocd-cm ignoreDifferences block that keeps the root app from
+// reporting perpetually OutOfSync. A pre-existing Argo CD is otherwise left as
+// found; in particular an existing ignoreDifferences entry for Applications is
+// someone's deliberate configuration and is not overwritten.
+func clusterArgoEnsure(ctx context.Context, kubeconfigPath string, opts clusterArgoOptions, out io.Writer) (clusterArgoResult, error) {
+	present, err := clusterArgoPresent(ctx, kubeconfigPath)
+	if err != nil {
+		return clusterArgoResult{}, err
 	}
+	if present {
+		fmt.Fprintf(out, "Argo CD already present in namespace %q; leaving it in place.\n", clusterArgoNamespace)
+		if err := clusterArgoEnsureIgnoreDifferences(ctx, kubeconfigPath, out); err != nil {
+			return clusterArgoResult{}, err
+		}
+		// Best effort: the initial Secret may legitimately be gone.
+		password, _ := clusterArgoAdminPassword(ctx, kubeconfigPath)
+		return clusterArgoResult{installed: false, adminPassword: password}, nil
+	}
+	if !opts.installIfAbsent {
+		return clusterArgoResult{}, fmt.Errorf("Argo CD not found in namespace %q (no argocd-server Deployment) and --no-argocd was given", clusterArgoNamespace)
+	}
+	password, err := clusterArgoInstall(ctx, kubeconfigPath, opts, out)
+	if err != nil {
+		return clusterArgoResult{}, err
+	}
+	return clusterArgoResult{installed: true, adminPassword: password}, nil
+}
+
+// clusterArgoPresent reports whether an argocd-server Deployment exists in the
+// Argo namespace. A missing namespace or Deployment is "absent"; any other
+// kubectl failure (unreachable cluster, no permission) is an error, since
+// guessing "absent" there would lead straight into a 20k-line install attempt.
+func clusterArgoPresent(ctx context.Context, kubeconfigPath string) (bool, error) {
+	out, err := clusterKubectlOutput(ctx, kubeconfigPath,
+		"get", "deployment", "argocd-server", "-n", clusterArgoNamespace, "--ignore-not-found", "-o", "name")
+	if err != nil {
+		return false, fmt.Errorf("check for an existing Argo CD: %w", err)
+	}
+	return len(bytes.TrimSpace(out)) > 0, nil
+}
+
+// clusterArgoInstall applies the Argo CD manifest into the argocd namespace,
+// applies the argocd-cm ignoreDifferences block needed for the self-referencing
+// root Application, optionally switches argocd-server to insecure HTTP on a
+// NodePort, waits for the parts of Argo that serve to be ready, and returns the
+// auto-generated admin password.
+func clusterArgoInstall(ctx context.Context, kubeconfigPath string, opts clusterArgoOptions, out io.Writer) (string, error) {
+	version := opts.version
+	if version == "" {
+		version = clusterArgoDefaultVersion
+	}
+	installURL := clusterArgoInstallURL(version)
+
+	fmt.Fprintf(out, "Creating namespace %q...\n", clusterArgoNamespace)
 	// idempotent ns create via apply
 	nsYaml := []byte("apiVersion: v1\nkind: Namespace\nmetadata:\n  name: " + clusterArgoNamespace + "\n")
 	if err := clusterKubectlApply(ctx, kubeconfigPath, nsYaml, out); err != nil {
 		return "", err
 	}
 
-	fmt.Fprintf(out, "Applying Argo CD install manifest from %s...\n", clusterArgoInstallURL)
+	fmt.Fprintf(out, "Applying Argo CD install manifest from %s...\n", installURL)
 	// --server-side is required: the applicationsets CRD's annotations
 	// exceed kubectl's 256 KiB client-side limit.
 	if err := clusterKubectl(ctx, kubeconfigPath, nil, out,
-		"apply", "--server-side", "--force-conflicts", "-n", clusterArgoNamespace, "-f", clusterArgoInstallURL); err != nil {
+		"apply", "--server-side", "--force-conflicts", "-n", clusterArgoNamespace, "-f", installURL); err != nil {
 		return "", fmt.Errorf("apply argo install: %w", err)
 	}
 
+	if err := clusterArgoEnsureIgnoreDifferences(ctx, kubeconfigPath, out); err != nil {
+		return "", err
+	}
+
+	if opts.nodePort > 0 {
+		if err := clusterArgoExposeNodePort(ctx, kubeconfigPath, opts.nodePort, out); err != nil {
+			return "", err
+		}
+	}
+
+	// argocd-server being Available is not the same as Argo being able to
+	// render anything: the repo-server and the application-controller are
+	// separate workloads, and a root Application applied before they are up
+	// fails its first comparison with "connection refused" and is not retried
+	// until the next reconcile, by default three minutes later. Wait for the
+	// pieces that actually serve.
+	fmt.Fprintln(out, "Waiting for Argo CD to be Available (timeout 5m)...")
+	for _, workload := range []string{"deployment/argocd-server", "deployment/argocd-repo-server", "statefulset/argocd-application-controller"} {
+		if err := clusterKubectl(ctx, kubeconfigPath, nil, out,
+			"rollout", "status", workload, "-n", clusterArgoNamespace, "--timeout=5m"); err != nil {
+			return "", fmt.Errorf("wait for %s: %w", workload, err)
+		}
+	}
+
+	fmt.Fprintln(out, "Fetching initial admin password...")
+	password, err := clusterArgoWaitAdminPassword(ctx, kubeconfigPath, 2*time.Minute)
+	if err != nil {
+		return "", err
+	}
+	return password, nil
+}
+
+// clusterArgoExposeNodePort switches argocd-server to plain HTTP on a NodePort,
+// for a kind cluster whose node has that port mapped to the host. Argo CD is
+// then reachable at http://localhost:<nodePort> without a port-forward.
+func clusterArgoExposeNodePort(ctx context.Context, kubeconfigPath string, nodePort int, out io.Writer) error {
 	fmt.Fprintln(out, "Patching argocd-cmd-params-cm (server.insecure=true)...")
 	if err := clusterKubectl(ctx, kubeconfigPath, nil, out,
 		"patch", "configmap", "argocd-cmd-params-cm", "-n", clusterArgoNamespace,
 		"--type", "merge", "-p", `{"data":{"server.insecure":"true"}}`); err != nil {
-		return "", err
-	}
-
-	fmt.Fprintln(out, "Patching argocd-cm (ignoreDifferences for self-referencing root Application)...")
-	if err := clusterKubectl(ctx, kubeconfigPath, nil, out,
-		"patch", "configmap", "argocd-cm", "-n", clusterArgoNamespace,
-		"--type", "merge", "-p", clusterArgoIgnoreDifferencesPatch); err != nil {
-		return "", err
+		return err
 	}
 
 	fmt.Fprintf(out, "Patching argocd-server Service to NodePort %d...\n", nodePort)
@@ -70,30 +194,71 @@ func clusterArgoInstall(ctx context.Context, kubeconfigPath string, nodePort int
 	if err := clusterKubectl(ctx, kubeconfigPath, nil, out,
 		"patch", "service", "argocd-server", "-n", clusterArgoNamespace,
 		"--type", "merge", "-p", svcPatch); err != nil {
-		return "", err
+		return err
 	}
 
 	// Rollout-restart argocd-server so it picks up server.insecure=true and
 	// stops re-running its readiness probe against HTTPS.
 	fmt.Fprintln(out, "Restarting argocd-server to pick up cmd-params change...")
-	if err := clusterKubectl(ctx, kubeconfigPath, nil, out,
-		"rollout", "restart", "deployment", "argocd-server", "-n", clusterArgoNamespace); err != nil {
-		return "", err
-	}
+	return clusterKubectl(ctx, kubeconfigPath, nil, out,
+		"rollout", "restart", "deployment", "argocd-server", "-n", clusterArgoNamespace)
+}
 
-	fmt.Fprintln(out, "Waiting for argocd-server Deployment to be Available (timeout 5m)...")
-	if err := clusterKubectl(ctx, kubeconfigPath, nil, out,
-		"wait", "--for=condition=Available", "--timeout=5m",
-		"deployment/argocd-server", "-n", clusterArgoNamespace); err != nil {
-		return "", fmt.Errorf("wait for argocd-server: %w", err)
-	}
-
-	fmt.Fprintln(out, "Fetching initial admin password...")
-	password, err := clusterArgoWaitAdminPassword(ctx, kubeconfigPath, 2*time.Minute)
+// clusterArgoEnsureIgnoreDifferences applies the argocd-cm ignoreDifferences
+// block for Application resources unless the ConfigMap already carries one. An
+// existing entry is left alone even though it may not cover ConfigHub's
+// annotations: overwriting it would silently discard whatever its author put
+// there, and the symptom of leaving it (the root Application shows OutOfSync)
+// is visible and named in the output.
+func clusterArgoEnsureIgnoreDifferences(ctx context.Context, kubeconfigPath string, out io.Writer) error {
+	raw, err := clusterKubectlOutput(ctx, kubeconfigPath,
+		"get", "configmap", "argocd-cm", "-n", clusterArgoNamespace, "--ignore-not-found", "-o", "json")
 	if err != nil {
-		return "", err
+		return fmt.Errorf("read argocd-cm: %w", err)
 	}
-	return password, nil
+	if len(bytes.TrimSpace(raw)) > 0 {
+		var cm struct {
+			Data map[string]string `json:"data"`
+		}
+		if err := json.Unmarshal(raw, &cm); err != nil {
+			return fmt.Errorf("decode argocd-cm: %w", err)
+		}
+		if existing := cm.Data[clusterArgoIgnoreDifferencesKey]; existing != "" {
+			if existing == clusterArgoIgnoreDifferencesValue {
+				return nil
+			}
+			fmt.Fprintf(out, "argocd-cm already sets %s; leaving it as is. If the root Application\n"+
+				"reports OutOfSync, add the confighub.com/* Application annotations to that block.\n",
+				clusterArgoIgnoreDifferencesKey)
+			return nil
+		}
+	}
+	fmt.Fprintln(out, "Patching argocd-cm (ignoreDifferences for self-referencing root Application)...")
+	return clusterKubectl(ctx, kubeconfigPath, nil, out,
+		"patch", "configmap", "argocd-cm", "-n", clusterArgoNamespace,
+		"--type", "merge", "-p", clusterArgoIgnoreDifferencesPatch)
+}
+
+// clusterArgoExistingOCICredsURL returns the registry URL of the repo-creds
+// Secret an earlier attachment left in the cluster, or "" when there is none.
+// Its presence means the cluster is already wired to a ConfigHub: a cluster
+// holds one such Secret, and attaching it twice would leave two sets of
+// ConfigHub objects claiming the same cluster.
+func clusterArgoExistingOCICredsURL(ctx context.Context, kubeconfigPath string) (string, error) {
+	raw, err := clusterKubectlOutput(ctx, kubeconfigPath,
+		"get", "secret", clusterArgoOCICredsSecret, "-n", clusterArgoNamespace, "--ignore-not-found",
+		"-o", "jsonpath={.data.url}")
+	if err != nil {
+		return "", fmt.Errorf("check for an existing %s Secret: %w", clusterArgoOCICredsSecret, err)
+	}
+	if len(bytes.TrimSpace(raw)) == 0 {
+		return "", nil
+	}
+	decoded, err := base64.StdEncoding.DecodeString(string(bytes.TrimSpace(raw)))
+	if err != nil {
+		return "", fmt.Errorf("decode the %s Secret's url: %w", clusterArgoOCICredsSecret, err)
+	}
+	return string(decoded), nil
 }
 
 // clusterArgoApplyOCIRepoCreds installs the Argo repo-creds Secret pointing at
@@ -116,7 +281,7 @@ func clusterArgoApplyOCIRepoCreds(ctx context.Context, kubeconfigPath, ociURL, p
 	secret := fmt.Sprintf(`apiVersion: v1
 kind: Secret
 metadata:
-  name: confighub-oci-creds
+  name: %s
   namespace: %s
   labels:
     argocd.argoproj.io/secret-type: repo-creds
@@ -127,7 +292,7 @@ stringData:
   enableOCI: "true"
 %s  username: token
   password: %s
-`, clusterArgoNamespace, ociURL, extra, pullToken)
+`, clusterArgoOCICredsSecret, clusterArgoNamespace, ociURL, extra, pullToken)
 	fmt.Fprintln(out, "Applying confighub-oci-creds repo-creds Secret to argocd namespace...")
 	return clusterKubectlApply(ctx, kubeconfigPath, []byte(secret), out)
 }
@@ -163,6 +328,38 @@ spec:
       - RespectIgnoreDifferences=true
       - CreateNamespace=false
 `, spaceSlug, clusterArgoNamespace, ociRepoURL, clusterArgoNamespace)
+}
+
+// clusterArgoDeleteApplication deletes one Argo CD Application, reporting
+// whether it existed. With cascade, Argo's resources-finalizer is set first so
+// Argo deletes what the Application deployed; without it, finalizers are
+// stripped so the delete orphans those resources.
+func clusterArgoDeleteApplication(ctx context.Context, kubeconfigPath, name string, cascade bool, out io.Writer) (bool, error) {
+	existing, err := clusterKubectlOutput(ctx, kubeconfigPath,
+		"get", "application", name, "-n", clusterArgoNamespace, "--ignore-not-found", "-o", "name")
+	if err != nil {
+		return false, fmt.Errorf("look up Application %q: %w", name, err)
+	}
+	if len(bytes.TrimSpace(existing)) == 0 {
+		return false, nil
+	}
+	finalizers := `{"metadata":{"finalizers":[]}}`
+	deleteArgs := []string{"delete", "application", name, "-n", clusterArgoNamespace, "--ignore-not-found", "--cascade=orphan"}
+	verb := "orphaning its resources"
+	if cascade {
+		finalizers = `{"metadata":{"finalizers":["resources-finalizer.argocd.argoproj.io"]}}`
+		deleteArgs = []string{"delete", "application", name, "-n", clusterArgoNamespace, "--ignore-not-found", "--timeout=5m"}
+		verb = "and its resources"
+	}
+	fmt.Fprintf(out, "  deleting Application %q (%s)...\n", name, verb)
+	if _, err := clusterKubectlOutput(ctx, kubeconfigPath,
+		"patch", "application", name, "-n", clusterArgoNamespace, "--type=merge", "-p", finalizers); err != nil {
+		return true, fmt.Errorf("set finalizers on Application %q: %w", name, err)
+	}
+	if _, err := clusterKubectlOutput(ctx, kubeconfigPath, deleteArgs...); err != nil {
+		return true, fmt.Errorf("delete Application %q: %w", name, err)
+	}
+	return true, nil
 }
 
 // clusterArgoAdminPassword reads the argocd-initial-admin-secret from the
@@ -220,14 +417,10 @@ func clusterArgoWaitAdminPassword(ctx context.Context, kubeconfigPath string, bu
 	}
 }
 
-// clusterArgoIgnoreDifferencesPatch is a merge patch for argocd-cm that tells
-// Argo to ignore the Argo + ConfigHub bookkeeping annotations on
-// argoproj.io_Application resources. Without this, the self-referencing root
-// Application is perpetually OutOfSync.
-var clusterArgoIgnoreDifferencesPatch = func() string {
-	patch := map[string]any{
-		"data": map[string]any{
-			"resource.customizations.ignoreDifferences.argoproj.io_Application": `jqPathExpressions:
+// clusterArgoIgnoreDifferencesValue tells Argo to ignore the Argo + ConfigHub
+// bookkeeping annotations on argoproj.io_Application resources. Without it,
+// the self-referencing root Application is perpetually OutOfSync.
+const clusterArgoIgnoreDifferencesValue = `jqPathExpressions:
 - '.metadata.annotations."kubectl.kubernetes.io/last-applied-configuration"'
 - '.metadata.annotations."confighub.com/origin"'
 - '.metadata.annotations."confighub.com/RevisionNum"'
@@ -236,7 +429,14 @@ var clusterArgoIgnoreDifferencesPatch = func() string {
 - '.metadata.annotations."confighub.com/ResourceMergeID"'
 - '.metadata.annotations."argocd.argoproj.io/tracking-id"'
 - '.metadata.finalizers'
-`,
+`
+
+// clusterArgoIgnoreDifferencesPatch is the merge patch for argocd-cm that
+// installs clusterArgoIgnoreDifferencesValue.
+var clusterArgoIgnoreDifferencesPatch = func() string {
+	patch := map[string]any{
+		"data": map[string]any{
+			clusterArgoIgnoreDifferencesKey: clusterArgoIgnoreDifferencesValue,
 		},
 	}
 	b, _ := json.Marshal(patch)

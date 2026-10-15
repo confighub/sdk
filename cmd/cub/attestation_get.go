@@ -88,6 +88,9 @@ func displayAttestationDetails(ea *goclientnew.ExtendedAttestation) {
 		}
 		view.Append([]string{"User ID", a.UserID.String()})
 		view.Append([]string{"Created At", a.CreatedAt.String()})
+		if a.Hash != "" {
+			view.Append([]string{"Hash", a.Hash})
+		}
 	}
 	if ea.Space != nil {
 		view.Append([]string{"Space", ea.Space.Slug})
