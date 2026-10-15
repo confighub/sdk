@@ -16983,10 +16983,10 @@
           {
             "name": "include",
             "in": "query",
-            "description": "Include clause for expanding related entities in the response for Release.\nThe attribute names are case-sensitive, PascalCase, and\nexpected in a comma-separated list format as in the JSON encoding.\n\nSupported attributes for Release are OrganizationID, SpaceID, TagID.\n\nThe whole string must be query-encoded.",
+            "description": "Include clause for expanding related entities in the response for Release.\nThe attribute names are case-sensitive, PascalCase, and\nexpected in a comma-separated list format as in the JSON encoding.\n\nSupported attributes for Release are ChangeOrderID, OrganizationID, SpaceID, TagID, TargetID, UserID.\n\nThe whole string must be query-encoded.",
             "required": false,
             "schema": {
-              "pattern": "^\\s*(OrganizationID|SpaceID|TagID)\\s*(?:,\\s*(?:OrganizationID|SpaceID|TagID)\\s*)*$",
+              "pattern": "^\\s*(ChangeOrderID|OrganizationID|SpaceID|TagID|TargetID|UserID)\\s*(?:,\\s*(?:ChangeOrderID|OrganizationID|SpaceID|TagID|TargetID|UserID)\\s*)*$",
               "type": "string"
             }
           },
@@ -33267,10 +33267,10 @@
           {
             "name": "include",
             "in": "query",
-            "description": "Include clause for expanding related entities in the response for Release.\nThe attribute names are case-sensitive, PascalCase, and\nexpected in a comma-separated list format as in the JSON encoding.\n\nSupported attributes for Release are OrganizationID, SpaceID, TagID.\n\nThe whole string must be query-encoded.",
+            "description": "Include clause for expanding related entities in the response for Release.\nThe attribute names are case-sensitive, PascalCase, and\nexpected in a comma-separated list format as in the JSON encoding.\n\nSupported attributes for Release are ChangeOrderID, OrganizationID, SpaceID, TagID, TargetID, UserID.\n\nThe whole string must be query-encoded.",
             "required": false,
             "schema": {
-              "pattern": "^\\s*(OrganizationID|SpaceID|TagID)\\s*(?:,\\s*(?:OrganizationID|SpaceID|TagID)\\s*)*$",
+              "pattern": "^\\s*(ChangeOrderID|OrganizationID|SpaceID|TagID|TargetID|UserID)\\s*(?:,\\s*(?:ChangeOrderID|OrganizationID|SpaceID|TagID|TargetID|UserID)\\s*)*$",
               "type": "string"
             }
           },
@@ -33683,10 +33683,10 @@
           {
             "name": "include",
             "in": "query",
-            "description": "Include clause for expanding related entities in the response for Release.\nThe attribute names are case-sensitive, PascalCase, and\nexpected in a comma-separated list format as in the JSON encoding.\n\nSupported attributes for Release are OrganizationID, SpaceID, TagID.\n\nThe whole string must be query-encoded.",
+            "description": "Include clause for expanding related entities in the response for Release.\nThe attribute names are case-sensitive, PascalCase, and\nexpected in a comma-separated list format as in the JSON encoding.\n\nSupported attributes for Release are ChangeOrderID, OrganizationID, SpaceID, TagID, TargetID, UserID.\n\nThe whole string must be query-encoded.",
             "required": false,
             "schema": {
-              "pattern": "^\\s*(OrganizationID|SpaceID|TagID)\\s*(?:,\\s*(?:OrganizationID|SpaceID|TagID)\\s*)*$",
+              "pattern": "^\\s*(ChangeOrderID|OrganizationID|SpaceID|TagID|TargetID|UserID)\\s*(?:,\\s*(?:ChangeOrderID|OrganizationID|SpaceID|TagID|TargetID|UserID)\\s*)*$",
               "type": "string"
             }
           },
@@ -57806,6 +57806,14 @@
       "ExtendedRelease": {
         "type": "object",
         "properties": {
+          "ChangeOrder": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/ChangeOrder"
+              }
+            ],
+            "description": "The ChangeOrder the Release was published for, if any. Expanded when requested via the include parameter."
+          },
           "Organization": {
             "$ref": "#/components/schemas/Organization"
           },
@@ -57832,6 +57840,22 @@
               }
             ],
             "description": "The Tag the bundled Units were pinned to, if any. Expanded when requested via the include parameter."
+          },
+          "Target": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/Target"
+              }
+            ],
+            "description": "The Target the Release was published for. Expanded when requested via the include parameter."
+          },
+          "User": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/User"
+              }
+            ],
+            "description": "The User who published the Release. Expanded when requested via the include parameter."
           }
         },
         "description": "Release with additional related entities expanded based on the request's include parameter."
@@ -61682,7 +61706,8 @@
             "example": "248df4b7-aa70-47b8-a036-33ac447e668d",
             "x-confighub-where": {
               "dataType": "uuid",
-              "references": "ChangeOrder"
+              "references": "ChangeOrder",
+              "expandable": true
             }
           },
           "CreatedAt": {
@@ -61871,7 +61896,8 @@
             "example": "248df4b7-aa70-47b8-a036-33ac447e668d",
             "x-confighub-where": {
               "dataType": "uuid",
-              "references": "Target"
+              "references": "Target",
+              "expandable": true
             }
           },
           "UnitCount": {
@@ -61903,7 +61929,8 @@
             "example": "248df4b7-aa70-47b8-a036-33ac447e668d",
             "x-confighub-where": {
               "dataType": "uuid",
-              "references": "User"
+              "references": "User",
+              "expandable": true
             }
           },
           "Version": {

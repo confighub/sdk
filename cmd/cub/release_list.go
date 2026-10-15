@@ -24,10 +24,10 @@ var releaseListCmd = &cobra.Command{
 --space is "*". With --space "*", --distinct-on Off lists every release that matches instead,
 and needs --where or --filter to say which.
 
-Each release is shown by its number, the tag on the revisions it bundled, whether it is
-published, the first 12 hex digits of its OCI manifest digest, the live status the tool
-deploying it reported, and when it was published. -o wide adds the release id and the whole
-manifest digest.
+Each release is shown by its number, the tag on the revisions it bundled, the change order it
+was published for, whether it is published, the first 12 hex digits of its OCI manifest digest,
+the sync and health status the tool deploying it reported, and when it was published. -o wide
+adds the operation applying the release, the release id and the whole manifest digest.
 
 Examples:
 `+"```"+`
@@ -60,7 +60,7 @@ Examples:
 
 // defaultReleaseColumns is what the table reads, both layouts included, so that the select list
 // names every field either one shows.
-var defaultReleaseColumns = []string{"Release.ReleaseNum", "Release.TagID", "Release.Published", "Release.ManifestDigest", "Release.LiveStatus", "Release.CreatedAt", "Release.ReleaseID", "Release.SpaceSlug"}
+var defaultReleaseColumns = []string{"Release.ReleaseNum", "Release.TagID", "Release.ChangeOrderID", "Release.Published", "Release.ManifestDigest", "Release.LiveStatus", "Release.CreatedAt", "Release.ReleaseID", "Release.SpaceSlug"}
 
 var releaseAliases = map[string]string{
 	"ID":  "ReleaseID",
@@ -69,8 +69,9 @@ var releaseAliases = map[string]string{
 
 var releaseCustomColumnDependencies = map[string][]string{}
 
-// releaseListInclude expands the Tag, so the table shows its name rather than its id.
-const releaseListInclude = "TagID"
+// releaseListInclude expands the Tag and the ChangeOrder, so the table shows their names rather
+// than their ids.
+const releaseListInclude = "TagID,ChangeOrderID"
 
 // releaseDistinctOn is --distinct-on: what the organization-wide search returns at most one
 // release per.
@@ -103,7 +104,7 @@ func releaseListCmdRun(cmd *cobra.Command, args []string) error {
 		return nil
 	}
 
-	releases, err := apiListReleases(selectedSpaceID, where, selectFields, filterID)
+	releases, err := apiListReleases(selectedSpaceID, where, selectFields, filterID, releaseListInclude)
 	if err != nil {
 		return err
 	}
@@ -149,6 +150,41 @@ func releaseTag(er *goclientnew.ExtendedRelease) string {
 	return ""
 }
 
+// releaseChangeOrder is the ChangeOrder a Release was published for, by slug when the response
+// expanded it. Empty when publishing named none.
+func releaseChangeOrder(er *goclientnew.ExtendedRelease) string {
+	if er.ChangeOrder != nil {
+		return qualifySlug(er.ChangeOrder.Slug, er.ChangeOrder.SpaceSlug, er.Release.SpaceSlug)
+	}
+	if er.Release.ChangeOrderID != nil && *er.Release.ChangeOrderID != uuid.Nil {
+		return er.Release.ChangeOrderID.String()
+	}
+	return ""
+}
+
+// releaseLiveSync, releaseLiveHealth and releaseLiveOperation are the parts of a Release's
+// LiveStatus, each empty for a Release no deploying tool has reported on.
+func releaseLiveSync(status *goclientnew.ReleaseLiveStatus) string {
+	if status == nil {
+		return ""
+	}
+	return string(status.Sync)
+}
+
+func releaseLiveHealth(status *goclientnew.ReleaseLiveStatus) string {
+	if status == nil {
+		return ""
+	}
+	return string(status.Health)
+}
+
+func releaseLiveOperation(status *goclientnew.ReleaseLiveStatus) string {
+	if status == nil {
+		return ""
+	}
+	return string(status.Operation)
+}
+
 // displayReleaseList renders the table. The default layout identifies a Release by its number and
 // the first digits of its manifest digest, which is what Argo CD and the cluster show of it; -o
 // wide adds the id and the whole digest, for passing to another command.
@@ -164,11 +200,15 @@ func displayReleaseList(releases []*goclientnew.ExtendedRelease) {
 		if crossSpace {
 			header = append(header, "Space")
 		}
-		header = append(header, "Num", "Tag", "Published")
+		header = append(header, "Num", "Tag", "ChangeOrder", "Published")
 		if !wide {
 			header = append(header, "Digest")
 		}
-		header = append(header, "Live", "Created")
+		header = append(header, "Sync", "Health")
+		if wide {
+			header = append(header, "Operation")
+		}
+		header = append(header, "Created")
 		if wide {
 			header = append(header, "ID", "Manifest-Digest")
 		}
@@ -185,11 +225,15 @@ func displayReleaseList(releases []*goclientnew.ExtendedRelease) {
 		}
 		// Withdrawn Releases are retained and still listed, so print the flag for both values
 		// rather than leaving the false case blank.
-		row = append(row, strconv.FormatInt(rel.ReleaseNum, 10), releaseTag(er), strconv.FormatBool(rel.Published))
+		row = append(row, strconv.FormatInt(rel.ReleaseNum, 10), releaseTag(er), releaseChangeOrder(er), strconv.FormatBool(rel.Published))
 		if !wide {
 			row = append(row, shortDigest(rel.ManifestDigest))
 		}
-		row = append(row, liveStatusSummary(rel.LiveStatus), rel.CreatedAt.Format("2006-01-02 15:04:05"))
+		row = append(row, releaseLiveSync(rel.LiveStatus), releaseLiveHealth(rel.LiveStatus))
+		if wide {
+			row = append(row, releaseLiveOperation(rel.LiveStatus))
+		}
+		row = append(row, rel.CreatedAt.Format("2006-01-02 15:04:05"))
 		if wide {
 			row = append(row, rel.ReleaseID.String(), rel.ManifestDigest)
 		}
@@ -224,7 +268,9 @@ func releaseSelectValue(selectParam, include string) string {
 	})
 }
 
-func apiListReleases(spaceID string, whereFilter string, selectParam string, filterParam string) ([]*goclientnew.ExtendedRelease, error) {
+// apiListReleases lists the Releases of a Space, expanding include, which names the Release
+// fields whose entities to expand.
+func apiListReleases(spaceID string, whereFilter string, selectParam string, filterParam string, include string) ([]*goclientnew.ExtendedRelease, error) {
 	newParams := &goclientnew.ListExtendedReleasesParams{}
 	if whereFilter != "" {
 		newParams.Where = &whereFilter
@@ -238,7 +284,6 @@ func apiListReleases(spaceID string, whereFilter string, selectParam string, fil
 	if includeHidden != "" {
 		newParams.IncludeHidden = &includeHidden
 	}
-	include := releaseListInclude
 	newParams.Include = &include
 	if selectValue := releaseSelectValue(selectParam, include); selectValue != "" && selectValue != "*" {
 		newParams.Select = &selectValue

@@ -11,13 +11,16 @@ import (
 	"github.com/confighub/sdk/core/cubapi"
 	goclientnew "github.com/confighub/sdk/core/openapi/goclient-new"
 	"github.com/google/uuid"
-	"github.com/olekukonko/tablewriter"
 	"github.com/spf13/cobra"
 )
 
 // releaseReferenceLatest is the only tag-style OCI reference supported: it
 // selects the highest-numbered Release for a Target.
 const releaseReferenceLatest = "latest"
+
+// releaseGetInclude expands every entity a Release references, so the details name each one
+// rather than giving its id.
+const releaseGetInclude = "SpaceID,TagID,ChangeOrderID,TargetID,UserID"
 
 var releaseGetCmd = &cobra.Command{
 	Use:   "get [release-num | release-id]",
@@ -157,7 +160,7 @@ func apiGetExtendedReleaseByWhere(spaceID, where, describe string) (*goclientnew
 	if selectParam == "" {
 		selectParam = "*"
 	}
-	releases, err := apiListReleases(spaceID, where, selectParam, "")
+	releases, err := apiListReleases(spaceID, where, selectParam, "", releaseGetInclude)
 	if err != nil {
 		return nil, err
 	}
@@ -187,7 +190,7 @@ func apiGetLatestRelease(spaceID string) (*goclientnew.ExtendedRelease, error) {
 	if selectParam == "" {
 		selectParam = "*"
 	}
-	releases, err := apiListReleases(spaceID, "Published = true", selectParam, "")
+	releases, err := apiListReleases(spaceID, "Published = true", selectParam, "", releaseGetInclude)
 	if err != nil {
 		return nil, err
 	}
@@ -206,84 +209,101 @@ func apiGetLatestRelease(spaceID string) (*goclientnew.ExtendedRelease, error) {
 	return latest, nil
 }
 
-// liveStatusSummary renders a Release's LiveStatus as Sync/Health, or nothing for a Release no
-// deploying tool has reported on.
-func liveStatusSummary(status *goclientnew.ReleaseLiveStatus) string {
-	if status == nil {
-		return ""
-	}
-	return string(status.Sync) + "/" + string(status.Health)
+func displayReleaseDetails(releaseDetails *goclientnew.Release) {
+	displayExtendedReleaseDetails(&goclientnew.ExtendedRelease{Release: releaseDetails})
 }
 
-func displayReleaseDetailsInView(releaseDetails *goclientnew.Release, view *tablewriter.Table) {
-	view.Append([]string{"ID", releaseDetails.ReleaseID.String()})
-	view.Append([]string{"Release Num", strconv.FormatInt(releaseDetails.ReleaseNum, 10)})
+// displayExtendedReleaseDetails shows every field of a Release, naming the entities it references
+// by slug when the response expanded them and by id when it did not.
+func displayExtendedReleaseDetails(er *goclientnew.ExtendedRelease) {
+	view := tableView()
+	rel := er.Release
+	if rel == nil {
+		view.Render()
+		return
+	}
+	view.Append([]string{"ID", rel.ReleaseID.String()})
+	view.Append([]string{"Release Num", strconv.FormatInt(rel.ReleaseNum, 10)})
+	switch {
+	case er.Space != nil:
+		view.Append([]string{"Space", er.Space.Slug})
+	case rel.SpaceSlug != "":
+		view.Append([]string{"Space", rel.SpaceSlug})
+	default:
+		view.Append([]string{"Space ID", rel.SpaceID.String()})
+	}
 	// Published is omitempty in the generated client, so a withdrawn Release
 	// decodes as false rather than being reported as absent; format it explicitly
 	// so withdrawal is visible here instead of showing an empty cell.
-	view.Append([]string{"Published", strconv.FormatBool(releaseDetails.Published)})
-	view.Append([]string{"Digest", releaseDetails.Digest})
-	view.Append([]string{"Manifest Digest", releaseDetails.ManifestDigest})
-	view.Append([]string{"Unit Count", strconv.FormatInt(releaseDetails.UnitCount, 10)})
-	if len(releaseDetails.SkippedUnits) > 0 {
-		view.Append([]string{"Skipped Units", skippedUnitsSummary(releaseDetails.SkippedUnits)})
+	view.Append([]string{"Published", strconv.FormatBool(rel.Published)})
+	if tag := releaseTag(er); tag != "" {
+		view.Append([]string{"Tag", tag})
 	}
-	if status := releaseDetails.LiveStatus; status != nil {
-		live := liveStatusSummary(status)
-		if status.Operation != "" {
-			live += " (" + string(status.Operation) + ")"
+	if changeOrder := releaseChangeOrder(er); changeOrder != "" {
+		view.Append([]string{"ChangeOrder", changeOrder})
+	}
+	if er.Target != nil {
+		view.Append([]string{"Target", qualifySlug(er.Target.Slug, er.Target.SpaceSlug, rel.SpaceSlug)})
+	} else if rel.TargetID != nil && *rel.TargetID != uuid.Nil {
+		view.Append([]string{"Target ID", rel.TargetID.String()})
+	}
+	if er.User != nil {
+		view.Append([]string{"Published By", er.User.Username})
+	} else if rel.UserID != nil && *rel.UserID != uuid.Nil {
+		view.Append([]string{"Published By", rel.UserID.String()})
+	}
+	view.Append([]string{"Unit Count", strconv.FormatInt(rel.UnitCount, 10)})
+	if len(rel.SkippedUnits) > 0 {
+		view.Append([]string{"Skipped Units", skippedUnitsSummary(rel.SkippedUnits)})
+	}
+	view.Append([]string{"Bundle Base Name", rel.BundleBaseName})
+	view.Append([]string{"Digest", rel.Digest})
+	view.Append([]string{"Manifest Digest", rel.ManifestDigest})
+	if rel.DataSize > 0 {
+		view.Append([]string{"Data Size", strconv.FormatInt(rel.DataSize, 10) + " bytes"})
+	}
+	if status := rel.LiveStatus; status != nil {
+		view.Append([]string{"Sync", reportedValue(string(status.Sync), status.ReporterSync)})
+		view.Append([]string{"Health", reportedValue(string(status.Health), status.ReporterHealth)})
+		if status.Operation != "" || status.ReporterOperation != "" {
+			view.Append([]string{"Operation", reportedValue(string(status.Operation), status.ReporterOperation)})
 		}
-		live += ", reported by " + status.Reporter
-		if status.DataSource != "" {
-			live += " from " + status.DataSource
-		}
-		live += " at " + status.ObservedAt.String()
-		view.Append([]string{"Live Status", live})
 		if status.Message != "" {
 			view.Append([]string{"Live Message", status.Message})
 		}
+		view.Append([]string{"Reporter", status.Reporter})
+		if status.DataSource != "" {
+			view.Append([]string{"Data Source", status.DataSource})
+		}
+		view.Append([]string{"Observed At", status.ObservedAt.String()})
 	}
-	view.Append([]string{"Organization ID", releaseDetails.OrganizationID.String()})
-	view.Append([]string{"Created At", releaseDetails.CreatedAt.String()})
-	view.Append([]string{"Labels", labelsToString(releaseDetails.Labels)})
-	view.Append([]string{"Delete Gates", deleteGatesToString(releaseDetails.DeleteGates)})
-	view.Append([]string{"Annotations", annotationsToString(releaseDetails.Annotations)})
-}
-
-func displayReleaseDetails(releaseDetails *goclientnew.Release) {
-	// Create an ExtendedRelease wrapper with just the Release set
-	extendedRelease := &goclientnew.ExtendedRelease{
-		Release: releaseDetails,
-		// All other fields (Target, Space, Tag, etc.) will be nil, causing Extended display to show basic info
-	}
-	displayExtendedReleaseDetails(extendedRelease)
-}
-
-func displayExtendedReleaseDetails(er *goclientnew.ExtendedRelease) {
-	view := tableView()
-	if er.Release != nil {
-		displayReleaseDetailsInView(er.Release, view)
-	}
-
-	// Display Space - use Slug if expanded, otherwise UUID
-	if er.Space != nil {
-		view.Append([]string{"Space", er.Space.Slug})
-	} else if er.Release != nil {
-		view.Append([]string{"Space ID", er.Release.SpaceID.String()})
-	}
-
-	// Display Tag - use Slug if expanded, otherwise UUID
-	if er.Tag != nil {
-		view.Append([]string{"Tag", er.Tag.Slug})
-	} else if er.Release != nil && er.Release.TagID != nil {
-		view.Append([]string{"Tag ID", er.Release.TagID.String()})
-	}
+	view.Append([]string{"Organization ID", rel.OrganizationID.String()})
+	view.Append([]string{"Created At", rel.CreatedAt.String()})
+	view.Append([]string{"Updated At", rel.UpdatedAt.String()})
+	view.Append([]string{"Version", strconv.FormatInt(rel.Version, 10)})
+	view.Append([]string{"Labels", labelsToString(rel.Labels)})
+	view.Append([]string{"Delete Gates", deleteGatesToString(rel.DeleteGates)})
+	view.Append([]string{"Annotations", annotationsToString(rel.Annotations)})
+	view.Append([]string{"Permissions", permissionsToString(rel.Permissions)})
 	view.Render()
+}
+
+// reportedValue is a normalized live-status value, followed by the reporter's own word for it
+// when that differs, as Argo CD's Error does from Failed: the reporter's word is the one to
+// search its console and logs for.
+func reportedValue(normalized, reported string) string {
+	if reported == "" || reported == normalized {
+		return normalized
+	}
+	if normalized == "" {
+		return reported
+	}
+	return normalized + " (reported as " + reported + ")"
 }
 
 func apiGetExtendedRelease(spaceID string, releaseID string, selectParam string) (*goclientnew.ExtendedRelease, error) {
 	newParams := &goclientnew.GetExtendedReleaseParams{}
-	include := "SpaceID,TagID"
+	include := releaseGetInclude
 	newParams.Include = &include
 	selectValue := handleSelectParameter(selectParam, selectFields, nil)
 	if selectValue != "" && selectValue != "*" {

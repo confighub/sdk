@@ -17440,14 +17440,14 @@ paths:
           The attribute names are case-sensitive, PascalCase, and
           expected in a comma-separated list format as in the JSON encoding.
 
-          Supported attributes for Release are OrganizationID, SpaceID, TagID.
+          Supported attributes for Release are ChangeOrderID, OrganizationID, SpaceID, TagID, TargetID, UserID.
 
           The whole string must be query-encoded.
         in: query
         name: include
         required: false
         schema:
-          pattern: ^\s*(OrganizationID|SpaceID|TagID)\s*(?:,\s*(?:OrganizationID|SpaceID|TagID)\s*)*$
+          pattern: ^\s*(ChangeOrderID|OrganizationID|SpaceID|TagID|TargetID|UserID)\s*(?:,\s*(?:ChangeOrderID|OrganizationID|SpaceID|TagID|TargetID|UserID)\s*)*$
           type: string
       - description: |-
           Select clause for specifying which fields to include in the response for Release.
@@ -31088,14 +31088,14 @@ paths:
           The attribute names are case-sensitive, PascalCase, and
           expected in a comma-separated list format as in the JSON encoding.
 
-          Supported attributes for Release are OrganizationID, SpaceID, TagID.
+          Supported attributes for Release are ChangeOrderID, OrganizationID, SpaceID, TagID, TargetID, UserID.
 
           The whole string must be query-encoded.
         in: query
         name: include
         required: false
         schema:
-          pattern: ^\s*(OrganizationID|SpaceID|TagID)\s*(?:,\s*(?:OrganizationID|SpaceID|TagID)\s*)*$
+          pattern: ^\s*(ChangeOrderID|OrganizationID|SpaceID|TagID|TargetID|UserID)\s*(?:,\s*(?:ChangeOrderID|OrganizationID|SpaceID|TagID|TargetID|UserID)\s*)*$
           type: string
       - description: |-
           Select clause for specifying which fields to include in the response for Release.
@@ -31405,14 +31405,14 @@ paths:
           The attribute names are case-sensitive, PascalCase, and
           expected in a comma-separated list format as in the JSON encoding.
 
-          Supported attributes for Release are OrganizationID, SpaceID, TagID.
+          Supported attributes for Release are ChangeOrderID, OrganizationID, SpaceID, TagID, TargetID, UserID.
 
           The whole string must be query-encoded.
         in: query
         name: include
         required: false
         schema:
-          pattern: ^\s*(OrganizationID|SpaceID|TagID)\s*(?:,\s*(?:OrganizationID|SpaceID|TagID)\s*)*$
+          pattern: ^\s*(ChangeOrderID|OrganizationID|SpaceID|TagID|TargetID|UserID)\s*(?:,\s*(?:ChangeOrderID|OrganizationID|SpaceID|TagID|TargetID|UserID)\s*)*$
           type: string
       - description: |-
           Select clause for specifying which fields to include in the response for Release.
@@ -54341,6 +54341,11 @@ components:
       description: Release with additional related entities expanded based on the
         request's include parameter.
       properties:
+        ChangeOrder:
+          allOf:
+          - $ref: '#/components/schemas/ChangeOrder'
+          description: The ChangeOrder the Release was published for, if any. Expanded
+            when requested via the include parameter.
         Organization:
           $ref: '#/components/schemas/Organization'
         Release:
@@ -54356,6 +54361,16 @@ components:
           - $ref: '#/components/schemas/Tag'
           description: The Tag the bundled Units were pinned to, if any. Expanded
             when requested via the include parameter.
+        Target:
+          allOf:
+          - $ref: '#/components/schemas/Target'
+          description: The Target the Release was published for. Expanded when requested
+            via the include parameter.
+        User:
+          allOf:
+          - $ref: '#/components/schemas/User'
+          description: The User who published the Release. Expanded when requested
+            via the include parameter.
       type: object
     ExtendedResource:
       properties:
@@ -57570,6 +57585,7 @@ components:
           type: string
           x-confighub-where:
             dataType: uuid
+            expandable: true
             references: ChangeOrder
         CreatedAt:
           description: The timestamp when the entity was created in "2023-01-01T12:00:00Z"
@@ -57737,6 +57753,7 @@ components:
           type: string
           x-confighub-where:
             dataType: uuid
+            expandable: true
             references: Target
         UnitCount:
           description: Number of Units bundled in the Release, captured at publish
@@ -57766,6 +57783,7 @@ components:
           type: string
           x-confighub-where:
             dataType: uuid
+            expandable: true
             references: User
         Version:
           description: An entity-specific sequence number used for optimistic concurrency

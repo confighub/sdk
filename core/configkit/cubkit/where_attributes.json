@@ -1217,7 +1217,8 @@
       },
       "ChangeOrderID": {
         "dataType": "uuid",
-        "references": "ChangeOrder"
+        "references": "ChangeOrder",
+        "expandable": true
       },
       "CreatedAt": {
         "dataType": "time"
@@ -1273,7 +1274,8 @@
       },
       "TargetID": {
         "dataType": "uuid",
-        "references": "Target"
+        "references": "Target",
+        "expandable": true
       },
       "UnitCount": {
         "dataType": "int"
@@ -1283,7 +1285,8 @@
       },
       "UserID": {
         "dataType": "uuid",
-        "references": "User"
+        "references": "User",
+        "expandable": true
       }
     },
     "Resource": {

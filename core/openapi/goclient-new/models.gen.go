@@ -2204,6 +2204,9 @@ type ExtendedOrganizationMember struct {
 
 // ExtendedRelease Release with additional related entities expanded based on the request's include parameter.
 type ExtendedRelease struct {
+	// ChangeOrder The ChangeOrder the Release was published for, if any. Expanded when requested via the include parameter.
+	ChangeOrder *ChangeOrder `json:"ChangeOrder,omitempty" yaml:"ChangeOrder,omitempty"`
+
 	// Organization The top-level container for an organization using ConfigHub.
 	Organization *Organization `json:"Organization,omitempty" yaml:"Organization,omitempty"`
 
@@ -2215,6 +2218,12 @@ type ExtendedRelease struct {
 
 	// Tag The Tag the bundled Units were pinned to, if any. Expanded when requested via the include parameter.
 	Tag *Tag `json:"Tag,omitempty" yaml:"Tag,omitempty"`
+
+	// Target The Target the Release was published for. Expanded when requested via the include parameter.
+	Target *Target `json:"Target,omitempty" yaml:"Target,omitempty"`
+
+	// User The User who published the Release. Expanded when requested via the include parameter.
+	User *User `json:"User,omitempty" yaml:"User,omitempty"`
 }
 
 // ExtendedResource defines model for ExtendedResource.
@@ -13255,7 +13264,7 @@ type ListAllReleasesParams struct {
 	// The attribute names are case-sensitive, PascalCase, and
 	// expected in a comma-separated list format as in the JSON encoding.
 	//
-	// Supported attributes for Release are OrganizationID, SpaceID, TagID.
+	// Supported attributes for Release are ChangeOrderID, OrganizationID, SpaceID, TagID, TargetID, UserID.
 	//
 	// The whole string must be query-encoded.
 	Include *string `form:"include,omitempty" json:"include,omitempty" yaml:"include,omitempty"`
@@ -17060,7 +17069,7 @@ type ListExtendedReleasesParams struct {
 	// The attribute names are case-sensitive, PascalCase, and
 	// expected in a comma-separated list format as in the JSON encoding.
 	//
-	// Supported attributes for Release are OrganizationID, SpaceID, TagID.
+	// Supported attributes for Release are ChangeOrderID, OrganizationID, SpaceID, TagID, TargetID, UserID.
 	//
 	// The whole string must be query-encoded.
 	Include *string `form:"include,omitempty" json:"include,omitempty" yaml:"include,omitempty"`
@@ -17120,7 +17129,7 @@ type GetExtendedReleaseParams struct {
 	// The attribute names are case-sensitive, PascalCase, and
 	// expected in a comma-separated list format as in the JSON encoding.
 	//
-	// Supported attributes for Release are OrganizationID, SpaceID, TagID.
+	// Supported attributes for Release are ChangeOrderID, OrganizationID, SpaceID, TagID, TargetID, UserID.
 	//
 	// The whole string must be query-encoded.
 	Include *string `form:"include,omitempty" json:"include,omitempty" yaml:"include,omitempty"`
