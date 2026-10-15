@@ -488,8 +488,8 @@ cub function get --space "*" --show output -o jq='.[].ResourceType' get-resource
 # Find unapplied units
 cub unit list --space SPACE_SLUG --where 'LastReleasedRevisionNum = 0'
 
-# Find units with pending changes
-cub unit list --space SPACE_SLUG --where 'HeadRevisionNum > LastReleasedRevisionNum'
+# Find units with unreleased changes
+cub unit list --space SPACE_SLUG --where 'HeadRevisionNum > LastReleasedRevisionNum AND TargetID IS NOT NULL'
 
 # Find units created after specific time
 cub unit list --space SPACE_SLUG --where "CreatedAt > '2025-01-01T00:00:00'"

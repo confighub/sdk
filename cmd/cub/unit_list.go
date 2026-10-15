@@ -89,7 +89,7 @@ Agent discovery workflow:
 Key filtering patterns for agents:
 
 Configuration state:
-- Find units with unreleased changes: --where 'HeadRevisionNum > LastReleasedRevisionNum'
+- Find units with unreleased changes: --where 'HeadRevisionNum > LastReleasedRevisionNum AND TargetID IS NOT NULL'
 - Find never-released units: --where 'LastReleasedRevisionNum = 0'
 - Find units with placeholders: Use 'function do get-placeholders' instead
 
@@ -190,8 +190,8 @@ func unreleasedChangesColumn(obj interface{}) string {
 var unitCustomColumnDependencies = map[string][]string{
 	"DataBytes":         {"Data"},
 	"UpgradeNeeded":     {"UpstreamRevisionNum", "UpstreamUnit.HeadRevisionNum"},
-	"UnreleasedChanges": {"HeadRevisionNum", "LastReleasedRevisionNum"},
-	"UnappliedChanges":  {"HeadRevisionNum", "LastReleasedRevisionNum"},
+	"UnreleasedChanges": {"HeadRevisionNum", "LastReleasedRevisionNum", "TargetID"},
+	"UnappliedChanges":  {"HeadRevisionNum", "LastReleasedRevisionNum", "TargetID"},
 }
 
 func init() {

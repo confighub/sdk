@@ -272,10 +272,10 @@ Find unapplied units within a space:
 cub unit list --space $SPACE --where 'LastReleasedRevisionNum = 0'
 ```
 
-Find units with unapplied changes within a space:
+Find units with unreleased changes within a space:
 
 ```
-cub unit list --space $SPACE --where 'HeadRevisionNum > LastReleasedRevisionNum'
+cub unit list --space $SPACE --where 'HeadRevisionNum > LastReleasedRevisionNum AND TargetID IS NOT NULL'
 ```
 
 Find units created after a specific time within a space:
