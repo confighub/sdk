@@ -128,6 +128,7 @@ paths:
         name: include
         required: false
         schema:
+          pattern: ^\s*(OrganizationID)\s*(?:,\s*(?:OrganizationID)\s*)*$
           type: string
       - description: Maximum number of Component entities to act on, in ID order.
           A request that names limit or continue also stops when it runs short of
@@ -349,6 +350,7 @@ paths:
         name: include
         required: false
         schema:
+          pattern: ^\s*(OrganizationID)\s*(?:,\s*(?:OrganizationID)\s*)*$
           type: string
       - description: Maximum number of Component entities to act on, in ID order.
           A request that names limit or continue also stops when it runs short of
@@ -668,6 +670,7 @@ paths:
         name: include
         required: false
         schema:
+          pattern: ^\s*(OrganizationID)\s*(?:,\s*(?:OrganizationID)\s*)*$
           type: string
       - description: Maximum number of ServiceAccount entities to act on, in ID order.
           A request that names limit or continue also stops when it runs short of
@@ -879,6 +882,7 @@ paths:
         name: include
         required: false
         schema:
+          pattern: ^\s*(OrganizationID)\s*(?:,\s*(?:OrganizationID)\s*)*$
           type: string
       - description: Maximum number of ServiceAccount entities to act on, in ID order.
           A request that names limit or continue also stops when it runs short of
@@ -1159,6 +1163,7 @@ paths:
         name: include
         required: false
         schema:
+          pattern: ^\s*(AttributeFilterID|AttributeIDs|ComponentID|OrganizationID|ReleaseTargetID|TriggerFilterID|TriggerIDs)\s*(?:,\s*(?:AttributeFilterID|AttributeIDs|ComponentID|OrganizationID|ReleaseTargetID|TriggerFilterID|TriggerIDs)\s*)*$
           type: string
       - description: Maximum number of Space entities to act on, in ID order. A request
           that names limit or continue also stops when it runs short of time, and
@@ -1404,6 +1409,7 @@ paths:
         name: include
         required: false
         schema:
+          pattern: ^\s*(AttributeFilterID|AttributeIDs|ComponentID|OrganizationID|ReleaseTargetID|TriggerFilterID|TriggerIDs)\s*(?:,\s*(?:AttributeFilterID|AttributeIDs|ComponentID|OrganizationID|ReleaseTargetID|TriggerFilterID|TriggerIDs)\s*)*$
           type: string
       - description: Maximum number of Space entities to act on, in ID order. A request
           that names limit or continue also stops when it runs short of time, and
@@ -1746,6 +1752,7 @@ paths:
         name: include
         required: false
         schema:
+          pattern: ^\s*(AttributeFilterID|AttributeIDs|ComponentID|OrganizationID|ReleaseTargetID|TriggerFilterID|TriggerIDs)\s*(?:,\s*(?:AttributeFilterID|AttributeIDs|ComponentID|OrganizationID|ReleaseTargetID|TriggerFilterID|TriggerIDs)\s*)*$
           type: string
       - description: Maximum number of Space entities to act on, in ID order. A request
           that names limit or continue also stops when it runs short of time, and
@@ -2242,6 +2249,7 @@ paths:
         name: include
         required: false
         schema:
+          pattern: ^\s*(OrganizationID|SpaceID)\s*(?:,\s*(?:OrganizationID|SpaceID)\s*)*$
           type: string
       - description: |-
           Select clause for specifying which fields to include in the response for Attestation.
@@ -2297,6 +2305,7 @@ paths:
         name: order_by
         required: false
         schema:
+          pattern: ^\s*(?:(?:[Aa][Ss][Cc]|[Dd][Ee][Ss][Cc])\s*:\s*)?(AttestationID|ChangeOrderID|CreatedAt|ExpiresAt|Hash|HiddenReason|Note|OrganizationID|ReleaseID|Result|RevokedAttestationID|SpaceID|Type|UserID)\s*(?:,\s*(?:(?:[Aa][Ss][Cc]|[Dd][Ee][Ss][Cc])\s*:\s*)?(?:AttestationID|ChangeOrderID|CreatedAt|ExpiresAt|Hash|HiddenReason|Note|OrganizationID|ReleaseID|Result|RevokedAttestationID|SpaceID|Type|UserID)\s*)*$
           type: string
       - description: |-
           The token from the ConfigHub-Continue header of the previous page, to return the Attestation entities after it.
@@ -2477,6 +2486,7 @@ paths:
         name: include
         required: false
         schema:
+          pattern: ^\s*(OrganizationID|SpaceID)\s*(?:,\s*(?:OrganizationID|SpaceID)\s*)*$
           type: string
       - description: Maximum number of Attribute entities to act on, in ID order.
           A request that names limit or continue also stops when it runs short of
@@ -2684,6 +2694,7 @@ paths:
         name: include
         required: false
         schema:
+          pattern: ^\s*(OrganizationID|SpaceID)\s*(?:,\s*(?:OrganizationID|SpaceID)\s*)*$
           type: string
       - description: |-
           Select clause for specifying which fields to include in the response for Attribute.
@@ -2739,6 +2750,7 @@ paths:
         name: order_by
         required: false
         schema:
+          pattern: ^\s*(?:(?:[Aa][Ss][Cc]|[Dd][Ee][Ss][Cc])\s*:\s*)?(AttributeID|BackingUnitID|CreatedAt|DataType|DisplayName|Hash|HiddenReason|OrganizationID|Slug|SpaceID|ToolchainType|UpdatedAt|UpstreamAttributeID)\s*(?:,\s*(?:(?:[Aa][Ss][Cc]|[Dd][Ee][Ss][Cc])\s*:\s*)?(?:AttributeID|BackingUnitID|CreatedAt|DataType|DisplayName|Hash|HiddenReason|OrganizationID|Slug|SpaceID|ToolchainType|UpdatedAt|UpstreamAttributeID)\s*)*$
           type: string
       - description: |-
           The token from the ConfigHub-Continue header of the previous page, to return the Attribute entities after it.
@@ -2919,6 +2931,7 @@ paths:
         name: include
         required: false
         schema:
+          pattern: ^\s*(OrganizationID|SpaceID)\s*(?:,\s*(?:OrganizationID|SpaceID)\s*)*$
           type: string
       - description: Maximum number of Attribute entities to act on, in ID order.
           A request that names limit or continue also stops when it runs short of
@@ -3244,6 +3257,7 @@ paths:
         name: include
         required: false
         schema:
+          pattern: ^\s*(OrganizationID|SpaceID)\s*(?:,\s*(?:OrganizationID|SpaceID)\s*)*$
           type: string
       - description: Maximum number of Attribute entities to act on, in ID order.
           A request that names limit or continue also stops when it runs short of
@@ -3707,6 +3721,7 @@ paths:
         name: include
         required: false
         schema:
+          pattern: ^\s*(OrganizationID|SpaceID)\s*(?:,\s*(?:OrganizationID|SpaceID)\s*)*$
           type: string
       - description: Report what the move would do, and what would stop it, without
           moving anything
@@ -3894,6 +3909,7 @@ paths:
         name: include
         required: false
         schema:
+          pattern: ^\s*(OrganizationID|SpaceID)\s*(?:,\s*(?:OrganizationID|SpaceID)\s*)*$
           type: string
       - description: Maximum number of BridgeWorker entities to act on, in ID order.
           A request that names limit or continue also stops when it runs short of
@@ -4100,6 +4116,7 @@ paths:
         name: include
         required: false
         schema:
+          pattern: ^\s*(OrganizationID|SpaceID)\s*(?:,\s*(?:OrganizationID|SpaceID)\s*)*$
           type: string
       - description: |-
           Select clause for specifying which fields to include in the response for BridgeWorker.
@@ -4155,6 +4172,7 @@ paths:
         name: order_by
         required: false
         schema:
+          pattern: ^\s*(?:(?:[Aa][Ss][Cc]|[Dd][Ee][Ss][Cc])\s*:\s*)?(BridgeWorkerID|Condition|CreatedAt|DisplayName|HiddenReason|IPAddress|LastMessage|LastSeenAt|OrgRole|OrganizationID|Slug|SpaceID|UpdatedAt|UserID)\s*(?:,\s*(?:(?:[Aa][Ss][Cc]|[Dd][Ee][Ss][Cc])\s*:\s*)?(?:BridgeWorkerID|Condition|CreatedAt|DisplayName|HiddenReason|IPAddress|LastMessage|LastSeenAt|OrgRole|OrganizationID|Slug|SpaceID|UpdatedAt|UserID)\s*)*$
           type: string
       - description: |-
           The token from the ConfigHub-Continue header of the previous page, to return the BridgeWorker entities after it.
@@ -4341,6 +4359,7 @@ paths:
         name: include
         required: false
         schema:
+          pattern: ^\s*(OrganizationID|SpaceID)\s*(?:,\s*(?:OrganizationID|SpaceID)\s*)*$
           type: string
       - description: Maximum number of BridgeWorker entities to act on, in ID order.
           A request that names limit or continue also stops when it runs short of
@@ -4635,6 +4654,7 @@ paths:
         name: order_by
         required: false
         schema:
+          pattern: ^\s*(?:(?:[Aa][Ss][Cc]|[Dd][Ee][Ss][Cc])\s*:\s*)?(Action|BridgeWorkerID|CreatedAt|DryRun|OrganizationID|QueuedOperationID|RevisionNum|Status|TargetID|UnitActionNum|UnitID)\s*(?:,\s*(?:(?:[Aa][Ss][Cc]|[Dd][Ee][Ss][Cc])\s*:\s*)?(?:Action|BridgeWorkerID|CreatedAt|DryRun|OrganizationID|QueuedOperationID|RevisionNum|Status|TargetID|UnitActionNum|UnitID)\s*)*$
           type: string
       - description: |-
           The token from the ConfigHub-Continue header of the previous page, to return the QueuedOperation entities after it.
@@ -4954,6 +4974,7 @@ paths:
         name: include
         required: false
         schema:
+          pattern: ^\s*(EndTagID|InvocationID|OrganizationID|ReleaseTagID|RestoreTagID|SpaceFilterID|SpaceID|StartTagID|UnitFilterID)\s*(?:,\s*(?:EndTagID|InvocationID|OrganizationID|ReleaseTagID|RestoreTagID|SpaceFilterID|SpaceID|StartTagID|UnitFilterID)\s*)*$
           type: string
       - description: Maximum number of ChangeOrder entities to act on, in ID order.
           A request that names limit or continue also stops when it runs short of
@@ -5160,6 +5181,7 @@ paths:
         name: include
         required: false
         schema:
+          pattern: ^\s*(EndTagID|InvocationID|OrganizationID|ReleaseTagID|RestoreTagID|SpaceFilterID|SpaceID|StartTagID|UnitFilterID)\s*(?:,\s*(?:EndTagID|InvocationID|OrganizationID|ReleaseTagID|RestoreTagID|SpaceFilterID|SpaceID|StartTagID|UnitFilterID)\s*)*$
           type: string
       - description: |-
           Select clause for specifying which fields to include in the response for ChangeOrder.
@@ -5215,6 +5237,7 @@ paths:
         name: order_by
         required: false
         schema:
+          pattern: ^\s*(?:(?:[Aa][Ss][Cc]|[Dd][Ee][Ss][Cc])\s*:\s*)?(AbortedReason|AdoptedEndTagID|ChangeOrderID|ChangeWorkflowID|CreatedAt|Description|DisplayName|EndTagID|HiddenReason|InvocationID|OrganizationID|PriorRevisions|ReleasePriorRevisions|ReleaseTagID|RestoreTagID|Slug|SpaceFilterID|SpaceID|Stage|StartTagID|UnitFilterID|UpdateType|UpdatedAt|UserID|WhereSpace|WhereUnit)\s*(?:,\s*(?:(?:[Aa][Ss][Cc]|[Dd][Ee][Ss][Cc])\s*:\s*)?(?:AbortedReason|AdoptedEndTagID|ChangeOrderID|ChangeWorkflowID|CreatedAt|Description|DisplayName|EndTagID|HiddenReason|InvocationID|OrganizationID|PriorRevisions|ReleasePriorRevisions|ReleaseTagID|RestoreTagID|Slug|SpaceFilterID|SpaceID|Stage|StartTagID|UnitFilterID|UpdateType|UpdatedAt|UserID|WhereSpace|WhereUnit)\s*)*$
           type: string
       - description: |-
           The token from the ConfigHub-Continue header of the previous page, to return the ChangeOrder entities after it.
@@ -5395,6 +5418,7 @@ paths:
         name: include
         required: false
         schema:
+          pattern: ^\s*(EndTagID|InvocationID|OrganizationID|ReleaseTagID|RestoreTagID|SpaceFilterID|SpaceID|StartTagID|UnitFilterID)\s*(?:,\s*(?:EndTagID|InvocationID|OrganizationID|ReleaseTagID|RestoreTagID|SpaceFilterID|SpaceID|StartTagID|UnitFilterID)\s*)*$
           type: string
       - description: Maximum number of ChangeOrder entities to act on, in ID order.
           A request that names limit or continue also stops when it runs short of
@@ -5752,6 +5776,7 @@ paths:
         name: include
         required: false
         schema:
+          pattern: ^\s*(EndTagID|InvocationID|OrganizationID|ReleaseTagID|RestoreTagID|SpaceFilterID|SpaceID|StartTagID|UnitFilterID)\s*(?:,\s*(?:EndTagID|InvocationID|OrganizationID|ReleaseTagID|RestoreTagID|SpaceFilterID|SpaceID|StartTagID|UnitFilterID)\s*)*$
           type: string
       - description: Maximum number of ChangeOrder entities to act on, in ID order.
           A request that names limit or continue also stops when it runs short of
@@ -6191,6 +6216,7 @@ paths:
         name: include
         required: false
         schema:
+          pattern: ^\s*(EndTagID|OrganizationID|SpaceID|StartTagID)\s*(?:,\s*(?:EndTagID|OrganizationID|SpaceID|StartTagID)\s*)*$
           type: string
       - description: Maximum number of ChangeSet entities to act on, in ID order.
           A request that names limit or continue also stops when it runs short of
@@ -6397,6 +6423,7 @@ paths:
         name: include
         required: false
         schema:
+          pattern: ^\s*(EndTagID|OrganizationID|SpaceID|StartTagID)\s*(?:,\s*(?:EndTagID|OrganizationID|SpaceID|StartTagID)\s*)*$
           type: string
       - description: |-
           Select clause for specifying which fields to include in the response for ChangeSet.
@@ -6452,6 +6479,7 @@ paths:
         name: order_by
         required: false
         schema:
+          pattern: ^\s*(?:(?:[Aa][Ss][Cc]|[Dd][Ee][Ss][Cc])\s*:\s*)?(ChangeSetID|CreatedAt|Description|DisplayName|EndTagID|HiddenReason|OrganizationID|Slug|SpaceID|StartTagID|StartTagIsPriorRevision|State|UpdatedAt)\s*(?:,\s*(?:(?:[Aa][Ss][Cc]|[Dd][Ee][Ss][Cc])\s*:\s*)?(?:ChangeSetID|CreatedAt|Description|DisplayName|EndTagID|HiddenReason|OrganizationID|Slug|SpaceID|StartTagID|StartTagIsPriorRevision|State|UpdatedAt)\s*)*$
           type: string
       - description: |-
           The token from the ConfigHub-Continue header of the previous page, to return the ChangeSet entities after it.
@@ -6632,6 +6660,7 @@ paths:
         name: include
         required: false
         schema:
+          pattern: ^\s*(EndTagID|OrganizationID|SpaceID|StartTagID)\s*(?:,\s*(?:EndTagID|OrganizationID|SpaceID|StartTagID)\s*)*$
           type: string
       - description: Maximum number of ChangeSet entities to act on, in ID order.
           A request that names limit or continue also stops when it runs short of
@@ -6912,6 +6941,7 @@ paths:
         name: include
         required: false
         schema:
+          pattern: ^\s*(EndTagID|OrganizationID|SpaceID|StartTagID)\s*(?:,\s*(?:EndTagID|OrganizationID|SpaceID|StartTagID)\s*)*$
           type: string
       - description: Maximum number of ChangeSet entities to act on, in ID order.
           A request that names limit or continue also stops when it runs short of
@@ -7287,6 +7317,7 @@ paths:
         name: include
         required: false
         schema:
+          pattern: ^\s*(EndTagID|OrganizationID|SpaceID|StartTagID)\s*(?:,\s*(?:EndTagID|OrganizationID|SpaceID|StartTagID)\s*)*$
           type: string
       - description: Report what the move would do, and what would stop it, without
           moving anything
@@ -7474,6 +7505,7 @@ paths:
         name: include
         required: false
         schema:
+          pattern: ^\s*(OrganizationID|SpaceID)\s*(?:,\s*(?:OrganizationID|SpaceID)\s*)*$
           type: string
       - description: Maximum number of ChangeWorkflow entities to act on, in ID order.
           A request that names limit or continue also stops when it runs short of
@@ -7682,6 +7714,7 @@ paths:
         name: include
         required: false
         schema:
+          pattern: ^\s*(OrganizationID|SpaceID)\s*(?:,\s*(?:OrganizationID|SpaceID)\s*)*$
           type: string
       - description: |-
           Select clause for specifying which fields to include in the response for ChangeWorkflow.
@@ -7737,6 +7770,7 @@ paths:
         name: order_by
         required: false
         schema:
+          pattern: ^\s*(?:(?:[Aa][Ss][Cc]|[Dd][Ee][Ss][Cc])\s*:\s*)?(BackingUnitID|ChangeWorkflowID|CreatedAt|DisplayName|Hash|HiddenReason|OrganizationID|Slug|SpaceID|UpdatedAt|UpstreamChangeWorkflowID)\s*(?:,\s*(?:(?:[Aa][Ss][Cc]|[Dd][Ee][Ss][Cc])\s*:\s*)?(?:BackingUnitID|ChangeWorkflowID|CreatedAt|DisplayName|Hash|HiddenReason|OrganizationID|Slug|SpaceID|UpdatedAt|UpstreamChangeWorkflowID)\s*)*$
           type: string
       - description: |-
           The token from the ConfigHub-Continue header of the previous page, to return the ChangeWorkflow entities after it.
@@ -7917,6 +7951,7 @@ paths:
         name: include
         required: false
         schema:
+          pattern: ^\s*(OrganizationID|SpaceID)\s*(?:,\s*(?:OrganizationID|SpaceID)\s*)*$
           type: string
       - description: Maximum number of ChangeWorkflow entities to act on, in ID order.
           A request that names limit or continue also stops when it runs short of
@@ -8247,6 +8282,7 @@ paths:
         name: include
         required: false
         schema:
+          pattern: ^\s*(OrganizationID|SpaceID)\s*(?:,\s*(?:OrganizationID|SpaceID)\s*)*$
           type: string
       - description: Maximum number of ChangeWorkflow entities to act on, in ID order.
           A request that names limit or continue also stops when it runs short of
@@ -8735,6 +8771,7 @@ paths:
         name: include
         required: false
         schema:
+          pattern: ^\s*(OrganizationID|SpaceID)\s*(?:,\s*(?:OrganizationID|SpaceID)\s*)*$
           type: string
       - description: Report what the move would do, and what would stop it, without
           moving anything
@@ -8922,6 +8959,7 @@ paths:
         name: include
         required: false
         schema:
+          pattern: ^\s*(OrganizationID|SpaceID)\s*(?:,\s*(?:OrganizationID|SpaceID)\s*)*$
           type: string
       - description: Maximum number of Channel entities to act on, in ID order. A
           request that names limit or continue also stops when it runs short of time,
@@ -9119,6 +9157,7 @@ paths:
         name: include
         required: false
         schema:
+          pattern: ^\s*(OrganizationID|SpaceID)\s*(?:,\s*(?:OrganizationID|SpaceID)\s*)*$
           type: string
       - description: |-
           Select clause for specifying which fields to include in the response for Channel.
@@ -9174,6 +9213,7 @@ paths:
         name: order_by
         required: false
         schema:
+          pattern: ^\s*(?:(?:[Aa][Ss][Cc]|[Dd][Ee][Ss][Cc])\s*:\s*)?(ChannelID|Condition|CreatedAt|DisplayName|EventPosition|HiddenReason|IPAddress|LastMessage|LastSeenAt|OrganizationID|Slug|SpaceID|UpdatedAt)\s*(?:,\s*(?:(?:[Aa][Ss][Cc]|[Dd][Ee][Ss][Cc])\s*:\s*)?(?:ChannelID|Condition|CreatedAt|DisplayName|EventPosition|HiddenReason|IPAddress|LastMessage|LastSeenAt|OrganizationID|Slug|SpaceID|UpdatedAt)\s*)*$
           type: string
       - description: |-
           The token from the ConfigHub-Continue header of the previous page, to return the Channel entities after it.
@@ -9353,6 +9393,7 @@ paths:
         name: include
         required: false
         schema:
+          pattern: ^\s*(OrganizationID|SpaceID)\s*(?:,\s*(?:OrganizationID|SpaceID)\s*)*$
           type: string
       - description: Maximum number of Channel entities to act on, in ID order. A
           request that names limit or continue also stops when it runs short of time,
@@ -9735,6 +9776,7 @@ paths:
         name: order_by
         required: false
         schema:
+          pattern: ^\s*(?:(?:[Aa][Ss][Cc]|[Dd][Ee][Ss][Cc])\s*:\s*)?(ChannelID|Command|CommandRunID|CompletedAt|CreatedAt|CreatedBy|Deadline|DeliveredAt|OrganizationID|SpaceID|Status|TargetID|TimeoutAt|UnitID)\s*(?:,\s*(?:(?:[Aa][Ss][Cc]|[Dd][Ee][Ss][Cc])\s*:\s*)?(?:ChannelID|Command|CommandRunID|CompletedAt|CreatedAt|CreatedBy|Deadline|DeliveredAt|OrganizationID|SpaceID|Status|TargetID|TimeoutAt|UnitID)\s*)*$
           type: string
       - description: |-
           The token from the ConfigHub-Continue header of the previous page, to return the CommandRun entities after it.
@@ -9902,6 +9944,7 @@ paths:
         name: include
         required: false
         schema:
+          pattern: ^\s*(OrganizationID)\s*(?:,\s*(?:OrganizationID)\s*)*$
           type: string
       - description: |-
           Select clause for specifying which fields to include in the response for Component.
@@ -9957,6 +10000,7 @@ paths:
         name: order_by
         required: false
         schema:
+          pattern: ^\s*(?:(?:[Aa][Ss][Cc]|[Dd][Ee][Ss][Cc])\s*:\s*)?(BackingUnitID|ChangeWorkflowRequired|ComponentID|CreatedAt|DisplayName|HiddenReason|OrganizationID|Slug|UpdatedAt|UpstreamComponentID)\s*(?:,\s*(?:(?:[Aa][Ss][Cc]|[Dd][Ee][Ss][Cc])\s*:\s*)?(?:BackingUnitID|ChangeWorkflowRequired|ComponentID|CreatedAt|DisplayName|HiddenReason|OrganizationID|Slug|UpdatedAt|UpstreamComponentID)\s*)*$
           type: string
       - description: |-
           The token from the ConfigHub-Continue header of the previous page, to return the Component entities after it.
@@ -10210,6 +10254,7 @@ paths:
         name: include
         required: false
         schema:
+          pattern: ^\s*(OrganizationID)\s*(?:,\s*(?:OrganizationID)\s*)*$
           type: string
       - description: |-
           Select clause for specifying which fields to include in the response for Component.
@@ -10671,14 +10716,15 @@ paths:
         required: false
         schema:
           type: boolean
-      - description: 'Comma-separated parts of the result to return in addition to
-          the actions: Mutations for what each restore changed, or on a dry run would
-          change, as entries of its MutationSources, and Diff for the same change
-          path by path with the values on both sides.'
+      - description: |-
+          Comma-separated parts of the result to return in addition to the actions: Mutations for what each restore changed, or on a dry run would change, as entries of its MutationSources, and Diff for the same change path by path with the values on both sides.
+
+          Supported values: Mutations, Diff.
         in: query
         name: include
         required: false
         schema:
+          pattern: ^\s*(Mutations|Diff)\s*(?:,\s*(?:Mutations|Diff)\s*)*$
           type: string
       requestBody:
         content:
@@ -10760,13 +10806,15 @@ paths:
         in a query string.
       operationId: DiffConfigurations
       parameters:
-      - description: 'Comma-separated: Attribution to attach to each changed path
-          the To side''s MutationSources entry, which says what set the new value,
-          and Unchanged to also list resources with no changes.'
+      - description: |-
+          Comma-separated: Attribution to attach to each changed path the To side's MutationSources entry, which says what set the new value, Unchanged to also list resources with no changes, and Context to also list, within each changed resource, the unchanged paths around the changes: every unchanged child of each map or array that holds a change, up to the resource, as ChangeType None.
+
+          Supported values: Attribution, Unchanged, Context.
         in: query
         name: include
         required: false
         schema:
+          pattern: ^\s*(Attribution|Unchanged|Context)\s*(?:,\s*(?:Attribution|Unchanged|Context)\s*)*$
           type: string
       - description: Limit the diff to the resources this where expression selects
           on either side.
@@ -10943,6 +10991,7 @@ paths:
         name: include
         required: false
         schema:
+          pattern: ^\s*(FromSpaceID|OrganizationID|SpaceID)\s*(?:,\s*(?:FromSpaceID|OrganizationID|SpaceID)\s*)*$
           type: string
       - description: Maximum number of Filter entities to act on, in ID order. A request
           that names limit or continue also stops when it runs short of time, and
@@ -11150,6 +11199,7 @@ paths:
         name: include
         required: false
         schema:
+          pattern: ^\s*(FromSpaceID|OrganizationID|SpaceID)\s*(?:,\s*(?:FromSpaceID|OrganizationID|SpaceID)\s*)*$
           type: string
       - description: |-
           Select clause for specifying which fields to include in the response for Filter.
@@ -11205,6 +11255,7 @@ paths:
         name: order_by
         required: false
         schema:
+          pattern: ^\s*(?:(?:[Aa][Ss][Cc]|[Dd][Ee][Ss][Cc])\s*:\s*)?(BackingUnitID|CreatedAt|DisplayName|FilterID|From|FromSpaceID|Hash|HiddenReason|IncludeHidden|OrganizationID|ResourceType|Slug|SpaceID|UpdatedAt|UpstreamFilterID|Where|WhereData)\s*(?:,\s*(?:(?:[Aa][Ss][Cc]|[Dd][Ee][Ss][Cc])\s*:\s*)?(?:BackingUnitID|CreatedAt|DisplayName|FilterID|From|FromSpaceID|Hash|HiddenReason|IncludeHidden|OrganizationID|ResourceType|Slug|SpaceID|UpdatedAt|UpstreamFilterID|Where|WhereData)\s*)*$
           type: string
       - description: |-
           The token from the ConfigHub-Continue header of the previous page, to return the Filter entities after it.
@@ -11398,6 +11449,7 @@ paths:
         name: include
         required: false
         schema:
+          pattern: ^\s*(FromSpaceID|OrganizationID|SpaceID)\s*(?:,\s*(?:FromSpaceID|OrganizationID|SpaceID)\s*)*$
           type: string
       - description: Maximum number of Filter entities to act on, in ID order. A request
           that names limit or continue also stops when it runs short of time, and
@@ -11722,6 +11774,7 @@ paths:
         name: include
         required: false
         schema:
+          pattern: ^\s*(FromSpaceID|OrganizationID|SpaceID)\s*(?:,\s*(?:FromSpaceID|OrganizationID|SpaceID)\s*)*$
           type: string
       - description: Maximum number of Filter entities to act on, in ID order. A request
           that names limit or continue also stops when it runs short of time, and
@@ -12203,6 +12256,7 @@ paths:
         name: include
         required: false
         schema:
+          pattern: ^\s*(FromSpaceID|OrganizationID|SpaceID)\s*(?:,\s*(?:FromSpaceID|OrganizationID|SpaceID)\s*)*$
           type: string
       - description: Report what the move would do, and what would stop it, without
           moving anything
@@ -12549,16 +12603,15 @@ paths:
         required: false
         schema:
           type: string
-      - description: 'Comma-separated parts of the result to return in addition to
-          the default: ConfigData for the configuration the invocation produced, carried
-          whether or not the invocation changed it. Without it, the configuration
-          is present only when the invocation changed it, and an unchanged result
-          is reported by DataHash alone. Diff for what the invocation changed in each
-          Unit, path by path with the values on both sides.'
+      - description: |-
+          Comma-separated parts of the result to return in addition to the default: ConfigData for the configuration the invocation produced, carried whether or not the invocation changed it. Without it, the configuration is present only when the invocation changed it, and an unchanged result is reported by DataHash alone. Diff for what the invocation changed in each Unit, path by path with the values on both sides.
+
+          Supported values: ConfigData, Diff.
         in: query
         name: include
         required: false
         schema:
+          pattern: ^\s*(ConfigData|Diff)\s*(?:,\s*(?:ConfigData|Diff)\s*)*$
           type: string
       - description: 'Resource type: Resource type to match for the desired ToolchainType,
           for example apps/v1/Deployment'
@@ -12875,6 +12928,7 @@ paths:
         name: order_by
         required: false
         schema:
+          pattern: ^\s*(?:(?:[Aa][Ss][Cc]|[Dd][Ee][Ss][Cc])\s*:\s*)?(CreatedAt|DisplayName|ExternalID|GroupID|Slug|UpdatedAt)\s*(?:,\s*(?:(?:[Aa][Ss][Cc]|[Dd][Ee][Ss][Cc])\s*:\s*)?(?:CreatedAt|DisplayName|ExternalID|GroupID|Slug|UpdatedAt)\s*)*$
           type: string
       - description: |-
           The token from the ConfigHub-Continue header of the previous page, to return the Group entities after it.
@@ -13301,6 +13355,7 @@ paths:
         name: include
         required: false
         schema:
+          pattern: ^\s*(BridgeWorkerID|OrganizationID|SpaceID)\s*(?:,\s*(?:BridgeWorkerID|OrganizationID|SpaceID)\s*)*$
           type: string
       - description: Maximum number of Invocation entities to act on, in ID order.
           A request that names limit or continue also stops when it runs short of
@@ -13510,6 +13565,7 @@ paths:
         name: include
         required: false
         schema:
+          pattern: ^\s*(BridgeWorkerID|OrganizationID|SpaceID)\s*(?:,\s*(?:BridgeWorkerID|OrganizationID|SpaceID)\s*)*$
           type: string
       - description: |-
           Select clause for specifying which fields to include in the response for Invocation.
@@ -13565,6 +13621,7 @@ paths:
         name: order_by
         required: false
         schema:
+          pattern: ^\s*(?:(?:[Aa][Ss][Cc]|[Dd][Ee][Ss][Cc])\s*:\s*)?(BackingUnitID|BridgeWorkerID|CreatedAt|DisplayName|Hash|HiddenReason|InvocationID|OrganizationID|Slug|SpaceID|ToolchainType|UpdatedAt|UpstreamInvocationID)\s*(?:,\s*(?:(?:[Aa][Ss][Cc]|[Dd][Ee][Ss][Cc])\s*:\s*)?(?:BackingUnitID|BridgeWorkerID|CreatedAt|DisplayName|Hash|HiddenReason|InvocationID|OrganizationID|Slug|SpaceID|ToolchainType|UpdatedAt|UpstreamInvocationID)\s*)*$
           type: string
       - description: |-
           The token from the ConfigHub-Continue header of the previous page, to return the Invocation entities after it.
@@ -13747,6 +13804,7 @@ paths:
         name: include
         required: false
         schema:
+          pattern: ^\s*(BridgeWorkerID|OrganizationID|SpaceID)\s*(?:,\s*(?:BridgeWorkerID|OrganizationID|SpaceID)\s*)*$
           type: string
       - description: Maximum number of Invocation entities to act on, in ID order.
           A request that names limit or continue also stops when it runs short of
@@ -14071,6 +14129,7 @@ paths:
         name: include
         required: false
         schema:
+          pattern: ^\s*(BridgeWorkerID|OrganizationID|SpaceID)\s*(?:,\s*(?:BridgeWorkerID|OrganizationID|SpaceID)\s*)*$
           type: string
       - description: Maximum number of Invocation entities to act on, in ID order.
           A request that names limit or continue also stops when it runs short of
@@ -14553,6 +14612,7 @@ paths:
         name: include
         required: false
         schema:
+          pattern: ^\s*(BridgeWorkerID|OrganizationID|SpaceID)\s*(?:,\s*(?:BridgeWorkerID|OrganizationID|SpaceID)\s*)*$
           type: string
       - description: Report what the move would do, and what would stop it, without
           moving anything
@@ -14740,6 +14800,7 @@ paths:
         name: include
         required: false
         schema:
+          pattern: ^\s*(FromUnitID|OrganizationID|SpaceID|ToSpaceID|ToUnitID|TransformInvocationID)\s*(?:,\s*(?:FromUnitID|OrganizationID|SpaceID|ToSpaceID|ToUnitID|TransformInvocationID)\s*)*$
           type: string
       - description: Maximum number of Link entities to act on, in ID order. A request
           that names limit or continue also stops when it runs short of time, and
@@ -14947,6 +15008,7 @@ paths:
         name: include
         required: false
         schema:
+          pattern: ^\s*(FromUnitID|OrganizationID|SpaceID|ToSpaceID|ToUnitID|TransformInvocationID)\s*(?:,\s*(?:FromUnitID|OrganizationID|SpaceID|ToSpaceID|ToUnitID|TransformInvocationID)\s*)*$
           type: string
       - description: |-
           Select clause for specifying which fields to include in the response for Link.
@@ -15002,6 +15064,7 @@ paths:
         name: order_by
         required: false
         schema:
+          pattern: ^\s*(?:(?:[Aa][Ss][Cc]|[Dd][Ee][Ss][Cc])\s*:\s*)?(AutoUpdate|BackingUnitID|CreatedAt|DisplayName|DownstreamLastMergedRevisionNum|FromUnitID|Hash|HiddenReason|LinkID|MergeEnableSubtraction|OrganizationID|Protect|Slug|SpaceID|Squash|Stale|ToSpaceID|ToUnitID|TransformInvocationID|UpdateType|UpdatedAt|UpstreamLastMergedRevisionNum|UpstreamLinkID)\s*(?:,\s*(?:(?:[Aa][Ss][Cc]|[Dd][Ee][Ss][Cc])\s*:\s*)?(?:AutoUpdate|BackingUnitID|CreatedAt|DisplayName|DownstreamLastMergedRevisionNum|FromUnitID|Hash|HiddenReason|LinkID|MergeEnableSubtraction|OrganizationID|Protect|Slug|SpaceID|Squash|Stale|ToSpaceID|ToUnitID|TransformInvocationID|UpdateType|UpdatedAt|UpstreamLastMergedRevisionNum|UpstreamLinkID)\s*)*$
           type: string
       - description: |-
           The token from the ConfigHub-Continue header of the previous page, to return the Link entities after it.
@@ -15181,6 +15244,7 @@ paths:
         name: include
         required: false
         schema:
+          pattern: ^\s*(FromUnitID|OrganizationID|SpaceID|ToSpaceID|ToUnitID|TransformInvocationID)\s*(?:,\s*(?:FromUnitID|OrganizationID|SpaceID|ToSpaceID|ToUnitID|TransformInvocationID)\s*)*$
           type: string
       - description: Maximum number of Link entities to act on, in ID order. A request
           that names limit or continue also stops when it runs short of time, and
@@ -17198,17 +17262,15 @@ paths:
         required: false
         schema:
           type: boolean
-      - description: 'Comma-separated parts of the result to return in addition to
-          the actions: Mutations for what each Unit write changed, or on a dry run
-          would change, as entries of its MutationSources, and Diff for the same change
-          path by path with the values on both sides, and ConfigData for the configuration
-          each Unit write produced, or on a dry run would produce. On a dry run any
-          of them runs the merges a plan otherwise skips, so they are returned only
-          when named.'
+      - description: |-
+          Comma-separated parts of the result to return in addition to the actions: Mutations for what each Unit write changed, or on a dry run would change, as entries of its MutationSources, and Diff for the same change path by path with the values on both sides, and ConfigData for the configuration each Unit write produced, or on a dry run would produce. On a dry run any of them runs the merges a plan otherwise skips, so they are returned only when named.
+
+          Supported values: Mutations, Diff, ConfigData.
         in: query
         name: include
         required: false
         schema:
+          pattern: ^\s*(Mutations|Diff|ConfigData)\s*(?:,\s*(?:Mutations|Diff|ConfigData)\s*)*$
           type: string
       requestBody:
         content:
@@ -17283,7 +17345,13 @@ paths:
       - Promote
   /release:
     get:
-      description: Retrieves a list of Releases across spaces in the Organization
+      description: 'Retrieves a list of Releases across spaces in the Organization.
+        By default, returns at most one Release per space: the highest-numbered one
+        that matches. Set `distinct_on=Off` to receive every matching Release instead
+        -- paginate with `limit` and the continue token to walk the full result set
+        (`distinct_on=Off` requires an explicit `limit` and a non-empty `where` or
+        `filter`, since without deduplication or a filter there is nothing bounding
+        the result set)'
       operationId: ListAllReleases
       parameters:
       - description: |-
@@ -17379,6 +17447,7 @@ paths:
         name: include
         required: false
         schema:
+          pattern: ^\s*(OrganizationID|SpaceID|TagID)\s*(?:,\s*(?:OrganizationID|SpaceID|TagID)\s*)*$
           type: string
       - description: |-
           Select clause for specifying which fields to include in the response for Release.
@@ -17434,6 +17503,7 @@ paths:
         name: order_by
         required: false
         schema:
+          pattern: ^\s*(?:(?:[Aa][Ss][Cc]|[Dd][Ee][Ss][Cc])\s*:\s*)?(ChangeOrderID|CreatedAt|Digest|HiddenReason|ManifestDigest|OrganizationID|Published|ReleaseID|ReleaseNum|SpaceID|TagID|TargetID|UnitCount|UpdatedAt|UserID)\s*(?:,\s*(?:(?:[Aa][Ss][Cc]|[Dd][Ee][Ss][Cc])\s*:\s*)?(?:ChangeOrderID|CreatedAt|Digest|HiddenReason|ManifestDigest|OrganizationID|Published|ReleaseID|ReleaseNum|SpaceID|TagID|TargetID|UnitCount|UpdatedAt|UserID)\s*)*$
           type: string
       - description: |-
           The token from the ConfigHub-Continue header of the previous page, to return the Release entities after it.
@@ -17445,6 +17515,22 @@ paths:
         name: continue
         required: false
         schema:
+          type: string
+      - description: |-
+          Entity to return at most one Release per. The result set applies DISTINCT ON this key, keeping the most recent row for each.
+
+          Supported values: Space, Off.
+
+          If not specified, results are restricted to at most one row per Space.
+
+          Off disables the DISTINCT ON and returns every matching row, so it requires an explicit 'limit' and is rejected with 400 without one.
+        in: query
+        name: distinct_on
+        required: false
+        schema:
+          enum:
+          - Space
+          - "Off"
           type: string
       responses:
         "200":
@@ -17603,6 +17689,7 @@ paths:
         name: include
         required: false
         schema:
+          pattern: ^\s*(OrganizationID|SpaceID|TargetID|UnitID)\s*(?:,\s*(?:OrganizationID|SpaceID|TargetID|UnitID)\s*)*$
           type: string
       - description: |-
           Select clause for specifying which fields to include in the response for Resource.
@@ -17658,6 +17745,7 @@ paths:
         name: order_by
         required: false
         schema:
+          pattern: ^\s*(?:(?:[Aa][Ss][Cc]|[Dd][Ee][Ss][Cc])\s*:\s*)?(CreatedAt|HiddenReason|OrganizationID|ResourceID|ResourceIndex|ResourceName|ResourceType|SpaceID|TargetID|ToolchainType|UnitID|UpdatedAt)\s*(?:,\s*(?:(?:[Aa][Ss][Cc]|[Dd][Ee][Ss][Cc])\s*:\s*)?(?:CreatedAt|HiddenReason|OrganizationID|ResourceID|ResourceIndex|ResourceName|ResourceType|SpaceID|TargetID|ToolchainType|UnitID|UpdatedAt)\s*)*$
           type: string
       - description: |-
           The token from the ConfigHub-Continue header of the previous page, to return the Resource entities after it.
@@ -17864,6 +17952,7 @@ paths:
         name: include
         required: false
         schema:
+          pattern: ^\s*(OrganizationID|RevisionID|SpaceID|UnitID)\s*(?:,\s*(?:OrganizationID|RevisionID|SpaceID|UnitID)\s*)*$
           type: string
       - description: Maximum number of ReviewComment entities to act on, in ID order.
           A request that names limit or continue also stops when it runs short of
@@ -18061,6 +18150,7 @@ paths:
         name: include
         required: false
         schema:
+          pattern: ^\s*(OrganizationID|RevisionID|SpaceID|UnitID)\s*(?:,\s*(?:OrganizationID|RevisionID|SpaceID|UnitID)\s*)*$
           type: string
       - description: |-
           Select clause for specifying which fields to include in the response for ReviewComment.
@@ -18116,6 +18206,7 @@ paths:
         name: order_by
         required: false
         schema:
+          pattern: ^\s*(?:(?:[Aa][Ss][Cc]|[Dd][Ee][Ss][Cc])\s*:\s*)?(CreatedAt|HiddenReason|OrganizationID|Path|ReplyToID|ReviewCommentID|RevisionID|RevisionNum|Text|UnitID|UpdatedAt|UserAgent|UserID)\s*(?:,\s*(?:(?:[Aa][Ss][Cc]|[Dd][Ee][Ss][Cc])\s*:\s*)?(?:CreatedAt|HiddenReason|OrganizationID|Path|ReplyToID|ReviewCommentID|RevisionID|RevisionNum|Text|UnitID|UpdatedAt|UserAgent|UserID)\s*)*$
           type: string
       - description: |-
           The token from the ConfigHub-Continue header of the previous page, to return the ReviewComment entities after it.
@@ -18297,6 +18388,7 @@ paths:
         name: include
         required: false
         schema:
+          pattern: ^\s*(OrganizationID|RevisionID|SpaceID|UnitID)\s*(?:,\s*(?:OrganizationID|RevisionID|SpaceID|UnitID)\s*)*$
           type: string
       - description: Maximum number of ReviewComment entities to act on, in ID order.
           A request that names limit or continue also stops when it runs short of
@@ -18553,6 +18645,7 @@ paths:
         name: include
         required: false
         schema:
+          pattern: ^\s*(Attestations|ChangeOrders|ChangeSetID|OrganizationID|Releases|SpaceID|Tags|UnitID|UserID)\s*(?:,\s*(?:Attestations|ChangeOrders|ChangeSetID|OrganizationID|Releases|SpaceID|Tags|UnitID|UserID)\s*)*$
           type: string
       - description: |-
           Select clause for specifying which fields to include in the response for Revision.
@@ -18608,6 +18701,7 @@ paths:
         name: order_by
         required: false
         schema:
+          pattern: ^\s*(?:(?:[Aa][Ss][Cc]|[Dd][Ee][Ss][Cc])\s*:\s*)?(ChangeSetID|CreatedAt|DataHash|Description|HiddenReason|OrganizationID|RevisionID|RevisionNum|Source|UnitID|UpdatedAt|UserAgent|UserID)\s*(?:,\s*(?:(?:[Aa][Ss][Cc]|[Dd][Ee][Ss][Cc])\s*:\s*)?(?:ChangeSetID|CreatedAt|DataHash|Description|HiddenReason|OrganizationID|RevisionID|RevisionNum|Source|UnitID|UpdatedAt|UserAgent|UserID)\s*)*$
           type: string
       - description: |-
           The token from the ConfigHub-Continue header of the previous page, to return the Revision entities after it.
@@ -18805,6 +18899,7 @@ paths:
         name: include
         required: false
         schema:
+          pattern: ^\s*(Attestations|ChangeOrders|ChangeSetID|OrganizationID|Releases|SpaceID|Tags|UnitID|UserID)\s*(?:,\s*(?:Attestations|ChangeOrders|ChangeSetID|OrganizationID|Releases|SpaceID|Tags|UnitID|UserID)\s*)*$
           type: string
       - description: |-
           Select clause for specifying which fields to include in the response for Revision.
@@ -18860,6 +18955,7 @@ paths:
         name: order_by
         required: false
         schema:
+          pattern: ^\s*(?:(?:[Aa][Ss][Cc]|[Dd][Ee][Ss][Cc])\s*:\s*)?(ChangeSetID|CreatedAt|DataHash|Description|HiddenReason|OrganizationID|RevisionID|RevisionNum|Source|UnitID|UpdatedAt|UserAgent|UserID)\s*(?:,\s*(?:(?:[Aa][Ss][Cc]|[Dd][Ee][Ss][Cc])\s*:\s*)?(?:ChangeSetID|CreatedAt|DataHash|Description|HiddenReason|OrganizationID|RevisionID|RevisionNum|Source|UnitID|UpdatedAt|UserAgent|UserID)\s*)*$
           type: string
       - description: |-
           The token from the ConfigHub-Continue header of the previous page, to return the Revision entities after it.
@@ -19056,6 +19152,7 @@ paths:
         name: include
         required: false
         schema:
+          pattern: ^\s*(Attestations|ChangeOrders|ChangeSetID|OrganizationID|Releases|SpaceID|Tags|UnitID|UserID)\s*(?:,\s*(?:Attestations|ChangeOrders|ChangeSetID|OrganizationID|Releases|SpaceID|Tags|UnitID|UserID)\s*)*$
           type: string
       - description: |-
           Select clause for specifying which fields to include in the response for Revision.
@@ -19111,6 +19208,7 @@ paths:
         name: order_by
         required: false
         schema:
+          pattern: ^\s*(?:(?:[Aa][Ss][Cc]|[Dd][Ee][Ss][Cc])\s*:\s*)?(ChangeSetID|CreatedAt|DataHash|Description|HiddenReason|OrganizationID|RevisionID|RevisionNum|Source|UnitID|UpdatedAt|UserAgent|UserID)\s*(?:,\s*(?:(?:[Aa][Ss][Cc]|[Dd][Ee][Ss][Cc])\s*:\s*)?(?:ChangeSetID|CreatedAt|DataHash|Description|HiddenReason|OrganizationID|RevisionID|RevisionNum|Source|UnitID|UpdatedAt|UserAgent|UserID)\s*)*$
           type: string
       - description: |-
           The token from the ConfigHub-Continue header of the previous page, to return the Revision entities after it.
@@ -19303,6 +19401,7 @@ paths:
         name: include
         required: false
         schema:
+          pattern: ^\s*(OrganizationID)\s*(?:,\s*(?:OrganizationID)\s*)*$
           type: string
       - description: |-
           Select clause for specifying which fields to include in the response for ServiceAccount.
@@ -19358,6 +19457,7 @@ paths:
         name: order_by
         required: false
         schema:
+          pattern: ^\s*(?:(?:[Aa][Ss][Cc]|[Dd][Ee][Ss][Cc])\s*:\s*)?(CreatedAt|DisplayName|HiddenReason|OrgRole|OrganizationID|ServiceAccountID|Slug|UpdatedAt|UserID)\s*(?:,\s*(?:(?:[Aa][Ss][Cc]|[Dd][Ee][Ss][Cc])\s*:\s*)?(?:CreatedAt|DisplayName|HiddenReason|OrgRole|OrganizationID|ServiceAccountID|Slug|UpdatedAt|UserID)\s*)*$
           type: string
       - description: |-
           The token from the ConfigHub-Continue header of the previous page, to return the ServiceAccount entities after it.
@@ -19596,6 +19696,7 @@ paths:
         name: include
         required: false
         schema:
+          pattern: ^\s*(OrganizationID)\s*(?:,\s*(?:OrganizationID)\s*)*$
           type: string
       - description: |-
           Select clause for specifying which fields to include in the response for ServiceAccount.
@@ -20433,6 +20534,7 @@ paths:
         name: include
         required: false
         schema:
+          pattern: ^\s*(AttributeFilterID|AttributeIDs|ComponentID|OrganizationID|ReleaseTargetID|TriggerFilterID|TriggerIDs)\s*(?:,\s*(?:AttributeFilterID|AttributeIDs|ComponentID|OrganizationID|ReleaseTargetID|TriggerFilterID|TriggerIDs)\s*)*$
           type: string
       - description: |-
           Select clause for specifying which fields to include in the response for Space.
@@ -20488,6 +20590,7 @@ paths:
         name: order_by
         required: false
         schema:
+          pattern: ^\s*(?:(?:[Aa][Ss][Cc]|[Dd][Ee][Ss][Cc])\s*:\s*)?(AttributeFilterID|AttributeHash|BackingUnitID|ComponentID|CreatedAt|DisplayName|HiddenReason|OrganizationID|ReleaseTargetID|Slug|SpaceID|TriggerFilterID|TriggerHash|UpdatedAt|UpstreamSpaceID)\s*(?:,\s*(?:(?:[Aa][Ss][Cc]|[Dd][Ee][Ss][Cc])\s*:\s*)?(?:AttributeFilterID|AttributeHash|BackingUnitID|ComponentID|CreatedAt|DisplayName|HiddenReason|OrganizationID|ReleaseTargetID|Slug|SpaceID|TriggerFilterID|TriggerHash|UpdatedAt|UpstreamSpaceID)\s*)*$
           type: string
       - description: |-
           The token from the ConfigHub-Continue header of the previous page, to return the Space entities after it.
@@ -20769,6 +20872,7 @@ paths:
         name: include
         required: false
         schema:
+          pattern: ^\s*(AttributeFilterID|AttributeIDs|ComponentID|OrganizationID|ReleaseTargetID|TriggerFilterID|TriggerIDs)\s*(?:,\s*(?:AttributeFilterID|AttributeIDs|ComponentID|OrganizationID|ReleaseTargetID|TriggerFilterID|TriggerIDs)\s*)*$
           type: string
       - description: |-
           Select clause for specifying which fields to include in the response for Space.
@@ -21207,6 +21311,7 @@ paths:
         name: include
         required: false
         schema:
+          pattern: ^\s*(OrganizationID|SpaceID)\s*(?:,\s*(?:OrganizationID|SpaceID)\s*)*$
           type: string
       - description: |-
           Select clause for specifying which fields to include in the response for Attestation.
@@ -21262,6 +21367,7 @@ paths:
         name: order_by
         required: false
         schema:
+          pattern: ^\s*(?:(?:[Aa][Ss][Cc]|[Dd][Ee][Ss][Cc])\s*:\s*)?(AttestationID|ChangeOrderID|CreatedAt|ExpiresAt|Hash|HiddenReason|Note|OrganizationID|ReleaseID|Result|RevokedAttestationID|SpaceID|Type|UserID)\s*(?:,\s*(?:(?:[Aa][Ss][Cc]|[Dd][Ee][Ss][Cc])\s*:\s*)?(?:AttestationID|ChangeOrderID|CreatedAt|ExpiresAt|Hash|HiddenReason|Note|OrganizationID|ReleaseID|Result|RevokedAttestationID|SpaceID|Type|UserID)\s*)*$
           type: string
       - description: |-
           The token from the ConfigHub-Continue header of the previous page, to return the Attestation entities after it.
@@ -21434,6 +21540,7 @@ paths:
         name: include
         required: false
         schema:
+          pattern: ^\s*(OrganizationID|SpaceID)\s*(?:,\s*(?:OrganizationID|SpaceID)\s*)*$
           type: string
       - description: |-
           Select clause for specifying which fields to include in the response for Attestation.
@@ -21608,6 +21715,7 @@ paths:
         name: include
         required: false
         schema:
+          pattern: ^\s*(OrganizationID|SpaceID)\s*(?:,\s*(?:OrganizationID|SpaceID)\s*)*$
           type: string
       - description: |-
           Select clause for specifying which fields to include in the response for Attribute.
@@ -21663,6 +21771,7 @@ paths:
         name: order_by
         required: false
         schema:
+          pattern: ^\s*(?:(?:[Aa][Ss][Cc]|[Dd][Ee][Ss][Cc])\s*:\s*)?(AttributeID|BackingUnitID|CreatedAt|DataType|DisplayName|Hash|HiddenReason|OrganizationID|Slug|SpaceID|ToolchainType|UpdatedAt|UpstreamAttributeID)\s*(?:,\s*(?:(?:[Aa][Ss][Cc]|[Dd][Ee][Ss][Cc])\s*:\s*)?(?:AttributeID|BackingUnitID|CreatedAt|DataType|DisplayName|Hash|HiddenReason|OrganizationID|Slug|SpaceID|ToolchainType|UpdatedAt|UpstreamAttributeID)\s*)*$
           type: string
       - description: |-
           The token from the ConfigHub-Continue header of the previous page, to return the Attribute entities after it.
@@ -21930,6 +22039,7 @@ paths:
         name: include
         required: false
         schema:
+          pattern: ^\s*(OrganizationID|SpaceID)\s*(?:,\s*(?:OrganizationID|SpaceID)\s*)*$
           type: string
       - description: |-
           Select clause for specifying which fields to include in the response for Attribute.
@@ -22523,6 +22633,7 @@ paths:
         name: include
         required: false
         schema:
+          pattern: ^\s*(OrganizationID|SpaceID)\s*(?:,\s*(?:OrganizationID|SpaceID)\s*)*$
           type: string
       - description: |-
           Select clause for specifying which fields to include in the response for BridgeWorker.
@@ -22578,6 +22689,7 @@ paths:
         name: order_by
         required: false
         schema:
+          pattern: ^\s*(?:(?:[Aa][Ss][Cc]|[Dd][Ee][Ss][Cc])\s*:\s*)?(BridgeWorkerID|Condition|CreatedAt|DisplayName|HiddenReason|IPAddress|LastMessage|LastSeenAt|OrgRole|OrganizationID|Slug|SpaceID|UpdatedAt|UserID)\s*(?:,\s*(?:(?:[Aa][Ss][Cc]|[Dd][Ee][Ss][Cc])\s*:\s*)?(?:BridgeWorkerID|Condition|CreatedAt|DisplayName|HiddenReason|IPAddress|LastMessage|LastSeenAt|OrgRole|OrganizationID|Slug|SpaceID|UpdatedAt|UserID)\s*)*$
           type: string
       - description: |-
           The token from the ConfigHub-Continue header of the previous page, to return the BridgeWorker entities after it.
@@ -22850,6 +22962,7 @@ paths:
         name: include
         required: false
         schema:
+          pattern: ^\s*(OrganizationID|SpaceID)\s*(?:,\s*(?:OrganizationID|SpaceID)\s*)*$
           type: string
       - description: |-
           Select clause for specifying which fields to include in the response for BridgeWorker.
@@ -23447,6 +23560,7 @@ paths:
         name: include
         required: false
         schema:
+          pattern: ^\s*(EndTagID|InvocationID|OrganizationID|ReleaseTagID|RestoreTagID|SpaceFilterID|SpaceID|StartTagID|UnitFilterID)\s*(?:,\s*(?:EndTagID|InvocationID|OrganizationID|ReleaseTagID|RestoreTagID|SpaceFilterID|SpaceID|StartTagID|UnitFilterID)\s*)*$
           type: string
       - description: |-
           Select clause for specifying which fields to include in the response for ChangeOrder.
@@ -23502,6 +23616,7 @@ paths:
         name: order_by
         required: false
         schema:
+          pattern: ^\s*(?:(?:[Aa][Ss][Cc]|[Dd][Ee][Ss][Cc])\s*:\s*)?(AbortedReason|AdoptedEndTagID|ChangeOrderID|ChangeWorkflowID|CreatedAt|Description|DisplayName|EndTagID|HiddenReason|InvocationID|OrganizationID|PriorRevisions|ReleasePriorRevisions|ReleaseTagID|RestoreTagID|Slug|SpaceFilterID|SpaceID|Stage|StartTagID|UnitFilterID|UpdateType|UpdatedAt|UserID|WhereSpace|WhereUnit)\s*(?:,\s*(?:(?:[Aa][Ss][Cc]|[Dd][Ee][Ss][Cc])\s*:\s*)?(?:AbortedReason|AdoptedEndTagID|ChangeOrderID|ChangeWorkflowID|CreatedAt|Description|DisplayName|EndTagID|HiddenReason|InvocationID|OrganizationID|PriorRevisions|ReleasePriorRevisions|ReleaseTagID|RestoreTagID|Slug|SpaceFilterID|SpaceID|Stage|StartTagID|UnitFilterID|UpdateType|UpdatedAt|UserID|WhereSpace|WhereUnit)\s*)*$
           type: string
       - description: |-
           The token from the ConfigHub-Continue header of the previous page, to return the ChangeOrder entities after it.
@@ -23766,6 +23881,7 @@ paths:
         name: include
         required: false
         schema:
+          pattern: ^\s*(EndTagID|InvocationID|OrganizationID|ReleaseTagID|RestoreTagID|SpaceFilterID|SpaceID|StartTagID|UnitFilterID)\s*(?:,\s*(?:EndTagID|InvocationID|OrganizationID|ReleaseTagID|RestoreTagID|SpaceFilterID|SpaceID|StartTagID|UnitFilterID)\s*)*$
           type: string
       - description: |-
           Select clause for specifying which fields to include in the response for ChangeOrder.
@@ -24265,6 +24381,7 @@ paths:
         name: include
         required: false
         schema:
+          pattern: ^\s*(EndTagID|OrganizationID|SpaceID|StartTagID)\s*(?:,\s*(?:EndTagID|OrganizationID|SpaceID|StartTagID)\s*)*$
           type: string
       - description: |-
           Select clause for specifying which fields to include in the response for ChangeSet.
@@ -24320,6 +24437,7 @@ paths:
         name: order_by
         required: false
         schema:
+          pattern: ^\s*(?:(?:[Aa][Ss][Cc]|[Dd][Ee][Ss][Cc])\s*:\s*)?(ChangeSetID|CreatedAt|Description|DisplayName|EndTagID|HiddenReason|OrganizationID|Slug|SpaceID|StartTagID|StartTagIsPriorRevision|State|UpdatedAt)\s*(?:,\s*(?:(?:[Aa][Ss][Cc]|[Dd][Ee][Ss][Cc])\s*:\s*)?(?:ChangeSetID|CreatedAt|Description|DisplayName|EndTagID|HiddenReason|OrganizationID|Slug|SpaceID|StartTagID|StartTagIsPriorRevision|State|UpdatedAt)\s*)*$
           type: string
       - description: |-
           The token from the ConfigHub-Continue header of the previous page, to return the ChangeSet entities after it.
@@ -24584,6 +24702,7 @@ paths:
         name: include
         required: false
         schema:
+          pattern: ^\s*(EndTagID|OrganizationID|SpaceID|StartTagID)\s*(?:,\s*(?:EndTagID|OrganizationID|SpaceID|StartTagID)\s*)*$
           type: string
       - description: |-
           Select clause for specifying which fields to include in the response for ChangeSet.
@@ -24988,6 +25107,7 @@ paths:
         name: include
         required: false
         schema:
+          pattern: ^\s*(OrganizationID|SpaceID)\s*(?:,\s*(?:OrganizationID|SpaceID)\s*)*$
           type: string
       - description: |-
           Select clause for specifying which fields to include in the response for ChangeWorkflow.
@@ -25043,6 +25163,7 @@ paths:
         name: order_by
         required: false
         schema:
+          pattern: ^\s*(?:(?:[Aa][Ss][Cc]|[Dd][Ee][Ss][Cc])\s*:\s*)?(BackingUnitID|ChangeWorkflowID|CreatedAt|DisplayName|Hash|HiddenReason|OrganizationID|Slug|SpaceID|UpdatedAt|UpstreamChangeWorkflowID)\s*(?:,\s*(?:(?:[Aa][Ss][Cc]|[Dd][Ee][Ss][Cc])\s*:\s*)?(?:BackingUnitID|ChangeWorkflowID|CreatedAt|DisplayName|Hash|HiddenReason|OrganizationID|Slug|SpaceID|UpdatedAt|UpstreamChangeWorkflowID)\s*)*$
           type: string
       - description: |-
           The token from the ConfigHub-Continue header of the previous page, to return the ChangeWorkflow entities after it.
@@ -25308,6 +25429,7 @@ paths:
         name: include
         required: false
         schema:
+          pattern: ^\s*(OrganizationID|SpaceID)\s*(?:,\s*(?:OrganizationID|SpaceID)\s*)*$
           type: string
       - description: |-
           Select clause for specifying which fields to include in the response for ChangeWorkflow.
@@ -25900,6 +26022,7 @@ paths:
         name: include
         required: false
         schema:
+          pattern: ^\s*(OrganizationID|SpaceID)\s*(?:,\s*(?:OrganizationID|SpaceID)\s*)*$
           type: string
       - description: |-
           Select clause for specifying which fields to include in the response for Channel.
@@ -25955,6 +26078,7 @@ paths:
         name: order_by
         required: false
         schema:
+          pattern: ^\s*(?:(?:[Aa][Ss][Cc]|[Dd][Ee][Ss][Cc])\s*:\s*)?(ChannelID|Condition|CreatedAt|DisplayName|EventPosition|HiddenReason|IPAddress|LastMessage|LastSeenAt|OrganizationID|Slug|SpaceID|UpdatedAt)\s*(?:,\s*(?:(?:[Aa][Ss][Cc]|[Dd][Ee][Ss][Cc])\s*:\s*)?(?:ChannelID|Condition|CreatedAt|DisplayName|EventPosition|HiddenReason|IPAddress|LastMessage|LastSeenAt|OrganizationID|Slug|SpaceID|UpdatedAt)\s*)*$
           type: string
       - description: |-
           The token from the ConfigHub-Continue header of the previous page, to return the Channel entities after it.
@@ -26215,6 +26339,7 @@ paths:
         name: include
         required: false
         schema:
+          pattern: ^\s*(OrganizationID|SpaceID)\s*(?:,\s*(?:OrganizationID|SpaceID)\s*)*$
           type: string
       - description: |-
           Select clause for specifying which fields to include in the response for Channel.
@@ -27085,6 +27210,7 @@ paths:
         name: order_by
         required: false
         schema:
+          pattern: ^\s*(?:(?:[Aa][Ss][Cc]|[Dd][Ee][Ss][Cc])\s*:\s*)?(ChannelID|Command|CommandRunID|CompletedAt|CreatedAt|CreatedBy|Deadline|DeliveredAt|OrganizationID|SpaceID|Status|TargetID|TimeoutAt|UnitID)\s*(?:,\s*(?:(?:[Aa][Ss][Cc]|[Dd][Ee][Ss][Cc])\s*:\s*)?(?:ChannelID|Command|CommandRunID|CompletedAt|CreatedAt|CreatedBy|Deadline|DeliveredAt|OrganizationID|SpaceID|Status|TargetID|TimeoutAt|UnitID)\s*)*$
           type: string
       - description: |-
           The token from the ConfigHub-Continue header of the previous page, to return the CommandRun entities after it.
@@ -27657,6 +27783,7 @@ paths:
         name: include
         required: false
         schema:
+          pattern: ^\s*(FromSpaceID|OrganizationID|SpaceID)\s*(?:,\s*(?:FromSpaceID|OrganizationID|SpaceID)\s*)*$
           type: string
       - description: |-
           Select clause for specifying which fields to include in the response for Filter.
@@ -27712,6 +27839,7 @@ paths:
         name: order_by
         required: false
         schema:
+          pattern: ^\s*(?:(?:[Aa][Ss][Cc]|[Dd][Ee][Ss][Cc])\s*:\s*)?(BackingUnitID|CreatedAt|DisplayName|FilterID|From|FromSpaceID|Hash|HiddenReason|IncludeHidden|OrganizationID|ResourceType|Slug|SpaceID|UpdatedAt|UpstreamFilterID|Where|WhereData)\s*(?:,\s*(?:(?:[Aa][Ss][Cc]|[Dd][Ee][Ss][Cc])\s*:\s*)?(?:BackingUnitID|CreatedAt|DisplayName|FilterID|From|FromSpaceID|Hash|HiddenReason|IncludeHidden|OrganizationID|ResourceType|Slug|SpaceID|UpdatedAt|UpstreamFilterID|Where|WhereData)\s*)*$
           type: string
       - description: |-
           The token from the ConfigHub-Continue header of the previous page, to return the Filter entities after it.
@@ -27989,6 +28117,7 @@ paths:
         name: include
         required: false
         schema:
+          pattern: ^\s*(FromSpaceID|OrganizationID|SpaceID)\s*(?:,\s*(?:FromSpaceID|OrganizationID|SpaceID)\s*)*$
           type: string
       - description: |-
           Select clause for specifying which fields to include in the response for Filter.
@@ -28762,16 +28891,15 @@ paths:
         required: false
         schema:
           type: string
-      - description: 'Comma-separated parts of the result to return in addition to
-          the default: ConfigData for the configuration the invocation produced, carried
-          whether or not the invocation changed it. Without it, the configuration
-          is present only when the invocation changed it, and an unchanged result
-          is reported by DataHash alone. Diff for what the invocation changed in each
-          Unit, path by path with the values on both sides.'
+      - description: |-
+          Comma-separated parts of the result to return in addition to the default: ConfigData for the configuration the invocation produced, carried whether or not the invocation changed it. Without it, the configuration is present only when the invocation changed it, and an unchanged result is reported by DataHash alone. Diff for what the invocation changed in each Unit, path by path with the values on both sides.
+
+          Supported values: ConfigData, Diff.
         in: query
         name: include
         required: false
         schema:
+          pattern: ^\s*(ConfigData|Diff)\s*(?:,\s*(?:ConfigData|Diff)\s*)*$
           type: string
       - description: 'Resource type: Resource type to match for the desired ToolchainType,
           for example apps/v1/Deployment'
@@ -29055,6 +29183,7 @@ paths:
         name: include
         required: false
         schema:
+          pattern: ^\s*(BridgeWorkerID|OrganizationID|SpaceID)\s*(?:,\s*(?:BridgeWorkerID|OrganizationID|SpaceID)\s*)*$
           type: string
       - description: |-
           Select clause for specifying which fields to include in the response for Invocation.
@@ -29110,6 +29239,7 @@ paths:
         name: order_by
         required: false
         schema:
+          pattern: ^\s*(?:(?:[Aa][Ss][Cc]|[Dd][Ee][Ss][Cc])\s*:\s*)?(BackingUnitID|BridgeWorkerID|CreatedAt|DisplayName|Hash|HiddenReason|InvocationID|OrganizationID|Slug|SpaceID|ToolchainType|UpdatedAt|UpstreamInvocationID)\s*(?:,\s*(?:(?:[Aa][Ss][Cc]|[Dd][Ee][Ss][Cc])\s*:\s*)?(?:BackingUnitID|BridgeWorkerID|CreatedAt|DisplayName|Hash|HiddenReason|InvocationID|OrganizationID|Slug|SpaceID|ToolchainType|UpdatedAt|UpstreamInvocationID)\s*)*$
           type: string
       - description: |-
           The token from the ConfigHub-Continue header of the previous page, to return the Invocation entities after it.
@@ -29374,6 +29504,7 @@ paths:
         name: include
         required: false
         schema:
+          pattern: ^\s*(BridgeWorkerID|OrganizationID|SpaceID)\s*(?:,\s*(?:BridgeWorkerID|OrganizationID|SpaceID)\s*)*$
           type: string
       - description: |-
           Select clause for specifying which fields to include in the response for Invocation.
@@ -29955,6 +30086,7 @@ paths:
         name: include
         required: false
         schema:
+          pattern: ^\s*(FromUnitID|OrganizationID|SpaceID|ToSpaceID|ToUnitID|TransformInvocationID)\s*(?:,\s*(?:FromUnitID|OrganizationID|SpaceID|ToSpaceID|ToUnitID|TransformInvocationID)\s*)*$
           type: string
       - description: |-
           Select clause for specifying which fields to include in the response for Link.
@@ -30010,6 +30142,7 @@ paths:
         name: order_by
         required: false
         schema:
+          pattern: ^\s*(?:(?:[Aa][Ss][Cc]|[Dd][Ee][Ss][Cc])\s*:\s*)?(AutoUpdate|BackingUnitID|CreatedAt|DisplayName|DownstreamLastMergedRevisionNum|FromUnitID|Hash|HiddenReason|LinkID|MergeEnableSubtraction|OrganizationID|Protect|Slug|SpaceID|Squash|Stale|ToSpaceID|ToUnitID|TransformInvocationID|UpdateType|UpdatedAt|UpstreamLastMergedRevisionNum|UpstreamLinkID)\s*(?:,\s*(?:(?:[Aa][Ss][Cc]|[Dd][Ee][Ss][Cc])\s*:\s*)?(?:AutoUpdate|BackingUnitID|CreatedAt|DisplayName|DownstreamLastMergedRevisionNum|FromUnitID|Hash|HiddenReason|LinkID|MergeEnableSubtraction|OrganizationID|Protect|Slug|SpaceID|Squash|Stale|ToSpaceID|ToUnitID|TransformInvocationID|UpdateType|UpdatedAt|UpstreamLastMergedRevisionNum|UpstreamLinkID)\s*)*$
           type: string
       - description: |-
           The token from the ConfigHub-Continue header of the previous page, to return the Link entities after it.
@@ -30277,6 +30410,7 @@ paths:
         name: include
         required: false
         schema:
+          pattern: ^\s*(FromUnitID|OrganizationID|SpaceID|ToSpaceID|ToUnitID|TransformInvocationID)\s*(?:,\s*(?:FromUnitID|OrganizationID|SpaceID|ToSpaceID|ToUnitID|TransformInvocationID)\s*)*$
           type: string
       - description: |-
           Select clause for specifying which fields to include in the response for Link.
@@ -30961,6 +31095,7 @@ paths:
         name: include
         required: false
         schema:
+          pattern: ^\s*(OrganizationID|SpaceID|TagID)\s*(?:,\s*(?:OrganizationID|SpaceID|TagID)\s*)*$
           type: string
       - description: |-
           Select clause for specifying which fields to include in the response for Release.
@@ -31016,6 +31151,7 @@ paths:
         name: order_by
         required: false
         schema:
+          pattern: ^\s*(?:(?:[Aa][Ss][Cc]|[Dd][Ee][Ss][Cc])\s*:\s*)?(ChangeOrderID|CreatedAt|Digest|HiddenReason|ManifestDigest|OrganizationID|Published|ReleaseID|ReleaseNum|SpaceID|TagID|TargetID|UnitCount|UpdatedAt|UserID)\s*(?:,\s*(?:(?:[Aa][Ss][Cc]|[Dd][Ee][Ss][Cc])\s*:\s*)?(?:ChangeOrderID|CreatedAt|Digest|HiddenReason|ManifestDigest|OrganizationID|Published|ReleaseID|ReleaseNum|SpaceID|TagID|TargetID|UnitCount|UpdatedAt|UserID)\s*)*$
           type: string
       - description: |-
           The token from the ConfigHub-Continue header of the previous page, to return the Release entities after it.
@@ -31276,6 +31412,7 @@ paths:
         name: include
         required: false
         schema:
+          pattern: ^\s*(OrganizationID|SpaceID|TagID)\s*(?:,\s*(?:OrganizationID|SpaceID|TagID)\s*)*$
           type: string
       - description: |-
           Select clause for specifying which fields to include in the response for Release.
@@ -31841,6 +31978,7 @@ paths:
         name: include
         required: false
         schema:
+          pattern: ^\s*(ChangeSetID|OrganizationID|SpaceID)\s*(?:,\s*(?:ChangeSetID|OrganizationID|SpaceID)\s*)*$
           type: string
       - description: |-
           Select clause for specifying which fields to include in the response for Tag.
@@ -31896,6 +32034,7 @@ paths:
         name: order_by
         required: false
         schema:
+          pattern: ^\s*(?:(?:[Aa][Ss][Cc]|[Dd][Ee][Ss][Cc])\s*:\s*)?(ChangeOrderID|ChangeSetID|CreatedAt|DisplayName|HiddenReason|OrganizationID|ReleaseID|Slug|SpaceID|TagID|UpdatedAt)\s*(?:,\s*(?:(?:[Aa][Ss][Cc]|[Dd][Ee][Ss][Cc])\s*:\s*)?(?:ChangeOrderID|ChangeSetID|CreatedAt|DisplayName|HiddenReason|OrganizationID|ReleaseID|Slug|SpaceID|TagID|UpdatedAt)\s*)*$
           type: string
       - description: |-
           The token from the ConfigHub-Continue header of the previous page, to return the Tag entities after it.
@@ -32161,6 +32300,7 @@ paths:
         name: include
         required: false
         schema:
+          pattern: ^\s*(ChangeSetID|OrganizationID|SpaceID)\s*(?:,\s*(?:ChangeSetID|OrganizationID|SpaceID)\s*)*$
           type: string
       - description: |-
           Select clause for specifying which fields to include in the response for Tag.
@@ -32563,6 +32703,7 @@ paths:
         name: include
         required: false
         schema:
+          pattern: ^\s*(OrganizationID|SpaceID|TriggerFilterID|TriggerIDs)\s*(?:,\s*(?:OrganizationID|SpaceID|TriggerFilterID|TriggerIDs)\s*)*$
           type: string
       - description: |-
           Select clause for specifying which fields to include in the response for Target.
@@ -32618,6 +32759,7 @@ paths:
         name: order_by
         required: false
         schema:
+          pattern: ^\s*(?:(?:[Aa][Ss][Cc]|[Dd][Ee][Ss][Cc])\s*:\s*)?(BackingUnitID|CreatedAt|DisplayName|HiddenReason|OrganizationID|Slug|SpaceID|TargetID|TriggerFilterID|TriggerHash|UpdatedAt|UpstreamTargetID)\s*(?:,\s*(?:(?:[Aa][Ss][Cc]|[Dd][Ee][Ss][Cc])\s*:\s*)?(?:BackingUnitID|CreatedAt|DisplayName|HiddenReason|OrganizationID|Slug|SpaceID|TargetID|TriggerFilterID|TriggerHash|UpdatedAt|UpstreamTargetID)\s*)*$
           type: string
       - description: |-
           The token from the ConfigHub-Continue header of the previous page, to return the Target entities after it.
@@ -32894,6 +33036,7 @@ paths:
         name: include
         required: false
         schema:
+          pattern: ^\s*(OrganizationID|SpaceID|TriggerFilterID|TriggerIDs)\s*(?:,\s*(?:OrganizationID|SpaceID|TriggerFilterID|TriggerIDs)\s*)*$
           type: string
       - description: |-
           Select clause for specifying which fields to include in the response for Target.
@@ -33493,6 +33636,7 @@ paths:
         name: include
         required: false
         schema:
+          pattern: ^\s*(BridgeWorkerID|InvocationID|OrganizationID|SpaceID|UnitFilterID)\s*(?:,\s*(?:BridgeWorkerID|InvocationID|OrganizationID|SpaceID|UnitFilterID)\s*)*$
           type: string
       - description: |-
           Select clause for specifying which fields to include in the response for Trigger.
@@ -33548,6 +33692,7 @@ paths:
         name: order_by
         required: false
         schema:
+          pattern: ^\s*(?:(?:[Aa][Ss][Cc]|[Dd][Ee][Ss][Cc])\s*:\s*)?(BackingUnitID|BridgeWorkerID|CreatedAt|Description|Disabled|DisplayName|Event|FunctionName|Hash|HiddenReason|InvocationID|OrganizationID|OtherDataSource|Protect|Slug|SpaceID|ToolchainType|TriggerID|UnitFilterID|UpdatedAt|UpstreamTriggerID|Validating|Warn|WhereResource|WhereUnit)\s*(?:,\s*(?:(?:[Aa][Ss][Cc]|[Dd][Ee][Ss][Cc])\s*:\s*)?(?:BackingUnitID|BridgeWorkerID|CreatedAt|Description|Disabled|DisplayName|Event|FunctionName|Hash|HiddenReason|InvocationID|OrganizationID|OtherDataSource|Protect|Slug|SpaceID|ToolchainType|TriggerID|UnitFilterID|UpdatedAt|UpstreamTriggerID|Validating|Warn|WhereResource|WhereUnit)\s*)*$
           type: string
       - description: |-
           The token from the ConfigHub-Continue header of the previous page, to return the Trigger entities after it.
@@ -33820,6 +33965,7 @@ paths:
         name: include
         required: false
         schema:
+          pattern: ^\s*(BridgeWorkerID|InvocationID|OrganizationID|SpaceID|UnitFilterID)\s*(?:,\s*(?:BridgeWorkerID|InvocationID|OrganizationID|SpaceID|UnitFilterID)\s*)*$
           type: string
       - description: |-
           Select clause for specifying which fields to include in the response for Trigger.
@@ -34492,6 +34638,7 @@ paths:
         name: include
         required: false
         schema:
+          pattern: ^\s*(ChangeSetID|FromLinkID|HeadMutationNum|HeadRevisionNum|LastReleasedRevisionNum|OrganizationID|SpaceID|TargetID|UnitEventID|UpstreamSpaceID|UpstreamUnitID)\s*(?:,\s*(?:ChangeSetID|FromLinkID|HeadMutationNum|HeadRevisionNum|LastReleasedRevisionNum|OrganizationID|SpaceID|TargetID|UnitEventID|UpstreamSpaceID|UpstreamUnitID)\s*)*$
           type: string
       - description: |-
           Select clause for specifying which fields to include in the response for Unit.
@@ -34547,6 +34694,7 @@ paths:
         name: order_by
         required: false
         schema:
+          pattern: ^\s*(?:(?:[Aa][Ss][Cc]|[Dd][Ee][Ss][Cc])\s*:\s*)?(ChangeSetID|CreatedAt|DataHash|DisplayName|HeadRevisionID|HeadRevisionNum|HeadUnitActionNum|HeadUnitEventNum|HiddenReason|LastChangeDescription|LastReleasedRevisionNum|OrganizationID|ProviderType|Slug|SpaceID|TargetID|ToolchainType|UnitID|UpdatedAt|UpstreamRevisionNum|UpstreamUnitID)\s*(?:,\s*(?:(?:[Aa][Ss][Cc]|[Dd][Ee][Ss][Cc])\s*:\s*)?(?:ChangeSetID|CreatedAt|DataHash|DisplayName|HeadRevisionID|HeadRevisionNum|HeadUnitActionNum|HeadUnitEventNum|HiddenReason|LastChangeDescription|LastReleasedRevisionNum|OrganizationID|ProviderType|Slug|SpaceID|TargetID|ToolchainType|UnitID|UpdatedAt|UpstreamRevisionNum|UpstreamUnitID)\s*)*$
           type: string
       - description: |-
           The token from the ConfigHub-Continue header of the previous page, to return the Unit entities after it.
@@ -34768,17 +34916,15 @@ paths:
         required: false
         schema:
           type: string
-      - description: 'Comma-separated parts of the result to return in addition to
-          the Unit: ConfigData for the configuration the operation produced, MutationSources
-          for what set each value in it, and Diff for what the operation changed,
-          path by path with the values on both sides. None is a field of a Unit, and
-          each costs something to return, so they are returned only when named. A
-          dry run stores nothing, so this is the only way to see what it would have
-          produced.'
+      - description: |-
+          Comma-separated parts of the result to return in addition to the Unit: ConfigData for the configuration the operation produced, MutationSources for what set each value in it, and Diff for what the operation changed, path by path with the values on both sides. None is a field of a Unit, and each costs something to return, so they are returned only when named. A dry run stores nothing, so this is the only way to see what it would have produced.
+
+          Supported values: ConfigData, MutationSources, Diff.
         in: query
         name: include
         required: false
         schema:
+          pattern: ^\s*(ConfigData|MutationSources|Diff)\s*(?:,\s*(?:ConfigData|MutationSources|Diff)\s*)*$
           type: string
       - description: 'If true, report what the write would do without doing it: the
           write runs, including every check it makes, and is then rolled back. The
@@ -34970,6 +35116,7 @@ paths:
         name: include
         required: false
         schema:
+          pattern: ^\s*(ChangeSetID|FromLinkID|HeadMutationNum|HeadRevisionNum|LastReleasedRevisionNum|OrganizationID|SpaceID|TargetID|UnitEventID|UpstreamSpaceID|UpstreamUnitID)\s*(?:,\s*(?:ChangeSetID|FromLinkID|HeadMutationNum|HeadRevisionNum|LastReleasedRevisionNum|OrganizationID|SpaceID|TargetID|UnitEventID|UpstreamSpaceID|UpstreamUnitID)\s*)*$
           type: string
       - description: |-
           Select clause for specifying which fields to include in the response for Unit.
@@ -35362,17 +35509,15 @@ paths:
         required: false
         schema:
           type: string
-      - description: 'Comma-separated parts of the result to return in addition to
-          the Unit: ConfigData for the configuration the operation produced, MutationSources
-          for what set each value in it, and Diff for what the operation changed,
-          path by path with the values on both sides. None is a field of a Unit, and
-          each costs something to return, so they are returned only when named. A
-          dry run stores nothing, so this is the only way to see what it would have
-          produced.'
+      - description: |-
+          Comma-separated parts of the result to return in addition to the Unit: ConfigData for the configuration the operation produced, MutationSources for what set each value in it, and Diff for what the operation changed, path by path with the values on both sides. None is a field of a Unit, and each costs something to return, so they are returned only when named. A dry run stores nothing, so this is the only way to see what it would have produced.
+
+          Supported values: ConfigData, MutationSources, Diff.
         in: query
         name: include
         required: false
         schema:
+          pattern: ^\s*(ConfigData|MutationSources|Diff)\s*(?:,\s*(?:ConfigData|MutationSources|Diff)\s*)*$
           type: string
       requestBody:
         content:
@@ -35858,17 +36003,15 @@ paths:
         required: false
         schema:
           type: string
-      - description: 'Comma-separated parts of the result to return in addition to
-          the Unit: ConfigData for the configuration the operation produced, MutationSources
-          for what set each value in it, and Diff for what the operation changed,
-          path by path with the values on both sides. None is a field of a Unit, and
-          each costs something to return, so they are returned only when named. A
-          dry run stores nothing, so this is the only way to see what it would have
-          produced.'
+      - description: |-
+          Comma-separated parts of the result to return in addition to the Unit: ConfigData for the configuration the operation produced, MutationSources for what set each value in it, and Diff for what the operation changed, path by path with the values on both sides. None is a field of a Unit, and each costs something to return, so they are returned only when named. A dry run stores nothing, so this is the only way to see what it would have produced.
+
+          Supported values: ConfigData, MutationSources, Diff.
         in: query
         name: include
         required: false
         schema:
+          pattern: ^\s*(ConfigData|MutationSources|Diff)\s*(?:,\s*(?:ConfigData|MutationSources|Diff)\s*)*$
           type: string
       requestBody:
         content:
@@ -36109,17 +36252,15 @@ paths:
         required: false
         schema:
           type: string
-      - description: 'Comma-separated parts of the result to return in addition to
-          the Unit: ConfigData for the configuration the operation produced, MutationSources
-          for what set each value in it, and Diff for what the operation changed,
-          path by path with the values on both sides. None is a field of a Unit, and
-          each costs something to return, so they are returned only when named. A
-          dry run stores nothing, so this is the only way to see what it would have
-          produced.'
+      - description: |-
+          Comma-separated parts of the result to return in addition to the Unit: ConfigData for the configuration the operation produced, MutationSources for what set each value in it, and Diff for what the operation changed, path by path with the values on both sides. None is a field of a Unit, and each costs something to return, so they are returned only when named. A dry run stores nothing, so this is the only way to see what it would have produced.
+
+          Supported values: ConfigData, MutationSources, Diff.
         in: query
         name: include
         required: false
         schema:
+          pattern: ^\s*(ConfigData|MutationSources|Diff)\s*(?:,\s*(?:ConfigData|MutationSources|Diff)\s*)*$
           type: string
       - description: The DataHash of the configuration this write replaces, as the
           ETag a read of the Unit's data served it (quoted) or bare. The write is
@@ -36326,13 +36467,15 @@ paths:
         required: false
         schema:
           type: string
-      - description: 'Comma-separated: Attribution to attach to each changed path
-          the To side''s MutationSources entry, which says what set the new value,
-          and Unchanged to also list resources with no changes.'
+      - description: |-
+          Comma-separated: Attribution to attach to each changed path the To side's MutationSources entry, which says what set the new value, Unchanged to also list resources with no changes, and Context to also list, within each changed resource, the unchanged paths around the changes: every unchanged child of each map or array that holds a change, up to the resource, as ChangeType None.
+
+          Supported values: Attribution, Unchanged, Context.
         in: query
         name: include
         required: false
         schema:
+          pattern: ^\s*(Attribution|Unchanged|Context)\s*(?:,\s*(?:Attribution|Unchanged|Context)\s*)*$
           type: string
       - description: Limit the diff to the resources this where expression selects
           on either side.
@@ -36583,6 +36726,7 @@ paths:
         name: include
         required: false
         schema:
+          pattern: ^\s*(InvocationID|LinkID|MergeSourceID|OrganizationID|RevisionID|SpaceID|TriggerID|UnitID)\s*(?:,\s*(?:InvocationID|LinkID|MergeSourceID|OrganizationID|RevisionID|SpaceID|TriggerID|UnitID)\s*)*$
           type: string
       - description: |-
           Select clause for specifying which fields to include in the response for Mutation.
@@ -36638,6 +36782,7 @@ paths:
         name: order_by
         required: false
         schema:
+          pattern: ^\s*(?:(?:[Aa][Ss][Cc]|[Dd][Ee][Ss][Cc])\s*:\s*)?(BridgeWorkerID|CreatedAt|FunctionName|HiddenReason|InvocationID|LinkID|MergeBaseRevisionNum|MergeEndRevisionNum|MergeSourceID|MutationID|MutationNum|OrganizationID|ReplayOutcome|ReplayReason|RestoredRevisionNum|RevisionID|RevisionNum|Subgroup|TriggerID|UnitID|UpdatedAt)\s*(?:,\s*(?:(?:[Aa][Ss][Cc]|[Dd][Ee][Ss][Cc])\s*:\s*)?(?:BridgeWorkerID|CreatedAt|FunctionName|HiddenReason|InvocationID|LinkID|MergeBaseRevisionNum|MergeEndRevisionNum|MergeSourceID|MutationID|MutationNum|OrganizationID|ReplayOutcome|ReplayReason|RestoredRevisionNum|RevisionID|RevisionNum|Subgroup|TriggerID|UnitID|UpdatedAt)\s*)*$
           type: string
       - description: |-
           The token from the ConfigHub-Continue header of the previous page, to return the Mutation entities after it.
@@ -36738,6 +36883,7 @@ paths:
         name: include
         required: false
         schema:
+          pattern: ^\s*(InvocationID|LinkID|MergeSourceID|OrganizationID|RevisionID|SpaceID|TriggerID|UnitID)\s*(?:,\s*(?:InvocationID|LinkID|MergeSourceID|OrganizationID|RevisionID|SpaceID|TriggerID|UnitID)\s*)*$
           type: string
       - description: |-
           Select clause for specifying which fields to include in the response for Mutation.
@@ -37066,6 +37212,7 @@ paths:
         name: include
         required: false
         schema:
+          pattern: ^\s*(OrganizationID|SpaceID|TargetID|UnitID)\s*(?:,\s*(?:OrganizationID|SpaceID|TargetID|UnitID)\s*)*$
           type: string
       - description: |-
           Select clause for specifying which fields to include in the response for Resource.
@@ -37121,6 +37268,7 @@ paths:
         name: order_by
         required: false
         schema:
+          pattern: ^\s*(?:(?:[Aa][Ss][Cc]|[Dd][Ee][Ss][Cc])\s*:\s*)?(CreatedAt|HiddenReason|OrganizationID|ResourceID|ResourceIndex|ResourceName|ResourceType|SpaceID|TargetID|ToolchainType|UnitID|UpdatedAt)\s*(?:,\s*(?:(?:[Aa][Ss][Cc]|[Dd][Ee][Ss][Cc])\s*:\s*)?(?:CreatedAt|HiddenReason|OrganizationID|ResourceID|ResourceIndex|ResourceName|ResourceType|SpaceID|TargetID|ToolchainType|UnitID|UpdatedAt)\s*)*$
           type: string
       - description: |-
           The token from the ConfigHub-Continue header of the previous page, to return the Resource entities after it.
@@ -37246,6 +37394,7 @@ paths:
         name: include
         required: false
         schema:
+          pattern: ^\s*(OrganizationID|SpaceID|TargetID|UnitID)\s*(?:,\s*(?:OrganizationID|SpaceID|TargetID|UnitID)\s*)*$
           type: string
       - description: |-
           Select clause for specifying which fields to include in the response for Resource.
@@ -37442,6 +37591,7 @@ paths:
         name: include
         required: false
         schema:
+          pattern: ^\s*(OrganizationID|RevisionID|SpaceID|UnitID)\s*(?:,\s*(?:OrganizationID|RevisionID|SpaceID|UnitID)\s*)*$
           type: string
       - description: |-
           Select clause for specifying which fields to include in the response for ReviewComment.
@@ -37497,6 +37647,7 @@ paths:
         name: order_by
         required: false
         schema:
+          pattern: ^\s*(?:(?:[Aa][Ss][Cc]|[Dd][Ee][Ss][Cc])\s*:\s*)?(CreatedAt|HiddenReason|OrganizationID|Path|ReplyToID|ReviewCommentID|RevisionID|RevisionNum|Text|UnitID|UpdatedAt|UserAgent|UserID)\s*(?:,\s*(?:(?:[Aa][Ss][Cc]|[Dd][Ee][Ss][Cc])\s*:\s*)?(?:CreatedAt|HiddenReason|OrganizationID|Path|ReplyToID|ReviewCommentID|RevisionID|RevisionNum|Text|UnitID|UpdatedAt|UserAgent|UserID)\s*)*$
           type: string
       - description: |-
           The token from the ConfigHub-Continue header of the previous page, to return the ReviewComment entities after it.
@@ -37767,6 +37918,7 @@ paths:
         name: include
         required: false
         schema:
+          pattern: ^\s*(OrganizationID|RevisionID|SpaceID|UnitID)\s*(?:,\s*(?:OrganizationID|RevisionID|SpaceID|UnitID)\s*)*$
           type: string
       - description: |-
           Select clause for specifying which fields to include in the response for ReviewComment.
@@ -38178,6 +38330,7 @@ paths:
         name: include
         required: false
         schema:
+          pattern: ^\s*(Attestations|ChangeOrders|ChangeSetID|OrganizationID|Releases|SpaceID|Tags|UnitID|UserID)\s*(?:,\s*(?:Attestations|ChangeOrders|ChangeSetID|OrganizationID|Releases|SpaceID|Tags|UnitID|UserID)\s*)*$
           type: string
       - description: |-
           Select clause for specifying which fields to include in the response for Revision.
@@ -38233,6 +38386,7 @@ paths:
         name: order_by
         required: false
         schema:
+          pattern: ^\s*(?:(?:[Aa][Ss][Cc]|[Dd][Ee][Ss][Cc])\s*:\s*)?(ChangeSetID|CreatedAt|DataHash|Description|HiddenReason|OrganizationID|RevisionID|RevisionNum|Source|UnitID|UpdatedAt|UserAgent|UserID)\s*(?:,\s*(?:(?:[Aa][Ss][Cc]|[Dd][Ee][Ss][Cc])\s*:\s*)?(?:ChangeSetID|CreatedAt|DataHash|Description|HiddenReason|OrganizationID|RevisionID|RevisionNum|Source|UnitID|UpdatedAt|UserAgent|UserID)\s*)*$
           type: string
       - description: |-
           The token from the ConfigHub-Continue header of the previous page, to return the Revision entities after it.
@@ -38342,6 +38496,7 @@ paths:
         name: include
         required: false
         schema:
+          pattern: ^\s*(Attestations|ChangeOrders|ChangeSetID|OrganizationID|Releases|SpaceID|Tags|UnitID|UserID)\s*(?:,\s*(?:Attestations|ChangeOrders|ChangeSetID|OrganizationID|Releases|SpaceID|Tags|UnitID|UserID)\s*)*$
           type: string
       - description: |-
           Select clause for specifying which fields to include in the response for Revision.
@@ -38684,6 +38839,7 @@ paths:
         name: order_by
         required: false
         schema:
+          pattern: ^\s*(?:(?:[Aa][Ss][Cc]|[Dd][Ee][Ss][Cc])\s*:\s*)?(Action|BridgeWorkerID|CreatedAt|DryRun|OrganizationID|QueuedOperationID|RevisionNum|Status|TargetID|UnitActionNum|UnitID)\s*(?:,\s*(?:(?:[Aa][Ss][Cc]|[Dd][Ee][Ss][Cc])\s*:\s*)?(?:Action|BridgeWorkerID|CreatedAt|DryRun|OrganizationID|QueuedOperationID|RevisionNum|Status|TargetID|UnitActionNum|UnitID)\s*)*$
           type: string
       - description: |-
           The token from the ConfigHub-Continue header of the previous page, to return the QueuedOperation entities after it.
@@ -38978,6 +39134,7 @@ paths:
         name: order_by
         required: false
         schema:
+          pattern: ^\s*(?:(?:[Aa][Ss][Cc]|[Dd][Ee][Ss][Cc])\s*:\s*)?(Action|BridgeWorkerID|CreatedAt|HiddenReason|OrganizationID|QueuedOperationID|Result|RevisionNum|StartedAt|Status|TerminatedAt|UnitEventID|UnitEventNum|UnitID|UpdatedAt)\s*(?:,\s*(?:(?:[Aa][Ss][Cc]|[Dd][Ee][Ss][Cc])\s*:\s*)?(?:Action|BridgeWorkerID|CreatedAt|HiddenReason|OrganizationID|QueuedOperationID|Result|RevisionNum|StartedAt|Status|TerminatedAt|UnitEventID|UnitEventNum|UnitID|UpdatedAt)\s*)*$
           type: string
       - description: |-
           The token from the ConfigHub-Continue header of the previous page, to return the UnitEvent entities after it.
@@ -39231,6 +39388,7 @@ paths:
         name: include
         required: false
         schema:
+          pattern: ^\s*(FilterID|OrganizationID|SpaceID)\s*(?:,\s*(?:FilterID|OrganizationID|SpaceID)\s*)*$
           type: string
       - description: |-
           Select clause for specifying which fields to include in the response for View.
@@ -39286,6 +39444,7 @@ paths:
         name: order_by
         required: false
         schema:
+          pattern: ^\s*(?:(?:[Aa][Ss][Cc]|[Dd][Ee][Ss][Cc])\s*:\s*)?(BackingUnitID|CreatedAt|DisplayName|FilterID|GroupBy|Hash|HiddenReason|Of|OrderBy|OrderByDirection|OrganizationID|Slug|SpaceID|UpdatedAt|UpstreamViewID|ViewID)\s*(?:,\s*(?:(?:[Aa][Ss][Cc]|[Dd][Ee][Ss][Cc])\s*:\s*)?(?:BackingUnitID|CreatedAt|DisplayName|FilterID|GroupBy|Hash|HiddenReason|Of|OrderBy|OrderByDirection|OrganizationID|Slug|SpaceID|UpdatedAt|UpstreamViewID|ViewID)\s*)*$
           type: string
       - description: |-
           The token from the ConfigHub-Continue header of the previous page, to return the View entities after it.
@@ -39549,6 +39708,7 @@ paths:
         name: include
         required: false
         schema:
+          pattern: ^\s*(FilterID|OrganizationID|SpaceID)\s*(?:,\s*(?:FilterID|OrganizationID|SpaceID)\s*)*$
           type: string
       - description: |-
           Select clause for specifying which fields to include in the response for View.
@@ -40138,6 +40298,7 @@ paths:
         name: include
         required: false
         schema:
+          pattern: ^\s*(ChangeSetID|OrganizationID|SpaceID)\s*(?:,\s*(?:ChangeSetID|OrganizationID|SpaceID)\s*)*$
           type: string
       - description: Maximum number of Tag entities to act on, in ID order. A request
           that names limit or continue also stops when it runs short of time, and
@@ -40344,6 +40505,7 @@ paths:
         name: include
         required: false
         schema:
+          pattern: ^\s*(ChangeSetID|OrganizationID|SpaceID)\s*(?:,\s*(?:ChangeSetID|OrganizationID|SpaceID)\s*)*$
           type: string
       - description: |-
           Select clause for specifying which fields to include in the response for Tag.
@@ -40399,6 +40561,7 @@ paths:
         name: order_by
         required: false
         schema:
+          pattern: ^\s*(?:(?:[Aa][Ss][Cc]|[Dd][Ee][Ss][Cc])\s*:\s*)?(ChangeOrderID|ChangeSetID|CreatedAt|DisplayName|HiddenReason|OrganizationID|ReleaseID|Slug|SpaceID|TagID|UpdatedAt)\s*(?:,\s*(?:(?:[Aa][Ss][Cc]|[Dd][Ee][Ss][Cc])\s*:\s*)?(?:ChangeOrderID|ChangeSetID|CreatedAt|DisplayName|HiddenReason|OrganizationID|ReleaseID|Slug|SpaceID|TagID|UpdatedAt)\s*)*$
           type: string
       - description: |-
           The token from the ConfigHub-Continue header of the previous page, to return the Tag entities after it.
@@ -40578,6 +40741,7 @@ paths:
         name: include
         required: false
         schema:
+          pattern: ^\s*(ChangeSetID|OrganizationID|SpaceID)\s*(?:,\s*(?:ChangeSetID|OrganizationID|SpaceID)\s*)*$
           type: string
       - description: Maximum number of Tag entities to act on, in ID order. A request
           that names limit or continue also stops when it runs short of time, and
@@ -40854,6 +41018,7 @@ paths:
         name: include
         required: false
         schema:
+          pattern: ^\s*(ChangeSetID|OrganizationID|SpaceID)\s*(?:,\s*(?:ChangeSetID|OrganizationID|SpaceID)\s*)*$
           type: string
       - description: Maximum number of Tag entities to act on, in ID order. A request
           that names limit or continue also stops when it runs short of time, and
@@ -41224,6 +41389,7 @@ paths:
         name: include
         required: false
         schema:
+          pattern: ^\s*(ChangeSetID|OrganizationID|SpaceID)\s*(?:,\s*(?:ChangeSetID|OrganizationID|SpaceID)\s*)*$
           type: string
       - description: Report what the move would do, and what would stop it, without
           moving anything
@@ -41411,6 +41577,7 @@ paths:
         name: include
         required: false
         schema:
+          pattern: ^\s*(OrganizationID|SpaceID|TriggerFilterID|TriggerIDs)\s*(?:,\s*(?:OrganizationID|SpaceID|TriggerFilterID|TriggerIDs)\s*)*$
           type: string
       - description: Maximum number of Target entities to act on, in ID order. A request
           that names limit or continue also stops when it runs short of time, and
@@ -41627,6 +41794,7 @@ paths:
         name: include
         required: false
         schema:
+          pattern: ^\s*(OrganizationID|SpaceID|TriggerFilterID|TriggerIDs)\s*(?:,\s*(?:OrganizationID|SpaceID|TriggerFilterID|TriggerIDs)\s*)*$
           type: string
       - description: |-
           Select clause for specifying which fields to include in the response for Target.
@@ -41682,6 +41850,7 @@ paths:
         name: order_by
         required: false
         schema:
+          pattern: ^\s*(?:(?:[Aa][Ss][Cc]|[Dd][Ee][Ss][Cc])\s*:\s*)?(BackingUnitID|CreatedAt|DisplayName|HiddenReason|OrganizationID|Slug|SpaceID|TargetID|TriggerFilterID|TriggerHash|UpdatedAt|UpstreamTargetID)\s*(?:,\s*(?:(?:[Aa][Ss][Cc]|[Dd][Ee][Ss][Cc])\s*:\s*)?(?:BackingUnitID|CreatedAt|DisplayName|HiddenReason|OrganizationID|Slug|SpaceID|TargetID|TriggerFilterID|TriggerHash|UpdatedAt|UpstreamTargetID)\s*)*$
           type: string
       - description: |-
           The token from the ConfigHub-Continue header of the previous page, to return the Target entities after it.
@@ -41861,6 +42030,7 @@ paths:
         name: include
         required: false
         schema:
+          pattern: ^\s*(OrganizationID|SpaceID|TriggerFilterID|TriggerIDs)\s*(?:,\s*(?:OrganizationID|SpaceID|TriggerFilterID|TriggerIDs)\s*)*$
           type: string
       - description: Maximum number of Target entities to act on, in ID order. A request
           that names limit or continue also stops when it runs short of time, and
@@ -42184,6 +42354,7 @@ paths:
         name: include
         required: false
         schema:
+          pattern: ^\s*(OrganizationID|SpaceID|TriggerFilterID|TriggerIDs)\s*(?:,\s*(?:OrganizationID|SpaceID|TriggerFilterID|TriggerIDs)\s*)*$
           type: string
       - description: Maximum number of Target entities to act on, in ID order. A request
           that names limit or continue also stops when it runs short of time, and
@@ -42657,6 +42828,7 @@ paths:
         name: include
         required: false
         schema:
+          pattern: ^\s*(OrganizationID|SpaceID|TriggerFilterID|TriggerIDs)\s*(?:,\s*(?:OrganizationID|SpaceID|TriggerFilterID|TriggerIDs)\s*)*$
           type: string
       - description: Report what the move would do, and what would stop it, without
           moving anything
@@ -42846,6 +43018,7 @@ paths:
         name: include
         required: false
         schema:
+          pattern: ^\s*(BridgeWorkerID|InvocationID|OrganizationID|SpaceID|UnitFilterID)\s*(?:,\s*(?:BridgeWorkerID|InvocationID|OrganizationID|SpaceID|UnitFilterID)\s*)*$
           type: string
       - description: Maximum number of Trigger entities to act on, in ID order. A
           request that names limit or continue also stops when it runs short of time,
@@ -43055,6 +43228,7 @@ paths:
         name: include
         required: false
         schema:
+          pattern: ^\s*(BridgeWorkerID|InvocationID|OrganizationID|SpaceID|UnitFilterID)\s*(?:,\s*(?:BridgeWorkerID|InvocationID|OrganizationID|SpaceID|UnitFilterID)\s*)*$
           type: string
       - description: |-
           Select clause for specifying which fields to include in the response for Trigger.
@@ -43110,6 +43284,7 @@ paths:
         name: order_by
         required: false
         schema:
+          pattern: ^\s*(?:(?:[Aa][Ss][Cc]|[Dd][Ee][Ss][Cc])\s*:\s*)?(BackingUnitID|BridgeWorkerID|CreatedAt|Description|Disabled|DisplayName|Event|FunctionName|Hash|HiddenReason|InvocationID|OrganizationID|OtherDataSource|Protect|Slug|SpaceID|ToolchainType|TriggerID|UnitFilterID|UpdatedAt|UpstreamTriggerID|Validating|Warn|WhereResource|WhereUnit)\s*(?:,\s*(?:(?:[Aa][Ss][Cc]|[Dd][Ee][Ss][Cc])\s*:\s*)?(?:BackingUnitID|BridgeWorkerID|CreatedAt|Description|Disabled|DisplayName|Event|FunctionName|Hash|HiddenReason|InvocationID|OrganizationID|OtherDataSource|Protect|Slug|SpaceID|ToolchainType|TriggerID|UnitFilterID|UpdatedAt|UpstreamTriggerID|Validating|Warn|WhereResource|WhereUnit)\s*)*$
           type: string
       - description: |-
           The token from the ConfigHub-Continue header of the previous page, to return the Trigger entities after it.
@@ -43291,6 +43466,7 @@ paths:
         name: include
         required: false
         schema:
+          pattern: ^\s*(BridgeWorkerID|InvocationID|OrganizationID|SpaceID|UnitFilterID)\s*(?:,\s*(?:BridgeWorkerID|InvocationID|OrganizationID|SpaceID|UnitFilterID)\s*)*$
           type: string
       - description: Maximum number of Trigger entities to act on, in ID order. A
           request that names limit or continue also stops when it runs short of time,
@@ -43680,6 +43856,7 @@ paths:
         name: include
         required: false
         schema:
+          pattern: ^\s*(BridgeWorkerID|InvocationID|OrganizationID|SpaceID|UnitFilterID)\s*(?:,\s*(?:BridgeWorkerID|InvocationID|OrganizationID|SpaceID|UnitFilterID)\s*)*$
           type: string
       - description: Maximum number of Trigger entities to act on, in ID order. A
           request that names limit or continue also stops when it runs short of time,
@@ -44229,6 +44406,7 @@ paths:
         name: include
         required: false
         schema:
+          pattern: ^\s*(BridgeWorkerID|InvocationID|OrganizationID|SpaceID|UnitFilterID)\s*(?:,\s*(?:BridgeWorkerID|InvocationID|OrganizationID|SpaceID|UnitFilterID)\s*)*$
           type: string
       - description: Report what the move would do, and what would stop it, without
           moving anything
@@ -44418,6 +44596,7 @@ paths:
         name: include
         required: false
         schema:
+          pattern: ^\s*(ChangeSetID|FromLinkID|HeadMutationNum|HeadRevisionNum|LastReleasedRevisionNum|OrganizationID|SpaceID|TargetID|UnitEventID|UpstreamSpaceID|UpstreamUnitID)\s*(?:,\s*(?:ChangeSetID|FromLinkID|HeadMutationNum|HeadRevisionNum|LastReleasedRevisionNum|OrganizationID|SpaceID|TargetID|UnitEventID|UpstreamSpaceID|UpstreamUnitID)\s*)*$
           type: string
       - description: Maximum number of Unit entities to act on, in ID order. A request
           that names limit or continue also stops when it runs short of time, and
@@ -44633,6 +44812,7 @@ paths:
         name: include
         required: false
         schema:
+          pattern: ^\s*(ChangeSetID|FromLinkID|HeadMutationNum|HeadRevisionNum|LastReleasedRevisionNum|OrganizationID|SpaceID|TargetID|UnitEventID|UpstreamSpaceID|UpstreamUnitID)\s*(?:,\s*(?:ChangeSetID|FromLinkID|HeadMutationNum|HeadRevisionNum|LastReleasedRevisionNum|OrganizationID|SpaceID|TargetID|UnitEventID|UpstreamSpaceID|UpstreamUnitID)\s*)*$
           type: string
       - description: |-
           Select clause for specifying which fields to include in the response for Unit.
@@ -44688,6 +44868,7 @@ paths:
         name: order_by
         required: false
         schema:
+          pattern: ^\s*(?:(?:[Aa][Ss][Cc]|[Dd][Ee][Ss][Cc])\s*:\s*)?(ChangeSetID|CreatedAt|DataHash|DisplayName|HeadRevisionID|HeadRevisionNum|HeadUnitActionNum|HeadUnitEventNum|HiddenReason|LastChangeDescription|LastReleasedRevisionNum|OrganizationID|ProviderType|Slug|SpaceID|TargetID|ToolchainType|UnitID|UpdatedAt|UpstreamRevisionNum|UpstreamUnitID)\s*(?:,\s*(?:(?:[Aa][Ss][Cc]|[Dd][Ee][Ss][Cc])\s*:\s*)?(?:ChangeSetID|CreatedAt|DataHash|DisplayName|HeadRevisionID|HeadRevisionNum|HeadUnitActionNum|HeadUnitEventNum|HiddenReason|LastChangeDescription|LastReleasedRevisionNum|OrganizationID|ProviderType|Slug|SpaceID|TargetID|ToolchainType|UnitID|UpdatedAt|UpstreamRevisionNum|UpstreamUnitID)\s*)*$
           type: string
       - description: |-
           The token from the ConfigHub-Continue header of the previous page, to return the Unit entities after it.
@@ -44946,11 +45127,16 @@ paths:
 
           Supported attributes for Unit are ChangeSetID, FromLinkID, HeadMutationNum, HeadRevisionNum, LastReleasedRevisionNum, OrganizationID, SpaceID, TargetID, UnitEventID, UpstreamSpaceID, UpstreamUnitID.
 
+          A write also accepts the parts of its result: ConfigData for the configuration the operation produced, MutationSources for what set each value in it, and Diff for what the operation changed, path by path with the values on both sides. None is a field of a Unit, and each costs something to return, so they are returned only when named. A dry run stores nothing, so this is the only way to see what it would have produced.
+
+          Supported values: ChangeSetID, FromLinkID, HeadMutationNum, HeadRevisionNum, LastReleasedRevisionNum, OrganizationID, SpaceID, TargetID, UnitEventID, UpstreamSpaceID, UpstreamUnitID, ConfigData, MutationSources, Diff.
+
           The whole string must be query-encoded.
         in: query
         name: include
         required: false
         schema:
+          pattern: ^\s*(ChangeSetID|FromLinkID|HeadMutationNum|HeadRevisionNum|LastReleasedRevisionNum|OrganizationID|SpaceID|TargetID|UnitEventID|UpstreamSpaceID|UpstreamUnitID|ConfigData|MutationSources|Diff)\s*(?:,\s*(?:ChangeSetID|FromLinkID|HeadMutationNum|HeadRevisionNum|LastReleasedRevisionNum|OrganizationID|SpaceID|TargetID|UnitEventID|UpstreamSpaceID|UpstreamUnitID|ConfigData|MutationSources|Diff)\s*)*$
           type: string
       - description: Maximum number of Unit entities to act on, in ID order. A request
           that names limit or continue also stops when it runs short of time, and
@@ -45558,11 +45744,16 @@ paths:
 
           Supported attributes for Unit are ChangeSetID, FromLinkID, HeadMutationNum, HeadRevisionNum, LastReleasedRevisionNum, OrganizationID, SpaceID, TargetID, UnitEventID, UpstreamSpaceID, UpstreamUnitID.
 
+          A write also accepts the parts of its result: ConfigData for the configuration the operation produced, MutationSources for what set each value in it, and Diff for what the operation changed, path by path with the values on both sides. None is a field of a Unit, and each costs something to return, so they are returned only when named. A dry run stores nothing, so this is the only way to see what it would have produced.
+
+          Supported values: ChangeSetID, FromLinkID, HeadMutationNum, HeadRevisionNum, LastReleasedRevisionNum, OrganizationID, SpaceID, TargetID, UnitEventID, UpstreamSpaceID, UpstreamUnitID, ConfigData, MutationSources, Diff.
+
           The whole string must be query-encoded.
         in: query
         name: include
         required: false
         schema:
+          pattern: ^\s*(ChangeSetID|FromLinkID|HeadMutationNum|HeadRevisionNum|LastReleasedRevisionNum|OrganizationID|SpaceID|TargetID|UnitEventID|UpstreamSpaceID|UpstreamUnitID|ConfigData|MutationSources|Diff)\s*(?:,\s*(?:ChangeSetID|FromLinkID|HeadMutationNum|HeadRevisionNum|LastReleasedRevisionNum|OrganizationID|SpaceID|TargetID|UnitEventID|UpstreamSpaceID|UpstreamUnitID|ConfigData|MutationSources|Diff)\s*)*$
           type: string
       - description: Maximum number of Unit entities to act on, in ID order. A request
           that names limit or continue also stops when it runs short of time, and
@@ -46054,6 +46245,7 @@ paths:
         name: include
         required: false
         schema:
+          pattern: ^\s*(ChangeSetID|FromLinkID|HeadMutationNum|HeadRevisionNum|LastReleasedRevisionNum|OrganizationID|SpaceID|TargetID|UnitEventID|UpstreamSpaceID|UpstreamUnitID)\s*(?:,\s*(?:ChangeSetID|FromLinkID|HeadMutationNum|HeadRevisionNum|LastReleasedRevisionNum|OrganizationID|SpaceID|TargetID|UnitEventID|UpstreamSpaceID|UpstreamUnitID)\s*)*$
           type: string
       responses:
         "200":
@@ -46239,6 +46431,7 @@ paths:
         name: include
         required: false
         schema:
+          pattern: ^\s*(ChangeSetID|FromLinkID|HeadMutationNum|HeadRevisionNum|LastReleasedRevisionNum|OrganizationID|SpaceID|TargetID|UnitEventID|UpstreamSpaceID|UpstreamUnitID)\s*(?:,\s*(?:ChangeSetID|FromLinkID|HeadMutationNum|HeadRevisionNum|LastReleasedRevisionNum|OrganizationID|SpaceID|TargetID|UnitEventID|UpstreamSpaceID|UpstreamUnitID)\s*)*$
           type: string
       - description: Report what the move would do, and what would stop it, without
           moving anything
@@ -46428,6 +46621,7 @@ paths:
         name: include
         required: false
         schema:
+          pattern: ^\s*(ChangeSetID|FromLinkID|HeadMutationNum|HeadRevisionNum|LastReleasedRevisionNum|OrganizationID|SpaceID|TargetID|UnitEventID|UpstreamSpaceID|UpstreamUnitID)\s*(?:,\s*(?:ChangeSetID|FromLinkID|HeadMutationNum|HeadRevisionNum|LastReleasedRevisionNum|OrganizationID|SpaceID|TargetID|UnitEventID|UpstreamSpaceID|UpstreamUnitID)\s*)*$
           type: string
       requestBody:
         content:
@@ -46620,6 +46814,7 @@ paths:
         name: order_by
         required: false
         schema:
+          pattern: ^\s*(?:(?:[Aa][Ss][Cc]|[Dd][Ee][Ss][Cc])\s*:\s*)?(Action|BridgeWorkerID|CreatedAt|DryRun|OrganizationID|QueuedOperationID|RevisionNum|Status|TargetID|UnitActionNum|UnitID)\s*(?:,\s*(?:(?:[Aa][Ss][Cc]|[Dd][Ee][Ss][Cc])\s*:\s*)?(?:Action|BridgeWorkerID|CreatedAt|DryRun|OrganizationID|QueuedOperationID|RevisionNum|Status|TargetID|UnitActionNum|UnitID)\s*)*$
           type: string
       - description: |-
           The token from the ConfigHub-Continue header of the previous page, to return the QueuedOperation entities after it.
@@ -46794,6 +46989,7 @@ paths:
         name: include
         required: false
         schema:
+          pattern: ^\s*(ChangeSetID|FromLinkID|HeadMutationNum|HeadRevisionNum|LastReleasedRevisionNum|OrganizationID|SpaceID|TargetID|UnitEventID|UpstreamSpaceID|UpstreamUnitID)\s*(?:,\s*(?:ChangeSetID|FromLinkID|HeadMutationNum|HeadRevisionNum|LastReleasedRevisionNum|OrganizationID|SpaceID|TargetID|UnitEventID|UpstreamSpaceID|UpstreamUnitID)\s*)*$
           type: string
       - description: |-
           Select clause for specifying which fields to include in the response for Unit.
@@ -46849,6 +47045,7 @@ paths:
         name: order_by
         required: false
         schema:
+          pattern: ^\s*(?:(?:[Aa][Ss][Cc]|[Dd][Ee][Ss][Cc])\s*:\s*)?(ChangeSetID|CreatedAt|DataHash|DisplayName|HeadRevisionID|HeadRevisionNum|HeadUnitActionNum|HeadUnitEventNum|HiddenReason|LastChangeDescription|LastReleasedRevisionNum|OrganizationID|ProviderType|Slug|SpaceID|TargetID|ToolchainType|UnitID|UpdatedAt|UpstreamRevisionNum|UpstreamUnitID)\s*(?:,\s*(?:(?:[Aa][Ss][Cc]|[Dd][Ee][Ss][Cc])\s*:\s*)?(?:ChangeSetID|CreatedAt|DataHash|DisplayName|HeadRevisionID|HeadRevisionNum|HeadUnitActionNum|HeadUnitEventNum|HiddenReason|LastChangeDescription|LastReleasedRevisionNum|OrganizationID|ProviderType|Slug|SpaceID|TargetID|ToolchainType|UnitID|UpdatedAt|UpstreamRevisionNum|UpstreamUnitID)\s*)*$
           type: string
       - description: |-
           The token from the ConfigHub-Continue header of the previous page, to return the Unit entities after it.
@@ -47135,6 +47332,7 @@ paths:
         name: order_by
         required: false
         schema:
+          pattern: ^\s*(?:(?:[Aa][Ss][Cc]|[Dd][Ee][Ss][Cc])\s*:\s*)?(ChangeSetID|CreatedAt|DataHash|DisplayName|HeadRevisionID|HeadRevisionNum|HeadUnitActionNum|HeadUnitEventNum|HiddenReason|LastChangeDescription|LastReleasedRevisionNum|OrganizationID|ProviderType|Slug|SpaceID|TargetID|ToolchainType|UnitID|UpdatedAt|UpstreamRevisionNum|UpstreamUnitID)\s*(?:,\s*(?:(?:[Aa][Ss][Cc]|[Dd][Ee][Ss][Cc])\s*:\s*)?(?:ChangeSetID|CreatedAt|DataHash|DisplayName|HeadRevisionID|HeadRevisionNum|HeadUnitActionNum|HeadUnitEventNum|HiddenReason|LastChangeDescription|LastReleasedRevisionNum|OrganizationID|ProviderType|Slug|SpaceID|TargetID|ToolchainType|UnitID|UpdatedAt|UpstreamRevisionNum|UpstreamUnitID)\s*)*$
           type: string
       - description: |-
           The token from the ConfigHub-Continue header of the previous page, to return the Unit entities after it.
@@ -47243,13 +47441,15 @@ paths:
         required: false
         schema:
           type: string
-      - description: 'Comma-separated: Attribution to attach to each changed path
-          the To side''s MutationSources entry, which says what set the new value,
-          and Unchanged to also list resources with no changes.'
+      - description: |-
+          Comma-separated: Attribution to attach to each changed path the To side's MutationSources entry, which says what set the new value, Unchanged to also list resources with no changes, and Context to also list, within each changed resource, the unchanged paths around the changes: every unchanged child of each map or array that holds a change, up to the resource, as ChangeType None.
+
+          Supported values: Attribution, Unchanged, Context.
         in: query
         name: include
         required: false
         schema:
+          pattern: ^\s*(Attribution|Unchanged|Context)\s*(?:,\s*(?:Attribution|Unchanged|Context)\s*)*$
           type: string
       - description: Limit the diff to the resources this where expression selects
           on either side.
@@ -47455,6 +47655,7 @@ paths:
         name: order_by
         required: false
         schema:
+          pattern: ^\s*(?:(?:[Aa][Ss][Cc]|[Dd][Ee][Ss][Cc])\s*:\s*)?(Action|BridgeWorkerID|CreatedAt|HiddenReason|OrganizationID|QueuedOperationID|Result|RevisionNum|StartedAt|Status|TerminatedAt|UnitEventID|UnitEventNum|UnitID|UpdatedAt)\s*(?:,\s*(?:(?:[Aa][Ss][Cc]|[Dd][Ee][Ss][Cc])\s*:\s*)?(?:Action|BridgeWorkerID|CreatedAt|HiddenReason|OrganizationID|QueuedOperationID|Result|RevisionNum|StartedAt|Status|TerminatedAt|UnitEventID|UnitEventNum|UnitID|UpdatedAt)\s*)*$
           type: string
       - description: |-
           The token from the ConfigHub-Continue header of the previous page, to return the UnitEvent entities after it.
@@ -47645,6 +47846,7 @@ paths:
         name: include
         required: false
         schema:
+          pattern: ^\s*(ChangeSetID|FromLinkID|HeadMutationNum|HeadRevisionNum|LastReleasedRevisionNum|OrganizationID|SpaceID|TargetID|UnitEventID|UpstreamSpaceID|UpstreamUnitID)\s*(?:,\s*(?:ChangeSetID|FromLinkID|HeadMutationNum|HeadRevisionNum|LastReleasedRevisionNum|OrganizationID|SpaceID|TargetID|UnitEventID|UpstreamSpaceID|UpstreamUnitID)\s*)*$
           type: string
       - description: |-
           Select clause for specifying which fields to include in the response for Unit.
@@ -47700,6 +47902,7 @@ paths:
         name: order_by
         required: false
         schema:
+          pattern: ^\s*(?:(?:[Aa][Ss][Cc]|[Dd][Ee][Ss][Cc])\s*:\s*)?(ChangeSetID|CreatedAt|DataHash|DisplayName|HeadRevisionID|HeadRevisionNum|HeadUnitActionNum|HeadUnitEventNum|HiddenReason|LastChangeDescription|LastReleasedRevisionNum|OrganizationID|ProviderType|Slug|SpaceID|TargetID|ToolchainType|UnitID|UpdatedAt|UpstreamRevisionNum|UpstreamUnitID)\s*(?:,\s*(?:(?:[Aa][Ss][Cc]|[Dd][Ee][Ss][Cc])\s*:\s*)?(?:ChangeSetID|CreatedAt|DataHash|DisplayName|HeadRevisionID|HeadRevisionNum|HeadUnitActionNum|HeadUnitEventNum|HiddenReason|LastChangeDescription|LastReleasedRevisionNum|OrganizationID|ProviderType|Slug|SpaceID|TargetID|ToolchainType|UnitID|UpdatedAt|UpstreamRevisionNum|UpstreamUnitID)\s*)*$
           type: string
       - description: |-
           The token from the ConfigHub-Continue header of the previous page, to return the Unit entities after it.
@@ -47869,16 +48072,15 @@ paths:
         required: false
         schema:
           type: boolean
-      - description: 'Comma-separated parts of the result to return in addition to
-          the actions: Mutations for what each Unit write changed, or on a dry run
-          would change, as entries of its MutationSources, and Diff for the same change
-          path by path with the values on both sides. They cost something to return,
-          and on a dry run either one runs the merges a plan otherwise skips, so they
-          are returned only when named.'
+      - description: |-
+          Comma-separated parts of the result to return in addition to the actions: Mutations for what each Unit write changed, or on a dry run would change, as entries of its MutationSources, and Diff for the same change path by path with the values on both sides. They cost something to return, and on a dry run either one runs the merges a plan otherwise skips, so they are returned only when named.
+
+          Supported values: Mutations, Diff.
         in: query
         name: include
         required: false
         schema:
+          pattern: ^\s*(Mutations|Diff)\s*(?:,\s*(?:Mutations|Diff)\s*)*$
           type: string
       requestBody:
         content:
@@ -48096,6 +48298,7 @@ paths:
         name: order_by
         required: false
         schema:
+          pattern: ^\s*(?:(?:[Aa][Ss][Cc]|[Dd][Ee][Ss][Cc])\s*:\s*)?(CreatedAt|DisplayName|ExternalID|HiddenReason|Slug|UpdatedAt|UserID|Username)\s*(?:,\s*(?:(?:[Aa][Ss][Cc]|[Dd][Ee][Ss][Cc])\s*:\s*)?(?:CreatedAt|DisplayName|ExternalID|HiddenReason|Slug|UpdatedAt|UserID|Username)\s*)*$
           type: string
       - description: |-
           The token from the ConfigHub-Continue header of the previous page, to return the User entities after it.
@@ -48570,6 +48773,7 @@ paths:
         name: include
         required: false
         schema:
+          pattern: ^\s*(FilterID|OrganizationID|SpaceID)\s*(?:,\s*(?:FilterID|OrganizationID|SpaceID)\s*)*$
           type: string
       - description: Maximum number of View entities to act on, in ID order. A request
           that names limit or continue also stops when it runs short of time, and
@@ -48777,6 +48981,7 @@ paths:
         name: include
         required: false
         schema:
+          pattern: ^\s*(FilterID|OrganizationID|SpaceID)\s*(?:,\s*(?:FilterID|OrganizationID|SpaceID)\s*)*$
           type: string
       - description: |-
           Select clause for specifying which fields to include in the response for View.
@@ -48832,6 +49037,7 @@ paths:
         name: order_by
         required: false
         schema:
+          pattern: ^\s*(?:(?:[Aa][Ss][Cc]|[Dd][Ee][Ss][Cc])\s*:\s*)?(BackingUnitID|CreatedAt|DisplayName|FilterID|GroupBy|Hash|HiddenReason|Of|OrderBy|OrderByDirection|OrganizationID|Slug|SpaceID|UpdatedAt|UpstreamViewID|ViewID)\s*(?:,\s*(?:(?:[Aa][Ss][Cc]|[Dd][Ee][Ss][Cc])\s*:\s*)?(?:BackingUnitID|CreatedAt|DisplayName|FilterID|GroupBy|Hash|HiddenReason|Of|OrderBy|OrderByDirection|OrganizationID|Slug|SpaceID|UpdatedAt|UpstreamViewID|ViewID)\s*)*$
           type: string
       - description: |-
           The token from the ConfigHub-Continue header of the previous page, to return the View entities after it.
@@ -49011,6 +49217,7 @@ paths:
         name: include
         required: false
         schema:
+          pattern: ^\s*(FilterID|OrganizationID|SpaceID)\s*(?:,\s*(?:FilterID|OrganizationID|SpaceID)\s*)*$
           type: string
       - description: Maximum number of View entities to act on, in ID order. A request
           that names limit or continue also stops when it runs short of time, and
@@ -49338,6 +49545,7 @@ paths:
         name: include
         required: false
         schema:
+          pattern: ^\s*(FilterID|OrganizationID|SpaceID)\s*(?:,\s*(?:FilterID|OrganizationID|SpaceID)\s*)*$
           type: string
       - description: Maximum number of View entities to act on, in ID order. A request
           that names limit or continue also stops when it runs short of time, and
@@ -49821,6 +50029,7 @@ paths:
         name: include
         required: false
         schema:
+          pattern: ^\s*(FilterID|OrganizationID|SpaceID)\s*(?:,\s*(?:FilterID|OrganizationID|SpaceID)\s*)*$
           type: string
       - description: Report what the move would do, and what would stop it, without
           moving anything
@@ -56588,13 +56797,27 @@ components:
           description: The To side's MutationSources entry for this path, which says
             what set the new value; returned when include names Attribution
         ChangeType:
-          description: Add, Delete, Update, Replace, Reorder, or Rename
+          description: Add, Delete, Update, Replace, Reorder, or Rename; or None for
+            an unchanged path returned as context
+          type: string
+          x-go-type-skip-optional-pointer: true
+        Comment:
+          description: 'Head, Line, or Foot when the change is to a comment on the
+            node at the path rather than to its value: the comment above the node,
+            at the end of its line, or below it. The path of a comment on a whole
+            resource is empty'
           type: string
           x-go-type-skip-optional-pointer: true
         DisplayPath:
           description: The path in configuration path syntax, as --path arguments
             and where filters take it, with each unkeyed array element named by its
             index
+          type: string
+          x-go-type-skip-optional-pointer: true
+        FromDataType:
+          description: 'How to read FromValue: string, int, or bool for a scalar,
+            YAML for a map or array, and empty for a scalar of another type, such
+            as a float or null, or when the From side has no value'
           type: string
           x-go-type-skip-optional-pointer: true
         FromValue:
@@ -56618,9 +56841,15 @@ components:
           nullable: true
           type: array
           x-go-type-skip-optional-pointer: true
+        ToDataType:
+          description: 'How to read ToValue: string, int, or bool for a scalar, YAML
+            for a map or array, and empty for a scalar of another type, such as a
+            float or null, or when the To side has no value'
+          type: string
+          x-go-type-skip-optional-pointer: true
         ToValue:
           description: 'The value on the To side: a scalar''s text, or a YAML block
-            for a map or array'
+            for a map or array. For an unchanged path, the value on both sides'
           type: string
           x-go-type-skip-optional-pointer: true
       type: object
@@ -56688,6 +56917,9 @@ components:
             element absent there
           type: integer
           x-go-type-skip-optional-pointer: true
+      required:
+      - FromIndex
+      - ToIndex
       type: object
     PathToVisitorInfoType:
       additionalProperties:

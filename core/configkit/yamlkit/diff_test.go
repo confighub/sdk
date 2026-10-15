@@ -4,6 +4,7 @@
 package yamlkit
 
 import (
+	"slices"
 	"strconv"
 	"strings"
 	"testing"
@@ -34,10 +35,30 @@ var diffTestProvider = &diffTestResourceProvider{testResourceProvider: *testProv
 
 func computeTestDiff(t *testing.T, previous, modified string) api.ConfigDiff {
 	t.Helper()
+	return computeTestDiffWithOptions(t, previous, modified, DiffOptions{})
+}
+
+func computeTestDiffWithOptions(t *testing.T, previous, modified string, options DiffOptions) api.ConfigDiff {
+	t.Helper()
 	previousDocs, err := gaby.ParseAll([]byte(previous))
 	require.NoError(t, err)
 	modifiedDocs, err := gaby.ParseAll([]byte(modified))
 	require.NoError(t, err)
+	diff, err := ComputeDiff(previousDocs, modifiedDocs, diffTestProvider, options)
+	require.NoError(t, err)
+	return diff
+}
+
+// computeTestDiffWithComments parses as the toolchains do, lifting comments into comment keys.
+func computeTestDiffWithComments(t *testing.T, previous, modified string) api.ConfigDiff {
+	t.Helper()
+	previousDocs, err := gaby.ParseAll([]byte(previous))
+	require.NoError(t, err)
+	modifiedDocs, err := gaby.ParseAll([]byte(modified))
+	require.NoError(t, err)
+	for _, doc := range append(slices.Clone(previousDocs), modifiedDocs...) {
+		require.NoError(t, doc.ExtractCommentsToKeys())
+	}
 	diff, err := ComputeDiff(previousDocs, modifiedDocs, diffTestProvider, DiffOptions{})
 	require.NoError(t, err)
 	return diff
@@ -249,8 +270,195 @@ func TestComputeDiffLeavesMutationsUnchanged(t *testing.T) {
 	require.NoError(t, err)
 
 	plain := diffResourcePair(previousDocs[0], modifiedDocs[0], "apps/v1/Deployment", 3, diffTestProvider)
-	recorded := diffResourcePairRecorded(previousDocs[0], modifiedDocs[0], "apps/v1/Deployment", 3, diffTestProvider, newDiffRecorder())
-	assert.Equal(t, plain, recorded)
+	for _, context := range []bool{false, true} {
+		recorded := diffResourcePairRecorded(previousDocs[0], modifiedDocs[0], "apps/v1/Deployment", 3, diffTestProvider, newDiffRecorder(context))
+		assert.Equal(t, plain, recorded, "context %v", context)
+	}
+}
+
+// Each side says how to read its value, so a string can be told from a number with the same
+// text, and a block from a multi-line string.
+func TestComputeDiffDataTypes(t *testing.T) {
+	previous := "apiVersion: v1\nkind: ConfigMap\nmetadata:\n  name: settings\ndata:\n  port: \"45\"\n  on: true\n  text: |\n    a: 1\n"
+	modified := "apiVersion: v1\nkind: ConfigMap\nmetadata:\n  name: settings\n  labels:\n    app: web\ndata:\n  port: 45\n  on: \"true\"\n  text: |\n    a: 2\n  ratio: 0.5\n"
+	diff := computeTestDiff(t, previous, modified)
+	require.Len(t, diff.Resources, 1)
+	type typed struct {
+		path               string
+		fromType, toType   api.DataType
+		fromValue, toValue string
+	}
+	var got []typed
+	for _, change := range diff.Resources[0].Changes {
+		got = append(got, typed{change.DisplayPath, change.FromDataType, change.ToDataType, change.FromValue, change.ToValue})
+	}
+	assert.Equal(t, []typed{
+		{"metadata.labels", "", api.DataTypeYAML, "", "app: web"},
+		{"data.port", api.DataTypeString, api.DataTypeInt, "45", "45"},
+		{"data.on", api.DataTypeBool, api.DataTypeString, "true", "true"},
+		{"data.text", api.DataTypeString, api.DataTypeString, "a: 1\n", "a: 2\n"},
+		// A float has no DataType, as functions report it.
+		{"data.ratio", "", "", "", "0.5"},
+	}, got)
+}
+
+func TestComputeDiffChangeTypeDataTypes(t *testing.T) {
+	diff := computeTestDiff(t, diffDeployment, strings.Replace(diffDeployment,
+		"        - name: A\n          value: a\n        - name: B\n          value: b",
+		"        - name: B\n          value: b\n        - name: A\n          value: a", 1))
+	require.Len(t, diff.Resources, 1)
+	require.Len(t, diff.Resources[0].Changes, 1)
+	reorder := diff.Resources[0].Changes[0]
+	assert.Equal(t, api.DiffChangeTypeReorder, reorder.ChangeType)
+	assert.Equal(t, api.DataTypeYAML, reorder.FromDataType)
+	assert.Equal(t, api.DataTypeYAML, reorder.ToDataType)
+
+	diff = computeTestDiff(t, diffDeployment, strings.Replace(diffDeployment,
+		"      - name: sidecar\n        image: sidecar:1", "      - name: proxy\n        image: sidecar:2", 1))
+	rename := diff.Resources[0].Changes[0]
+	assert.Equal(t, api.DiffChangeTypeRename, rename.ChangeType)
+	assert.Equal(t, api.DataTypeString, rename.FromDataType)
+	assert.Equal(t, api.DataTypeString, rename.ToDataType)
+}
+
+// A comment change is reported at the path of the node the comment annotates, not at the
+// comment key the parse stores it under, and a block shows its comments as comments.
+func TestComputeDiffComments(t *testing.T) {
+	previous := "apiVersion: v1\nkind: ConfigMap\nmetadata:\n  name: demo\ndata:\n  mode: simple # the mode\n"
+	modified := "apiVersion: v1\n# what this ConfigMap is for\nkind: ConfigMap\nmetadata:\n  name: demo\ndata:\n  mode: simple # the new mode\n  extra:\n    # inner\n    x: \"1\" # line\n"
+	diff := computeTestDiffWithComments(t, previous, modified)
+	require.Len(t, diff.Resources, 1)
+	type comment struct {
+		changeType  api.DiffChangeType
+		displayPath string
+		comment     api.DiffComment
+		fromValue   string
+		toValue     string
+	}
+	var got []comment
+	for _, change := range diff.Resources[0].Changes {
+		got = append(got, comment{change.ChangeType, change.DisplayPath, change.Comment, change.FromValue, change.ToValue})
+		assert.NotContains(t, change.DisplayPath, CommentKeyPrefix)
+		for _, segment := range change.Segments {
+			assert.NotContains(t, segment.Field, CommentKeyPrefix)
+		}
+	}
+	assert.Equal(t, []comment{
+		{api.DiffChangeTypeAdd, "kind", api.DiffCommentHead, "", "what this ConfigMap is for"},
+		{api.DiffChangeTypeUpdate, "data.mode", api.DiffCommentLine, "the mode", "the new mode"},
+		{api.DiffChangeTypeAdd, "data.extra", "", "", "# inner\nx: \"1\" # line"},
+	}, got)
+	// The Path is still the one MutationSources records.
+	assert.Equal(t, api.ResolvedPath("$comment$head$kind"), diff.Resources[0].Changes[0].Path)
+}
+
+func TestComputeDiffResourceDocumentComments(t *testing.T) {
+	added := "apiVersion: v1\nkind: ConfigMap\nmetadata:\n  # the name\n  name: extra\n"
+	diff := computeTestDiffWithComments(t, diffDeployment, diffDeployment+"---\n"+added)
+	require.Len(t, diff.Resources, 1)
+	assert.Equal(t, api.MutationTypeAdd, diff.Resources[0].ChangeType)
+	assert.Contains(t, diff.Resources[0].ToValue, "# the name\n")
+	assert.NotContains(t, diff.Resources[0].ToValue, CommentKeyPrefix)
+
+	// The comment above a document's separator is the document's own head comment.
+	diff = computeTestDiffWithComments(t, diffDeployment, diffDeployment+"---\n# about extra\n---\n"+added)
+	require.Len(t, diff.Resources, 1)
+	assert.True(t, strings.HasPrefix(diff.Resources[0].ToValue, "# about extra\napiVersion: v1\n"), diff.Resources[0].ToValue)
+}
+
+// contextSummary renders a resource's entries, changes and context alike, compactly.
+func contextSummary(resource api.ResourceDiff) []string {
+	var lines []string
+	for _, change := range resource.Changes {
+		lines = append(lines, string(change.ChangeType)+" "+change.DisplayPath)
+	}
+	return lines
+}
+
+// Context is every unchanged child of each map or array on the way from a change up to the
+// resource, an unchanged map or array as one entry, in document order with the changes.
+func TestComputeDiffContext(t *testing.T) {
+	modified := strings.Replace(diffDeployment, "image: app:1", "image: app:2", 1)
+	diff := computeTestDiffWithOptions(t, diffDeployment, modified, DiffOptions{IncludeContext: true})
+	require.Len(t, diff.Resources, 1)
+	assert.Equal(t, []string{
+		"None apiVersion",
+		"None kind",
+		"None metadata",
+		"None spec.replicas",
+		"None spec.template.spec.containers.?name=app.name",
+		"Update spec.template.spec.containers.?name=app.image",
+		"None spec.template.spec.containers.?name=app.args",
+		"None spec.template.spec.containers.?name=app.env",
+		"None spec.template.spec.containers.?name=sidecar",
+	}, contextSummary(diff.Resources[0]))
+
+	changes := diff.Resources[0].Changes
+	assert.Equal(t, "name: web\nnamespace: prod", changes[2].ToValue)
+	assert.Equal(t, api.DataTypeYAML, changes[2].ToDataType)
+	assert.Empty(t, changes[2].FromValue)
+	assert.Equal(t, "2", changes[3].ToValue)
+	assert.Equal(t, api.DataTypeInt, changes[3].ToDataType)
+	sidecar := changes[8].Segments[4]
+	assert.Equal(t, 1, sidecar.FromIndex)
+	assert.Equal(t, 1, sidecar.ToIndex)
+
+	// Without the option, only the change.
+	assert.Len(t, computeTestDiff(t, diffDeployment, modified).Resources[0].Changes, 1)
+}
+
+func TestComputeDiffContextAroundAddDeleteAndRename(t *testing.T) {
+	modified := strings.NewReplacer(
+		"        - name: A\n          value: a\n", "",
+		"      - name: sidecar\n        image: sidecar:1", "      - name: proxy\n        image: sidecar:2",
+		"  replicas: 2\n", "  replicas: 2\n  paused: true\n",
+	).Replace(diffDeployment)
+	diff := computeTestDiffWithOptions(t, diffDeployment, modified, DiffOptions{IncludeContext: true})
+	require.Len(t, diff.Resources, 1)
+	assert.Equal(t, []string{
+		"None apiVersion",
+		"None kind",
+		"None metadata",
+		"None spec.replicas",
+		"Add spec.paused",
+		"None spec.template.spec.containers.?name=app.name",
+		"None spec.template.spec.containers.?name=app.image",
+		"None spec.template.spec.containers.?name=app.args",
+		"Delete spec.template.spec.containers.?name=app.env.?name=A",
+		"None spec.template.spec.containers.?name=app.env.?name=B",
+		"Rename spec.template.spec.containers.?name=proxy",
+		"Update spec.template.spec.containers.?name=proxy.image",
+		"None spec.template.spec.containers.?name=proxy.imagePullPolicy",
+		"None spec.template.spec.containers.?name=proxy.workingDir",
+		"None spec.template.spec.containers.?name=proxy.tty",
+		"None spec.template.spec.containers.?name=proxy.stdin",
+		"None spec.template.spec.containers.?name=proxy.terminationMessagePath",
+		"None spec.template.spec.containers.?name=proxy.command",
+	}, contextSummary(diff.Resources[0]))
+}
+
+func TestComputeDiffContextPositional(t *testing.T) {
+	modified := strings.Replace(diffDeployment, `args: [serve, --port, "8080"]`, `args: [serve, --port, "9090"]`, 1)
+	diff := computeTestDiffWithOptions(t, diffDeployment, modified, DiffOptions{IncludeContext: true})
+	require.Len(t, diff.Resources, 1)
+	var args []string
+	for _, change := range diff.Resources[0].Changes {
+		if strings.HasPrefix(change.DisplayPath, "spec.template.spec.containers.?name=app.args.") {
+			args = append(args, string(change.ChangeType)+" "+change.DisplayPath+" "+change.ToValue)
+		}
+	}
+	assert.Equal(t, []string{
+		"None spec.template.spec.containers.?name=app.args.0 serve",
+		"None spec.template.spec.containers.?name=app.args.1 --port",
+		"Update spec.template.spec.containers.?name=app.args.2 9090",
+	}, args)
+}
+
+func TestComputeDiffContextUnchangedResource(t *testing.T) {
+	diff := computeTestDiffWithOptions(t, diffDeployment, diffDeployment, DiffOptions{IncludeContext: true, IncludeUnchanged: true})
+	require.Len(t, diff.Resources, 1)
+	assert.Equal(t, api.MutationTypeNone, diff.Resources[0].ChangeType)
+	assert.Empty(t, diff.Resources[0].Changes)
 }
 
 func TestDisplayLinePatch(t *testing.T) {

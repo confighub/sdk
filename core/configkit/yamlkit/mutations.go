@@ -1763,6 +1763,7 @@ func computeMutationsForDocs(rootPath string, rootLocation diffLocation, previou
 		location := item.location
 		previousDoc := item.previousDoc
 		modifiedDoc := item.modifiedDoc
+		recorder.enter(path)
 
 		// Now process this item (similar logic to the recursive function)
 		modifiedChildren := modifiedDoc.ChildrenMap()
@@ -1810,6 +1811,7 @@ func computeMutationsForDocs(rootPath string, rootLocation diffLocation, previou
 				}
 
 				// Instead of recursion, push this item to the stack
+				recorder.visit(currentPath, childLocation, modifiedChild)
 				stack = append(stack, traversalItem{
 					path:        currentPath,
 					location:    childLocation,
@@ -1977,6 +1979,7 @@ func computeMutationsForDocs(rootPath string, rootLocation diffLocation, previou
 								childLocation = location.element(nil, nil, modifiedIndex, modifiedIndex,
 									diffOrder{pos: float64(modifiedIndex)})
 							}
+							recorder.visit(currentPath, childLocation, modifiedChild)
 							stack = append(stack, traversalItem{
 								path:        currentPath,
 								location:    childLocation,
@@ -2000,6 +2003,7 @@ func computeMutationsForDocs(rootPath string, rootLocation diffLocation, previou
 							childLocation = location.element(mergeKeys, modifiedKeyValues, prev.index, modifiedIndex,
 								diffOrder{pos: float64(modifiedIndex)})
 						}
+						recorder.visit(currentPath, childLocation, modifiedChild)
 						stack = append(stack, traversalItem{
 							path:        currentPath,
 							location:    childLocation,
@@ -2062,7 +2066,7 @@ func computeMutationsForDocs(rootPath string, rootLocation diffLocation, previou
 						var tmpRecorder *diffRecorder
 						var subLocation diffLocation
 						if recording {
-							tmpRecorder = newDiffRecorder()
+							tmpRecorder = recorder.sub()
 							subLocation = location.element(mergeKeys, splitMergeKeyIdentity(pa.keyValue, mergeKeys),
 								prevIdx, pa.modifiedIndex, diffOrder{pos: float64(pa.modifiedIndex)})
 						}
@@ -2150,14 +2154,18 @@ func computeMutationsForDocs(rootPath string, rootLocation diffLocation, previou
 						pathMutationMap[p] = m
 					}
 					if recording {
-						// The merge-key field's change is shown as the element's Rename.
+						// The merge-key field's change is shown as the element's Rename, and
+						// is not context either.
 						delete(bestPrevRecorder.changes, mergeKeyFieldPath)
+						delete(bestPrevRecorder.visited, string(mergeKeyFieldPath))
 						recorder.merge(bestPrevRecorder)
 						renameLocation := location.element(mergeKeys, splitMergeKeyIdentity(pa.keyValue, mergeKeys),
 							bestPrevIdx, pa.modifiedIndex, diffOrder{pos: float64(pa.modifiedIndex)})
 						renamePath := path + "." + AssociativePathSegment(
 							mergeKeys, splitMergeKeyIdentity(bestPrevKeyValue, mergeKeys), pa.modifiedIndex)
-						recorder.recordText(renamePath, renameLocation, api.DiffChangeTypeRename, bestPrevKeyValue, pa.keyValue)
+						recorder.visit(renamePath, renameLocation, pa.modifiedChild)
+						recorder.recordText(renamePath, renameLocation, api.DiffChangeTypeRename, bestPrevKeyValue, pa.keyValue,
+							api.DataTypeString)
 					}
 					if arrayOrders != nil {
 						for p, o := range bestPrevArrayOrders {
@@ -2221,7 +2229,7 @@ func computeMutationsForDocs(rootPath string, rootLocation diffLocation, previou
 				if recording {
 					if reordered, previousCommon, modifiedCommon := reorderedCommonKeys(previousKeySeq, modifiedKeySeq); reordered {
 						recorder.recordText(path, location, api.DiffChangeTypeReorder,
-							keySequenceText(previousCommon), keySequenceText(modifiedCommon))
+							keySequenceText(previousCommon), keySequenceText(modifiedCommon), api.DataTypeYAML)
 					}
 				}
 			} else {
@@ -2249,9 +2257,10 @@ func computeMutationsForDocs(rootPath string, rootLocation diffLocation, previou
 					if recording {
 						childLocation = location.element(nil, nil, pair[0], pair[1], diffOrder{pos: float64(pair[1])})
 					}
+					childPath := path + "." + AnchoredPathSegment(previousArrayChildren, pair[0], true)
+					recorder.visit(childPath, childLocation, modifiedArrayChildren[pair[1]])
 					stack = append(stack, traversalItem{
-						path: path + "." + AnchoredPathSegment(
-							previousArrayChildren, pair[0], true),
+						path:        childPath,
 						location:    childLocation,
 						previousDoc: previousArrayChildren[pair[0]],
 						modifiedDoc: modifiedArrayChildren[pair[1]],

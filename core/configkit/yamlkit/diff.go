@@ -5,6 +5,7 @@ package yamlkit
 
 import (
 	"fmt"
+	"maps"
 	"slices"
 	"sort"
 	"strings"
@@ -79,19 +80,66 @@ type recordedChange struct {
 	location   diffLocation
 	from, to   *gaby.YamlDoc
 	// fromText and toText stand in for from and to when the change is not a value, as for
-	// a Reorder or a Rename.
+	// a Reorder or a Rename, and textDataType says how to read them.
 	fromText, toText string
+	textDataType     api.DataType
 	patch            string
+	// container is the path the walk was comparing when it recorded the change: the
+	// change's own path, or the map or array it was found in.
+	container string
+}
+
+// visitedPath is a path present on both sides that the walk compared, kept for context.
+type visitedPath struct {
+	// parent is the path of the map or array the walk found it in.
+	parent   string
+	location diffLocation
+	to       *gaby.YamlDoc
 }
 
 // diffRecorder collects the changes a diff reports, keyed by the path the walk recorded
 // the corresponding mutation at. It is nil unless a diff was asked for.
 type diffRecorder struct {
 	changes map[api.ResolvedPath]*recordedChange
+	// context asks for the unchanged paths around the changes. The fields below are kept
+	// only then.
+	context bool
+	// current is the path the walk is comparing.
+	current string
+	visited map[string]*visitedPath
 }
 
-func newDiffRecorder() *diffRecorder {
-	return &diffRecorder{changes: map[api.ResolvedPath]*recordedChange{}}
+func newDiffRecorder(context bool) *diffRecorder {
+	recorder := &diffRecorder{changes: map[api.ResolvedPath]*recordedChange{}, context: context}
+	if context {
+		recorder.visited = map[string]*visitedPath{}
+	}
+	return recorder
+}
+
+// sub returns a recorder for a sub-walk whose result may be merged into this one.
+func (recorder *diffRecorder) sub() *diffRecorder {
+	if recorder == nil {
+		return nil
+	}
+	return newDiffRecorder(recorder.context)
+}
+
+// enter notes that the walk is now comparing the two nodes at path.
+func (recorder *diffRecorder) enter(path string) {
+	if recorder == nil || !recorder.context {
+		return
+	}
+	recorder.current = path
+}
+
+// visit notes a path, inside the one being compared, that is present on both sides and
+// that the walk will compare. Whatever of it turns out unchanged is context.
+func (recorder *diffRecorder) visit(path string, location diffLocation, to *gaby.YamlDoc) {
+	if recorder == nil || !recorder.context {
+		return
+	}
+	recorder.visited[path] = &visitedPath{parent: recorder.current, location: location, to: to}
 }
 
 // record notes a change between two nodes, either of which may be nil.
@@ -113,19 +161,22 @@ func (recorder *diffRecorder) record(path string, location diffLocation, changeT
 		from:       from,
 		to:         to,
 		patch:      patch,
+		container:  recorder.current,
 	}
 }
 
 // recordText notes a change that is not between two nodes.
-func (recorder *diffRecorder) recordText(path string, location diffLocation, changeType api.DiffChangeType, fromText, toText string) {
+func (recorder *diffRecorder) recordText(path string, location diffLocation, changeType api.DiffChangeType, fromText, toText string, dataType api.DataType) {
 	if recorder == nil {
 		return
 	}
 	recorder.changes[api.ResolvedPath(path)] = &recordedChange{
-		changeType: changeType,
-		location:   location,
-		fromText:   fromText,
-		toText:     toText,
+		changeType:   changeType,
+		location:     location,
+		fromText:     fromText,
+		toText:       toText,
+		textDataType: dataType,
+		container:    recorder.current,
 	}
 }
 
@@ -134,22 +185,57 @@ func (recorder *diffRecorder) merge(other *diffRecorder) {
 	if recorder == nil || other == nil {
 		return
 	}
-	for path, change := range other.changes {
-		recorder.changes[path] = change
-	}
+	maps.Copy(recorder.changes, other.changes)
+	maps.Copy(recorder.visited, other.visited)
 }
 
-// pathChanges returns the recorded changes in document order.
+// contextChanges returns, for each map or array the changes are in, and each one those are
+// in up to the resource, its children that are unchanged, as ChangeType None. An unchanged
+// child that is itself a map or array is one entry holding its block.
+func (recorder *diffRecorder) contextChanges() map[api.ResolvedPath]*recordedChange {
+	// A path is marked when a change is at it or beneath it.
+	marked := map[string]bool{}
+	for _, change := range recorder.changes {
+		for path := change.container; !marked[path]; {
+			marked[path] = true
+			visited, found := recorder.visited[path]
+			if !found {
+				break
+			}
+			path = visited.parent
+		}
+	}
+	context := map[api.ResolvedPath]*recordedChange{}
+	for path, visited := range recorder.visited {
+		if !marked[visited.parent] || marked[path] || recorder.changes[api.ResolvedPath(path)] != nil {
+			continue
+		}
+		context[api.ResolvedPath(path)] = &recordedChange{
+			changeType: api.DiffChangeTypeNone,
+			location:   visited.location,
+			to:         visited.to,
+		}
+	}
+	return context
+}
+
+// pathChanges returns the recorded changes in document order, with the unchanged paths
+// around them when context was asked for.
 func (recorder *diffRecorder) pathChanges() []api.PathChange {
 	if recorder == nil || len(recorder.changes) == 0 {
 		return nil
 	}
-	paths := make([]api.ResolvedPath, 0, len(recorder.changes))
-	for path := range recorder.changes {
+	recorded := recorder.changes
+	if recorder.context {
+		recorded = recorder.contextChanges()
+		maps.Copy(recorded, recorder.changes)
+	}
+	paths := make([]api.ResolvedPath, 0, len(recorded))
+	for path := range recorded {
 		paths = append(paths, path)
 	}
 	sort.Slice(paths, func(i, j int) bool {
-		a, b := recorder.changes[paths[i]].location.order, recorder.changes[paths[j]].location.order
+		a, b := recorded[paths[i]].location.order, recorded[paths[j]].location.order
 		if c := slices.CompareFunc(a, b, compareDiffOrder); c != 0 {
 			return c < 0
 		}
@@ -157,25 +243,63 @@ func (recorder *diffRecorder) pathChanges() []api.PathChange {
 	})
 	changes := make([]api.PathChange, 0, len(paths))
 	for _, path := range paths {
-		recorded := recorder.changes[path]
-		change := api.PathChange{
+		change := recorded[path]
+		segments, comment := commentTarget(change.location.segments)
+		pathChange := api.PathChange{
 			Path:        path,
-			DisplayPath: api.DisplayPathFromSegments(recorded.location.segments),
-			Segments:    recorded.location.segments,
-			ChangeType:  recorded.changeType,
-			FromValue:   recorded.fromText,
-			ToValue:     recorded.toText,
-			Patch:       recorded.patch,
+			DisplayPath: api.DisplayPathFromSegments(segments),
+			Segments:    segments,
+			ChangeType:  change.changeType,
+			Comment:     comment,
+			FromValue:   change.fromText,
+			ToValue:     change.toText,
+			Patch:       change.patch,
 		}
-		if recorded.from != nil {
-			change.FromValue = diffValueText(recorded.from)
+		if change.fromText != "" {
+			pathChange.FromDataType = change.textDataType
 		}
-		if recorded.to != nil {
-			change.ToValue = diffValueText(recorded.to)
+		if change.toText != "" {
+			pathChange.ToDataType = change.textDataType
 		}
-		changes = append(changes, change)
+		if change.from != nil {
+			pathChange.FromValue = diffValueText(change.from)
+			pathChange.FromDataType = diffValueDataType(change.from)
+		}
+		if change.to != nil {
+			pathChange.ToValue = diffValueText(change.to)
+			pathChange.ToDataType = diffValueDataType(change.to)
+		}
+		changes = append(changes, pathChange)
 	}
 	return changes
+}
+
+var diffComments = map[CommentType]api.DiffComment{
+	CommentHead: api.DiffCommentHead,
+	CommentLine: api.DiffCommentLine,
+	CommentFoot: api.DiffCommentFoot,
+}
+
+// commentTarget reports a change to a comment, which the walk sees as a change to the
+// comment's key beside the node it annotates (see CommentKey), at that node's path. A
+// comment with no target key annotates the map that holds it.
+func commentTarget(segments []api.PathSegment) ([]api.PathSegment, api.DiffComment) {
+	if len(segments) == 0 {
+		return segments, ""
+	}
+	last := segments[len(segments)-1]
+	if last.IsElement() {
+		return segments, ""
+	}
+	commentType, target, isComment := ParseCommentKey(last.Field)
+	if !isComment {
+		return segments, ""
+	}
+	targetSegments := slices.Clone(segments[:len(segments)-1])
+	if target != "" {
+		targetSegments = append(targetSegments, api.FieldSegment(target))
+	}
+	return targetSegments, diffComments[commentType]
 }
 
 // diffValueText renders a value for display: a scalar as its text, without the quoting or
@@ -184,7 +308,53 @@ func diffValueText(doc *gaby.YamlDoc) string {
 	if node := doc.YNode(); node != nil && node.Kind == yaml.ScalarNode {
 		return node.Value
 	}
-	return strings.TrimRight(doc.String(), "\n")
+	return strings.TrimRight(diffDocumentText(doc), "\n")
+}
+
+// diffDocumentText renders a map or array as YAML, with the comments the parse lifted into
+// comment keys (see CommentKey) written back as comments.
+func diffDocumentText(doc *gaby.YamlDoc) string {
+	text := doc.String()
+	if !strings.Contains(text, CommentKeyPrefix) {
+		return text
+	}
+	copied, err := gaby.ParseYAML([]byte(text))
+	if err != nil {
+		return text
+	}
+	docs := []*gaby.YamlDoc{copied}
+	if copied.IsArray() {
+		docs = copied.Children()
+	}
+	for _, d := range docs {
+		if err := d.InjectCommentsFromKeys(); err != nil {
+			return text
+		}
+	}
+	// A document's own head comment is kept as a key, holding the comment lines that were
+	// above its separator.
+	header := ""
+	if node := copied.YNode(); node.Kind == yaml.MappingNode && len(node.Content) >= 2 &&
+		node.Content[0].Value == CommentKey(CommentHead, "") {
+		if node.Content[1].Value != "" {
+			header = strings.TrimRight(node.Content[1].Value, "\n") + "\n"
+		}
+		node.Content = node.Content[2:]
+	}
+	return header + copied.String()
+}
+
+// diffValueDataType says how to read a value's text, as functions type values: a scalar is
+// a string, int, or bool, or has no DataType, and anything else is YAML.
+func diffValueDataType(doc *gaby.YamlDoc) api.DataType {
+	node := doc.YNode()
+	if node == nil {
+		return api.DataTypeNone
+	}
+	if node.Kind != yaml.ScalarNode {
+		return api.DataTypeYAML
+	}
+	return api.DataTypeOfValue(doc.Data())
 }
 
 // orderedMapKeys returns a map's scalar keys in document order.
@@ -277,6 +447,10 @@ func keySequenceText(keys []string) string {
 type DiffOptions struct {
 	// IncludeUnchanged returns resources with no changes, as ChangeType None.
 	IncludeUnchanged bool
+	// IncludeContext returns, within each changed resource, the unchanged paths around the
+	// changes, as ChangeType None: every unchanged child of each map or array that holds a
+	// change, from the change up to the resource.
+	IncludeContext bool
 }
 
 // ComputeDiff returns the difference between two configurations for display. Resources are
@@ -311,12 +485,12 @@ func ComputeDiff(previousParsedData, modifiedParsedData gaby.Container, resource
 			resources = append(resources, orderedResource{order: order, diff: api.ResourceDiff{
 				Resource:   *modifiedInfo,
 				ChangeType: api.MutationTypeAdd,
-				ToValue:    modifiedParsedData[modifiedDocIndex].String(),
+				ToValue:    diffDocumentText(modifiedParsedData[modifiedDocIndex]),
 			}})
 			continue
 		}
 		previousInfo := matching.previousInfos[previousDocIndex]
-		recorder := newDiffRecorder()
+		recorder := newDiffRecorder(options.IncludeContext)
 		diffResourcePairRecorded(previousParsedData[previousDocIndex], modifiedParsedData[modifiedDocIndex],
 			modifiedInfo.ResourceType, 0, resourceProvider, recorder)
 		resourceDiff := api.ResourceDiff{
@@ -345,7 +519,7 @@ func ComputeDiff(previousParsedData, modifiedParsedData gaby.Container, resource
 			diff: api.ResourceDiff{
 				Resource:   *matching.previousInfos[previousDocIndex],
 				ChangeType: api.MutationTypeDelete,
-				FromValue:  previousParsedData[previousDocIndex].String(),
+				FromValue:  diffDocumentText(previousParsedData[previousDocIndex]),
 			},
 		})
 	}

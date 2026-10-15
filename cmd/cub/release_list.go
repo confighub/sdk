@@ -4,6 +4,8 @@
 package main
 
 import (
+	"errors"
+	"math"
 	"net/http"
 	"sort"
 	"strconv"
@@ -19,7 +21,8 @@ var releaseListCmd = &cobra.Command{
 	Use:   "list",
 	Short: "List releases",
 	Long: getCommandHelp(`List the releases of a space, newest first, or the newest release of each space when
---space is "*".
+--space is "*". With --space "*", --distinct-on Off lists every release that matches instead,
+and needs --where or --filter to say which.
 
 Each release is shown by its number, the tag on the revisions it bundled, whether it is
 published, the first 12 hex digits of its OCI manifest digest, the live status the tool
@@ -45,6 +48,9 @@ Examples:
 
   # Find the release with a manifest digest in any space
   cub release list --space '*' --where "ManifestDigest = 'sha256:...'"
+
+  # Every release published in any space since October 1, not only the newest of each
+  cub release list --space '*' --distinct-on Off --where "CreatedAt >= '2026-10-01T00:00:00Z'"
 `+"```"+`
 `, ""),
 	Args:        cobra.NoArgs,
@@ -66,9 +72,15 @@ var releaseCustomColumnDependencies = map[string][]string{}
 // releaseListInclude expands the Tag, so the table shows its name rather than its id.
 const releaseListInclude = "TagID"
 
+// releaseDistinctOn is --distinct-on: what the organization-wide search returns at most one
+// release per.
+var releaseDistinctOn string
+
 func init() {
 	addStandardListFlags(releaseListCmd)
 	enableListPagingFlags(releaseListCmd)
+	releaseListCmd.Flags().StringVar(&releaseDistinctOn, "distinct-on", "",
+		`with --space "*", what to return at most one release per: Space, the default, or Off for every release that matches, which needs --where or --filter`)
 	releaseCmd.AddCommand(releaseListCmd)
 }
 
@@ -79,6 +91,9 @@ func releaseListCmdRun(cmd *cobra.Command, args []string) error {
 	}
 
 	// Cross-space search when --space is "*", otherwise list within the space.
+	if releaseDistinctOn != "" && selectedSpaceID != "*" {
+		return errors.New(`--distinct-on applies only with --space "*"; a space's own list has every one of its releases`)
+	}
 	if selectedSpaceID == "*" {
 		releases, err := apiSearchListReleases(where, selectFields, filterID)
 		if err != nil {
@@ -266,22 +281,29 @@ func apiSearchListReleases(whereFilter string, selectParam string, filterParam s
 	if selectValue := releaseSelectValue(selectParam, include); selectValue != "" && selectValue != "*" {
 		newParams.Select = &selectValue
 	}
-	relRes, err := cubClientNew.ListAllReleasesWithResponse(ctx, newParams)
-	if cubapi.IsAPIError(err, relRes) {
-		return nil, cubapi.InterpretErrorGeneric(err, relRes)
+	opts := listPageOpts("DESC:CreatedAt")
+	if releaseDistinctOn != "" {
+		distinctOn := goclientnew.ListAllReleasesParamsDistinctOn(releaseDistinctOn)
+		newParams.DistinctOn = &distinctOn
+		// Without the dedupe the server requires a limit, so read every page of matches.
+		if distinctOn == goclientnew.ListAllReleasesParamsDistinctOnOff && opts.Limit == 0 {
+			opts.Limit = math.MaxInt
+		}
 	}
-	releases := extendedReleasePtrs(relRes.JSON200)
+	if opts.OrderBy != "" {
+		newParams.OrderBy = &opts.OrderBy
+	}
+	releases, err := cubapi.ReadPages(opts, func(limit *int, token *string) (*http.Response, *[]goclientnew.ExtendedRelease, error) {
+		newParams.Limit, newParams.Continue = limit, token
+		res, err := cubClientNew.ListAllReleasesWithResponse(ctx, newParams)
+		if cubapi.IsAPIError(err, res) {
+			return nil, nil, cubapi.InterpretErrorGeneric(err, res)
+		}
+		return res.HTTPResponse, res.JSON200, nil
+	})
+	if err != nil {
+		return nil, err
+	}
 	sortReleasesNewestFirst(releases)
 	return releases, nil
-}
-
-func extendedReleasePtrs(releases *[]goclientnew.ExtendedRelease) []*goclientnew.ExtendedRelease {
-	if releases == nil {
-		return nil
-	}
-	result := make([]*goclientnew.ExtendedRelease, len(*releases))
-	for i := range *releases {
-		result[i] = &(*releases)[i]
-	}
-	return result
 }

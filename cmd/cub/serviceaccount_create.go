@@ -41,7 +41,7 @@ Examples:
 func init() {
 	addStandardCreateFlags(serviceAccountCreateCmd)
 	serviceAccountCreateCmd.Flags().StringSliceVar(&serviceAccountCreateArgs.permissions, "permission", []string{}, permissionCreateHelp)
-	serviceAccountCreateCmd.Flags().StringVar(&serviceAccountCreateArgs.orgRole, "org-role", "", "organization-level role for the service account (admin, manager, editor, user, viewer, creator, member, or none), no higher than your own; the default is none, which leaves it with only the permissions granted to its user")
+	serviceAccountCreateCmd.Flags().StringVar(&serviceAccountCreateArgs.orgRole, "org-role", "", "organization-level role for the service account (admin, manager, editor, user, viewer, creator, or none), no higher than your own; the default is none, which leaves it with only the permissions granted to its user")
 	serviceAccountCmd.AddCommand(serviceAccountCreateCmd)
 }
 

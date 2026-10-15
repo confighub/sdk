@@ -14,15 +14,15 @@ import (
 
 // Thin aliases to keep call sites readable and to allow test substitution.
 var (
-	osMkdirAll   = os.MkdirAll
-	osWriteFile  = os.WriteFile
-	filepathDir  = filepath.Dir
+	osMkdirAll  = os.MkdirAll
+	osWriteFile = os.WriteFile
+	filepathDir = filepath.Dir
 )
 
 // OutputKind identifies a rendering of a response payload.
 // Introduced as part of the `-o/--output` flag that replaces the several
 // mutually-exclusive boolean/string flags (--json, --yaml, --jq, --yq, --names,
-// --columns, --display-mutations). See docs/dev/cli.md and cub-overview.md.
+// --columns, --display-mutations). See cub-overview.md.
 type OutputKind int
 
 const (

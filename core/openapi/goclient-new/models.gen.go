@@ -147,6 +147,12 @@ const (
 	UnitActionStatusProgressing  UnitActionStatus = "Progressing"
 )
 
+// Defines values for ListAllReleasesParamsDistinctOn.
+const (
+	ListAllReleasesParamsDistinctOnOff   ListAllReleasesParamsDistinctOn = "Off"
+	ListAllReleasesParamsDistinctOnSpace ListAllReleasesParamsDistinctOn = "Space"
+)
+
 // Defines values for ListAllRevisionsParamsDistinctOn.
 const (
 	ListAllRevisionsParamsDistinctOnOff  ListAllRevisionsParamsDistinctOn = "Off"
@@ -3403,11 +3409,17 @@ type PathChange struct {
 	// Attribution The To side's MutationSources entry for this path, which says what set the new value; returned when include names Attribution
 	Attribution *MutationInfo `json:"Attribution,omitempty" yaml:"Attribution,omitempty"`
 
-	// ChangeType Add, Delete, Update, Replace, Reorder, or Rename
+	// ChangeType Add, Delete, Update, Replace, Reorder, or Rename; or None for an unchanged path returned as context
 	ChangeType string `json:"ChangeType,omitempty" yaml:"ChangeType,omitempty"`
+
+	// Comment Head, Line, or Foot when the change is to a comment on the node at the path rather than to its value: the comment above the node, at the end of its line, or below it. The path of a comment on a whole resource is empty
+	Comment string `json:"Comment,omitempty" yaml:"Comment,omitempty"`
 
 	// DisplayPath The path in configuration path syntax, as --path arguments and where filters take it, with each unkeyed array element named by its index
 	DisplayPath string `json:"DisplayPath,omitempty" yaml:"DisplayPath,omitempty"`
+
+	// FromDataType How to read FromValue: string, int, or bool for a scalar, YAML for a map or array, and empty for a scalar of another type, such as a float or null, or when the From side has no value
+	FromDataType string `json:"FromDataType,omitempty" yaml:"FromDataType,omitempty"`
 
 	// FromValue The value on the From side: a scalar's text, or a YAML block for a map or array
 	FromValue string `json:"FromValue,omitempty" yaml:"FromValue,omitempty"`
@@ -3421,7 +3433,10 @@ type PathChange struct {
 	// Segments The path split into its segments, for rendering without parsing the path syntax
 	Segments []PathSegment `json:"Segments" yaml:"Segments"`
 
-	// ToValue The value on the To side: a scalar's text, or a YAML block for a map or array
+	// ToDataType How to read ToValue: string, int, or bool for a scalar, YAML for a map or array, and empty for a scalar of another type, such as a float or null, or when the To side has no value
+	ToDataType string `json:"ToDataType,omitempty" yaml:"ToDataType,omitempty"`
+
+	// ToValue The value on the To side: a scalar's text, or a YAML block for a map or array. For an unchanged path, the value on both sides
 	ToValue string `json:"ToValue,omitempty" yaml:"ToValue,omitempty"`
 }
 
@@ -3455,13 +3470,13 @@ type PathSegment struct {
 	Field string `json:"Field,omitempty" yaml:"Field,omitempty"`
 
 	// FromIndex The element's index on the From side; -1 for a map key or an element absent there
-	FromIndex int `json:"FromIndex,omitempty" yaml:"FromIndex,omitempty"`
+	FromIndex int `json:"FromIndex" yaml:"FromIndex"`
 
 	// MergeKeys The merge keys that identify the element, for an element of a merge-keyed array
 	MergeKeys []MergeKeyValue `json:"MergeKeys,omitempty" yaml:"MergeKeys,omitempty"`
 
 	// ToIndex The element's index on the To side; -1 for a map key or an element absent there
-	ToIndex int `json:"ToIndex,omitempty" yaml:"ToIndex,omitempty"`
+	ToIndex int `json:"ToIndex" yaml:"ToIndex"`
 }
 
 // PathToVisitorInfoType defines model for PathToVisitorInfoType.
@@ -10597,12 +10612,16 @@ type DemoteParams struct {
 	DryRun *bool `form:"dry_run,omitempty" json:"dry_run,omitempty" yaml:"dry_run,omitempty"`
 
 	// Include Comma-separated parts of the result to return in addition to the actions: Mutations for what each restore changed, or on a dry run would change, as entries of its MutationSources, and Diff for the same change path by path with the values on both sides.
+	//
+	// Supported values: Mutations, Diff.
 	Include *string `form:"include,omitempty" json:"include,omitempty" yaml:"include,omitempty"`
 }
 
 // DiffConfigurationsParams defines parameters for DiffConfigurations.
 type DiffConfigurationsParams struct {
-	// Include Comma-separated: Attribution to attach to each changed path the To side's MutationSources entry, which says what set the new value, and Unchanged to also list resources with no changes.
+	// Include Comma-separated: Attribution to attach to each changed path the To side's MutationSources entry, which says what set the new value, Unchanged to also list resources with no changes, and Context to also list, within each changed resource, the unchanged paths around the changes: every unchanged child of each map or array that holds a change, up to the resource, as ChangeType None.
+	//
+	// Supported values: Attribution, Unchanged, Context.
 	Include *string `form:"include,omitempty" json:"include,omitempty" yaml:"include,omitempty"`
 
 	// WhereResource Limit the diff to the resources this where expression selects on either side.
@@ -11453,6 +11472,8 @@ type InvokeFunctionsOnOrgParams struct {
 	IncludeHidden *string `form:"include_hidden,omitempty" json:"include_hidden,omitempty" yaml:"include_hidden,omitempty"`
 
 	// Include Comma-separated parts of the result to return in addition to the default: ConfigData for the configuration the invocation produced, carried whether or not the invocation changed it. Without it, the configuration is present only when the invocation changed it, and an unchanged result is reported by DataHash alone. Diff for what the invocation changed in each Unit, path by path with the values on both sides.
+	//
+	// Supported values: ConfigData, Diff.
 	Include *string `form:"include,omitempty" json:"include,omitempty" yaml:"include,omitempty"`
 
 	// ResourceType Resource type: Resource type to match for the desired ToolchainType, for example apps/v1/Deployment
@@ -13154,6 +13175,8 @@ type PromoteParams struct {
 	DryRun *bool `form:"dry_run,omitempty" json:"dry_run,omitempty" yaml:"dry_run,omitempty"`
 
 	// Include Comma-separated parts of the result to return in addition to the actions: Mutations for what each Unit write changed, or on a dry run would change, as entries of its MutationSources, and Diff for the same change path by path with the values on both sides, and ConfigData for the configuration each Unit write produced, or on a dry run would produce. On a dry run any of them runs the merges a plan otherwise skips, so they are returned only when named.
+	//
+	// Supported values: Mutations, Diff, ConfigData.
 	Include *string `form:"include,omitempty" json:"include,omitempty" yaml:"include,omitempty"`
 }
 
@@ -13278,7 +13301,19 @@ type ListAllReleasesParams struct {
 	//
 	// Keep reading until a response has no such header: a page can hold fewer entities than the limit, or none, and still be followed by more.
 	Continue *string `form:"continue,omitempty" json:"continue,omitempty" yaml:"continue,omitempty"`
+
+	// DistinctOn Entity to return at most one Release per. The result set applies DISTINCT ON this key, keeping the most recent row for each.
+	//
+	// Supported values: Space, Off.
+	//
+	// If not specified, results are restricted to at most one row per Space.
+	//
+	// Off disables the DISTINCT ON and returns every matching row, so it requires an explicit 'limit' and is rejected with 400 without one.
+	DistinctOn *ListAllReleasesParamsDistinctOn `form:"distinct_on,omitempty" json:"distinct_on,omitempty" yaml:"distinct_on,omitempty"`
 }
+
+// ListAllReleasesParamsDistinctOn defines parameters for ListAllReleases.
+type ListAllReleasesParamsDistinctOn string
 
 // ListAllResourcesParams defines parameters for ListAllResources.
 type ListAllResourcesParams struct {
@@ -16493,6 +16528,8 @@ type InvokeFunctionsParams struct {
 	IncludeHidden *string `form:"include_hidden,omitempty" json:"include_hidden,omitempty" yaml:"include_hidden,omitempty"`
 
 	// Include Comma-separated parts of the result to return in addition to the default: ConfigData for the configuration the invocation produced, carried whether or not the invocation changed it. Without it, the configuration is present only when the invocation changed it, and an unchanged result is reported by DataHash alone. Diff for what the invocation changed in each Unit, path by path with the values on both sides.
+	//
+	// Supported values: ConfigData, Diff.
 	Include *string `form:"include,omitempty" json:"include,omitempty" yaml:"include,omitempty"`
 
 	// ResourceType Resource type: Resource type to match for the desired ToolchainType, for example apps/v1/Deployment
@@ -17937,6 +17974,8 @@ type CreateUnitParams struct {
 	AllowExists *string `form:"allow_exists,omitempty" json:"allow_exists,omitempty" yaml:"allow_exists,omitempty"`
 
 	// Include Comma-separated parts of the result to return in addition to the Unit: ConfigData for the configuration the operation produced, MutationSources for what set each value in it, and Diff for what the operation changed, path by path with the values on both sides. None is a field of a Unit, and each costs something to return, so they are returned only when named. A dry run stores nothing, so this is the only way to see what it would have produced.
+	//
+	// Supported values: ConfigData, MutationSources, Diff.
 	Include *string `form:"include,omitempty" json:"include,omitempty" yaml:"include,omitempty"`
 
 	// DryRun If true, report what the write would do without doing it: the write runs, including every check it makes, and is then rolled back. The response is the one the write would return, with the entities as they would be written. An entity a dry run creates is given an ID that the real create will not reuse.
@@ -18126,6 +18165,8 @@ type PatchUnitParams struct {
 	Subgroup *string `form:"subgroup,omitempty" json:"subgroup,omitempty" yaml:"subgroup,omitempty"`
 
 	// Include Comma-separated parts of the result to return in addition to the Unit: ConfigData for the configuration the operation produced, MutationSources for what set each value in it, and Diff for what the operation changed, path by path with the values on both sides. None is a field of a Unit, and each costs something to return, so they are returned only when named. A dry run stores nothing, so this is the only way to see what it would have produced.
+	//
+	// Supported values: ConfigData, MutationSources, Diff.
 	Include *string `form:"include,omitempty" json:"include,omitempty" yaml:"include,omitempty"`
 }
 
@@ -18243,6 +18284,8 @@ type UpdateUnitParams struct {
 	Subgroup *string `form:"subgroup,omitempty" json:"subgroup,omitempty" yaml:"subgroup,omitempty"`
 
 	// Include Comma-separated parts of the result to return in addition to the Unit: ConfigData for the configuration the operation produced, MutationSources for what set each value in it, and Diff for what the operation changed, path by path with the values on both sides. None is a field of a Unit, and each costs something to return, so they are returned only when named. A dry run stores nothing, so this is the only way to see what it would have produced.
+	//
+	// Supported values: ConfigData, MutationSources, Diff.
 	Include *string `form:"include,omitempty" json:"include,omitempty" yaml:"include,omitempty"`
 }
 
@@ -18252,6 +18295,8 @@ type UploadUnitDataParams struct {
 	LastChangeDescription *string `form:"last_change_description,omitempty" json:"last_change_description,omitempty" yaml:"last_change_description,omitempty"`
 
 	// Include Comma-separated parts of the result to return in addition to the Unit: ConfigData for the configuration the operation produced, MutationSources for what set each value in it, and Diff for what the operation changed, path by path with the values on both sides. None is a field of a Unit, and each costs something to return, so they are returned only when named. A dry run stores nothing, so this is the only way to see what it would have produced.
+	//
+	// Supported values: ConfigData, MutationSources, Diff.
 	Include *string `form:"include,omitempty" json:"include,omitempty" yaml:"include,omitempty"`
 
 	// DryRun Dry run mode: return changed unit(s) but don't update configuration data
@@ -18296,7 +18341,9 @@ type GetUnitDiffParams struct {
 	// To The Revision on the To side, in the same syntax as from.
 	To *string `form:"to,omitempty" json:"to,omitempty" yaml:"to,omitempty"`
 
-	// Include Comma-separated: Attribution to attach to each changed path the To side's MutationSources entry, which says what set the new value, and Unchanged to also list resources with no changes.
+	// Include Comma-separated: Attribution to attach to each changed path the To side's MutationSources entry, which says what set the new value, Unchanged to also list resources with no changes, and Context to also list, within each changed resource, the unchanged paths around the changes: every unchanged child of each map or array that holds a change, up to the resource, as ChangeType None.
+	//
+	// Supported values: Attribution, Unchanged, Context.
 	Include *string `form:"include,omitempty" json:"include,omitempty" yaml:"include,omitempty"`
 
 	// WhereResource Limit the diff to the resources this where expression selects on either side.
@@ -21803,6 +21850,10 @@ type BulkPatchUnitsParams struct {
 	//
 	// Supported attributes for Unit are ChangeSetID, FromLinkID, HeadMutationNum, HeadRevisionNum, LastReleasedRevisionNum, OrganizationID, SpaceID, TargetID, UnitEventID, UpstreamSpaceID, UpstreamUnitID.
 	//
+	// A write also accepts the parts of its result: ConfigData for the configuration the operation produced, MutationSources for what set each value in it, and Diff for what the operation changed, path by path with the values on both sides. None is a field of a Unit, and each costs something to return, so they are returned only when named. A dry run stores nothing, so this is the only way to see what it would have produced.
+	//
+	// Supported values: ChangeSetID, FromLinkID, HeadMutationNum, HeadRevisionNum, LastReleasedRevisionNum, OrganizationID, SpaceID, TargetID, UnitEventID, UpstreamSpaceID, UpstreamUnitID, ConfigData, MutationSources, Diff.
+	//
 	// The whole string must be query-encoded.
 	Include *string `form:"include,omitempty" json:"include,omitempty" yaml:"include,omitempty"`
 
@@ -22049,6 +22100,10 @@ type BulkCreateUnitsParams struct {
 	// expected in a comma-separated list format as in the JSON encoding.
 	//
 	// Supported attributes for Unit are ChangeSetID, FromLinkID, HeadMutationNum, HeadRevisionNum, LastReleasedRevisionNum, OrganizationID, SpaceID, TargetID, UnitEventID, UpstreamSpaceID, UpstreamUnitID.
+	//
+	// A write also accepts the parts of its result: ConfigData for the configuration the operation produced, MutationSources for what set each value in it, and Diff for what the operation changed, path by path with the values on both sides. None is a field of a Unit, and each costs something to return, so they are returned only when named. A dry run stores nothing, so this is the only way to see what it would have produced.
+	//
+	// Supported values: ChangeSetID, FromLinkID, HeadMutationNum, HeadRevisionNum, LastReleasedRevisionNum, OrganizationID, SpaceID, TargetID, UnitEventID, UpstreamSpaceID, UpstreamUnitID, ConfigData, MutationSources, Diff.
 	//
 	// The whole string must be query-encoded.
 	Include *string `form:"include,omitempty" json:"include,omitempty" yaml:"include,omitempty"`
@@ -22828,7 +22883,9 @@ type SearchUnitDiffParams struct {
 	// To The Revision on the To side, in the same syntax as from.
 	To *string `form:"to,omitempty" json:"to,omitempty" yaml:"to,omitempty"`
 
-	// Include Comma-separated: Attribution to attach to each changed path the To side's MutationSources entry, which says what set the new value, and Unchanged to also list resources with no changes.
+	// Include Comma-separated: Attribution to attach to each changed path the To side's MutationSources entry, which says what set the new value, Unchanged to also list resources with no changes, and Context to also list, within each changed resource, the unchanged paths around the changes: every unchanged child of each map or array that holds a change, up to the resource, as ChangeType None.
+	//
+	// Supported values: Attribution, Unchanged, Context.
 	Include *string `form:"include,omitempty" json:"include,omitempty" yaml:"include,omitempty"`
 
 	// WhereResource Limit the diff to the resources this where expression selects on either side.
@@ -23106,6 +23163,8 @@ type UploadParams struct {
 	DryRun *bool `form:"dry_run,omitempty" json:"dry_run,omitempty" yaml:"dry_run,omitempty"`
 
 	// Include Comma-separated parts of the result to return in addition to the actions: Mutations for what each Unit write changed, or on a dry run would change, as entries of its MutationSources, and Diff for the same change path by path with the values on both sides. They cost something to return, and on a dry run either one runs the merges a plan otherwise skips, so they are returned only when named.
+	//
+	// Supported values: Mutations, Diff.
 	Include *string `form:"include,omitempty" json:"include,omitempty" yaml:"include,omitempty"`
 }
 

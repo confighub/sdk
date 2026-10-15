@@ -19,6 +19,7 @@ import (
 var variantDiffArgs struct {
 	unifiedDiff bool
 	colorOutput bool
+	context     bool
 }
 
 var variantDiffCmd = &cobra.Command{
@@ -85,8 +86,11 @@ Examples:
   # Only the workloads, as a unified diff
   cub variant diff -u apptique-prod v1.2.0 v1.3.0 --where "Slug LIKE 'deployment-%'"
 
-  # What set each value that the change touched, rather than the lines
+  # Each changed path with its value on both sides, rather than the lines
   cub variant diff apptique-prod v1.2.0 v1.3.0 -o mutations
+
+  # The same, with the unchanged fields around each change
+  cub variant diff apptique-prod v1.2.0 v1.3.0 -o mutations --context
 `+"```"+`
 `, ""),
 	Args: cobra.RangeArgs(2, 3),
@@ -100,6 +104,7 @@ func init() {
 	// text or mutations, not a structured entity payload, so json/yaml/jq/yq do not apply.
 	variantDiffCmd.Flags().StringVarP(&outputFormat, "output", "o", "",
 		`Output format: "`+variantDiffOutputDefault+`" for the text diff, or "`+variantDiffOutputMutations+`" for a structured, path-by-path diff that matches list elements by merge key.`)
+	variantDiffCmd.Flags().BoolVar(&variantDiffArgs.context, "context", false, "with -o "+variantDiffOutputMutations+", also show the unchanged paths around each change: every unchanged field and element of each map and list a change is in, up to the resource")
 	enableWhereFlag(variantDiffCmd)
 	enableQuietFlag(variantDiffCmd)
 	variantCmd.AddCommand(variantDiffCmd)
@@ -179,6 +184,9 @@ func variantDiffCmdRun(cmd *cobra.Command, args []string) error {
 	default:
 		return errors.Newf(`"cub variant diff" accepts -o %q or -o %q; %q is not supported`,
 			variantDiffOutputDefault, variantDiffOutputMutations, outputFormat)
+	}
+	if variantDiffArgs.context && outputFormat != variantDiffOutputMutations {
+		return errors.Newf("--context applies to the structured diff: add -o %s", variantDiffOutputMutations)
 	}
 
 	// Args bounds the count, so the from side is always present and the to side is the
@@ -270,7 +278,8 @@ func variantMutationsDiff(space *goclientnew.Space, units []*goclientnew.Unit, s
 	if selectionWhere != "" {
 		whereClause = selectionWhere + " AND " + whereClause
 	}
-	params := &goclientnew.SearchUnitDiffParams{Where: &whereClause, From: &from.revision, To: &to.revision}
+	params := &goclientnew.SearchUnitDiffParams{Where: &whereClause, From: &from.revision, To: &to.revision,
+		Include: diffContextInclude(variantDiffArgs.context)}
 	res, err := cubClientNew.SearchUnitDiffWithResponse(ctx, params)
 	if cubapi.IsAPIError(err, res) {
 		return cubapi.InterpretErrorGeneric(err, res)

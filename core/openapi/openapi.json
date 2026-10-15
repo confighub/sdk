@@ -78,6 +78,7 @@
             "description": "Include clause for expanding related entities in the response for Component.\nThe attribute names are case-sensitive, PascalCase, and\nexpected in a comma-separated list format as in the JSON encoding.\n\nSupported attributes for Component are OrganizationID.\n\nThe whole string must be query-encoded.",
             "required": false,
             "schema": {
+              "pattern": "^\\s*(OrganizationID)\\s*(?:,\\s*(?:OrganizationID)\\s*)*$",
               "type": "string"
             }
           },
@@ -279,6 +280,7 @@
             "description": "Include clause for expanding related entities in the response for Component.\nThe attribute names are case-sensitive, PascalCase, and\nexpected in a comma-separated list format as in the JSON encoding.\n\nSupported attributes for Component are OrganizationID.\n\nThe whole string must be query-encoded.",
             "required": false,
             "schema": {
+              "pattern": "^\\s*(OrganizationID)\\s*(?:,\\s*(?:OrganizationID)\\s*)*$",
               "type": "string"
             }
           },
@@ -592,6 +594,7 @@
             "description": "Include clause for expanding related entities in the response for ServiceAccount.\nThe attribute names are case-sensitive, PascalCase, and\nexpected in a comma-separated list format as in the JSON encoding.\n\nSupported attributes for ServiceAccount are OrganizationID.\n\nThe whole string must be query-encoded.",
             "required": false,
             "schema": {
+              "pattern": "^\\s*(OrganizationID)\\s*(?:,\\s*(?:OrganizationID)\\s*)*$",
               "type": "string"
             }
           },
@@ -784,6 +787,7 @@
             "description": "Include clause for expanding related entities in the response for ServiceAccount.\nThe attribute names are case-sensitive, PascalCase, and\nexpected in a comma-separated list format as in the JSON encoding.\n\nSupported attributes for ServiceAccount are OrganizationID.\n\nThe whole string must be query-encoded.",
             "required": false,
             "schema": {
+              "pattern": "^\\s*(OrganizationID)\\s*(?:,\\s*(?:OrganizationID)\\s*)*$",
               "type": "string"
             }
           },
@@ -1050,6 +1054,7 @@
             "description": "Include clause for expanding related entities in the response for Space.\nThe attribute names are case-sensitive, PascalCase, and\nexpected in a comma-separated list format as in the JSON encoding.\n\nSupported attributes for Space are AttributeFilterID, AttributeIDs, ComponentID, OrganizationID, ReleaseTargetID, TriggerFilterID, TriggerIDs.\n\nThe whole string must be query-encoded.",
             "required": false,
             "schema": {
+              "pattern": "^\\s*(AttributeFilterID|AttributeIDs|ComponentID|OrganizationID|ReleaseTargetID|TriggerFilterID|TriggerIDs)\\s*(?:,\\s*(?:AttributeFilterID|AttributeIDs|ComponentID|OrganizationID|ReleaseTargetID|TriggerFilterID|TriggerIDs)\\s*)*$",
               "type": "string"
             }
           },
@@ -1278,6 +1283,7 @@
             "description": "Include clause for expanding related entities in the response for Space.\nThe attribute names are case-sensitive, PascalCase, and\nexpected in a comma-separated list format as in the JSON encoding.\n\nSupported attributes for Space are AttributeFilterID, AttributeIDs, ComponentID, OrganizationID, ReleaseTargetID, TriggerFilterID, TriggerIDs.\n\nThe whole string must be query-encoded.",
             "required": false,
             "schema": {
+              "pattern": "^\\s*(AttributeFilterID|AttributeIDs|ComponentID|OrganizationID|ReleaseTargetID|TriggerFilterID|TriggerIDs)\\s*(?:,\\s*(?:AttributeFilterID|AttributeIDs|ComponentID|OrganizationID|ReleaseTargetID|TriggerFilterID|TriggerIDs)\\s*)*$",
               "type": "string"
             }
           },
@@ -1617,6 +1623,7 @@
             "description": "Include clause for expanding related entities in the response for Space.\nThe attribute names are case-sensitive, PascalCase, and\nexpected in a comma-separated list format as in the JSON encoding.\n\nSupported attributes for Space are AttributeFilterID, AttributeIDs, ComponentID, OrganizationID, ReleaseTargetID, TriggerFilterID, TriggerIDs.\n\nThe whole string must be query-encoded.",
             "required": false,
             "schema": {
+              "pattern": "^\\s*(AttributeFilterID|AttributeIDs|ComponentID|OrganizationID|ReleaseTargetID|TriggerFilterID|TriggerIDs)\\s*(?:,\\s*(?:AttributeFilterID|AttributeIDs|ComponentID|OrganizationID|ReleaseTargetID|TriggerFilterID|TriggerIDs)\\s*)*$",
               "type": "string"
             }
           },
@@ -2125,6 +2132,7 @@
             "description": "Include clause for expanding related entities in the response for Attestation.\nThe attribute names are case-sensitive, PascalCase, and\nexpected in a comma-separated list format as in the JSON encoding.\n\nSupported attributes for Attestation are OrganizationID, SpaceID.\n\nThe whole string must be query-encoded.",
             "required": false,
             "schema": {
+              "pattern": "^\\s*(OrganizationID|SpaceID)\\s*(?:,\\s*(?:OrganizationID|SpaceID)\\s*)*$",
               "type": "string"
             }
           },
@@ -2163,6 +2171,7 @@
             "description": "Comma-separated list of fields to sort Attestation results by, each in the form 'ASC|DESC:FieldName' or just 'FieldName'.\n\nField names are case-sensitive and PascalCase, as in the JSON encoding. Sort direction defaults to ASC when the 'DIRECTION:' prefix is omitted.\n\nSupported attributes for ordering Attestation: AttestationID, ChangeOrderID, CreatedAt, ExpiresAt, Hash, HiddenReason, Note, OrganizationID, ReleaseID, Result, RevokedAttestationID, SpaceID, Type, UserID.\n\nExample: 'DESC:CreatedAt' or 'DisplayName,DESC:CreatedAt'.\n\nResults are ordered by the Attestation's ID after the fields named, and by the ID alone if none are.\n\nThe whole string must be query-encoded.",
             "required": false,
             "schema": {
+              "pattern": "^\\s*(?:(?:[Aa][Ss][Cc]|[Dd][Ee][Ss][Cc])\\s*:\\s*)?(AttestationID|ChangeOrderID|CreatedAt|ExpiresAt|Hash|HiddenReason|Note|OrganizationID|ReleaseID|Result|RevokedAttestationID|SpaceID|Type|UserID)\\s*(?:,\\s*(?:(?:[Aa][Ss][Cc]|[Dd][Ee][Ss][Cc])\\s*:\\s*)?(?:AttestationID|ChangeOrderID|CreatedAt|ExpiresAt|Hash|HiddenReason|Note|OrganizationID|ReleaseID|Result|RevokedAttestationID|SpaceID|Type|UserID)\\s*)*$",
               "type": "string"
             }
           },
@@ -2313,6 +2322,7 @@
             "description": "Include clause for expanding related entities in the response for Attribute.\nThe attribute names are case-sensitive, PascalCase, and\nexpected in a comma-separated list format as in the JSON encoding.\n\nSupported attributes for Attribute are OrganizationID, SpaceID.\n\nThe whole string must be query-encoded.",
             "required": false,
             "schema": {
+              "pattern": "^\\s*(OrganizationID|SpaceID)\\s*(?:,\\s*(?:OrganizationID|SpaceID)\\s*)*$",
               "type": "string"
             }
           },
@@ -2505,6 +2515,7 @@
             "description": "Include clause for expanding related entities in the response for Attribute.\nThe attribute names are case-sensitive, PascalCase, and\nexpected in a comma-separated list format as in the JSON encoding.\n\nSupported attributes for Attribute are OrganizationID, SpaceID.\n\nThe whole string must be query-encoded.",
             "required": false,
             "schema": {
+              "pattern": "^\\s*(OrganizationID|SpaceID)\\s*(?:,\\s*(?:OrganizationID|SpaceID)\\s*)*$",
               "type": "string"
             }
           },
@@ -2543,6 +2554,7 @@
             "description": "Comma-separated list of fields to sort Attribute results by, each in the form 'ASC|DESC:FieldName' or just 'FieldName'.\n\nField names are case-sensitive and PascalCase, as in the JSON encoding. Sort direction defaults to ASC when the 'DIRECTION:' prefix is omitted.\n\nSupported attributes for ordering Attribute: AttributeID, BackingUnitID, CreatedAt, DataType, DisplayName, Hash, HiddenReason, OrganizationID, Slug, SpaceID, ToolchainType, UpdatedAt, UpstreamAttributeID.\n\nExample: 'DESC:CreatedAt' or 'DisplayName,DESC:CreatedAt'.\n\nResults are ordered by the Attribute's ID after the fields named, and by the ID alone if none are.\n\nThe whole string must be query-encoded.",
             "required": false,
             "schema": {
+              "pattern": "^\\s*(?:(?:[Aa][Ss][Cc]|[Dd][Ee][Ss][Cc])\\s*:\\s*)?(AttributeID|BackingUnitID|CreatedAt|DataType|DisplayName|Hash|HiddenReason|OrganizationID|Slug|SpaceID|ToolchainType|UpdatedAt|UpstreamAttributeID)\\s*(?:,\\s*(?:(?:[Aa][Ss][Cc]|[Dd][Ee][Ss][Cc])\\s*:\\s*)?(?:AttributeID|BackingUnitID|CreatedAt|DataType|DisplayName|Hash|HiddenReason|OrganizationID|Slug|SpaceID|ToolchainType|UpdatedAt|UpstreamAttributeID)\\s*)*$",
               "type": "string"
             }
           },
@@ -2691,6 +2703,7 @@
             "description": "Include clause for expanding related entities in the response for Attribute.\nThe attribute names are case-sensitive, PascalCase, and\nexpected in a comma-separated list format as in the JSON encoding.\n\nSupported attributes for Attribute are OrganizationID, SpaceID.\n\nThe whole string must be query-encoded.",
             "required": false,
             "schema": {
+              "pattern": "^\\s*(OrganizationID|SpaceID)\\s*(?:,\\s*(?:OrganizationID|SpaceID)\\s*)*$",
               "type": "string"
             }
           },
@@ -3011,6 +3024,7 @@
             "description": "Include clause for expanding related entities in the response for Attribute.\nThe attribute names are case-sensitive, PascalCase, and\nexpected in a comma-separated list format as in the JSON encoding.\n\nSupported attributes for Attribute are OrganizationID, SpaceID.\n\nThe whole string must be query-encoded.",
             "required": false,
             "schema": {
+              "pattern": "^\\s*(OrganizationID|SpaceID)\\s*(?:,\\s*(?:OrganizationID|SpaceID)\\s*)*$",
               "type": "string"
             }
           },
@@ -3387,6 +3401,7 @@
             "description": "Include clause for expanding related entities in the response for Attribute.\nThe attribute names are case-sensitive, PascalCase, and\nexpected in a comma-separated list format as in the JSON encoding.\n\nSupported attributes for Attribute are OrganizationID, SpaceID.\n\nThe whole string must be query-encoded.",
             "required": false,
             "schema": {
+              "pattern": "^\\s*(OrganizationID|SpaceID)\\s*(?:,\\s*(?:OrganizationID|SpaceID)\\s*)*$",
               "type": "string"
             }
           },
@@ -3560,6 +3575,7 @@
             "description": "Include clause for expanding related entities in the response for BridgeWorker.\nThe attribute names are case-sensitive, PascalCase, and\nexpected in a comma-separated list format as in the JSON encoding.\n\nSupported attributes for BridgeWorker are OrganizationID, SpaceID.\n\nThe whole string must be query-encoded.",
             "required": false,
             "schema": {
+              "pattern": "^\\s*(OrganizationID|SpaceID)\\s*(?:,\\s*(?:OrganizationID|SpaceID)\\s*)*$",
               "type": "string"
             }
           },
@@ -3752,6 +3768,7 @@
             "description": "Include clause for expanding related entities in the response for BridgeWorker.\nThe attribute names are case-sensitive, PascalCase, and\nexpected in a comma-separated list format as in the JSON encoding.\n\nSupported attributes for BridgeWorker are OrganizationID, SpaceID.\n\nThe whole string must be query-encoded.",
             "required": false,
             "schema": {
+              "pattern": "^\\s*(OrganizationID|SpaceID)\\s*(?:,\\s*(?:OrganizationID|SpaceID)\\s*)*$",
               "type": "string"
             }
           },
@@ -3790,6 +3807,7 @@
             "description": "Comma-separated list of fields to sort BridgeWorker results by, each in the form 'ASC|DESC:FieldName' or just 'FieldName'.\n\nField names are case-sensitive and PascalCase, as in the JSON encoding. Sort direction defaults to ASC when the 'DIRECTION:' prefix is omitted.\n\nSupported attributes for ordering BridgeWorker: BridgeWorkerID, Condition, CreatedAt, DisplayName, HiddenReason, IPAddress, LastMessage, LastSeenAt, OrgRole, OrganizationID, Slug, SpaceID, UpdatedAt, UserID.\n\nExample: 'DESC:CreatedAt' or 'DisplayName,DESC:CreatedAt'.\n\nResults are ordered by the BridgeWorker's ID after the fields named, and by the ID alone if none are.\n\nThe whole string must be query-encoded.",
             "required": false,
             "schema": {
+              "pattern": "^\\s*(?:(?:[Aa][Ss][Cc]|[Dd][Ee][Ss][Cc])\\s*:\\s*)?(BridgeWorkerID|Condition|CreatedAt|DisplayName|HiddenReason|IPAddress|LastMessage|LastSeenAt|OrgRole|OrganizationID|Slug|SpaceID|UpdatedAt|UserID)\\s*(?:,\\s*(?:(?:[Aa][Ss][Cc]|[Dd][Ee][Ss][Cc])\\s*:\\s*)?(?:BridgeWorkerID|Condition|CreatedAt|DisplayName|HiddenReason|IPAddress|LastMessage|LastSeenAt|OrgRole|OrganizationID|Slug|SpaceID|UpdatedAt|UserID)\\s*)*$",
               "type": "string"
             }
           },
@@ -3947,6 +3965,7 @@
             "description": "Include clause for expanding related entities in the response for BridgeWorker.\nThe attribute names are case-sensitive, PascalCase, and\nexpected in a comma-separated list format as in the JSON encoding.\n\nSupported attributes for BridgeWorker are OrganizationID, SpaceID.\n\nThe whole string must be query-encoded.",
             "required": false,
             "schema": {
+              "pattern": "^\\s*(OrganizationID|SpaceID)\\s*(?:,\\s*(?:OrganizationID|SpaceID)\\s*)*$",
               "type": "string"
             }
           },
@@ -4230,6 +4249,7 @@
             "description": "Comma-separated list of fields to sort QueuedOperation results by, each in the form 'ASC|DESC:FieldName' or just 'FieldName'.\n\nField names are case-sensitive and PascalCase, as in the JSON encoding. Sort direction defaults to ASC when the 'DIRECTION:' prefix is omitted.\n\nSupported attributes for ordering QueuedOperation: Action, BridgeWorkerID, CreatedAt, DryRun, OrganizationID, QueuedOperationID, RevisionNum, Status, TargetID, UnitActionNum, UnitID.\n\nExample: 'DESC:CreatedAt' or 'DisplayName,DESC:CreatedAt'.\n\nResults are ordered by the QueuedOperation's ID after the fields named, and by the ID alone if none are.\n\nThe whole string must be query-encoded.",
             "required": false,
             "schema": {
+              "pattern": "^\\s*(?:(?:[Aa][Ss][Cc]|[Dd][Ee][Ss][Cc])\\s*:\\s*)?(Action|BridgeWorkerID|CreatedAt|DryRun|OrganizationID|QueuedOperationID|RevisionNum|Status|TargetID|UnitActionNum|UnitID)\\s*(?:,\\s*(?:(?:[Aa][Ss][Cc]|[Dd][Ee][Ss][Cc])\\s*:\\s*)?(?:Action|BridgeWorkerID|CreatedAt|DryRun|OrganizationID|QueuedOperationID|RevisionNum|Status|TargetID|UnitActionNum|UnitID)\\s*)*$",
               "type": "string"
             }
           },
@@ -4597,6 +4617,7 @@
             "description": "Include clause for expanding related entities in the response for ChangeOrder.\nThe attribute names are case-sensitive, PascalCase, and\nexpected in a comma-separated list format as in the JSON encoding.\n\nSupported attributes for ChangeOrder are EndTagID, InvocationID, OrganizationID, ReleaseTagID, RestoreTagID, SpaceFilterID, SpaceID, StartTagID, UnitFilterID.\n\nThe whole string must be query-encoded.",
             "required": false,
             "schema": {
+              "pattern": "^\\s*(EndTagID|InvocationID|OrganizationID|ReleaseTagID|RestoreTagID|SpaceFilterID|SpaceID|StartTagID|UnitFilterID)\\s*(?:,\\s*(?:EndTagID|InvocationID|OrganizationID|ReleaseTagID|RestoreTagID|SpaceFilterID|SpaceID|StartTagID|UnitFilterID)\\s*)*$",
               "type": "string"
             }
           },
@@ -4789,6 +4810,7 @@
             "description": "Include clause for expanding related entities in the response for ChangeOrder.\nThe attribute names are case-sensitive, PascalCase, and\nexpected in a comma-separated list format as in the JSON encoding.\n\nSupported attributes for ChangeOrder are EndTagID, InvocationID, OrganizationID, ReleaseTagID, RestoreTagID, SpaceFilterID, SpaceID, StartTagID, UnitFilterID.\n\nThe whole string must be query-encoded.",
             "required": false,
             "schema": {
+              "pattern": "^\\s*(EndTagID|InvocationID|OrganizationID|ReleaseTagID|RestoreTagID|SpaceFilterID|SpaceID|StartTagID|UnitFilterID)\\s*(?:,\\s*(?:EndTagID|InvocationID|OrganizationID|ReleaseTagID|RestoreTagID|SpaceFilterID|SpaceID|StartTagID|UnitFilterID)\\s*)*$",
               "type": "string"
             }
           },
@@ -4827,6 +4849,7 @@
             "description": "Comma-separated list of fields to sort ChangeOrder results by, each in the form 'ASC|DESC:FieldName' or just 'FieldName'.\n\nField names are case-sensitive and PascalCase, as in the JSON encoding. Sort direction defaults to ASC when the 'DIRECTION:' prefix is omitted.\n\nSupported attributes for ordering ChangeOrder: AbortedReason, AdoptedEndTagID, ChangeOrderID, ChangeWorkflowID, CreatedAt, Description, DisplayName, EndTagID, HiddenReason, InvocationID, OrganizationID, PriorRevisions, ReleasePriorRevisions, ReleaseTagID, RestoreTagID, Slug, SpaceFilterID, SpaceID, Stage, StartTagID, UnitFilterID, UpdateType, UpdatedAt, UserID, WhereSpace, WhereUnit.\n\nExample: 'DESC:CreatedAt' or 'DisplayName,DESC:CreatedAt'.\n\nResults are ordered by the ChangeOrder's ID after the fields named, and by the ID alone if none are.\n\nThe whole string must be query-encoded.",
             "required": false,
             "schema": {
+              "pattern": "^\\s*(?:(?:[Aa][Ss][Cc]|[Dd][Ee][Ss][Cc])\\s*:\\s*)?(AbortedReason|AdoptedEndTagID|ChangeOrderID|ChangeWorkflowID|CreatedAt|Description|DisplayName|EndTagID|HiddenReason|InvocationID|OrganizationID|PriorRevisions|ReleasePriorRevisions|ReleaseTagID|RestoreTagID|Slug|SpaceFilterID|SpaceID|Stage|StartTagID|UnitFilterID|UpdateType|UpdatedAt|UserID|WhereSpace|WhereUnit)\\s*(?:,\\s*(?:(?:[Aa][Ss][Cc]|[Dd][Ee][Ss][Cc])\\s*:\\s*)?(?:AbortedReason|AdoptedEndTagID|ChangeOrderID|ChangeWorkflowID|CreatedAt|Description|DisplayName|EndTagID|HiddenReason|InvocationID|OrganizationID|PriorRevisions|ReleasePriorRevisions|ReleaseTagID|RestoreTagID|Slug|SpaceFilterID|SpaceID|Stage|StartTagID|UnitFilterID|UpdateType|UpdatedAt|UserID|WhereSpace|WhereUnit)\\s*)*$",
               "type": "string"
             }
           },
@@ -4975,6 +4998,7 @@
             "description": "Include clause for expanding related entities in the response for ChangeOrder.\nThe attribute names are case-sensitive, PascalCase, and\nexpected in a comma-separated list format as in the JSON encoding.\n\nSupported attributes for ChangeOrder are EndTagID, InvocationID, OrganizationID, ReleaseTagID, RestoreTagID, SpaceFilterID, SpaceID, StartTagID, UnitFilterID.\n\nThe whole string must be query-encoded.",
             "required": false,
             "schema": {
+              "pattern": "^\\s*(EndTagID|InvocationID|OrganizationID|ReleaseTagID|RestoreTagID|SpaceFilterID|SpaceID|StartTagID|UnitFilterID)\\s*(?:,\\s*(?:EndTagID|InvocationID|OrganizationID|ReleaseTagID|RestoreTagID|SpaceFilterID|SpaceID|StartTagID|UnitFilterID)\\s*)*$",
               "type": "string"
             }
           },
@@ -5332,6 +5356,7 @@
             "description": "Include clause for expanding related entities in the response for ChangeOrder.\nThe attribute names are case-sensitive, PascalCase, and\nexpected in a comma-separated list format as in the JSON encoding.\n\nSupported attributes for ChangeOrder are EndTagID, InvocationID, OrganizationID, ReleaseTagID, RestoreTagID, SpaceFilterID, SpaceID, StartTagID, UnitFilterID.\n\nThe whole string must be query-encoded.",
             "required": false,
             "schema": {
+              "pattern": "^\\s*(EndTagID|InvocationID|OrganizationID|ReleaseTagID|RestoreTagID|SpaceFilterID|SpaceID|StartTagID|UnitFilterID)\\s*(?:,\\s*(?:EndTagID|InvocationID|OrganizationID|ReleaseTagID|RestoreTagID|SpaceFilterID|SpaceID|StartTagID|UnitFilterID)\\s*)*$",
               "type": "string"
             }
           },
@@ -5736,6 +5761,7 @@
             "description": "Include clause for expanding related entities in the response for ChangeSet.\nThe attribute names are case-sensitive, PascalCase, and\nexpected in a comma-separated list format as in the JSON encoding.\n\nSupported attributes for ChangeSet are EndTagID, OrganizationID, SpaceID, StartTagID.\n\nThe whole string must be query-encoded.",
             "required": false,
             "schema": {
+              "pattern": "^\\s*(EndTagID|OrganizationID|SpaceID|StartTagID)\\s*(?:,\\s*(?:EndTagID|OrganizationID|SpaceID|StartTagID)\\s*)*$",
               "type": "string"
             }
           },
@@ -5928,6 +5954,7 @@
             "description": "Include clause for expanding related entities in the response for ChangeSet.\nThe attribute names are case-sensitive, PascalCase, and\nexpected in a comma-separated list format as in the JSON encoding.\n\nSupported attributes for ChangeSet are EndTagID, OrganizationID, SpaceID, StartTagID.\n\nThe whole string must be query-encoded.",
             "required": false,
             "schema": {
+              "pattern": "^\\s*(EndTagID|OrganizationID|SpaceID|StartTagID)\\s*(?:,\\s*(?:EndTagID|OrganizationID|SpaceID|StartTagID)\\s*)*$",
               "type": "string"
             }
           },
@@ -5966,6 +5993,7 @@
             "description": "Comma-separated list of fields to sort ChangeSet results by, each in the form 'ASC|DESC:FieldName' or just 'FieldName'.\n\nField names are case-sensitive and PascalCase, as in the JSON encoding. Sort direction defaults to ASC when the 'DIRECTION:' prefix is omitted.\n\nSupported attributes for ordering ChangeSet: ChangeSetID, CreatedAt, Description, DisplayName, EndTagID, HiddenReason, OrganizationID, Slug, SpaceID, StartTagID, StartTagIsPriorRevision, State, UpdatedAt.\n\nExample: 'DESC:CreatedAt' or 'DisplayName,DESC:CreatedAt'.\n\nResults are ordered by the ChangeSet's ID after the fields named, and by the ID alone if none are.\n\nThe whole string must be query-encoded.",
             "required": false,
             "schema": {
+              "pattern": "^\\s*(?:(?:[Aa][Ss][Cc]|[Dd][Ee][Ss][Cc])\\s*:\\s*)?(ChangeSetID|CreatedAt|Description|DisplayName|EndTagID|HiddenReason|OrganizationID|Slug|SpaceID|StartTagID|StartTagIsPriorRevision|State|UpdatedAt)\\s*(?:,\\s*(?:(?:[Aa][Ss][Cc]|[Dd][Ee][Ss][Cc])\\s*:\\s*)?(?:ChangeSetID|CreatedAt|Description|DisplayName|EndTagID|HiddenReason|OrganizationID|Slug|SpaceID|StartTagID|StartTagIsPriorRevision|State|UpdatedAt)\\s*)*$",
               "type": "string"
             }
           },
@@ -6114,6 +6142,7 @@
             "description": "Include clause for expanding related entities in the response for ChangeSet.\nThe attribute names are case-sensitive, PascalCase, and\nexpected in a comma-separated list format as in the JSON encoding.\n\nSupported attributes for ChangeSet are EndTagID, OrganizationID, SpaceID, StartTagID.\n\nThe whole string must be query-encoded.",
             "required": false,
             "schema": {
+              "pattern": "^\\s*(EndTagID|OrganizationID|SpaceID|StartTagID)\\s*(?:,\\s*(?:EndTagID|OrganizationID|SpaceID|StartTagID)\\s*)*$",
               "type": "string"
             }
           },
@@ -6378,6 +6407,7 @@
             "description": "Include clause for expanding related entities in the response for ChangeSet.\nThe attribute names are case-sensitive, PascalCase, and\nexpected in a comma-separated list format as in the JSON encoding.\n\nSupported attributes for ChangeSet are EndTagID, OrganizationID, SpaceID, StartTagID.\n\nThe whole string must be query-encoded.",
             "required": false,
             "schema": {
+              "pattern": "^\\s*(EndTagID|OrganizationID|SpaceID|StartTagID)\\s*(?:,\\s*(?:EndTagID|OrganizationID|SpaceID|StartTagID)\\s*)*$",
               "type": "string"
             }
           },
@@ -6698,6 +6728,7 @@
             "description": "Include clause for expanding related entities in the response for ChangeSet.\nThe attribute names are case-sensitive, PascalCase, and\nexpected in a comma-separated list format as in the JSON encoding.\n\nSupported attributes for ChangeSet are EndTagID, OrganizationID, SpaceID, StartTagID.\n\nThe whole string must be query-encoded.",
             "required": false,
             "schema": {
+              "pattern": "^\\s*(EndTagID|OrganizationID|SpaceID|StartTagID)\\s*(?:,\\s*(?:EndTagID|OrganizationID|SpaceID|StartTagID)\\s*)*$",
               "type": "string"
             }
           },
@@ -6871,6 +6902,7 @@
             "description": "Include clause for expanding related entities in the response for ChangeWorkflow.\nThe attribute names are case-sensitive, PascalCase, and\nexpected in a comma-separated list format as in the JSON encoding.\n\nSupported attributes for ChangeWorkflow are OrganizationID, SpaceID.\n\nThe whole string must be query-encoded.",
             "required": false,
             "schema": {
+              "pattern": "^\\s*(OrganizationID|SpaceID)\\s*(?:,\\s*(?:OrganizationID|SpaceID)\\s*)*$",
               "type": "string"
             }
           },
@@ -7063,6 +7095,7 @@
             "description": "Include clause for expanding related entities in the response for ChangeWorkflow.\nThe attribute names are case-sensitive, PascalCase, and\nexpected in a comma-separated list format as in the JSON encoding.\n\nSupported attributes for ChangeWorkflow are OrganizationID, SpaceID.\n\nThe whole string must be query-encoded.",
             "required": false,
             "schema": {
+              "pattern": "^\\s*(OrganizationID|SpaceID)\\s*(?:,\\s*(?:OrganizationID|SpaceID)\\s*)*$",
               "type": "string"
             }
           },
@@ -7101,6 +7134,7 @@
             "description": "Comma-separated list of fields to sort ChangeWorkflow results by, each in the form 'ASC|DESC:FieldName' or just 'FieldName'.\n\nField names are case-sensitive and PascalCase, as in the JSON encoding. Sort direction defaults to ASC when the 'DIRECTION:' prefix is omitted.\n\nSupported attributes for ordering ChangeWorkflow: BackingUnitID, ChangeWorkflowID, CreatedAt, DisplayName, Hash, HiddenReason, OrganizationID, Slug, SpaceID, UpdatedAt, UpstreamChangeWorkflowID.\n\nExample: 'DESC:CreatedAt' or 'DisplayName,DESC:CreatedAt'.\n\nResults are ordered by the ChangeWorkflow's ID after the fields named, and by the ID alone if none are.\n\nThe whole string must be query-encoded.",
             "required": false,
             "schema": {
+              "pattern": "^\\s*(?:(?:[Aa][Ss][Cc]|[Dd][Ee][Ss][Cc])\\s*:\\s*)?(BackingUnitID|ChangeWorkflowID|CreatedAt|DisplayName|Hash|HiddenReason|OrganizationID|Slug|SpaceID|UpdatedAt|UpstreamChangeWorkflowID)\\s*(?:,\\s*(?:(?:[Aa][Ss][Cc]|[Dd][Ee][Ss][Cc])\\s*:\\s*)?(?:BackingUnitID|ChangeWorkflowID|CreatedAt|DisplayName|Hash|HiddenReason|OrganizationID|Slug|SpaceID|UpdatedAt|UpstreamChangeWorkflowID)\\s*)*$",
               "type": "string"
             }
           },
@@ -7249,6 +7283,7 @@
             "description": "Include clause for expanding related entities in the response for ChangeWorkflow.\nThe attribute names are case-sensitive, PascalCase, and\nexpected in a comma-separated list format as in the JSON encoding.\n\nSupported attributes for ChangeWorkflow are OrganizationID, SpaceID.\n\nThe whole string must be query-encoded.",
             "required": false,
             "schema": {
+              "pattern": "^\\s*(OrganizationID|SpaceID)\\s*(?:,\\s*(?:OrganizationID|SpaceID)\\s*)*$",
               "type": "string"
             }
           },
@@ -7568,6 +7603,7 @@
             "description": "Include clause for expanding related entities in the response for ChangeWorkflow.\nThe attribute names are case-sensitive, PascalCase, and\nexpected in a comma-separated list format as in the JSON encoding.\n\nSupported attributes for ChangeWorkflow are OrganizationID, SpaceID.\n\nThe whole string must be query-encoded.",
             "required": false,
             "schema": {
+              "pattern": "^\\s*(OrganizationID|SpaceID)\\s*(?:,\\s*(?:OrganizationID|SpaceID)\\s*)*$",
               "type": "string"
             }
           },
@@ -7970,6 +8006,7 @@
             "description": "Include clause for expanding related entities in the response for ChangeWorkflow.\nThe attribute names are case-sensitive, PascalCase, and\nexpected in a comma-separated list format as in the JSON encoding.\n\nSupported attributes for ChangeWorkflow are OrganizationID, SpaceID.\n\nThe whole string must be query-encoded.",
             "required": false,
             "schema": {
+              "pattern": "^\\s*(OrganizationID|SpaceID)\\s*(?:,\\s*(?:OrganizationID|SpaceID)\\s*)*$",
               "type": "string"
             }
           },
@@ -8143,6 +8180,7 @@
             "description": "Include clause for expanding related entities in the response for Channel.\nThe attribute names are case-sensitive, PascalCase, and\nexpected in a comma-separated list format as in the JSON encoding.\n\nSupported attributes for Channel are OrganizationID, SpaceID.\n\nThe whole string must be query-encoded.",
             "required": false,
             "schema": {
+              "pattern": "^\\s*(OrganizationID|SpaceID)\\s*(?:,\\s*(?:OrganizationID|SpaceID)\\s*)*$",
               "type": "string"
             }
           },
@@ -8326,6 +8364,7 @@
             "description": "Include clause for expanding related entities in the response for Channel.\nThe attribute names are case-sensitive, PascalCase, and\nexpected in a comma-separated list format as in the JSON encoding.\n\nSupported attributes for Channel are OrganizationID, SpaceID.\n\nThe whole string must be query-encoded.",
             "required": false,
             "schema": {
+              "pattern": "^\\s*(OrganizationID|SpaceID)\\s*(?:,\\s*(?:OrganizationID|SpaceID)\\s*)*$",
               "type": "string"
             }
           },
@@ -8364,6 +8403,7 @@
             "description": "Comma-separated list of fields to sort Channel results by, each in the form 'ASC|DESC:FieldName' or just 'FieldName'.\n\nField names are case-sensitive and PascalCase, as in the JSON encoding. Sort direction defaults to ASC when the 'DIRECTION:' prefix is omitted.\n\nSupported attributes for ordering Channel: ChannelID, Condition, CreatedAt, DisplayName, EventPosition, HiddenReason, IPAddress, LastMessage, LastSeenAt, OrganizationID, Slug, SpaceID, UpdatedAt.\n\nExample: 'DESC:CreatedAt' or 'DisplayName,DESC:CreatedAt'.\n\nResults are ordered by the Channel's ID after the fields named, and by the ID alone if none are.\n\nThe whole string must be query-encoded.",
             "required": false,
             "schema": {
+              "pattern": "^\\s*(?:(?:[Aa][Ss][Cc]|[Dd][Ee][Ss][Cc])\\s*:\\s*)?(ChannelID|Condition|CreatedAt|DisplayName|EventPosition|HiddenReason|IPAddress|LastMessage|LastSeenAt|OrganizationID|Slug|SpaceID|UpdatedAt)\\s*(?:,\\s*(?:(?:[Aa][Ss][Cc]|[Dd][Ee][Ss][Cc])\\s*:\\s*)?(?:ChannelID|Condition|CreatedAt|DisplayName|EventPosition|HiddenReason|IPAddress|LastMessage|LastSeenAt|OrganizationID|Slug|SpaceID|UpdatedAt)\\s*)*$",
               "type": "string"
             }
           },
@@ -8512,6 +8552,7 @@
             "description": "Include clause for expanding related entities in the response for Channel.\nThe attribute names are case-sensitive, PascalCase, and\nexpected in a comma-separated list format as in the JSON encoding.\n\nSupported attributes for Channel are OrganizationID, SpaceID.\n\nThe whole string must be query-encoded.",
             "required": false,
             "schema": {
+              "pattern": "^\\s*(OrganizationID|SpaceID)\\s*(?:,\\s*(?:OrganizationID|SpaceID)\\s*)*$",
               "type": "string"
             }
           },
@@ -8912,6 +8953,7 @@
             "description": "Comma-separated list of fields to sort CommandRun results by, each in the form 'ASC|DESC:FieldName' or just 'FieldName'.\n\nField names are case-sensitive and PascalCase, as in the JSON encoding. Sort direction defaults to ASC when the 'DIRECTION:' prefix is omitted.\n\nSupported attributes for ordering CommandRun: ChannelID, Command, CommandRunID, CompletedAt, CreatedAt, CreatedBy, Deadline, DeliveredAt, OrganizationID, SpaceID, Status, TargetID, TimeoutAt, UnitID.\n\nExample: 'DESC:CreatedAt' or 'DisplayName,DESC:CreatedAt'.\n\nResults are ordered by the CommandRun's ID after the fields named, and by the ID alone if none are.\n\nThe whole string must be query-encoded.",
             "required": false,
             "schema": {
+              "pattern": "^\\s*(?:(?:[Aa][Ss][Cc]|[Dd][Ee][Ss][Cc])\\s*:\\s*)?(ChannelID|Command|CommandRunID|CompletedAt|CreatedAt|CreatedBy|Deadline|DeliveredAt|OrganizationID|SpaceID|Status|TargetID|TimeoutAt|UnitID)\\s*(?:,\\s*(?:(?:[Aa][Ss][Cc]|[Dd][Ee][Ss][Cc])\\s*:\\s*)?(?:ChannelID|Command|CommandRunID|CompletedAt|CreatedAt|CreatedBy|Deadline|DeliveredAt|OrganizationID|SpaceID|Status|TargetID|TimeoutAt|UnitID)\\s*)*$",
               "type": "string"
             }
           },
@@ -9053,6 +9095,7 @@
             "description": "Include clause for expanding related entities in the response for Component.\nThe attribute names are case-sensitive, PascalCase, and\nexpected in a comma-separated list format as in the JSON encoding.\n\nSupported attributes for Component are OrganizationID.\n\nThe whole string must be query-encoded.",
             "required": false,
             "schema": {
+              "pattern": "^\\s*(OrganizationID)\\s*(?:,\\s*(?:OrganizationID)\\s*)*$",
               "type": "string"
             }
           },
@@ -9091,6 +9134,7 @@
             "description": "Comma-separated list of fields to sort Component results by, each in the form 'ASC|DESC:FieldName' or just 'FieldName'.\n\nField names are case-sensitive and PascalCase, as in the JSON encoding. Sort direction defaults to ASC when the 'DIRECTION:' prefix is omitted.\n\nSupported attributes for ordering Component: BackingUnitID, ChangeWorkflowRequired, ComponentID, CreatedAt, DisplayName, HiddenReason, OrganizationID, Slug, UpdatedAt, UpstreamComponentID.\n\nExample: 'DESC:CreatedAt' or 'DisplayName,DESC:CreatedAt'.\n\nResults are ordered by the Component's ID after the fields named, and by the ID alone if none are.\n\nThe whole string must be query-encoded.",
             "required": false,
             "schema": {
+              "pattern": "^\\s*(?:(?:[Aa][Ss][Cc]|[Dd][Ee][Ss][Cc])\\s*:\\s*)?(BackingUnitID|ChangeWorkflowRequired|ComponentID|CreatedAt|DisplayName|HiddenReason|OrganizationID|Slug|UpdatedAt|UpstreamComponentID)\\s*(?:,\\s*(?:(?:[Aa][Ss][Cc]|[Dd][Ee][Ss][Cc])\\s*:\\s*)?(?:BackingUnitID|ChangeWorkflowRequired|ComponentID|CreatedAt|DisplayName|HiddenReason|OrganizationID|Slug|UpdatedAt|UpstreamComponentID)\\s*)*$",
               "type": "string"
             }
           },
@@ -9454,6 +9498,7 @@
             "description": "Include clause for expanding related entities in the response for Component.\nThe attribute names are case-sensitive, PascalCase, and\nexpected in a comma-separated list format as in the JSON encoding.\n\nSupported attributes for Component are OrganizationID.\n\nThe whole string must be query-encoded.",
             "required": false,
             "schema": {
+              "pattern": "^\\s*(OrganizationID)\\s*(?:,\\s*(?:OrganizationID)\\s*)*$",
               "type": "string"
             }
           },
@@ -10100,9 +10145,10 @@
           {
             "name": "include",
             "in": "query",
-            "description": "Comma-separated parts of the result to return in addition to the actions: Mutations for what each restore changed, or on a dry run would change, as entries of its MutationSources, and Diff for the same change path by path with the values on both sides.",
+            "description": "Comma-separated parts of the result to return in addition to the actions: Mutations for what each restore changed, or on a dry run would change, as entries of its MutationSources, and Diff for the same change path by path with the values on both sides.\n\nSupported values: Mutations, Diff.",
             "required": false,
             "schema": {
+              "pattern": "^\\s*(Mutations|Diff)\\s*(?:,\\s*(?:Mutations|Diff)\\s*)*$",
               "type": "string"
             }
           }
@@ -10232,9 +10278,10 @@
           {
             "name": "include",
             "in": "query",
-            "description": "Comma-separated: Attribution to attach to each changed path the To side's MutationSources entry, which says what set the new value, and Unchanged to also list resources with no changes.",
+            "description": "Comma-separated: Attribution to attach to each changed path the To side's MutationSources entry, which says what set the new value, Unchanged to also list resources with no changes, and Context to also list, within each changed resource, the unchanged paths around the changes: every unchanged child of each map or array that holds a change, up to the resource, as ChangeType None.\n\nSupported values: Attribution, Unchanged, Context.",
             "required": false,
             "schema": {
+              "pattern": "^\\s*(Attribution|Unchanged|Context)\\s*(?:,\\s*(?:Attribution|Unchanged|Context)\\s*)*$",
               "type": "string"
             }
           },
@@ -10392,6 +10439,7 @@
             "description": "Include clause for expanding related entities in the response for Filter.\nThe attribute names are case-sensitive, PascalCase, and\nexpected in a comma-separated list format as in the JSON encoding.\n\nSupported attributes for Filter are FromSpaceID, OrganizationID, SpaceID.\n\nThe whole string must be query-encoded.",
             "required": false,
             "schema": {
+              "pattern": "^\\s*(FromSpaceID|OrganizationID|SpaceID)\\s*(?:,\\s*(?:FromSpaceID|OrganizationID|SpaceID)\\s*)*$",
               "type": "string"
             }
           },
@@ -10584,6 +10632,7 @@
             "description": "Include clause for expanding related entities in the response for Filter.\nThe attribute names are case-sensitive, PascalCase, and\nexpected in a comma-separated list format as in the JSON encoding.\n\nSupported attributes for Filter are FromSpaceID, OrganizationID, SpaceID.\n\nThe whole string must be query-encoded.",
             "required": false,
             "schema": {
+              "pattern": "^\\s*(FromSpaceID|OrganizationID|SpaceID)\\s*(?:,\\s*(?:FromSpaceID|OrganizationID|SpaceID)\\s*)*$",
               "type": "string"
             }
           },
@@ -10622,6 +10671,7 @@
             "description": "Comma-separated list of fields to sort Filter results by, each in the form 'ASC|DESC:FieldName' or just 'FieldName'.\n\nField names are case-sensitive and PascalCase, as in the JSON encoding. Sort direction defaults to ASC when the 'DIRECTION:' prefix is omitted.\n\nSupported attributes for ordering Filter: BackingUnitID, CreatedAt, DisplayName, FilterID, From, FromSpaceID, Hash, HiddenReason, IncludeHidden, OrganizationID, ResourceType, Slug, SpaceID, UpdatedAt, UpstreamFilterID, Where, WhereData.\n\nExample: 'DESC:CreatedAt' or 'DisplayName,DESC:CreatedAt'.\n\nResults are ordered by the Filter's ID after the fields named, and by the ID alone if none are.\n\nThe whole string must be query-encoded.",
             "required": false,
             "schema": {
+              "pattern": "^\\s*(?:(?:[Aa][Ss][Cc]|[Dd][Ee][Ss][Cc])\\s*:\\s*)?(BackingUnitID|CreatedAt|DisplayName|FilterID|From|FromSpaceID|Hash|HiddenReason|IncludeHidden|OrganizationID|ResourceType|Slug|SpaceID|UpdatedAt|UpstreamFilterID|Where|WhereData)\\s*(?:,\\s*(?:(?:[Aa][Ss][Cc]|[Dd][Ee][Ss][Cc])\\s*:\\s*)?(?:BackingUnitID|CreatedAt|DisplayName|FilterID|From|FromSpaceID|Hash|HiddenReason|IncludeHidden|OrganizationID|ResourceType|Slug|SpaceID|UpdatedAt|UpstreamFilterID|Where|WhereData)\\s*)*$",
               "type": "string"
             }
           },
@@ -10788,6 +10838,7 @@
             "description": "Include clause for expanding related entities in the response for Filter.\nThe attribute names are case-sensitive, PascalCase, and\nexpected in a comma-separated list format as in the JSON encoding.\n\nSupported attributes for Filter are FromSpaceID, OrganizationID, SpaceID.\n\nThe whole string must be query-encoded.",
             "required": false,
             "schema": {
+              "pattern": "^\\s*(FromSpaceID|OrganizationID|SpaceID)\\s*(?:,\\s*(?:FromSpaceID|OrganizationID|SpaceID)\\s*)*$",
               "type": "string"
             }
           },
@@ -11106,6 +11157,7 @@
             "description": "Include clause for expanding related entities in the response for Filter.\nThe attribute names are case-sensitive, PascalCase, and\nexpected in a comma-separated list format as in the JSON encoding.\n\nSupported attributes for Filter are FromSpaceID, OrganizationID, SpaceID.\n\nThe whole string must be query-encoded.",
             "required": false,
             "schema": {
+              "pattern": "^\\s*(FromSpaceID|OrganizationID|SpaceID)\\s*(?:,\\s*(?:FromSpaceID|OrganizationID|SpaceID)\\s*)*$",
               "type": "string"
             }
           },
@@ -11507,6 +11559,7 @@
             "description": "Include clause for expanding related entities in the response for Filter.\nThe attribute names are case-sensitive, PascalCase, and\nexpected in a comma-separated list format as in the JSON encoding.\n\nSupported attributes for Filter are FromSpaceID, OrganizationID, SpaceID.\n\nThe whole string must be query-encoded.",
             "required": false,
             "schema": {
+              "pattern": "^\\s*(FromSpaceID|OrganizationID|SpaceID)\\s*(?:,\\s*(?:FromSpaceID|OrganizationID|SpaceID)\\s*)*$",
               "type": "string"
             }
           },
@@ -11859,9 +11912,10 @@
           {
             "name": "include",
             "in": "query",
-            "description": "Comma-separated parts of the result to return in addition to the default: ConfigData for the configuration the invocation produced, carried whether or not the invocation changed it. Without it, the configuration is present only when the invocation changed it, and an unchanged result is reported by DataHash alone. Diff for what the invocation changed in each Unit, path by path with the values on both sides.",
+            "description": "Comma-separated parts of the result to return in addition to the default: ConfigData for the configuration the invocation produced, carried whether or not the invocation changed it. Without it, the configuration is present only when the invocation changed it, and an unchanged result is reported by DataHash alone. Diff for what the invocation changed in each Unit, path by path with the values on both sides.\n\nSupported values: ConfigData, Diff.",
             "required": false,
             "schema": {
+              "pattern": "^\\s*(ConfigData|Diff)\\s*(?:,\\s*(?:ConfigData|Diff)\\s*)*$",
               "type": "string"
             }
           },
@@ -12149,6 +12203,7 @@
             "description": "Comma-separated list of fields to sort Group results by, each in the form 'ASC|DESC:FieldName' or just 'FieldName'.\n\nField names are case-sensitive and PascalCase, as in the JSON encoding. Sort direction defaults to ASC when the 'DIRECTION:' prefix is omitted.\n\nSupported attributes for ordering Group: CreatedAt, DisplayName, ExternalID, GroupID, Slug, UpdatedAt.\n\nExample: 'DESC:CreatedAt' or 'DisplayName,DESC:CreatedAt'.\n\nResults are ordered by the Group's ID after the fields named, and by the ID alone if none are.\n\nThe whole string must be query-encoded.",
             "required": false,
             "schema": {
+              "pattern": "^\\s*(?:(?:[Aa][Ss][Cc]|[Dd][Ee][Ss][Cc])\\s*:\\s*)?(CreatedAt|DisplayName|ExternalID|GroupID|Slug|UpdatedAt)\\s*(?:,\\s*(?:(?:[Aa][Ss][Cc]|[Dd][Ee][Ss][Cc])\\s*:\\s*)?(?:CreatedAt|DisplayName|ExternalID|GroupID|Slug|UpdatedAt)\\s*)*$",
               "type": "string"
             }
           },
@@ -12660,6 +12715,7 @@
             "description": "Include clause for expanding related entities in the response for Invocation.\nThe attribute names are case-sensitive, PascalCase, and\nexpected in a comma-separated list format as in the JSON encoding.\n\nSupported attributes for Invocation are BridgeWorkerID, OrganizationID, SpaceID.\n\nThe whole string must be query-encoded.",
             "required": false,
             "schema": {
+              "pattern": "^\\s*(BridgeWorkerID|OrganizationID|SpaceID)\\s*(?:,\\s*(?:BridgeWorkerID|OrganizationID|SpaceID)\\s*)*$",
               "type": "string"
             }
           },
@@ -12852,6 +12908,7 @@
             "description": "Include clause for expanding related entities in the response for Invocation.\nThe attribute names are case-sensitive, PascalCase, and\nexpected in a comma-separated list format as in the JSON encoding.\n\nSupported attributes for Invocation are BridgeWorkerID, OrganizationID, SpaceID.\n\nThe whole string must be query-encoded.",
             "required": false,
             "schema": {
+              "pattern": "^\\s*(BridgeWorkerID|OrganizationID|SpaceID)\\s*(?:,\\s*(?:BridgeWorkerID|OrganizationID|SpaceID)\\s*)*$",
               "type": "string"
             }
           },
@@ -12890,6 +12947,7 @@
             "description": "Comma-separated list of fields to sort Invocation results by, each in the form 'ASC|DESC:FieldName' or just 'FieldName'.\n\nField names are case-sensitive and PascalCase, as in the JSON encoding. Sort direction defaults to ASC when the 'DIRECTION:' prefix is omitted.\n\nSupported attributes for ordering Invocation: BackingUnitID, BridgeWorkerID, CreatedAt, DisplayName, Hash, HiddenReason, InvocationID, OrganizationID, Slug, SpaceID, ToolchainType, UpdatedAt, UpstreamInvocationID.\n\nExample: 'DESC:CreatedAt' or 'DisplayName,DESC:CreatedAt'.\n\nResults are ordered by the Invocation's ID after the fields named, and by the ID alone if none are.\n\nThe whole string must be query-encoded.",
             "required": false,
             "schema": {
+              "pattern": "^\\s*(?:(?:[Aa][Ss][Cc]|[Dd][Ee][Ss][Cc])\\s*:\\s*)?(BackingUnitID|BridgeWorkerID|CreatedAt|DisplayName|Hash|HiddenReason|InvocationID|OrganizationID|Slug|SpaceID|ToolchainType|UpdatedAt|UpstreamInvocationID)\\s*(?:,\\s*(?:(?:[Aa][Ss][Cc]|[Dd][Ee][Ss][Cc])\\s*:\\s*)?(?:BackingUnitID|BridgeWorkerID|CreatedAt|DisplayName|Hash|HiddenReason|InvocationID|OrganizationID|Slug|SpaceID|ToolchainType|UpdatedAt|UpstreamInvocationID)\\s*)*$",
               "type": "string"
             }
           },
@@ -13038,6 +13096,7 @@
             "description": "Include clause for expanding related entities in the response for Invocation.\nThe attribute names are case-sensitive, PascalCase, and\nexpected in a comma-separated list format as in the JSON encoding.\n\nSupported attributes for Invocation are BridgeWorkerID, OrganizationID, SpaceID.\n\nThe whole string must be query-encoded.",
             "required": false,
             "schema": {
+              "pattern": "^\\s*(BridgeWorkerID|OrganizationID|SpaceID)\\s*(?:,\\s*(?:BridgeWorkerID|OrganizationID|SpaceID)\\s*)*$",
               "type": "string"
             }
           },
@@ -13354,6 +13413,7 @@
             "description": "Include clause for expanding related entities in the response for Invocation.\nThe attribute names are case-sensitive, PascalCase, and\nexpected in a comma-separated list format as in the JSON encoding.\n\nSupported attributes for Invocation are BridgeWorkerID, OrganizationID, SpaceID.\n\nThe whole string must be query-encoded.",
             "required": false,
             "schema": {
+              "pattern": "^\\s*(BridgeWorkerID|OrganizationID|SpaceID)\\s*(?:,\\s*(?:BridgeWorkerID|OrganizationID|SpaceID)\\s*)*$",
               "type": "string"
             }
           },
@@ -13753,6 +13813,7 @@
             "description": "Include clause for expanding related entities in the response for Invocation.\nThe attribute names are case-sensitive, PascalCase, and\nexpected in a comma-separated list format as in the JSON encoding.\n\nSupported attributes for Invocation are BridgeWorkerID, OrganizationID, SpaceID.\n\nThe whole string must be query-encoded.",
             "required": false,
             "schema": {
+              "pattern": "^\\s*(BridgeWorkerID|OrganizationID|SpaceID)\\s*(?:,\\s*(?:BridgeWorkerID|OrganizationID|SpaceID)\\s*)*$",
               "type": "string"
             }
           },
@@ -13926,6 +13987,7 @@
             "description": "Include clause for expanding related entities in the response for Link.\nThe attribute names are case-sensitive, PascalCase, and\nexpected in a comma-separated list format as in the JSON encoding.\n\nSupported attributes for Link are FromUnitID, OrganizationID, SpaceID, ToSpaceID, ToUnitID, TransformInvocationID.\n\nThe whole string must be query-encoded.",
             "required": false,
             "schema": {
+              "pattern": "^\\s*(FromUnitID|OrganizationID|SpaceID|ToSpaceID|ToUnitID|TransformInvocationID)\\s*(?:,\\s*(?:FromUnitID|OrganizationID|SpaceID|ToSpaceID|ToUnitID|TransformInvocationID)\\s*)*$",
               "type": "string"
             }
           },
@@ -14118,6 +14180,7 @@
             "description": "Include clause for expanding related entities in the response for Link.\nThe attribute names are case-sensitive, PascalCase, and\nexpected in a comma-separated list format as in the JSON encoding.\n\nSupported attributes for Link are FromUnitID, OrganizationID, SpaceID, ToSpaceID, ToUnitID, TransformInvocationID.\n\nThe whole string must be query-encoded.",
             "required": false,
             "schema": {
+              "pattern": "^\\s*(FromUnitID|OrganizationID|SpaceID|ToSpaceID|ToUnitID|TransformInvocationID)\\s*(?:,\\s*(?:FromUnitID|OrganizationID|SpaceID|ToSpaceID|ToUnitID|TransformInvocationID)\\s*)*$",
               "type": "string"
             }
           },
@@ -14156,6 +14219,7 @@
             "description": "Comma-separated list of fields to sort Link results by, each in the form 'ASC|DESC:FieldName' or just 'FieldName'.\n\nField names are case-sensitive and PascalCase, as in the JSON encoding. Sort direction defaults to ASC when the 'DIRECTION:' prefix is omitted.\n\nSupported attributes for ordering Link: AutoUpdate, BackingUnitID, CreatedAt, DisplayName, DownstreamLastMergedRevisionNum, FromUnitID, Hash, HiddenReason, LinkID, MergeEnableSubtraction, OrganizationID, Protect, Slug, SpaceID, Squash, Stale, ToSpaceID, ToUnitID, TransformInvocationID, UpdateType, UpdatedAt, UpstreamLastMergedRevisionNum, UpstreamLinkID.\n\nExample: 'DESC:CreatedAt' or 'DisplayName,DESC:CreatedAt'.\n\nResults are ordered by the Link's ID after the fields named, and by the ID alone if none are.\n\nThe whole string must be query-encoded.",
             "required": false,
             "schema": {
+              "pattern": "^\\s*(?:(?:[Aa][Ss][Cc]|[Dd][Ee][Ss][Cc])\\s*:\\s*)?(AutoUpdate|BackingUnitID|CreatedAt|DisplayName|DownstreamLastMergedRevisionNum|FromUnitID|Hash|HiddenReason|LinkID|MergeEnableSubtraction|OrganizationID|Protect|Slug|SpaceID|Squash|Stale|ToSpaceID|ToUnitID|TransformInvocationID|UpdateType|UpdatedAt|UpstreamLastMergedRevisionNum|UpstreamLinkID)\\s*(?:,\\s*(?:(?:[Aa][Ss][Cc]|[Dd][Ee][Ss][Cc])\\s*:\\s*)?(?:AutoUpdate|BackingUnitID|CreatedAt|DisplayName|DownstreamLastMergedRevisionNum|FromUnitID|Hash|HiddenReason|LinkID|MergeEnableSubtraction|OrganizationID|Protect|Slug|SpaceID|Squash|Stale|ToSpaceID|ToUnitID|TransformInvocationID|UpdateType|UpdatedAt|UpstreamLastMergedRevisionNum|UpstreamLinkID)\\s*)*$",
               "type": "string"
             }
           },
@@ -14304,6 +14368,7 @@
             "description": "Include clause for expanding related entities in the response for Link.\nThe attribute names are case-sensitive, PascalCase, and\nexpected in a comma-separated list format as in the JSON encoding.\n\nSupported attributes for Link are FromUnitID, OrganizationID, SpaceID, ToSpaceID, ToUnitID, TransformInvocationID.\n\nThe whole string must be query-encoded.",
             "required": false,
             "schema": {
+              "pattern": "^\\s*(FromUnitID|OrganizationID|SpaceID|ToSpaceID|ToUnitID|TransformInvocationID)\\s*(?:,\\s*(?:FromUnitID|OrganizationID|SpaceID|ToSpaceID|ToUnitID|TransformInvocationID)\\s*)*$",
               "type": "string"
             }
           },
@@ -16758,9 +16823,10 @@
           {
             "name": "include",
             "in": "query",
-            "description": "Comma-separated parts of the result to return in addition to the actions: Mutations for what each Unit write changed, or on a dry run would change, as entries of its MutationSources, and Diff for the same change path by path with the values on both sides, and ConfigData for the configuration each Unit write produced, or on a dry run would produce. On a dry run any of them runs the merges a plan otherwise skips, so they are returned only when named.",
+            "description": "Comma-separated parts of the result to return in addition to the actions: Mutations for what each Unit write changed, or on a dry run would change, as entries of its MutationSources, and Diff for the same change path by path with the values on both sides, and ConfigData for the configuration each Unit write produced, or on a dry run would produce. On a dry run any of them runs the merges a plan otherwise skips, so they are returned only when named.\n\nSupported values: Mutations, Diff, ConfigData.",
             "required": false,
             "schema": {
+              "pattern": "^\\s*(Mutations|Diff|ConfigData)\\s*(?:,\\s*(?:Mutations|Diff|ConfigData)\\s*)*$",
               "type": "string"
             }
           }
@@ -16884,7 +16950,7 @@
           "Release"
         ],
         "summary": "List of Releases across spaces",
-        "description": "Retrieves a list of Releases across spaces in the Organization",
+        "description": "Retrieves a list of Releases across spaces in the Organization. By default, returns at most one Release per space: the highest-numbered one that matches. Set `distinct_on=Off` to receive every matching Release instead -- paginate with `limit` and the continue token to walk the full result set (`distinct_on=Off` requires an explicit `limit` and a non-empty `where` or `filter`, since without deduplication or a filter there is nothing bounding the result set)",
         "operationId": "ListAllReleases",
         "parameters": [
           {
@@ -16920,6 +16986,7 @@
             "description": "Include clause for expanding related entities in the response for Release.\nThe attribute names are case-sensitive, PascalCase, and\nexpected in a comma-separated list format as in the JSON encoding.\n\nSupported attributes for Release are OrganizationID, SpaceID, TagID.\n\nThe whole string must be query-encoded.",
             "required": false,
             "schema": {
+              "pattern": "^\\s*(OrganizationID|SpaceID|TagID)\\s*(?:,\\s*(?:OrganizationID|SpaceID|TagID)\\s*)*$",
               "type": "string"
             }
           },
@@ -16958,6 +17025,7 @@
             "description": "Comma-separated list of fields to sort Release results by, each in the form 'ASC|DESC:FieldName' or just 'FieldName'.\n\nField names are case-sensitive and PascalCase, as in the JSON encoding. Sort direction defaults to ASC when the 'DIRECTION:' prefix is omitted.\n\nSupported attributes for ordering Release: ChangeOrderID, CreatedAt, Digest, HiddenReason, ManifestDigest, OrganizationID, Published, ReleaseID, ReleaseNum, SpaceID, TagID, TargetID, UnitCount, UpdatedAt, UserID.\n\nExample: 'DESC:CreatedAt' or 'DisplayName,DESC:CreatedAt'.\n\nResults are ordered by the Release's ID after the fields named, and by the ID alone if none are.\n\nThe whole string must be query-encoded.",
             "required": false,
             "schema": {
+              "pattern": "^\\s*(?:(?:[Aa][Ss][Cc]|[Dd][Ee][Ss][Cc])\\s*:\\s*)?(ChangeOrderID|CreatedAt|Digest|HiddenReason|ManifestDigest|OrganizationID|Published|ReleaseID|ReleaseNum|SpaceID|TagID|TargetID|UnitCount|UpdatedAt|UserID)\\s*(?:,\\s*(?:(?:[Aa][Ss][Cc]|[Dd][Ee][Ss][Cc])\\s*:\\s*)?(?:ChangeOrderID|CreatedAt|Digest|HiddenReason|ManifestDigest|OrganizationID|Published|ReleaseID|ReleaseNum|SpaceID|TagID|TargetID|UnitCount|UpdatedAt|UserID)\\s*)*$",
               "type": "string"
             }
           },
@@ -16967,6 +17035,19 @@
             "description": "The token from the ConfigHub-Continue header of the previous page, to return the Release entities after it.\n\nThe request's other parameters, except limit, must be the same as those of the request that returned the token.\n\nKeep reading until a response has no such header: a page can hold fewer entities than the limit, or none, and still be followed by more.",
             "required": false,
             "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "distinct_on",
+            "in": "query",
+            "description": "Entity to return at most one Release per. The result set applies DISTINCT ON this key, keeping the most recent row for each.\n\nSupported values: Space, Off.\n\nIf not specified, results are restricted to at most one row per Space.\n\nOff disables the DISTINCT ON and returns every matching row, so it requires an explicit 'limit' and is rejected with 400 without one.",
+            "required": false,
+            "schema": {
+              "enum": [
+                "Space",
+                "Off"
+              ],
               "type": "string"
             }
           }
@@ -17099,6 +17180,7 @@
             "description": "Include clause for expanding related entities in the response for Resource.\nThe attribute names are case-sensitive, PascalCase, and\nexpected in a comma-separated list format as in the JSON encoding.\n\nSupported attributes for Resource are OrganizationID, SpaceID, TargetID, UnitID.\n\nThe whole string must be query-encoded.",
             "required": false,
             "schema": {
+              "pattern": "^\\s*(OrganizationID|SpaceID|TargetID|UnitID)\\s*(?:,\\s*(?:OrganizationID|SpaceID|TargetID|UnitID)\\s*)*$",
               "type": "string"
             }
           },
@@ -17137,6 +17219,7 @@
             "description": "Comma-separated list of fields to sort Resource results by, each in the form 'ASC|DESC:FieldName' or just 'FieldName'.\n\nField names are case-sensitive and PascalCase, as in the JSON encoding. Sort direction defaults to ASC when the 'DIRECTION:' prefix is omitted.\n\nSupported attributes for ordering Resource: CreatedAt, HiddenReason, OrganizationID, ResourceID, ResourceIndex, ResourceName, ResourceType, SpaceID, TargetID, ToolchainType, UnitID, UpdatedAt.\n\nExample: 'DESC:CreatedAt' or 'DisplayName,DESC:CreatedAt'.\n\nResults are ordered by the Resource's ID after the fields named, and by the ID alone if none are.\n\nThe whole string must be query-encoded.",
             "required": false,
             "schema": {
+              "pattern": "^\\s*(?:(?:[Aa][Ss][Cc]|[Dd][Ee][Ss][Cc])\\s*:\\s*)?(CreatedAt|HiddenReason|OrganizationID|ResourceID|ResourceIndex|ResourceName|ResourceType|SpaceID|TargetID|ToolchainType|UnitID|UpdatedAt)\\s*(?:,\\s*(?:(?:[Aa][Ss][Cc]|[Dd][Ee][Ss][Cc])\\s*:\\s*)?(?:CreatedAt|HiddenReason|OrganizationID|ResourceID|ResourceIndex|ResourceName|ResourceType|SpaceID|TargetID|ToolchainType|UnitID|UpdatedAt)\\s*)*$",
               "type": "string"
             }
           },
@@ -17316,6 +17399,7 @@
             "description": "Include clause for expanding related entities in the response for ReviewComment.\nThe attribute names are case-sensitive, PascalCase, and\nexpected in a comma-separated list format as in the JSON encoding.\n\nSupported attributes for ReviewComment are OrganizationID, RevisionID, SpaceID, UnitID.\n\nThe whole string must be query-encoded.",
             "required": false,
             "schema": {
+              "pattern": "^\\s*(OrganizationID|RevisionID|SpaceID|UnitID)\\s*(?:,\\s*(?:OrganizationID|RevisionID|SpaceID|UnitID)\\s*)*$",
               "type": "string"
             }
           },
@@ -17499,6 +17583,7 @@
             "description": "Include clause for expanding related entities in the response for ReviewComment.\nThe attribute names are case-sensitive, PascalCase, and\nexpected in a comma-separated list format as in the JSON encoding.\n\nSupported attributes for ReviewComment are OrganizationID, RevisionID, SpaceID, UnitID.\n\nThe whole string must be query-encoded.",
             "required": false,
             "schema": {
+              "pattern": "^\\s*(OrganizationID|RevisionID|SpaceID|UnitID)\\s*(?:,\\s*(?:OrganizationID|RevisionID|SpaceID|UnitID)\\s*)*$",
               "type": "string"
             }
           },
@@ -17537,6 +17622,7 @@
             "description": "Comma-separated list of fields to sort ReviewComment results by, each in the form 'ASC|DESC:FieldName' or just 'FieldName'.\n\nField names are case-sensitive and PascalCase, as in the JSON encoding. Sort direction defaults to ASC when the 'DIRECTION:' prefix is omitted.\n\nSupported attributes for ordering ReviewComment: CreatedAt, HiddenReason, OrganizationID, Path, ReplyToID, ReviewCommentID, RevisionID, RevisionNum, Text, UnitID, UpdatedAt, UserAgent, UserID.\n\nExample: 'DESC:CreatedAt' or 'DisplayName,DESC:CreatedAt'.\n\nResults are ordered by the ReviewComment's ID after the fields named, and by the ID alone if none are.\n\nThe whole string must be query-encoded.",
             "required": false,
             "schema": {
+              "pattern": "^\\s*(?:(?:[Aa][Ss][Cc]|[Dd][Ee][Ss][Cc])\\s*:\\s*)?(CreatedAt|HiddenReason|OrganizationID|Path|ReplyToID|ReviewCommentID|RevisionID|RevisionNum|Text|UnitID|UpdatedAt|UserAgent|UserID)\\s*(?:,\\s*(?:(?:[Aa][Ss][Cc]|[Dd][Ee][Ss][Cc])\\s*:\\s*)?(?:CreatedAt|HiddenReason|OrganizationID|Path|ReplyToID|ReviewCommentID|RevisionID|RevisionNum|Text|UnitID|UpdatedAt|UserAgent|UserID)\\s*)*$",
               "type": "string"
             }
           },
@@ -17685,6 +17771,7 @@
             "description": "Include clause for expanding related entities in the response for ReviewComment.\nThe attribute names are case-sensitive, PascalCase, and\nexpected in a comma-separated list format as in the JSON encoding.\n\nSupported attributes for ReviewComment are OrganizationID, RevisionID, SpaceID, UnitID.\n\nThe whole string must be query-encoded.",
             "required": false,
             "schema": {
+              "pattern": "^\\s*(OrganizationID|RevisionID|SpaceID|UnitID)\\s*(?:,\\s*(?:OrganizationID|RevisionID|SpaceID|UnitID)\\s*)*$",
               "type": "string"
             }
           },
@@ -17923,6 +18010,7 @@
             "description": "Include clause for expanding related entities in the response for Revision.\nThe attribute names are case-sensitive, PascalCase, and\nexpected in a comma-separated list format as in the JSON encoding.\n\nSupported attributes for Revision are Attestations, ChangeOrders, ChangeSetID, OrganizationID, Releases, SpaceID, Tags, UnitID, UserID.\n\nThe whole string must be query-encoded.",
             "required": false,
             "schema": {
+              "pattern": "^\\s*(Attestations|ChangeOrders|ChangeSetID|OrganizationID|Releases|SpaceID|Tags|UnitID|UserID)\\s*(?:,\\s*(?:Attestations|ChangeOrders|ChangeSetID|OrganizationID|Releases|SpaceID|Tags|UnitID|UserID)\\s*)*$",
               "type": "string"
             }
           },
@@ -17961,6 +18049,7 @@
             "description": "Comma-separated list of fields to sort Revision results by, each in the form 'ASC|DESC:FieldName' or just 'FieldName'.\n\nField names are case-sensitive and PascalCase, as in the JSON encoding. Sort direction defaults to ASC when the 'DIRECTION:' prefix is omitted.\n\nSupported attributes for ordering Revision: ChangeSetID, CreatedAt, DataHash, Description, HiddenReason, OrganizationID, RevisionID, RevisionNum, Source, UnitID, UpdatedAt, UserAgent, UserID.\n\nExample: 'DESC:CreatedAt' or 'DisplayName,DESC:CreatedAt'.\n\nResults are ordered by the Revision's ID after the fields named, and by the ID alone if none are.\n\nThe whole string must be query-encoded.",
             "required": false,
             "schema": {
+              "pattern": "^\\s*(?:(?:[Aa][Ss][Cc]|[Dd][Ee][Ss][Cc])\\s*:\\s*)?(ChangeSetID|CreatedAt|DataHash|Description|HiddenReason|OrganizationID|RevisionID|RevisionNum|Source|UnitID|UpdatedAt|UserAgent|UserID)\\s*(?:,\\s*(?:(?:[Aa][Ss][Cc]|[Dd][Ee][Ss][Cc])\\s*:\\s*)?(?:ChangeSetID|CreatedAt|DataHash|Description|HiddenReason|OrganizationID|RevisionID|RevisionNum|Source|UnitID|UpdatedAt|UserAgent|UserID)\\s*)*$",
               "type": "string"
             }
           },
@@ -18126,6 +18215,7 @@
             "description": "Include clause for expanding related entities in the response for Revision.\nThe attribute names are case-sensitive, PascalCase, and\nexpected in a comma-separated list format as in the JSON encoding.\n\nSupported attributes for Revision are Attestations, ChangeOrders, ChangeSetID, OrganizationID, Releases, SpaceID, Tags, UnitID, UserID.\n\nThe whole string must be query-encoded.",
             "required": false,
             "schema": {
+              "pattern": "^\\s*(Attestations|ChangeOrders|ChangeSetID|OrganizationID|Releases|SpaceID|Tags|UnitID|UserID)\\s*(?:,\\s*(?:Attestations|ChangeOrders|ChangeSetID|OrganizationID|Releases|SpaceID|Tags|UnitID|UserID)\\s*)*$",
               "type": "string"
             }
           },
@@ -18164,6 +18254,7 @@
             "description": "Comma-separated list of fields to sort Revision results by, each in the form 'ASC|DESC:FieldName' or just 'FieldName'.\n\nField names are case-sensitive and PascalCase, as in the JSON encoding. Sort direction defaults to ASC when the 'DIRECTION:' prefix is omitted.\n\nSupported attributes for ordering Revision: ChangeSetID, CreatedAt, DataHash, Description, HiddenReason, OrganizationID, RevisionID, RevisionNum, Source, UnitID, UpdatedAt, UserAgent, UserID.\n\nExample: 'DESC:CreatedAt' or 'DisplayName,DESC:CreatedAt'.\n\nResults are ordered by the Revision's ID after the fields named, and by the ID alone if none are.\n\nThe whole string must be query-encoded.",
             "required": false,
             "schema": {
+              "pattern": "^\\s*(?:(?:[Aa][Ss][Cc]|[Dd][Ee][Ss][Cc])\\s*:\\s*)?(ChangeSetID|CreatedAt|DataHash|Description|HiddenReason|OrganizationID|RevisionID|RevisionNum|Source|UnitID|UpdatedAt|UserAgent|UserID)\\s*(?:,\\s*(?:(?:[Aa][Ss][Cc]|[Dd][Ee][Ss][Cc])\\s*:\\s*)?(?:ChangeSetID|CreatedAt|DataHash|Description|HiddenReason|OrganizationID|RevisionID|RevisionNum|Source|UnitID|UpdatedAt|UserAgent|UserID)\\s*)*$",
               "type": "string"
             }
           },
@@ -18329,6 +18420,7 @@
             "description": "Include clause for expanding related entities in the response for Revision.\nThe attribute names are case-sensitive, PascalCase, and\nexpected in a comma-separated list format as in the JSON encoding.\n\nSupported attributes for Revision are Attestations, ChangeOrders, ChangeSetID, OrganizationID, Releases, SpaceID, Tags, UnitID, UserID.\n\nThe whole string must be query-encoded.",
             "required": false,
             "schema": {
+              "pattern": "^\\s*(Attestations|ChangeOrders|ChangeSetID|OrganizationID|Releases|SpaceID|Tags|UnitID|UserID)\\s*(?:,\\s*(?:Attestations|ChangeOrders|ChangeSetID|OrganizationID|Releases|SpaceID|Tags|UnitID|UserID)\\s*)*$",
               "type": "string"
             }
           },
@@ -18367,6 +18459,7 @@
             "description": "Comma-separated list of fields to sort Revision results by, each in the form 'ASC|DESC:FieldName' or just 'FieldName'.\n\nField names are case-sensitive and PascalCase, as in the JSON encoding. Sort direction defaults to ASC when the 'DIRECTION:' prefix is omitted.\n\nSupported attributes for ordering Revision: ChangeSetID, CreatedAt, DataHash, Description, HiddenReason, OrganizationID, RevisionID, RevisionNum, Source, UnitID, UpdatedAt, UserAgent, UserID.\n\nExample: 'DESC:CreatedAt' or 'DisplayName,DESC:CreatedAt'.\n\nResults are ordered by the Revision's ID after the fields named, and by the ID alone if none are.\n\nThe whole string must be query-encoded.",
             "required": false,
             "schema": {
+              "pattern": "^\\s*(?:(?:[Aa][Ss][Cc]|[Dd][Ee][Ss][Cc])\\s*:\\s*)?(ChangeSetID|CreatedAt|DataHash|Description|HiddenReason|OrganizationID|RevisionID|RevisionNum|Source|UnitID|UpdatedAt|UserAgent|UserID)\\s*(?:,\\s*(?:(?:[Aa][Ss][Cc]|[Dd][Ee][Ss][Cc])\\s*:\\s*)?(?:ChangeSetID|CreatedAt|DataHash|Description|HiddenReason|OrganizationID|RevisionID|RevisionNum|Source|UnitID|UpdatedAt|UserAgent|UserID)\\s*)*$",
               "type": "string"
             }
           },
@@ -18532,6 +18625,7 @@
             "description": "Include clause for expanding related entities in the response for ServiceAccount.\nThe attribute names are case-sensitive, PascalCase, and\nexpected in a comma-separated list format as in the JSON encoding.\n\nSupported attributes for ServiceAccount are OrganizationID.\n\nThe whole string must be query-encoded.",
             "required": false,
             "schema": {
+              "pattern": "^\\s*(OrganizationID)\\s*(?:,\\s*(?:OrganizationID)\\s*)*$",
               "type": "string"
             }
           },
@@ -18570,6 +18664,7 @@
             "description": "Comma-separated list of fields to sort ServiceAccount results by, each in the form 'ASC|DESC:FieldName' or just 'FieldName'.\n\nField names are case-sensitive and PascalCase, as in the JSON encoding. Sort direction defaults to ASC when the 'DIRECTION:' prefix is omitted.\n\nSupported attributes for ordering ServiceAccount: CreatedAt, DisplayName, HiddenReason, OrgRole, OrganizationID, ServiceAccountID, Slug, UpdatedAt, UserID.\n\nExample: 'DESC:CreatedAt' or 'DisplayName,DESC:CreatedAt'.\n\nResults are ordered by the ServiceAccount's ID after the fields named, and by the ID alone if none are.\n\nThe whole string must be query-encoded.",
             "required": false,
             "schema": {
+              "pattern": "^\\s*(?:(?:[Aa][Ss][Cc]|[Dd][Ee][Ss][Cc])\\s*:\\s*)?(CreatedAt|DisplayName|HiddenReason|OrgRole|OrganizationID|ServiceAccountID|Slug|UpdatedAt|UserID)\\s*(?:,\\s*(?:(?:[Aa][Ss][Cc]|[Dd][Ee][Ss][Cc])\\s*:\\s*)?(?:CreatedAt|DisplayName|HiddenReason|OrgRole|OrganizationID|ServiceAccountID|Slug|UpdatedAt|UserID)\\s*)*$",
               "type": "string"
             }
           },
@@ -18915,6 +19010,7 @@
             "description": "Include clause for expanding related entities in the response for ServiceAccount.\nThe attribute names are case-sensitive, PascalCase, and\nexpected in a comma-separated list format as in the JSON encoding.\n\nSupported attributes for ServiceAccount are OrganizationID.\n\nThe whole string must be query-encoded.",
             "required": false,
             "schema": {
+              "pattern": "^\\s*(OrganizationID)\\s*(?:,\\s*(?:OrganizationID)\\s*)*$",
               "type": "string"
             }
           },
@@ -20032,6 +20128,7 @@
             "description": "Include clause for expanding related entities in the response for Space.\nThe attribute names are case-sensitive, PascalCase, and\nexpected in a comma-separated list format as in the JSON encoding.\n\nSupported attributes for Space are AttributeFilterID, AttributeIDs, ComponentID, OrganizationID, ReleaseTargetID, TriggerFilterID, TriggerIDs.\n\nThe whole string must be query-encoded.",
             "required": false,
             "schema": {
+              "pattern": "^\\s*(AttributeFilterID|AttributeIDs|ComponentID|OrganizationID|ReleaseTargetID|TriggerFilterID|TriggerIDs)\\s*(?:,\\s*(?:AttributeFilterID|AttributeIDs|ComponentID|OrganizationID|ReleaseTargetID|TriggerFilterID|TriggerIDs)\\s*)*$",
               "type": "string"
             }
           },
@@ -20070,6 +20167,7 @@
             "description": "Comma-separated list of fields to sort Space results by, each in the form 'ASC|DESC:FieldName' or just 'FieldName'.\n\nField names are case-sensitive and PascalCase, as in the JSON encoding. Sort direction defaults to ASC when the 'DIRECTION:' prefix is omitted.\n\nSupported attributes for ordering Space: AttributeFilterID, AttributeHash, BackingUnitID, ComponentID, CreatedAt, DisplayName, HiddenReason, OrganizationID, ReleaseTargetID, Slug, SpaceID, TriggerFilterID, TriggerHash, UpdatedAt, UpstreamSpaceID.\n\nExample: 'DESC:CreatedAt' or 'DisplayName,DESC:CreatedAt'.\n\nResults are ordered by the Space's ID after the fields named, and by the ID alone if none are.\n\nThe whole string must be query-encoded.",
             "required": false,
             "schema": {
+              "pattern": "^\\s*(?:(?:[Aa][Ss][Cc]|[Dd][Ee][Ss][Cc])\\s*:\\s*)?(AttributeFilterID|AttributeHash|BackingUnitID|ComponentID|CreatedAt|DisplayName|HiddenReason|OrganizationID|ReleaseTargetID|Slug|SpaceID|TriggerFilterID|TriggerHash|UpdatedAt|UpstreamSpaceID)\\s*(?:,\\s*(?:(?:[Aa][Ss][Cc]|[Dd][Ee][Ss][Cc])\\s*:\\s*)?(?:AttributeFilterID|AttributeHash|BackingUnitID|ComponentID|CreatedAt|DisplayName|HiddenReason|OrganizationID|ReleaseTargetID|Slug|SpaceID|TriggerFilterID|TriggerHash|UpdatedAt|UpstreamSpaceID)\\s*)*$",
               "type": "string"
             }
           },
@@ -20469,6 +20567,7 @@
             "description": "Include clause for expanding related entities in the response for Space.\nThe attribute names are case-sensitive, PascalCase, and\nexpected in a comma-separated list format as in the JSON encoding.\n\nSupported attributes for Space are AttributeFilterID, AttributeIDs, ComponentID, OrganizationID, ReleaseTargetID, TriggerFilterID, TriggerIDs.\n\nThe whole string must be query-encoded.",
             "required": false,
             "schema": {
+              "pattern": "^\\s*(AttributeFilterID|AttributeIDs|ComponentID|OrganizationID|ReleaseTargetID|TriggerFilterID|TriggerIDs)\\s*(?:,\\s*(?:AttributeFilterID|AttributeIDs|ComponentID|OrganizationID|ReleaseTargetID|TriggerFilterID|TriggerIDs)\\s*)*$",
               "type": "string"
             }
           },
@@ -20978,6 +21077,7 @@
             "description": "Include clause for expanding related entities in the response for Attestation.\nThe attribute names are case-sensitive, PascalCase, and\nexpected in a comma-separated list format as in the JSON encoding.\n\nSupported attributes for Attestation are OrganizationID, SpaceID.\n\nThe whole string must be query-encoded.",
             "required": false,
             "schema": {
+              "pattern": "^\\s*(OrganizationID|SpaceID)\\s*(?:,\\s*(?:OrganizationID|SpaceID)\\s*)*$",
               "type": "string"
             }
           },
@@ -21016,6 +21116,7 @@
             "description": "Comma-separated list of fields to sort Attestation results by, each in the form 'ASC|DESC:FieldName' or just 'FieldName'.\n\nField names are case-sensitive and PascalCase, as in the JSON encoding. Sort direction defaults to ASC when the 'DIRECTION:' prefix is omitted.\n\nSupported attributes for ordering Attestation: AttestationID, ChangeOrderID, CreatedAt, ExpiresAt, Hash, HiddenReason, Note, OrganizationID, ReleaseID, Result, RevokedAttestationID, SpaceID, Type, UserID.\n\nExample: 'DESC:CreatedAt' or 'DisplayName,DESC:CreatedAt'.\n\nResults are ordered by the Attestation's ID after the fields named, and by the ID alone if none are.\n\nThe whole string must be query-encoded.",
             "required": false,
             "schema": {
+              "pattern": "^\\s*(?:(?:[Aa][Ss][Cc]|[Dd][Ee][Ss][Cc])\\s*:\\s*)?(AttestationID|ChangeOrderID|CreatedAt|ExpiresAt|Hash|HiddenReason|Note|OrganizationID|ReleaseID|Result|RevokedAttestationID|SpaceID|Type|UserID)\\s*(?:,\\s*(?:(?:[Aa][Ss][Cc]|[Dd][Ee][Ss][Cc])\\s*:\\s*)?(?:AttestationID|ChangeOrderID|CreatedAt|ExpiresAt|Hash|HiddenReason|Note|OrganizationID|ReleaseID|Result|RevokedAttestationID|SpaceID|Type|UserID)\\s*)*$",
               "type": "string"
             }
           },
@@ -21260,6 +21361,7 @@
             "description": "Include clause for expanding related entities in the response for Attestation.\nThe attribute names are case-sensitive, PascalCase, and\nexpected in a comma-separated list format as in the JSON encoding.\n\nSupported attributes for Attestation are OrganizationID, SpaceID.\n\nThe whole string must be query-encoded.",
             "required": false,
             "schema": {
+              "pattern": "^\\s*(OrganizationID|SpaceID)\\s*(?:,\\s*(?:OrganizationID|SpaceID)\\s*)*$",
               "type": "string"
             }
           },
@@ -21409,6 +21511,7 @@
             "description": "Include clause for expanding related entities in the response for Attribute.\nThe attribute names are case-sensitive, PascalCase, and\nexpected in a comma-separated list format as in the JSON encoding.\n\nSupported attributes for Attribute are OrganizationID, SpaceID.\n\nThe whole string must be query-encoded.",
             "required": false,
             "schema": {
+              "pattern": "^\\s*(OrganizationID|SpaceID)\\s*(?:,\\s*(?:OrganizationID|SpaceID)\\s*)*$",
               "type": "string"
             }
           },
@@ -21447,6 +21550,7 @@
             "description": "Comma-separated list of fields to sort Attribute results by, each in the form 'ASC|DESC:FieldName' or just 'FieldName'.\n\nField names are case-sensitive and PascalCase, as in the JSON encoding. Sort direction defaults to ASC when the 'DIRECTION:' prefix is omitted.\n\nSupported attributes for ordering Attribute: AttributeID, BackingUnitID, CreatedAt, DataType, DisplayName, Hash, HiddenReason, OrganizationID, Slug, SpaceID, ToolchainType, UpdatedAt, UpstreamAttributeID.\n\nExample: 'DESC:CreatedAt' or 'DisplayName,DESC:CreatedAt'.\n\nResults are ordered by the Attribute's ID after the fields named, and by the ID alone if none are.\n\nThe whole string must be query-encoded.",
             "required": false,
             "schema": {
+              "pattern": "^\\s*(?:(?:[Aa][Ss][Cc]|[Dd][Ee][Ss][Cc])\\s*:\\s*)?(AttributeID|BackingUnitID|CreatedAt|DataType|DisplayName|Hash|HiddenReason|OrganizationID|Slug|SpaceID|ToolchainType|UpdatedAt|UpstreamAttributeID)\\s*(?:,\\s*(?:(?:[Aa][Ss][Cc]|[Dd][Ee][Ss][Cc])\\s*:\\s*)?(?:AttributeID|BackingUnitID|CreatedAt|DataType|DisplayName|Hash|HiddenReason|OrganizationID|Slug|SpaceID|ToolchainType|UpdatedAt|UpstreamAttributeID)\\s*)*$",
               "type": "string"
             }
           },
@@ -21831,6 +21935,7 @@
             "description": "Include clause for expanding related entities in the response for Attribute.\nThe attribute names are case-sensitive, PascalCase, and\nexpected in a comma-separated list format as in the JSON encoding.\n\nSupported attributes for Attribute are OrganizationID, SpaceID.\n\nThe whole string must be query-encoded.",
             "required": false,
             "schema": {
+              "pattern": "^\\s*(OrganizationID|SpaceID)\\s*(?:,\\s*(?:OrganizationID|SpaceID)\\s*)*$",
               "type": "string"
             }
           },
@@ -22566,6 +22671,7 @@
             "description": "Include clause for expanding related entities in the response for BridgeWorker.\nThe attribute names are case-sensitive, PascalCase, and\nexpected in a comma-separated list format as in the JSON encoding.\n\nSupported attributes for BridgeWorker are OrganizationID, SpaceID.\n\nThe whole string must be query-encoded.",
             "required": false,
             "schema": {
+              "pattern": "^\\s*(OrganizationID|SpaceID)\\s*(?:,\\s*(?:OrganizationID|SpaceID)\\s*)*$",
               "type": "string"
             }
           },
@@ -22604,6 +22710,7 @@
             "description": "Comma-separated list of fields to sort BridgeWorker results by, each in the form 'ASC|DESC:FieldName' or just 'FieldName'.\n\nField names are case-sensitive and PascalCase, as in the JSON encoding. Sort direction defaults to ASC when the 'DIRECTION:' prefix is omitted.\n\nSupported attributes for ordering BridgeWorker: BridgeWorkerID, Condition, CreatedAt, DisplayName, HiddenReason, IPAddress, LastMessage, LastSeenAt, OrgRole, OrganizationID, Slug, SpaceID, UpdatedAt, UserID.\n\nExample: 'DESC:CreatedAt' or 'DisplayName,DESC:CreatedAt'.\n\nResults are ordered by the BridgeWorker's ID after the fields named, and by the ID alone if none are.\n\nThe whole string must be query-encoded.",
             "required": false,
             "schema": {
+              "pattern": "^\\s*(?:(?:[Aa][Ss][Cc]|[Dd][Ee][Ss][Cc])\\s*:\\s*)?(BridgeWorkerID|Condition|CreatedAt|DisplayName|HiddenReason|IPAddress|LastMessage|LastSeenAt|OrgRole|OrganizationID|Slug|SpaceID|UpdatedAt|UserID)\\s*(?:,\\s*(?:(?:[Aa][Ss][Cc]|[Dd][Ee][Ss][Cc])\\s*:\\s*)?(?:BridgeWorkerID|Condition|CreatedAt|DisplayName|HiddenReason|IPAddress|LastMessage|LastSeenAt|OrgRole|OrganizationID|Slug|SpaceID|UpdatedAt|UserID)\\s*)*$",
               "type": "string"
             }
           },
@@ -22988,6 +23095,7 @@
             "description": "Include clause for expanding related entities in the response for BridgeWorker.\nThe attribute names are case-sensitive, PascalCase, and\nexpected in a comma-separated list format as in the JSON encoding.\n\nSupported attributes for BridgeWorker are OrganizationID, SpaceID.\n\nThe whole string must be query-encoded.",
             "required": false,
             "schema": {
+              "pattern": "^\\s*(OrganizationID|SpaceID)\\s*(?:,\\s*(?:OrganizationID|SpaceID)\\s*)*$",
               "type": "string"
             }
           },
@@ -23737,6 +23845,7 @@
             "description": "Include clause for expanding related entities in the response for ChangeOrder.\nThe attribute names are case-sensitive, PascalCase, and\nexpected in a comma-separated list format as in the JSON encoding.\n\nSupported attributes for ChangeOrder are EndTagID, InvocationID, OrganizationID, ReleaseTagID, RestoreTagID, SpaceFilterID, SpaceID, StartTagID, UnitFilterID.\n\nThe whole string must be query-encoded.",
             "required": false,
             "schema": {
+              "pattern": "^\\s*(EndTagID|InvocationID|OrganizationID|ReleaseTagID|RestoreTagID|SpaceFilterID|SpaceID|StartTagID|UnitFilterID)\\s*(?:,\\s*(?:EndTagID|InvocationID|OrganizationID|ReleaseTagID|RestoreTagID|SpaceFilterID|SpaceID|StartTagID|UnitFilterID)\\s*)*$",
               "type": "string"
             }
           },
@@ -23775,6 +23884,7 @@
             "description": "Comma-separated list of fields to sort ChangeOrder results by, each in the form 'ASC|DESC:FieldName' or just 'FieldName'.\n\nField names are case-sensitive and PascalCase, as in the JSON encoding. Sort direction defaults to ASC when the 'DIRECTION:' prefix is omitted.\n\nSupported attributes for ordering ChangeOrder: AbortedReason, AdoptedEndTagID, ChangeOrderID, ChangeWorkflowID, CreatedAt, Description, DisplayName, EndTagID, HiddenReason, InvocationID, OrganizationID, PriorRevisions, ReleasePriorRevisions, ReleaseTagID, RestoreTagID, Slug, SpaceFilterID, SpaceID, Stage, StartTagID, UnitFilterID, UpdateType, UpdatedAt, UserID, WhereSpace, WhereUnit.\n\nExample: 'DESC:CreatedAt' or 'DisplayName,DESC:CreatedAt'.\n\nResults are ordered by the ChangeOrder's ID after the fields named, and by the ID alone if none are.\n\nThe whole string must be query-encoded.",
             "required": false,
             "schema": {
+              "pattern": "^\\s*(?:(?:[Aa][Ss][Cc]|[Dd][Ee][Ss][Cc])\\s*:\\s*)?(AbortedReason|AdoptedEndTagID|ChangeOrderID|ChangeWorkflowID|CreatedAt|Description|DisplayName|EndTagID|HiddenReason|InvocationID|OrganizationID|PriorRevisions|ReleasePriorRevisions|ReleaseTagID|RestoreTagID|Slug|SpaceFilterID|SpaceID|Stage|StartTagID|UnitFilterID|UpdateType|UpdatedAt|UserID|WhereSpace|WhereUnit)\\s*(?:,\\s*(?:(?:[Aa][Ss][Cc]|[Dd][Ee][Ss][Cc])\\s*:\\s*)?(?:AbortedReason|AdoptedEndTagID|ChangeOrderID|ChangeWorkflowID|CreatedAt|Description|DisplayName|EndTagID|HiddenReason|InvocationID|OrganizationID|PriorRevisions|ReleasePriorRevisions|ReleaseTagID|RestoreTagID|Slug|SpaceFilterID|SpaceID|Stage|StartTagID|UnitFilterID|UpdateType|UpdatedAt|UserID|WhereSpace|WhereUnit)\\s*)*$",
               "type": "string"
             }
           },
@@ -24159,6 +24269,7 @@
             "description": "Include clause for expanding related entities in the response for ChangeOrder.\nThe attribute names are case-sensitive, PascalCase, and\nexpected in a comma-separated list format as in the JSON encoding.\n\nSupported attributes for ChangeOrder are EndTagID, InvocationID, OrganizationID, ReleaseTagID, RestoreTagID, SpaceFilterID, SpaceID, StartTagID, UnitFilterID.\n\nThe whole string must be query-encoded.",
             "required": false,
             "schema": {
+              "pattern": "^\\s*(EndTagID|InvocationID|OrganizationID|ReleaseTagID|RestoreTagID|SpaceFilterID|SpaceID|StartTagID|UnitFilterID)\\s*(?:,\\s*(?:EndTagID|InvocationID|OrganizationID|ReleaseTagID|RestoreTagID|SpaceFilterID|SpaceID|StartTagID|UnitFilterID)\\s*)*$",
               "type": "string"
             }
           },
@@ -24743,6 +24854,7 @@
             "description": "Include clause for expanding related entities in the response for ChangeSet.\nThe attribute names are case-sensitive, PascalCase, and\nexpected in a comma-separated list format as in the JSON encoding.\n\nSupported attributes for ChangeSet are EndTagID, OrganizationID, SpaceID, StartTagID.\n\nThe whole string must be query-encoded.",
             "required": false,
             "schema": {
+              "pattern": "^\\s*(EndTagID|OrganizationID|SpaceID|StartTagID)\\s*(?:,\\s*(?:EndTagID|OrganizationID|SpaceID|StartTagID)\\s*)*$",
               "type": "string"
             }
           },
@@ -24781,6 +24893,7 @@
             "description": "Comma-separated list of fields to sort ChangeSet results by, each in the form 'ASC|DESC:FieldName' or just 'FieldName'.\n\nField names are case-sensitive and PascalCase, as in the JSON encoding. Sort direction defaults to ASC when the 'DIRECTION:' prefix is omitted.\n\nSupported attributes for ordering ChangeSet: ChangeSetID, CreatedAt, Description, DisplayName, EndTagID, HiddenReason, OrganizationID, Slug, SpaceID, StartTagID, StartTagIsPriorRevision, State, UpdatedAt.\n\nExample: 'DESC:CreatedAt' or 'DisplayName,DESC:CreatedAt'.\n\nResults are ordered by the ChangeSet's ID after the fields named, and by the ID alone if none are.\n\nThe whole string must be query-encoded.",
             "required": false,
             "schema": {
+              "pattern": "^\\s*(?:(?:[Aa][Ss][Cc]|[Dd][Ee][Ss][Cc])\\s*:\\s*)?(ChangeSetID|CreatedAt|Description|DisplayName|EndTagID|HiddenReason|OrganizationID|Slug|SpaceID|StartTagID|StartTagIsPriorRevision|State|UpdatedAt)\\s*(?:,\\s*(?:(?:[Aa][Ss][Cc]|[Dd][Ee][Ss][Cc])\\s*:\\s*)?(?:ChangeSetID|CreatedAt|Description|DisplayName|EndTagID|HiddenReason|OrganizationID|Slug|SpaceID|StartTagID|StartTagIsPriorRevision|State|UpdatedAt)\\s*)*$",
               "type": "string"
             }
           },
@@ -25165,6 +25278,7 @@
             "description": "Include clause for expanding related entities in the response for ChangeSet.\nThe attribute names are case-sensitive, PascalCase, and\nexpected in a comma-separated list format as in the JSON encoding.\n\nSupported attributes for ChangeSet are EndTagID, OrganizationID, SpaceID, StartTagID.\n\nThe whole string must be query-encoded.",
             "required": false,
             "schema": {
+              "pattern": "^\\s*(EndTagID|OrganizationID|SpaceID|StartTagID)\\s*(?:,\\s*(?:EndTagID|OrganizationID|SpaceID|StartTagID)\\s*)*$",
               "type": "string"
             }
           },
@@ -25638,6 +25752,7 @@
             "description": "Include clause for expanding related entities in the response for ChangeWorkflow.\nThe attribute names are case-sensitive, PascalCase, and\nexpected in a comma-separated list format as in the JSON encoding.\n\nSupported attributes for ChangeWorkflow are OrganizationID, SpaceID.\n\nThe whole string must be query-encoded.",
             "required": false,
             "schema": {
+              "pattern": "^\\s*(OrganizationID|SpaceID)\\s*(?:,\\s*(?:OrganizationID|SpaceID)\\s*)*$",
               "type": "string"
             }
           },
@@ -25676,6 +25791,7 @@
             "description": "Comma-separated list of fields to sort ChangeWorkflow results by, each in the form 'ASC|DESC:FieldName' or just 'FieldName'.\n\nField names are case-sensitive and PascalCase, as in the JSON encoding. Sort direction defaults to ASC when the 'DIRECTION:' prefix is omitted.\n\nSupported attributes for ordering ChangeWorkflow: BackingUnitID, ChangeWorkflowID, CreatedAt, DisplayName, Hash, HiddenReason, OrganizationID, Slug, SpaceID, UpdatedAt, UpstreamChangeWorkflowID.\n\nExample: 'DESC:CreatedAt' or 'DisplayName,DESC:CreatedAt'.\n\nResults are ordered by the ChangeWorkflow's ID after the fields named, and by the ID alone if none are.\n\nThe whole string must be query-encoded.",
             "required": false,
             "schema": {
+              "pattern": "^\\s*(?:(?:[Aa][Ss][Cc]|[Dd][Ee][Ss][Cc])\\s*:\\s*)?(BackingUnitID|ChangeWorkflowID|CreatedAt|DisplayName|Hash|HiddenReason|OrganizationID|Slug|SpaceID|UpdatedAt|UpstreamChangeWorkflowID)\\s*(?:,\\s*(?:(?:[Aa][Ss][Cc]|[Dd][Ee][Ss][Cc])\\s*:\\s*)?(?:BackingUnitID|ChangeWorkflowID|CreatedAt|DisplayName|Hash|HiddenReason|OrganizationID|Slug|SpaceID|UpdatedAt|UpstreamChangeWorkflowID)\\s*)*$",
               "type": "string"
             }
           },
@@ -26060,6 +26176,7 @@
             "description": "Include clause for expanding related entities in the response for ChangeWorkflow.\nThe attribute names are case-sensitive, PascalCase, and\nexpected in a comma-separated list format as in the JSON encoding.\n\nSupported attributes for ChangeWorkflow are OrganizationID, SpaceID.\n\nThe whole string must be query-encoded.",
             "required": false,
             "schema": {
+              "pattern": "^\\s*(OrganizationID|SpaceID)\\s*(?:,\\s*(?:OrganizationID|SpaceID)\\s*)*$",
               "type": "string"
             }
           },
@@ -26794,6 +26911,7 @@
             "description": "Include clause for expanding related entities in the response for Channel.\nThe attribute names are case-sensitive, PascalCase, and\nexpected in a comma-separated list format as in the JSON encoding.\n\nSupported attributes for Channel are OrganizationID, SpaceID.\n\nThe whole string must be query-encoded.",
             "required": false,
             "schema": {
+              "pattern": "^\\s*(OrganizationID|SpaceID)\\s*(?:,\\s*(?:OrganizationID|SpaceID)\\s*)*$",
               "type": "string"
             }
           },
@@ -26832,6 +26950,7 @@
             "description": "Comma-separated list of fields to sort Channel results by, each in the form 'ASC|DESC:FieldName' or just 'FieldName'.\n\nField names are case-sensitive and PascalCase, as in the JSON encoding. Sort direction defaults to ASC when the 'DIRECTION:' prefix is omitted.\n\nSupported attributes for ordering Channel: ChannelID, Condition, CreatedAt, DisplayName, EventPosition, HiddenReason, IPAddress, LastMessage, LastSeenAt, OrganizationID, Slug, SpaceID, UpdatedAt.\n\nExample: 'DESC:CreatedAt' or 'DisplayName,DESC:CreatedAt'.\n\nResults are ordered by the Channel's ID after the fields named, and by the ID alone if none are.\n\nThe whole string must be query-encoded.",
             "required": false,
             "schema": {
+              "pattern": "^\\s*(?:(?:[Aa][Ss][Cc]|[Dd][Ee][Ss][Cc])\\s*:\\s*)?(ChannelID|Condition|CreatedAt|DisplayName|EventPosition|HiddenReason|IPAddress|LastMessage|LastSeenAt|OrganizationID|Slug|SpaceID|UpdatedAt)\\s*(?:,\\s*(?:(?:[Aa][Ss][Cc]|[Dd][Ee][Ss][Cc])\\s*:\\s*)?(?:ChannelID|Condition|CreatedAt|DisplayName|EventPosition|HiddenReason|IPAddress|LastMessage|LastSeenAt|OrganizationID|Slug|SpaceID|UpdatedAt)\\s*)*$",
               "type": "string"
             }
           },
@@ -27207,6 +27326,7 @@
             "description": "Include clause for expanding related entities in the response for Channel.\nThe attribute names are case-sensitive, PascalCase, and\nexpected in a comma-separated list format as in the JSON encoding.\n\nSupported attributes for Channel are OrganizationID, SpaceID.\n\nThe whole string must be query-encoded.",
             "required": false,
             "schema": {
+              "pattern": "^\\s*(OrganizationID|SpaceID)\\s*(?:,\\s*(?:OrganizationID|SpaceID)\\s*)*$",
               "type": "string"
             }
           },
@@ -28338,6 +28458,7 @@
             "description": "Comma-separated list of fields to sort CommandRun results by, each in the form 'ASC|DESC:FieldName' or just 'FieldName'.\n\nField names are case-sensitive and PascalCase, as in the JSON encoding. Sort direction defaults to ASC when the 'DIRECTION:' prefix is omitted.\n\nSupported attributes for ordering CommandRun: ChannelID, Command, CommandRunID, CompletedAt, CreatedAt, CreatedBy, Deadline, DeliveredAt, OrganizationID, SpaceID, Status, TargetID, TimeoutAt, UnitID.\n\nExample: 'DESC:CreatedAt' or 'DisplayName,DESC:CreatedAt'.\n\nResults are ordered by the CommandRun's ID after the fields named, and by the ID alone if none are.\n\nThe whole string must be query-encoded.",
             "required": false,
             "schema": {
+              "pattern": "^\\s*(?:(?:[Aa][Ss][Cc]|[Dd][Ee][Ss][Cc])\\s*:\\s*)?(ChannelID|Command|CommandRunID|CompletedAt|CreatedAt|CreatedBy|Deadline|DeliveredAt|OrganizationID|SpaceID|Status|TargetID|TimeoutAt|UnitID)\\s*(?:,\\s*(?:(?:[Aa][Ss][Cc]|[Dd][Ee][Ss][Cc])\\s*:\\s*)?(?:ChannelID|Command|CommandRunID|CompletedAt|CreatedAt|CreatedBy|Deadline|DeliveredAt|OrganizationID|SpaceID|Status|TargetID|TimeoutAt|UnitID)\\s*)*$",
               "type": "string"
             }
           },
@@ -29059,6 +29180,7 @@
             "description": "Include clause for expanding related entities in the response for Filter.\nThe attribute names are case-sensitive, PascalCase, and\nexpected in a comma-separated list format as in the JSON encoding.\n\nSupported attributes for Filter are FromSpaceID, OrganizationID, SpaceID.\n\nThe whole string must be query-encoded.",
             "required": false,
             "schema": {
+              "pattern": "^\\s*(FromSpaceID|OrganizationID|SpaceID)\\s*(?:,\\s*(?:FromSpaceID|OrganizationID|SpaceID)\\s*)*$",
               "type": "string"
             }
           },
@@ -29097,6 +29219,7 @@
             "description": "Comma-separated list of fields to sort Filter results by, each in the form 'ASC|DESC:FieldName' or just 'FieldName'.\n\nField names are case-sensitive and PascalCase, as in the JSON encoding. Sort direction defaults to ASC when the 'DIRECTION:' prefix is omitted.\n\nSupported attributes for ordering Filter: BackingUnitID, CreatedAt, DisplayName, FilterID, From, FromSpaceID, Hash, HiddenReason, IncludeHidden, OrganizationID, ResourceType, Slug, SpaceID, UpdatedAt, UpstreamFilterID, Where, WhereData.\n\nExample: 'DESC:CreatedAt' or 'DisplayName,DESC:CreatedAt'.\n\nResults are ordered by the Filter's ID after the fields named, and by the ID alone if none are.\n\nThe whole string must be query-encoded.",
             "required": false,
             "schema": {
+              "pattern": "^\\s*(?:(?:[Aa][Ss][Cc]|[Dd][Ee][Ss][Cc])\\s*:\\s*)?(BackingUnitID|CreatedAt|DisplayName|FilterID|From|FromSpaceID|Hash|HiddenReason|IncludeHidden|OrganizationID|ResourceType|Slug|SpaceID|UpdatedAt|UpstreamFilterID|Where|WhereData)\\s*(?:,\\s*(?:(?:[Aa][Ss][Cc]|[Dd][Ee][Ss][Cc])\\s*:\\s*)?(?:BackingUnitID|CreatedAt|DisplayName|FilterID|From|FromSpaceID|Hash|HiddenReason|IncludeHidden|OrganizationID|ResourceType|Slug|SpaceID|UpdatedAt|UpstreamFilterID|Where|WhereData)\\s*)*$",
               "type": "string"
             }
           },
@@ -29499,6 +29622,7 @@
             "description": "Include clause for expanding related entities in the response for Filter.\nThe attribute names are case-sensitive, PascalCase, and\nexpected in a comma-separated list format as in the JSON encoding.\n\nSupported attributes for Filter are FromSpaceID, OrganizationID, SpaceID.\n\nThe whole string must be query-encoded.",
             "required": false,
             "schema": {
+              "pattern": "^\\s*(FromSpaceID|OrganizationID|SpaceID)\\s*(?:,\\s*(?:FromSpaceID|OrganizationID|SpaceID)\\s*)*$",
               "type": "string"
             }
           },
@@ -30450,9 +30574,10 @@
           {
             "name": "include",
             "in": "query",
-            "description": "Comma-separated parts of the result to return in addition to the default: ConfigData for the configuration the invocation produced, carried whether or not the invocation changed it. Without it, the configuration is present only when the invocation changed it, and an unchanged result is reported by DataHash alone. Diff for what the invocation changed in each Unit, path by path with the values on both sides.",
+            "description": "Comma-separated parts of the result to return in addition to the default: ConfigData for the configuration the invocation produced, carried whether or not the invocation changed it. Without it, the configuration is present only when the invocation changed it, and an unchanged result is reported by DataHash alone. Diff for what the invocation changed in each Unit, path by path with the values on both sides.\n\nSupported values: ConfigData, Diff.",
             "required": false,
             "schema": {
+              "pattern": "^\\s*(ConfigData|Diff)\\s*(?:,\\s*(?:ConfigData|Diff)\\s*)*$",
               "type": "string"
             }
           },
@@ -30721,6 +30846,7 @@
             "description": "Include clause for expanding related entities in the response for Invocation.\nThe attribute names are case-sensitive, PascalCase, and\nexpected in a comma-separated list format as in the JSON encoding.\n\nSupported attributes for Invocation are BridgeWorkerID, OrganizationID, SpaceID.\n\nThe whole string must be query-encoded.",
             "required": false,
             "schema": {
+              "pattern": "^\\s*(BridgeWorkerID|OrganizationID|SpaceID)\\s*(?:,\\s*(?:BridgeWorkerID|OrganizationID|SpaceID)\\s*)*$",
               "type": "string"
             }
           },
@@ -30759,6 +30885,7 @@
             "description": "Comma-separated list of fields to sort Invocation results by, each in the form 'ASC|DESC:FieldName' or just 'FieldName'.\n\nField names are case-sensitive and PascalCase, as in the JSON encoding. Sort direction defaults to ASC when the 'DIRECTION:' prefix is omitted.\n\nSupported attributes for ordering Invocation: BackingUnitID, BridgeWorkerID, CreatedAt, DisplayName, Hash, HiddenReason, InvocationID, OrganizationID, Slug, SpaceID, ToolchainType, UpdatedAt, UpstreamInvocationID.\n\nExample: 'DESC:CreatedAt' or 'DisplayName,DESC:CreatedAt'.\n\nResults are ordered by the Invocation's ID after the fields named, and by the ID alone if none are.\n\nThe whole string must be query-encoded.",
             "required": false,
             "schema": {
+              "pattern": "^\\s*(?:(?:[Aa][Ss][Cc]|[Dd][Ee][Ss][Cc])\\s*:\\s*)?(BackingUnitID|BridgeWorkerID|CreatedAt|DisplayName|Hash|HiddenReason|InvocationID|OrganizationID|Slug|SpaceID|ToolchainType|UpdatedAt|UpstreamInvocationID)\\s*(?:,\\s*(?:(?:[Aa][Ss][Cc]|[Dd][Ee][Ss][Cc])\\s*:\\s*)?(?:BackingUnitID|BridgeWorkerID|CreatedAt|DisplayName|Hash|HiddenReason|InvocationID|OrganizationID|Slug|SpaceID|ToolchainType|UpdatedAt|UpstreamInvocationID)\\s*)*$",
               "type": "string"
             }
           },
@@ -31143,6 +31270,7 @@
             "description": "Include clause for expanding related entities in the response for Invocation.\nThe attribute names are case-sensitive, PascalCase, and\nexpected in a comma-separated list format as in the JSON encoding.\n\nSupported attributes for Invocation are BridgeWorkerID, OrganizationID, SpaceID.\n\nThe whole string must be query-encoded.",
             "required": false,
             "schema": {
+              "pattern": "^\\s*(BridgeWorkerID|OrganizationID|SpaceID)\\s*(?:,\\s*(?:BridgeWorkerID|OrganizationID|SpaceID)\\s*)*$",
               "type": "string"
             }
           },
@@ -31874,6 +32002,7 @@
             "description": "Include clause for expanding related entities in the response for Link.\nThe attribute names are case-sensitive, PascalCase, and\nexpected in a comma-separated list format as in the JSON encoding.\n\nSupported attributes for Link are FromUnitID, OrganizationID, SpaceID, ToSpaceID, ToUnitID, TransformInvocationID.\n\nThe whole string must be query-encoded.",
             "required": false,
             "schema": {
+              "pattern": "^\\s*(FromUnitID|OrganizationID|SpaceID|ToSpaceID|ToUnitID|TransformInvocationID)\\s*(?:,\\s*(?:FromUnitID|OrganizationID|SpaceID|ToSpaceID|ToUnitID|TransformInvocationID)\\s*)*$",
               "type": "string"
             }
           },
@@ -31912,6 +32041,7 @@
             "description": "Comma-separated list of fields to sort Link results by, each in the form 'ASC|DESC:FieldName' or just 'FieldName'.\n\nField names are case-sensitive and PascalCase, as in the JSON encoding. Sort direction defaults to ASC when the 'DIRECTION:' prefix is omitted.\n\nSupported attributes for ordering Link: AutoUpdate, BackingUnitID, CreatedAt, DisplayName, DownstreamLastMergedRevisionNum, FromUnitID, Hash, HiddenReason, LinkID, MergeEnableSubtraction, OrganizationID, Protect, Slug, SpaceID, Squash, Stale, ToSpaceID, ToUnitID, TransformInvocationID, UpdateType, UpdatedAt, UpstreamLastMergedRevisionNum, UpstreamLinkID.\n\nExample: 'DESC:CreatedAt' or 'DisplayName,DESC:CreatedAt'.\n\nResults are ordered by the Link's ID after the fields named, and by the ID alone if none are.\n\nThe whole string must be query-encoded.",
             "required": false,
             "schema": {
+              "pattern": "^\\s*(?:(?:[Aa][Ss][Cc]|[Dd][Ee][Ss][Cc])\\s*:\\s*)?(AutoUpdate|BackingUnitID|CreatedAt|DisplayName|DownstreamLastMergedRevisionNum|FromUnitID|Hash|HiddenReason|LinkID|MergeEnableSubtraction|OrganizationID|Protect|Slug|SpaceID|Squash|Stale|ToSpaceID|ToUnitID|TransformInvocationID|UpdateType|UpdatedAt|UpstreamLastMergedRevisionNum|UpstreamLinkID)\\s*(?:,\\s*(?:(?:[Aa][Ss][Cc]|[Dd][Ee][Ss][Cc])\\s*:\\s*)?(?:AutoUpdate|BackingUnitID|CreatedAt|DisplayName|DownstreamLastMergedRevisionNum|FromUnitID|Hash|HiddenReason|LinkID|MergeEnableSubtraction|OrganizationID|Protect|Slug|SpaceID|Squash|Stale|ToSpaceID|ToUnitID|TransformInvocationID|UpdateType|UpdatedAt|UpstreamLastMergedRevisionNum|UpstreamLinkID)\\s*)*$",
               "type": "string"
             }
           },
@@ -32296,6 +32426,7 @@
             "description": "Include clause for expanding related entities in the response for Link.\nThe attribute names are case-sensitive, PascalCase, and\nexpected in a comma-separated list format as in the JSON encoding.\n\nSupported attributes for Link are FromUnitID, OrganizationID, SpaceID, ToSpaceID, ToUnitID, TransformInvocationID.\n\nThe whole string must be query-encoded.",
             "required": false,
             "schema": {
+              "pattern": "^\\s*(FromUnitID|OrganizationID|SpaceID|ToSpaceID|ToUnitID|TransformInvocationID)\\s*(?:,\\s*(?:FromUnitID|OrganizationID|SpaceID|ToSpaceID|ToUnitID|TransformInvocationID)\\s*)*$",
               "type": "string"
             }
           },
@@ -33139,6 +33270,7 @@
             "description": "Include clause for expanding related entities in the response for Release.\nThe attribute names are case-sensitive, PascalCase, and\nexpected in a comma-separated list format as in the JSON encoding.\n\nSupported attributes for Release are OrganizationID, SpaceID, TagID.\n\nThe whole string must be query-encoded.",
             "required": false,
             "schema": {
+              "pattern": "^\\s*(OrganizationID|SpaceID|TagID)\\s*(?:,\\s*(?:OrganizationID|SpaceID|TagID)\\s*)*$",
               "type": "string"
             }
           },
@@ -33177,6 +33309,7 @@
             "description": "Comma-separated list of fields to sort Release results by, each in the form 'ASC|DESC:FieldName' or just 'FieldName'.\n\nField names are case-sensitive and PascalCase, as in the JSON encoding. Sort direction defaults to ASC when the 'DIRECTION:' prefix is omitted.\n\nSupported attributes for ordering Release: ChangeOrderID, CreatedAt, Digest, HiddenReason, ManifestDigest, OrganizationID, Published, ReleaseID, ReleaseNum, SpaceID, TagID, TargetID, UnitCount, UpdatedAt, UserID.\n\nExample: 'DESC:CreatedAt' or 'DisplayName,DESC:CreatedAt'.\n\nResults are ordered by the Release's ID after the fields named, and by the ID alone if none are.\n\nThe whole string must be query-encoded.",
             "required": false,
             "schema": {
+              "pattern": "^\\s*(?:(?:[Aa][Ss][Cc]|[Dd][Ee][Ss][Cc])\\s*:\\s*)?(ChangeOrderID|CreatedAt|Digest|HiddenReason|ManifestDigest|OrganizationID|Published|ReleaseID|ReleaseNum|SpaceID|TagID|TargetID|UnitCount|UpdatedAt|UserID)\\s*(?:,\\s*(?:(?:[Aa][Ss][Cc]|[Dd][Ee][Ss][Cc])\\s*:\\s*)?(?:ChangeOrderID|CreatedAt|Digest|HiddenReason|ManifestDigest|OrganizationID|Published|ReleaseID|ReleaseNum|SpaceID|TagID|TargetID|UnitCount|UpdatedAt|UserID)\\s*)*$",
               "type": "string"
             }
           },
@@ -33553,6 +33686,7 @@
             "description": "Include clause for expanding related entities in the response for Release.\nThe attribute names are case-sensitive, PascalCase, and\nexpected in a comma-separated list format as in the JSON encoding.\n\nSupported attributes for Release are OrganizationID, SpaceID, TagID.\n\nThe whole string must be query-encoded.",
             "required": false,
             "schema": {
+              "pattern": "^\\s*(OrganizationID|SpaceID|TagID)\\s*(?:,\\s*(?:OrganizationID|SpaceID|TagID)\\s*)*$",
               "type": "string"
             }
           },
@@ -34245,6 +34379,7 @@
             "description": "Include clause for expanding related entities in the response for Tag.\nThe attribute names are case-sensitive, PascalCase, and\nexpected in a comma-separated list format as in the JSON encoding.\n\nSupported attributes for Tag are ChangeSetID, OrganizationID, SpaceID.\n\nThe whole string must be query-encoded.",
             "required": false,
             "schema": {
+              "pattern": "^\\s*(ChangeSetID|OrganizationID|SpaceID)\\s*(?:,\\s*(?:ChangeSetID|OrganizationID|SpaceID)\\s*)*$",
               "type": "string"
             }
           },
@@ -34283,6 +34418,7 @@
             "description": "Comma-separated list of fields to sort Tag results by, each in the form 'ASC|DESC:FieldName' or just 'FieldName'.\n\nField names are case-sensitive and PascalCase, as in the JSON encoding. Sort direction defaults to ASC when the 'DIRECTION:' prefix is omitted.\n\nSupported attributes for ordering Tag: ChangeOrderID, ChangeSetID, CreatedAt, DisplayName, HiddenReason, OrganizationID, ReleaseID, Slug, SpaceID, TagID, UpdatedAt.\n\nExample: 'DESC:CreatedAt' or 'DisplayName,DESC:CreatedAt'.\n\nResults are ordered by the Tag's ID after the fields named, and by the ID alone if none are.\n\nThe whole string must be query-encoded.",
             "required": false,
             "schema": {
+              "pattern": "^\\s*(?:(?:[Aa][Ss][Cc]|[Dd][Ee][Ss][Cc])\\s*:\\s*)?(ChangeOrderID|ChangeSetID|CreatedAt|DisplayName|HiddenReason|OrganizationID|ReleaseID|Slug|SpaceID|TagID|UpdatedAt)\\s*(?:,\\s*(?:(?:[Aa][Ss][Cc]|[Dd][Ee][Ss][Cc])\\s*:\\s*)?(?:ChangeOrderID|ChangeSetID|CreatedAt|DisplayName|HiddenReason|OrganizationID|ReleaseID|Slug|SpaceID|TagID|UpdatedAt)\\s*)*$",
               "type": "string"
             }
           },
@@ -34667,6 +34803,7 @@
             "description": "Include clause for expanding related entities in the response for Tag.\nThe attribute names are case-sensitive, PascalCase, and\nexpected in a comma-separated list format as in the JSON encoding.\n\nSupported attributes for Tag are ChangeSetID, OrganizationID, SpaceID.\n\nThe whole string must be query-encoded.",
             "required": false,
             "schema": {
+              "pattern": "^\\s*(ChangeSetID|OrganizationID|SpaceID)\\s*(?:,\\s*(?:ChangeSetID|OrganizationID|SpaceID)\\s*)*$",
               "type": "string"
             }
           },
@@ -35135,6 +35272,7 @@
             "description": "Include clause for expanding related entities in the response for Target.\nThe attribute names are case-sensitive, PascalCase, and\nexpected in a comma-separated list format as in the JSON encoding.\n\nSupported attributes for Target are OrganizationID, SpaceID, TriggerFilterID, TriggerIDs.\n\nThe whole string must be query-encoded.",
             "required": false,
             "schema": {
+              "pattern": "^\\s*(OrganizationID|SpaceID|TriggerFilterID|TriggerIDs)\\s*(?:,\\s*(?:OrganizationID|SpaceID|TriggerFilterID|TriggerIDs)\\s*)*$",
               "type": "string"
             }
           },
@@ -35173,6 +35311,7 @@
             "description": "Comma-separated list of fields to sort Target results by, each in the form 'ASC|DESC:FieldName' or just 'FieldName'.\n\nField names are case-sensitive and PascalCase, as in the JSON encoding. Sort direction defaults to ASC when the 'DIRECTION:' prefix is omitted.\n\nSupported attributes for ordering Target: BackingUnitID, CreatedAt, DisplayName, HiddenReason, OrganizationID, Slug, SpaceID, TargetID, TriggerFilterID, TriggerHash, UpdatedAt, UpstreamTargetID.\n\nExample: 'DESC:CreatedAt' or 'DisplayName,DESC:CreatedAt'.\n\nResults are ordered by the Target's ID after the fields named, and by the ID alone if none are.\n\nThe whole string must be query-encoded.",
             "required": false,
             "schema": {
+              "pattern": "^\\s*(?:(?:[Aa][Ss][Cc]|[Dd][Ee][Ss][Cc])\\s*:\\s*)?(BackingUnitID|CreatedAt|DisplayName|HiddenReason|OrganizationID|Slug|SpaceID|TargetID|TriggerFilterID|TriggerHash|UpdatedAt|UpstreamTargetID)\\s*(?:,\\s*(?:(?:[Aa][Ss][Cc]|[Dd][Ee][Ss][Cc])\\s*:\\s*)?(?:BackingUnitID|CreatedAt|DisplayName|HiddenReason|OrganizationID|Slug|SpaceID|TargetID|TriggerFilterID|TriggerHash|UpdatedAt|UpstreamTargetID)\\s*)*$",
               "type": "string"
             }
           },
@@ -35566,6 +35705,7 @@
             "description": "Include clause for expanding related entities in the response for Target.\nThe attribute names are case-sensitive, PascalCase, and\nexpected in a comma-separated list format as in the JSON encoding.\n\nSupported attributes for Target are OrganizationID, SpaceID, TriggerFilterID, TriggerIDs.\n\nThe whole string must be query-encoded.",
             "required": false,
             "schema": {
+              "pattern": "^\\s*(OrganizationID|SpaceID|TriggerFilterID|TriggerIDs)\\s*(?:,\\s*(?:OrganizationID|SpaceID|TriggerFilterID|TriggerIDs)\\s*)*$",
               "type": "string"
             }
           },
@@ -36306,6 +36446,7 @@
             "description": "Include clause for expanding related entities in the response for Trigger.\nThe attribute names are case-sensitive, PascalCase, and\nexpected in a comma-separated list format as in the JSON encoding.\n\nSupported attributes for Trigger are BridgeWorkerID, InvocationID, OrganizationID, SpaceID, UnitFilterID.\n\nThe whole string must be query-encoded.",
             "required": false,
             "schema": {
+              "pattern": "^\\s*(BridgeWorkerID|InvocationID|OrganizationID|SpaceID|UnitFilterID)\\s*(?:,\\s*(?:BridgeWorkerID|InvocationID|OrganizationID|SpaceID|UnitFilterID)\\s*)*$",
               "type": "string"
             }
           },
@@ -36344,6 +36485,7 @@
             "description": "Comma-separated list of fields to sort Trigger results by, each in the form 'ASC|DESC:FieldName' or just 'FieldName'.\n\nField names are case-sensitive and PascalCase, as in the JSON encoding. Sort direction defaults to ASC when the 'DIRECTION:' prefix is omitted.\n\nSupported attributes for ordering Trigger: BackingUnitID, BridgeWorkerID, CreatedAt, Description, Disabled, DisplayName, Event, FunctionName, Hash, HiddenReason, InvocationID, OrganizationID, OtherDataSource, Protect, Slug, SpaceID, ToolchainType, TriggerID, UnitFilterID, UpdatedAt, UpstreamTriggerID, Validating, Warn, WhereResource, WhereUnit.\n\nExample: 'DESC:CreatedAt' or 'DisplayName,DESC:CreatedAt'.\n\nResults are ordered by the Trigger's ID after the fields named, and by the ID alone if none are.\n\nThe whole string must be query-encoded.",
             "required": false,
             "schema": {
+              "pattern": "^\\s*(?:(?:[Aa][Ss][Cc]|[Dd][Ee][Ss][Cc])\\s*:\\s*)?(BackingUnitID|BridgeWorkerID|CreatedAt|Description|Disabled|DisplayName|Event|FunctionName|Hash|HiddenReason|InvocationID|OrganizationID|OtherDataSource|Protect|Slug|SpaceID|ToolchainType|TriggerID|UnitFilterID|UpdatedAt|UpstreamTriggerID|Validating|Warn|WhereResource|WhereUnit)\\s*(?:,\\s*(?:(?:[Aa][Ss][Cc]|[Dd][Ee][Ss][Cc])\\s*:\\s*)?(?:BackingUnitID|BridgeWorkerID|CreatedAt|Description|Disabled|DisplayName|Event|FunctionName|Hash|HiddenReason|InvocationID|OrganizationID|OtherDataSource|Protect|Slug|SpaceID|ToolchainType|TriggerID|UnitFilterID|UpdatedAt|UpstreamTriggerID|Validating|Warn|WhereResource|WhereUnit)\\s*)*$",
               "type": "string"
             }
           },
@@ -36728,6 +36870,7 @@
             "description": "Include clause for expanding related entities in the response for Trigger.\nThe attribute names are case-sensitive, PascalCase, and\nexpected in a comma-separated list format as in the JSON encoding.\n\nSupported attributes for Trigger are BridgeWorkerID, InvocationID, OrganizationID, SpaceID, UnitFilterID.\n\nThe whole string must be query-encoded.",
             "required": false,
             "schema": {
+              "pattern": "^\\s*(BridgeWorkerID|InvocationID|OrganizationID|SpaceID|UnitFilterID)\\s*(?:,\\s*(?:BridgeWorkerID|InvocationID|OrganizationID|SpaceID|UnitFilterID)\\s*)*$",
               "type": "string"
             }
           },
@@ -37530,6 +37673,7 @@
             "description": "Include clause for expanding related entities in the response for Unit.\nThe attribute names are case-sensitive, PascalCase, and\nexpected in a comma-separated list format as in the JSON encoding.\n\nSupported attributes for Unit are ChangeSetID, FromLinkID, HeadMutationNum, HeadRevisionNum, LastReleasedRevisionNum, OrganizationID, SpaceID, TargetID, UnitEventID, UpstreamSpaceID, UpstreamUnitID.\n\nThe whole string must be query-encoded.",
             "required": false,
             "schema": {
+              "pattern": "^\\s*(ChangeSetID|FromLinkID|HeadMutationNum|HeadRevisionNum|LastReleasedRevisionNum|OrganizationID|SpaceID|TargetID|UnitEventID|UpstreamSpaceID|UpstreamUnitID)\\s*(?:,\\s*(?:ChangeSetID|FromLinkID|HeadMutationNum|HeadRevisionNum|LastReleasedRevisionNum|OrganizationID|SpaceID|TargetID|UnitEventID|UpstreamSpaceID|UpstreamUnitID)\\s*)*$",
               "type": "string"
             }
           },
@@ -37568,6 +37712,7 @@
             "description": "Comma-separated list of fields to sort Unit results by, each in the form 'ASC|DESC:FieldName' or just 'FieldName'.\n\nField names are case-sensitive and PascalCase, as in the JSON encoding. Sort direction defaults to ASC when the 'DIRECTION:' prefix is omitted.\n\nSupported attributes for ordering Unit: ChangeSetID, CreatedAt, DataHash, DisplayName, HeadRevisionID, HeadRevisionNum, HeadUnitActionNum, HeadUnitEventNum, HiddenReason, LastChangeDescription, LastReleasedRevisionNum, OrganizationID, ProviderType, Slug, SpaceID, TargetID, ToolchainType, UnitID, UpdatedAt, UpstreamRevisionNum, UpstreamUnitID.\n\nExample: 'DESC:CreatedAt' or 'DisplayName,DESC:CreatedAt'.\n\nResults are ordered by the Unit's ID after the fields named, and by the ID alone if none are.\n\nThe whole string must be query-encoded.",
             "required": false,
             "schema": {
+              "pattern": "^\\s*(?:(?:[Aa][Ss][Cc]|[Dd][Ee][Ss][Cc])\\s*:\\s*)?(ChangeSetID|CreatedAt|DataHash|DisplayName|HeadRevisionID|HeadRevisionNum|HeadUnitActionNum|HeadUnitEventNum|HiddenReason|LastChangeDescription|LastReleasedRevisionNum|OrganizationID|ProviderType|Slug|SpaceID|TargetID|ToolchainType|UnitID|UpdatedAt|UpstreamRevisionNum|UpstreamUnitID)\\s*(?:,\\s*(?:(?:[Aa][Ss][Cc]|[Dd][Ee][Ss][Cc])\\s*:\\s*)?(?:ChangeSetID|CreatedAt|DataHash|DisplayName|HeadRevisionID|HeadRevisionNum|HeadUnitActionNum|HeadUnitEventNum|HiddenReason|LastChangeDescription|LastReleasedRevisionNum|OrganizationID|ProviderType|Slug|SpaceID|TargetID|ToolchainType|UnitID|UpdatedAt|UpstreamRevisionNum|UpstreamUnitID)\\s*)*$",
               "type": "string"
             }
           },
@@ -37806,9 +37951,10 @@
           {
             "name": "include",
             "in": "query",
-            "description": "Comma-separated parts of the result to return in addition to the Unit: ConfigData for the configuration the operation produced, MutationSources for what set each value in it, and Diff for what the operation changed, path by path with the values on both sides. None is a field of a Unit, and each costs something to return, so they are returned only when named. A dry run stores nothing, so this is the only way to see what it would have produced.",
+            "description": "Comma-separated parts of the result to return in addition to the Unit: ConfigData for the configuration the operation produced, MutationSources for what set each value in it, and Diff for what the operation changed, path by path with the values on both sides. None is a field of a Unit, and each costs something to return, so they are returned only when named. A dry run stores nothing, so this is the only way to see what it would have produced.\n\nSupported values: ConfigData, MutationSources, Diff.",
             "required": false,
             "schema": {
+              "pattern": "^\\s*(ConfigData|MutationSources|Diff)\\s*(?:,\\s*(?:ConfigData|MutationSources|Diff)\\s*)*$",
               "type": "string"
             }
           },
@@ -38091,6 +38237,7 @@
             "description": "Include clause for expanding related entities in the response for Unit.\nThe attribute names are case-sensitive, PascalCase, and\nexpected in a comma-separated list format as in the JSON encoding.\n\nSupported attributes for Unit are ChangeSetID, FromLinkID, HeadMutationNum, HeadRevisionNum, LastReleasedRevisionNum, OrganizationID, SpaceID, TargetID, UnitEventID, UpstreamSpaceID, UpstreamUnitID.\n\nThe whole string must be query-encoded.",
             "required": false,
             "schema": {
+              "pattern": "^\\s*(ChangeSetID|FromLinkID|HeadMutationNum|HeadRevisionNum|LastReleasedRevisionNum|OrganizationID|SpaceID|TargetID|UnitEventID|UpstreamSpaceID|UpstreamUnitID)\\s*(?:,\\s*(?:ChangeSetID|FromLinkID|HeadMutationNum|HeadRevisionNum|LastReleasedRevisionNum|OrganizationID|SpaceID|TargetID|UnitEventID|UpstreamSpaceID|UpstreamUnitID)\\s*)*$",
               "type": "string"
             }
           },
@@ -38412,9 +38559,10 @@
           {
             "name": "include",
             "in": "query",
-            "description": "Comma-separated parts of the result to return in addition to the Unit: ConfigData for the configuration the operation produced, MutationSources for what set each value in it, and Diff for what the operation changed, path by path with the values on both sides. None is a field of a Unit, and each costs something to return, so they are returned only when named. A dry run stores nothing, so this is the only way to see what it would have produced.",
+            "description": "Comma-separated parts of the result to return in addition to the Unit: ConfigData for the configuration the operation produced, MutationSources for what set each value in it, and Diff for what the operation changed, path by path with the values on both sides. None is a field of a Unit, and each costs something to return, so they are returned only when named. A dry run stores nothing, so this is the only way to see what it would have produced.\n\nSupported values: ConfigData, MutationSources, Diff.",
             "required": false,
             "schema": {
+              "pattern": "^\\s*(ConfigData|MutationSources|Diff)\\s*(?:,\\s*(?:ConfigData|MutationSources|Diff)\\s*)*$",
               "type": "string"
             }
           }
@@ -38841,9 +38989,10 @@
           {
             "name": "include",
             "in": "query",
-            "description": "Comma-separated parts of the result to return in addition to the Unit: ConfigData for the configuration the operation produced, MutationSources for what set each value in it, and Diff for what the operation changed, path by path with the values on both sides. None is a field of a Unit, and each costs something to return, so they are returned only when named. A dry run stores nothing, so this is the only way to see what it would have produced.",
+            "description": "Comma-separated parts of the result to return in addition to the Unit: ConfigData for the configuration the operation produced, MutationSources for what set each value in it, and Diff for what the operation changed, path by path with the values on both sides. None is a field of a Unit, and each costs something to return, so they are returned only when named. A dry run stores nothing, so this is the only way to see what it would have produced.\n\nSupported values: ConfigData, MutationSources, Diff.",
             "required": false,
             "schema": {
+              "pattern": "^\\s*(ConfigData|MutationSources|Diff)\\s*(?:,\\s*(?:ConfigData|MutationSources|Diff)\\s*)*$",
               "type": "string"
             }
           }
@@ -39217,9 +39366,10 @@
           {
             "name": "include",
             "in": "query",
-            "description": "Comma-separated parts of the result to return in addition to the Unit: ConfigData for the configuration the operation produced, MutationSources for what set each value in it, and Diff for what the operation changed, path by path with the values on both sides. None is a field of a Unit, and each costs something to return, so they are returned only when named. A dry run stores nothing, so this is the only way to see what it would have produced.",
+            "description": "Comma-separated parts of the result to return in addition to the Unit: ConfigData for the configuration the operation produced, MutationSources for what set each value in it, and Diff for what the operation changed, path by path with the values on both sides. None is a field of a Unit, and each costs something to return, so they are returned only when named. A dry run stores nothing, so this is the only way to see what it would have produced.\n\nSupported values: ConfigData, MutationSources, Diff.",
             "required": false,
             "schema": {
+              "pattern": "^\\s*(ConfigData|MutationSources|Diff)\\s*(?:,\\s*(?:ConfigData|MutationSources|Diff)\\s*)*$",
               "type": "string"
             }
           },
@@ -39468,9 +39618,10 @@
           {
             "name": "include",
             "in": "query",
-            "description": "Comma-separated: Attribution to attach to each changed path the To side's MutationSources entry, which says what set the new value, and Unchanged to also list resources with no changes.",
+            "description": "Comma-separated: Attribution to attach to each changed path the To side's MutationSources entry, which says what set the new value, Unchanged to also list resources with no changes, and Context to also list, within each changed resource, the unchanged paths around the changes: every unchanged child of each map or array that holds a change, up to the resource, as ChangeType None.\n\nSupported values: Attribution, Unchanged, Context.",
             "required": false,
             "schema": {
+              "pattern": "^\\s*(Attribution|Unchanged|Context)\\s*(?:,\\s*(?:Attribution|Unchanged|Context)\\s*)*$",
               "type": "string"
             }
           },
@@ -39743,6 +39894,7 @@
             "description": "Include clause for expanding related entities in the response for Mutation.\nThe attribute names are case-sensitive, PascalCase, and\nexpected in a comma-separated list format as in the JSON encoding.\n\nSupported attributes for Mutation are InvocationID, LinkID, MergeSourceID, OrganizationID, RevisionID, SpaceID, TriggerID, UnitID.\n\nThe whole string must be query-encoded.",
             "required": false,
             "schema": {
+              "pattern": "^\\s*(InvocationID|LinkID|MergeSourceID|OrganizationID|RevisionID|SpaceID|TriggerID|UnitID)\\s*(?:,\\s*(?:InvocationID|LinkID|MergeSourceID|OrganizationID|RevisionID|SpaceID|TriggerID|UnitID)\\s*)*$",
               "type": "string"
             }
           },
@@ -39781,6 +39933,7 @@
             "description": "Comma-separated list of fields to sort Mutation results by, each in the form 'ASC|DESC:FieldName' or just 'FieldName'.\n\nField names are case-sensitive and PascalCase, as in the JSON encoding. Sort direction defaults to ASC when the 'DIRECTION:' prefix is omitted.\n\nSupported attributes for ordering Mutation: BridgeWorkerID, CreatedAt, FunctionName, HiddenReason, InvocationID, LinkID, MergeBaseRevisionNum, MergeEndRevisionNum, MergeSourceID, MutationID, MutationNum, OrganizationID, ReplayOutcome, ReplayReason, RestoredRevisionNum, RevisionID, RevisionNum, Subgroup, TriggerID, UnitID, UpdatedAt.\n\nExample: 'DESC:CreatedAt' or 'DisplayName,DESC:CreatedAt'.\n\nResults are ordered by the Mutation's ID after the fields named, and by the ID alone if none are.\n\nThe whole string must be query-encoded.",
             "required": false,
             "schema": {
+              "pattern": "^\\s*(?:(?:[Aa][Ss][Cc]|[Dd][Ee][Ss][Cc])\\s*:\\s*)?(BridgeWorkerID|CreatedAt|FunctionName|HiddenReason|InvocationID|LinkID|MergeBaseRevisionNum|MergeEndRevisionNum|MergeSourceID|MutationID|MutationNum|OrganizationID|ReplayOutcome|ReplayReason|RestoredRevisionNum|RevisionID|RevisionNum|Subgroup|TriggerID|UnitID|UpdatedAt)\\s*(?:,\\s*(?:(?:[Aa][Ss][Cc]|[Dd][Ee][Ss][Cc])\\s*:\\s*)?(?:BridgeWorkerID|CreatedAt|FunctionName|HiddenReason|InvocationID|LinkID|MergeBaseRevisionNum|MergeEndRevisionNum|MergeSourceID|MutationID|MutationNum|OrganizationID|ReplayOutcome|ReplayReason|RestoredRevisionNum|RevisionID|RevisionNum|Subgroup|TriggerID|UnitID|UpdatedAt)\\s*)*$",
               "type": "string"
             }
           },
@@ -39915,6 +40068,7 @@
             "description": "Include clause for expanding related entities in the response for Mutation.\nThe attribute names are case-sensitive, PascalCase, and\nexpected in a comma-separated list format as in the JSON encoding.\n\nSupported attributes for Mutation are InvocationID, LinkID, MergeSourceID, OrganizationID, RevisionID, SpaceID, TriggerID, UnitID.\n\nThe whole string must be query-encoded.",
             "required": false,
             "schema": {
+              "pattern": "^\\s*(InvocationID|LinkID|MergeSourceID|OrganizationID|RevisionID|SpaceID|TriggerID|UnitID)\\s*(?:,\\s*(?:InvocationID|LinkID|MergeSourceID|OrganizationID|RevisionID|SpaceID|TriggerID|UnitID)\\s*)*$",
               "type": "string"
             }
           },
@@ -40301,6 +40455,7 @@
             "description": "Include clause for expanding related entities in the response for Resource.\nThe attribute names are case-sensitive, PascalCase, and\nexpected in a comma-separated list format as in the JSON encoding.\n\nSupported attributes for Resource are OrganizationID, SpaceID, TargetID, UnitID.\n\nThe whole string must be query-encoded.",
             "required": false,
             "schema": {
+              "pattern": "^\\s*(OrganizationID|SpaceID|TargetID|UnitID)\\s*(?:,\\s*(?:OrganizationID|SpaceID|TargetID|UnitID)\\s*)*$",
               "type": "string"
             }
           },
@@ -40339,6 +40494,7 @@
             "description": "Comma-separated list of fields to sort Resource results by, each in the form 'ASC|DESC:FieldName' or just 'FieldName'.\n\nField names are case-sensitive and PascalCase, as in the JSON encoding. Sort direction defaults to ASC when the 'DIRECTION:' prefix is omitted.\n\nSupported attributes for ordering Resource: CreatedAt, HiddenReason, OrganizationID, ResourceID, ResourceIndex, ResourceName, ResourceType, SpaceID, TargetID, ToolchainType, UnitID, UpdatedAt.\n\nExample: 'DESC:CreatedAt' or 'DisplayName,DESC:CreatedAt'.\n\nResults are ordered by the Resource's ID after the fields named, and by the ID alone if none are.\n\nThe whole string must be query-encoded.",
             "required": false,
             "schema": {
+              "pattern": "^\\s*(?:(?:[Aa][Ss][Cc]|[Dd][Ee][Ss][Cc])\\s*:\\s*)?(CreatedAt|HiddenReason|OrganizationID|ResourceID|ResourceIndex|ResourceName|ResourceType|SpaceID|TargetID|ToolchainType|UnitID|UpdatedAt)\\s*(?:,\\s*(?:(?:[Aa][Ss][Cc]|[Dd][Ee][Ss][Cc])\\s*:\\s*)?(?:CreatedAt|HiddenReason|OrganizationID|ResourceID|ResourceIndex|ResourceName|ResourceType|SpaceID|TargetID|ToolchainType|UnitID|UpdatedAt)\\s*)*$",
               "type": "string"
             }
           },
@@ -40502,6 +40658,7 @@
             "description": "Include clause for expanding related entities in the response for Resource.\nThe attribute names are case-sensitive, PascalCase, and\nexpected in a comma-separated list format as in the JSON encoding.\n\nSupported attributes for Resource are OrganizationID, SpaceID, TargetID, UnitID.\n\nThe whole string must be query-encoded.",
             "required": false,
             "schema": {
+              "pattern": "^\\s*(OrganizationID|SpaceID|TargetID|UnitID)\\s*(?:,\\s*(?:OrganizationID|SpaceID|TargetID|UnitID)\\s*)*$",
               "type": "string"
             }
           },
@@ -40679,6 +40836,7 @@
             "description": "Include clause for expanding related entities in the response for ReviewComment.\nThe attribute names are case-sensitive, PascalCase, and\nexpected in a comma-separated list format as in the JSON encoding.\n\nSupported attributes for ReviewComment are OrganizationID, RevisionID, SpaceID, UnitID.\n\nThe whole string must be query-encoded.",
             "required": false,
             "schema": {
+              "pattern": "^\\s*(OrganizationID|RevisionID|SpaceID|UnitID)\\s*(?:,\\s*(?:OrganizationID|RevisionID|SpaceID|UnitID)\\s*)*$",
               "type": "string"
             }
           },
@@ -40717,6 +40875,7 @@
             "description": "Comma-separated list of fields to sort ReviewComment results by, each in the form 'ASC|DESC:FieldName' or just 'FieldName'.\n\nField names are case-sensitive and PascalCase, as in the JSON encoding. Sort direction defaults to ASC when the 'DIRECTION:' prefix is omitted.\n\nSupported attributes for ordering ReviewComment: CreatedAt, HiddenReason, OrganizationID, Path, ReplyToID, ReviewCommentID, RevisionID, RevisionNum, Text, UnitID, UpdatedAt, UserAgent, UserID.\n\nExample: 'DESC:CreatedAt' or 'DisplayName,DESC:CreatedAt'.\n\nResults are ordered by the ReviewComment's ID after the fields named, and by the ID alone if none are.\n\nThe whole string must be query-encoded.",
             "required": false,
             "schema": {
+              "pattern": "^\\s*(?:(?:[Aa][Ss][Cc]|[Dd][Ee][Ss][Cc])\\s*:\\s*)?(CreatedAt|HiddenReason|OrganizationID|Path|ReplyToID|ReviewCommentID|RevisionID|RevisionNum|Text|UnitID|UpdatedAt|UserAgent|UserID)\\s*(?:,\\s*(?:(?:[Aa][Ss][Cc]|[Dd][Ee][Ss][Cc])\\s*:\\s*)?(?:CreatedAt|HiddenReason|OrganizationID|Path|ReplyToID|ReviewCommentID|RevisionID|RevisionNum|Text|UnitID|UpdatedAt|UserAgent|UserID)\\s*)*$",
               "type": "string"
             }
           },
@@ -41113,6 +41272,7 @@
             "description": "Include clause for expanding related entities in the response for ReviewComment.\nThe attribute names are case-sensitive, PascalCase, and\nexpected in a comma-separated list format as in the JSON encoding.\n\nSupported attributes for ReviewComment are OrganizationID, RevisionID, SpaceID, UnitID.\n\nThe whole string must be query-encoded.",
             "required": false,
             "schema": {
+              "pattern": "^\\s*(OrganizationID|RevisionID|SpaceID|UnitID)\\s*(?:,\\s*(?:OrganizationID|RevisionID|SpaceID|UnitID)\\s*)*$",
               "type": "string"
             }
           },
@@ -41597,6 +41757,7 @@
             "description": "Include clause for expanding related entities in the response for Revision.\nThe attribute names are case-sensitive, PascalCase, and\nexpected in a comma-separated list format as in the JSON encoding.\n\nSupported attributes for Revision are Attestations, ChangeOrders, ChangeSetID, OrganizationID, Releases, SpaceID, Tags, UnitID, UserID.\n\nThe whole string must be query-encoded.",
             "required": false,
             "schema": {
+              "pattern": "^\\s*(Attestations|ChangeOrders|ChangeSetID|OrganizationID|Releases|SpaceID|Tags|UnitID|UserID)\\s*(?:,\\s*(?:Attestations|ChangeOrders|ChangeSetID|OrganizationID|Releases|SpaceID|Tags|UnitID|UserID)\\s*)*$",
               "type": "string"
             }
           },
@@ -41635,6 +41796,7 @@
             "description": "Comma-separated list of fields to sort Revision results by, each in the form 'ASC|DESC:FieldName' or just 'FieldName'.\n\nField names are case-sensitive and PascalCase, as in the JSON encoding. Sort direction defaults to ASC when the 'DIRECTION:' prefix is omitted.\n\nSupported attributes for ordering Revision: ChangeSetID, CreatedAt, DataHash, Description, HiddenReason, OrganizationID, RevisionID, RevisionNum, Source, UnitID, UpdatedAt, UserAgent, UserID.\n\nExample: 'DESC:CreatedAt' or 'DisplayName,DESC:CreatedAt'.\n\nResults are ordered by the Revision's ID after the fields named, and by the ID alone if none are.\n\nThe whole string must be query-encoded.",
             "required": false,
             "schema": {
+              "pattern": "^\\s*(?:(?:[Aa][Ss][Cc]|[Dd][Ee][Ss][Cc])\\s*:\\s*)?(ChangeSetID|CreatedAt|DataHash|Description|HiddenReason|OrganizationID|RevisionID|RevisionNum|Source|UnitID|UpdatedAt|UserAgent|UserID)\\s*(?:,\\s*(?:(?:[Aa][Ss][Cc]|[Dd][Ee][Ss][Cc])\\s*:\\s*)?(?:ChangeSetID|CreatedAt|DataHash|Description|HiddenReason|OrganizationID|RevisionID|RevisionNum|Source|UnitID|UpdatedAt|UserAgent|UserID)\\s*)*$",
               "type": "string"
             }
           },
@@ -41780,6 +41942,7 @@
             "description": "Include clause for expanding related entities in the response for Revision.\nThe attribute names are case-sensitive, PascalCase, and\nexpected in a comma-separated list format as in the JSON encoding.\n\nSupported attributes for Revision are Attestations, ChangeOrders, ChangeSetID, OrganizationID, Releases, SpaceID, Tags, UnitID, UserID.\n\nThe whole string must be query-encoded.",
             "required": false,
             "schema": {
+              "pattern": "^\\s*(Attestations|ChangeOrders|ChangeSetID|OrganizationID|Releases|SpaceID|Tags|UnitID|UserID)\\s*(?:,\\s*(?:Attestations|ChangeOrders|ChangeSetID|OrganizationID|Releases|SpaceID|Tags|UnitID|UserID)\\s*)*$",
               "type": "string"
             }
           },
@@ -42178,6 +42341,7 @@
             "description": "Comma-separated list of fields to sort QueuedOperation results by, each in the form 'ASC|DESC:FieldName' or just 'FieldName'.\n\nField names are case-sensitive and PascalCase, as in the JSON encoding. Sort direction defaults to ASC when the 'DIRECTION:' prefix is omitted.\n\nSupported attributes for ordering QueuedOperation: Action, BridgeWorkerID, CreatedAt, DryRun, OrganizationID, QueuedOperationID, RevisionNum, Status, TargetID, UnitActionNum, UnitID.\n\nExample: 'DESC:CreatedAt' or 'DisplayName,DESC:CreatedAt'.\n\nResults are ordered by the QueuedOperation's ID after the fields named, and by the ID alone if none are.\n\nThe whole string must be query-encoded.",
             "required": false,
             "schema": {
+              "pattern": "^\\s*(?:(?:[Aa][Ss][Cc]|[Dd][Ee][Ss][Cc])\\s*:\\s*)?(Action|BridgeWorkerID|CreatedAt|DryRun|OrganizationID|QueuedOperationID|RevisionNum|Status|TargetID|UnitActionNum|UnitID)\\s*(?:,\\s*(?:(?:[Aa][Ss][Cc]|[Dd][Ee][Ss][Cc])\\s*:\\s*)?(?:Action|BridgeWorkerID|CreatedAt|DryRun|OrganizationID|QueuedOperationID|RevisionNum|Status|TargetID|UnitActionNum|UnitID)\\s*)*$",
               "type": "string"
             }
           },
@@ -42484,6 +42648,7 @@
             "description": "Comma-separated list of fields to sort UnitEvent results by, each in the form 'ASC|DESC:FieldName' or just 'FieldName'.\n\nField names are case-sensitive and PascalCase, as in the JSON encoding. Sort direction defaults to ASC when the 'DIRECTION:' prefix is omitted.\n\nSupported attributes for ordering UnitEvent: Action, BridgeWorkerID, CreatedAt, HiddenReason, OrganizationID, QueuedOperationID, Result, RevisionNum, StartedAt, Status, TerminatedAt, UnitEventID, UnitEventNum, UnitID, UpdatedAt.\n\nExample: 'DESC:CreatedAt' or 'DisplayName,DESC:CreatedAt'.\n\nResults are ordered by the UnitEvent's ID after the fields named, and by the ID alone if none are.\n\nThe whole string must be query-encoded.",
             "required": false,
             "schema": {
+              "pattern": "^\\s*(?:(?:[Aa][Ss][Cc]|[Dd][Ee][Ss][Cc])\\s*:\\s*)?(Action|BridgeWorkerID|CreatedAt|HiddenReason|OrganizationID|QueuedOperationID|Result|RevisionNum|StartedAt|Status|TerminatedAt|UnitEventID|UnitEventNum|UnitID|UpdatedAt)\\s*(?:,\\s*(?:(?:[Aa][Ss][Cc]|[Dd][Ee][Ss][Cc])\\s*:\\s*)?(?:Action|BridgeWorkerID|CreatedAt|HiddenReason|OrganizationID|QueuedOperationID|Result|RevisionNum|StartedAt|Status|TerminatedAt|UnitEventID|UnitEventNum|UnitID|UpdatedAt)\\s*)*$",
               "type": "string"
             }
           },
@@ -42749,6 +42914,7 @@
             "description": "Include clause for expanding related entities in the response for View.\nThe attribute names are case-sensitive, PascalCase, and\nexpected in a comma-separated list format as in the JSON encoding.\n\nSupported attributes for View are FilterID, OrganizationID, SpaceID.\n\nThe whole string must be query-encoded.",
             "required": false,
             "schema": {
+              "pattern": "^\\s*(FilterID|OrganizationID|SpaceID)\\s*(?:,\\s*(?:FilterID|OrganizationID|SpaceID)\\s*)*$",
               "type": "string"
             }
           },
@@ -42787,6 +42953,7 @@
             "description": "Comma-separated list of fields to sort View results by, each in the form 'ASC|DESC:FieldName' or just 'FieldName'.\n\nField names are case-sensitive and PascalCase, as in the JSON encoding. Sort direction defaults to ASC when the 'DIRECTION:' prefix is omitted.\n\nSupported attributes for ordering View: BackingUnitID, CreatedAt, DisplayName, FilterID, GroupBy, Hash, HiddenReason, Of, OrderBy, OrderByDirection, OrganizationID, Slug, SpaceID, UpdatedAt, UpstreamViewID, ViewID.\n\nExample: 'DESC:CreatedAt' or 'DisplayName,DESC:CreatedAt'.\n\nResults are ordered by the View's ID after the fields named, and by the ID alone if none are.\n\nThe whole string must be query-encoded.",
             "required": false,
             "schema": {
+              "pattern": "^\\s*(?:(?:[Aa][Ss][Cc]|[Dd][Ee][Ss][Cc])\\s*:\\s*)?(BackingUnitID|CreatedAt|DisplayName|FilterID|GroupBy|Hash|HiddenReason|Of|OrderBy|OrderByDirection|OrganizationID|Slug|SpaceID|UpdatedAt|UpstreamViewID|ViewID)\\s*(?:,\\s*(?:(?:[Aa][Ss][Cc]|[Dd][Ee][Ss][Cc])\\s*:\\s*)?(?:BackingUnitID|CreatedAt|DisplayName|FilterID|GroupBy|Hash|HiddenReason|Of|OrderBy|OrderByDirection|OrganizationID|Slug|SpaceID|UpdatedAt|UpstreamViewID|ViewID)\\s*)*$",
               "type": "string"
             }
           },
@@ -43171,6 +43338,7 @@
             "description": "Include clause for expanding related entities in the response for View.\nThe attribute names are case-sensitive, PascalCase, and\nexpected in a comma-separated list format as in the JSON encoding.\n\nSupported attributes for View are FilterID, OrganizationID, SpaceID.\n\nThe whole string must be query-encoded.",
             "required": false,
             "schema": {
+              "pattern": "^\\s*(FilterID|OrganizationID|SpaceID)\\s*(?:,\\s*(?:FilterID|OrganizationID|SpaceID)\\s*)*$",
               "type": "string"
             }
           },
@@ -43907,6 +44075,7 @@
             "description": "Include clause for expanding related entities in the response for Tag.\nThe attribute names are case-sensitive, PascalCase, and\nexpected in a comma-separated list format as in the JSON encoding.\n\nSupported attributes for Tag are ChangeSetID, OrganizationID, SpaceID.\n\nThe whole string must be query-encoded.",
             "required": false,
             "schema": {
+              "pattern": "^\\s*(ChangeSetID|OrganizationID|SpaceID)\\s*(?:,\\s*(?:ChangeSetID|OrganizationID|SpaceID)\\s*)*$",
               "type": "string"
             }
           },
@@ -44099,6 +44268,7 @@
             "description": "Include clause for expanding related entities in the response for Tag.\nThe attribute names are case-sensitive, PascalCase, and\nexpected in a comma-separated list format as in the JSON encoding.\n\nSupported attributes for Tag are ChangeSetID, OrganizationID, SpaceID.\n\nThe whole string must be query-encoded.",
             "required": false,
             "schema": {
+              "pattern": "^\\s*(ChangeSetID|OrganizationID|SpaceID)\\s*(?:,\\s*(?:ChangeSetID|OrganizationID|SpaceID)\\s*)*$",
               "type": "string"
             }
           },
@@ -44137,6 +44307,7 @@
             "description": "Comma-separated list of fields to sort Tag results by, each in the form 'ASC|DESC:FieldName' or just 'FieldName'.\n\nField names are case-sensitive and PascalCase, as in the JSON encoding. Sort direction defaults to ASC when the 'DIRECTION:' prefix is omitted.\n\nSupported attributes for ordering Tag: ChangeOrderID, ChangeSetID, CreatedAt, DisplayName, HiddenReason, OrganizationID, ReleaseID, Slug, SpaceID, TagID, UpdatedAt.\n\nExample: 'DESC:CreatedAt' or 'DisplayName,DESC:CreatedAt'.\n\nResults are ordered by the Tag's ID after the fields named, and by the ID alone if none are.\n\nThe whole string must be query-encoded.",
             "required": false,
             "schema": {
+              "pattern": "^\\s*(?:(?:[Aa][Ss][Cc]|[Dd][Ee][Ss][Cc])\\s*:\\s*)?(ChangeOrderID|ChangeSetID|CreatedAt|DisplayName|HiddenReason|OrganizationID|ReleaseID|Slug|SpaceID|TagID|UpdatedAt)\\s*(?:,\\s*(?:(?:[Aa][Ss][Cc]|[Dd][Ee][Ss][Cc])\\s*:\\s*)?(?:ChangeOrderID|ChangeSetID|CreatedAt|DisplayName|HiddenReason|OrganizationID|ReleaseID|Slug|SpaceID|TagID|UpdatedAt)\\s*)*$",
               "type": "string"
             }
           },
@@ -44285,6 +44456,7 @@
             "description": "Include clause for expanding related entities in the response for Tag.\nThe attribute names are case-sensitive, PascalCase, and\nexpected in a comma-separated list format as in the JSON encoding.\n\nSupported attributes for Tag are ChangeSetID, OrganizationID, SpaceID.\n\nThe whole string must be query-encoded.",
             "required": false,
             "schema": {
+              "pattern": "^\\s*(ChangeSetID|OrganizationID|SpaceID)\\s*(?:,\\s*(?:ChangeSetID|OrganizationID|SpaceID)\\s*)*$",
               "type": "string"
             }
           },
@@ -44544,6 +44716,7 @@
             "description": "Include clause for expanding related entities in the response for Tag.\nThe attribute names are case-sensitive, PascalCase, and\nexpected in a comma-separated list format as in the JSON encoding.\n\nSupported attributes for Tag are ChangeSetID, OrganizationID, SpaceID.\n\nThe whole string must be query-encoded.",
             "required": false,
             "schema": {
+              "pattern": "^\\s*(ChangeSetID|OrganizationID|SpaceID)\\s*(?:,\\s*(?:ChangeSetID|OrganizationID|SpaceID)\\s*)*$",
               "type": "string"
             }
           },
@@ -44859,6 +45032,7 @@
             "description": "Include clause for expanding related entities in the response for Tag.\nThe attribute names are case-sensitive, PascalCase, and\nexpected in a comma-separated list format as in the JSON encoding.\n\nSupported attributes for Tag are ChangeSetID, OrganizationID, SpaceID.\n\nThe whole string must be query-encoded.",
             "required": false,
             "schema": {
+              "pattern": "^\\s*(ChangeSetID|OrganizationID|SpaceID)\\s*(?:,\\s*(?:ChangeSetID|OrganizationID|SpaceID)\\s*)*$",
               "type": "string"
             }
           },
@@ -45032,6 +45206,7 @@
             "description": "Include clause for expanding related entities in the response for Target.\nThe attribute names are case-sensitive, PascalCase, and\nexpected in a comma-separated list format as in the JSON encoding.\n\nSupported attributes for Target are OrganizationID, SpaceID, TriggerFilterID, TriggerIDs.\n\nThe whole string must be query-encoded.",
             "required": false,
             "schema": {
+              "pattern": "^\\s*(OrganizationID|SpaceID|TriggerFilterID|TriggerIDs)\\s*(?:,\\s*(?:OrganizationID|SpaceID|TriggerFilterID|TriggerIDs)\\s*)*$",
               "type": "string"
             }
           },
@@ -45233,6 +45408,7 @@
             "description": "Include clause for expanding related entities in the response for Target.\nThe attribute names are case-sensitive, PascalCase, and\nexpected in a comma-separated list format as in the JSON encoding.\n\nSupported attributes for Target are OrganizationID, SpaceID, TriggerFilterID, TriggerIDs.\n\nThe whole string must be query-encoded.",
             "required": false,
             "schema": {
+              "pattern": "^\\s*(OrganizationID|SpaceID|TriggerFilterID|TriggerIDs)\\s*(?:,\\s*(?:OrganizationID|SpaceID|TriggerFilterID|TriggerIDs)\\s*)*$",
               "type": "string"
             }
           },
@@ -45271,6 +45447,7 @@
             "description": "Comma-separated list of fields to sort Target results by, each in the form 'ASC|DESC:FieldName' or just 'FieldName'.\n\nField names are case-sensitive and PascalCase, as in the JSON encoding. Sort direction defaults to ASC when the 'DIRECTION:' prefix is omitted.\n\nSupported attributes for ordering Target: BackingUnitID, CreatedAt, DisplayName, HiddenReason, OrganizationID, Slug, SpaceID, TargetID, TriggerFilterID, TriggerHash, UpdatedAt, UpstreamTargetID.\n\nExample: 'DESC:CreatedAt' or 'DisplayName,DESC:CreatedAt'.\n\nResults are ordered by the Target's ID after the fields named, and by the ID alone if none are.\n\nThe whole string must be query-encoded.",
             "required": false,
             "schema": {
+              "pattern": "^\\s*(?:(?:[Aa][Ss][Cc]|[Dd][Ee][Ss][Cc])\\s*:\\s*)?(BackingUnitID|CreatedAt|DisplayName|HiddenReason|OrganizationID|Slug|SpaceID|TargetID|TriggerFilterID|TriggerHash|UpdatedAt|UpstreamTargetID)\\s*(?:,\\s*(?:(?:[Aa][Ss][Cc]|[Dd][Ee][Ss][Cc])\\s*:\\s*)?(?:BackingUnitID|CreatedAt|DisplayName|HiddenReason|OrganizationID|Slug|SpaceID|TargetID|TriggerFilterID|TriggerHash|UpdatedAt|UpstreamTargetID)\\s*)*$",
               "type": "string"
             }
           },
@@ -45419,6 +45596,7 @@
             "description": "Include clause for expanding related entities in the response for Target.\nThe attribute names are case-sensitive, PascalCase, and\nexpected in a comma-separated list format as in the JSON encoding.\n\nSupported attributes for Target are OrganizationID, SpaceID, TriggerFilterID, TriggerIDs.\n\nThe whole string must be query-encoded.",
             "required": false,
             "schema": {
+              "pattern": "^\\s*(OrganizationID|SpaceID|TriggerFilterID|TriggerIDs)\\s*(?:,\\s*(?:OrganizationID|SpaceID|TriggerFilterID|TriggerIDs)\\s*)*$",
               "type": "string"
             }
           },
@@ -45735,6 +45913,7 @@
             "description": "Include clause for expanding related entities in the response for Target.\nThe attribute names are case-sensitive, PascalCase, and\nexpected in a comma-separated list format as in the JSON encoding.\n\nSupported attributes for Target are OrganizationID, SpaceID, TriggerFilterID, TriggerIDs.\n\nThe whole string must be query-encoded.",
             "required": false,
             "schema": {
+              "pattern": "^\\s*(OrganizationID|SpaceID|TriggerFilterID|TriggerIDs)\\s*(?:,\\s*(?:OrganizationID|SpaceID|TriggerFilterID|TriggerIDs)\\s*)*$",
               "type": "string"
             }
           },
@@ -46125,6 +46304,7 @@
             "description": "Include clause for expanding related entities in the response for Target.\nThe attribute names are case-sensitive, PascalCase, and\nexpected in a comma-separated list format as in the JSON encoding.\n\nSupported attributes for Target are OrganizationID, SpaceID, TriggerFilterID, TriggerIDs.\n\nThe whole string must be query-encoded.",
             "required": false,
             "schema": {
+              "pattern": "^\\s*(OrganizationID|SpaceID|TriggerFilterID|TriggerIDs)\\s*(?:,\\s*(?:OrganizationID|SpaceID|TriggerFilterID|TriggerIDs)\\s*)*$",
               "type": "string"
             }
           },
@@ -46298,6 +46478,7 @@
             "description": "Include clause for expanding related entities in the response for Trigger.\nThe attribute names are case-sensitive, PascalCase, and\nexpected in a comma-separated list format as in the JSON encoding.\n\nSupported attributes for Trigger are BridgeWorkerID, InvocationID, OrganizationID, SpaceID, UnitFilterID.\n\nThe whole string must be query-encoded.",
             "required": false,
             "schema": {
+              "pattern": "^\\s*(BridgeWorkerID|InvocationID|OrganizationID|SpaceID|UnitFilterID)\\s*(?:,\\s*(?:BridgeWorkerID|InvocationID|OrganizationID|SpaceID|UnitFilterID)\\s*)*$",
               "type": "string"
             }
           },
@@ -46490,6 +46671,7 @@
             "description": "Include clause for expanding related entities in the response for Trigger.\nThe attribute names are case-sensitive, PascalCase, and\nexpected in a comma-separated list format as in the JSON encoding.\n\nSupported attributes for Trigger are BridgeWorkerID, InvocationID, OrganizationID, SpaceID, UnitFilterID.\n\nThe whole string must be query-encoded.",
             "required": false,
             "schema": {
+              "pattern": "^\\s*(BridgeWorkerID|InvocationID|OrganizationID|SpaceID|UnitFilterID)\\s*(?:,\\s*(?:BridgeWorkerID|InvocationID|OrganizationID|SpaceID|UnitFilterID)\\s*)*$",
               "type": "string"
             }
           },
@@ -46528,6 +46710,7 @@
             "description": "Comma-separated list of fields to sort Trigger results by, each in the form 'ASC|DESC:FieldName' or just 'FieldName'.\n\nField names are case-sensitive and PascalCase, as in the JSON encoding. Sort direction defaults to ASC when the 'DIRECTION:' prefix is omitted.\n\nSupported attributes for ordering Trigger: BackingUnitID, BridgeWorkerID, CreatedAt, Description, Disabled, DisplayName, Event, FunctionName, Hash, HiddenReason, InvocationID, OrganizationID, OtherDataSource, Protect, Slug, SpaceID, ToolchainType, TriggerID, UnitFilterID, UpdatedAt, UpstreamTriggerID, Validating, Warn, WhereResource, WhereUnit.\n\nExample: 'DESC:CreatedAt' or 'DisplayName,DESC:CreatedAt'.\n\nResults are ordered by the Trigger's ID after the fields named, and by the ID alone if none are.\n\nThe whole string must be query-encoded.",
             "required": false,
             "schema": {
+              "pattern": "^\\s*(?:(?:[Aa][Ss][Cc]|[Dd][Ee][Ss][Cc])\\s*:\\s*)?(BackingUnitID|BridgeWorkerID|CreatedAt|Description|Disabled|DisplayName|Event|FunctionName|Hash|HiddenReason|InvocationID|OrganizationID|OtherDataSource|Protect|Slug|SpaceID|ToolchainType|TriggerID|UnitFilterID|UpdatedAt|UpstreamTriggerID|Validating|Warn|WhereResource|WhereUnit)\\s*(?:,\\s*(?:(?:[Aa][Ss][Cc]|[Dd][Ee][Ss][Cc])\\s*:\\s*)?(?:BackingUnitID|BridgeWorkerID|CreatedAt|Description|Disabled|DisplayName|Event|FunctionName|Hash|HiddenReason|InvocationID|OrganizationID|OtherDataSource|Protect|Slug|SpaceID|ToolchainType|TriggerID|UnitFilterID|UpdatedAt|UpstreamTriggerID|Validating|Warn|WhereResource|WhereUnit)\\s*)*$",
               "type": "string"
             }
           },
@@ -46676,6 +46859,7 @@
             "description": "Include clause for expanding related entities in the response for Trigger.\nThe attribute names are case-sensitive, PascalCase, and\nexpected in a comma-separated list format as in the JSON encoding.\n\nSupported attributes for Trigger are BridgeWorkerID, InvocationID, OrganizationID, SpaceID, UnitFilterID.\n\nThe whole string must be query-encoded.",
             "required": false,
             "schema": {
+              "pattern": "^\\s*(BridgeWorkerID|InvocationID|OrganizationID|SpaceID|UnitFilterID)\\s*(?:,\\s*(?:BridgeWorkerID|InvocationID|OrganizationID|SpaceID|UnitFilterID)\\s*)*$",
               "type": "string"
             }
           },
@@ -47063,6 +47247,7 @@
             "description": "Include clause for expanding related entities in the response for Trigger.\nThe attribute names are case-sensitive, PascalCase, and\nexpected in a comma-separated list format as in the JSON encoding.\n\nSupported attributes for Trigger are BridgeWorkerID, InvocationID, OrganizationID, SpaceID, UnitFilterID.\n\nThe whole string must be query-encoded.",
             "required": false,
             "schema": {
+              "pattern": "^\\s*(BridgeWorkerID|InvocationID|OrganizationID|SpaceID|UnitFilterID)\\s*(?:,\\s*(?:BridgeWorkerID|InvocationID|OrganizationID|SpaceID|UnitFilterID)\\s*)*$",
               "type": "string"
             }
           },
@@ -47533,6 +47718,7 @@
             "description": "Include clause for expanding related entities in the response for Trigger.\nThe attribute names are case-sensitive, PascalCase, and\nexpected in a comma-separated list format as in the JSON encoding.\n\nSupported attributes for Trigger are BridgeWorkerID, InvocationID, OrganizationID, SpaceID, UnitFilterID.\n\nThe whole string must be query-encoded.",
             "required": false,
             "schema": {
+              "pattern": "^\\s*(BridgeWorkerID|InvocationID|OrganizationID|SpaceID|UnitFilterID)\\s*(?:,\\s*(?:BridgeWorkerID|InvocationID|OrganizationID|SpaceID|UnitFilterID)\\s*)*$",
               "type": "string"
             }
           },
@@ -47706,6 +47892,7 @@
             "description": "Include clause for expanding related entities in the response for Unit.\nThe attribute names are case-sensitive, PascalCase, and\nexpected in a comma-separated list format as in the JSON encoding.\n\nSupported attributes for Unit are ChangeSetID, FromLinkID, HeadMutationNum, HeadRevisionNum, LastReleasedRevisionNum, OrganizationID, SpaceID, TargetID, UnitEventID, UpstreamSpaceID, UpstreamUnitID.\n\nThe whole string must be query-encoded.",
             "required": false,
             "schema": {
+              "pattern": "^\\s*(ChangeSetID|FromLinkID|HeadMutationNum|HeadRevisionNum|LastReleasedRevisionNum|OrganizationID|SpaceID|TargetID|UnitEventID|UpstreamSpaceID|UpstreamUnitID)\\s*(?:,\\s*(?:ChangeSetID|FromLinkID|HeadMutationNum|HeadRevisionNum|LastReleasedRevisionNum|OrganizationID|SpaceID|TargetID|UnitEventID|UpstreamSpaceID|UpstreamUnitID)\\s*)*$",
               "type": "string"
             }
           },
@@ -47908,6 +48095,7 @@
             "description": "Include clause for expanding related entities in the response for Unit.\nThe attribute names are case-sensitive, PascalCase, and\nexpected in a comma-separated list format as in the JSON encoding.\n\nSupported attributes for Unit are ChangeSetID, FromLinkID, HeadMutationNum, HeadRevisionNum, LastReleasedRevisionNum, OrganizationID, SpaceID, TargetID, UnitEventID, UpstreamSpaceID, UpstreamUnitID.\n\nThe whole string must be query-encoded.",
             "required": false,
             "schema": {
+              "pattern": "^\\s*(ChangeSetID|FromLinkID|HeadMutationNum|HeadRevisionNum|LastReleasedRevisionNum|OrganizationID|SpaceID|TargetID|UnitEventID|UpstreamSpaceID|UpstreamUnitID)\\s*(?:,\\s*(?:ChangeSetID|FromLinkID|HeadMutationNum|HeadRevisionNum|LastReleasedRevisionNum|OrganizationID|SpaceID|TargetID|UnitEventID|UpstreamSpaceID|UpstreamUnitID)\\s*)*$",
               "type": "string"
             }
           },
@@ -47946,6 +48134,7 @@
             "description": "Comma-separated list of fields to sort Unit results by, each in the form 'ASC|DESC:FieldName' or just 'FieldName'.\n\nField names are case-sensitive and PascalCase, as in the JSON encoding. Sort direction defaults to ASC when the 'DIRECTION:' prefix is omitted.\n\nSupported attributes for ordering Unit: ChangeSetID, CreatedAt, DataHash, DisplayName, HeadRevisionID, HeadRevisionNum, HeadUnitActionNum, HeadUnitEventNum, HiddenReason, LastChangeDescription, LastReleasedRevisionNum, OrganizationID, ProviderType, Slug, SpaceID, TargetID, ToolchainType, UnitID, UpdatedAt, UpstreamRevisionNum, UpstreamUnitID.\n\nExample: 'DESC:CreatedAt' or 'DisplayName,DESC:CreatedAt'.\n\nResults are ordered by the Unit's ID after the fields named, and by the ID alone if none are.\n\nThe whole string must be query-encoded.",
             "required": false,
             "schema": {
+              "pattern": "^\\s*(?:(?:[Aa][Ss][Cc]|[Dd][Ee][Ss][Cc])\\s*:\\s*)?(ChangeSetID|CreatedAt|DataHash|DisplayName|HeadRevisionID|HeadRevisionNum|HeadUnitActionNum|HeadUnitEventNum|HiddenReason|LastChangeDescription|LastReleasedRevisionNum|OrganizationID|ProviderType|Slug|SpaceID|TargetID|ToolchainType|UnitID|UpdatedAt|UpstreamRevisionNum|UpstreamUnitID)\\s*(?:,\\s*(?:(?:[Aa][Ss][Cc]|[Dd][Ee][Ss][Cc])\\s*:\\s*)?(?:ChangeSetID|CreatedAt|DataHash|DisplayName|HeadRevisionID|HeadRevisionNum|HeadUnitActionNum|HeadUnitEventNum|HiddenReason|LastChangeDescription|LastReleasedRevisionNum|OrganizationID|ProviderType|Slug|SpaceID|TargetID|ToolchainType|UnitID|UpdatedAt|UpstreamRevisionNum|UpstreamUnitID)\\s*)*$",
               "type": "string"
             }
           },
@@ -48154,9 +48343,10 @@
           {
             "name": "include",
             "in": "query",
-            "description": "Include clause for expanding related entities in the response for Unit.\nThe attribute names are case-sensitive, PascalCase, and\nexpected in a comma-separated list format as in the JSON encoding.\n\nSupported attributes for Unit are ChangeSetID, FromLinkID, HeadMutationNum, HeadRevisionNum, LastReleasedRevisionNum, OrganizationID, SpaceID, TargetID, UnitEventID, UpstreamSpaceID, UpstreamUnitID.\n\nThe whole string must be query-encoded.",
+            "description": "Include clause for expanding related entities in the response for Unit.\nThe attribute names are case-sensitive, PascalCase, and\nexpected in a comma-separated list format as in the JSON encoding.\n\nSupported attributes for Unit are ChangeSetID, FromLinkID, HeadMutationNum, HeadRevisionNum, LastReleasedRevisionNum, OrganizationID, SpaceID, TargetID, UnitEventID, UpstreamSpaceID, UpstreamUnitID.\n\nA write also accepts the parts of its result: ConfigData for the configuration the operation produced, MutationSources for what set each value in it, and Diff for what the operation changed, path by path with the values on both sides. None is a field of a Unit, and each costs something to return, so they are returned only when named. A dry run stores nothing, so this is the only way to see what it would have produced.\n\nSupported values: ChangeSetID, FromLinkID, HeadMutationNum, HeadRevisionNum, LastReleasedRevisionNum, OrganizationID, SpaceID, TargetID, UnitEventID, UpstreamSpaceID, UpstreamUnitID, ConfigData, MutationSources, Diff.\n\nThe whole string must be query-encoded.",
             "required": false,
             "schema": {
+              "pattern": "^\\s*(ChangeSetID|FromLinkID|HeadMutationNum|HeadRevisionNum|LastReleasedRevisionNum|OrganizationID|SpaceID|TargetID|UnitEventID|UpstreamSpaceID|UpstreamUnitID|ConfigData|MutationSources|Diff)\\s*(?:,\\s*(?:ChangeSetID|FromLinkID|HeadMutationNum|HeadRevisionNum|LastReleasedRevisionNum|OrganizationID|SpaceID|TargetID|UnitEventID|UpstreamSpaceID|UpstreamUnitID|ConfigData|MutationSources|Diff)\\s*)*$",
               "type": "string"
             }
           },
@@ -48633,9 +48823,10 @@
           {
             "name": "include",
             "in": "query",
-            "description": "Include clause for expanding related entities in the response for Unit.\nThe attribute names are case-sensitive, PascalCase, and\nexpected in a comma-separated list format as in the JSON encoding.\n\nSupported attributes for Unit are ChangeSetID, FromLinkID, HeadMutationNum, HeadRevisionNum, LastReleasedRevisionNum, OrganizationID, SpaceID, TargetID, UnitEventID, UpstreamSpaceID, UpstreamUnitID.\n\nThe whole string must be query-encoded.",
+            "description": "Include clause for expanding related entities in the response for Unit.\nThe attribute names are case-sensitive, PascalCase, and\nexpected in a comma-separated list format as in the JSON encoding.\n\nSupported attributes for Unit are ChangeSetID, FromLinkID, HeadMutationNum, HeadRevisionNum, LastReleasedRevisionNum, OrganizationID, SpaceID, TargetID, UnitEventID, UpstreamSpaceID, UpstreamUnitID.\n\nA write also accepts the parts of its result: ConfigData for the configuration the operation produced, MutationSources for what set each value in it, and Diff for what the operation changed, path by path with the values on both sides. None is a field of a Unit, and each costs something to return, so they are returned only when named. A dry run stores nothing, so this is the only way to see what it would have produced.\n\nSupported values: ChangeSetID, FromLinkID, HeadMutationNum, HeadRevisionNum, LastReleasedRevisionNum, OrganizationID, SpaceID, TargetID, UnitEventID, UpstreamSpaceID, UpstreamUnitID, ConfigData, MutationSources, Diff.\n\nThe whole string must be query-encoded.",
             "required": false,
             "schema": {
+              "pattern": "^\\s*(ChangeSetID|FromLinkID|HeadMutationNum|HeadRevisionNum|LastReleasedRevisionNum|OrganizationID|SpaceID|TargetID|UnitEventID|UpstreamSpaceID|UpstreamUnitID|ConfigData|MutationSources|Diff)\\s*(?:,\\s*(?:ChangeSetID|FromLinkID|HeadMutationNum|HeadRevisionNum|LastReleasedRevisionNum|OrganizationID|SpaceID|TargetID|UnitEventID|UpstreamSpaceID|UpstreamUnitID|ConfigData|MutationSources|Diff)\\s*)*$",
               "type": "string"
             }
           },
@@ -49024,6 +49215,7 @@
             "description": "Include clause for expanding related entities in the response for Unit.\nThe attribute names are case-sensitive, PascalCase, and\nexpected in a comma-separated list format as in the JSON encoding.\n\nSupported attributes for Unit are ChangeSetID, FromLinkID, HeadMutationNum, HeadRevisionNum, LastReleasedRevisionNum, OrganizationID, SpaceID, TargetID, UnitEventID, UpstreamSpaceID, UpstreamUnitID.\n\nThe whole string must be query-encoded.",
             "required": false,
             "schema": {
+              "pattern": "^\\s*(ChangeSetID|FromLinkID|HeadMutationNum|HeadRevisionNum|LastReleasedRevisionNum|OrganizationID|SpaceID|TargetID|UnitEventID|UpstreamSpaceID|UpstreamUnitID)\\s*(?:,\\s*(?:ChangeSetID|FromLinkID|HeadMutationNum|HeadRevisionNum|LastReleasedRevisionNum|OrganizationID|SpaceID|TargetID|UnitEventID|UpstreamSpaceID|UpstreamUnitID)\\s*)*$",
               "type": "string"
             }
           }
@@ -49189,6 +49381,7 @@
             "description": "Include clause for expanding related entities in the response for Unit.\nThe attribute names are case-sensitive, PascalCase, and\nexpected in a comma-separated list format as in the JSON encoding.\n\nSupported attributes for Unit are ChangeSetID, FromLinkID, HeadMutationNum, HeadRevisionNum, LastReleasedRevisionNum, OrganizationID, SpaceID, TargetID, UnitEventID, UpstreamSpaceID, UpstreamUnitID.\n\nThe whole string must be query-encoded.",
             "required": false,
             "schema": {
+              "pattern": "^\\s*(ChangeSetID|FromLinkID|HeadMutationNum|HeadRevisionNum|LastReleasedRevisionNum|OrganizationID|SpaceID|TargetID|UnitEventID|UpstreamSpaceID|UpstreamUnitID)\\s*(?:,\\s*(?:ChangeSetID|FromLinkID|HeadMutationNum|HeadRevisionNum|LastReleasedRevisionNum|OrganizationID|SpaceID|TargetID|UnitEventID|UpstreamSpaceID|UpstreamUnitID)\\s*)*$",
               "type": "string"
             }
           },
@@ -49362,6 +49555,7 @@
             "description": "Include clause for expanding related entities in the response for Unit.\nThe attribute names are case-sensitive, PascalCase, and\nexpected in a comma-separated list format as in the JSON encoding.\n\nSupported attributes for Unit are ChangeSetID, FromLinkID, HeadMutationNum, HeadRevisionNum, LastReleasedRevisionNum, OrganizationID, SpaceID, TargetID, UnitEventID, UpstreamSpaceID, UpstreamUnitID.\n\nThe whole string must be query-encoded.",
             "required": false,
             "schema": {
+              "pattern": "^\\s*(ChangeSetID|FromLinkID|HeadMutationNum|HeadRevisionNum|LastReleasedRevisionNum|OrganizationID|SpaceID|TargetID|UnitEventID|UpstreamSpaceID|UpstreamUnitID)\\s*(?:,\\s*(?:ChangeSetID|FromLinkID|HeadMutationNum|HeadRevisionNum|LastReleasedRevisionNum|OrganizationID|SpaceID|TargetID|UnitEventID|UpstreamSpaceID|UpstreamUnitID)\\s*)*$",
               "type": "string"
             }
           }
@@ -49538,6 +49732,7 @@
             "description": "Comma-separated list of fields to sort QueuedOperation results by, each in the form 'ASC|DESC:FieldName' or just 'FieldName'.\n\nField names are case-sensitive and PascalCase, as in the JSON encoding. Sort direction defaults to ASC when the 'DIRECTION:' prefix is omitted.\n\nSupported attributes for ordering QueuedOperation: Action, BridgeWorkerID, CreatedAt, DryRun, OrganizationID, QueuedOperationID, RevisionNum, Status, TargetID, UnitActionNum, UnitID.\n\nExample: 'DESC:CreatedAt' or 'DisplayName,DESC:CreatedAt'.\n\nResults are ordered by the QueuedOperation's ID after the fields named, and by the ID alone if none are.\n\nThe whole string must be query-encoded.",
             "required": false,
             "schema": {
+              "pattern": "^\\s*(?:(?:[Aa][Ss][Cc]|[Dd][Ee][Ss][Cc])\\s*:\\s*)?(Action|BridgeWorkerID|CreatedAt|DryRun|OrganizationID|QueuedOperationID|RevisionNum|Status|TargetID|UnitActionNum|UnitID)\\s*(?:,\\s*(?:(?:[Aa][Ss][Cc]|[Dd][Ee][Ss][Cc])\\s*:\\s*)?(?:Action|BridgeWorkerID|CreatedAt|DryRun|OrganizationID|QueuedOperationID|RevisionNum|Status|TargetID|UnitActionNum|UnitID)\\s*)*$",
               "type": "string"
             }
           },
@@ -49679,6 +49874,7 @@
             "description": "Include clause for expanding related entities in the response for Unit.\nThe attribute names are case-sensitive, PascalCase, and\nexpected in a comma-separated list format as in the JSON encoding.\n\nSupported attributes for Unit are ChangeSetID, FromLinkID, HeadMutationNum, HeadRevisionNum, LastReleasedRevisionNum, OrganizationID, SpaceID, TargetID, UnitEventID, UpstreamSpaceID, UpstreamUnitID.\n\nThe whole string must be query-encoded.",
             "required": false,
             "schema": {
+              "pattern": "^\\s*(ChangeSetID|FromLinkID|HeadMutationNum|HeadRevisionNum|LastReleasedRevisionNum|OrganizationID|SpaceID|TargetID|UnitEventID|UpstreamSpaceID|UpstreamUnitID)\\s*(?:,\\s*(?:ChangeSetID|FromLinkID|HeadMutationNum|HeadRevisionNum|LastReleasedRevisionNum|OrganizationID|SpaceID|TargetID|UnitEventID|UpstreamSpaceID|UpstreamUnitID)\\s*)*$",
               "type": "string"
             }
           },
@@ -49717,6 +49913,7 @@
             "description": "Comma-separated list of fields to sort Unit results by, each in the form 'ASC|DESC:FieldName' or just 'FieldName'.\n\nField names are case-sensitive and PascalCase, as in the JSON encoding. Sort direction defaults to ASC when the 'DIRECTION:' prefix is omitted.\n\nSupported attributes for ordering Unit: ChangeSetID, CreatedAt, DataHash, DisplayName, HeadRevisionID, HeadRevisionNum, HeadUnitActionNum, HeadUnitEventNum, HiddenReason, LastChangeDescription, LastReleasedRevisionNum, OrganizationID, ProviderType, Slug, SpaceID, TargetID, ToolchainType, UnitID, UpdatedAt, UpstreamRevisionNum, UpstreamUnitID.\n\nExample: 'DESC:CreatedAt' or 'DisplayName,DESC:CreatedAt'.\n\nResults are ordered by the Unit's ID after the fields named, and by the ID alone if none are.\n\nThe whole string must be query-encoded.",
             "required": false,
             "schema": {
+              "pattern": "^\\s*(?:(?:[Aa][Ss][Cc]|[Dd][Ee][Ss][Cc])\\s*:\\s*)?(ChangeSetID|CreatedAt|DataHash|DisplayName|HeadRevisionID|HeadRevisionNum|HeadUnitActionNum|HeadUnitEventNum|HiddenReason|LastChangeDescription|LastReleasedRevisionNum|OrganizationID|ProviderType|Slug|SpaceID|TargetID|ToolchainType|UnitID|UpdatedAt|UpstreamRevisionNum|UpstreamUnitID)\\s*(?:,\\s*(?:(?:[Aa][Ss][Cc]|[Dd][Ee][Ss][Cc])\\s*:\\s*)?(?:ChangeSetID|CreatedAt|DataHash|DisplayName|HeadRevisionID|HeadRevisionNum|HeadUnitActionNum|HeadUnitEventNum|HiddenReason|LastChangeDescription|LastReleasedRevisionNum|OrganizationID|ProviderType|Slug|SpaceID|TargetID|ToolchainType|UnitID|UpdatedAt|UpstreamRevisionNum|UpstreamUnitID)\\s*)*$",
               "type": "string"
             }
           },
@@ -49941,6 +50138,7 @@
             "description": "Comma-separated list of fields to sort Unit results by, each in the form 'ASC|DESC:FieldName' or just 'FieldName'.\n\nField names are case-sensitive and PascalCase, as in the JSON encoding. Sort direction defaults to ASC when the 'DIRECTION:' prefix is omitted.\n\nSupported attributes for ordering Unit: ChangeSetID, CreatedAt, DataHash, DisplayName, HeadRevisionID, HeadRevisionNum, HeadUnitActionNum, HeadUnitEventNum, HiddenReason, LastChangeDescription, LastReleasedRevisionNum, OrganizationID, ProviderType, Slug, SpaceID, TargetID, ToolchainType, UnitID, UpdatedAt, UpstreamRevisionNum, UpstreamUnitID.\n\nExample: 'DESC:CreatedAt' or 'DisplayName,DESC:CreatedAt'.\n\nResults are ordered by the Unit's ID after the fields named, and by the ID alone if none are.\n\nThe whole string must be query-encoded.",
             "required": false,
             "schema": {
+              "pattern": "^\\s*(?:(?:[Aa][Ss][Cc]|[Dd][Ee][Ss][Cc])\\s*:\\s*)?(ChangeSetID|CreatedAt|DataHash|DisplayName|HeadRevisionID|HeadRevisionNum|HeadUnitActionNum|HeadUnitEventNum|HiddenReason|LastChangeDescription|LastReleasedRevisionNum|OrganizationID|ProviderType|Slug|SpaceID|TargetID|ToolchainType|UnitID|UpdatedAt|UpstreamRevisionNum|UpstreamUnitID)\\s*(?:,\\s*(?:(?:[Aa][Ss][Cc]|[Dd][Ee][Ss][Cc])\\s*:\\s*)?(?:ChangeSetID|CreatedAt|DataHash|DisplayName|HeadRevisionID|HeadRevisionNum|HeadUnitActionNum|HeadUnitEventNum|HiddenReason|LastChangeDescription|LastReleasedRevisionNum|OrganizationID|ProviderType|Slug|SpaceID|TargetID|ToolchainType|UnitID|UpdatedAt|UpstreamRevisionNum|UpstreamUnitID)\\s*)*$",
               "type": "string"
             }
           },
@@ -50037,9 +50235,10 @@
           {
             "name": "include",
             "in": "query",
-            "description": "Comma-separated: Attribution to attach to each changed path the To side's MutationSources entry, which says what set the new value, and Unchanged to also list resources with no changes.",
+            "description": "Comma-separated: Attribution to attach to each changed path the To side's MutationSources entry, which says what set the new value, Unchanged to also list resources with no changes, and Context to also list, within each changed resource, the unchanged paths around the changes: every unchanged child of each map or array that holds a change, up to the resource, as ChangeType None.\n\nSupported values: Attribution, Unchanged, Context.",
             "required": false,
             "schema": {
+              "pattern": "^\\s*(Attribution|Unchanged|Context)\\s*(?:,\\s*(?:Attribution|Unchanged|Context)\\s*)*$",
               "type": "string"
             }
           },
@@ -50212,6 +50411,7 @@
             "description": "Comma-separated list of fields to sort UnitEvent results by, each in the form 'ASC|DESC:FieldName' or just 'FieldName'.\n\nField names are case-sensitive and PascalCase, as in the JSON encoding. Sort direction defaults to ASC when the 'DIRECTION:' prefix is omitted.\n\nSupported attributes for ordering UnitEvent: Action, BridgeWorkerID, CreatedAt, HiddenReason, OrganizationID, QueuedOperationID, Result, RevisionNum, StartedAt, Status, TerminatedAt, UnitEventID, UnitEventNum, UnitID, UpdatedAt.\n\nExample: 'DESC:CreatedAt' or 'DisplayName,DESC:CreatedAt'.\n\nResults are ordered by the UnitEvent's ID after the fields named, and by the ID alone if none are.\n\nThe whole string must be query-encoded.",
             "required": false,
             "schema": {
+              "pattern": "^\\s*(?:(?:[Aa][Ss][Cc]|[Dd][Ee][Ss][Cc])\\s*:\\s*)?(Action|BridgeWorkerID|CreatedAt|HiddenReason|OrganizationID|QueuedOperationID|Result|RevisionNum|StartedAt|Status|TerminatedAt|UnitEventID|UnitEventNum|UnitID|UpdatedAt)\\s*(?:,\\s*(?:(?:[Aa][Ss][Cc]|[Dd][Ee][Ss][Cc])\\s*:\\s*)?(?:Action|BridgeWorkerID|CreatedAt|HiddenReason|OrganizationID|QueuedOperationID|Result|RevisionNum|StartedAt|Status|TerminatedAt|UnitEventID|UnitEventNum|UnitID|UpdatedAt)\\s*)*$",
               "type": "string"
             }
           },
@@ -50366,6 +50566,7 @@
             "description": "Include clause for expanding related entities in the response for Unit.\nThe attribute names are case-sensitive, PascalCase, and\nexpected in a comma-separated list format as in the JSON encoding.\n\nSupported attributes for Unit are ChangeSetID, FromLinkID, HeadMutationNum, HeadRevisionNum, LastReleasedRevisionNum, OrganizationID, SpaceID, TargetID, UnitEventID, UpstreamSpaceID, UpstreamUnitID.\n\nThe whole string must be query-encoded.",
             "required": false,
             "schema": {
+              "pattern": "^\\s*(ChangeSetID|FromLinkID|HeadMutationNum|HeadRevisionNum|LastReleasedRevisionNum|OrganizationID|SpaceID|TargetID|UnitEventID|UpstreamSpaceID|UpstreamUnitID)\\s*(?:,\\s*(?:ChangeSetID|FromLinkID|HeadMutationNum|HeadRevisionNum|LastReleasedRevisionNum|OrganizationID|SpaceID|TargetID|UnitEventID|UpstreamSpaceID|UpstreamUnitID)\\s*)*$",
               "type": "string"
             }
           },
@@ -50404,6 +50605,7 @@
             "description": "Comma-separated list of fields to sort Unit results by, each in the form 'ASC|DESC:FieldName' or just 'FieldName'.\n\nField names are case-sensitive and PascalCase, as in the JSON encoding. Sort direction defaults to ASC when the 'DIRECTION:' prefix is omitted.\n\nSupported attributes for ordering Unit: ChangeSetID, CreatedAt, DataHash, DisplayName, HeadRevisionID, HeadRevisionNum, HeadUnitActionNum, HeadUnitEventNum, HiddenReason, LastChangeDescription, LastReleasedRevisionNum, OrganizationID, ProviderType, Slug, SpaceID, TargetID, ToolchainType, UnitID, UpdatedAt, UpstreamRevisionNum, UpstreamUnitID.\n\nExample: 'DESC:CreatedAt' or 'DisplayName,DESC:CreatedAt'.\n\nResults are ordered by the Unit's ID after the fields named, and by the ID alone if none are.\n\nThe whole string must be query-encoded.",
             "required": false,
             "schema": {
+              "pattern": "^\\s*(?:(?:[Aa][Ss][Cc]|[Dd][Ee][Ss][Cc])\\s*:\\s*)?(ChangeSetID|CreatedAt|DataHash|DisplayName|HeadRevisionID|HeadRevisionNum|HeadUnitActionNum|HeadUnitEventNum|HiddenReason|LastChangeDescription|LastReleasedRevisionNum|OrganizationID|ProviderType|Slug|SpaceID|TargetID|ToolchainType|UnitID|UpdatedAt|UpstreamRevisionNum|UpstreamUnitID)\\s*(?:,\\s*(?:(?:[Aa][Ss][Cc]|[Dd][Ee][Ss][Cc])\\s*:\\s*)?(?:ChangeSetID|CreatedAt|DataHash|DisplayName|HeadRevisionID|HeadRevisionNum|HeadUnitActionNum|HeadUnitEventNum|HiddenReason|LastChangeDescription|LastReleasedRevisionNum|OrganizationID|ProviderType|Slug|SpaceID|TargetID|ToolchainType|UnitID|UpdatedAt|UpstreamRevisionNum|UpstreamUnitID)\\s*)*$",
               "type": "string"
             }
           },
@@ -50588,9 +50790,10 @@
           {
             "name": "include",
             "in": "query",
-            "description": "Comma-separated parts of the result to return in addition to the actions: Mutations for what each Unit write changed, or on a dry run would change, as entries of its MutationSources, and Diff for the same change path by path with the values on both sides. They cost something to return, and on a dry run either one runs the merges a plan otherwise skips, so they are returned only when named.",
+            "description": "Comma-separated parts of the result to return in addition to the actions: Mutations for what each Unit write changed, or on a dry run would change, as entries of its MutationSources, and Diff for the same change path by path with the values on both sides. They cost something to return, and on a dry run either one runs the merges a plan otherwise skips, so they are returned only when named.\n\nSupported values: Mutations, Diff.",
             "required": false,
             "schema": {
+              "pattern": "^\\s*(Mutations|Diff)\\s*(?:,\\s*(?:Mutations|Diff)\\s*)*$",
               "type": "string"
             }
           }
@@ -50789,6 +50992,7 @@
             "description": "Comma-separated list of fields to sort User results by, each in the form 'ASC|DESC:FieldName' or just 'FieldName'.\n\nField names are case-sensitive and PascalCase, as in the JSON encoding. Sort direction defaults to ASC when the 'DIRECTION:' prefix is omitted.\n\nSupported attributes for ordering User: CreatedAt, DisplayName, ExternalID, HiddenReason, Slug, UpdatedAt, UserID, Username.\n\nExample: 'DESC:CreatedAt' or 'DisplayName,DESC:CreatedAt'.\n\nResults are ordered by the User's ID after the fields named, and by the ID alone if none are.\n\nThe whole string must be query-encoded.",
             "required": false,
             "schema": {
+              "pattern": "^\\s*(?:(?:[Aa][Ss][Cc]|[Dd][Ee][Ss][Cc])\\s*:\\s*)?(CreatedAt|DisplayName|ExternalID|HiddenReason|Slug|UpdatedAt|UserID|Username)\\s*(?:,\\s*(?:(?:[Aa][Ss][Cc]|[Dd][Ee][Ss][Cc])\\s*:\\s*)?(?:CreatedAt|DisplayName|ExternalID|HiddenReason|Slug|UpdatedAt|UserID|Username)\\s*)*$",
               "type": "string"
             }
           },
@@ -51379,6 +51583,7 @@
             "description": "Include clause for expanding related entities in the response for View.\nThe attribute names are case-sensitive, PascalCase, and\nexpected in a comma-separated list format as in the JSON encoding.\n\nSupported attributes for View are FilterID, OrganizationID, SpaceID.\n\nThe whole string must be query-encoded.",
             "required": false,
             "schema": {
+              "pattern": "^\\s*(FilterID|OrganizationID|SpaceID)\\s*(?:,\\s*(?:FilterID|OrganizationID|SpaceID)\\s*)*$",
               "type": "string"
             }
           },
@@ -51571,6 +51776,7 @@
             "description": "Include clause for expanding related entities in the response for View.\nThe attribute names are case-sensitive, PascalCase, and\nexpected in a comma-separated list format as in the JSON encoding.\n\nSupported attributes for View are FilterID, OrganizationID, SpaceID.\n\nThe whole string must be query-encoded.",
             "required": false,
             "schema": {
+              "pattern": "^\\s*(FilterID|OrganizationID|SpaceID)\\s*(?:,\\s*(?:FilterID|OrganizationID|SpaceID)\\s*)*$",
               "type": "string"
             }
           },
@@ -51609,6 +51815,7 @@
             "description": "Comma-separated list of fields to sort View results by, each in the form 'ASC|DESC:FieldName' or just 'FieldName'.\n\nField names are case-sensitive and PascalCase, as in the JSON encoding. Sort direction defaults to ASC when the 'DIRECTION:' prefix is omitted.\n\nSupported attributes for ordering View: BackingUnitID, CreatedAt, DisplayName, FilterID, GroupBy, Hash, HiddenReason, Of, OrderBy, OrderByDirection, OrganizationID, Slug, SpaceID, UpdatedAt, UpstreamViewID, ViewID.\n\nExample: 'DESC:CreatedAt' or 'DisplayName,DESC:CreatedAt'.\n\nResults are ordered by the View's ID after the fields named, and by the ID alone if none are.\n\nThe whole string must be query-encoded.",
             "required": false,
             "schema": {
+              "pattern": "^\\s*(?:(?:[Aa][Ss][Cc]|[Dd][Ee][Ss][Cc])\\s*:\\s*)?(BackingUnitID|CreatedAt|DisplayName|FilterID|GroupBy|Hash|HiddenReason|Of|OrderBy|OrderByDirection|OrganizationID|Slug|SpaceID|UpdatedAt|UpstreamViewID|ViewID)\\s*(?:,\\s*(?:(?:[Aa][Ss][Cc]|[Dd][Ee][Ss][Cc])\\s*:\\s*)?(?:BackingUnitID|CreatedAt|DisplayName|FilterID|GroupBy|Hash|HiddenReason|Of|OrderBy|OrderByDirection|OrganizationID|Slug|SpaceID|UpdatedAt|UpstreamViewID|ViewID)\\s*)*$",
               "type": "string"
             }
           },
@@ -51757,6 +51964,7 @@
             "description": "Include clause for expanding related entities in the response for View.\nThe attribute names are case-sensitive, PascalCase, and\nexpected in a comma-separated list format as in the JSON encoding.\n\nSupported attributes for View are FilterID, OrganizationID, SpaceID.\n\nThe whole string must be query-encoded.",
             "required": false,
             "schema": {
+              "pattern": "^\\s*(FilterID|OrganizationID|SpaceID)\\s*(?:,\\s*(?:FilterID|OrganizationID|SpaceID)\\s*)*$",
               "type": "string"
             }
           },
@@ -52079,6 +52287,7 @@
             "description": "Include clause for expanding related entities in the response for View.\nThe attribute names are case-sensitive, PascalCase, and\nexpected in a comma-separated list format as in the JSON encoding.\n\nSupported attributes for View are FilterID, OrganizationID, SpaceID.\n\nThe whole string must be query-encoded.",
             "required": false,
             "schema": {
+              "pattern": "^\\s*(FilterID|OrganizationID|SpaceID)\\s*(?:,\\s*(?:FilterID|OrganizationID|SpaceID)\\s*)*$",
               "type": "string"
             }
           },
@@ -52484,6 +52693,7 @@
             "description": "Include clause for expanding related entities in the response for View.\nThe attribute names are case-sensitive, PascalCase, and\nexpected in a comma-separated list format as in the JSON encoding.\n\nSupported attributes for View are FilterID, OrganizationID, SpaceID.\n\nThe whole string must be query-encoded.",
             "required": false,
             "schema": {
+              "pattern": "^\\s*(FilterID|OrganizationID|SpaceID)\\s*(?:,\\s*(?:FilterID|OrganizationID|SpaceID)\\s*)*$",
               "type": "string"
             }
           },
@@ -60616,12 +60826,22 @@
           },
           "ChangeType": {
             "type": "string",
-            "description": "Add, Delete, Update, Replace, Reorder, or Rename",
+            "description": "Add, Delete, Update, Replace, Reorder, or Rename; or None for an unchanged path returned as context",
+            "x-go-type-skip-optional-pointer": true
+          },
+          "Comment": {
+            "type": "string",
+            "description": "Head, Line, or Foot when the change is to a comment on the node at the path rather than to its value: the comment above the node, at the end of its line, or below it. The path of a comment on a whole resource is empty",
             "x-go-type-skip-optional-pointer": true
           },
           "DisplayPath": {
             "type": "string",
             "description": "The path in configuration path syntax, as --path arguments and where filters take it, with each unkeyed array element named by its index",
+            "x-go-type-skip-optional-pointer": true
+          },
+          "FromDataType": {
+            "type": "string",
+            "description": "How to read FromValue: string, int, or bool for a scalar, YAML for a map or array, and empty for a scalar of another type, such as a float or null, or when the From side has no value",
             "x-go-type-skip-optional-pointer": true
           },
           "FromValue": {
@@ -60648,9 +60868,14 @@
             "nullable": true,
             "x-go-type-skip-optional-pointer": true
           },
+          "ToDataType": {
+            "type": "string",
+            "description": "How to read ToValue: string, int, or bool for a scalar, YAML for a map or array, and empty for a scalar of another type, such as a float or null, or when the To side has no value",
+            "x-go-type-skip-optional-pointer": true
+          },
           "ToValue": {
             "type": "string",
-            "description": "The value on the To side: a scalar's text, or a YAML block for a map or array",
+            "description": "The value on the To side: a scalar's text, or a YAML block for a map or array. For an unchanged path, the value on both sides",
             "x-go-type-skip-optional-pointer": true
           }
         }
@@ -60702,6 +60927,10 @@
         }
       },
       "PathSegment": {
+        "required": [
+          "FromIndex",
+          "ToIndex"
+        ],
         "type": "object",
         "properties": {
           "Field": {

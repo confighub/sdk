@@ -26,6 +26,21 @@ const (
 	// A merge-keyed array element's merge-key value changed while the element stayed the
 	// same element. FromValue and ToValue are the previous and new merge-key values.
 	DiffChangeTypeRename DiffChangeType = "Rename"
+	// The path is unchanged. It is returned only as context around the changes, when
+	// asked for.
+	DiffChangeTypeNone DiffChangeType = "None"
+)
+
+// DiffComment says which comment on a node a PathChange is about.
+type DiffComment string
+
+const (
+	// The comment on the lines above the node.
+	DiffCommentHead DiffComment = "Head"
+	// The comment at the end of the node's line.
+	DiffCommentLine DiffComment = "Line"
+	// The comment on the lines below the node.
+	DiffCommentFoot DiffComment = "Foot"
 )
 
 // ConfigDiff is the difference between two configurations, for display. It is computed with
@@ -51,19 +66,25 @@ type PathChange struct {
 	Path        ResolvedPath   `description:"The path as MutationSources and patch functions record it"`
 	DisplayPath string         `description:"The path in configuration path syntax, as --path arguments and where filters take it, with each unkeyed array element named by its index"`
 	Segments    []PathSegment  `description:"The path split into its segments, for rendering without parsing the path syntax"`
-	ChangeType  DiffChangeType `description:"Add, Delete, Update, Replace, Reorder, or Rename"`
+	ChangeType  DiffChangeType `description:"Add, Delete, Update, Replace, Reorder, or Rename; or None for an unchanged path returned as context"`
+	Comment     DiffComment    `json:",omitempty" description:"Head, Line, or Foot when the change is to a comment on the node at the path rather than to its value: the comment above the node, at the end of its line, or below it. The path of a comment on a whole resource is empty"`
 	FromValue   string         `json:",omitempty" description:"The value on the From side: a scalar's text, or a YAML block for a map or array"`
-	ToValue     string         `json:",omitempty" description:"The value on the To side: a scalar's text, or a YAML block for a map or array"`
-	Patch       string         `json:",omitempty" description:"A unified line diff, for multi-line string values"`
-	Attribution *MutationInfo  `json:",omitempty" description:"The To side's MutationSources entry for this path, which says what set the new value; returned when include names Attribution"`
+	ToValue     string         `json:",omitempty" description:"The value on the To side: a scalar's text, or a YAML block for a map or array. For an unchanged path, the value on both sides"`
+	// FromDataType and ToDataType say how to read FromValue and ToValue, as a function
+	// reports a value's type: a scalar is string, int, or bool, and a map or array is YAML.
+	FromDataType DataType      `json:",omitempty" swaggertype:"string" description:"How to read FromValue: string, int, or bool for a scalar, YAML for a map or array, and empty for a scalar of another type, such as a float or null, or when the From side has no value"`
+	ToDataType   DataType      `json:",omitempty" swaggertype:"string" description:"How to read ToValue: string, int, or bool for a scalar, YAML for a map or array, and empty for a scalar of another type, such as a float or null, or when the To side has no value"`
+	Patch        string        `json:",omitempty" description:"A unified line diff, for multi-line string values"`
+	Attribution  *MutationInfo `json:",omitempty" description:"The To side's MutationSources entry for this path, which says what set the new value; returned when include names Attribution"`
 }
 
 // PathSegment is one segment of a PathChange's path: a map key, or an array element.
 type PathSegment struct {
 	Field     string          `json:",omitempty" description:"The map key, for a map segment"`
 	MergeKeys []MergeKeyValue `json:",omitempty" description:"The merge keys that identify the element, for an element of a merge-keyed array"`
-	FromIndex int             `description:"The element's index on the From side; -1 for a map key or an element absent there"`
-	ToIndex   int             `description:"The element's index on the To side; -1 for a map key or an element absent there"`
+	// Required, so that generated clients do not drop index 0 as an empty value.
+	FromIndex int `required:"true" description:"The element's index on the From side; -1 for a map key or an element absent there"`
+	ToIndex   int `required:"true" description:"The element's index on the To side; -1 for a map key or an element absent there"`
 }
 
 // MergeKeyValue is one merge key of an array element and its value.

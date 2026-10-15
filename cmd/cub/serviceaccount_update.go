@@ -48,7 +48,7 @@ func init() {
 	addStandardUpdateFlags(serviceAccountUpdateCmd)
 	serviceAccountUpdateCmd.Flags().BoolVar(&isPatch, "patch", false, "use patch API")
 	serviceAccountUpdateCmd.Flags().StringSliceVar(&serviceAccountUpdateArgs.permissions, "permission", []string{}, permissionUpdateHelp)
-	serviceAccountUpdateCmd.Flags().StringVar(&serviceAccountUpdateArgs.orgRole, "org-role", "", "organization-level role for the service account (admin, manager, editor, user, viewer, creator, member, or none), no higher than your own")
+	serviceAccountUpdateCmd.Flags().StringVar(&serviceAccountUpdateArgs.orgRole, "org-role", "", "organization-level role for the service account (admin, manager, editor, user, viewer, creator, or none), no higher than your own")
 	enableWhereFlag(serviceAccountUpdateCmd)
 	serviceAccountCmd.AddCommand(serviceAccountUpdateCmd)
 }

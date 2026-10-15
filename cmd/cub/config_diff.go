@@ -13,10 +13,20 @@ import (
 	"github.com/google/uuid"
 )
 
+// diffContextInclude is the include that asks a diff read for the unchanged paths around each
+// change, or nil when context is not wanted.
+func diffContextInclude(context bool) *string {
+	if !context {
+		return nil
+	}
+	include := "Context"
+	return &include
+}
+
 // fetchUnitDiff reads the difference between two Revisions of a Unit, each named by a
 // Revision selector the server resolves.
-func fetchUnitDiff(spaceID, unitID uuid.UUID, from, to string) (*goclientnew.UnitDiff, error) {
-	params := &goclientnew.GetUnitDiffParams{}
+func fetchUnitDiff(spaceID, unitID uuid.UUID, from, to string, context bool) (*goclientnew.UnitDiff, error) {
+	params := &goclientnew.GetUnitDiffParams{Include: diffContextInclude(context)}
 	if from != "" {
 		params.From = &from
 	}
@@ -32,8 +42,9 @@ func fetchUnitDiff(spaceID, unitID uuid.UUID, from, to string) (*goclientnew.Uni
 
 // diffConfigurations reads the difference between two configurations, each a Unit at a
 // Revision or configuration given inline.
-func diffConfigurations(request goclientnew.DiffRequest) (*goclientnew.DiffResult, error) {
-	res, err := cubClientNew.DiffConfigurationsWithResponse(ctx, &goclientnew.DiffConfigurationsParams{}, request)
+func diffConfigurations(request goclientnew.DiffRequest, context bool) (*goclientnew.DiffResult, error) {
+	res, err := cubClientNew.DiffConfigurationsWithResponse(ctx,
+		&goclientnew.DiffConfigurationsParams{Include: diffContextInclude(context)}, request)
 	if cubapi.IsAPIError(err, res) {
 		return nil, cubapi.InterpretErrorGeneric(err, res)
 	}
@@ -51,8 +62,9 @@ func inlineDiffSide(data []byte, toolchainType string) *goclientnew.DiffSide {
 }
 
 // displayConfigDiff renders a ConfigDiff: each resource that differs, and under it each
-// changed path with its value on both sides. This is the structured diff every
-// `-o mutations` display shows for a change -- a Revision diff, a dry run, or a write.
+// changed path with its value on both sides, and any unchanged path returned as context with
+// its value. This is the structured diff every `-o mutations` display shows for a change --
+// a Revision diff, a dry run, or a write.
 func displayConfigDiff(diff *goclientnew.ConfigDiff) {
 	if diff == nil || len(diff.Resources) == 0 {
 		tprintRaw("No changes")
@@ -105,6 +117,26 @@ func resourceDiffLabel(resource *goclientnew.ResourceInfo) string {
 
 func displayPathChange(change *goclientnew.PathChange) {
 	const indent = "      "
+	label := change.DisplayPath
+	if change.Comment != "" {
+		comment := strings.ToLower(change.Comment) + " comment"
+		if label == "" {
+			label = "(" + comment + " on the resource)"
+		} else {
+			label += " (" + comment + ")"
+		}
+	}
+	if change.ChangeType == "None" {
+		// Context: the unchanged value, dimmed, where a change would be.
+		value := trimMutationValue(change.ToValue)
+		if strings.Contains(value, "\n") {
+			tprintRaw(colorDim + "    " + label + ":" + colorReset)
+			tprintRaw(colorDim + indentMultiline(value, indent) + colorReset)
+		} else {
+			tprintRaw(colorDim + "    " + label + ": " + value + colorReset)
+		}
+		return
+	}
 	var symbol string
 	switch change.ChangeType {
 	case "Add":
@@ -116,7 +148,7 @@ func displayPathChange(change *goclientnew.PathChange) {
 	default:
 		symbol = colorGreen + "~" + colorReset
 	}
-	tprintRaw(fmt.Sprintf("  %s [%s] %s%s", symbol, change.ChangeType, change.DisplayPath, attributionLabel(change.Attribution)))
+	tprintRaw(fmt.Sprintf("  %s [%s] %s%s", symbol, change.ChangeType, label, attributionLabel(change.Attribution)))
 
 	fromValue, toValue := trimMutationValue(change.FromValue), trimMutationValue(change.ToValue)
 	switch {

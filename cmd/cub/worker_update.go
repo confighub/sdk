@@ -55,7 +55,7 @@ func init() {
 	enableFilterFlag(bridgeworkerUpdateCmd)
 	bridgeworkerUpdateCmd.Flags().StringSliceVar(&workerIdentifiers, "worker", []string{}, "target specific bridge workers by slug or UUID for bulk patch (can be repeated or comma-separated)")
 	bridgeworkerUpdateCmd.Flags().StringSliceVar(&workerUpdatePermissions, "permission", []string{}, permissionUpdateHelp)
-	bridgeworkerUpdateCmd.Flags().StringVar(&workerUpdateOrgRole, "org-role", "", "organization-level role for the worker (e.g., admin, manager, editor, user, viewer, creator, member, none)")
+	bridgeworkerUpdateCmd.Flags().StringVar(&workerUpdateOrgRole, "org-role", "", "organization-level role for the worker (e.g., admin, manager, editor, user, viewer, creator, none)")
 	workerCmd.AddCommand(bridgeworkerUpdateCmd)
 }
 

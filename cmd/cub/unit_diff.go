@@ -89,6 +89,9 @@ Examples:
 
   # Show mutations instead of text diff
   cub unit diff my-unit -o mutations
+
+  # The same, with the unchanged fields around each change
+  cub unit diff my-unit -o mutations --context
 `+"```"+`
 `, ""),
 	Args: cobra.RangeArgs(1, 3),
@@ -103,6 +106,7 @@ var unitDiffArgs struct {
 	withUnit         string
 	file             string
 	displayMutations bool
+	context          bool
 }
 
 func init() {
@@ -116,6 +120,7 @@ func init() {
 	// structured diff, and json/yaml/jq/yq print the structured one as data.
 	unitDiffCmd.Flags().StringVarP(&outputFormat, "output", "o", "",
 		`Output format: "mutations" replaces the text diff with a structured, path-by-path diff; json, yaml, jq=<expr> and yq=<expr> print that diff as data.`)
+	unitDiffCmd.Flags().BoolVar(&unitDiffArgs.context, "context", false, "with -o mutations or a data format, also show the unchanged paths around each change: every unchanged field and element of each map and list a change is in, up to the resource")
 	unitDiffCmd.Flags().BoolVar(&unitDiffArgs.displayMutations, "display-mutations", false, "display resource mutations instead of text diff")
 	_ = unitDiffCmd.Flags().MarkDeprecated("display-mutations", "use -o mutations")
 	enableOptionalSpace(unitDiffCmd)
@@ -412,6 +417,9 @@ func runRevisionDiff(cmd *cobra.Command, args []string) error {
 		return fmt.Errorf(`"cub unit diff" accepts -o mutations, json, yaml, jq=<expr> and yq=<expr>; %q is not supported`, outputFormat)
 	}
 	structuredDiff := unitDiffArgs.displayMutations || outputSpec.Kind != OutputDefault
+	if unitDiffArgs.context && !structuredDiff {
+		return fmt.Errorf("--context applies to the structured diff: add -o mutations, or a data format")
+	}
 
 	if unitDiffArgs.file != "" {
 		if unitDiffArgs.withUnit != "" || len(args) > 1 || unitDiffArgs.toRev != defaultTo {
@@ -532,7 +540,7 @@ func runRevisionDiff(cmd *cobra.Command, args []string) error {
 
 	if structuredDiff && toUnit.UnitID == unit.Unit.UnitID {
 		unitDiff, err := fetchUnitDiff(unit.Unit.SpaceID, unit.Unit.UnitID,
-			strconv.FormatInt(revFromNum, 10), strconv.FormatInt(revToNum, 10))
+			strconv.FormatInt(revFromNum, 10), strconv.FormatInt(revToNum, 10), unitDiffArgs.context)
 		if err != nil {
 			return err
 		}
@@ -543,7 +551,7 @@ func runRevisionDiff(cmd *cobra.Command, args []string) error {
 		result, err := diffConfigurations(goclientnew.DiffRequest{
 			From: unitDiffSide(unit.Unit.UnitID, revFromNum),
 			To:   unitDiffSide(toUnit.UnitID, revToNum),
-		})
+		}, unitDiffArgs.context)
 		if err != nil {
 			return err
 		}
@@ -660,7 +668,7 @@ func runFileDiff(unitSlug, fromRev, file string, structuredDiff bool) error {
 		result, err := diffConfigurations(goclientnew.DiffRequest{
 			From: unitDiffSide(unit.Unit.UnitID, revFromNum),
 			To:   inlineDiffSide(fileData, unit.Unit.ToolchainType),
-		})
+		}, unitDiffArgs.context)
 		if err != nil {
 			return err
 		}
