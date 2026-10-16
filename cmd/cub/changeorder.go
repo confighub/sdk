@@ -15,8 +15,9 @@ var changeorderCmd = &cobra.Command{
 	Long: getCommandHelp(`The changeorder subcommands are used to manage change orders.
 
 A ChangeSet names a change within one Space and locks the Units it is open on. A ChangeOrder names
-the change itself: the ChangeSets a change creates as it is promoted from Space to Space all carry
-the same ChangeOrderID, which is what lets a fleet be asked where a change has landed.
+the change itself: the revisions it covers and the ones each promotion makes from Space to Space
+all carry it, which is what lets a fleet be asked where a change has landed
+("cub revision list --change-order").
 
 A ChangeOrder resides in a Space, by convention the one holding the changes to promote, and is
 bounded by a start and an end Tag created with it. Where it is headed is its InScopeSpaceIDs: a

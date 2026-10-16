@@ -39,6 +39,9 @@ Examples:
   # List the revisions a change order landed on, across every space it reached
   cub revision list --change-order my-base/release-42
 
+  # List the revisions made in a change set
+  cub revision list --changeset my-base/raise-replicas
+
   # List revisions without headers
   cub revision list --space my-space --no-headers my-ns
 
@@ -84,6 +87,7 @@ var revisionCustomColumnDependencies = map[string][]string{}
 var (
 	revisionTagSlug           string
 	revisionChangeOrderSlug   string
+	revisionChangeSetSlug     string
 	revisionChangeSetStartTag string
 	revisionChangeSetEndTag   string
 )
@@ -93,8 +97,9 @@ func init() {
 	enableListPagingFlags(revisionListCmd)
 	revisionListCmd.Flags().StringVar(&revisionTagSlug, "tag", "", "filter revisions by tag slug or UUID")
 	revisionListCmd.Flags().StringVar(&revisionChangeOrderSlug, "change-order", "", "filter revisions by change order slug, space/slug, or UUID: the revisions the change landed on, in whichever space they are in")
-	revisionListCmd.Flags().StringVar(&revisionChangeSetStartTag, "changeset-starttag", "", "filter revisions by changeset start tag slug or UUID")
-	revisionListCmd.Flags().StringVar(&revisionChangeSetEndTag, "changeset-endtag", "", "filter revisions by changeset end tag slug or UUID")
+	revisionListCmd.Flags().StringVar(&revisionChangeSetSlug, "changeset", "", "filter revisions by change set slug, space/slug, or UUID: the revisions made in the change set, in whichever units it was added to")
+	revisionListCmd.Flags().StringVar(&revisionChangeSetStartTag, "changeset-starttag", "", "filter revisions by a change set's start tag, naming either the change set or its start tag by slug, space/slug, or UUID")
+	revisionListCmd.Flags().StringVar(&revisionChangeSetEndTag, "changeset-endtag", "", "filter revisions by a closed change set's end tag, naming either the change set or its end tag by slug, space/slug, or UUID")
 	enableViewFlag(revisionListCmd)
 	revisionCmd.AddCommand(revisionListCmd)
 }
@@ -166,30 +171,30 @@ func buildRevisionWhereClause() (string, error) {
 		clauses = append(clauses, fmt.Sprintf("ChangeOrders ? '%s'", changeOrder.ChangeOrder.ChangeOrderID.String()))
 	}
 
-	// Handle --changeset-starttag flag
+	// Handle --changeset flag: the Revisions the ChangeSet's changes made, in whichever Units it
+	// was attached to.
+	if revisionChangeSetSlug != "" {
+		changeset, err := resolveChangeSet(revisionChangeSetSlug, defaultSpaceID(), "ChangeSetID,Slug,SpaceID")
+		if err != nil {
+			return "", fmt.Errorf("failed to parse changeset '%s': %w", revisionChangeSetSlug, err)
+		}
+		clauses = append(clauses, fmt.Sprintf("ChangeSetID = '%s'", changeset.ChangeSet.ChangeSetID.String()))
+	}
+
 	if revisionChangeSetStartTag != "" {
-		changeset, err := resolveChangeSet(revisionChangeSetStartTag, defaultSpaceID(), "*")
+		tagID, err := resolveChangeSetBoundaryTag(revisionChangeSetStartTag, false)
 		if err != nil {
 			return "", fmt.Errorf("failed to parse changeset start tag '%s': %w", revisionChangeSetStartTag, err)
 		}
-		if changeset.ChangeSet.State != "New" {
-			clauses = append(clauses, fmt.Sprintf("Tags ? '%s'", changeset.ChangeSet.StartTagID.String()))
-		} else {
-			return "", fmt.Errorf("changeset '%s' has not been added to any units yet", revisionChangeSetStartTag)
-		}
+		clauses = append(clauses, fmt.Sprintf("Tags ? '%s'", tagID.String()))
 	}
 
-	// Handle --changeset-endtag flag
 	if revisionChangeSetEndTag != "" {
-		changeset, err := resolveChangeSet(revisionChangeSetEndTag, defaultSpaceID(), "*")
+		tagID, err := resolveChangeSetBoundaryTag(revisionChangeSetEndTag, true)
 		if err != nil {
 			return "", fmt.Errorf("failed to parse changeset end tag '%s': %w", revisionChangeSetEndTag, err)
 		}
-		if changeset.ChangeSet.State == "Closed" {
-			clauses = append(clauses, fmt.Sprintf("Tags ? '%s'", changeset.ChangeSet.EndTagID.String()))
-		} else {
-			return "", fmt.Errorf("changeset '%s' is not closed", revisionChangeSetEndTag)
-		}
+		clauses = append(clauses, fmt.Sprintf("Tags ? '%s'", tagID.String()))
 	}
 
 	// Add user-provided where clause
@@ -202,6 +207,50 @@ func buildRevisionWhereClause() (string, error) {
 		return "", nil
 	}
 	return strings.Join(clauses, " AND "), nil
+}
+
+// resolveChangeSetBoundaryTag is the Tag that marks the start, or with end the end, of a
+// ChangeSet. ref names either the ChangeSet or that Tag: the flags are read both ways, since the
+// Tag is what they filter by and the ChangeSet is what people know the change by.
+func resolveChangeSetBoundaryTag(ref string, end bool) (uuid.UUID, error) {
+	changeset, csErr := resolveChangeSet(ref, defaultSpaceID(), "*")
+	if csErr != nil {
+		if !cubapi.IsNotFoundError(csErr) {
+			return uuid.Nil, csErr
+		}
+		tag, tagErr := resolveTag(ref, defaultSpaceID(), "*")
+		if tagErr != nil {
+			return uuid.Nil, fmt.Errorf("no change set or change set tag by that name: %w; %w", csErr, tagErr)
+		}
+		if tag.Tag.ChangeSetID == nil || *tag.Tag.ChangeSetID == uuid.Nil {
+			return uuid.Nil, fmt.Errorf("tag %q does not belong to a change set", tag.Tag.Slug)
+		}
+		changeset, csErr = resolveChangeSet(tag.Tag.ChangeSetID.String(), defaultSpaceID(), "*")
+		if csErr != nil {
+			return uuid.Nil, csErr
+		}
+		boundary := changeset.ChangeSet.StartTagID
+		if end {
+			boundary = changeset.ChangeSet.EndTagID
+		}
+		if boundary != tag.Tag.TagID {
+			which := "start"
+			if end {
+				which = "end"
+			}
+			return uuid.Nil, fmt.Errorf("tag %q is not the %s tag of change set %q", tag.Tag.Slug, which, changeset.ChangeSet.Slug)
+		}
+	}
+	if end {
+		if changeset.ChangeSet.State != "Closed" {
+			return uuid.Nil, fmt.Errorf("change set %q is not closed", changeset.ChangeSet.Slug)
+		}
+		return changeset.ChangeSet.EndTagID, nil
+	}
+	if changeset.ChangeSet.State == "New" {
+		return uuid.Nil, fmt.Errorf("change set %q has not been added to any units yet", changeset.ChangeSet.Slug)
+	}
+	return changeset.ChangeSet.StartTagID, nil
 }
 
 func getRevisionSlug(extendedRevision *goclientnew.ExtendedRevision) string {
