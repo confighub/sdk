@@ -23,8 +23,8 @@ Examples:
   # List all triggers in a space with headers
   cub trigger list --space my-space
 
-  # List triggers across all spaces (requires --space "*")
-  cub trigger list --space "*" --where "Event = 'Mutation'"
+  # List triggers across all spaces
+  cub trigger list --where "Event = 'Mutation'"
 
   # List triggers without headers for scripting
   cub trigger list --space my-space --no-headers
@@ -45,22 +45,22 @@ Examples:
   cub trigger list --space my-space --where "FunctionName = 'vet-cel'"
 
   # Find triggers still using a deprecated function
-  cub trigger list --space "*" --where "FunctionName = 'cel-validate'"
+  cub trigger list --where "FunctionName = 'cel-validate'"
 
   # List disabled triggers across all spaces
-  cub trigger list --space "*" --where "Disabled = true"
+  cub trigger list --where "Disabled = true"
 
   # List triggers that set a particular attribute, by the argument bound to a named parameter
-  cub trigger list --space "*" --where "Arguments.?ParameterName=attribute-name.Value = 'owner'"
+  cub trigger list --where "Arguments.?ParameterName=attribute-name.Value = 'owner'"
 
   # List triggers whose function takes a given value as any argument
-  cub trigger list --space "*" --where "Arguments.*.Value LIKE 'confighub.com/%'"
+  cub trigger list --where "Arguments.*.Value LIKE 'confighub.com/%'"
 
   # List triggers cleared to overwrite a guarded path
-  cub trigger list --space "*" --where "Clearance.*.Key = 'owner'"
+  cub trigger list --where "Clearance.*.Key = 'owner'"
 
   # List triggers that stamp a guard on what they write
-  cub trigger list --space "*" --where "Guards.owner = 'platform-trigger'"
+  cub trigger list --where "Guards.owner = 'platform-trigger'"
 `+"```"+`
 `, ""),
 	Args:        cobra.ExactArgs(0),

@@ -35,16 +35,16 @@ Examples:
   cub k8s types --space my-space
 
   # Every resource type across the organization
-  cub k8s types --space "*"
+  cub k8s types
 
   # Everything except CustomResourceDefinitions
-  cub k8s types all --space "*"
+  cub k8s types all
 
   # Types delivered to one target
   cub k8s types --target prod-use2/prod-use2-oci
 
   # Just the type names, for scripting
-  cub k8s types --space "*" -o name
+  cub k8s types -o name
 ` + "```" + `
 `
 

@@ -33,8 +33,8 @@ Examples:
   # Delete specific attributes by slug
   cub attribute delete --attribute my-attr,another-attr
 
-  # Delete attributes across all spaces (requires --space "*")
-  cub attribute delete --space "*" --where "Labels.cleanup = 'true'"
+  # Delete attributes across all spaces
+  cub attribute delete --where "Labels.cleanup = 'true'"
 `+"```"+`
 `, ""),
 	Args:        cobra.MaximumNArgs(1),

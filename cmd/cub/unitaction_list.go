@@ -19,7 +19,7 @@ import (
 var unitActionListCmd = &cobra.Command{
 	Use:   "list [unit-slug]",
 	Short: "List unit actions",
-	Long: getCommandHelp(`List unit actions for a specific unit, or across all units when no unit is specified. When listing across units, at most one unit action is returned per unit (the latest one, ordered by UnitActionNum). Use --space '*' to search across all spaces in the Organization.
+	Long: getCommandHelp(`List unit actions for a specific unit, or across all units when no unit is specified. When listing across units, at most one unit action is returned per unit (the latest one, ordered by UnitActionNum). Omit --space to search across all spaces in the organization.
 
 Examples:
 `+"```"+`
@@ -30,7 +30,7 @@ Examples:
   cub unit-action list --space my-space --where "Action = 'Apply'"
 
   # List the latest Apply unit actions started within the past 15 minutes across all spaces
-  cub unit-action list --space '*' --where "Action = 'Apply' AND CreatedAt > '2026-04-15T12:00:00Z'"
+  cub unit-action list --where "Action = 'Apply' AND CreatedAt > '2026-04-15T12:00:00Z'"
 `+"```"+`
 `, ""),
 	Args:        cobra.RangeArgs(0, 1),

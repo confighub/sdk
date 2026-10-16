@@ -19,7 +19,7 @@ import (
 var revisionListCmd = &cobra.Command{
 	Use:   "list [unit]",
 	Short: "List revisions",
-	Long: getCommandHelp(`List revisions for a unit in a space, or across all spaces when selectedSpaceID is "*". Revisions track the history of changes made to a unit's configuration.
+	Long: getCommandHelp(`List revisions for a unit in a space, or across all spaces without --space. Revisions track the history of changes made to a unit's configuration.
 
 The default output identifies each revision and shows what change management put on it: its
 ChangeSet, the ChangeOrders it belongs to, and its Tags, with the change description last and
@@ -37,7 +37,7 @@ Examples:
   cub revision list --space my-space -o wide my-ns
 
   # List the revisions a change order landed on, across every space it reached
-  cub revision list --space '*' --change-order my-base/release-42
+  cub revision list --change-order my-base/release-42
 
   # List revisions without headers
   cub revision list --space my-space --no-headers my-ns
@@ -55,7 +55,7 @@ Examples:
   cub revision list --space my-space --where 'RevisionNum > 1' my-ns
 
   # List revisions across all spaces (organization-wide search, at most one revision per unit)
-  cub revision list --space '*' --where 'Tags.my-tag-id = "some-value"'
+  cub revision list --where 'Tags.my-tag-id = "some-value"'
 `+"```"+`
 `, ""),
 	Args:        cobra.RangeArgs(0, 1),
@@ -157,7 +157,7 @@ func buildRevisionWhereClause() (string, error) {
 	}
 
 	// Handle --change-order flag. A ChangeOrder names a change wherever it went, so this is the
-	// query that answers "where has it landed?" -- across every Space when --space is '*'.
+	// query that answers "where has it landed?" -- across every Space without --space.
 	if revisionChangeOrderSlug != "" {
 		changeOrder, err := resolveChangeOrder(revisionChangeOrderSlug, defaultSpaceID(), "*")
 		if err != nil {

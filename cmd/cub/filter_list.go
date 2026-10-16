@@ -22,8 +22,8 @@ Examples:
   # List all filters in a space with headers
   cub filter list --space my-space
 
-  # List filters across all spaces (requires --space "*")
-  cub filter list --space "*" --where "From = 'Unit'"
+  # List filters across all spaces
+  cub filter list --where "From = 'Unit'"
 
   # List filters without headers for scripting
   cub filter list --space my-space --no-headers
@@ -44,7 +44,7 @@ Examples:
   cub filter list --space my-space --entity-type Unit --entity-id my-unit
 
   # List filters that match a space (works across all spaces)
-  cub filter list --space "*" --entity-type Space --entity-id my-space
+  cub filter list --entity-type Space --entity-id my-space
 `+"```"+`
 `, ""),
 	Args:        cobra.ExactArgs(0),

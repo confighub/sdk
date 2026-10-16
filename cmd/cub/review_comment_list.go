@@ -30,6 +30,9 @@ Examples:
   # List the comments that start a thread
   cub review-comment list --space my-space --where 'ReplyToID IS NULL' my-deployment
 
+  # List the comments in the review of a change order
+  cub review-comment list --space my-space --where "ChangeOrderID = '9b1c4f2e-6a1d-4e8b-9f3a-2c7d5e8a1b04'" my-deployment
+
   # List the replies to a comment
   cub review-comment list --space my-space --where "ReplyToID = '61f26b06-3c34-4363-8b9d-7d0a7c2b5f1c'" my-deployment
 `+"```"+`

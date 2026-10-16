@@ -104,6 +104,11 @@ func displayExtendedReviewCommentDetails(extendedReviewComment *goclientnew.Exte
 	if isSetUUID(reviewComment.ReplyToID) {
 		view.Append([]string{"Reply To", reviewComment.ReplyToID.String()})
 	}
+	if extendedReviewComment.ChangeOrder != nil {
+		view.Append([]string{"Change Order", extendedReviewComment.ChangeOrder.Slug})
+	} else if isSetUUID(reviewComment.ChangeOrderID) {
+		view.Append([]string{"Change Order ID", reviewComment.ChangeOrderID.String()})
+	}
 	if reviewComment.UserID != uuid.Nil {
 		view.Append([]string{"User ID", reviewComment.UserID.String()})
 	}
@@ -124,7 +129,7 @@ func apiGetReviewComment(spaceID, unitID, reviewCommentID uuid.UUID, selectParam
 	if selectParam == "" {
 		selectParam = "*"
 	}
-	include := "SpaceID,UnitID"
+	include := "SpaceID,UnitID,ChangeOrderID"
 	params := &goclientnew.GetReviewCommentParams{Include: &include}
 	if selectParam != "*" {
 		params.Select = &selectParam

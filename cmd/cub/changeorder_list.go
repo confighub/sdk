@@ -20,8 +20,8 @@ Examples:
   # List all changeorders in a space with headers
   cub changeorder list --space my-space
 
-  # List changeorders across all spaces (requires --space "*")
-  cub changeorder list --space "*" --where "Description LIKE '%release%'"
+  # List changeorders across all spaces
+  cub changeorder list --where "Description LIKE '%release%'"
 
   # List changeorders without headers for scripting
   cub changeorder list --space my-space --no-headers
@@ -40,8 +40,8 @@ Examples:
   cub changeorder list --space my-space --where "ReleasedSpaceIDs ? '<space-id>'"
 
   # List the changeorders still on their way, and the ones given up on
-  cub changeorder list --space "*" --where "State = 'InProgress'"
-  cub changeorder list --space "*" --where "State = 'Aborted'"
+  cub changeorder list --where "State = 'InProgress'"
+  cub changeorder list --where "State = 'Aborted'"
 `+"```"+`
 `, ""),
 	Args:        cobra.ExactArgs(0),

@@ -30,8 +30,8 @@ Examples:
   # Delete all units with specific label
   cub unit delete --where "Labels.Tier = 'backend'"
 
-  # Delete units across all spaces (requires --space "*")
-  cub unit delete --space "*" --where "Labels.cleanup = 'true'"
+  # Delete units across all spaces
+  cub unit delete --where "Labels.cleanup = 'true'"
 
   # Delete specific units by slug
   cub unit delete --unit my-unit,another-unit

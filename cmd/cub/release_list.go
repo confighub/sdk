@@ -20,8 +20,8 @@ import (
 var releaseListCmd = &cobra.Command{
 	Use:   "list",
 	Short: "List releases",
-	Long: getCommandHelp(`List the releases of a space, newest first, or the newest release of each space when
---space is "*". With --space "*", --distinct-on Off lists every release that matches instead,
+	Long: getCommandHelp(`List the releases of a space, newest first, or without --space the newest release of each space
+in the organization. Without --space, --distinct-on Off lists every release that matches instead,
 and needs --where or --filter to say which.
 
 Each release is shown by its number, the tag on the revisions it bundled, the change order it
@@ -44,13 +44,13 @@ Examples:
   cub release list --space my-space -o json
 
   # The newest release of each space (organization-wide search)
-  cub release list --space '*'
+  cub release list
 
   # Find the release with a manifest digest in any space
-  cub release list --space '*' --where "ManifestDigest = 'sha256:...'"
+  cub release list --where "ManifestDigest = 'sha256:...'"
 
   # Every release published in any space since October 1, not only the newest of each
-  cub release list --space '*' --distinct-on Off --where "CreatedAt >= '2026-10-01T00:00:00Z'"
+  cub release list --distinct-on Off --where "CreatedAt >= '2026-10-01T00:00:00Z'"
 `+"```"+`
 `, ""),
 	Args:        cobra.NoArgs,
@@ -81,7 +81,7 @@ func init() {
 	addStandardListFlags(releaseListCmd)
 	enableListPagingFlags(releaseListCmd)
 	releaseListCmd.Flags().StringVar(&releaseDistinctOn, "distinct-on", "",
-		`with --space "*", what to return at most one release per: Space, the default, or Off for every release that matches, which needs --where or --filter`)
+		`without --space, what to return at most one release per: Space, the default, or Off for every release that matches, which needs --where or --filter`)
 	enableViewFlag(releaseListCmd)
 	releaseCmd.AddCommand(releaseListCmd)
 }
@@ -92,9 +92,9 @@ func releaseListCmdRun(cmd *cobra.Command, args []string) error {
 		return err
 	}
 
-	// Cross-space search when --space is "*", otherwise list within the space.
+	// Cross-space search without --space, otherwise list within the space.
 	if releaseDistinctOn != "" && selectedSpaceID != "*" {
-		return errors.New(`--distinct-on applies only with --space "*"; a space's own list has every one of its releases`)
+		return errors.New(`--distinct-on applies only without --space; a space's own list has every one of its releases`)
 	}
 	if selectedSpaceID == "*" {
 		releases, err := apiSearchListReleases(where, selectFields, filterID)

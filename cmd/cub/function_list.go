@@ -79,7 +79,7 @@ func listFunctions(workerSlug, whereClause string) (string, functionsByToolchain
 
 	// Validate that selectedSpaceID is not "*" when a worker is specified
 	if selectedSpaceID == "*" && workerSlug != "" {
-		return entity, funcs, fmt.Errorf("cannot use --space '*' with --worker")
+		return entity, funcs, fmt.Errorf("--worker needs --space, the space the worker is in")
 	}
 	if workerSlug != "" {
 		workerDetails, err := resolveWorker(workerSlug, selectedSpaceID, "") // default select is fine

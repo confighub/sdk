@@ -1347,6 +1347,11 @@
       }
     },
     "ReviewComment": {
+      "ChangeOrderID": {
+        "dataType": "uuid",
+        "references": "ChangeOrder",
+        "expandable": true
+      },
       "CreatedAt": {
         "dataType": "time"
       },

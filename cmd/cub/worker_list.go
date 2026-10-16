@@ -13,7 +13,7 @@ import (
 var workerListCmd = &cobra.Command{
 	Use:   "list",
 	Short: "List workers",
-	Long: getCommandHelp(`List workers in a space or across all spaces. Use --space "*" to list workers across all spaces.
+	Long: getCommandHelp(`List workers in a space or across all spaces. Omit --space to list workers across all spaces.
 
 What a worker reports about itself on connecting is stored as one document, so --where reaches
 into it with a path.
@@ -21,13 +21,13 @@ into it with a path.
 Examples:
 `+"```"+`
   # List all workers across all spaces
-  cub worker list --space "*"
+  cub worker list
 
   # List the server-hosted workers, which run in the server rather than as a process
-  cub worker list --space "*" --where "ProvidedInfo.IsServerWorker = true"
+  cub worker list --where "ProvidedInfo.IsServerWorker = true"
 
   # List the workers hosting a custom function
-  cub worker list --space "*" --where "ProvidedInfo.FunctionWorkerInfo.SupportedFunctions.Kubernetes/YAML ? 'my-function'"
+  cub worker list --where "ProvidedInfo.FunctionWorkerInfo.SupportedFunctions.Kubernetes/YAML ? 'my-function'"
 
 `+"```"+`
 `, ""),

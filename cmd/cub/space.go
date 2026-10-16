@@ -58,7 +58,7 @@ var selectedSpaceSlug string
 var spaceScopedCommands []*cobra.Command
 
 func addSpaceFlags(cmd *cobra.Command) {
-	cmd.PersistentFlags().StringVar(&spaceFlag, "space", "", "space to operate in, by slug or UUID. Omitted, a list or bulk operation spans the organization and a single entity is named as <space>/<slug>")
+	cmd.PersistentFlags().StringVar(&spaceFlag, "space", "", "space to operate in, by slug or UUID. Omitted, a list or bulk operation spans the organization and a single entity is named as <space>/<slug>; \"*\" means the same as omitting it")
 	cmd.PersistentFlags().StringVar(&variantFlag, "variant", "", "variant to operate in, as <component>/<variant>, or as <variant> with --component: the space naming that Component whose Variant label is <variant>. The same scope as --space, named by what it is rather than by the space's slug; the two cannot be combined")
 	cmd.PersistentFlags().StringVar(&componentFlag, "component", "", "the Component of --variant, when that names the variant alone; --variant <component>/<variant> says the same in one flag")
 	spaceScopedCommands = append(spaceScopedCommands, cmd)

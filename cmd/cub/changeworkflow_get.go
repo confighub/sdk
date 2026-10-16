@@ -54,7 +54,7 @@ func formatChangeWorkflowStage(stage goclientnew.ChangeWorkflowStage) string {
 	if stage.WhereSpace != "" {
 		parts = append(parts, stage.WhereSpace)
 	} else {
-		parts = append(parts, "every Space of the component")
+		parts = append(parts, "every Space the change order is headed for")
 	}
 	if len(stage.Prerequisites) > 0 {
 		parts = append(parts, "gates: "+strings.Join(stage.Prerequisites, ", "))

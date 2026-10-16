@@ -19,7 +19,7 @@ import (
 var unitEventListCmd = &cobra.Command{
 	Use:   "list [unit-slug]",
 	Short: "List unit events",
-	Long: getCommandHelp(`List unit events for a specific unit, or across all units when no unit is specified. Use --space '*' to search across all spaces in the Organization.
+	Long: getCommandHelp(`List unit events for a specific unit, or across all units when no unit is specified. Omit --space to search across all spaces in the organization.
 
 Examples:
 `+"```"+`
@@ -30,7 +30,7 @@ Examples:
   cub unit-event list --space my-space --where "Action = 'Apply' AND Result = 'Failed'"
 
   # List Apply events started within the past 15 minutes across all spaces
-  cub unit-event list --space '*' --where "Action = 'Apply' AND CreatedAt > '2026-04-15T12:00:00Z'"
+  cub unit-event list --where "Action = 'Apply' AND CreatedAt > '2026-04-15T12:00:00Z'"
 `+"```"+`
 `, ""),
 	Args:        cobra.RangeArgs(0, 1),

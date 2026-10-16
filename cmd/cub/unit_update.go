@@ -119,7 +119,7 @@ Patch Mode Examples:
   cub unit update --patch --where "Slug LIKE 'app-%'" --change-desc "Metadata review" --label reviewed=2024-01
 
   # Bulk patch across all spaces with metadata
-  cub unit update --patch --space "*" --where "UpstreamRevisionNum > 0" --change-desc "Upgrade all" --upgrade
+  cub unit update --patch --where "UpstreamRevisionNum > 0" --change-desc "Upgrade all" --upgrade
 
   # Bulk restore with change description
   cub unit update --patch --where "Slug IN ('unit1', 'unit2')" --restore LastReleasedRevisionNum --change-desc "Restored to last released revision"
@@ -159,7 +159,7 @@ Upgrade from upstream:
 
 Bulk patch operations:
   cub unit update --patch --where "Slug LIKE 'app-%'" --restore LastReleasedRevisionNum --change-desc "Restored apps"
-  cub unit update --patch --space "*" --where "Labels.tier = 'platform'" --label updated=true --change-desc "Updated platform units"
+  cub unit update --patch --where "Labels.tier = 'platform'" --label updated=true --change-desc "Updated platform units"
 
 Key flags for agents:
 - --wait: Wait for triggers and validation to complete (recommended)

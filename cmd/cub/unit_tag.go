@@ -64,8 +64,8 @@ Examples:
   # Remove tag using shorthand
   cub unit tag my-tag --revision - --where "Labels.cleanup = 'true'"
 
-  # Tag units across all spaces (requires --space "*") with space/tag syntax
-  cub unit tag production/prod-release --space "*" --where "Labels.env = 'production'"
+  # Tag units across all spaces with space/tag syntax
+  cub unit tag production/prod-release --where "Labels.env = 'production'"
 
   # Use space/tag syntax to target tag in specific space
   cub unit tag dev-space/dev-tag --unit my-unit

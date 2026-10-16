@@ -20,8 +20,8 @@ Examples:
   # List all invocations in a space with headers
   cub invocation list --space my-space
 
-  # List invocations across all spaces (requires --space "*")
-  cub invocation list --space "*" --where "FunctionName = 'vet-cel'"
+  # List invocations across all spaces
+  cub invocation list --where "FunctionName = 'vet-cel'"
 
   # List invocations without headers for scripting
   cub invocation list --space my-space --no-headers
@@ -39,7 +39,7 @@ Examples:
   cub invocation list --space my-space --where "FunctionInvocations.*.FunctionName = 'vet-cel'"
 
   # Find invocations still calling a deprecated function
-  cub invocation list --space "*" --where "FunctionInvocations.*.FunctionName = 'cel-validate'"
+  cub invocation list --where "FunctionInvocations.*.FunctionName = 'cel-validate'"
 
   # Find invocations whose first function is set-image
   cub invocation list --space my-space --where "FunctionInvocations.0.FunctionName = 'set-image'"

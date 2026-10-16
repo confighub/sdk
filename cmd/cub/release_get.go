@@ -81,7 +81,7 @@ func releaseGetCmdRun(cmd *cobra.Command, args []string) error {
 	}
 
 	// The OCI-reference and bundle-digest lookups resolve via list within a
-	// single Space, so they require a specific --space (not "*").
+	// single Space, so they require --space to name one.
 	if (releaseGetOCIReference != "" || releaseGetBundleDigest != "") &&
 		(selectedSpaceID == "" || selectedSpaceID == "*") {
 		return fmt.Errorf("--oci-reference and --bundle-digest require a specific --space")

@@ -82,14 +82,14 @@ Examples:
   # Show link tree for specific units
   cub unit tree --edge link --where "Labels.tier = 'web'"
 
-  # Show tree across all spaces (requires --space "*")
-  cub unit tree --space "*"
+  # Show tree across all spaces
+  cub unit tree
 
   # Show link tree across all spaces with custom columns
-  cub unit tree --edge link --space "*" --columns Space.Slug,UnreleasedChanges
+  cub unit tree --edge link --columns Space.Slug,UnreleasedChanges
 
   # Show space-based tree across all spaces
-  cub unit tree --node space --space "*" --columns UnreleasedChanges
+  cub unit tree --node space --columns UnreleasedChanges
 
   # Explicitly specify clone edge type
   cub unit tree --edge clone
@@ -103,7 +103,7 @@ Key use cases for agents:
 - Understand configuration inheritance patterns
 - Identify root units and their downstream dependencies
 - Analyze dependency relationships via links
-- Cross-space analysis with --space "*" wildcard
+- Cross-space analysis by omitting --space
 
 Tree structure insights:
 - Root units have no upstream dependencies
@@ -115,10 +115,10 @@ Tree structure insights:
 Edge type differences:
 - Clone trees: Show configuration inheritance (UpstreamUnit relationships)
 - Link trees: Show dependency relationships (Link relationships)
-- Both support cross-space operations when using --space "*"
+- Both support cross-space operations when --space is omitted
 
 Cross-space operations:
-- Use --space "*" to analyze units across all accessible spaces
+- Omit --space to analyze units across all accessible spaces
 - Combine with --where filters for targeted analysis
 - Add Space.Slug column to identify space context
 - Link trees can show cross-space dependencies

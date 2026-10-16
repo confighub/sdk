@@ -22,14 +22,14 @@ Examples:
   # List all change workflows in a space with headers
   cub changeworkflow list --space workflows
 
-  # List change workflows across all spaces (requires --space "*")
-  cub changeworkflow list --space "*"
+  # List change workflows across all spaces
+  cub changeworkflow list
 
   # List the workflows whose last stage is gated on live status
-  cub changeworkflow list --space "*" --where "Final.Prerequisites ? 'Healthy'"
+  cub changeworkflow list --where "Final.Prerequisites ? 'Healthy'"
 
   # List the workflows that have a stage named prod
-  cub changeworkflow list --space "*" --where "Stages.*.Name = 'prod'"
+  cub changeworkflow list --where "Stages.*.Name = 'prod'"
 
   # List change workflows without headers for scripting
   cub changeworkflow list --space workflows --no-headers

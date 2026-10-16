@@ -33,8 +33,8 @@ Examples:
   # Delete changesets with specific descriptions
   cub changeset delete --where "Description LIKE '%deprecated%'"
 
-  # Delete changesets across all spaces (requires --space "*")
-  cub changeset delete --space "*" --where "Labels.cleanup = 'true'"
+  # Delete changesets across all spaces
+  cub changeset delete --where "Labels.cleanup = 'true'"
 
   # Delete specific changesets by slug
   cub changeset delete --changeset old-changeset,deprecated-changeset

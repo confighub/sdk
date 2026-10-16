@@ -10820,10 +10820,10 @@
           {
             "name": "include",
             "in": "query",
-            "description": "Comma-separated parts of the result to return in addition to the actions: Mutations for what each restore changed, or on a dry run would change, as entries of its MutationSources, and Diff for the same change path by path with the values on both sides.\n\nSupported values: Mutations, Diff.",
+            "description": "Comma-separated parts of the result to return in addition to the actions: Mutations for what each restore changed, or on a dry run would change, as entries of its MutationSources, and Diff for the same change path by path with the values on both sides. Context, with Diff, adds to each Diff the unchanged paths around the changes: every unchanged child of each map or array that holds a change, up to the resource, as ChangeType None.\n\nSupported values: Mutations, Diff, Context.",
             "required": false,
             "schema": {
-              "pattern": "^\\s*(Mutations|Diff)\\s*(?:,\\s*(?:Mutations|Diff)\\s*)*$",
+              "pattern": "^\\s*(Mutations|Diff|Context)\\s*(?:,\\s*(?:Mutations|Diff|Context)\\s*)*$",
               "type": "string"
             }
           }
@@ -17552,10 +17552,10 @@
           {
             "name": "include",
             "in": "query",
-            "description": "Comma-separated parts of the result to return in addition to the actions: Mutations for what each Unit write changed, or on a dry run would change, as entries of its MutationSources, and Diff for the same change path by path with the values on both sides, and ConfigData for the configuration each Unit write produced, or on a dry run would produce. On a dry run any of them runs the merges a plan otherwise skips, so they are returned only when named.\n\nSupported values: Mutations, Diff, ConfigData.",
+            "description": "Comma-separated parts of the result to return in addition to the actions: Mutations for what each Unit write changed, or on a dry run would change, as entries of its MutationSources, and Diff for the same change path by path with the values on both sides, and ConfigData for the configuration each Unit write produced, or on a dry run would produce. On a dry run any of them runs the merges a plan otherwise skips, so they are returned only when named. Context, with Diff, adds to each Diff the unchanged paths around the changes: every unchanged child of each map or array that holds a change, up to the resource, as ChangeType None.\n\nSupported values: Mutations, Diff, Context, ConfigData.",
             "required": false,
             "schema": {
-              "pattern": "^\\s*(Mutations|Diff|ConfigData)\\s*(?:,\\s*(?:Mutations|Diff|ConfigData)\\s*)*$",
+              "pattern": "^\\s*(Mutations|Diff|Context|ConfigData)\\s*(?:,\\s*(?:Mutations|Diff|Context|ConfigData)\\s*)*$",
               "type": "string"
             }
           }
@@ -18098,7 +18098,7 @@
           {
             "name": "where",
             "in": "query",
-            "description": "The specified string is an expression for the purpose of filtering\nthe list of ReviewComments returned. The expression syntax was inspired by SQL.\nIt supports conjunctions using `AND` of relational expressions of the form *attribute*\n*operator* *attribute_or_literal*. The attribute names are case-sensitive and PascalCase,\nas in the JSON encoding.\nStrings support the following operators: `\u003c`, `\u003e`, `\u003c=`, `\u003e=`, `=`, `!=`, `LIKE`, `NOT LIKE`, `ILIKE`, `~~`, `!~~`, `~`, `~*`, `!~`, `!~*`, `IN`, `NOT IN`.\nString pattern operators: `LIKE` and `~~` for pattern matching with `%` and `_` wildcards,\n`ILIKE` for case-insensitive pattern matching, `NOT LIKE` and `!~~` for negated pattern matching.\nString regex operators: `~` for regex matching, `~*` for case-insensitive regex,\n`!~` and `!~*` for regex not matching (case-sensitive and insensitive).\nIntegers support the following operators: `\u003c`, `\u003e`, `\u003c=`, `\u003e=`, `=`, `!=`, `IN`, `NOT IN`.\nUUIDs and boolean attributes support equality and inequality only.\nUUID and time literals must be quoted as string literals.\nString literals are quoted with single quotes, such as `'string'`.\nTime literals use the same form as when serialized as JSON,\nsuch as: `CreatedAt \u003e '2025-02-18T23:16:34'`.\nInteger and boolean literals are also supported for attributes of those types.\nArrays support the `?` operator to to match any element of the array,\nas in `FromLinkID ? '7c61626f-ddbe-41af-93f6-b69f4ab6d308'`.\nArrays can perform LEN() to check for length, as in `LEN(FromLinkID) \u003e 0`.\nAn attribute naming a list of other entities can be filtered on their attributes with a `*` segment,\nas in `FromLink.*.Slug = 'upgrade-app'`, which holds when any element satisfies it.\nWithout the `*` such a reference is an error, since it names no single value to compare.\nMap support the dot notation to specify a particular map key, as in `Labels.tier = 'Backend'`.\nMaps support `IS NULL` and `IS NOT NULL` with dot notation to check for key absence or presence,\nas in `Labels.tier IS NULL` (key doesn't exist) or `Labels.tier IS NOT NULL` (key exists).\nComparison results can be tested with `IS TRUE`, `IS FALSE`, `IS NOT TRUE`, and `IS NOT FALSE`.\nThese are useful for nullable columns: `MergeSourceID = '\u003cuuid\u003e' IS NOT FALSE` matches rows where MergeSourceID equals the value OR is NULL.\nThe `IN` and `NOT IN` operators accept a comma-separated list of values in parentheses,\nsuch as `Slug IN ('slugone', 'slugtwo')` or `Labels.environment IN ('prod', 'staging')`.\nConjunctions are supported using the `AND` operator.\nAn example conjunction is:\n`CreatedAt \u003e= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.\n\nSupported attributes for filtering on ReviewComment: CreatedAt, HiddenReason, OrganizationID, Path, ReplyToID, ReviewCommentID, RevisionID, RevisionNum, SpaceID, Text, UnitID, UpdatedAt, UserAgent, UserID.\n\nThe whole string must be query-encoded.",
+            "description": "The specified string is an expression for the purpose of filtering\nthe list of ReviewComments returned. The expression syntax was inspired by SQL.\nIt supports conjunctions using `AND` of relational expressions of the form *attribute*\n*operator* *attribute_or_literal*. The attribute names are case-sensitive and PascalCase,\nas in the JSON encoding.\nStrings support the following operators: `\u003c`, `\u003e`, `\u003c=`, `\u003e=`, `=`, `!=`, `LIKE`, `NOT LIKE`, `ILIKE`, `~~`, `!~~`, `~`, `~*`, `!~`, `!~*`, `IN`, `NOT IN`.\nString pattern operators: `LIKE` and `~~` for pattern matching with `%` and `_` wildcards,\n`ILIKE` for case-insensitive pattern matching, `NOT LIKE` and `!~~` for negated pattern matching.\nString regex operators: `~` for regex matching, `~*` for case-insensitive regex,\n`!~` and `!~*` for regex not matching (case-sensitive and insensitive).\nIntegers support the following operators: `\u003c`, `\u003e`, `\u003c=`, `\u003e=`, `=`, `!=`, `IN`, `NOT IN`.\nUUIDs and boolean attributes support equality and inequality only.\nUUID and time literals must be quoted as string literals.\nString literals are quoted with single quotes, such as `'string'`.\nTime literals use the same form as when serialized as JSON,\nsuch as: `CreatedAt \u003e '2025-02-18T23:16:34'`.\nInteger and boolean literals are also supported for attributes of those types.\nArrays support the `?` operator to to match any element of the array,\nas in `FromLinkID ? '7c61626f-ddbe-41af-93f6-b69f4ab6d308'`.\nArrays can perform LEN() to check for length, as in `LEN(FromLinkID) \u003e 0`.\nAn attribute naming a list of other entities can be filtered on their attributes with a `*` segment,\nas in `FromLink.*.Slug = 'upgrade-app'`, which holds when any element satisfies it.\nWithout the `*` such a reference is an error, since it names no single value to compare.\nMap support the dot notation to specify a particular map key, as in `Labels.tier = 'Backend'`.\nMaps support `IS NULL` and `IS NOT NULL` with dot notation to check for key absence or presence,\nas in `Labels.tier IS NULL` (key doesn't exist) or `Labels.tier IS NOT NULL` (key exists).\nComparison results can be tested with `IS TRUE`, `IS FALSE`, `IS NOT TRUE`, and `IS NOT FALSE`.\nThese are useful for nullable columns: `MergeSourceID = '\u003cuuid\u003e' IS NOT FALSE` matches rows where MergeSourceID equals the value OR is NULL.\nThe `IN` and `NOT IN` operators accept a comma-separated list of values in parentheses,\nsuch as `Slug IN ('slugone', 'slugtwo')` or `Labels.environment IN ('prod', 'staging')`.\nConjunctions are supported using the `AND` operator.\nAn example conjunction is:\n`CreatedAt \u003e= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.\n\nSupported attributes for filtering on ReviewComment: ChangeOrderID, CreatedAt, HiddenReason, OrganizationID, Path, ReplyToID, ReviewCommentID, RevisionID, RevisionNum, SpaceID, Text, UnitID, UpdatedAt, UserAgent, UserID.\n\nThe whole string must be query-encoded.",
             "required": false,
             "schema": {
               "type": "string"
@@ -18134,10 +18134,10 @@
           {
             "name": "include",
             "in": "query",
-            "description": "Include clause for expanding related entities in the response for ReviewComment.\nThe attribute names are case-sensitive, PascalCase, and\nexpected in a comma-separated list format as in the JSON encoding.\n\nSupported attributes for ReviewComment are OrganizationID, RevisionID, SpaceID, UnitID.\n\nThe whole string must be query-encoded.",
+            "description": "Include clause for expanding related entities in the response for ReviewComment.\nThe attribute names are case-sensitive, PascalCase, and\nexpected in a comma-separated list format as in the JSON encoding.\n\nSupported attributes for ReviewComment are ChangeOrderID, OrganizationID, RevisionID, SpaceID, UnitID.\n\nThe whole string must be query-encoded.",
             "required": false,
             "schema": {
-              "pattern": "^\\s*(OrganizationID|RevisionID|SpaceID|UnitID)\\s*(?:,\\s*(?:OrganizationID|RevisionID|SpaceID|UnitID)\\s*)*$",
+              "pattern": "^\\s*(ChangeOrderID|OrganizationID|RevisionID|SpaceID|UnitID)\\s*(?:,\\s*(?:ChangeOrderID|OrganizationID|RevisionID|SpaceID|UnitID)\\s*)*$",
               "type": "string"
             }
           },
@@ -18291,7 +18291,7 @@
           {
             "name": "where",
             "in": "query",
-            "description": "The specified string is an expression for the purpose of filtering\nthe list of ReviewComments returned. The expression syntax was inspired by SQL.\nIt supports conjunctions using `AND` of relational expressions of the form *attribute*\n*operator* *attribute_or_literal*. The attribute names are case-sensitive and PascalCase,\nas in the JSON encoding.\nStrings support the following operators: `\u003c`, `\u003e`, `\u003c=`, `\u003e=`, `=`, `!=`, `LIKE`, `NOT LIKE`, `ILIKE`, `~~`, `!~~`, `~`, `~*`, `!~`, `!~*`, `IN`, `NOT IN`.\nString pattern operators: `LIKE` and `~~` for pattern matching with `%` and `_` wildcards,\n`ILIKE` for case-insensitive pattern matching, `NOT LIKE` and `!~~` for negated pattern matching.\nString regex operators: `~` for regex matching, `~*` for case-insensitive regex,\n`!~` and `!~*` for regex not matching (case-sensitive and insensitive).\nIntegers support the following operators: `\u003c`, `\u003e`, `\u003c=`, `\u003e=`, `=`, `!=`, `IN`, `NOT IN`.\nUUIDs and boolean attributes support equality and inequality only.\nUUID and time literals must be quoted as string literals.\nString literals are quoted with single quotes, such as `'string'`.\nTime literals use the same form as when serialized as JSON,\nsuch as: `CreatedAt \u003e '2025-02-18T23:16:34'`.\nInteger and boolean literals are also supported for attributes of those types.\nArrays support the `?` operator to to match any element of the array,\nas in `FromLinkID ? '7c61626f-ddbe-41af-93f6-b69f4ab6d308'`.\nArrays can perform LEN() to check for length, as in `LEN(FromLinkID) \u003e 0`.\nAn attribute naming a list of other entities can be filtered on their attributes with a `*` segment,\nas in `FromLink.*.Slug = 'upgrade-app'`, which holds when any element satisfies it.\nWithout the `*` such a reference is an error, since it names no single value to compare.\nMap support the dot notation to specify a particular map key, as in `Labels.tier = 'Backend'`.\nMaps support `IS NULL` and `IS NOT NULL` with dot notation to check for key absence or presence,\nas in `Labels.tier IS NULL` (key doesn't exist) or `Labels.tier IS NOT NULL` (key exists).\nComparison results can be tested with `IS TRUE`, `IS FALSE`, `IS NOT TRUE`, and `IS NOT FALSE`.\nThese are useful for nullable columns: `MergeSourceID = '\u003cuuid\u003e' IS NOT FALSE` matches rows where MergeSourceID equals the value OR is NULL.\nThe `IN` and `NOT IN` operators accept a comma-separated list of values in parentheses,\nsuch as `Slug IN ('slugone', 'slugtwo')` or `Labels.environment IN ('prod', 'staging')`.\nConjunctions are supported using the `AND` operator.\nAn example conjunction is:\n`CreatedAt \u003e= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.\n\nSupported attributes for filtering on ReviewComment: CreatedAt, HiddenReason, OrganizationID, Path, ReplyToID, ReviewCommentID, RevisionID, RevisionNum, SpaceID, Text, UnitID, UpdatedAt, UserAgent, UserID.\n\nThe whole string must be query-encoded.",
+            "description": "The specified string is an expression for the purpose of filtering\nthe list of ReviewComments returned. The expression syntax was inspired by SQL.\nIt supports conjunctions using `AND` of relational expressions of the form *attribute*\n*operator* *attribute_or_literal*. The attribute names are case-sensitive and PascalCase,\nas in the JSON encoding.\nStrings support the following operators: `\u003c`, `\u003e`, `\u003c=`, `\u003e=`, `=`, `!=`, `LIKE`, `NOT LIKE`, `ILIKE`, `~~`, `!~~`, `~`, `~*`, `!~`, `!~*`, `IN`, `NOT IN`.\nString pattern operators: `LIKE` and `~~` for pattern matching with `%` and `_` wildcards,\n`ILIKE` for case-insensitive pattern matching, `NOT LIKE` and `!~~` for negated pattern matching.\nString regex operators: `~` for regex matching, `~*` for case-insensitive regex,\n`!~` and `!~*` for regex not matching (case-sensitive and insensitive).\nIntegers support the following operators: `\u003c`, `\u003e`, `\u003c=`, `\u003e=`, `=`, `!=`, `IN`, `NOT IN`.\nUUIDs and boolean attributes support equality and inequality only.\nUUID and time literals must be quoted as string literals.\nString literals are quoted with single quotes, such as `'string'`.\nTime literals use the same form as when serialized as JSON,\nsuch as: `CreatedAt \u003e '2025-02-18T23:16:34'`.\nInteger and boolean literals are also supported for attributes of those types.\nArrays support the `?` operator to to match any element of the array,\nas in `FromLinkID ? '7c61626f-ddbe-41af-93f6-b69f4ab6d308'`.\nArrays can perform LEN() to check for length, as in `LEN(FromLinkID) \u003e 0`.\nAn attribute naming a list of other entities can be filtered on their attributes with a `*` segment,\nas in `FromLink.*.Slug = 'upgrade-app'`, which holds when any element satisfies it.\nWithout the `*` such a reference is an error, since it names no single value to compare.\nMap support the dot notation to specify a particular map key, as in `Labels.tier = 'Backend'`.\nMaps support `IS NULL` and `IS NOT NULL` with dot notation to check for key absence or presence,\nas in `Labels.tier IS NULL` (key doesn't exist) or `Labels.tier IS NOT NULL` (key exists).\nComparison results can be tested with `IS TRUE`, `IS FALSE`, `IS NOT TRUE`, and `IS NOT FALSE`.\nThese are useful for nullable columns: `MergeSourceID = '\u003cuuid\u003e' IS NOT FALSE` matches rows where MergeSourceID equals the value OR is NULL.\nThe `IN` and `NOT IN` operators accept a comma-separated list of values in parentheses,\nsuch as `Slug IN ('slugone', 'slugtwo')` or `Labels.environment IN ('prod', 'staging')`.\nConjunctions are supported using the `AND` operator.\nAn example conjunction is:\n`CreatedAt \u003e= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.\n\nSupported attributes for filtering on ReviewComment: ChangeOrderID, CreatedAt, HiddenReason, OrganizationID, Path, ReplyToID, ReviewCommentID, RevisionID, RevisionNum, SpaceID, Text, UnitID, UpdatedAt, UserAgent, UserID.\n\nThe whole string must be query-encoded.",
             "required": false,
             "schema": {
               "type": "string"
@@ -18318,10 +18318,10 @@
           {
             "name": "include",
             "in": "query",
-            "description": "Include clause for expanding related entities in the response for ReviewComment.\nThe attribute names are case-sensitive, PascalCase, and\nexpected in a comma-separated list format as in the JSON encoding.\n\nSupported attributes for ReviewComment are OrganizationID, RevisionID, SpaceID, UnitID.\n\nThe whole string must be query-encoded.",
+            "description": "Include clause for expanding related entities in the response for ReviewComment.\nThe attribute names are case-sensitive, PascalCase, and\nexpected in a comma-separated list format as in the JSON encoding.\n\nSupported attributes for ReviewComment are ChangeOrderID, OrganizationID, RevisionID, SpaceID, UnitID.\n\nThe whole string must be query-encoded.",
             "required": false,
             "schema": {
-              "pattern": "^\\s*(OrganizationID|RevisionID|SpaceID|UnitID)\\s*(?:,\\s*(?:OrganizationID|RevisionID|SpaceID|UnitID)\\s*)*$",
+              "pattern": "^\\s*(ChangeOrderID|OrganizationID|RevisionID|SpaceID|UnitID)\\s*(?:,\\s*(?:ChangeOrderID|OrganizationID|RevisionID|SpaceID|UnitID)\\s*)*$",
               "type": "string"
             }
           },
@@ -18366,10 +18366,10 @@
           {
             "name": "order_by",
             "in": "query",
-            "description": "Comma-separated list of fields to sort ReviewComment results by, each in the form 'ASC|DESC:FieldName' or just 'FieldName'.\n\nField names are case-sensitive and PascalCase, as in the JSON encoding. Sort direction defaults to ASC when the 'DIRECTION:' prefix is omitted.\n\nSupported attributes for ordering ReviewComment: CreatedAt, HiddenReason, OrganizationID, Path, ReplyToID, ReviewCommentID, RevisionID, RevisionNum, Text, UnitID, UpdatedAt, UserAgent, UserID.\n\nExample: 'DESC:CreatedAt' or 'DisplayName,DESC:CreatedAt'.\n\nResults are ordered by the ReviewComment's ID after the fields named, and by the ID alone if none are.\n\nThe whole string must be query-encoded.",
+            "description": "Comma-separated list of fields to sort ReviewComment results by, each in the form 'ASC|DESC:FieldName' or just 'FieldName'.\n\nField names are case-sensitive and PascalCase, as in the JSON encoding. Sort direction defaults to ASC when the 'DIRECTION:' prefix is omitted.\n\nSupported attributes for ordering ReviewComment: ChangeOrderID, CreatedAt, HiddenReason, OrganizationID, Path, ReplyToID, ReviewCommentID, RevisionID, RevisionNum, Text, UnitID, UpdatedAt, UserAgent, UserID.\n\nExample: 'DESC:CreatedAt' or 'DisplayName,DESC:CreatedAt'.\n\nResults are ordered by the ReviewComment's ID after the fields named, and by the ID alone if none are.\n\nThe whole string must be query-encoded.",
             "required": false,
             "schema": {
-              "pattern": "^\\s*(?:(?:[Aa][Ss][Cc]|[Dd][Ee][Ss][Cc])\\s*:\\s*)?(CreatedAt|HiddenReason|OrganizationID|Path|ReplyToID|ReviewCommentID|RevisionID|RevisionNum|Text|UnitID|UpdatedAt|UserAgent|UserID)\\s*(?:,\\s*(?:(?:[Aa][Ss][Cc]|[Dd][Ee][Ss][Cc])\\s*:\\s*)?(?:CreatedAt|HiddenReason|OrganizationID|Path|ReplyToID|ReviewCommentID|RevisionID|RevisionNum|Text|UnitID|UpdatedAt|UserAgent|UserID)\\s*)*$",
+              "pattern": "^\\s*(?:(?:[Aa][Ss][Cc]|[Dd][Ee][Ss][Cc])\\s*:\\s*)?(ChangeOrderID|CreatedAt|HiddenReason|OrganizationID|Path|ReplyToID|ReviewCommentID|RevisionID|RevisionNum|Text|UnitID|UpdatedAt|UserAgent|UserID)\\s*(?:,\\s*(?:(?:[Aa][Ss][Cc]|[Dd][Ee][Ss][Cc])\\s*:\\s*)?(?:ChangeOrderID|CreatedAt|HiddenReason|OrganizationID|Path|ReplyToID|ReviewCommentID|RevisionID|RevisionNum|Text|UnitID|UpdatedAt|UserAgent|UserID)\\s*)*$",
               "type": "string"
             }
           },
@@ -18479,7 +18479,7 @@
           {
             "name": "where",
             "in": "query",
-            "description": "The specified string is an expression for the purpose of filtering\nthe list of ReviewComments returned. The expression syntax was inspired by SQL.\nIt supports conjunctions using `AND` of relational expressions of the form *attribute*\n*operator* *attribute_or_literal*. The attribute names are case-sensitive and PascalCase,\nas in the JSON encoding.\nStrings support the following operators: `\u003c`, `\u003e`, `\u003c=`, `\u003e=`, `=`, `!=`, `LIKE`, `NOT LIKE`, `ILIKE`, `~~`, `!~~`, `~`, `~*`, `!~`, `!~*`, `IN`, `NOT IN`.\nString pattern operators: `LIKE` and `~~` for pattern matching with `%` and `_` wildcards,\n`ILIKE` for case-insensitive pattern matching, `NOT LIKE` and `!~~` for negated pattern matching.\nString regex operators: `~` for regex matching, `~*` for case-insensitive regex,\n`!~` and `!~*` for regex not matching (case-sensitive and insensitive).\nIntegers support the following operators: `\u003c`, `\u003e`, `\u003c=`, `\u003e=`, `=`, `!=`, `IN`, `NOT IN`.\nUUIDs and boolean attributes support equality and inequality only.\nUUID and time literals must be quoted as string literals.\nString literals are quoted with single quotes, such as `'string'`.\nTime literals use the same form as when serialized as JSON,\nsuch as: `CreatedAt \u003e '2025-02-18T23:16:34'`.\nInteger and boolean literals are also supported for attributes of those types.\nArrays support the `?` operator to to match any element of the array,\nas in `FromLinkID ? '7c61626f-ddbe-41af-93f6-b69f4ab6d308'`.\nArrays can perform LEN() to check for length, as in `LEN(FromLinkID) \u003e 0`.\nAn attribute naming a list of other entities can be filtered on their attributes with a `*` segment,\nas in `FromLink.*.Slug = 'upgrade-app'`, which holds when any element satisfies it.\nWithout the `*` such a reference is an error, since it names no single value to compare.\nMap support the dot notation to specify a particular map key, as in `Labels.tier = 'Backend'`.\nMaps support `IS NULL` and `IS NOT NULL` with dot notation to check for key absence or presence,\nas in `Labels.tier IS NULL` (key doesn't exist) or `Labels.tier IS NOT NULL` (key exists).\nComparison results can be tested with `IS TRUE`, `IS FALSE`, `IS NOT TRUE`, and `IS NOT FALSE`.\nThese are useful for nullable columns: `MergeSourceID = '\u003cuuid\u003e' IS NOT FALSE` matches rows where MergeSourceID equals the value OR is NULL.\nThe `IN` and `NOT IN` operators accept a comma-separated list of values in parentheses,\nsuch as `Slug IN ('slugone', 'slugtwo')` or `Labels.environment IN ('prod', 'staging')`.\nConjunctions are supported using the `AND` operator.\nAn example conjunction is:\n`CreatedAt \u003e= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.\n\nSupported attributes for filtering on ReviewComment: CreatedAt, HiddenReason, OrganizationID, Path, ReplyToID, ReviewCommentID, RevisionID, RevisionNum, SpaceID, Text, UnitID, UpdatedAt, UserAgent, UserID.\n\nThe whole string must be query-encoded.",
+            "description": "The specified string is an expression for the purpose of filtering\nthe list of ReviewComments returned. The expression syntax was inspired by SQL.\nIt supports conjunctions using `AND` of relational expressions of the form *attribute*\n*operator* *attribute_or_literal*. The attribute names are case-sensitive and PascalCase,\nas in the JSON encoding.\nStrings support the following operators: `\u003c`, `\u003e`, `\u003c=`, `\u003e=`, `=`, `!=`, `LIKE`, `NOT LIKE`, `ILIKE`, `~~`, `!~~`, `~`, `~*`, `!~`, `!~*`, `IN`, `NOT IN`.\nString pattern operators: `LIKE` and `~~` for pattern matching with `%` and `_` wildcards,\n`ILIKE` for case-insensitive pattern matching, `NOT LIKE` and `!~~` for negated pattern matching.\nString regex operators: `~` for regex matching, `~*` for case-insensitive regex,\n`!~` and `!~*` for regex not matching (case-sensitive and insensitive).\nIntegers support the following operators: `\u003c`, `\u003e`, `\u003c=`, `\u003e=`, `=`, `!=`, `IN`, `NOT IN`.\nUUIDs and boolean attributes support equality and inequality only.\nUUID and time literals must be quoted as string literals.\nString literals are quoted with single quotes, such as `'string'`.\nTime literals use the same form as when serialized as JSON,\nsuch as: `CreatedAt \u003e '2025-02-18T23:16:34'`.\nInteger and boolean literals are also supported for attributes of those types.\nArrays support the `?` operator to to match any element of the array,\nas in `FromLinkID ? '7c61626f-ddbe-41af-93f6-b69f4ab6d308'`.\nArrays can perform LEN() to check for length, as in `LEN(FromLinkID) \u003e 0`.\nAn attribute naming a list of other entities can be filtered on their attributes with a `*` segment,\nas in `FromLink.*.Slug = 'upgrade-app'`, which holds when any element satisfies it.\nWithout the `*` such a reference is an error, since it names no single value to compare.\nMap support the dot notation to specify a particular map key, as in `Labels.tier = 'Backend'`.\nMaps support `IS NULL` and `IS NOT NULL` with dot notation to check for key absence or presence,\nas in `Labels.tier IS NULL` (key doesn't exist) or `Labels.tier IS NOT NULL` (key exists).\nComparison results can be tested with `IS TRUE`, `IS FALSE`, `IS NOT TRUE`, and `IS NOT FALSE`.\nThese are useful for nullable columns: `MergeSourceID = '\u003cuuid\u003e' IS NOT FALSE` matches rows where MergeSourceID equals the value OR is NULL.\nThe `IN` and `NOT IN` operators accept a comma-separated list of values in parentheses,\nsuch as `Slug IN ('slugone', 'slugtwo')` or `Labels.environment IN ('prod', 'staging')`.\nConjunctions are supported using the `AND` operator.\nAn example conjunction is:\n`CreatedAt \u003e= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.\n\nSupported attributes for filtering on ReviewComment: ChangeOrderID, CreatedAt, HiddenReason, OrganizationID, Path, ReplyToID, ReviewCommentID, RevisionID, RevisionNum, SpaceID, Text, UnitID, UpdatedAt, UserAgent, UserID.\n\nThe whole string must be query-encoded.",
             "required": false,
             "schema": {
               "type": "string"
@@ -18515,10 +18515,10 @@
           {
             "name": "include",
             "in": "query",
-            "description": "Include clause for expanding related entities in the response for ReviewComment.\nThe attribute names are case-sensitive, PascalCase, and\nexpected in a comma-separated list format as in the JSON encoding.\n\nSupported attributes for ReviewComment are OrganizationID, RevisionID, SpaceID, UnitID.\n\nThe whole string must be query-encoded.",
+            "description": "Include clause for expanding related entities in the response for ReviewComment.\nThe attribute names are case-sensitive, PascalCase, and\nexpected in a comma-separated list format as in the JSON encoding.\n\nSupported attributes for ReviewComment are ChangeOrderID, OrganizationID, RevisionID, SpaceID, UnitID.\n\nThe whole string must be query-encoded.",
             "required": false,
             "schema": {
-              "pattern": "^\\s*(OrganizationID|RevisionID|SpaceID|UnitID)\\s*(?:,\\s*(?:OrganizationID|RevisionID|SpaceID|UnitID)\\s*)*$",
+              "pattern": "^\\s*(ChangeOrderID|OrganizationID|RevisionID|SpaceID|UnitID)\\s*(?:,\\s*(?:ChangeOrderID|OrganizationID|RevisionID|SpaceID|UnitID)\\s*)*$",
               "type": "string"
             }
           },
@@ -18558,6 +18558,12 @@
               "schema": {
                 "type": "object",
                 "properties": {
+                  "ChangeOrderID": {
+                    "type": "string",
+                    "description": "",
+                    "format": "uuid",
+                    "nullable": true
+                  },
                   "HiddenReason": {
                     "type": "string",
                     "description": "The reason the entity is hidden, if it is. A hidden entity is left out of List and Search results, and of what bulk operations act on, unless the include_hidden parameter names its reason or is *, or the where parameter names the entity by Slug or ID. ConfigHub/YAML Units are created hidden with the reason BackingUnit unless given another.",
@@ -25100,15 +25106,6 @@
             "schema": {
               "type": "string",
               "format": "uuid"
-            }
-          },
-          {
-            "name": "container_images",
-            "in": "query",
-            "description": "If true, fill in ContainerImages: for each Space the ChangeOrder has landed in, the container images get-container-image finds at the Revisions its end Tag marks that differ from those at the Revisions its start Tag marks.",
-            "required": false,
-            "schema": {
-              "type": "boolean"
             }
           }
         ],
@@ -41949,7 +41946,7 @@
           {
             "name": "where",
             "in": "query",
-            "description": "The specified string is an expression for the purpose of filtering\nthe list of ReviewComments returned. The expression syntax was inspired by SQL.\nIt supports conjunctions using `AND` of relational expressions of the form *attribute*\n*operator* *attribute_or_literal*. The attribute names are case-sensitive and PascalCase,\nas in the JSON encoding.\nStrings support the following operators: `\u003c`, `\u003e`, `\u003c=`, `\u003e=`, `=`, `!=`, `LIKE`, `NOT LIKE`, `ILIKE`, `~~`, `!~~`, `~`, `~*`, `!~`, `!~*`, `IN`, `NOT IN`.\nString pattern operators: `LIKE` and `~~` for pattern matching with `%` and `_` wildcards,\n`ILIKE` for case-insensitive pattern matching, `NOT LIKE` and `!~~` for negated pattern matching.\nString regex operators: `~` for regex matching, `~*` for case-insensitive regex,\n`!~` and `!~*` for regex not matching (case-sensitive and insensitive).\nIntegers support the following operators: `\u003c`, `\u003e`, `\u003c=`, `\u003e=`, `=`, `!=`, `IN`, `NOT IN`.\nUUIDs and boolean attributes support equality and inequality only.\nUUID and time literals must be quoted as string literals.\nString literals are quoted with single quotes, such as `'string'`.\nTime literals use the same form as when serialized as JSON,\nsuch as: `CreatedAt \u003e '2025-02-18T23:16:34'`.\nInteger and boolean literals are also supported for attributes of those types.\nArrays support the `?` operator to to match any element of the array,\nas in `FromLinkID ? '7c61626f-ddbe-41af-93f6-b69f4ab6d308'`.\nArrays can perform LEN() to check for length, as in `LEN(FromLinkID) \u003e 0`.\nAn attribute naming a list of other entities can be filtered on their attributes with a `*` segment,\nas in `FromLink.*.Slug = 'upgrade-app'`, which holds when any element satisfies it.\nWithout the `*` such a reference is an error, since it names no single value to compare.\nMap support the dot notation to specify a particular map key, as in `Labels.tier = 'Backend'`.\nMaps support `IS NULL` and `IS NOT NULL` with dot notation to check for key absence or presence,\nas in `Labels.tier IS NULL` (key doesn't exist) or `Labels.tier IS NOT NULL` (key exists).\nComparison results can be tested with `IS TRUE`, `IS FALSE`, `IS NOT TRUE`, and `IS NOT FALSE`.\nThese are useful for nullable columns: `MergeSourceID = '\u003cuuid\u003e' IS NOT FALSE` matches rows where MergeSourceID equals the value OR is NULL.\nThe `IN` and `NOT IN` operators accept a comma-separated list of values in parentheses,\nsuch as `Slug IN ('slugone', 'slugtwo')` or `Labels.environment IN ('prod', 'staging')`.\nConjunctions are supported using the `AND` operator.\nAn example conjunction is:\n`CreatedAt \u003e= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.\n\nSupported attributes for filtering on ReviewComment: CreatedAt, HiddenReason, OrganizationID, Path, ReplyToID, ReviewCommentID, RevisionID, RevisionNum, SpaceID, Text, UnitID, UpdatedAt, UserAgent, UserID.\n\nThe whole string must be query-encoded.",
+            "description": "The specified string is an expression for the purpose of filtering\nthe list of ReviewComments returned. The expression syntax was inspired by SQL.\nIt supports conjunctions using `AND` of relational expressions of the form *attribute*\n*operator* *attribute_or_literal*. The attribute names are case-sensitive and PascalCase,\nas in the JSON encoding.\nStrings support the following operators: `\u003c`, `\u003e`, `\u003c=`, `\u003e=`, `=`, `!=`, `LIKE`, `NOT LIKE`, `ILIKE`, `~~`, `!~~`, `~`, `~*`, `!~`, `!~*`, `IN`, `NOT IN`.\nString pattern operators: `LIKE` and `~~` for pattern matching with `%` and `_` wildcards,\n`ILIKE` for case-insensitive pattern matching, `NOT LIKE` and `!~~` for negated pattern matching.\nString regex operators: `~` for regex matching, `~*` for case-insensitive regex,\n`!~` and `!~*` for regex not matching (case-sensitive and insensitive).\nIntegers support the following operators: `\u003c`, `\u003e`, `\u003c=`, `\u003e=`, `=`, `!=`, `IN`, `NOT IN`.\nUUIDs and boolean attributes support equality and inequality only.\nUUID and time literals must be quoted as string literals.\nString literals are quoted with single quotes, such as `'string'`.\nTime literals use the same form as when serialized as JSON,\nsuch as: `CreatedAt \u003e '2025-02-18T23:16:34'`.\nInteger and boolean literals are also supported for attributes of those types.\nArrays support the `?` operator to to match any element of the array,\nas in `FromLinkID ? '7c61626f-ddbe-41af-93f6-b69f4ab6d308'`.\nArrays can perform LEN() to check for length, as in `LEN(FromLinkID) \u003e 0`.\nAn attribute naming a list of other entities can be filtered on their attributes with a `*` segment,\nas in `FromLink.*.Slug = 'upgrade-app'`, which holds when any element satisfies it.\nWithout the `*` such a reference is an error, since it names no single value to compare.\nMap support the dot notation to specify a particular map key, as in `Labels.tier = 'Backend'`.\nMaps support `IS NULL` and `IS NOT NULL` with dot notation to check for key absence or presence,\nas in `Labels.tier IS NULL` (key doesn't exist) or `Labels.tier IS NOT NULL` (key exists).\nComparison results can be tested with `IS TRUE`, `IS FALSE`, `IS NOT TRUE`, and `IS NOT FALSE`.\nThese are useful for nullable columns: `MergeSourceID = '\u003cuuid\u003e' IS NOT FALSE` matches rows where MergeSourceID equals the value OR is NULL.\nThe `IN` and `NOT IN` operators accept a comma-separated list of values in parentheses,\nsuch as `Slug IN ('slugone', 'slugtwo')` or `Labels.environment IN ('prod', 'staging')`.\nConjunctions are supported using the `AND` operator.\nAn example conjunction is:\n`CreatedAt \u003e= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.\n\nSupported attributes for filtering on ReviewComment: ChangeOrderID, CreatedAt, HiddenReason, OrganizationID, Path, ReplyToID, ReviewCommentID, RevisionID, RevisionNum, SpaceID, Text, UnitID, UpdatedAt, UserAgent, UserID.\n\nThe whole string must be query-encoded.",
             "required": false,
             "schema": {
               "type": "string"
@@ -41976,10 +41973,10 @@
           {
             "name": "include",
             "in": "query",
-            "description": "Include clause for expanding related entities in the response for ReviewComment.\nThe attribute names are case-sensitive, PascalCase, and\nexpected in a comma-separated list format as in the JSON encoding.\n\nSupported attributes for ReviewComment are OrganizationID, RevisionID, SpaceID, UnitID.\n\nThe whole string must be query-encoded.",
+            "description": "Include clause for expanding related entities in the response for ReviewComment.\nThe attribute names are case-sensitive, PascalCase, and\nexpected in a comma-separated list format as in the JSON encoding.\n\nSupported attributes for ReviewComment are ChangeOrderID, OrganizationID, RevisionID, SpaceID, UnitID.\n\nThe whole string must be query-encoded.",
             "required": false,
             "schema": {
-              "pattern": "^\\s*(OrganizationID|RevisionID|SpaceID|UnitID)\\s*(?:,\\s*(?:OrganizationID|RevisionID|SpaceID|UnitID)\\s*)*$",
+              "pattern": "^\\s*(ChangeOrderID|OrganizationID|RevisionID|SpaceID|UnitID)\\s*(?:,\\s*(?:ChangeOrderID|OrganizationID|RevisionID|SpaceID|UnitID)\\s*)*$",
               "type": "string"
             }
           },
@@ -42024,10 +42021,10 @@
           {
             "name": "order_by",
             "in": "query",
-            "description": "Comma-separated list of fields to sort ReviewComment results by, each in the form 'ASC|DESC:FieldName' or just 'FieldName'.\n\nField names are case-sensitive and PascalCase, as in the JSON encoding. Sort direction defaults to ASC when the 'DIRECTION:' prefix is omitted.\n\nSupported attributes for ordering ReviewComment: CreatedAt, HiddenReason, OrganizationID, Path, ReplyToID, ReviewCommentID, RevisionID, RevisionNum, Text, UnitID, UpdatedAt, UserAgent, UserID.\n\nExample: 'DESC:CreatedAt' or 'DisplayName,DESC:CreatedAt'.\n\nResults are ordered by the ReviewComment's ID after the fields named, and by the ID alone if none are.\n\nThe whole string must be query-encoded.",
+            "description": "Comma-separated list of fields to sort ReviewComment results by, each in the form 'ASC|DESC:FieldName' or just 'FieldName'.\n\nField names are case-sensitive and PascalCase, as in the JSON encoding. Sort direction defaults to ASC when the 'DIRECTION:' prefix is omitted.\n\nSupported attributes for ordering ReviewComment: ChangeOrderID, CreatedAt, HiddenReason, OrganizationID, Path, ReplyToID, ReviewCommentID, RevisionID, RevisionNum, Text, UnitID, UpdatedAt, UserAgent, UserID.\n\nExample: 'DESC:CreatedAt' or 'DisplayName,DESC:CreatedAt'.\n\nResults are ordered by the ReviewComment's ID after the fields named, and by the ID alone if none are.\n\nThe whole string must be query-encoded.",
             "required": false,
             "schema": {
-              "pattern": "^\\s*(?:(?:[Aa][Ss][Cc]|[Dd][Ee][Ss][Cc])\\s*:\\s*)?(CreatedAt|HiddenReason|OrganizationID|Path|ReplyToID|ReviewCommentID|RevisionID|RevisionNum|Text|UnitID|UpdatedAt|UserAgent|UserID)\\s*(?:,\\s*(?:(?:[Aa][Ss][Cc]|[Dd][Ee][Ss][Cc])\\s*:\\s*)?(?:CreatedAt|HiddenReason|OrganizationID|Path|ReplyToID|ReviewCommentID|RevisionID|RevisionNum|Text|UnitID|UpdatedAt|UserAgent|UserID)\\s*)*$",
+              "pattern": "^\\s*(?:(?:[Aa][Ss][Cc]|[Dd][Ee][Ss][Cc])\\s*:\\s*)?(ChangeOrderID|CreatedAt|HiddenReason|OrganizationID|Path|ReplyToID|ReviewCommentID|RevisionID|RevisionNum|Text|UnitID|UpdatedAt|UserAgent|UserID)\\s*(?:,\\s*(?:(?:[Aa][Ss][Cc]|[Dd][Ee][Ss][Cc])\\s*:\\s*)?(?:ChangeOrderID|CreatedAt|HiddenReason|OrganizationID|Path|ReplyToID|ReviewCommentID|RevisionID|RevisionNum|Text|UnitID|UpdatedAt|UserAgent|UserID)\\s*)*$",
               "type": "string"
             }
           },
@@ -42421,10 +42418,10 @@
           {
             "name": "include",
             "in": "query",
-            "description": "Include clause for expanding related entities in the response for ReviewComment.\nThe attribute names are case-sensitive, PascalCase, and\nexpected in a comma-separated list format as in the JSON encoding.\n\nSupported attributes for ReviewComment are OrganizationID, RevisionID, SpaceID, UnitID.\n\nThe whole string must be query-encoded.",
+            "description": "Include clause for expanding related entities in the response for ReviewComment.\nThe attribute names are case-sensitive, PascalCase, and\nexpected in a comma-separated list format as in the JSON encoding.\n\nSupported attributes for ReviewComment are ChangeOrderID, OrganizationID, RevisionID, SpaceID, UnitID.\n\nThe whole string must be query-encoded.",
             "required": false,
             "schema": {
-              "pattern": "^\\s*(OrganizationID|RevisionID|SpaceID|UnitID)\\s*(?:,\\s*(?:OrganizationID|RevisionID|SpaceID|UnitID)\\s*)*$",
+              "pattern": "^\\s*(ChangeOrderID|OrganizationID|RevisionID|SpaceID|UnitID)\\s*(?:,\\s*(?:ChangeOrderID|OrganizationID|RevisionID|SpaceID|UnitID)\\s*)*$",
               "type": "string"
             }
           },
@@ -42575,6 +42572,12 @@
               "schema": {
                 "type": "object",
                 "properties": {
+                  "ChangeOrderID": {
+                    "type": "string",
+                    "description": "",
+                    "format": "uuid",
+                    "nullable": true
+                  },
                   "HiddenReason": {
                     "type": "string",
                     "description": "The reason the entity is hidden, if it is. A hidden entity is left out of List and Search results, and of what bulk operations act on, unless the include_hidden parameter names its reason or is *, or the where parameter names the entity by Slug or ID. ConfigHub/YAML Units are created hidden with the reason BackingUnit unless given another.",
@@ -51987,10 +51990,10 @@
           {
             "name": "include",
             "in": "query",
-            "description": "Comma-separated parts of the result to return in addition to the actions: Mutations for what each Unit write changed, or on a dry run would change, as entries of its MutationSources, and Diff for the same change path by path with the values on both sides. They cost something to return, and on a dry run either one runs the merges a plan otherwise skips, so they are returned only when named.\n\nSupported values: Mutations, Diff.",
+            "description": "Comma-separated parts of the result to return in addition to the actions: Mutations for what each Unit write changed, or on a dry run would change, as entries of its MutationSources, and Diff for the same change path by path with the values on both sides. They cost something to return, and on a dry run either one runs the merges a plan otherwise skips, so they are returned only when named. Context, with Diff, adds to each Diff the unchanged paths around the changes: every unchanged child of each map or array that holds a change, up to the resource, as ChangeType None.\n\nSupported values: Mutations, Diff, Context.",
             "required": false,
             "schema": {
-              "pattern": "^\\s*(Mutations|Diff)\\s*(?:,\\s*(?:Mutations|Diff)\\s*)*$",
+              "pattern": "^\\s*(Mutations|Diff|Context)\\s*(?:,\\s*(?:Mutations|Diff|Context)\\s*)*$",
               "type": "string"
             }
           }
@@ -55866,15 +55869,6 @@
               "references": "ChangeWorkflow"
             }
           },
-          "ContainerImages": {
-            "type": "array",
-            "items": {
-              "$ref": "#/components/schemas/ChangeOrderSpaceContainerImages"
-            },
-            "description": "ContainerImages lists, for each Space the ChangeOrder has landed in, the container images it changed there: in each Unit the end Tag marks, the images get-container-image finds that differ from those at the Revision the start Tag marks. Derived only when a single ChangeOrder is read with container_images=true, never in a list. Spaces and Units the reader cannot view are left out.",
-            "readOnly": true,
-            "x-go-type-skip-optional-pointer": true
-          },
           "CreatedAt": {
             "type": "string",
             "description": "The timestamp when the entity was created in \"2023-01-01T12:00:00Z\" format.",
@@ -56326,61 +56320,6 @@
         },
         "description": "Defines a change's identity as it moves between Spaces."
       },
-      "ChangeOrderContainerImageChange": {
-        "type": "object",
-        "properties": {
-          "FromImage": {
-            "type": "string",
-            "description": "The image before the change; absent for a container the change added.",
-            "x-go-type-skip-optional-pointer": true
-          },
-          "FromRevisionNum": {
-            "type": "integer",
-            "description": "The Revision the start Tag marks; absent for a Unit the change added.",
-            "format": "int64",
-            "x-go-type-skip-optional-pointer": true
-          },
-          "Path": {
-            "type": "string",
-            "description": "The path of the image within the resource.",
-            "x-go-type-skip-optional-pointer": true
-          },
-          "ResourceName": {
-            "type": "string",
-            "description": "The name of the resource the container is in, as it is at the end Tag's Revision.",
-            "x-go-type-skip-optional-pointer": true
-          },
-          "ResourceType": {
-            "type": "string",
-            "description": "The type of the resource the container is in.",
-            "x-go-type-skip-optional-pointer": true
-          },
-          "ToImage": {
-            "type": "string",
-            "description": "The image after the change; absent for a container the change removed.",
-            "x-go-type-skip-optional-pointer": true
-          },
-          "ToRevisionNum": {
-            "type": "integer",
-            "description": "The Revision the end Tag marks.",
-            "format": "int64",
-            "x-go-type-skip-optional-pointer": true
-          },
-          "UnitID": {
-            "type": "string",
-            "description": "The Unit the image is in.",
-            "format": "uuid",
-            "example": "248df4b7-aa70-47b8-a036-33ac447e668d",
-            "x-go-type-skip-optional-pointer": true,
-            "x-omitzero": true
-          },
-          "UnitSlug": {
-            "type": "string",
-            "description": "The Unit's slug.",
-            "x-go-type-skip-optional-pointer": true
-          }
-        }
-      },
       "ChangeOrderCreateOrUpdateResponse": {
         "type": "object",
         "properties": {
@@ -56641,33 +56580,6 @@
             "example": "248df4b7-aa70-47b8-a036-33ac447e668d",
             "x-go-type-skip-optional-pointer": true,
             "x-omitzero": true
-          }
-        }
-      },
-      "ChangeOrderSpaceContainerImages": {
-        "type": "object",
-        "properties": {
-          "Images": {
-            "type": "array",
-            "items": {
-              "$ref": "#/components/schemas/ChangeOrderContainerImageChange"
-            },
-            "description": "The images that changed, by Unit, resource, and path.",
-            "nullable": true,
-            "x-go-type-skip-optional-pointer": true
-          },
-          "SpaceID": {
-            "type": "string",
-            "description": "The Space the images changed in.",
-            "format": "uuid",
-            "example": "248df4b7-aa70-47b8-a036-33ac447e668d",
-            "x-go-type-skip-optional-pointer": true,
-            "x-omitzero": true
-          },
-          "SpaceSlug": {
-            "type": "string",
-            "description": "The Space's slug.",
-            "x-go-type-skip-optional-pointer": true
           }
         }
       },
@@ -59377,6 +59289,9 @@
       "ExtendedReviewComment": {
         "type": "object",
         "properties": {
+          "ChangeOrder": {
+            "$ref": "#/components/schemas/ChangeOrder"
+          },
           "Error": {
             "$ref": "#/components/schemas/ResponseError"
           },
@@ -64282,6 +64197,17 @@
         ],
         "type": "object",
         "properties": {
+          "ChangeOrderID": {
+            "type": "string",
+            "description": "Unique identifier of the ChangeOrder the comment was made in review of, which may be in another Space. Optional; requires Use permission on the ChangeOrder. A reply takes the ChangeOrderID of the comment it answers, and may not name another. Immutable.",
+            "format": "uuid",
+            "example": "248df4b7-aa70-47b8-a036-33ac447e668d",
+            "x-confighub-where": {
+              "dataType": "uuid",
+              "references": "ChangeOrder",
+              "expandable": true
+            }
+          },
           "CreatedAt": {
             "type": "string",
             "description": "The timestamp when the entity was created in \"2023-01-01T12:00:00Z\" format.",

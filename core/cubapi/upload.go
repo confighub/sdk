@@ -69,3 +69,9 @@ func WithUploadMutations(params *goclientnew.UploadParams) {
 func WithUploadDiff(params *goclientnew.UploadParams) {
 	params.Include = appendInclude(params.Include, "Diff")
 }
+
+// WithUploadDiffContext adds to each Diff [WithUploadDiff] asks for the unchanged paths around
+// its changes, as ChangeType None. It needs WithUploadDiff.
+func WithUploadDiffContext(params *goclientnew.UploadParams) {
+	params.Include = appendInclude(params.Include, "Context")
+}

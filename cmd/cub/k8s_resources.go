@@ -69,7 +69,7 @@ func addK8sQueryFlags(cmd *cobra.Command) {
 	enableWhereFlag(cmd)
 	enableFilterFlag(cmd)
 	cmd.Flags().StringSliceVar(&k8sQueryTargets, "target", nil,
-		"only Units bound to these targets, as space-slug/target-slug (can be repeated or comma-separated); implies --space '*' unless --space is given")
+		"only Units bound to these targets, as space-slug/target-slug (can be repeated or comma-separated); spans the organization unless --space is given")
 	cmd.Flags().StringVarP(&k8sQueryNamespace, "namespace", "n", "",
 		"only resources in this Kubernetes namespace")
 	cmd.Flags().StringVar(&whereResource, "where-resource", "",

@@ -20,8 +20,8 @@ Examples:
   # List all tags in a space with headers
   cub tag list --space my-space
 
-  # List tags across all spaces (requires --space "*")
-  cub tag list --space "*" --where "Labels.version = '1.0'"
+  # List tags across all spaces
+  cub tag list --where "Labels.version = '1.0'"
 
   # List tags without headers for scripting
   cub tag list --space my-space --no-headers

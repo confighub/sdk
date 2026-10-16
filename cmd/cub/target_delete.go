@@ -30,8 +30,8 @@ Examples:
   # Delete targets for specific toolchain
   cub target delete --where "ToolchainType = 'Kubernetes/YAML'"
 
-  # Delete targets across all spaces (requires --space "*")
-  cub target delete --space "*" --where "Labels.cleanup = 'true'"
+  # Delete targets across all spaces
+  cub target delete --where "Labels.cleanup = 'true'"
 
   # Delete specific targets by slug
   cub target delete --target my-target,another-target

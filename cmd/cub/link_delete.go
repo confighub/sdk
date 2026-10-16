@@ -34,8 +34,8 @@ Examples:
   # Delete cross-space links
   cub link delete --where "ToSpaceID != SpaceID"
 
-  # Delete links across all spaces (requires --space "*")
-  cub link delete --space "*" --where "Labels.cleanup = 'true'"
+  # Delete links across all spaces
+  cub link delete --where "Labels.cleanup = 'true'"
 
   # Delete specific links by slug
   cub link delete --link my-link,another-link

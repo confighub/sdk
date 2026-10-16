@@ -55,3 +55,9 @@ func WithDemoteMutations(params *goclientnew.DemoteParams) {
 func WithDemoteDiff(params *goclientnew.DemoteParams) {
 	params.Include = appendInclude(params.Include, "Diff")
 }
+
+// WithDemoteDiffContext adds to each Diff [WithDemoteDiff] asks for the unchanged paths around
+// its changes, as ChangeType None. It needs WithDemoteDiff.
+func WithDemoteDiffContext(params *goclientnew.DemoteParams) {
+	params.Include = appendInclude(params.Include, "Context")
+}

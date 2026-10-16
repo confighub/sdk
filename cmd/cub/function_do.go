@@ -26,7 +26,7 @@ var functionDoCmd = &cobra.Command{
 }
 
 func getFunctionDoHelp() string {
-	baseHelp := `Invoke a function on units in a space, or across all spaces if the selected space is "*".
+	baseHelp := `Invoke a function on units in a space, or across all spaces without --space.
 
 This is the mixed escape hatch: it accepts any kind of function. Prefer the
 verb that matches the kind -- cub function set for mutating functions, cub
@@ -141,7 +141,7 @@ Key flags for agents:
   <kind>/<namespace>/<name>, without knowing which unit holds it; an error when
   it matches none or more than one
 - --where: Filter units (use quotes around expressions)
-- --space: Target space ("*" for all spaces where supported)
+- --space: Target space (omit for all spaces where supported)
 - --variant: Target the space that is a Component's variant, as <component>/<variant>;
   the same scope as --space
 - --show output: Show just function output, not execution details

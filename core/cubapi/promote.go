@@ -96,6 +96,12 @@ func WithPromoteDiff(params *goclientnew.PromoteParams) {
 	params.Include = appendInclude(params.Include, "Diff")
 }
 
+// WithPromoteDiffContext adds to each Diff [WithPromoteDiff] asks for the unchanged paths around
+// its changes, as ChangeType None. It needs WithPromoteDiff.
+func WithPromoteDiffContext(params *goclientnew.PromoteParams) {
+	params.Include = appendInclude(params.Include, "Context")
+}
+
 // WithPromoteConfigData asks a promotion for the configuration each Unit write produced, or on a
 // dry run would produce.
 func WithPromoteConfigData(params *goclientnew.PromoteParams) {

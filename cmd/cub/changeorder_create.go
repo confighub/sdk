@@ -29,7 +29,10 @@ func getChangeOrderCreateHelp() string {
 
 SINGLE CHANGEORDER CREATION:
 
-Create a new changeorder to record an entity changeorder specification.
+Create a change order: the change it names, where it is headed, and how it propagates. Creating it
+creates the start and end tags that bound the change. How it propagates -- its update type,
+invocation, and change workflow -- is fixed once it is created; where it is headed can be changed
+with "cub changeorder update".
 
 Examples:
 ` + "```" + `

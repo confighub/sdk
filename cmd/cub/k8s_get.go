@@ -64,29 +64,29 @@ Examples:
   cub k8s get netpol --target prod-use2/prod-use2-oci
 
   # Two types at once, across all spaces
-  cub k8s get deploy,sts --space "*"
+  cub k8s get deploy,sts
 
   # Describe one resource by name
   cub k8s get deploy my-app --space my-space --show detail
 
   # Print the YAML of every ConfigMap in a namespace
-  cub k8s get cm -n kube-system --space "*" --show data
+  cub k8s get cm -n kube-system --show data
 
   # Everything except CRDs in one unit
   cub k8s get all --space my-space --where "Unit.Slug = 'my-unit'"
 
   # Everything in the production spaces whose unit name ends in -backend
-  cub k8s get all --space "*" --where "Unit.Slug LIKE '%-backend' AND Space.Labels.Environment = 'prod'"
+  cub k8s get all --where "Unit.Slug LIKE '%-backend' AND Space.Labels.Environment = 'prod'"
 
   # Deployments with more than one replica
-  cub k8s get deploy --space "*" --where-resource "spec.replicas > 1"
+  cub k8s get deploy --where-resource "spec.replicas > 1"
 
   # Custom resources by Kind
-  cub k8s get externalsecrets --space "*"
+  cub k8s get externalsecrets
 
   # Machine-readable output
-  cub k8s get svc --space "*" -o json
-  cub k8s get svc --space "*" -o name
+  cub k8s get svc -o json
+  cub k8s get svc -o name
 ` + "```" + `
 
 Filtering combines four independent scopes, all ANDed:
@@ -107,7 +107,7 @@ resources, so a fleet-wide sweep does not read every unit's configuration.`
 
 Cost model: the resource type is applied inside a single function pass over the selected
 Units, so narrowing with --space, --target, or --where is what makes a query fast; narrowing
-the type alone does not reduce the number of Units read. "--space '*'" over a large
+the type alone does not reduce the number of Units read. A query without --space over a large
 organization takes tens of seconds.
 
 Use --show data when you need to feed the YAML to another tool, --show detail to read

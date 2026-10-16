@@ -33,8 +33,8 @@ Examples:
   # Delete bridgeworkers with specific status
   cub worker delete --where "Status = 'inactive'"
 
-  # Delete bridgeworkers across all spaces (requires --space "*")
-  cub worker delete --space "*" --where "Labels.cleanup = 'true'"
+  # Delete bridgeworkers across all spaces
+  cub worker delete --where "Labels.cleanup = 'true'"
 
   # Delete specific bridgeworkers by name
   cub worker delete --worker my-worker,another-worker

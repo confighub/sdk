@@ -19,21 +19,36 @@ the change itself: the ChangeSets a change creates as it is promoted from Space 
 the same ChangeOrderID, which is what lets a fleet be asked where a change has landed.
 
 A ChangeOrder resides in a Space, by convention the one holding the changes to promote, and is
-bounded by a start and an end Tag created with it. It selects where it is headed with a Filter over
-Spaces, and names the Link UpdateType to follow (UpgradeUnit, the clone lineage).
+bounded by a start and an end Tag created with it. Where it is headed is its InScopeSpaceIDs: a
+list given with --in-scope-space, or one the server works out from --where-space-field,
+--space-filter, or --component. Given none, it is headed wherever its Links reach. Its UpdateType
+says how it propagates: UpgradeUnit (the clone lineage, the default) and MergeUnits follow Links
+and take the change from Revisions the source Unit already has; Insert, Upsert, and
+TransformPaths carry a change made to Units outside its scope into the Spaces in scope, over Links
+of that type; and Invoke runs one Invocation in each Space in scope.
 
-Creating one decides what the change is; promoting one takes it into a target:
+Creating one decides what the change is; promoting one takes it into the Spaces it is headed for:
 
-  cub unit update --patch --space my-dev --where "Slug LIKE '%'" \
-      --upgrade --change-order my-base/release-42 --change-desc "Take release-42"
+  cub variant promote my-dev --change-order my-base/release-42
 
 The change order supplies the range, so units it does not cover are passed over and a unit that has
 merged past where it starts is an error. A unit short of it merges the revisions before the start
-first, unmarked, unless --prior-revisions says Skip or Error. It marks what it promoted, so one
-restore undoes it:
+first, unmarked, unless --prior-revisions says Skip or Error. To promote it into the units a
+selection picks instead of a whole Space, use "cub unit update --upgrade --change-order".
 
-  cub unit update --patch --space my-dev --where "Slug LIKE '%'" \
-      --restore Before:ChangeOrder:my-base/release-42 --change-desc "Roll release-42 back"
+A change order created with --change-workflow is promoted through that workflow's stages, and the
+server holds each promotion to the entry gates of the stage it enters. Without a Space,
+"cub variant promote" advances the change into the next stage it has not reached, or into the
+stage --target-stage names:
+
+  cub variant promote --change-order my-base/release-42 --target-stage staging
+
+Aborting a change order says the change is not coming to the Spaces still waiting for it, and is
+what undoing it requires. It marks what it promoted, so one demote undoes it in a Space however
+many revisions it made, and records that it did:
+
+  cub changeorder update my-base/release-42 --aborted-reason "superseded by release-43"
+  cub variant demote my-dev --change-order my-base/release-42
 `, ""),
 	PersistentPreRunE: spacePreRunE,
 }

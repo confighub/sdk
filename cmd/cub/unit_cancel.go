@@ -29,13 +29,13 @@ Examples:
 
   # Cancel operations for one component's units in dev
   COMPONENT_ID=$(cub component get api -o jq=.Component.ComponentID)
-  cub unit cancel --space "*" --where "Space.ComponentID = '$COMPONENT_ID' AND Space.Labels.Environment = 'dev'"
+  cub unit cancel --where "Space.ComponentID = '$COMPONENT_ID' AND Space.Labels.Environment = 'dev'"
 
   # Cancel operations for specific units by slug
   cub unit cancel --unit my-unit,another-unit
 
-  # Cancel operations across all spaces (requires --space "*")
-  cub unit cancel --space "*" --where "Slug = 'backend'"
+  # Cancel operations across all spaces
+  cub unit cancel --where "Slug = 'backend'"
 `+"```"+`
 `, ""),
 	Args:        cobra.MaximumNArgs(1), // Allow 0 or 1 args (0 for bulk mode)

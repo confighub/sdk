@@ -22,8 +22,8 @@ Examples:
   # List all links in a space
   cub link list --space my-space
 
-  # List links across all spaces (requires --space "*")
-  cub link list --space "*" --where "DisplayName = 'app-to-db'"
+  # List links across all spaces
+  cub link list --where "DisplayName = 'app-to-db'"
 
   # List links without headers for scripting
   cub link list --space my-space --no-headers
@@ -44,19 +44,19 @@ Examples:
   cub link list --space my-space --where "FromUnitID = 'c871ca3a-d9ca-4eeb-a576-79c3b5a2ca97'"
 
   # List cross-space links across all spaces
-  cub link list --space "*" --where "ToSpaceID != SpaceID"
+  cub link list --where "ToSpaceID != SpaceID"
 
   # List the links that are behind their upstream unit and do not update themselves
-  cub link list --space "*" --where "Stale = true AND AutoUpdate = false"
+  cub link list --where "Stale = true AND AutoUpdate = false"
 
   # List the links that carry a named attribute
-  cub link list --space "*" --where "Bindings.*.AttributeName = 'image'"
+  cub link list --where "Bindings.*.AttributeName = 'image'"
 
   # List the transform links that write a path
-  cub link list --space "*" --where "DownstreamPaths.*.Path LIKE 'spec.replicas%'"
+  cub link list --where "DownstreamPaths.*.Path LIKE 'spec.replicas%'"
 
   # List the links that stamp a guard on what they write
-  cub link list --space "*" --where "Guards.owner = 'transform-link'"
+  cub link list --where "Guards.owner = 'transform-link'"
 `+"```"+`
 `, ""),
 	Args:        cobra.ExactArgs(0),

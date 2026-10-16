@@ -228,7 +228,7 @@ func includeWriteDiff() *string {
 // bulkDataWhere scopes a caller's where clause to the Space the command is pointed at. The
 // bulk endpoints are organization-level -- "the configuration of everything matching this"
 // rarely stops at a Space boundary -- so a Space is a where clause like any other rather than
-// part of the path. `--space "*"` means the whole organization and adds nothing.
+// part of the path. No --space, or "*", means the whole organization and adds nothing.
 func bulkDataWhere(whereClause string) string {
 	if selectedSpaceID == "" || selectedSpaceID == "*" {
 		return whereClause

@@ -17,11 +17,15 @@ A ChangeWorkflow declares how a change is promoted: the ordered stages it moves 
 Spaces each stage selects, and the gates that have to pass before it enters one. It is the
 definition; a ChangeOrder is the invocation, and one workflow governs many of them.
 
-A workflow names no component and no base Space. Both come from the ChangeOrder being promoted --
-the base is the Space the change order lives in, and the component is that Space's Component label
--- so one workflow resolves to different Spaces under different change orders. That is what lets a
-workflow be cloned into another component's Space and give it the same shape of rollout, which
-"cub changeworkflow create" does in bulk mode.
+A workflow names no base Space and no scope. Both come from the ChangeOrder being promoted -- the
+base is the Space the change order lives in, and a stage's Spaces are those its WhereSpace selects
+among the change order's InScopeSpaceIDs -- so one workflow resolves to different Spaces under
+different change orders. That is what lets a workflow be cloned into another component's Space and
+give it the same shape of rollout, which "cub changeworkflow create" does in bulk mode.
+
+The component plays no part in which Spaces a stage selects. The Component named by the ComponentID
+of the change order's Space decides only which workflows it may be promoted under, with its
+AllowedChangeWorkflowIDs and ChangeWorkflowRequired.
 
 "cub changeorder create --change-workflow" names the workflow a change order is promoted under.
 `, ""),

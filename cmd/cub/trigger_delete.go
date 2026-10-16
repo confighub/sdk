@@ -33,8 +33,8 @@ Examples:
   # Delete triggers for specific function
   cub trigger delete --where "FunctionName = 'validate'"
 
-  # Delete triggers across all spaces (requires --space "*")
-  cub trigger delete --space "*" --where "Labels.cleanup = 'true'"
+  # Delete triggers across all spaces
+  cub trigger delete --where "Labels.cleanup = 'true'"
 
   # Delete specific triggers by slug
   cub trigger delete --trigger my-trigger,another-trigger

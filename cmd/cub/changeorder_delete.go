@@ -33,8 +33,8 @@ Examples:
   # Delete changeorders with specific descriptions
   cub changeorder delete --where "Description LIKE '%deprecated%'"
 
-  # Delete changeorders across all spaces (requires --space "*")
-  cub changeorder delete --space "*" --where "Labels.cleanup = 'true'"
+  # Delete changeorders across all spaces
+  cub changeorder delete --where "Labels.cleanup = 'true'"
 
   # Delete specific changeorders by slug
   cub changeorder delete --changeorder old-changeorder,deprecated-changeorder

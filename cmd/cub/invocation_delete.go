@@ -33,8 +33,8 @@ Examples:
   # Delete invocations for specific toolchain
   cub invocation delete --where "ToolchainType = 'Kubernetes/YAML'"
 
-  # Delete invocations across all spaces (requires --space "*")
-  cub invocation delete --space "*" --where "Labels.cleanup = 'true'"
+  # Delete invocations across all spaces
+  cub invocation delete --where "Labels.cleanup = 'true'"
 
   # Delete specific invocations by slug
   cub invocation delete --invocation my-invocation,another-invocation

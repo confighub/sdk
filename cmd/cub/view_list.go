@@ -23,8 +23,8 @@ Examples:
   # List all views in a space with headers
   cub view list --space my-space
 
-  # List views across all spaces (requires --space "*")
-  cub view list --space "*" --where "FilterID IS NOT NULL"
+  # List views across all spaces
+  cub view list --where "FilterID IS NOT NULL"
 
   # List views without headers for scripting
   cub view list --space my-space --no-headers

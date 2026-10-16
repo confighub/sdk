@@ -39,7 +39,7 @@ Examples:
   cub unit move --space my-space --where "Labels.App = 'web'" other-space
 
   # Preview a move across all spaces
-  cub unit move --space "*" --where "Labels.App = 'web'" --dry-run other-space
+  cub unit move --where "Labels.App = 'web'" --dry-run other-space
 
   # Move specific units by slug
   cub unit move --space my-space --unit my-unit,another-unit other-space

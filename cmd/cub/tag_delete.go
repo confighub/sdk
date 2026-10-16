@@ -33,8 +33,8 @@ Examples:
   # Delete tags with specific labels
   cub tag delete --where "Labels.archived = 'true'"
 
-  # Delete tags across all spaces (requires --space "*")
-  cub tag delete --space "*" --where "Labels.cleanup = 'true'"
+  # Delete tags across all spaces
+  cub tag delete --where "Labels.cleanup = 'true'"
 
   # Delete specific tags by slug
   cub tag delete --tag old-tag,deprecated-tag

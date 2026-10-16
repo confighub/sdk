@@ -41,33 +41,33 @@ Examples:
   cub resource list --space my-space
 
   # List every Deployment in the organization
-  cub resource list --space "*" --where "ResourceType = 'apps/v1/Deployment'"
+  cub resource list --where "ResourceType = 'apps/v1/Deployment'"
 
   # List everything headed for one target, across all spaces
-  cub resource list --space "*" --where "TargetID = '<target-uuid>'"
+  cub resource list --where "TargetID = '<target-uuid>'"
 
   # Find resources that are not bound to any target yet
-  cub resource list --space "*" --where "TargetID IS NULL"
+  cub resource list --where "TargetID IS NULL"
 
   # Filter by the resource's own Kubernetes labels, or by its space's labels
-  cub resource list --space "*" --where "Data.metadata.labels.app = 'checkout'"
-  cub resource list --space "*" --where "Space.Labels.Environment = 'prod' AND ResourceType = 'v1/Service'"
+  cub resource list --where "Data.metadata.labels.app = 'checkout'"
+  cub resource list --where "Space.Labels.Environment = 'prod' AND ResourceType = 'v1/Service'"
 
   # Filter by its space's Component
   COMPONENT_ID=$(cub component get checkout -o jq=.Component.ComponentID)
-  cub resource list --space "*" --where "Space.ComponentID = '$COMPONENT_ID'"
+  cub resource list --where "Space.ComponentID = '$COMPONENT_ID'"
 
   # Find Deployments running more than one replica
-  cub resource list --space "*" --where "ResourceType = 'apps/v1/Deployment' AND Data.spec.replicas > 1"
+  cub resource list --where "ResourceType = 'apps/v1/Deployment' AND Data.spec.replicas > 1"
 
   # Find a named container's image, wherever it sits in the containers array
-  cub resource list --space "*" --where "Data.spec.template.spec.containers.?name=nginx.image LIKE 'nginx:1.%'"
+  cub resource list --where "Data.spec.template.spec.containers.?name=nginx.image LIKE 'nginx:1.%'"
 
   # Any container running an image from a given registry
-  cub resource list --space "*" --where "Data.spec.template.spec.containers.*.image LIKE 'ghcr.io/%'"
+  cub resource list --where "Data.spec.template.spec.containers.*.image LIKE 'ghcr.io/%'"
 
   # Find resources by name
-  cub resource list --space "*" --where "ResourceName LIKE '%/checkout%'"
+  cub resource list --where "ResourceName LIKE '%/checkout%'"
 
   # Find resources whose data has a top-level key
   cub resource list --space my-space --where "Data ? 'spec'"

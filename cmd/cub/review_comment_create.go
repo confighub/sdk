@@ -23,6 +23,12 @@ var reviewCommentCreateCmd = &cobra.Command{
 The comment can be about one resource, named as <resource-type>:<resource-name>, and one path in
 it. With --reply-to it answers another review comment on the same unit.
 
+With --change-order the comment is part of the review of a change order. That is for a unit the
+change order will change but whose revisions do not record the change yet: one it promotes a
+change made elsewhere into, or one it invokes a function on. A reply takes the change order of the
+comment it answers. A comment on a change set needs no --change-order, since the change set's
+revisions are marked with it.
+
 Examples:
 `+"```"+`
   # Comment on revision 4 of a unit
@@ -31,6 +37,10 @@ Examples:
   # Comment on one path of one resource
   cub review-comment create my-space/my-deployment --revision-num 4 \
     --resource apps/v1/Deployment:default/web --path spec.replicas --text "Why 5 replicas?"
+
+  # Comment on the revision a change order will change
+  cub review-comment create prod/my-deployment --revision-num 7 \
+    --change-order dev/raise-replicas --text "Is prod sized for this?"
 
   # Reply to a comment
   cub review-comment create my-space/my-deployment --revision-num 4 \
@@ -46,6 +56,7 @@ var reviewCommentCreateArgs struct {
 	replyTo     string
 	resource    string
 	path        string
+	changeOrder string
 }
 
 func init() {
@@ -59,6 +70,7 @@ func init() {
 	reviewCommentCreateCmd.Flags().StringVar(&reviewCommentCreateArgs.replyTo, "reply-to", "", "ID of the review comment, on the same unit, this one replies to")
 	reviewCommentCreateCmd.Flags().StringVar(&reviewCommentCreateArgs.resource, "resource", "", "resource the comment is about, as <resource-type>:<resource-name>, e.g. apps/v1/Deployment:default/web")
 	reviewCommentCreateCmd.Flags().StringVar(&reviewCommentCreateArgs.path, "path", "", "path, within the resource, the comment is about")
+	reviewCommentCreateCmd.Flags().StringVar(&reviewCommentCreateArgs.changeOrder, "change-order", "", "change order the comment is part of the review of, as <space>/<slug> or an ID; a bare slug resolves in the selected space, and a change order resides where its change was made, which is often not the unit's space")
 	reviewCommentCmd.AddCommand(reviewCommentCreateCmd)
 }
 
@@ -109,6 +121,13 @@ func reviewCommentCreateCmdRun(cmd *cobra.Command, args []string) error {
 	}
 	if reviewCommentCreateArgs.path != "" {
 		newBody.Path = reviewCommentCreateArgs.path
+	}
+	if reviewCommentCreateArgs.changeOrder != "" {
+		changeOrderID, err := resolveChangeOrderID(reviewCommentCreateArgs.changeOrder)
+		if err != nil {
+			return err
+		}
+		newBody.ChangeOrderID = &changeOrderID
 	}
 	if newBody.RevisionNum == 0 {
 		return fmt.Errorf("--revision-num is required")

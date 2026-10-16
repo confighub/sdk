@@ -33,8 +33,8 @@ Examples:
   # Delete filters with specific resource type
   cub filter delete --where "ResourceType = 'apps/v1/Deployment'"
 
-  # Delete filters across all spaces (requires --space "*")
-  cub filter delete --space "*" --where "Labels.cleanup = 'true'"
+  # Delete filters across all spaces
+  cub filter delete --where "Labels.cleanup = 'true'"
 
   # Delete specific filters by slug
   cub filter delete --filter-entity my-filter,another-filter

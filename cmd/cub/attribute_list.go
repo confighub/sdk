@@ -20,8 +20,8 @@ Examples:
   # List all attributes in a space
   cub attribute list --space my-space
 
-  # List attributes across all spaces (requires --space "*")
-  cub attribute list --space "*"
+  # List attributes across all spaces
+  cub attribute list
 
   # List attributes in JSON format
   cub attribute list --space my-space -o json

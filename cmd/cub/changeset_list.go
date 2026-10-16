@@ -20,8 +20,8 @@ Examples:
   # List all changesets in a space with headers
   cub changeset list --space my-space
 
-  # List changesets across all spaces (requires --space "*")
-  cub changeset list --space "*" --where "Description LIKE '%release%'"
+  # List changesets across all spaces
+  cub changeset list --where "Description LIKE '%release%'"
 
   # List changesets without headers for scripting
   cub changeset list --space my-space --no-headers

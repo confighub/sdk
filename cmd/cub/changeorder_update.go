@@ -67,8 +67,6 @@ Examples:
   # Withdraw a review request
   cub changeorder update my-changeorder --withdraw-review-request staging:alice
 
-  # Update tags for changeorders using JSON patch
-  echo '{"StartTagID": "new-tag-uuid", "EndTagID": "another-tag-uuid"}' | cub changeorder update --patch --where "Description LIKE 'Release%'" --from-stdin
 `+"```"+`
 `, ""),
 	Args:        cobra.MinimumNArgs(0), // Allow 0 args for bulk mode

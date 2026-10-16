@@ -30,7 +30,7 @@ table.
 
 With --where, reads every unit the clause selects in one request rather than one per unit.
 Each row carries the unit it belongs to, so the payload is addressed as
-'.[0].MutationSources' rather than '.[0]'. Scoped to --space unless that is "*". Examples:
+'.[0].MutationSources' rather than '.[0]'. Scoped to --space when it is given. Examples:
 
   cub unit mutation-sources --space my-space my-unit
   cub unit mutation-sources --space my-space --where "Slug LIKE 'app-%'"`, ""),

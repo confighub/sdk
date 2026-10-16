@@ -861,9 +861,6 @@ type ChangeOrder struct {
 	// ChangeWorkflowID ChangeWorkflowID is the ChangeWorkflow this ChangeOrder is promoted under. It says which workflow the stored copy was taken from, and keeps saying so after that workflow has been edited or deleted, which is why it is not a foreign key.
 	ChangeWorkflowID *openapi_types.UUID `json:"ChangeWorkflowID,omitempty" yaml:"ChangeWorkflowID,omitempty"`
 
-	// ContainerImages ContainerImages lists, for each Space the ChangeOrder has landed in, the container images it changed there: in each Unit the end Tag marks, the images get-container-image finds that differ from those at the Revision the start Tag marks. Derived only when a single ChangeOrder is read with container_images=true, never in a list. Spaces and Units the reader cannot view are left out.
-	ContainerImages []ChangeOrderSpaceContainerImages `json:"ContainerImages,omitempty" yaml:"ContainerImages,omitempty"`
-
 	// CreatedAt The timestamp when the entity was created in "2023-01-01T12:00:00Z" format.
 	CreatedAt time.Time `json:"CreatedAt,omitempty,omitzero" yaml:"CreatedAt,omitempty"`
 
@@ -1030,36 +1027,6 @@ type ChangeOrderPriorRevisions string
 // ChangeOrderReleasePriorRevisions What a Release of the ChangeOrder does with a bundled Unit's Revisions from before the change: those after its LastReleasedRevisionNum, up to the one the start Tag marks. Include (the default) releases them; Error refuses the publish, naming them and the ChangeOrders they belong to. A publish's PriorRevisions overrides it.
 type ChangeOrderReleasePriorRevisions string
 
-// ChangeOrderContainerImageChange defines model for ChangeOrderContainerImageChange.
-type ChangeOrderContainerImageChange struct {
-	// FromImage The image before the change; absent for a container the change added.
-	FromImage string `json:"FromImage,omitempty" yaml:"FromImage,omitempty"`
-
-	// FromRevisionNum The Revision the start Tag marks; absent for a Unit the change added.
-	FromRevisionNum int64 `json:"FromRevisionNum,omitempty" yaml:"FromRevisionNum,omitempty"`
-
-	// Path The path of the image within the resource.
-	Path string `json:"Path,omitempty" yaml:"Path,omitempty"`
-
-	// ResourceName The name of the resource the container is in, as it is at the end Tag's Revision.
-	ResourceName string `json:"ResourceName,omitempty" yaml:"ResourceName,omitempty"`
-
-	// ResourceType The type of the resource the container is in.
-	ResourceType string `json:"ResourceType,omitempty" yaml:"ResourceType,omitempty"`
-
-	// ToImage The image after the change; absent for a container the change removed.
-	ToImage string `json:"ToImage,omitempty" yaml:"ToImage,omitempty"`
-
-	// ToRevisionNum The Revision the end Tag marks.
-	ToRevisionNum int64 `json:"ToRevisionNum,omitempty" yaml:"ToRevisionNum,omitempty"`
-
-	// UnitID The Unit the image is in.
-	UnitID openapi_types.UUID `json:"UnitID,omitempty,omitzero" yaml:"UnitID,omitempty"`
-
-	// UnitSlug The Unit's slug.
-	UnitSlug string `json:"UnitSlug,omitempty" yaml:"UnitSlug,omitempty"`
-}
-
 // ChangeOrderCreateOrUpdateResponse defines model for ChangeOrderCreateOrUpdateResponse.
 type ChangeOrderCreateOrUpdateResponse struct {
 	// ChangeOrder Defines a change's identity as it moves between Spaces.
@@ -1145,18 +1112,6 @@ type ChangeOrderReviewRequest struct {
 
 	// UserID The User asked to review.
 	UserID openapi_types.UUID `json:"UserID,omitzero" yaml:"UserID"`
-}
-
-// ChangeOrderSpaceContainerImages defines model for ChangeOrderSpaceContainerImages.
-type ChangeOrderSpaceContainerImages struct {
-	// Images The images that changed, by Unit, resource, and path.
-	Images []ChangeOrderContainerImageChange `json:"Images" yaml:"Images"`
-
-	// SpaceID The Space the images changed in.
-	SpaceID openapi_types.UUID `json:"SpaceID,omitempty,omitzero" yaml:"SpaceID,omitempty"`
-
-	// SpaceSlug The Space's slug.
-	SpaceSlug string `json:"SpaceSlug,omitempty" yaml:"SpaceSlug,omitempty"`
 }
 
 // ChangeSet Defines an entity changeset.
@@ -2311,7 +2266,9 @@ type ExtendedResource struct {
 
 // ExtendedReviewComment defines model for ExtendedReviewComment.
 type ExtendedReviewComment struct {
-	Error *ResponseError `json:"Error,omitempty" yaml:"Error,omitempty"`
+	// ChangeOrder Defines a change's identity as it moves between Spaces.
+	ChangeOrder *ChangeOrder   `json:"ChangeOrder,omitempty" yaml:"ChangeOrder,omitempty"`
+	Error       *ResponseError `json:"Error,omitempty" yaml:"Error,omitempty"`
 
 	// Organization The top-level container for an organization using ConfigHub.
 	Organization *Organization `json:"Organization,omitempty" yaml:"Organization,omitempty"`
@@ -4254,6 +4211,9 @@ type ResponseError struct {
 
 // ReviewComment ReviewComment is a remark made in review of a Revision of a Unit, optionally about one resource or path in it.
 type ReviewComment struct {
+	// ChangeOrderID Unique identifier of the ChangeOrder the comment was made in review of, which may be in another Space. Optional; requires Use permission on the ChangeOrder. A reply takes the ChangeOrderID of the comment it answers, and may not name another. Immutable.
+	ChangeOrderID *openapi_types.UUID `json:"ChangeOrderID,omitempty" yaml:"ChangeOrderID,omitempty"`
+
 	// CreatedAt The timestamp when the entity was created in "2023-01-01T12:00:00Z" format.
 	CreatedAt time.Time `json:"CreatedAt,omitempty,omitzero" yaml:"CreatedAt,omitempty"`
 
@@ -11123,9 +11083,9 @@ type DemoteParams struct {
 	// DryRun Plan the demotion and return the same response without writing anything.
 	DryRun *bool `form:"dry_run,omitempty" json:"dry_run,omitempty" yaml:"dry_run,omitempty"`
 
-	// Include Comma-separated parts of the result to return in addition to the actions: Mutations for what each restore changed, or on a dry run would change, as entries of its MutationSources, and Diff for the same change path by path with the values on both sides.
+	// Include Comma-separated parts of the result to return in addition to the actions: Mutations for what each restore changed, or on a dry run would change, as entries of its MutationSources, and Diff for the same change path by path with the values on both sides. Context, with Diff, adds to each Diff the unchanged paths around the changes: every unchanged child of each map or array that holds a change, up to the resource, as ChangeType None.
 	//
-	// Supported values: Mutations, Diff.
+	// Supported values: Mutations, Diff, Context.
 	Include *string `form:"include,omitempty" json:"include,omitempty" yaml:"include,omitempty"`
 }
 
@@ -13740,9 +13700,9 @@ type PromoteParams struct {
 	// DryRun Deprecated: use DryRun in the request body. Plan the promotion, evaluate its gates, and return the same response without writing anything. Either one asks for a dry run.
 	DryRun *bool `form:"dry_run,omitempty" json:"dry_run,omitempty" yaml:"dry_run,omitempty"`
 
-	// Include Comma-separated parts of the result to return in addition to the actions: Mutations for what each Unit write changed, or on a dry run would change, as entries of its MutationSources, and Diff for the same change path by path with the values on both sides, and ConfigData for the configuration each Unit write produced, or on a dry run would produce. On a dry run any of them runs the merges a plan otherwise skips, so they are returned only when named.
+	// Include Comma-separated parts of the result to return in addition to the actions: Mutations for what each Unit write changed, or on a dry run would change, as entries of its MutationSources, and Diff for the same change path by path with the values on both sides, and ConfigData for the configuration each Unit write produced, or on a dry run would produce. On a dry run any of them runs the merges a plan otherwise skips, so they are returned only when named. Context, with Diff, adds to each Diff the unchanged paths around the changes: every unchanged child of each map or array that holds a change, up to the resource, as ChangeType None.
 	//
-	// Supported values: Mutations, Diff, ConfigData.
+	// Supported values: Mutations, Diff, Context, ConfigData.
 	Include *string `form:"include,omitempty" json:"include,omitempty" yaml:"include,omitempty"`
 }
 
@@ -14066,7 +14026,7 @@ type BulkDeleteReviewCommentsParams struct {
 	// An example conjunction is:
 	// `CreatedAt >= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.
 	//
-	// Supported attributes for filtering on ReviewComment: CreatedAt, HiddenReason, OrganizationID, Path, ReplyToID, ReviewCommentID, RevisionID, RevisionNum, SpaceID, Text, UnitID, UpdatedAt, UserAgent, UserID.
+	// Supported attributes for filtering on ReviewComment: ChangeOrderID, CreatedAt, HiddenReason, OrganizationID, Path, ReplyToID, ReviewCommentID, RevisionID, RevisionNum, SpaceID, Text, UnitID, UpdatedAt, UserAgent, UserID.
 	//
 	// The whole string must be query-encoded.
 	Where *string `form:"where,omitempty" json:"where,omitempty" yaml:"where,omitempty"`
@@ -14114,7 +14074,7 @@ type BulkDeleteReviewCommentsParams struct {
 	// The attribute names are case-sensitive, PascalCase, and
 	// expected in a comma-separated list format as in the JSON encoding.
 	//
-	// Supported attributes for ReviewComment are OrganizationID, RevisionID, SpaceID, UnitID.
+	// Supported attributes for ReviewComment are ChangeOrderID, OrganizationID, RevisionID, SpaceID, UnitID.
 	//
 	// The whole string must be query-encoded.
 	Include *string `form:"include,omitempty" json:"include,omitempty" yaml:"include,omitempty"`
@@ -14162,7 +14122,7 @@ type ListAllReviewCommentsParams struct {
 	// An example conjunction is:
 	// `CreatedAt >= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.
 	//
-	// Supported attributes for filtering on ReviewComment: CreatedAt, HiddenReason, OrganizationID, Path, ReplyToID, ReviewCommentID, RevisionID, RevisionNum, SpaceID, Text, UnitID, UpdatedAt, UserAgent, UserID.
+	// Supported attributes for filtering on ReviewComment: ChangeOrderID, CreatedAt, HiddenReason, OrganizationID, Path, ReplyToID, ReviewCommentID, RevisionID, RevisionNum, SpaceID, Text, UnitID, UpdatedAt, UserAgent, UserID.
 	//
 	// The whole string must be query-encoded.
 	Where *string `form:"where,omitempty" json:"where,omitempty" yaml:"where,omitempty"`
@@ -14201,7 +14161,7 @@ type ListAllReviewCommentsParams struct {
 	// The attribute names are case-sensitive, PascalCase, and
 	// expected in a comma-separated list format as in the JSON encoding.
 	//
-	// Supported attributes for ReviewComment are OrganizationID, RevisionID, SpaceID, UnitID.
+	// Supported attributes for ReviewComment are ChangeOrderID, OrganizationID, RevisionID, SpaceID, UnitID.
 	//
 	// The whole string must be query-encoded.
 	Include *string `form:"include,omitempty" json:"include,omitempty" yaml:"include,omitempty"`
@@ -14241,7 +14201,7 @@ type ListAllReviewCommentsParams struct {
 	//
 	// Field names are case-sensitive and PascalCase, as in the JSON encoding. Sort direction defaults to ASC when the 'DIRECTION:' prefix is omitted.
 	//
-	// Supported attributes for ordering ReviewComment: CreatedAt, HiddenReason, OrganizationID, Path, ReplyToID, ReviewCommentID, RevisionID, RevisionNum, Text, UnitID, UpdatedAt, UserAgent, UserID.
+	// Supported attributes for ordering ReviewComment: ChangeOrderID, CreatedAt, HiddenReason, OrganizationID, Path, ReplyToID, ReviewCommentID, RevisionID, RevisionNum, Text, UnitID, UpdatedAt, UserAgent, UserID.
 	//
 	// Example: 'DESC:CreatedAt' or 'DisplayName,DESC:CreatedAt'.
 	//
@@ -14260,6 +14220,8 @@ type ListAllReviewCommentsParams struct {
 
 // BulkPatchReviewCommentsApplicationMergePatchPlusJSONBody defines parameters for BulkPatchReviewComments.
 type BulkPatchReviewCommentsApplicationMergePatchPlusJSONBody struct {
+	ChangeOrderID *openapi_types.UUID `json:"ChangeOrderID" yaml:"ChangeOrderID"`
+
 	// HiddenReason The reason the entity is hidden, if it is. A hidden entity is left out of List and Search results, and of what bulk operations act on, unless the include_hidden parameter names its reason or is *, or the where parameter names the entity by Slug or ID. ConfigHub/YAML Units are created hidden with the reason BackingUnit unless given another.
 	HiddenReason *string `json:"HiddenReason" yaml:"HiddenReason"`
 
@@ -14313,7 +14275,7 @@ type BulkPatchReviewCommentsParams struct {
 	// An example conjunction is:
 	// `CreatedAt >= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.
 	//
-	// Supported attributes for filtering on ReviewComment: CreatedAt, HiddenReason, OrganizationID, Path, ReplyToID, ReviewCommentID, RevisionID, RevisionNum, SpaceID, Text, UnitID, UpdatedAt, UserAgent, UserID.
+	// Supported attributes for filtering on ReviewComment: ChangeOrderID, CreatedAt, HiddenReason, OrganizationID, Path, ReplyToID, ReviewCommentID, RevisionID, RevisionNum, SpaceID, Text, UnitID, UpdatedAt, UserAgent, UserID.
 	//
 	// The whole string must be query-encoded.
 	Where *string `form:"where,omitempty" json:"where,omitempty" yaml:"where,omitempty"`
@@ -14361,7 +14323,7 @@ type BulkPatchReviewCommentsParams struct {
 	// The attribute names are case-sensitive, PascalCase, and
 	// expected in a comma-separated list format as in the JSON encoding.
 	//
-	// Supported attributes for ReviewComment are OrganizationID, RevisionID, SpaceID, UnitID.
+	// Supported attributes for ReviewComment are ChangeOrderID, OrganizationID, RevisionID, SpaceID, UnitID.
 	//
 	// The whole string must be query-encoded.
 	Include *string `form:"include,omitempty" json:"include,omitempty" yaml:"include,omitempty"`
@@ -16003,9 +15965,6 @@ type GetChangeOrderParams struct {
 	// Example: 'DisplayName,CreatedAt,Labels' will return only those fields plus the required ID and Slug fields.
 	// The whole string must be query-encoded.
 	Select *string `form:"select,omitempty" json:"select,omitempty" yaml:"select,omitempty"`
-
-	// ContainerImages If true, fill in ContainerImages: for each Space the ChangeOrder has landed in, the container images get-container-image finds at the Revisions its end Tag marks that differ from those at the Revisions its start Tag marks.
-	ContainerImages *bool `form:"container_images,omitempty" json:"container_images,omitempty" yaml:"container_images,omitempty"`
 }
 
 // PatchChangeOrderApplicationMergePatchPlusJSONBody defines parameters for PatchChangeOrder.
@@ -19465,7 +19424,7 @@ type ListReviewCommentsParams struct {
 	// An example conjunction is:
 	// `CreatedAt >= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.
 	//
-	// Supported attributes for filtering on ReviewComment: CreatedAt, HiddenReason, OrganizationID, Path, ReplyToID, ReviewCommentID, RevisionID, RevisionNum, SpaceID, Text, UnitID, UpdatedAt, UserAgent, UserID.
+	// Supported attributes for filtering on ReviewComment: ChangeOrderID, CreatedAt, HiddenReason, OrganizationID, Path, ReplyToID, ReviewCommentID, RevisionID, RevisionNum, SpaceID, Text, UnitID, UpdatedAt, UserAgent, UserID.
 	//
 	// The whole string must be query-encoded.
 	Where *string `form:"where,omitempty" json:"where,omitempty" yaml:"where,omitempty"`
@@ -19504,7 +19463,7 @@ type ListReviewCommentsParams struct {
 	// The attribute names are case-sensitive, PascalCase, and
 	// expected in a comma-separated list format as in the JSON encoding.
 	//
-	// Supported attributes for ReviewComment are OrganizationID, RevisionID, SpaceID, UnitID.
+	// Supported attributes for ReviewComment are ChangeOrderID, OrganizationID, RevisionID, SpaceID, UnitID.
 	//
 	// The whole string must be query-encoded.
 	Include *string `form:"include,omitempty" json:"include,omitempty" yaml:"include,omitempty"`
@@ -19544,7 +19503,7 @@ type ListReviewCommentsParams struct {
 	//
 	// Field names are case-sensitive and PascalCase, as in the JSON encoding. Sort direction defaults to ASC when the 'DIRECTION:' prefix is omitted.
 	//
-	// Supported attributes for ordering ReviewComment: CreatedAt, HiddenReason, OrganizationID, Path, ReplyToID, ReviewCommentID, RevisionID, RevisionNum, Text, UnitID, UpdatedAt, UserAgent, UserID.
+	// Supported attributes for ordering ReviewComment: ChangeOrderID, CreatedAt, HiddenReason, OrganizationID, Path, ReplyToID, ReviewCommentID, RevisionID, RevisionNum, Text, UnitID, UpdatedAt, UserAgent, UserID.
 	//
 	// Example: 'DESC:CreatedAt' or 'DisplayName,DESC:CreatedAt'.
 	//
@@ -19573,7 +19532,7 @@ type GetReviewCommentParams struct {
 	// The attribute names are case-sensitive, PascalCase, and
 	// expected in a comma-separated list format as in the JSON encoding.
 	//
-	// Supported attributes for ReviewComment are OrganizationID, RevisionID, SpaceID, UnitID.
+	// Supported attributes for ReviewComment are ChangeOrderID, OrganizationID, RevisionID, SpaceID, UnitID.
 	//
 	// The whole string must be query-encoded.
 	Include *string `form:"include,omitempty" json:"include,omitempty" yaml:"include,omitempty"`
@@ -19591,6 +19550,8 @@ type GetReviewCommentParams struct {
 
 // PatchReviewCommentApplicationMergePatchPlusJSONBody defines parameters for PatchReviewComment.
 type PatchReviewCommentApplicationMergePatchPlusJSONBody struct {
+	ChangeOrderID *openapi_types.UUID `json:"ChangeOrderID" yaml:"ChangeOrderID"`
+
 	// HiddenReason The reason the entity is hidden, if it is. A hidden entity is left out of List and Search results, and of what bulk operations act on, unless the include_hidden parameter names its reason or is *, or the where parameter names the entity by Slug or ID. ConfigHub/YAML Units are created hidden with the reason BackingUnit unless given another.
 	HiddenReason *string `json:"HiddenReason" yaml:"HiddenReason"`
 
@@ -23992,9 +23953,9 @@ type UploadParams struct {
 	// DryRun Deprecated: use DryRun in the request body. Plan the upload and return the same response without writing anything. Either one asks for a dry run.
 	DryRun *bool `form:"dry_run,omitempty" json:"dry_run,omitempty" yaml:"dry_run,omitempty"`
 
-	// Include Comma-separated parts of the result to return in addition to the actions: Mutations for what each Unit write changed, or on a dry run would change, as entries of its MutationSources, and Diff for the same change path by path with the values on both sides. They cost something to return, and on a dry run either one runs the merges a plan otherwise skips, so they are returned only when named.
+	// Include Comma-separated parts of the result to return in addition to the actions: Mutations for what each Unit write changed, or on a dry run would change, as entries of its MutationSources, and Diff for the same change path by path with the values on both sides. They cost something to return, and on a dry run either one runs the merges a plan otherwise skips, so they are returned only when named. Context, with Diff, adds to each Diff the unchanged paths around the changes: every unchanged child of each map or array that holds a change, up to the resource, as ChangeType None.
 	//
-	// Supported values: Mutations, Diff.
+	// Supported values: Mutations, Diff, Context.
 	Include *string `form:"include,omitempty" json:"include,omitempty" yaml:"include,omitempty"`
 }
 
