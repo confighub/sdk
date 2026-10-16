@@ -189,18 +189,18 @@ type ActionResult struct {
 	Message       string   `json:"Message,omitempty" yaml:"Message,omitempty"`
 
 	// QueuedOperationID UUID of the operation corresponding to the action request
-	QueuedOperationID openapi_types.UUID `json:"QueuedOperationID,omitempty" yaml:"QueuedOperationID,omitempty"`
+	QueuedOperationID openapi_types.UUID `json:"QueuedOperationID,omitempty,omitzero" yaml:"QueuedOperationID,omitempty"`
 	Result            *ActionResultType  `json:"Result,omitempty" yaml:"Result,omitempty"`
 	RevisionNum       int64              `json:"RevisionNum,omitempty" yaml:"RevisionNum,omitempty"`
 
 	// SpaceID UUID of the Space of the Unit on which the action is performed
-	SpaceID      openapi_types.UUID `json:"SpaceID,omitempty" yaml:"SpaceID,omitempty"`
+	SpaceID      openapi_types.UUID `json:"SpaceID,omitempty,omitzero" yaml:"SpaceID,omitempty"`
 	StartedAt    time.Time          `json:"StartedAt,omitempty" yaml:"StartedAt,omitempty"`
 	Status       *ActionStatusType  `json:"Status,omitempty" yaml:"Status,omitempty"`
 	TerminatedAt time.Time          `json:"TerminatedAt" yaml:"TerminatedAt"`
 
 	// UnitID UUID of the Unit on which the action is performed
-	UnitID openapi_types.UUID `json:"UnitID,omitempty" yaml:"UnitID,omitempty"`
+	UnitID openapi_types.UUID `json:"UnitID,omitempty,omitzero" yaml:"UnitID,omitempty"`
 }
 
 // ActionResultType defines model for ActionResultType.
@@ -254,7 +254,7 @@ type AttestRequest struct {
 	ChangeOrderID          *openapi_types.UUID `json:"ChangeOrderID,omitempty" yaml:"ChangeOrderID,omitempty"`
 	Claims                 map[string]string   `json:"Claims,omitempty" yaml:"Claims,omitempty"`
 	EvidenceAttestationIDs []UUID              `json:"EvidenceAttestationIDs,omitempty" yaml:"EvidenceAttestationIDs,omitempty"`
-	ExpiresAt              time.Time           `json:"ExpiresAt,omitempty" yaml:"ExpiresAt,omitempty"`
+	ExpiresAt              time.Time           `json:"ExpiresAt,omitempty,omitzero" yaml:"ExpiresAt,omitempty"`
 	Note                   string              `json:"Note,omitempty" yaml:"Note,omitempty"`
 	Permissions            *Permissions        `json:"Permissions,omitempty" yaml:"Permissions,omitempty"`
 	ReleaseID              *openapi_types.UUID `json:"ReleaseID,omitempty" yaml:"ReleaseID,omitempty"`
@@ -279,7 +279,7 @@ type AttestSpaceResult struct {
 	Attestation  *Attestation             `json:"Attestation,omitempty" yaml:"Attestation,omitempty"`
 	Error        *ResponseError           `json:"Error,omitempty" yaml:"Error,omitempty"`
 	SkippedUnits []AttestationSkippedUnit `json:"SkippedUnits,omitempty" yaml:"SkippedUnits,omitempty"`
-	SpaceID      openapi_types.UUID       `json:"SpaceID,omitempty" yaml:"SpaceID,omitempty"`
+	SpaceID      openapi_types.UUID       `json:"SpaceID,omitempty,omitzero" yaml:"SpaceID,omitempty"`
 	SpaceSlug    string                   `json:"SpaceSlug,omitempty" yaml:"SpaceSlug,omitempty"`
 	Subjects     []AttestationSubject     `json:"Subjects,omitempty" yaml:"Subjects,omitempty"`
 }
@@ -287,7 +287,7 @@ type AttestSpaceResult struct {
 // Attestation An Attestation records that a principal made a claim about specific Revisions, all in its Space: that they approve them, that a review or check passed or failed, or anything else its Type names. It is never updated; withdrawing one is a new Attestation naming it in RevokedAttestationID.
 type Attestation struct {
 	// AttestationID Uniquely identifies the Attestation.
-	AttestationID openapi_types.UUID `json:"AttestationID,omitempty" yaml:"AttestationID,omitempty"`
+	AttestationID openapi_types.UUID `json:"AttestationID,omitempty,omitzero" yaml:"AttestationID,omitempty"`
 
 	// ChangeOrderID The ChangeOrder the Attestation was made in the context of. Context only: it does not change which Revisions are covered.
 	ChangeOrderID *openapi_types.UUID `json:"ChangeOrderID,omitempty" yaml:"ChangeOrderID,omitempty"`
@@ -296,7 +296,7 @@ type Attestation struct {
 	Claims map[string]string `json:"Claims,omitempty" yaml:"Claims,omitempty"`
 
 	// CreatedAt The timestamp when the entity was created in "2023-01-01T12:00:00Z" format.
-	CreatedAt time.Time `json:"CreatedAt,omitempty" yaml:"CreatedAt,omitempty"`
+	CreatedAt time.Time `json:"CreatedAt,omitempty,omitzero" yaml:"CreatedAt,omitempty"`
 
 	// EntityType The type of entity.
 	EntityType string `json:"EntityType,omitempty" yaml:"EntityType,omitempty"`
@@ -305,7 +305,7 @@ type Attestation struct {
 	EvidenceAttestationIDs []UUID `json:"EvidenceAttestationIDs,omitempty" yaml:"EvidenceAttestationIDs,omitempty"`
 
 	// ExpiresAt When the Attestation stops satisfying requirements. Optional.
-	ExpiresAt time.Time `json:"ExpiresAt,omitempty" yaml:"ExpiresAt,omitempty"`
+	ExpiresAt time.Time `json:"ExpiresAt,omitempty,omitzero" yaml:"ExpiresAt,omitempty"`
 
 	// Hash SHA256 hash of the claim encoded as hexadecimal: the statement (Type, Result, RevokedAttestationID, ChangeOrderID, ReleaseID, EvidenceAttestationIDs, Note, Claims and ExpiresAt), the User who recorded it, and the Revisions it covers. (readonly)
 	Hash string `json:"Hash,omitempty" yaml:"Hash,omitempty"`
@@ -317,7 +317,7 @@ type Attestation struct {
 	Note string `json:"Note,omitempty" yaml:"Note,omitempty"`
 
 	// OrganizationID The Organization the Attestation belongs to.
-	OrganizationID openapi_types.UUID `json:"OrganizationID,omitempty" yaml:"OrganizationID,omitempty"`
+	OrganizationID openapi_types.UUID `json:"OrganizationID,omitempty,omitzero" yaml:"OrganizationID,omitempty"`
 
 	// Permissions Permissions to access this attestation.
 	Permissions *Permissions `json:"Permissions,omitempty" yaml:"Permissions,omitempty"`
@@ -332,7 +332,7 @@ type Attestation struct {
 	RevokedAttestationID *openapi_types.UUID `json:"RevokedAttestationID,omitempty" yaml:"RevokedAttestationID,omitempty"`
 
 	// SpaceID The Space the Attestation belongs to. Every Revision it covers is in this Space.
-	SpaceID openapi_types.UUID `json:"SpaceID,omitempty" yaml:"SpaceID,omitempty"`
+	SpaceID openapi_types.UUID `json:"SpaceID,omitempty,omitzero" yaml:"SpaceID,omitempty"`
 
 	// SpaceSlug Slug of the Space the Attestation belongs to.
 	SpaceSlug string `json:"SpaceSlug,omitempty" yaml:"SpaceSlug,omitempty"`
@@ -341,10 +341,10 @@ type Attestation struct {
 	Type string `json:"Type,omitempty" yaml:"Type,omitempty"`
 
 	// UpdatedAt The timestamp when the entity was last updated in "2023-01-01T12:00:00Z" format.
-	UpdatedAt time.Time `json:"UpdatedAt,omitempty" yaml:"UpdatedAt,omitempty"`
+	UpdatedAt time.Time `json:"UpdatedAt,omitempty,omitzero" yaml:"UpdatedAt,omitempty"`
 
 	// UserID The authenticated User that created the Attestation.
-	UserID openapi_types.UUID `json:"UserID,omitempty" yaml:"UserID,omitempty"`
+	UserID openapi_types.UUID `json:"UserID,omitempty,omitzero" yaml:"UserID,omitempty"`
 
 	// Version An entity-specific sequence number used for optimistic concurrency control. The value read must be sent in calls to Update.
 	Version int64 `json:"Version,omitempty" yaml:"Version,omitempty"`
@@ -358,7 +358,7 @@ type AttestationCreateRequest struct {
 	ChangeOrderID          *openapi_types.UUID `json:"ChangeOrderID,omitempty" yaml:"ChangeOrderID,omitempty"`
 	Claims                 map[string]string   `json:"Claims,omitempty" yaml:"Claims,omitempty"`
 	EvidenceAttestationIDs []UUID              `json:"EvidenceAttestationIDs,omitempty" yaml:"EvidenceAttestationIDs,omitempty"`
-	ExpiresAt              time.Time           `json:"ExpiresAt,omitempty" yaml:"ExpiresAt,omitempty"`
+	ExpiresAt              time.Time           `json:"ExpiresAt,omitempty,omitzero" yaml:"ExpiresAt,omitempty"`
 	Note                   string              `json:"Note,omitempty" yaml:"Note,omitempty"`
 	Permissions            *Permissions        `json:"Permissions,omitempty" yaml:"Permissions,omitempty"`
 	ReleaseID              *openapi_types.UUID `json:"ReleaseID,omitempty" yaml:"ReleaseID,omitempty"`
@@ -391,18 +391,18 @@ type AttestationGateCaller struct {
 
 // AttestationGateEntry defines model for AttestationGateEntry.
 type AttestationGateEntry struct {
-	AttestationID openapi_types.UUID `json:"AttestationID,omitempty" yaml:"AttestationID,omitempty"`
+	AttestationID openapi_types.UUID `json:"AttestationID,omitempty,omitzero" yaml:"AttestationID,omitempty"`
 
 	// CountedOn How many of the Revisions evaluated it counts on. A Fail that counts rejects them.
 	CountedOn int       `json:"CountedOn,omitempty" yaml:"CountedOn,omitempty"`
-	CreatedAt time.Time `json:"CreatedAt,omitempty" yaml:"CreatedAt,omitempty"`
+	CreatedAt time.Time `json:"CreatedAt,omitempty,omitzero" yaml:"CreatedAt,omitempty"`
 
 	// Reason Why it counts on none of the Revisions it covers: Revoked, Expired, TooOld (older than MaxAge), NotEligible, Author, or FailIgnored (a Fail, under IgnoreFail).
 	Reason string `json:"Reason,omitempty" yaml:"Reason,omitempty"`
 
 	// Result Pass or Fail.
 	Result string             `json:"Result,omitempty" yaml:"Result,omitempty"`
-	UserID openapi_types.UUID `json:"UserID,omitempty" yaml:"UserID,omitempty"`
+	UserID openapi_types.UUID `json:"UserID,omitempty,omitzero" yaml:"UserID,omitempty"`
 
 	// ValidUntil When it stops counting: the earlier of its ExpiresAt and its CreatedAt plus the prerequisite's MaxAge. Absent when neither is set.
 	ValidUntil time.Time `json:"ValidUntil" yaml:"ValidUntil"`
@@ -452,7 +452,7 @@ type AttestationGateRevision struct {
 	// Reason AttestationsMissing or AttestationRejected.
 	Reason      string             `json:"Reason,omitempty" yaml:"Reason,omitempty"`
 	RevisionNum int64              `json:"RevisionNum,omitempty" yaml:"RevisionNum,omitempty"`
-	UnitID      openapi_types.UUID `json:"UnitID,omitempty" yaml:"UnitID,omitempty"`
+	UnitID      openapi_types.UUID `json:"UnitID,omitempty,omitzero" yaml:"UnitID,omitempty"`
 	UnitSlug    string             `json:"UnitSlug,omitempty" yaml:"UnitSlug,omitempty"`
 }
 
@@ -463,7 +463,7 @@ type AttestationSkippedUnit struct {
 
 	// Reason Why the Unit is not covered, as a code: NoTarget or NoRevision.
 	Reason   string             `json:"Reason,omitempty" yaml:"Reason,omitempty"`
-	UnitID   openapi_types.UUID `json:"UnitID,omitempty" yaml:"UnitID,omitempty"`
+	UnitID   openapi_types.UUID `json:"UnitID,omitempty,omitzero" yaml:"UnitID,omitempty"`
 	UnitSlug string             `json:"UnitSlug,omitempty" yaml:"UnitSlug,omitempty"`
 }
 
@@ -471,9 +471,9 @@ type AttestationSkippedUnit struct {
 type AttestationSubject struct {
 	// Authored With a ChangeOrder, the caller wrote one of the Revisions of the change on this Unit in this Space, so the Attestation does not count here for a prerequisite that excludes authors.
 	Authored    bool               `json:"Authored,omitempty" yaml:"Authored,omitempty"`
-	RevisionID  openapi_types.UUID `json:"RevisionID,omitempty" yaml:"RevisionID,omitempty"`
+	RevisionID  openapi_types.UUID `json:"RevisionID,omitempty,omitzero" yaml:"RevisionID,omitempty"`
 	RevisionNum int64              `json:"RevisionNum,omitempty" yaml:"RevisionNum,omitempty"`
-	UnitID      openapi_types.UUID `json:"UnitID,omitempty" yaml:"UnitID,omitempty"`
+	UnitID      openapi_types.UUID `json:"UnitID,omitempty,omitzero" yaml:"UnitID,omitempty"`
 	UnitSlug    string             `json:"UnitSlug,omitempty" yaml:"UnitSlug,omitempty"`
 }
 
@@ -486,11 +486,11 @@ type Attribute struct {
 	Annotations map[string]string `json:"Annotations,omitempty" yaml:"Annotations,omitempty"`
 
 	// AttributeID AttributeID uniquely identifies an attribute within the system.
-	AttributeID   openapi_types.UUID  `json:"AttributeID,omitempty" yaml:"AttributeID,omitempty"`
+	AttributeID   openapi_types.UUID  `json:"AttributeID,omitempty,omitzero" yaml:"AttributeID,omitempty"`
 	BackingUnitID *openapi_types.UUID `json:"BackingUnitID,omitempty" yaml:"BackingUnitID,omitempty"`
 
 	// CreatedAt The timestamp when the entity was created in "2023-01-01T12:00:00Z" format.
-	CreatedAt time.Time `json:"CreatedAt,omitempty" yaml:"CreatedAt,omitempty"`
+	CreatedAt time.Time `json:"CreatedAt,omitempty,omitzero" yaml:"CreatedAt,omitempty"`
 
 	// DataType DataType specifies the data type of the attribute value. Must be one of: string, int, bool.
 	DataType string `json:"DataType" yaml:"DataType"`
@@ -517,7 +517,7 @@ type Attribute struct {
 	Labels map[string]string `json:"Labels,omitempty" yaml:"Labels,omitempty"`
 
 	// OrganizationID Unique identifier for an organization.
-	OrganizationID openapi_types.UUID `json:"OrganizationID,omitempty" yaml:"OrganizationID,omitempty"`
+	OrganizationID openapi_types.UUID `json:"OrganizationID,omitempty,omitzero" yaml:"OrganizationID,omitempty"`
 
 	// Parameters Parameters specifies the function parameters for the getter and setter functions.
 	Parameters []FunctionParameter `json:"Parameters" yaml:"Parameters"`
@@ -532,7 +532,7 @@ type Attribute struct {
 	Slug string `json:"Slug" yaml:"Slug"`
 
 	// SpaceID Unique identifier for a space.
-	SpaceID openapi_types.UUID `json:"SpaceID,omitempty" yaml:"SpaceID,omitempty"`
+	SpaceID openapi_types.UUID `json:"SpaceID,omitempty,omitzero" yaml:"SpaceID,omitempty"`
 
 	// SpaceSlug Slug of the Space this entity belongs to. (readonly)
 	SpaceSlug string `json:"SpaceSlug,omitempty" yaml:"SpaceSlug,omitempty"`
@@ -541,7 +541,7 @@ type Attribute struct {
 	ToolchainType string `json:"ToolchainType" yaml:"ToolchainType"`
 
 	// UpdatedAt The timestamp when the entity was last updated in "2023-01-01T12:00:00Z" format.
-	UpdatedAt           time.Time           `json:"UpdatedAt,omitempty" yaml:"UpdatedAt,omitempty"`
+	UpdatedAt           time.Time           `json:"UpdatedAt,omitempty,omitzero" yaml:"UpdatedAt,omitempty"`
 	UpstreamAttributeID *openapi_types.UUID `json:"UpstreamAttributeID,omitempty" yaml:"UpstreamAttributeID,omitempty"`
 
 	// Version An entity-specific sequence number used for optimistic concurrency control. The value read must be sent in calls to Update.
@@ -561,7 +561,7 @@ type AttributeCreateOrUpdateResponse struct {
 // AttributeDetails defines model for AttributeDetails.
 type AttributeDetails struct {
 	// BoundLinkID ID of the Link that bound this needed path to a provided value
-	BoundLinkID openapi_types.UUID `json:"BoundLinkID,omitempty" yaml:"BoundLinkID,omitempty"`
+	BoundLinkID openapi_types.UUID `json:"BoundLinkID,omitempty,omitzero" yaml:"BoundLinkID,omitempty"`
 
 	// BoundProvidedProperties ProvidedProperties of the provided path that was bound to this needed path, for cross-link score comparison
 	BoundProvidedProperties map[string]string `json:"BoundProvidedProperties,omitempty" yaml:"BoundProvidedProperties,omitempty"`
@@ -715,7 +715,7 @@ type BridgeWorker struct {
 	Annotations map[string]string `json:"Annotations,omitempty" yaml:"Annotations,omitempty"`
 
 	// BridgeWorkerID Unique identifier for a Bridge Worker.
-	BridgeWorkerID  openapi_types.UUID  `json:"BridgeWorkerID,omitempty" yaml:"BridgeWorkerID,omitempty"`
+	BridgeWorkerID  openapi_types.UUID  `json:"BridgeWorkerID,omitempty,omitzero" yaml:"BridgeWorkerID,omitempty"`
 	ClaimTTLSeconds int                 `json:"ClaimTTLSeconds,omitempty" yaml:"ClaimTTLSeconds,omitempty"`
 	ClaimToken      *openapi_types.UUID `json:"ClaimToken,omitempty" yaml:"ClaimToken,omitempty"`
 
@@ -723,7 +723,7 @@ type BridgeWorker struct {
 	Condition string `json:"Condition,omitempty" yaml:"Condition,omitempty"`
 
 	// CreatedAt The timestamp when the entity was created in "2023-01-01T12:00:00Z" format.
-	CreatedAt time.Time `json:"CreatedAt,omitempty" yaml:"CreatedAt,omitempty"`
+	CreatedAt time.Time `json:"CreatedAt,omitempty,omitzero" yaml:"CreatedAt,omitempty"`
 
 	// DeleteGates An optional set of gates that, if any is present, will block deletion.
 	DeleteGates map[string]bool `json:"DeleteGates,omitempty" yaml:"DeleteGates,omitempty"`
@@ -747,13 +747,13 @@ type BridgeWorker struct {
 	LastMessage string `json:"LastMessage,omitempty" yaml:"LastMessage,omitempty"`
 
 	// LastSeenAt LastSeenAt is the time the worker was last seen (heartbeat, connection, or any event).
-	LastSeenAt time.Time `json:"LastSeenAt,omitempty" yaml:"LastSeenAt,omitempty"`
+	LastSeenAt time.Time `json:"LastSeenAt,omitempty,omitzero" yaml:"LastSeenAt,omitempty"`
 
 	// OrgRole Organization-level role of the BridgeWorker User. Defaults to none, which leaves the User with only the permissions granted to it.
 	OrgRole string `json:"OrgRole,omitempty" yaml:"OrgRole,omitempty"`
 
 	// OrganizationID Unique identifier for an organization.
-	OrganizationID openapi_types.UUID `json:"OrganizationID,omitempty" yaml:"OrganizationID,omitempty"`
+	OrganizationID openapi_types.UUID `json:"OrganizationID,omitempty,omitzero" yaml:"OrganizationID,omitempty"`
 
 	// Permissions Permissions to access this bridge worker.
 	Permissions *Permissions `json:"Permissions,omitempty" yaml:"Permissions,omitempty"`
@@ -775,13 +775,13 @@ type BridgeWorker struct {
 	Slug string `json:"Slug" yaml:"Slug"`
 
 	// SpaceID Unique identifier for a space.
-	SpaceID openapi_types.UUID `json:"SpaceID,omitempty" yaml:"SpaceID,omitempty"`
+	SpaceID openapi_types.UUID `json:"SpaceID,omitempty,omitzero" yaml:"SpaceID,omitempty"`
 
 	// SpaceSlug Slug of the Space this entity belongs to. (readonly)
 	SpaceSlug string `json:"SpaceSlug,omitempty" yaml:"SpaceSlug,omitempty"`
 
 	// UpdatedAt The timestamp when the entity was last updated in "2023-01-01T12:00:00Z" format.
-	UpdatedAt time.Time `json:"UpdatedAt,omitempty" yaml:"UpdatedAt,omitempty"`
+	UpdatedAt time.Time `json:"UpdatedAt,omitempty,omitzero" yaml:"UpdatedAt,omitempty"`
 
 	// UserID UserID is the ID of the bot user associated with this bridge worker.
 	// This user is created when the bridge worker is created and is used for
@@ -810,25 +810,25 @@ type BridgeWorkerCreateOrUpdateResponse struct {
 // BridgeWorkerStatus BridgeWorkerStatus represents the status information of a bridge worker within the system.
 type BridgeWorkerStatus struct {
 	// BridgeWorkerID Unique identifier for the Bridge Worker.
-	BridgeWorkerID openapi_types.UUID `json:"BridgeWorkerID,omitempty" yaml:"BridgeWorkerID,omitempty"`
+	BridgeWorkerID openapi_types.UUID `json:"BridgeWorkerID,omitempty,omitzero" yaml:"BridgeWorkerID,omitempty"`
 
 	// BridgeWorkerSlug Slug for the Bridge Worker.
 	BridgeWorkerSlug string `json:"BridgeWorkerSlug,omitempty" yaml:"BridgeWorkerSlug,omitempty"`
 
 	// BridgeWorkerStatusID BridgeWorkerStatusID is the unique identifier for the bridge worker status entry.
-	BridgeWorkerStatusID openapi_types.UUID `json:"BridgeWorkerStatusID,omitempty" yaml:"BridgeWorkerStatusID,omitempty"`
+	BridgeWorkerStatusID openapi_types.UUID `json:"BridgeWorkerStatusID,omitempty,omitzero" yaml:"BridgeWorkerStatusID,omitempty"`
 
 	// IPAddress IPAddress is the IP address from which the bridge worker is connecting.
 	IPAddress string `json:"IPAddress,omitempty" yaml:"IPAddress,omitempty"`
 
 	// OrganizationID OrganizationID is the unique identifier of the organization the bridge worker belongs to.
-	OrganizationID openapi_types.UUID `json:"OrganizationID,omitempty" yaml:"OrganizationID,omitempty"`
+	OrganizationID openapi_types.UUID `json:"OrganizationID,omitempty,omitzero" yaml:"OrganizationID,omitempty"`
 
 	// SeenAt The timestamp when the bridge worker last responded in "2023-01-01T12:00:00Z" format.
-	SeenAt time.Time `json:"SeenAt,omitempty" yaml:"SeenAt,omitempty"`
+	SeenAt time.Time `json:"SeenAt,omitempty,omitzero" yaml:"SeenAt,omitempty"`
 
 	// SpaceID SpaceID is the unique identifier of the space the bridge worker belongs to.
-	SpaceID openapi_types.UUID `json:"SpaceID,omitempty" yaml:"SpaceID,omitempty"`
+	SpaceID openapi_types.UUID `json:"SpaceID,omitempty,omitzero" yaml:"SpaceID,omitempty"`
 
 	// Status Status indicates the current status of the bridge worker. Possible values include Connected, Disconnected, ActionSent, ActionResultReceived.
 	Status string `json:"Status,omitempty" yaml:"Status,omitempty"`
@@ -847,13 +847,13 @@ type ChangeOrder struct {
 	AbortedReason string `json:"AbortedReason,omitempty" yaml:"AbortedReason,omitempty"`
 
 	// AdoptedEndTagID AdoptedEndTagID is the Tag whose marks were taken as the ChangeOrder's boundary, when it was created with one, and empty when the boundary was each Unit's head Revision.
-	AdoptedEndTagID openapi_types.UUID `json:"AdoptedEndTagID,omitempty" yaml:"AdoptedEndTagID,omitempty"`
+	AdoptedEndTagID openapi_types.UUID `json:"AdoptedEndTagID,omitempty,omitzero" yaml:"AdoptedEndTagID,omitempty"`
 
 	// Annotations An optional map of Annotation key/value pairs for tools to attach information to entities.
 	Annotations map[string]string `json:"Annotations,omitempty" yaml:"Annotations,omitempty"`
 
 	// ChangeOrderID ChangeOrderID uniquely identifies a change order within the system.
-	ChangeOrderID openapi_types.UUID `json:"ChangeOrderID,omitempty" yaml:"ChangeOrderID,omitempty"`
+	ChangeOrderID openapi_types.UUID `json:"ChangeOrderID,omitempty,omitzero" yaml:"ChangeOrderID,omitempty"`
 
 	// ChangeWorkflow ChangeWorkflow governs how this ChangeOrder is promoted: the ordered stages it moves through and the gates that have to pass before it enters one. It is a copy taken when the workflow was associated, not a reference, so editing the ChangeWorkflow afterwards cannot change the rules a rollout already started under. Empty is a ChangeOrder no workflow governs, which is promoted ungated.
 	ChangeWorkflow *ChangeWorkflowSpec `json:"ChangeWorkflow,omitempty" yaml:"ChangeWorkflow,omitempty"`
@@ -865,7 +865,7 @@ type ChangeOrder struct {
 	ContainerImages []ChangeOrderSpaceContainerImages `json:"ContainerImages,omitempty" yaml:"ContainerImages,omitempty"`
 
 	// CreatedAt The timestamp when the entity was created in "2023-01-01T12:00:00Z" format.
-	CreatedAt time.Time `json:"CreatedAt,omitempty" yaml:"CreatedAt,omitempty"`
+	CreatedAt time.Time `json:"CreatedAt,omitempty,omitzero" yaml:"CreatedAt,omitempty"`
 
 	// DeleteGates An optional set of gates that, if any is present, will block deletion.
 	DeleteGates map[string]bool `json:"DeleteGates,omitempty" yaml:"DeleteGates,omitempty"`
@@ -877,7 +877,7 @@ type ChangeOrder struct {
 	DisplayName string `json:"DisplayName,omitempty" yaml:"DisplayName,omitempty"`
 
 	// EndTagID EndTagID is the identifier of the set of Revisions that end the ChangeOrder. The ChangeOrder always mints this Tag itself; supplying one at creation adopts its marks as the boundary, and the supplied Tag is recorded as AdoptedEndTagID and never written to. Without one the boundary is each Unit's head Revision.
-	EndTagID openapi_types.UUID `json:"EndTagID,omitempty" yaml:"EndTagID,omitempty"`
+	EndTagID openapi_types.UUID `json:"EndTagID,omitempty,omitzero" yaml:"EndTagID,omitempty"`
 
 	// EntityType The type of entity.
 	EntityType string `json:"EntityType,omitempty" yaml:"EntityType,omitempty"`
@@ -895,7 +895,7 @@ type ChangeOrder struct {
 	Labels map[string]string `json:"Labels,omitempty" yaml:"Labels,omitempty"`
 
 	// OrganizationID Unique identifier for an organization.
-	OrganizationID openapi_types.UUID `json:"OrganizationID,omitempty" yaml:"OrganizationID,omitempty"`
+	OrganizationID openapi_types.UUID `json:"OrganizationID,omitempty,omitzero" yaml:"OrganizationID,omitempty"`
 
 	// Parameters Parameters supplies values for the declared Parameters of a parameterized Invocation, keyed by parameter name, validated against the declaration the way ParameterizedInvocations are on a direct call. One set for the whole ChangeOrder, not one per Space. Immutable.
 	Parameters map[string]interface{} `json:"Parameters,omitempty" yaml:"Parameters,omitempty"`
@@ -919,7 +919,7 @@ type ChangeOrder struct {
 	ReleasePriorRevisions ChangeOrderReleasePriorRevisions `json:"ReleasePriorRevisions,omitempty" yaml:"ReleasePriorRevisions,omitempty"`
 
 	// ReleaseTagID ReleaseTagID is the Tag a Release of the ChangeOrder is published at. It marks one Revision of each releasable Unit (ProviderType empty or OCI) in every Space the change is in: the Revision the end Tag marks, or the head where the Unit does not carry it. It follows Revisions the resolve processor makes after the promotion, and can be moved with a tag move, until a Release in the Space has been published at it. Empty on ChangeOrders created before it existed.
-	ReleaseTagID openapi_types.UUID `json:"ReleaseTagID,omitempty" yaml:"ReleaseTagID,omitempty"`
+	ReleaseTagID openapi_types.UUID `json:"ReleaseTagID,omitempty,omitzero" yaml:"ReleaseTagID,omitempty"`
 
 	// ReleasedRestoredSpaceIDs ReleasedRestoredSpaceIDs is where the undoing has been released: the Spaces in RestoredSpaceIDs whose Units are released at or past the Revision the restore Tag marks. Covering ReleasedSpaceIDs is what State reports as RestoreReleased. Derived when the ChangeOrder is read.
 	ReleasedRestoredSpaceIDs []UUID `json:"ReleasedRestoredSpaceIDs,omitempty" yaml:"ReleasedRestoredSpaceIDs,omitempty"`
@@ -934,7 +934,7 @@ type ChangeOrder struct {
 	ResolvedSpaceIDs []UUID `json:"ResolvedSpaceIDs,omitempty" yaml:"ResolvedSpaceIDs,omitempty"`
 
 	// RestoreTagID RestoreTagID is the Tag marking the Revisions that undid the ChangeOrder. The first restore mints it; every restore after that marks with the same Tag. Empty until something has been restored.
-	RestoreTagID openapi_types.UUID `json:"RestoreTagID,omitempty" yaml:"RestoreTagID,omitempty"`
+	RestoreTagID openapi_types.UUID `json:"RestoreTagID,omitempty,omitzero" yaml:"RestoreTagID,omitempty"`
 
 	// RestoredSpaceIDs RestoredSpaceIDs is where the ChangeOrder has been undone: the Spaces whose Units all carry the restore Tag. Derived when the ChangeOrder is read.
 	RestoredSpaceIDs []UUID `json:"RestoredSpaceIDs,omitempty" yaml:"RestoredSpaceIDs,omitempty"`
@@ -952,7 +952,7 @@ type ChangeOrder struct {
 	SpaceFilterID *openapi_types.UUID `json:"SpaceFilterID,omitempty" yaml:"SpaceFilterID,omitempty"`
 
 	// SpaceID Unique identifier for a space.
-	SpaceID openapi_types.UUID `json:"SpaceID,omitempty" yaml:"SpaceID,omitempty"`
+	SpaceID openapi_types.UUID `json:"SpaceID,omitempty,omitzero" yaml:"SpaceID,omitempty"`
 
 	// SpaceSlug Slug of the Space this entity belongs to. (readonly)
 	SpaceSlug string `json:"SpaceSlug,omitempty" yaml:"SpaceSlug,omitempty"`
@@ -961,7 +961,7 @@ type ChangeOrder struct {
 	Stage string `json:"Stage,omitempty" yaml:"Stage,omitempty"`
 
 	// StartTagID StartTagID is the identifier of the set of Revisions immediately before the ChangeOrder, making it the half-open interval (start, end].
-	StartTagID openapi_types.UUID `json:"StartTagID,omitempty" yaml:"StartTagID,omitempty"`
+	StartTagID openapi_types.UUID `json:"StartTagID,omitempty,omitzero" yaml:"StartTagID,omitempty"`
 
 	// State State is how far the ChangeOrder has got: New until a Space other than its own has taken it, InProgress while some have and some have not, Resolved once every Space in scope has, Released once every Space in scope that has a ReleaseTargetID has released what it took (a Space with none has nothing to release), Aborted whenever AbortedReason is set, Restored once every Space that had taken it has been restored to the Revisions before it, and RestoreReleased once every Space that had released it has released the restored Revisions. Derived when the ChangeOrder is read.
 	State string `json:"State,omitempty" yaml:"State,omitempty"`
@@ -973,7 +973,7 @@ type ChangeOrder struct {
 	UpdateType string `json:"UpdateType,omitempty" yaml:"UpdateType,omitempty"`
 
 	// UpdatedAt The timestamp when the entity was last updated in "2023-01-01T12:00:00Z" format.
-	UpdatedAt time.Time `json:"UpdatedAt,omitempty" yaml:"UpdatedAt,omitempty"`
+	UpdatedAt time.Time `json:"UpdatedAt,omitempty,omitzero" yaml:"UpdatedAt,omitempty"`
 
 	// UserID The User who created the ChangeOrder. Absent for ChangeOrders created before it was recorded. (readonly)
 	UserID *openapi_types.UUID `json:"UserID,omitempty" yaml:"UserID,omitempty"`
@@ -1054,7 +1054,7 @@ type ChangeOrderContainerImageChange struct {
 	ToRevisionNum int64 `json:"ToRevisionNum,omitempty" yaml:"ToRevisionNum,omitempty"`
 
 	// UnitID The Unit the image is in.
-	UnitID openapi_types.UUID `json:"UnitID,omitempty" yaml:"UnitID,omitempty"`
+	UnitID openapi_types.UUID `json:"UnitID,omitempty,omitzero" yaml:"UnitID,omitempty"`
 
 	// UnitSlug The Unit's slug.
 	UnitSlug string `json:"UnitSlug,omitempty" yaml:"UnitSlug,omitempty"`
@@ -1069,18 +1069,18 @@ type ChangeOrderCreateOrUpdateResponse struct {
 
 // ChangeOrderPromotion defines model for ChangeOrderPromotion.
 type ChangeOrderPromotion struct {
-	PromotedAt time.Time          `json:"PromotedAt,omitempty" yaml:"PromotedAt,omitempty"`
+	PromotedAt time.Time          `json:"PromotedAt,omitempty,omitzero" yaml:"PromotedAt,omitempty"`
 	SpaceIDs   []UUID             `json:"SpaceIDs,omitempty" yaml:"SpaceIDs,omitempty"`
 	Stage      string             `json:"Stage,omitempty" yaml:"Stage,omitempty"`
-	UserID     openapi_types.UUID `json:"UserID,omitempty" yaml:"UserID,omitempty"`
+	UserID     openapi_types.UUID `json:"UserID,omitempty,omitzero" yaml:"UserID,omitempty"`
 }
 
 // ChangeOrderPromotionFailure defines model for ChangeOrderPromotionFailure.
 type ChangeOrderPromotionFailure struct {
-	FailedAt time.Time                          `json:"FailedAt,omitempty" yaml:"FailedAt,omitempty"`
+	FailedAt time.Time                          `json:"FailedAt,omitempty,omitzero" yaml:"FailedAt,omitempty"`
 	Spaces   []ChangeOrderPromotionFailureSpace `json:"Spaces,omitempty" yaml:"Spaces,omitempty"`
 	Stage    string                             `json:"Stage,omitempty" yaml:"Stage,omitempty"`
-	UserID   openapi_types.UUID                 `json:"UserID,omitempty" yaml:"UserID,omitempty"`
+	UserID   openapi_types.UUID                 `json:"UserID,omitempty,omitzero" yaml:"UserID,omitempty"`
 }
 
 // ChangeOrderPromotionFailureLink defines model for ChangeOrderPromotionFailureLink.
@@ -1097,7 +1097,7 @@ type ChangeOrderPromotionFailureSpace struct {
 	Links     []ChangeOrderPromotionFailureLink `json:"Links,omitempty" yaml:"Links,omitempty"`
 	Message   string                            `json:"Message,omitempty" yaml:"Message,omitempty"`
 	Reason    string                            `json:"Reason,omitempty" yaml:"Reason,omitempty"`
-	SpaceID   openapi_types.UUID                `json:"SpaceID,omitempty" yaml:"SpaceID,omitempty"`
+	SpaceID   openapi_types.UUID                `json:"SpaceID,omitempty,omitzero" yaml:"SpaceID,omitempty"`
 	SpaceSlug string                            `json:"SpaceSlug,omitempty" yaml:"SpaceSlug,omitempty"`
 	Stage     string                            `json:"Stage,omitempty" yaml:"Stage,omitempty"`
 	Units     []ChangeOrderPromotionFailureUnit `json:"Units,omitempty" yaml:"Units,omitempty"`
@@ -1113,38 +1113,38 @@ type ChangeOrderPromotionFailureUnit struct {
 // ChangeOrderPromotionOverride defines model for ChangeOrderPromotionOverride.
 type ChangeOrderPromotionOverride struct {
 	FailedGates  []string           `json:"FailedGates,omitempty" yaml:"FailedGates,omitempty"`
-	OverriddenAt time.Time          `json:"OverriddenAt,omitempty" yaml:"OverriddenAt,omitempty"`
+	OverriddenAt time.Time          `json:"OverriddenAt,omitempty,omitzero" yaml:"OverriddenAt,omitempty"`
 	Reason       string             `json:"Reason,omitempty" yaml:"Reason,omitempty"`
 	SpaceIDs     []UUID             `json:"SpaceIDs,omitempty" yaml:"SpaceIDs,omitempty"`
 	Stage        string             `json:"Stage,omitempty" yaml:"Stage,omitempty"`
-	UserID       openapi_types.UUID `json:"UserID,omitempty" yaml:"UserID,omitempty"`
+	UserID       openapi_types.UUID `json:"UserID,omitempty,omitzero" yaml:"UserID,omitempty"`
 }
 
 // ChangeOrderRelease defines model for ChangeOrderRelease.
 type ChangeOrderRelease struct {
 	// ReleaseID The earliest published Release of the Space that carries the change.
-	ReleaseID openapi_types.UUID `json:"ReleaseID,omitempty" yaml:"ReleaseID,omitempty"`
+	ReleaseID openapi_types.UUID `json:"ReleaseID,omitempty,omitzero" yaml:"ReleaseID,omitempty"`
 
 	// ReleaseNum The Release's number within its Target.
 	ReleaseNum int64 `json:"ReleaseNum,omitempty" yaml:"ReleaseNum,omitempty"`
 
 	// SpaceID The Space the Release was published from.
-	SpaceID openapi_types.UUID `json:"SpaceID,omitempty" yaml:"SpaceID,omitempty"`
+	SpaceID openapi_types.UUID `json:"SpaceID,omitempty,omitzero" yaml:"SpaceID,omitempty"`
 }
 
 // ChangeOrderReviewRequest defines model for ChangeOrderReviewRequest.
 type ChangeOrderReviewRequest struct {
 	// RequestedAt When the review was requested, by the server's clock. A new request is stamped with the current time, and an existing one keeps its time; sending a later time than the one recorded re-requests the review, and stamps it with the current time.
-	RequestedAt time.Time `json:"RequestedAt,omitempty" yaml:"RequestedAt,omitempty"`
+	RequestedAt time.Time `json:"RequestedAt,omitempty,omitzero" yaml:"RequestedAt,omitempty"`
 
 	// RequestedByUserID Who requested the review, or last re-requested it. Set by the server.
-	RequestedByUserID openapi_types.UUID `json:"RequestedByUserID,omitempty" yaml:"RequestedByUserID,omitempty"`
+	RequestedByUserID openapi_types.UUID `json:"RequestedByUserID,omitempty,omitzero" yaml:"RequestedByUserID,omitempty"`
 
 	// Stage The stage whose Spaces are to be reviewed, which is where an Attestation recorded with that TargetStage goes. Empty is the change order's own Space.
 	Stage string `json:"Stage,omitempty" yaml:"Stage,omitempty"`
 
 	// UserID The User asked to review.
-	UserID openapi_types.UUID `json:"UserID" yaml:"UserID"`
+	UserID openapi_types.UUID `json:"UserID,omitzero" yaml:"UserID"`
 }
 
 // ChangeOrderSpaceContainerImages defines model for ChangeOrderSpaceContainerImages.
@@ -1153,7 +1153,7 @@ type ChangeOrderSpaceContainerImages struct {
 	Images []ChangeOrderContainerImageChange `json:"Images" yaml:"Images"`
 
 	// SpaceID The Space the images changed in.
-	SpaceID openapi_types.UUID `json:"SpaceID,omitempty" yaml:"SpaceID,omitempty"`
+	SpaceID openapi_types.UUID `json:"SpaceID,omitempty,omitzero" yaml:"SpaceID,omitempty"`
 
 	// SpaceSlug The Space's slug.
 	SpaceSlug string `json:"SpaceSlug,omitempty" yaml:"SpaceSlug,omitempty"`
@@ -1165,10 +1165,10 @@ type ChangeSet struct {
 	Annotations map[string]string `json:"Annotations,omitempty" yaml:"Annotations,omitempty"`
 
 	// ChangeSetID ChangeSetID uniquely identifies a changeset within the system.
-	ChangeSetID openapi_types.UUID `json:"ChangeSetID,omitempty" yaml:"ChangeSetID,omitempty"`
+	ChangeSetID openapi_types.UUID `json:"ChangeSetID,omitempty,omitzero" yaml:"ChangeSetID,omitempty"`
 
 	// CreatedAt The timestamp when the entity was created in "2023-01-01T12:00:00Z" format.
-	CreatedAt time.Time `json:"CreatedAt,omitempty" yaml:"CreatedAt,omitempty"`
+	CreatedAt time.Time `json:"CreatedAt,omitempty,omitzero" yaml:"CreatedAt,omitempty"`
 
 	// DeleteGates An optional set of gates that, if any is present, will block deletion.
 	DeleteGates map[string]bool `json:"DeleteGates,omitempty" yaml:"DeleteGates,omitempty"`
@@ -1180,7 +1180,7 @@ type ChangeSet struct {
 	DisplayName string `json:"DisplayName,omitempty" yaml:"DisplayName,omitempty"`
 
 	// EndTagID EndTagID is the identifier of the set of revisions that end the ChangeSet.
-	EndTagID openapi_types.UUID `json:"EndTagID,omitempty" yaml:"EndTagID,omitempty"`
+	EndTagID openapi_types.UUID `json:"EndTagID,omitempty,omitzero" yaml:"EndTagID,omitempty"`
 
 	// EntityType The type of entity.
 	EntityType string `json:"EntityType,omitempty" yaml:"EntityType,omitempty"`
@@ -1192,7 +1192,7 @@ type ChangeSet struct {
 	Labels map[string]string `json:"Labels,omitempty" yaml:"Labels,omitempty"`
 
 	// OrganizationID Unique identifier for an organization.
-	OrganizationID openapi_types.UUID `json:"OrganizationID,omitempty" yaml:"OrganizationID,omitempty"`
+	OrganizationID openapi_types.UUID `json:"OrganizationID,omitempty,omitzero" yaml:"OrganizationID,omitempty"`
 
 	// Permissions Permissions to access this change set.
 	Permissions *Permissions `json:"Permissions,omitempty" yaml:"Permissions,omitempty"`
@@ -1201,13 +1201,13 @@ type ChangeSet struct {
 	Slug string `json:"Slug" yaml:"Slug"`
 
 	// SpaceID Unique identifier for a space.
-	SpaceID openapi_types.UUID `json:"SpaceID,omitempty" yaml:"SpaceID,omitempty"`
+	SpaceID openapi_types.UUID `json:"SpaceID,omitempty,omitzero" yaml:"SpaceID,omitempty"`
 
 	// SpaceSlug Slug of the Space this entity belongs to. (readonly)
 	SpaceSlug string `json:"SpaceSlug,omitempty" yaml:"SpaceSlug,omitempty"`
 
 	// StartTagID StartTagID is the identifier of the set of revisions that begin the ChangeSet.
-	StartTagID openapi_types.UUID `json:"StartTagID,omitempty" yaml:"StartTagID,omitempty"`
+	StartTagID openapi_types.UUID `json:"StartTagID,omitempty,omitzero" yaml:"StartTagID,omitempty"`
 
 	// StartTagIsPriorRevision StartTagIsPriorRevision reports whether the start Tag marks the Revision before the ChangeSet, making the ChangeSet the half-open interval (start, end]. False, the original meaning, means it marks the ChangeSet's first Revision.
 	StartTagIsPriorRevision bool `json:"StartTagIsPriorRevision,omitempty" yaml:"StartTagIsPriorRevision,omitempty"`
@@ -1216,7 +1216,7 @@ type ChangeSet struct {
 	State string `json:"State,omitempty" yaml:"State,omitempty"`
 
 	// UpdatedAt The timestamp when the entity was last updated in "2023-01-01T12:00:00Z" format.
-	UpdatedAt time.Time `json:"UpdatedAt,omitempty" yaml:"UpdatedAt,omitempty"`
+	UpdatedAt time.Time `json:"UpdatedAt,omitempty,omitzero" yaml:"UpdatedAt,omitempty"`
 
 	// Version An entity-specific sequence number used for optimistic concurrency control. The value read must be sent in calls to Update.
 	Version int64 `json:"Version,omitempty" yaml:"Version,omitempty"`
@@ -1239,10 +1239,10 @@ type ChangeWorkflow struct {
 	BackingUnitID            *openapi_types.UUID                     `json:"BackingUnitID,omitempty" yaml:"BackingUnitID,omitempty"`
 
 	// ChangeWorkflowID ChangeWorkflowID uniquely identifies a change workflow within the system.
-	ChangeWorkflowID openapi_types.UUID `json:"ChangeWorkflowID,omitempty" yaml:"ChangeWorkflowID,omitempty"`
+	ChangeWorkflowID openapi_types.UUID `json:"ChangeWorkflowID,omitempty,omitzero" yaml:"ChangeWorkflowID,omitempty"`
 
 	// CreatedAt The timestamp when the entity was created in "2023-01-01T12:00:00Z" format.
-	CreatedAt time.Time `json:"CreatedAt,omitempty" yaml:"CreatedAt,omitempty"`
+	CreatedAt time.Time `json:"CreatedAt,omitempty,omitzero" yaml:"CreatedAt,omitempty"`
 
 	// CustomPrerequisites CustomPrerequisites declares the checks a stage or Final may gate on beyond the built-in ones, each carrying a Name to gate on and a "cel:" Expression to evaluate. Declared once and named wherever they apply.
 	CustomPrerequisites []ChangeWorkflowPrerequisite `json:"CustomPrerequisites,omitempty" yaml:"CustomPrerequisites,omitempty"`
@@ -1269,7 +1269,7 @@ type ChangeWorkflow struct {
 	Labels map[string]string `json:"Labels,omitempty" yaml:"Labels,omitempty"`
 
 	// OrganizationID Unique identifier for an organization.
-	OrganizationID openapi_types.UUID `json:"OrganizationID,omitempty" yaml:"OrganizationID,omitempty"`
+	OrganizationID openapi_types.UUID `json:"OrganizationID,omitempty,omitzero" yaml:"OrganizationID,omitempty"`
 
 	// Permissions Permissions to access this change workflow.
 	Permissions *Permissions `json:"Permissions,omitempty" yaml:"Permissions,omitempty"`
@@ -1278,7 +1278,7 @@ type ChangeWorkflow struct {
 	Slug string `json:"Slug" yaml:"Slug"`
 
 	// SpaceID Unique identifier for a space.
-	SpaceID openapi_types.UUID `json:"SpaceID,omitempty" yaml:"SpaceID,omitempty"`
+	SpaceID openapi_types.UUID `json:"SpaceID,omitempty,omitzero" yaml:"SpaceID,omitempty"`
 
 	// SpaceSlug Slug of the Space this entity belongs to. (readonly)
 	SpaceSlug string `json:"SpaceSlug,omitempty" yaml:"SpaceSlug,omitempty"`
@@ -1287,7 +1287,7 @@ type ChangeWorkflow struct {
 	Stages []ChangeWorkflowStage `json:"Stages" yaml:"Stages"`
 
 	// UpdatedAt The timestamp when the entity was last updated in "2023-01-01T12:00:00Z" format.
-	UpdatedAt                time.Time           `json:"UpdatedAt,omitempty" yaml:"UpdatedAt,omitempty"`
+	UpdatedAt                time.Time           `json:"UpdatedAt,omitempty,omitzero" yaml:"UpdatedAt,omitempty"`
 	UpstreamChangeWorkflowID *openapi_types.UUID `json:"UpstreamChangeWorkflowID,omitempty" yaml:"UpstreamChangeWorkflowID,omitempty"`
 
 	// Version An entity-specific sequence number used for optimistic concurrency control. The value read must be sent in calls to Update.
@@ -1385,10 +1385,11 @@ type ChangeWorkflowStage struct {
 // Channel A Channel is a mailbox between ConfigHub and one bot. A client claims it and polls it; callers run the commands it declares on it, each as a CommandRun; it subscribes to events and bookmarks how far it has read. It owns no identity: a ServiceAccount claims it by holding Claim on it. Its Commands and Subscriptions are set by whoever manages it, not by the client.
 type Channel struct {
 	// Annotations An optional map of Annotation key/value pairs for tools to attach information to entities.
-	Annotations map[string]string `json:"Annotations,omitempty" yaml:"Annotations,omitempty"`
+	Annotations   map[string]string   `json:"Annotations,omitempty" yaml:"Annotations,omitempty"`
+	BackingUnitID *openapi_types.UUID `json:"BackingUnitID,omitempty" yaml:"BackingUnitID,omitempty"`
 
 	// ChannelID ChannelID uniquely identifies a channel.
-	ChannelID openapi_types.UUID `json:"ChannelID,omitempty" yaml:"ChannelID,omitempty"`
+	ChannelID openapi_types.UUID `json:"ChannelID,omitempty,omitzero" yaml:"ChannelID,omitempty"`
 
 	// ClaimTTLSeconds How long a lease stays held without a poll renewing it.
 	ClaimTTLSeconds int `json:"ClaimTTLSeconds,omitempty" yaml:"ClaimTTLSeconds,omitempty"`
@@ -1403,7 +1404,7 @@ type Channel struct {
 	Condition ChannelCondition `json:"Condition,omitempty" yaml:"Condition,omitempty"`
 
 	// CreatedAt The timestamp when the entity was created in "2023-01-01T12:00:00Z" format.
-	CreatedAt time.Time `json:"CreatedAt,omitempty" yaml:"CreatedAt,omitempty"`
+	CreatedAt time.Time `json:"CreatedAt,omitempty,omitzero" yaml:"CreatedAt,omitempty"`
 
 	// DeleteGates An optional set of gates that, if any is present, will block deletion.
 	DeleteGates map[string]bool `json:"DeleteGates,omitempty" yaml:"DeleteGates,omitempty"`
@@ -1414,7 +1415,7 @@ type Channel struct {
 	// EntityType The type of entity.
 	EntityType string `json:"EntityType,omitempty" yaml:"EntityType,omitempty"`
 
-	// EventPosition The channel's bookmark into the event log. Set to the log's tail at creation; change it to replay or skip.
+	// EventPosition The channel's bookmark into the event log. Set to the log's tail at creation, a clone's too; change it to replay or skip.
 	EventPosition int64 `json:"EventPosition" yaml:"EventPosition"`
 
 	// HiddenReason The reason the entity is hidden, if it is. A hidden entity is left out of List and Search results, and of what bulk operations act on, unless the include_hidden parameter names its reason or is *, or the where parameter names the entity by Slug or ID. ConfigHub/YAML Units are created hidden with the reason BackingUnit unless given another.
@@ -1430,10 +1431,10 @@ type Channel struct {
 	LastMessage string `json:"LastMessage,omitempty" yaml:"LastMessage,omitempty"`
 
 	// LastSeenAt The last time the client holding the lease polled.
-	LastSeenAt time.Time `json:"LastSeenAt,omitempty" yaml:"LastSeenAt,omitempty"`
+	LastSeenAt time.Time `json:"LastSeenAt,omitempty,omitzero" yaml:"LastSeenAt,omitempty"`
 
 	// OrganizationID Unique identifier for an organization.
-	OrganizationID openapi_types.UUID `json:"OrganizationID,omitempty" yaml:"OrganizationID,omitempty"`
+	OrganizationID openapi_types.UUID `json:"OrganizationID,omitempty,omitzero" yaml:"OrganizationID,omitempty"`
 
 	// Permissions Permissions to access this Channel. Claim: acquire its lease and poll it. Use: run a command on it.
 	Permissions *Permissions `json:"Permissions,omitempty" yaml:"Permissions,omitempty"`
@@ -1442,7 +1443,7 @@ type Channel struct {
 	Slug string `json:"Slug" yaml:"Slug"`
 
 	// SpaceID Unique identifier for a space.
-	SpaceID openapi_types.UUID `json:"SpaceID,omitempty" yaml:"SpaceID,omitempty"`
+	SpaceID openapi_types.UUID `json:"SpaceID,omitempty,omitzero" yaml:"SpaceID,omitempty"`
 
 	// SpaceSlug Slug of the Space this entity belongs to. (readonly)
 	SpaceSlug string `json:"SpaceSlug,omitempty" yaml:"SpaceSlug,omitempty"`
@@ -1451,7 +1452,10 @@ type Channel struct {
 	Subscriptions []EventSubscription `json:"Subscriptions,omitempty" yaml:"Subscriptions,omitempty"`
 
 	// UpdatedAt The timestamp when the entity was last updated in "2023-01-01T12:00:00Z" format.
-	UpdatedAt time.Time `json:"UpdatedAt,omitempty" yaml:"UpdatedAt,omitempty"`
+	UpdatedAt time.Time `json:"UpdatedAt,omitempty,omitzero" yaml:"UpdatedAt,omitempty"`
+
+	// UpstreamChannelID The Channel this Channel was cloned from, if any.
+	UpstreamChannelID *openapi_types.UUID `json:"UpstreamChannelID,omitempty" yaml:"UpstreamChannelID,omitempty"`
 
 	// Version An entity-specific sequence number used for optimistic concurrency control. The value read must be sent in calls to Update.
 	Version int64 `json:"Version,omitempty" yaml:"Version,omitempty"`
@@ -1469,7 +1473,7 @@ type ChannelCreateOrUpdateResponse struct {
 
 // ChannelLease ChannelLease is the lease a client holds on a Channel: its ClaimToken, carried by every poll and release, and the TTL in seconds a poll renews it for.
 type ChannelLease struct {
-	ClaimToken openapi_types.UUID `json:"ClaimToken" yaml:"ClaimToken"`
+	ClaimToken openapi_types.UUID `json:"ClaimToken,omitzero" yaml:"ClaimToken"`
 	TTLSeconds int                `json:"TTLSeconds" yaml:"TTLSeconds"`
 }
 
@@ -1485,7 +1489,7 @@ type ChannelMessage struct {
 
 // ChannelPollRequest ChannelPollRequest is one poll of a Channel under its lease. The response is the runs and events waiting for the client, up to MaxRuns runs, or nothing after TimeoutSeconds.
 type ChannelPollRequest struct {
-	ClaimToken     openapi_types.UUID `json:"ClaimToken" yaml:"ClaimToken"`
+	ClaimToken     openapi_types.UUID `json:"ClaimToken,omitzero" yaml:"ClaimToken"`
 	MaxRuns        int                `json:"MaxRuns,omitempty" yaml:"MaxRuns,omitempty"`
 	TimeoutSeconds int                `json:"TimeoutSeconds,omitempty" yaml:"TimeoutSeconds,omitempty"`
 }
@@ -1548,34 +1552,34 @@ type CommandOption struct {
 // CommandRun CommandRun is one execution of a command on a Channel: the request, from the caller, and the outcome, from the channel's client. Create one at the Space, naming the command and optionally the Channel; without a Channel, the command is resolved to the one Channel in the Space that declares it. A Pending run waits for the client until its Deadline; a Delivered run has a fixed time to its outcome.
 type CommandRun struct {
 	// ChannelID ChannelID is the Channel the run is delivered on. Optional on create: absent, the command is resolved within the Space.
-	ChannelID openapi_types.UUID `json:"ChannelID,omitempty" yaml:"ChannelID,omitempty"`
+	ChannelID openapi_types.UUID `json:"ChannelID,omitempty,omitzero" yaml:"ChannelID,omitempty"`
 
 	// Command Command is the name of the command to run, as the Channel declares it.
 	Command string `json:"Command" yaml:"Command"`
 
 	// CommandRunID CommandRunID uniquely identifies the run.
-	CommandRunID openapi_types.UUID `json:"CommandRunID,omitempty" yaml:"CommandRunID,omitempty"`
+	CommandRunID openapi_types.UUID `json:"CommandRunID,omitempty,omitzero" yaml:"CommandRunID,omitempty"`
 
 	// CompletedAt CompletedAt is when the run reached a terminal status.
-	CompletedAt time.Time `json:"CompletedAt,omitempty" yaml:"CompletedAt,omitempty"`
+	CompletedAt time.Time `json:"CompletedAt,omitempty,omitzero" yaml:"CompletedAt,omitempty"`
 
 	// CreatedAt When the run was created, in "2023-01-01T12:00:00Z" format.
-	CreatedAt time.Time `json:"CreatedAt,omitempty" yaml:"CreatedAt,omitempty"`
+	CreatedAt time.Time `json:"CreatedAt,omitempty,omitzero" yaml:"CreatedAt,omitempty"`
 
 	// CreatedBy CreatedBy is the user that asked for the run.
-	CreatedBy openapi_types.UUID `json:"CreatedBy,omitempty" yaml:"CreatedBy,omitempty"`
+	CreatedBy openapi_types.UUID `json:"CreatedBy,omitempty,omitzero" yaml:"CreatedBy,omitempty"`
 
 	// Deadline Deadline is when a Pending run expires. Defaults to five minutes after creation; at most one hour.
-	Deadline time.Time `json:"Deadline,omitempty" yaml:"Deadline,omitempty"`
+	Deadline time.Time `json:"Deadline,omitempty,omitzero" yaml:"Deadline,omitempty"`
 
 	// DeliveredAt DeliveredAt is when the run was handed to the client.
-	DeliveredAt time.Time `json:"DeliveredAt,omitempty" yaml:"DeliveredAt,omitempty"`
+	DeliveredAt time.Time `json:"DeliveredAt,omitempty,omitzero" yaml:"DeliveredAt,omitempty"`
 
 	// ErrorMessage ErrorMessage explains a Failed or Rejected run.
 	ErrorMessage string `json:"ErrorMessage,omitempty" yaml:"ErrorMessage,omitempty"`
 
 	// OrganizationID OrganizationID of the Space the run is in.
-	OrganizationID openapi_types.UUID `json:"OrganizationID,omitempty" yaml:"OrganizationID,omitempty"`
+	OrganizationID openapi_types.UUID `json:"OrganizationID,omitempty,omitzero" yaml:"OrganizationID,omitempty"`
 
 	// Params Params is the JSON object of inputs, keyed by the option names the Channel declares for the command.
 	Params map[string]interface{} `json:"Params,omitempty" yaml:"Params,omitempty"`
@@ -1584,7 +1588,7 @@ type CommandRun struct {
 	Result map[string]interface{} `json:"Result,omitempty" yaml:"Result,omitempty"`
 
 	// SpaceID SpaceID of the Space the run is in: the Channel's Space.
-	SpaceID openapi_types.UUID `json:"SpaceID,omitempty" yaml:"SpaceID,omitempty"`
+	SpaceID openapi_types.UUID `json:"SpaceID,omitempty,omitzero" yaml:"SpaceID,omitempty"`
 
 	// SpaceSlug Slug of the Space the run is in.
 	SpaceSlug string `json:"SpaceSlug,omitempty" yaml:"SpaceSlug,omitempty"`
@@ -1596,7 +1600,7 @@ type CommandRun struct {
 	TargetID *openapi_types.UUID `json:"TargetID,omitempty" yaml:"TargetID,omitempty"`
 
 	// TimeoutAt TimeoutAt is when a Delivered run times out if the client has reported nothing.
-	TimeoutAt time.Time `json:"TimeoutAt,omitempty" yaml:"TimeoutAt,omitempty"`
+	TimeoutAt time.Time `json:"TimeoutAt,omitempty,omitzero" yaml:"TimeoutAt,omitempty"`
 
 	// UnitID UnitID is the Unit the run is about, if any. For the record; not a foreign key.
 	UnitID *openapi_types.UUID `json:"UnitID,omitempty" yaml:"UnitID,omitempty"`
@@ -1635,10 +1639,10 @@ type Component struct {
 	ChangeWorkflowRequired bool `json:"ChangeWorkflowRequired,omitempty" yaml:"ChangeWorkflowRequired,omitempty"`
 
 	// ComponentID Unique identifier for a component.
-	ComponentID openapi_types.UUID `json:"ComponentID,omitempty" yaml:"ComponentID,omitempty"`
+	ComponentID openapi_types.UUID `json:"ComponentID,omitempty,omitzero" yaml:"ComponentID,omitempty"`
 
 	// CreatedAt The timestamp when the entity was created in "2023-01-01T12:00:00Z" format.
-	CreatedAt time.Time `json:"CreatedAt,omitempty" yaml:"CreatedAt,omitempty"`
+	CreatedAt time.Time `json:"CreatedAt,omitempty,omitzero" yaml:"CreatedAt,omitempty"`
 
 	// DeleteGates An optional set of gates that, if any is present, will block deletion.
 	DeleteGates map[string]bool `json:"DeleteGates,omitempty" yaml:"DeleteGates,omitempty"`
@@ -1656,7 +1660,7 @@ type Component struct {
 	Labels map[string]string `json:"Labels,omitempty" yaml:"Labels,omitempty"`
 
 	// OrganizationID Unique identifier for an organization.
-	OrganizationID openapi_types.UUID `json:"OrganizationID,omitempty" yaml:"OrganizationID,omitempty"`
+	OrganizationID openapi_types.UUID `json:"OrganizationID,omitempty,omitzero" yaml:"OrganizationID,omitempty"`
 
 	// Permissions Permissions to access this component.
 	Permissions *Permissions `json:"Permissions,omitempty" yaml:"Permissions,omitempty"`
@@ -1665,7 +1669,7 @@ type Component struct {
 	Slug string `json:"Slug" yaml:"Slug"`
 
 	// UpdatedAt The timestamp when the entity was last updated in "2023-01-01T12:00:00Z" format.
-	UpdatedAt           time.Time           `json:"UpdatedAt,omitempty" yaml:"UpdatedAt,omitempty"`
+	UpdatedAt           time.Time           `json:"UpdatedAt,omitempty,omitzero" yaml:"UpdatedAt,omitempty"`
 	UpstreamComponentID *openapi_types.UUID `json:"UpstreamComponentID,omitempty" yaml:"UpstreamComponentID,omitempty"`
 
 	// Version An entity-specific sequence number used for optimistic concurrency control. The value read must be sent in calls to Update.
@@ -1694,16 +1698,16 @@ type CreateUserKeyRequest struct {
 // CreateUserTokenRequest defines model for CreateUserTokenRequest.
 type CreateUserTokenRequest struct {
 	Description string    `json:"Description,omitempty" yaml:"Description,omitempty"`
-	ExpiresAt   time.Time `json:"ExpiresAt,omitempty" yaml:"ExpiresAt,omitempty"`
+	ExpiresAt   time.Time `json:"ExpiresAt,omitempty,omitzero" yaml:"ExpiresAt,omitempty"`
 }
 
 // DeclaredCommand DeclaredCommand is a command a Channel declares: its name and signature, and the Channel and Space that declare it. A command declared by two Channels in a Space is listed twice, and a run of it has to name one.
 type DeclaredCommand struct {
-	ChannelID   openapi_types.UUID `json:"ChannelID,omitempty" yaml:"ChannelID,omitempty"`
+	ChannelID   openapi_types.UUID `json:"ChannelID,omitempty,omitzero" yaml:"ChannelID,omitempty"`
 	ChannelSlug string             `json:"ChannelSlug,omitempty" yaml:"ChannelSlug,omitempty"`
 	Command     string             `json:"Command,omitempty" yaml:"Command,omitempty"`
 	Signature   *CommandSignature  `json:"Signature,omitempty" yaml:"Signature,omitempty"`
-	SpaceID     openapi_types.UUID `json:"SpaceID,omitempty" yaml:"SpaceID,omitempty"`
+	SpaceID     openapi_types.UUID `json:"SpaceID,omitempty,omitzero" yaml:"SpaceID,omitempty"`
 	SpaceSlug   string             `json:"SpaceSlug,omitempty" yaml:"SpaceSlug,omitempty"`
 }
 
@@ -1722,7 +1726,7 @@ type DemoteRequest struct {
 	ChangeDescription string `json:"ChangeDescription,omitempty" yaml:"ChangeDescription,omitempty"`
 
 	// ChangeOrderID The ChangeOrder to undo. It must have an AbortedReason. Which Units are restored is the Units its start Tag marks.
-	ChangeOrderID openapi_types.UUID `json:"ChangeOrderID" yaml:"ChangeOrderID"`
+	ChangeOrderID openapi_types.UUID `json:"ChangeOrderID,omitzero" yaml:"ChangeOrderID"`
 
 	// ChangeSetID An existing open ChangeSet to record every write in.
 	ChangeSetID *openapi_types.UUID `json:"ChangeSetID,omitempty" yaml:"ChangeSetID,omitempty"`
@@ -1742,7 +1746,7 @@ type DemoteRequest struct {
 
 // DemoteResult defines model for DemoteResult.
 type DemoteResult struct {
-	ChangeOrderID openapi_types.UUID `json:"ChangeOrderID,omitempty" yaml:"ChangeOrderID,omitempty"`
+	ChangeOrderID openapi_types.UUID `json:"ChangeOrderID,omitempty,omitzero" yaml:"ChangeOrderID,omitempty"`
 
 	// DryRun True when nothing was written.
 	DryRun bool `json:"DryRun,omitempty" yaml:"DryRun,omitempty"`
@@ -1762,7 +1766,7 @@ type DemoteSpaceResult struct {
 
 	// Reason For Skipped: NotMarked, when the change order marks no Unit of the Space.
 	Reason    string             `json:"Reason,omitempty" yaml:"Reason,omitempty"`
-	SpaceID   openapi_types.UUID `json:"SpaceID,omitempty" yaml:"SpaceID,omitempty"`
+	SpaceID   openapi_types.UUID `json:"SpaceID,omitempty,omitzero" yaml:"SpaceID,omitempty"`
 	SpaceSlug string             `json:"SpaceSlug,omitempty" yaml:"SpaceSlug,omitempty"`
 	Stage     string             `json:"Stage,omitempty" yaml:"Stage,omitempty"`
 
@@ -1799,7 +1803,7 @@ type DemoteUnitResult struct {
 
 	// StartRevisionNum The Revision the change started from, which the Unit is restored to.
 	StartRevisionNum int64              `json:"StartRevisionNum,omitempty" yaml:"StartRevisionNum,omitempty"`
-	UnitID           openapi_types.UUID `json:"UnitID,omitempty" yaml:"UnitID,omitempty"`
+	UnitID           openapi_types.UUID `json:"UnitID,omitempty,omitzero" yaml:"UnitID,omitempty"`
 }
 
 // DiffRequest defines model for DiffRequest.
@@ -1835,7 +1839,7 @@ type DiffSide struct {
 	ToolchainType string `json:"ToolchainType,omitempty" yaml:"ToolchainType,omitempty"`
 
 	// UnitID The Unit whose configuration this side is. Omitted for inline Data.
-	UnitID openapi_types.UUID `json:"UnitID,omitempty" yaml:"UnitID,omitempty"`
+	UnitID openapi_types.UUID `json:"UnitID,omitempty,omitzero" yaml:"UnitID,omitempty"`
 }
 
 // DiffSideResult defines model for DiffSideResult.
@@ -1844,10 +1848,10 @@ type DiffSideResult struct {
 	RevisionNum int64 `json:"RevisionNum,omitempty" yaml:"RevisionNum,omitempty"`
 
 	// SpaceID The Space of the Unit, for a Unit side
-	SpaceID openapi_types.UUID `json:"SpaceID,omitempty" yaml:"SpaceID,omitempty"`
+	SpaceID openapi_types.UUID `json:"SpaceID,omitempty,omitzero" yaml:"SpaceID,omitempty"`
 
 	// UnitID The Unit, for a Unit side
-	UnitID openapi_types.UUID `json:"UnitID,omitempty" yaml:"UnitID,omitempty"`
+	UnitID openapi_types.UUID `json:"UnitID,omitempty,omitzero" yaml:"UnitID,omitempty"`
 }
 
 // EntityDocument defines model for EntityDocument.
@@ -1898,25 +1902,25 @@ type ErrorMetadata struct {
 // EventLog defines model for EventLog.
 type EventLog struct {
 	// CreatedAt The timestamp when the entity was created in "2023-01-01T12:00:00Z" format.
-	CreatedAt time.Time `json:"CreatedAt,omitempty" yaml:"CreatedAt,omitempty"`
+	CreatedAt time.Time `json:"CreatedAt,omitempty,omitzero" yaml:"CreatedAt,omitempty"`
 	CursorID  int64     `json:"CursorID,omitempty" yaml:"CursorID,omitempty"`
 
 	// EntityType The type of entity.
 	EntityType string             `json:"EntityType,omitempty" yaml:"EntityType,omitempty"`
-	EventLogID openapi_types.UUID `json:"EventLogID,omitempty" yaml:"EventLogID,omitempty"`
+	EventLogID openapi_types.UUID `json:"EventLogID,omitempty,omitzero" yaml:"EventLogID,omitempty"`
 	EventType  string             `json:"EventType,omitempty" yaml:"EventType,omitempty"`
 
 	// HiddenReason The reason the entity is hidden, if it is. A hidden entity is left out of List and Search results, and of what bulk operations act on, unless the include_hidden parameter names its reason or is *, or the where parameter names the entity by Slug or ID. ConfigHub/YAML Units are created hidden with the reason BackingUnit unless given another.
 	HiddenReason      string              `json:"HiddenReason,omitempty" yaml:"HiddenReason,omitempty"`
-	OrganizationID    openapi_types.UUID  `json:"OrganizationID,omitempty" yaml:"OrganizationID,omitempty"`
+	OrganizationID    openapi_types.UUID  `json:"OrganizationID,omitempty,omitzero" yaml:"OrganizationID,omitempty"`
 	Payload           interface{}         `json:"Payload,omitempty" yaml:"Payload,omitempty"`
 	SpaceID           *openapi_types.UUID `json:"SpaceID,omitempty" yaml:"SpaceID,omitempty"`
-	SubjectEntityID   openapi_types.UUID  `json:"SubjectEntityID,omitempty" yaml:"SubjectEntityID,omitempty"`
+	SubjectEntityID   openapi_types.UUID  `json:"SubjectEntityID,omitempty,omitzero" yaml:"SubjectEntityID,omitempty"`
 	SubjectEntityType string              `json:"SubjectEntityType,omitempty" yaml:"SubjectEntityType,omitempty"`
 	TargetID          *openapi_types.UUID `json:"TargetID,omitempty" yaml:"TargetID,omitempty"`
 
 	// UpdatedAt The timestamp when the entity was last updated in "2023-01-01T12:00:00Z" format.
-	UpdatedAt time.Time `json:"UpdatedAt,omitempty" yaml:"UpdatedAt,omitempty"`
+	UpdatedAt time.Time `json:"UpdatedAt,omitempty,omitzero" yaml:"UpdatedAt,omitempty"`
 
 	// Version An entity-specific sequence number used for optimistic concurrency control. The value read must be sent in calls to Update.
 	Version int64 `json:"Version,omitempty" yaml:"Version,omitempty"`
@@ -1924,9 +1928,14 @@ type EventLog struct {
 
 // EventSubscription defines model for EventSubscription.
 type EventSubscription struct {
-	EventTypes []string            `json:"EventTypes,omitempty" yaml:"EventTypes,omitempty"`
-	SpaceID    *openapi_types.UUID `json:"SpaceID,omitempty" yaml:"SpaceID,omitempty"`
-	TargetID   *openapi_types.UUID `json:"TargetID,omitempty" yaml:"TargetID,omitempty"`
+	// EventTypes The event types to deliver, such as release.published. Empty means all.
+	EventTypes []string `json:"EventTypes,omitempty" yaml:"EventTypes,omitempty"`
+
+	// SpaceID Restricts delivery to events about one Space. It has to name a Space when the Channel is written; a Space deleted later leaves the subscription matching nothing.
+	SpaceID *openapi_types.UUID `json:"SpaceID,omitempty" yaml:"SpaceID,omitempty"`
+
+	// TargetID Restricts delivery to events about one Target. It has to name a Target when the Channel is written; a Target deleted later leaves the subscription matching nothing.
+	TargetID *openapi_types.UUID `json:"TargetID,omitempty" yaml:"TargetID,omitempty"`
 }
 
 // ExtendedAttestation Attestation with additional related entities expanded based on the request's include parameter.
@@ -1939,6 +1948,9 @@ type ExtendedAttestation struct {
 
 	// Space The Space the Attestation belongs to.
 	Space *Space `json:"Space,omitempty" yaml:"Space,omitempty"`
+
+	// ViewColumns The values of the columns of the View named by the view parameter, in the View's column order. A column that selects several values, such as one with a wildcard, has an entry for each, all with the column's Name.
+	ViewColumns []ViewColumn `json:"ViewColumns,omitempty" yaml:"ViewColumns,omitempty"`
 }
 
 // ExtendedAttribute defines model for ExtendedAttribute.
@@ -1955,6 +1967,9 @@ type ExtendedAttribute struct {
 
 	// Space The logical container for most entities in ConfigHub. Namespaces triggers, units, targets, workers, and other entities.
 	Space *Space `json:"Space,omitempty" yaml:"Space,omitempty"`
+
+	// ViewColumns The values of the columns of the View named by the view parameter, in the View's column order. A column that selects several values, such as one with a wildcard, has an entry for each, all with the column's Name.
+	ViewColumns []ViewColumn `json:"ViewColumns,omitempty" yaml:"ViewColumns,omitempty"`
 }
 
 // ExtendedBridgeWorker defines model for ExtendedBridgeWorker.
@@ -1975,6 +1990,9 @@ type ExtendedBridgeWorker struct {
 
 	// Space The logical container for most entities in ConfigHub. Namespaces triggers, units, targets, workers, and other entities.
 	Space *Space `json:"Space,omitempty" yaml:"Space,omitempty"`
+
+	// ViewColumns The values of the columns of the View named by the view parameter, in the View's column order. A column that selects several values, such as one with a wildcard, has an entry for each, all with the column's Name.
+	ViewColumns []ViewColumn `json:"ViewColumns,omitempty" yaml:"ViewColumns,omitempty"`
 }
 
 // ExtendedChangeOrder defines model for ExtendedChangeOrder.
@@ -2009,6 +2027,9 @@ type ExtendedChangeOrder struct {
 
 	// UnitFilter Defines an entity filter.
 	UnitFilter *Filter `json:"UnitFilter,omitempty" yaml:"UnitFilter,omitempty"`
+
+	// ViewColumns The values of the columns of the View named by the view parameter, in the View's column order. A column that selects several values, such as one with a wildcard, has an entry for each, all with the column's Name.
+	ViewColumns []ViewColumn `json:"ViewColumns,omitempty" yaml:"ViewColumns,omitempty"`
 }
 
 // ExtendedChangeSet defines model for ExtendedChangeSet.
@@ -2028,6 +2049,9 @@ type ExtendedChangeSet struct {
 
 	// StartTag Defines a Tag that can be used to identify a set of Revisions across Units.
 	StartTag *Tag `json:"StartTag,omitempty" yaml:"StartTag,omitempty"`
+
+	// ViewColumns The values of the columns of the View named by the view parameter, in the View's column order. A column that selects several values, such as one with a wildcard, has an entry for each, all with the column's Name.
+	ViewColumns []ViewColumn `json:"ViewColumns,omitempty" yaml:"ViewColumns,omitempty"`
 }
 
 // ExtendedChangeWorkflow defines model for ExtendedChangeWorkflow.
@@ -2041,6 +2065,9 @@ type ExtendedChangeWorkflow struct {
 
 	// Space The logical container for most entities in ConfigHub. Namespaces triggers, units, targets, workers, and other entities.
 	Space *Space `json:"Space,omitempty" yaml:"Space,omitempty"`
+
+	// ViewColumns The values of the columns of the View named by the view parameter, in the View's column order. A column that selects several values, such as one with a wildcard, has an entry for each, all with the column's Name.
+	ViewColumns []ViewColumn `json:"ViewColumns,omitempty" yaml:"ViewColumns,omitempty"`
 }
 
 // ExtendedChannel defines model for ExtendedChannel.
@@ -2054,6 +2081,9 @@ type ExtendedChannel struct {
 
 	// Space The logical container for most entities in ConfigHub. Namespaces triggers, units, targets, workers, and other entities.
 	Space *Space `json:"Space,omitempty" yaml:"Space,omitempty"`
+
+	// ViewColumns The values of the columns of the View named by the view parameter, in the View's column order. A column that selects several values, such as one with a wildcard, has an entry for each, all with the column's Name.
+	ViewColumns []ViewColumn `json:"ViewColumns,omitempty" yaml:"ViewColumns,omitempty"`
 }
 
 // ExtendedComponent defines model for ExtendedComponent.
@@ -2064,6 +2094,9 @@ type ExtendedComponent struct {
 
 	// Organization The top-level container for an organization using ConfigHub.
 	Organization *Organization `json:"Organization,omitempty" yaml:"Organization,omitempty"`
+
+	// ViewColumns The values of the columns of the View named by the view parameter, in the View's column order. A column that selects several values, such as one with a wildcard, has an entry for each, all with the column's Name.
+	ViewColumns []ViewColumn `json:"ViewColumns,omitempty" yaml:"ViewColumns,omitempty"`
 }
 
 // ExtendedFilter defines model for ExtendedFilter.
@@ -2081,6 +2114,9 @@ type ExtendedFilter struct {
 
 	// Space The logical container for most entities in ConfigHub. Namespaces triggers, units, targets, workers, and other entities.
 	Space *Space `json:"Space,omitempty" yaml:"Space,omitempty"`
+
+	// ViewColumns The values of the columns of the View named by the view parameter, in the View's column order. A column that selects several values, such as one with a wildcard, has an entry for each, all with the column's Name.
+	ViewColumns []ViewColumn `json:"ViewColumns,omitempty" yaml:"ViewColumns,omitempty"`
 }
 
 // ExtendedGroup Group with additional related entities expanded based on the request's include parameter.
@@ -2089,6 +2125,9 @@ type ExtendedGroup struct {
 
 	// Group The Group.
 	Group *Group `json:"Group,omitempty" yaml:"Group,omitempty"`
+
+	// ViewColumns The values of the columns of the View named by the view parameter, in the View's column order. A column that selects several values, such as one with a wildcard, has an entry for each, all with the column's Name.
+	ViewColumns []ViewColumn `json:"ViewColumns,omitempty" yaml:"ViewColumns,omitempty"`
 }
 
 // ExtendedInvocation defines model for ExtendedInvocation.
@@ -2112,6 +2151,9 @@ type ExtendedInvocation struct {
 
 	// Space The logical container for most entities in ConfigHub. Namespaces triggers, units, targets, workers, and other entities.
 	Space *Space `json:"Space,omitempty" yaml:"Space,omitempty"`
+
+	// ViewColumns The values of the columns of the View named by the view parameter, in the View's column order. A column that selects several values, such as one with a wildcard, has an entry for each, all with the column's Name.
+	ViewColumns []ViewColumn `json:"ViewColumns,omitempty" yaml:"ViewColumns,omitempty"`
 }
 
 // ExtendedLink defines model for ExtendedLink.
@@ -2141,6 +2183,9 @@ type ExtendedLink struct {
 
 	// TransformInvocation Defines a stored, reusable call to one or more functions, executed in the order they are listed.
 	TransformInvocation *Invocation `json:"TransformInvocation,omitempty" yaml:"TransformInvocation,omitempty"`
+
+	// ViewColumns The values of the columns of the View named by the view parameter, in the View's column order. A column that selects several values, such as one with a wildcard, has an entry for each, all with the column's Name.
+	ViewColumns []ViewColumn `json:"ViewColumns,omitempty" yaml:"ViewColumns,omitempty"`
 }
 
 // ExtendedMutation defines model for ExtendedMutation.
@@ -2184,6 +2229,9 @@ type ExtendedMutation struct {
 
 	// Unit Unit is the core unit of operation in ConfigHub. It contains a blob of configuration Data of a single supported Config Type (configuration format). This blob is typically a text document that contains a collection of Kubernetes or infrastructure resources, or an application configuration file. Applying / deploying or destroying the configuration happens as a single *transaction* from ConfigHub's perspective. In reality, it is most often a multi-step workflow performed by the underlying configuration / deployment tool. The resources must belong to a single infrastructure provider and the actuation mechanism must be able to resolve references and ordering dependencies among the resources within the document. For example, if one resource needs to be fully provisioned to provide input to another resource, then the actuation code is responsible for handling this. Revisions store historical copies of the configuration data. Configuration data can be restored from prior Revisions. Units can also be cloned to create new variants of a configuration.
 	Unit *Unit `json:"Unit,omitempty" yaml:"Unit,omitempty"`
+
+	// ViewColumns The values of the columns of the View named by the view parameter, in the View's column order. A column that selects several values, such as one with a wildcard, has an entry for each, all with the column's Name.
+	ViewColumns []ViewColumn `json:"ViewColumns,omitempty" yaml:"ViewColumns,omitempty"`
 }
 
 // ExtendedOrganization defines model for ExtendedOrganization.
@@ -2192,6 +2240,9 @@ type ExtendedOrganization struct {
 
 	// Organization The top-level container for an organization using ConfigHub.
 	Organization *Organization `json:"Organization,omitempty" yaml:"Organization,omitempty"`
+
+	// ViewColumns The values of the columns of the View named by the view parameter, in the View's column order. A column that selects several values, such as one with a wildcard, has an entry for each, all with the column's Name.
+	ViewColumns []ViewColumn `json:"ViewColumns,omitempty" yaml:"ViewColumns,omitempty"`
 }
 
 // ExtendedOrganizationMember defines model for ExtendedOrganizationMember.
@@ -2200,6 +2251,9 @@ type ExtendedOrganizationMember struct {
 
 	// OrganizationMember a User given membership on the Organization
 	OrganizationMember *OrganizationMember `json:"OrganizationMember,omitempty" yaml:"OrganizationMember,omitempty"`
+
+	// ViewColumns The values of the columns of the View named by the view parameter, in the View's column order. A column that selects several values, such as one with a wildcard, has an entry for each, all with the column's Name.
+	ViewColumns []ViewColumn `json:"ViewColumns,omitempty" yaml:"ViewColumns,omitempty"`
 }
 
 // ExtendedRelease Release with additional related entities expanded based on the request's include parameter.
@@ -2224,6 +2278,9 @@ type ExtendedRelease struct {
 
 	// User The User who published the Release. Expanded when requested via the include parameter.
 	User *User `json:"User,omitempty" yaml:"User,omitempty"`
+
+	// ViewColumns The values of the columns of the View named by the view parameter, in the View's column order. A column that selects several values, such as one with a wildcard, has an entry for each, all with the column's Name.
+	ViewColumns []ViewColumn `json:"ViewColumns,omitempty" yaml:"ViewColumns,omitempty"`
 }
 
 // ExtendedResource defines model for ExtendedResource.
@@ -2248,8 +2305,7 @@ type ExtendedResource struct {
 	// Unit Unit is the core unit of operation in ConfigHub. It contains a blob of configuration Data of a single supported Config Type (configuration format). This blob is typically a text document that contains a collection of Kubernetes or infrastructure resources, or an application configuration file. Applying / deploying or destroying the configuration happens as a single *transaction* from ConfigHub's perspective. In reality, it is most often a multi-step workflow performed by the underlying configuration / deployment tool. The resources must belong to a single infrastructure provider and the actuation mechanism must be able to resolve references and ordering dependencies among the resources within the document. For example, if one resource needs to be fully provisioned to provide input to another resource, then the actuation code is responsible for handling this. Revisions store historical copies of the configuration data. Configuration data can be restored from prior Revisions. Units can also be cloned to create new variants of a configuration.
 	Unit *Unit `json:"Unit,omitempty" yaml:"Unit,omitempty"`
 
-	// View Defines an entity view.
-	View        *View        `json:"View,omitempty" yaml:"View,omitempty"`
+	// ViewColumns The values of the columns of the View named by the view parameter, in the View's column order. A column that selects several values, such as one with a wildcard, has an entry for each, all with the column's Name.
 	ViewColumns []ViewColumn `json:"ViewColumns,omitempty" yaml:"ViewColumns,omitempty"`
 }
 
@@ -2271,6 +2327,9 @@ type ExtendedReviewComment struct {
 
 	// Unit Unit is the core unit of operation in ConfigHub. It contains a blob of configuration Data of a single supported Config Type (configuration format). This blob is typically a text document that contains a collection of Kubernetes or infrastructure resources, or an application configuration file. Applying / deploying or destroying the configuration happens as a single *transaction* from ConfigHub's perspective. In reality, it is most often a multi-step workflow performed by the underlying configuration / deployment tool. The resources must belong to a single infrastructure provider and the actuation mechanism must be able to resolve references and ordering dependencies among the resources within the document. For example, if one resource needs to be fully provisioned to provide input to another resource, then the actuation code is responsible for handling this. Revisions store historical copies of the configuration data. Configuration data can be restored from prior Revisions. Units can also be cloned to create new variants of a configuration.
 	Unit *Unit `json:"Unit,omitempty" yaml:"Unit,omitempty"`
+
+	// ViewColumns The values of the columns of the View named by the view parameter, in the View's column order. A column that selects several values, such as one with a wildcard, has an entry for each, all with the column's Name.
+	ViewColumns []ViewColumn `json:"ViewColumns,omitempty" yaml:"ViewColumns,omitempty"`
 }
 
 // ExtendedRevision defines model for ExtendedRevision.
@@ -2298,6 +2357,9 @@ type ExtendedRevision struct {
 
 	// User a User in Confighub.
 	User *User `json:"User,omitempty" yaml:"User,omitempty"`
+
+	// ViewColumns The values of the columns of the View named by the view parameter, in the View's column order. A column that selects several values, such as one with a wildcard, has an entry for each, all with the column's Name.
+	ViewColumns []ViewColumn `json:"ViewColumns,omitempty" yaml:"ViewColumns,omitempty"`
 }
 
 // ExtendedServiceAccount defines model for ExtendedServiceAccount.
@@ -2309,6 +2371,9 @@ type ExtendedServiceAccount struct {
 
 	// ServiceAccount An identity of the organization that is not a person and does not log in through the identity provider, such as an automation or an agent. Each ServiceAccount is backed by a User, which is what other entities' Permissions and Groups name to grant it access. The ServiceAccount's own Permissions say who may manage it.
 	ServiceAccount *ServiceAccount `json:"ServiceAccount,omitempty" yaml:"ServiceAccount,omitempty"`
+
+	// ViewColumns The values of the columns of the View named by the view parameter, in the View's column order. A column that selects several values, such as one with a wildcard, has an entry for each, all with the column's Name.
+	ViewColumns []ViewColumn `json:"ViewColumns,omitempty" yaml:"ViewColumns,omitempty"`
 }
 
 // ExtendedSpace defines model for ExtendedSpace.
@@ -2335,6 +2400,7 @@ type ExtendedSpace struct {
 	TotalChangeOrderCount    int64          `json:"TotalChangeOrderCount,omitempty" yaml:"TotalChangeOrderCount,omitempty"`
 	TotalChangeSetCount      int64          `json:"TotalChangeSetCount,omitempty" yaml:"TotalChangeSetCount,omitempty"`
 	TotalChangeWorkflowCount int64          `json:"TotalChangeWorkflowCount,omitempty" yaml:"TotalChangeWorkflowCount,omitempty"`
+	TotalChannelCount        int64          `json:"TotalChannelCount,omitempty" yaml:"TotalChannelCount,omitempty"`
 	TotalFilterCount         int64          `json:"TotalFilterCount,omitempty" yaml:"TotalFilterCount,omitempty"`
 	TotalInvocationCount     int64          `json:"TotalInvocationCount,omitempty" yaml:"TotalInvocationCount,omitempty"`
 	TotalLinkCount           int64          `json:"TotalLinkCount,omitempty" yaml:"TotalLinkCount,omitempty"`
@@ -2351,7 +2417,10 @@ type ExtendedSpace struct {
 	UnlinkedUnitCount   int64     `json:"UnlinkedUnitCount,omitempty" yaml:"UnlinkedUnitCount,omitempty"`
 	UnreleasedUnitCount int64     `json:"UnreleasedUnitCount,omitempty" yaml:"UnreleasedUnitCount,omitempty"`
 	UpgradableUnitCount int64     `json:"UpgradableUnitCount,omitempty" yaml:"UpgradableUnitCount,omitempty"`
-	WarnedUnitCount     int64     `json:"WarnedUnitCount,omitempty" yaml:"WarnedUnitCount,omitempty"`
+
+	// ViewColumns The values of the columns of the View named by the view parameter, in the View's column order. A column that selects several values, such as one with a wildcard, has an entry for each, all with the column's Name.
+	ViewColumns     []ViewColumn `json:"ViewColumns,omitempty" yaml:"ViewColumns,omitempty"`
+	WarnedUnitCount int64        `json:"WarnedUnitCount,omitempty" yaml:"WarnedUnitCount,omitempty"`
 }
 
 // ExtendedTag defines model for ExtendedTag.
@@ -2368,6 +2437,9 @@ type ExtendedTag struct {
 
 	// Tag Defines a Tag that can be used to identify a set of Revisions across Units.
 	Tag *Tag `json:"Tag,omitempty" yaml:"Tag,omitempty"`
+
+	// ViewColumns The values of the columns of the View named by the view parameter, in the View's column order. A column that selects several values, such as one with a wildcard, has an entry for each, all with the column's Name.
+	ViewColumns []ViewColumn `json:"ViewColumns,omitempty" yaml:"ViewColumns,omitempty"`
 }
 
 // ExtendedTarget defines model for ExtendedTarget.
@@ -2386,6 +2458,9 @@ type ExtendedTarget struct {
 	// TriggerFilter Defines an entity filter.
 	TriggerFilter *Filter   `json:"TriggerFilter,omitempty" yaml:"TriggerFilter,omitempty"`
 	Triggers      []Trigger `json:"Triggers,omitempty" yaml:"Triggers,omitempty"`
+
+	// ViewColumns The values of the columns of the View named by the view parameter, in the View's column order. A column that selects several values, such as one with a wildcard, has an entry for each, all with the column's Name.
+	ViewColumns []ViewColumn `json:"ViewColumns,omitempty" yaml:"ViewColumns,omitempty"`
 }
 
 // ExtendedTrigger defines model for ExtendedTrigger.
@@ -2423,6 +2498,9 @@ type ExtendedTrigger struct {
 
 	// UnitFilter Defines an entity filter.
 	UnitFilter *Filter `json:"UnitFilter,omitempty" yaml:"UnitFilter,omitempty"`
+
+	// ViewColumns The values of the columns of the View named by the view parameter, in the View's column order. A column that selects several values, such as one with a wildcard, has an entry for each, all with the column's Name.
+	ViewColumns []ViewColumn `json:"ViewColumns,omitempty" yaml:"ViewColumns,omitempty"`
 }
 
 // ExtendedUnit Unit with capability to extend additional related entities.
@@ -2462,8 +2540,7 @@ type ExtendedUnit struct {
 	// UpstreamUnit If this Unit is a clone, the Upstream Unit it was cloned from. Optional.
 	UpstreamUnit *Unit `json:"UpstreamUnit,omitempty" yaml:"UpstreamUnit,omitempty"`
 
-	// View Defines an entity view.
-	View        *View        `json:"View,omitempty" yaml:"View,omitempty"`
+	// ViewColumns The values of the columns of the View named by the view parameter, in the View's column order. A column that selects several values, such as one with a wildcard, has an entry for each, all with the column's Name.
 	ViewColumns []ViewColumn `json:"ViewColumns,omitempty" yaml:"ViewColumns,omitempty"`
 }
 
@@ -2473,6 +2550,9 @@ type ExtendedUser struct {
 
 	// User a User in Confighub.
 	User *User `json:"User,omitempty" yaml:"User,omitempty"`
+
+	// ViewColumns The values of the columns of the View named by the view parameter, in the View's column order. A column that selects several values, such as one with a wildcard, has an entry for each, all with the column's Name.
+	ViewColumns []ViewColumn `json:"ViewColumns,omitempty" yaml:"ViewColumns,omitempty"`
 }
 
 // ExtendedView defines model for ExtendedView.
@@ -2490,6 +2570,9 @@ type ExtendedView struct {
 
 	// View Defines an entity view.
 	View *View `json:"View,omitempty" yaml:"View,omitempty"`
+
+	// ViewColumns The values of the columns of the View named by the view parameter, in the View's column order. A column that selects several values, such as one with a wildcard, has an entry for each, all with the column's Name.
+	ViewColumns []ViewColumn `json:"ViewColumns,omitempty" yaml:"ViewColumns,omitempty"`
 }
 
 // Filter Defines an entity filter.
@@ -2499,7 +2582,7 @@ type Filter struct {
 	BackingUnitID *openapi_types.UUID `json:"BackingUnitID,omitempty" yaml:"BackingUnitID,omitempty"`
 
 	// CreatedAt The timestamp when the entity was created in "2023-01-01T12:00:00Z" format.
-	CreatedAt time.Time `json:"CreatedAt,omitempty" yaml:"CreatedAt,omitempty"`
+	CreatedAt time.Time `json:"CreatedAt,omitempty,omitzero" yaml:"CreatedAt,omitempty"`
 
 	// DeleteGates An optional set of gates that, if any is present, will block deletion.
 	DeleteGates map[string]bool `json:"DeleteGates,omitempty" yaml:"DeleteGates,omitempty"`
@@ -2511,9 +2594,9 @@ type Filter struct {
 	EntityType string `json:"EntityType,omitempty" yaml:"EntityType,omitempty"`
 
 	// FilterID FilterID uniquely identifies a filter within the system.
-	FilterID openapi_types.UUID `json:"FilterID,omitempty" yaml:"FilterID,omitempty"`
+	FilterID openapi_types.UUID `json:"FilterID,omitempty,omitzero" yaml:"FilterID,omitempty"`
 
-	// From From specifies the type of entity (Unit, Space, etc.) to filter, in PascalCase.
+	// From From specifies the type of entity (Unit, Space, etc.) to filter, in PascalCase. Required on create, and immutable.
 	From string `json:"From" yaml:"From"`
 
 	// FromSpaceID FromSpaceID optionally specifies a Space to filter within. Only relevant for spaced entity spaces. (optional)
@@ -2530,7 +2613,7 @@ type Filter struct {
 	Labels map[string]string `json:"Labels,omitempty" yaml:"Labels,omitempty"`
 
 	// OrganizationID Unique identifier for an organization.
-	OrganizationID openapi_types.UUID `json:"OrganizationID,omitempty" yaml:"OrganizationID,omitempty"`
+	OrganizationID openapi_types.UUID `json:"OrganizationID,omitempty,omitzero" yaml:"OrganizationID,omitempty"`
 
 	// Permissions Permissions to access this filter.
 	Permissions *Permissions `json:"Permissions,omitempty" yaml:"Permissions,omitempty"`
@@ -2542,13 +2625,13 @@ type Filter struct {
 	Slug string `json:"Slug" yaml:"Slug"`
 
 	// SpaceID Unique identifier for a space.
-	SpaceID openapi_types.UUID `json:"SpaceID,omitempty" yaml:"SpaceID,omitempty"`
+	SpaceID openapi_types.UUID `json:"SpaceID,omitempty,omitzero" yaml:"SpaceID,omitempty"`
 
 	// SpaceSlug Slug of the Space this entity belongs to. (readonly)
 	SpaceSlug string `json:"SpaceSlug,omitempty" yaml:"SpaceSlug,omitempty"`
 
 	// UpdatedAt The timestamp when the entity was last updated in "2023-01-01T12:00:00Z" format.
-	UpdatedAt        time.Time           `json:"UpdatedAt,omitempty" yaml:"UpdatedAt,omitempty"`
+	UpdatedAt        time.Time           `json:"UpdatedAt,omitempty,omitzero" yaml:"UpdatedAt,omitempty"`
 	UpstreamFilterID *openapi_types.UUID `json:"UpstreamFilterID,omitempty" yaml:"UpstreamFilterID,omitempty"`
 
 	// Version An entity-specific sequence number used for optimistic concurrency control. The value read must be sent in calls to Update.
@@ -2683,16 +2766,16 @@ type FunctionInvocationsResponse struct {
 	Mutators []int `json:"Mutators" yaml:"Mutators"`
 
 	// OrganizationID ID of the Unit's Organization
-	OrganizationID openapi_types.UUID `json:"OrganizationID,omitempty" yaml:"OrganizationID,omitempty"`
+	OrganizationID openapi_types.UUID `json:"OrganizationID,omitempty,omitzero" yaml:"OrganizationID,omitempty"`
 
 	// Outputs Map of output types to their corresponding output data as embedded JSON
 	Outputs map[string]string `json:"Outputs" yaml:"Outputs"`
 
 	// RevisionID ID of the Revision the configuration data is associated with
-	RevisionID openapi_types.UUID `json:"RevisionID,omitempty" yaml:"RevisionID,omitempty"`
+	RevisionID openapi_types.UUID `json:"RevisionID,omitempty,omitzero" yaml:"RevisionID,omitempty"`
 
 	// SpaceID ID of the Unit's Space
-	SpaceID openapi_types.UUID `json:"SpaceID,omitempty" yaml:"SpaceID,omitempty"`
+	SpaceID openapi_types.UUID `json:"SpaceID,omitempty,omitzero" yaml:"SpaceID,omitempty"`
 
 	// SpaceSlug Slug of the Unit's Space
 	SpaceSlug string `json:"SpaceSlug,omitempty" yaml:"SpaceSlug,omitempty"`
@@ -2701,10 +2784,10 @@ type FunctionInvocationsResponse struct {
 	Success bool `json:"Success,omitempty" yaml:"Success,omitempty"`
 
 	// TargetID ID of the Unit's Target; optional
-	TargetID openapi_types.UUID `json:"TargetID,omitempty" yaml:"TargetID,omitempty"`
+	TargetID openapi_types.UUID `json:"TargetID,omitempty,omitzero" yaml:"TargetID,omitempty"`
 
 	// UnitID ID of the Unit the configuration data is associated with
-	UnitID openapi_types.UUID `json:"UnitID,omitempty" yaml:"UnitID,omitempty"`
+	UnitID openapi_types.UUID `json:"UnitID,omitempty,omitzero" yaml:"UnitID,omitempty"`
 
 	// UnitSlug Slug of the Unit
 	UnitSlug string `json:"UnitSlug,omitempty" yaml:"UnitSlug,omitempty"`
@@ -2821,7 +2904,7 @@ type FunctionWorkerInfo struct {
 // Group A Group of Users, a subject in an entity's Permissions. Groups and their membership are managed in the identity provider, and like Users are not scoped to an Organization; a Group is provisioned when a User in it logs in. Bot Users are the exception: they are added to a Group through the API.
 type Group struct {
 	// CreatedAt The timestamp when the entity was created in "2023-01-01T12:00:00Z" format.
-	CreatedAt time.Time `json:"CreatedAt,omitempty" yaml:"CreatedAt,omitempty"`
+	CreatedAt time.Time `json:"CreatedAt,omitempty,omitzero" yaml:"CreatedAt,omitempty"`
 
 	// DisplayName Friendly name for the entity.
 	DisplayName string `json:"DisplayName,omitempty" yaml:"DisplayName,omitempty"`
@@ -2833,7 +2916,7 @@ type Group struct {
 	ExternalID string `json:"ExternalID,omitempty" yaml:"ExternalID,omitempty"`
 
 	// GroupID Unique identifier for a Group. (readonly)
-	GroupID openapi_types.UUID `json:"GroupID,omitempty" yaml:"GroupID,omitempty"`
+	GroupID openapi_types.UUID `json:"GroupID,omitempty,omitzero" yaml:"GroupID,omitempty"`
 
 	// HiddenReason The reason the entity is hidden, if it is. A hidden entity is left out of List and Search results, and of what bulk operations act on, unless the include_hidden parameter names its reason or is *, or the where parameter names the entity by Slug or ID. ConfigHub/YAML Units are created hidden with the reason BackingUnit unless given another.
 	HiddenReason string `json:"HiddenReason,omitempty" yaml:"HiddenReason,omitempty"`
@@ -2842,7 +2925,7 @@ type Group struct {
 	Slug string `json:"Slug" yaml:"Slug"`
 
 	// UpdatedAt The timestamp when the entity was last updated in "2023-01-01T12:00:00Z" format.
-	UpdatedAt time.Time `json:"UpdatedAt,omitempty" yaml:"UpdatedAt,omitempty"`
+	UpdatedAt time.Time `json:"UpdatedAt,omitempty,omitzero" yaml:"UpdatedAt,omitempty"`
 
 	// Version An entity-specific sequence number used for optimistic concurrency control. The value read must be sent in calls to Update.
 	Version int64 `json:"Version,omitempty" yaml:"Version,omitempty"`
@@ -2873,7 +2956,7 @@ type Invocation struct {
 	BridgeWorkerID *openapi_types.UUID `json:"BridgeWorkerID,omitempty" yaml:"BridgeWorkerID,omitempty"`
 
 	// CreatedAt The timestamp when the entity was created in "2023-01-01T12:00:00Z" format.
-	CreatedAt time.Time `json:"CreatedAt,omitempty" yaml:"CreatedAt,omitempty"`
+	CreatedAt time.Time `json:"CreatedAt,omitempty,omitzero" yaml:"CreatedAt,omitempty"`
 
 	// DeleteGates An optional set of gates that, if any is present, will block deletion.
 	DeleteGates map[string]bool `json:"DeleteGates,omitempty" yaml:"DeleteGates,omitempty"`
@@ -2892,13 +2975,13 @@ type Invocation struct {
 	HiddenReason string `json:"HiddenReason,omitempty" yaml:"HiddenReason,omitempty"`
 
 	// InvocationID InvocationID uniquely identifies a invocation within the system.
-	InvocationID openapi_types.UUID `json:"InvocationID,omitempty" yaml:"InvocationID,omitempty"`
+	InvocationID openapi_types.UUID `json:"InvocationID,omitempty,omitzero" yaml:"InvocationID,omitempty"`
 
 	// Labels An optional map of Label key/value pairs to specify identifying attributes of entities for the purpose of grouping and filtering them.
 	Labels map[string]string `json:"Labels,omitempty" yaml:"Labels,omitempty"`
 
 	// OrganizationID Unique identifier for an organization.
-	OrganizationID openapi_types.UUID  `json:"OrganizationID,omitempty" yaml:"OrganizationID,omitempty"`
+	OrganizationID openapi_types.UUID  `json:"OrganizationID,omitempty,omitzero" yaml:"OrganizationID,omitempty"`
 	Parameters     []FunctionParameter `json:"Parameters,omitempty" yaml:"Parameters,omitempty"`
 
 	// Permissions Permissions to access this invocation.
@@ -2908,7 +2991,7 @@ type Invocation struct {
 	Slug string `json:"Slug" yaml:"Slug"`
 
 	// SpaceID Unique identifier for a space.
-	SpaceID openapi_types.UUID `json:"SpaceID,omitempty" yaml:"SpaceID,omitempty"`
+	SpaceID openapi_types.UUID `json:"SpaceID,omitempty,omitzero" yaml:"SpaceID,omitempty"`
 
 	// SpaceSlug Slug of the Space this entity belongs to. (readonly)
 	SpaceSlug string `json:"SpaceSlug,omitempty" yaml:"SpaceSlug,omitempty"`
@@ -2918,7 +3001,7 @@ type Invocation struct {
 	ToolchainType string `json:"ToolchainType" yaml:"ToolchainType"`
 
 	// UpdatedAt The timestamp when the entity was last updated in "2023-01-01T12:00:00Z" format.
-	UpdatedAt            time.Time           `json:"UpdatedAt,omitempty" yaml:"UpdatedAt,omitempty"`
+	UpdatedAt            time.Time           `json:"UpdatedAt,omitempty,omitzero" yaml:"UpdatedAt,omitempty"`
 	UpstreamInvocationID *openapi_types.UUID `json:"UpstreamInvocationID,omitempty" yaml:"UpstreamInvocationID,omitempty"`
 
 	// Version An entity-specific sequence number used for optimistic concurrency control. The value read must be sent in calls to Update.
@@ -2965,7 +3048,7 @@ type Link struct {
 	Clearance *Clearance   `json:"Clearance,omitempty" yaml:"Clearance,omitempty"`
 
 	// CreatedAt The timestamp when the entity was created in "2023-01-01T12:00:00Z" format.
-	CreatedAt time.Time `json:"CreatedAt,omitempty" yaml:"CreatedAt,omitempty"`
+	CreatedAt time.Time `json:"CreatedAt,omitempty,omitzero" yaml:"CreatedAt,omitempty"`
 
 	// DeleteGates An optional set of gates that, if any is present, will block deletion.
 	DeleteGates map[string]bool `json:"DeleteGates,omitempty" yaml:"DeleteGates,omitempty"`
@@ -2986,7 +3069,7 @@ type Link struct {
 	EntityType string `json:"EntityType,omitempty" yaml:"EntityType,omitempty"`
 
 	// FromUnitID Unique identifier of the downstream (consumer) Unit. Links must be in the same space as the source unit.
-	FromUnitID openapi_types.UUID `json:"FromUnitID" yaml:"FromUnitID"`
+	FromUnitID openapi_types.UUID `json:"FromUnitID,omitzero" yaml:"FromUnitID"`
 
 	// Guards Guards to record on the paths this link's resolve writes, naming the reasons those paths hold what they hold, so a later operation must be cleared for them before overwriting. Sibling to Protect: Protect claims the paths, Guards say why. Add and overwrite only -- retiring a guard is the /guard API (cub unit set-guard --remove-guard). Refused on UpgradeUnit and MergeUnits links, whose guards arrive by propagation from upstream.
 	Guards *GuardStamp `json:"Guards,omitempty" yaml:"Guards,omitempty"`
@@ -3001,7 +3084,7 @@ type Link struct {
 	Labels map[string]string `json:"Labels,omitempty" yaml:"Labels,omitempty"`
 
 	// LinkID Unique identifier for a Link.
-	LinkID openapi_types.UUID `json:"LinkID,omitempty" yaml:"LinkID,omitempty"`
+	LinkID openapi_types.UUID `json:"LinkID,omitempty,omitzero" yaml:"LinkID,omitempty"`
 
 	// ManualBindings The needs/provides attribute bindings stated for this Link, which resolution uses as they are. Each Binding maps one needed attribute in the downstream Unit to one provided attribute in the upstream Unit. An Insert Link has exactly one, which identifies only the needed attribute (NeededResource and NeededPath) and whose DataType selects how the upstream Unit is inserted: string, the default, inserts it verbatim as text; the downstream Unit's own configuration format inserts it as configuration data.
 	ManualBindings *BindingList `json:"ManualBindings,omitempty" yaml:"ManualBindings,omitempty"`
@@ -3010,7 +3093,7 @@ type Link struct {
 	MergeEnableSubtraction bool `json:"MergeEnableSubtraction,omitempty" yaml:"MergeEnableSubtraction,omitempty"`
 
 	// OrganizationID Unique identifier for an organization.
-	OrganizationID openapi_types.UUID `json:"OrganizationID,omitempty" yaml:"OrganizationID,omitempty"`
+	OrganizationID openapi_types.UUID `json:"OrganizationID,omitempty,omitzero" yaml:"OrganizationID,omitempty"`
 
 	// Permissions Permissions to access this link.
 	Permissions *Permissions `json:"Permissions,omitempty" yaml:"Permissions,omitempty"`
@@ -3022,7 +3105,7 @@ type Link struct {
 	Slug string `json:"Slug" yaml:"Slug"`
 
 	// SpaceID Unique identifier for a space.
-	SpaceID openapi_types.UUID `json:"SpaceID,omitempty" yaml:"SpaceID,omitempty"`
+	SpaceID openapi_types.UUID `json:"SpaceID,omitempty,omitzero" yaml:"SpaceID,omitempty"`
 
 	// SpaceSlug Slug of the Space this entity belongs to. (readonly)
 	SpaceSlug string `json:"SpaceSlug,omitempty" yaml:"SpaceSlug,omitempty"`
@@ -3034,10 +3117,10 @@ type Link struct {
 	Stale bool `json:"Stale,omitempty" yaml:"Stale,omitempty"`
 
 	// ToSpaceID Unique identifier of the Space of the upstream Unit.
-	ToSpaceID openapi_types.UUID `json:"ToSpaceID,omitempty" yaml:"ToSpaceID,omitempty"`
+	ToSpaceID openapi_types.UUID `json:"ToSpaceID,omitempty,omitzero" yaml:"ToSpaceID,omitempty"`
 
 	// ToUnitID Unique identifier of the upstream (producer) Unit.
-	ToUnitID openapi_types.UUID `json:"ToUnitID" yaml:"ToUnitID"`
+	ToUnitID openapi_types.UUID `json:"ToUnitID,omitzero" yaml:"ToUnitID"`
 
 	// TransformInvocationID Identifier of an Invocation whose function is executed on the upstream Unit's data before the result is inserted into or upserted into the downstream Unit. Only valid when UpdateType is Insert or Upsert. The Invocation's ToolchainType must match the upstream Unit's ToolchainType, the function must be non-mutating, and its OutputType must be YAML. For Upsert the output must also match the downstream Unit's toolchain, which currently limits it to Kubernetes/YAML.
 	TransformInvocationID *openapi_types.UUID `json:"TransformInvocationID,omitempty" yaml:"TransformInvocationID,omitempty"`
@@ -3046,7 +3129,7 @@ type Link struct {
 	UpdateType string `json:"UpdateType,omitempty" yaml:"UpdateType,omitempty"`
 
 	// UpdatedAt The timestamp when the entity was last updated in "2023-01-01T12:00:00Z" format.
-	UpdatedAt time.Time `json:"UpdatedAt,omitempty" yaml:"UpdatedAt,omitempty"`
+	UpdatedAt time.Time `json:"UpdatedAt,omitempty,omitzero" yaml:"UpdatedAt,omitempty"`
 
 	// UpstreamGetters Getter function invocations whose first AttributeValue Value is exposed to DownstreamPaths expressions and DownstreamSetters argument templates by Name, alongside UpstreamPaths. Each function must be non-mutating and produce OutputTypeAttributeValueList. Worker functions are not supported. Only valid when UpdateType is TransformPaths.
 	UpstreamGetters []NamedFunctionResult `json:"UpstreamGetters,omitempty" yaml:"UpstreamGetters,omitempty"`
@@ -3096,7 +3179,7 @@ type LinkFinding struct {
 	Key string `json:"Key,omitempty" yaml:"Key,omitempty"`
 
 	// LinkID The Link whose resolve recorded the finding
-	LinkID openapi_types.UUID `json:"LinkID,omitempty" yaml:"LinkID,omitempty"`
+	LinkID openapi_types.UUID `json:"LinkID,omitempty,omitzero" yaml:"LinkID,omitempty"`
 
 	// Path The path the finding is about; empty for a resource-level finding
 	Path string `json:"Path,omitempty" yaml:"Path,omitempty"`
@@ -3108,7 +3191,7 @@ type LinkFinding struct {
 	Resource *ResourceInfo `json:"Resource,omitempty" yaml:"Resource,omitempty"`
 
 	// UnitID The other Unit involved: the Link's upstream Unit
-	UnitID openapi_types.UUID `json:"UnitID,omitempty" yaml:"UnitID,omitempty"`
+	UnitID openapi_types.UUID `json:"UnitID,omitempty,omitzero" yaml:"UnitID,omitempty"`
 }
 
 // LinkFindingList defines model for LinkFindingList.
@@ -3122,12 +3205,12 @@ type MergeKeyValue struct {
 
 // MoveRequest defines model for MoveRequest.
 type MoveRequest struct {
-	ToSpaceID openapi_types.UUID `json:"ToSpaceID,omitempty" yaml:"ToSpaceID,omitempty"`
+	ToSpaceID openapi_types.UUID `json:"ToSpaceID,omitempty,omitzero" yaml:"ToSpaceID,omitempty"`
 }
 
 // MoveResponse defines model for MoveResponse.
 type MoveResponse struct {
-	EntityID         openapi_types.UUID `json:"EntityID,omitempty" yaml:"EntityID,omitempty"`
+	EntityID         openapi_types.UUID `json:"EntityID,omitempty,omitzero" yaml:"EntityID,omitempty"`
 	Error            *ResponseError     `json:"Error,omitempty" yaml:"Error,omitempty"`
 	Moved            bool               `json:"Moved,omitempty" yaml:"Moved,omitempty"`
 	MovedTagSlugs    []string           `json:"MovedTagSlugs,omitempty" yaml:"MovedTagSlugs,omitempty"`
@@ -3140,7 +3223,7 @@ type Mutation struct {
 	BridgeWorkerID *openapi_types.UUID `json:"BridgeWorkerID,omitempty" yaml:"BridgeWorkerID,omitempty"`
 
 	// CreatedAt The timestamp when the entity was created in "2023-01-01T12:00:00Z" format.
-	CreatedAt time.Time `json:"CreatedAt,omitempty" yaml:"CreatedAt,omitempty"`
+	CreatedAt time.Time `json:"CreatedAt,omitempty,omitzero" yaml:"CreatedAt,omitempty"`
 
 	// EntityType The type of entity.
 	EntityType string `json:"EntityType,omitempty" yaml:"EntityType,omitempty"`
@@ -3168,13 +3251,13 @@ type Mutation struct {
 	MergeSourceID *openapi_types.UUID `json:"MergeSourceID,omitempty" yaml:"MergeSourceID,omitempty"`
 
 	// MutationID Unique identifier for a Mutation.
-	MutationID openapi_types.UUID `json:"MutationID,omitempty" yaml:"MutationID,omitempty"`
+	MutationID openapi_types.UUID `json:"MutationID,omitempty,omitzero" yaml:"MutationID,omitempty"`
 
 	// MutationNum Sequence number for the Mutation.
 	MutationNum int64 `json:"MutationNum,omitempty" yaml:"MutationNum,omitempty"`
 
 	// OrganizationID Unique identifier for an Organization.
-	OrganizationID openapi_types.UUID `json:"OrganizationID,omitempty" yaml:"OrganizationID,omitempty"`
+	OrganizationID openapi_types.UUID `json:"OrganizationID,omitempty,omitzero" yaml:"OrganizationID,omitempty"`
 
 	// ProvidedPath ProvidedPath is the path of the provided value used to satisfy a needed value if the change was made due to resolving a link.
 	ProvidedPath string `json:"ProvidedPath,omitempty" yaml:"ProvidedPath,omitempty"`
@@ -3188,13 +3271,13 @@ type Mutation struct {
 	RestoredRevisionNum int64 `json:"RestoredRevisionNum,omitempty" yaml:"RestoredRevisionNum,omitempty"`
 
 	// RevisionID Unique identifier of the corresponding Revision.
-	RevisionID openapi_types.UUID `json:"RevisionID,omitempty" yaml:"RevisionID,omitempty"`
+	RevisionID openapi_types.UUID `json:"RevisionID,omitempty,omitzero" yaml:"RevisionID,omitempty"`
 
 	// RevisionNum Sequence number of the corresponding Revision.
 	RevisionNum int64 `json:"RevisionNum,omitempty" yaml:"RevisionNum,omitempty"`
 
 	// SpaceID Unique identifier for a space.
-	SpaceID openapi_types.UUID `json:"SpaceID,omitempty" yaml:"SpaceID,omitempty"`
+	SpaceID openapi_types.UUID `json:"SpaceID,omitempty,omitzero" yaml:"SpaceID,omitempty"`
 
 	// SpaceSlug Slug of the Space this entity belongs to. (readonly)
 	SpaceSlug string `json:"SpaceSlug,omitempty" yaml:"SpaceSlug,omitempty"`
@@ -3206,13 +3289,13 @@ type Mutation struct {
 	TriggerID *openapi_types.UUID `json:"TriggerID,omitempty" yaml:"TriggerID,omitempty"`
 
 	// UnitID Unique identifier for a Unit.
-	UnitID openapi_types.UUID `json:"UnitID,omitempty" yaml:"UnitID,omitempty"`
+	UnitID openapi_types.UUID `json:"UnitID,omitempty,omitzero" yaml:"UnitID,omitempty"`
 
 	// UnitSlug Slug of the Unit this entity belongs to. (readonly)
 	UnitSlug string `json:"UnitSlug,omitempty" yaml:"UnitSlug,omitempty"`
 
 	// UpdatedAt The timestamp when the entity was last updated in "2023-01-01T12:00:00Z" format.
-	UpdatedAt time.Time `json:"UpdatedAt,omitempty" yaml:"UpdatedAt,omitempty"`
+	UpdatedAt time.Time `json:"UpdatedAt,omitempty,omitzero" yaml:"UpdatedAt,omitempty"`
 
 	// Version An entity-specific sequence number used for optimistic concurrency control. The value read must be sent in calls to Update.
 	Version int64 `json:"Version,omitempty" yaml:"Version,omitempty"`
@@ -3245,7 +3328,7 @@ type MutationConflict struct {
 	Target *MutationInfo `json:"Target,omitempty" yaml:"Target,omitempty"`
 
 	// UnitID ID of the other unit involved in the conflict (upstream for upgrade/merge, link target for resolve)
-	UnitID openapi_types.UUID `json:"UnitID,omitempty" yaml:"UnitID,omitempty"`
+	UnitID openapi_types.UUID `json:"UnitID,omitempty,omitzero" yaml:"UnitID,omitempty"`
 }
 
 // MutationConflictList defines model for MutationConflictList.
@@ -3326,7 +3409,7 @@ type Organization struct {
 	Annotations map[string]string `json:"Annotations,omitempty" yaml:"Annotations,omitempty"`
 
 	// CreatedAt The timestamp when the entity was created in "2023-01-01T12:00:00Z" format.
-	CreatedAt time.Time `json:"CreatedAt,omitempty" yaml:"CreatedAt,omitempty"`
+	CreatedAt time.Time `json:"CreatedAt,omitempty,omitzero" yaml:"CreatedAt,omitempty"`
 
 	// DeleteGates An optional set of gates that, if any is present, will block deletion.
 	DeleteGates map[string]bool `json:"DeleteGates,omitempty" yaml:"DeleteGates,omitempty"`
@@ -3350,13 +3433,13 @@ type Organization struct {
 	Labels map[string]string `json:"Labels,omitempty" yaml:"Labels,omitempty"`
 
 	// OrganizationID Unique identifier for an organization.
-	OrganizationID openapi_types.UUID `json:"OrganizationID,omitempty" yaml:"OrganizationID,omitempty"`
+	OrganizationID openapi_types.UUID `json:"OrganizationID,omitempty,omitzero" yaml:"OrganizationID,omitempty"`
 
 	// Slug Unique URL-safe identifier for the entity.
 	Slug string `json:"Slug" yaml:"Slug"`
 
 	// UpdatedAt The timestamp when the entity was last updated in "2023-01-01T12:00:00Z" format.
-	UpdatedAt time.Time `json:"UpdatedAt,omitempty" yaml:"UpdatedAt,omitempty"`
+	UpdatedAt time.Time `json:"UpdatedAt,omitempty,omitzero" yaml:"UpdatedAt,omitempty"`
 
 	// Version An entity-specific sequence number used for optimistic concurrency control. The value read must be sent in calls to Update.
 	Version int64 `json:"Version,omitempty" yaml:"Version,omitempty"`
@@ -3374,7 +3457,7 @@ type OrganizationMember struct {
 	ExternalOrganizationID string `json:"ExternalOrganizationID,omitempty" yaml:"ExternalOrganizationID,omitempty"`
 
 	// OrganizationID Unique identifier for an organization.
-	OrganizationID openapi_types.UUID `json:"OrganizationID,omitempty" yaml:"OrganizationID,omitempty"`
+	OrganizationID openapi_types.UUID `json:"OrganizationID,omitempty,omitzero" yaml:"OrganizationID,omitempty"`
 
 	// ProfilePictureURL The URL to get the profile avatar picture of the User.
 	ProfilePictureURL string `json:"ProfilePictureURL,omitempty" yaml:"ProfilePictureURL,omitempty"`
@@ -3383,7 +3466,7 @@ type OrganizationMember struct {
 	Slug string `json:"Slug,omitempty" yaml:"Slug,omitempty"`
 
 	// UserID Unique identifier for the organization member User.
-	UserID openapi_types.UUID `json:"UserID,omitempty" yaml:"UserID,omitempty"`
+	UserID openapi_types.UUID `json:"UserID,omitempty,omitzero" yaml:"UserID,omitempty"`
 
 	// Username Unique username for a User. Must be unique for all of ConfigHub.
 	Username string `json:"Username,omitempty" yaml:"Username,omitempty"`
@@ -3403,7 +3486,7 @@ type ParameterizedFunction struct {
 
 // ParameterizedInvocationRef defines model for ParameterizedInvocationRef.
 type ParameterizedInvocationRef struct {
-	InvocationID openapi_types.UUID     `json:"InvocationID,omitempty" yaml:"InvocationID,omitempty"`
+	InvocationID openapi_types.UUID     `json:"InvocationID,omitempty,omitzero" yaml:"InvocationID,omitempty"`
 	Parameters   map[string]interface{} `json:"Parameters,omitempty" yaml:"Parameters,omitempty"`
 }
 
@@ -3535,7 +3618,7 @@ type PromoteGateResult struct {
 	// Reason Why the gate does not hold, as a code: NotPromoted, PreviousStageEmpty, NotReleased, ValidationErrors, NotMarked, NoReleaseTarget, NoRelease, NoLiveStatus, NotSynced, Deploying, DeployFailed, Unhealthy, AttestationsMissing, AttestationRejected, ExpressionFalse, EvaluationFailed, or UnknownPrerequisite. A client that does not know a code shows Message.
 	Reason    string             `json:"Reason,omitempty" yaml:"Reason,omitempty"`
 	Satisfied bool               `json:"Satisfied,omitempty" yaml:"Satisfied,omitempty"`
-	SpaceID   openapi_types.UUID `json:"SpaceID,omitempty" yaml:"SpaceID,omitempty"`
+	SpaceID   openapi_types.UUID `json:"SpaceID,omitempty,omitzero" yaml:"SpaceID,omitempty"`
 	SpaceSlug string             `json:"SpaceSlug,omitempty" yaml:"SpaceSlug,omitempty"`
 }
 
@@ -3658,7 +3741,7 @@ type PromoteSpaceResult struct {
 
 	// Reason Why the Space was Skipped or Blocked, as a code: ChangeOrderSpace, NotInScope, UpstreamPromotedFirst, or UpstreamFailed.
 	Reason            string              `json:"Reason,omitempty" yaml:"Reason,omitempty"`
-	SpaceID           openapi_types.UUID  `json:"SpaceID,omitempty" yaml:"SpaceID,omitempty"`
+	SpaceID           openapi_types.UUID  `json:"SpaceID,omitempty,omitzero" yaml:"SpaceID,omitempty"`
 	SpaceSlug         string              `json:"SpaceSlug,omitempty" yaml:"SpaceSlug,omitempty"`
 	Stage             string              `json:"Stage,omitempty" yaml:"Stage,omitempty"`
 	Units             []PromoteUnitResult `json:"Units,omitempty" yaml:"Units,omitempty"`
@@ -3721,10 +3804,10 @@ type QueuedOperation struct {
 	Action *ActionType `json:"Action,omitempty" yaml:"Action,omitempty"`
 
 	// BridgeWorkerID BridgeWorkerID is the unique identifier of the bridge worker that will process this operation.
-	BridgeWorkerID openapi_types.UUID `json:"BridgeWorkerID,omitempty" yaml:"BridgeWorkerID,omitempty"`
+	BridgeWorkerID openapi_types.UUID `json:"BridgeWorkerID,omitempty,omitzero" yaml:"BridgeWorkerID,omitempty"`
 
 	// CreatedAt The timestamp when the entity was created in "2023-01-01T12:00:00Z" format.
-	CreatedAt time.Time `json:"CreatedAt,omitempty" yaml:"CreatedAt,omitempty"`
+	CreatedAt time.Time `json:"CreatedAt,omitempty,omitzero" yaml:"CreatedAt,omitempty"`
 
 	// Data The result of a dry-run Data-changing action like refresh and import, where the data is not stored in the Unit.
 	Data string `json:"Data,omitempty" yaml:"Data,omitempty"`
@@ -3742,34 +3825,34 @@ type QueuedOperation struct {
 	ExtraParams string `json:"ExtraParams,omitempty" yaml:"ExtraParams,omitempty"`
 
 	// OrganizationID OrganizationID is the unique identifier of the organization this operation belongs to.
-	OrganizationID openapi_types.UUID `json:"OrganizationID,omitempty" yaml:"OrganizationID,omitempty"`
+	OrganizationID openapi_types.UUID `json:"OrganizationID,omitempty,omitzero" yaml:"OrganizationID,omitempty"`
 
 	// QueuedOperationID QueuedOperationID is the unique identifier for the queued unit action.
-	QueuedOperationID openapi_types.UUID `json:"QueuedOperationID,omitempty" yaml:"QueuedOperationID,omitempty"`
+	QueuedOperationID openapi_types.UUID `json:"QueuedOperationID,omitempty,omitzero" yaml:"QueuedOperationID,omitempty"`
 
 	// RevisionNum RevisionNum is the revision number this operation was performed on.
 	RevisionNum int64 `json:"RevisionNum,omitempty" yaml:"RevisionNum,omitempty"`
 
 	// SpaceID SpaceID is the unique identifier of the space of the unit this operation is performed on.
-	SpaceID openapi_types.UUID `json:"SpaceID,omitempty" yaml:"SpaceID,omitempty"`
+	SpaceID openapi_types.UUID `json:"SpaceID,omitempty,omitzero" yaml:"SpaceID,omitempty"`
 
 	// Status Status indicates the current status of the unit action. v2 statuses: Initializing (being set up), Pending (waiting), Delivered (sent to worker), Progressing (being processed), Completed (success), Failed (error). v1 compatibility: 'pending' = Pending, 'delivered' = Completed (legacy 'delivered' meant work done).
 	Status QueuedOperationStatus `json:"Status,omitempty" yaml:"Status,omitempty"`
 
 	// TargetID TargetID is the unique identifier of the target this operation is directed to.
-	TargetID openapi_types.UUID `json:"TargetID,omitempty" yaml:"TargetID,omitempty"`
+	TargetID openapi_types.UUID `json:"TargetID,omitempty,omitzero" yaml:"TargetID,omitempty"`
 
 	// UnitActionNum UnitActionNum is the sequence number of this unit action.
 	UnitActionNum int64 `json:"UnitActionNum,omitempty" yaml:"UnitActionNum,omitempty"`
 
 	// UnitID UnitID is the unique identifier of the unit this operation is performed on.
-	UnitID openapi_types.UUID `json:"UnitID,omitempty" yaml:"UnitID,omitempty"`
+	UnitID openapi_types.UUID `json:"UnitID,omitempty,omitzero" yaml:"UnitID,omitempty"`
 
 	// UserAgent User-Agent string of the API call.
 	UserAgent string `json:"UserAgent,omitempty" yaml:"UserAgent,omitempty"`
 
 	// UserID UserID of the user the action was performed by.
-	UserID openapi_types.UUID `json:"UserID,omitempty" yaml:"UserID,omitempty"`
+	UserID openapi_types.UUID `json:"UserID,omitempty,omitzero" yaml:"UserID,omitempty"`
 
 	// UserIsBot Whether the user who requested the action is a bot user.
 	UserIsBot bool `json:"UserIsBot,omitempty" yaml:"UserIsBot,omitempty"`
@@ -3797,8 +3880,8 @@ type Release struct {
 	ChangeOrderID *openapi_types.UUID `json:"ChangeOrderID,omitempty" yaml:"ChangeOrderID,omitempty"`
 
 	// CreatedAt The timestamp when the entity was created in "2023-01-01T12:00:00Z" format.
-	CreatedAt time.Time `json:"CreatedAt,omitempty" yaml:"CreatedAt,omitempty"`
-	DataSize  int64     `json:"DataSize,omitempty" yaml:"DataSize,omitempty"`
+	CreatedAt time.Time `json:"CreatedAt,omitempty,omitzero" yaml:"CreatedAt,omitempty"`
+	DataSize  int64     `json:"DataSize,omitempty,omitzero" yaml:"DataSize,omitempty"`
 
 	// DeleteGates An optional set of gates that, if any is present, will block deletion.
 	DeleteGates map[string]bool `json:"DeleteGates,omitempty" yaml:"DeleteGates,omitempty"`
@@ -3820,7 +3903,7 @@ type Release struct {
 
 	// ManifestDigest OCI digest (sha256:...) of the Release's OCI image manifest.
 	ManifestDigest string             `json:"ManifestDigest,omitempty" yaml:"ManifestDigest,omitempty"`
-	OrganizationID openapi_types.UUID `json:"OrganizationID,omitempty" yaml:"OrganizationID,omitempty"`
+	OrganizationID openapi_types.UUID `json:"OrganizationID,omitempty,omitzero" yaml:"OrganizationID,omitempty"`
 
 	// Permissions Permissions to access this release.
 	Permissions *Permissions `json:"Permissions,omitempty" yaml:"Permissions,omitempty"`
@@ -3829,14 +3912,14 @@ type Release struct {
 	Published bool `json:"Published,omitempty" yaml:"Published,omitempty"`
 
 	// ReleaseID Unique identifier for a Release.
-	ReleaseID openapi_types.UUID `json:"ReleaseID,omitempty" yaml:"ReleaseID,omitempty"`
+	ReleaseID openapi_types.UUID `json:"ReleaseID,omitempty,omitzero" yaml:"ReleaseID,omitempty"`
 
 	// ReleaseNum Monotonically increasing sequence number of the Release within its Target, assigned at publish time. The highest ReleaseNum is the latest Release for the Target.
 	ReleaseNum int64 `json:"ReleaseNum,omitempty" yaml:"ReleaseNum,omitempty"`
 
 	// SkippedUnits SkippedUnits names the Units assigned to the Release's Target that the Release does not bundle, mapped to the reason as a code. NotMarked: publishing with a TagID leaves out a Unit that has never been released and that the Tag marks no Revision of; a Unit that has been released must be marked. (readonly)
 	SkippedUnits map[string]string  `json:"SkippedUnits,omitempty" yaml:"SkippedUnits,omitempty"`
-	SpaceID      openapi_types.UUID `json:"SpaceID,omitempty" yaml:"SpaceID,omitempty"`
+	SpaceID      openapi_types.UUID `json:"SpaceID,omitempty,omitzero" yaml:"SpaceID,omitempty"`
 
 	// SpaceSlug Slug of the Space this entity belongs to.
 	SpaceSlug string `json:"SpaceSlug,omitempty" yaml:"SpaceSlug,omitempty"`
@@ -3849,7 +3932,7 @@ type Release struct {
 	UnitCount int64 `json:"UnitCount,omitempty" yaml:"UnitCount,omitempty"`
 
 	// UpdatedAt The timestamp when the entity was last updated in "2023-01-01T12:00:00Z" format.
-	UpdatedAt time.Time `json:"UpdatedAt,omitempty" yaml:"UpdatedAt,omitempty"`
+	UpdatedAt time.Time `json:"UpdatedAt,omitempty,omitzero" yaml:"UpdatedAt,omitempty"`
 
 	// UserID The User who published the Release. Absent for Releases published before it was recorded. (readonly)
 	UserID *openapi_types.UUID `json:"UserID,omitempty" yaml:"UserID,omitempty"`
@@ -3870,7 +3953,7 @@ type ReleaseLiveStatus struct {
 	Message string `json:"Message,omitempty" yaml:"Message,omitempty"`
 
 	// ObservedAt When the reporter observed this status.
-	ObservedAt time.Time `json:"ObservedAt,omitempty" yaml:"ObservedAt,omitempty"`
+	ObservedAt time.Time `json:"ObservedAt,omitempty,omitzero" yaml:"ObservedAt,omitempty"`
 
 	// Operation The state of the operation applying the Release, when the reporter runs one: Running, Succeeded, or Failed.
 	Operation ReleaseLiveStatusOperation `json:"Operation,omitempty" yaml:"Operation,omitempty"`
@@ -3951,7 +4034,7 @@ type ReleasePublishResponse struct {
 // Resource Resource is a configuration element extracted from a Unit's configuration data. Resources are maintained automatically as Units change and are read-only.
 type Resource struct {
 	// CreatedAt The timestamp when the entity was created in "2023-01-01T12:00:00Z" format.
-	CreatedAt time.Time `json:"CreatedAt,omitempty" yaml:"CreatedAt,omitempty"`
+	CreatedAt time.Time `json:"CreatedAt,omitempty,omitzero" yaml:"CreatedAt,omitempty"`
 
 	// Data Configuration data of the resource, represented as JSON.
 	Data map[string]interface{} `json:"Data,omitempty" yaml:"Data,omitempty"`
@@ -3963,10 +4046,10 @@ type Resource struct {
 	HiddenReason string `json:"HiddenReason,omitempty" yaml:"HiddenReason,omitempty"`
 
 	// OrganizationID Unique identifier for an Organization.
-	OrganizationID openapi_types.UUID `json:"OrganizationID,omitempty" yaml:"OrganizationID,omitempty"`
+	OrganizationID openapi_types.UUID `json:"OrganizationID,omitempty,omitzero" yaml:"OrganizationID,omitempty"`
 
 	// ResourceID Unique identifier for a Resource.
-	ResourceID openapi_types.UUID `json:"ResourceID,omitempty" yaml:"ResourceID,omitempty"`
+	ResourceID openapi_types.UUID `json:"ResourceID,omitempty,omitzero" yaml:"ResourceID,omitempty"`
 
 	// ResourceIndex Distinguishes resources within a Unit that share a ResourceType and ResourceName, as AppConfig documents that declare no configHub.configName do. 0 when the name is unique within the Unit.
 	ResourceIndex int64 `json:"ResourceIndex,omitempty" yaml:"ResourceIndex,omitempty"`
@@ -3978,7 +4061,7 @@ type Resource struct {
 	ResourceType string `json:"ResourceType,omitempty" yaml:"ResourceType,omitempty"`
 
 	// SpaceID Unique identifier for a space.
-	SpaceID openapi_types.UUID `json:"SpaceID,omitempty" yaml:"SpaceID,omitempty"`
+	SpaceID openapi_types.UUID `json:"SpaceID,omitempty,omitzero" yaml:"SpaceID,omitempty"`
 
 	// SpaceSlug Slug of the Space this entity belongs to. (readonly)
 	SpaceSlug string `json:"SpaceSlug,omitempty" yaml:"SpaceSlug,omitempty"`
@@ -3990,13 +4073,13 @@ type Resource struct {
 	ToolchainType string `json:"ToolchainType,omitempty" yaml:"ToolchainType,omitempty"`
 
 	// UnitID Unique identifier for a Unit.
-	UnitID openapi_types.UUID `json:"UnitID,omitempty" yaml:"UnitID,omitempty"`
+	UnitID openapi_types.UUID `json:"UnitID,omitempty,omitzero" yaml:"UnitID,omitempty"`
 
 	// UnitSlug Slug of the Unit this entity belongs to. (readonly)
 	UnitSlug string `json:"UnitSlug,omitempty" yaml:"UnitSlug,omitempty"`
 
 	// UpdatedAt The timestamp when the entity was last updated in "2023-01-01T12:00:00Z" format.
-	UpdatedAt time.Time `json:"UpdatedAt,omitempty" yaml:"UpdatedAt,omitempty"`
+	UpdatedAt time.Time `json:"UpdatedAt,omitempty,omitzero" yaml:"UpdatedAt,omitempty"`
 
 	// Version An entity-specific sequence number used for optimistic concurrency control. The value read must be sent in calls to Update.
 	Version int64 `json:"Version,omitempty" yaml:"Version,omitempty"`
@@ -4128,7 +4211,7 @@ type ResourceProtection struct {
 // ResourceTypePathsEntry defines model for ResourceTypePathsEntry.
 type ResourceTypePathsEntry struct {
 	// BoundLinkID ID of the Link that bound this needed path to a provided value
-	BoundLinkID openapi_types.UUID `json:"BoundLinkID,omitempty" yaml:"BoundLinkID,omitempty"`
+	BoundLinkID openapi_types.UUID `json:"BoundLinkID,omitempty,omitzero" yaml:"BoundLinkID,omitempty"`
 
 	// BoundProvidedProperties ProvidedProperties of the provided path that was bound to this needed path, for cross-link score comparison
 	BoundProvidedProperties map[string]string `json:"BoundProvidedProperties,omitempty" yaml:"BoundProvidedProperties,omitempty"`
@@ -4172,7 +4255,7 @@ type ResponseError struct {
 // ReviewComment ReviewComment is a remark made in review of a Revision of a Unit, optionally about one resource or path in it.
 type ReviewComment struct {
 	// CreatedAt The timestamp when the entity was created in "2023-01-01T12:00:00Z" format.
-	CreatedAt time.Time `json:"CreatedAt,omitempty" yaml:"CreatedAt,omitempty"`
+	CreatedAt time.Time `json:"CreatedAt,omitempty,omitzero" yaml:"CreatedAt,omitempty"`
 
 	// EntityType The type of entity.
 	EntityType string `json:"EntityType,omitempty" yaml:"EntityType,omitempty"`
@@ -4181,7 +4264,7 @@ type ReviewComment struct {
 	HiddenReason string `json:"HiddenReason,omitempty" yaml:"HiddenReason,omitempty"`
 
 	// OrganizationID Unique identifier for an Organization.
-	OrganizationID openapi_types.UUID `json:"OrganizationID,omitempty" yaml:"OrganizationID,omitempty"`
+	OrganizationID openapi_types.UUID `json:"OrganizationID,omitempty,omitzero" yaml:"OrganizationID,omitempty"`
 
 	// Path Path to which the remark is attached; optional
 	Path string `json:"Path,omitempty" yaml:"Path,omitempty"`
@@ -4193,16 +4276,16 @@ type ReviewComment struct {
 	Resource *ResourceInfoType2 `json:"Resource,omitempty" yaml:"Resource,omitempty"`
 
 	// ReviewCommentID Unique identifier for a ReviewComment.
-	ReviewCommentID openapi_types.UUID `json:"ReviewCommentID,omitempty" yaml:"ReviewCommentID,omitempty"`
+	ReviewCommentID openapi_types.UUID `json:"ReviewCommentID,omitempty,omitzero" yaml:"ReviewCommentID,omitempty"`
 
 	// RevisionID Unique identifier of the Revision the comment is about. Set by the server from RevisionNum.
-	RevisionID openapi_types.UUID `json:"RevisionID,omitempty" yaml:"RevisionID,omitempty"`
+	RevisionID openapi_types.UUID `json:"RevisionID,omitempty,omitzero" yaml:"RevisionID,omitempty"`
 
 	// RevisionNum Sequence number of the Revision the comment is about. Required on create, and immutable.
-	RevisionNum int64 `json:"RevisionNum" yaml:"RevisionNum"`
+	RevisionNum int64 `json:"RevisionNum,omitzero" yaml:"RevisionNum"`
 
 	// SpaceID Unique identifier for a space.
-	SpaceID openapi_types.UUID `json:"SpaceID,omitempty" yaml:"SpaceID,omitempty"`
+	SpaceID openapi_types.UUID `json:"SpaceID,omitempty,omitzero" yaml:"SpaceID,omitempty"`
 
 	// SpaceSlug Slug of the Space this entity belongs to. (readonly)
 	SpaceSlug string `json:"SpaceSlug,omitempty" yaml:"SpaceSlug,omitempty"`
@@ -4211,19 +4294,19 @@ type ReviewComment struct {
 	Text string `json:"Text" yaml:"Text"`
 
 	// UnitID Unique identifier for a Unit.
-	UnitID openapi_types.UUID `json:"UnitID,omitempty" yaml:"UnitID,omitempty"`
+	UnitID openapi_types.UUID `json:"UnitID,omitempty,omitzero" yaml:"UnitID,omitempty"`
 
 	// UnitSlug Slug of the Unit this entity belongs to. (readonly)
 	UnitSlug string `json:"UnitSlug,omitempty" yaml:"UnitSlug,omitempty"`
 
 	// UpdatedAt The timestamp when the entity was last updated in "2023-01-01T12:00:00Z" format.
-	UpdatedAt time.Time `json:"UpdatedAt,omitempty" yaml:"UpdatedAt,omitempty"`
+	UpdatedAt time.Time `json:"UpdatedAt,omitempty,omitzero" yaml:"UpdatedAt,omitempty"`
 
 	// UserAgent User-Agent string of the API call that created the comment.
 	UserAgent string `json:"UserAgent,omitempty" yaml:"UserAgent,omitempty"`
 
 	// UserID Unique identifier of the user who made the comment.
-	UserID openapi_types.UUID `json:"UserID,omitempty" yaml:"UserID,omitempty"`
+	UserID openapi_types.UUID `json:"UserID,omitempty,omitzero" yaml:"UserID,omitempty"`
 
 	// Version An entity-specific sequence number used for optimistic concurrency control. The value read must be sent in calls to Update.
 	Version int64 `json:"Version,omitempty" yaml:"Version,omitempty"`
@@ -4256,13 +4339,13 @@ type Revision struct {
 	Conflicts   *MutationConflictList `json:"Conflicts,omitempty" yaml:"Conflicts,omitempty"`
 
 	// CreatedAt The timestamp when the entity was created in "2023-01-01T12:00:00Z" format.
-	CreatedAt time.Time `json:"CreatedAt,omitempty" yaml:"CreatedAt,omitempty"`
+	CreatedAt time.Time `json:"CreatedAt,omitempty,omitzero" yaml:"CreatedAt,omitempty"`
 
 	// DataHash The SHA256 hash of this revision's data, encoded as hexadecimal. It is also the ETag the data endpoint serves.
 	DataHash string `json:"DataHash,omitempty" yaml:"DataHash,omitempty"`
 
 	// DataSize The size of this revision's data in bytes. The data itself is not part of the Revision; read it from the data endpoint.
-	DataSize int64 `json:"DataSize,omitempty" yaml:"DataSize,omitempty"`
+	DataSize int64 `json:"DataSize,omitempty,omitzero" yaml:"DataSize,omitempty"`
 
 	// Description User description of the change. It is copied from the LastChangeDescription field of the Unit at the time the change was made that created the Revision.
 	Description string `json:"Description,omitempty" yaml:"Description,omitempty"`
@@ -4278,7 +4361,7 @@ type Revision struct {
 	NeededPaths []AttributeValue `json:"NeededPaths,omitempty" yaml:"NeededPaths,omitempty"`
 
 	// OrganizationID Unique identifier for an Organization.
-	OrganizationID openapi_types.UUID `json:"OrganizationID,omitempty" yaml:"OrganizationID,omitempty"`
+	OrganizationID openapi_types.UUID `json:"OrganizationID,omitempty,omitzero" yaml:"OrganizationID,omitempty"`
 
 	// PathAnnotations Annotations on locations within the Unit's configuration data as of this Revision.
 	PathAnnotations *PathAnnotationList `json:"PathAnnotations,omitempty" yaml:"PathAnnotations,omitempty"`
@@ -4290,7 +4373,7 @@ type Revision struct {
 	Releases map[string]string `json:"Releases,omitempty" yaml:"Releases,omitempty"`
 
 	// RevisionID Unique identifier for a Revision.
-	RevisionID openapi_types.UUID `json:"RevisionID,omitempty" yaml:"RevisionID,omitempty"`
+	RevisionID openapi_types.UUID `json:"RevisionID,omitempty,omitzero" yaml:"RevisionID,omitempty"`
 
 	// RevisionNum Sequence number for a Revision.
 	RevisionNum int64 `json:"RevisionNum,omitempty" yaml:"RevisionNum,omitempty"`
@@ -4299,7 +4382,7 @@ type Revision struct {
 	Source string `json:"Source,omitempty" yaml:"Source,omitempty"`
 
 	// SpaceID Unique identifier for a space.
-	SpaceID openapi_types.UUID `json:"SpaceID,omitempty" yaml:"SpaceID,omitempty"`
+	SpaceID openapi_types.UUID `json:"SpaceID,omitempty,omitzero" yaml:"SpaceID,omitempty"`
 
 	// SpaceSlug Slug of the Space this entity belongs to. (readonly)
 	SpaceSlug string `json:"SpaceSlug,omitempty" yaml:"SpaceSlug,omitempty"`
@@ -4308,19 +4391,19 @@ type Revision struct {
 	Tags map[string]string `json:"Tags,omitempty" yaml:"Tags,omitempty"`
 
 	// UnitID Unique identifier for a Unit.
-	UnitID openapi_types.UUID `json:"UnitID,omitempty" yaml:"UnitID,omitempty"`
+	UnitID openapi_types.UUID `json:"UnitID,omitempty,omitzero" yaml:"UnitID,omitempty"`
 
 	// UnitSlug Slug of the Unit this entity belongs to. (readonly)
 	UnitSlug string `json:"UnitSlug,omitempty" yaml:"UnitSlug,omitempty"`
 
 	// UpdatedAt The timestamp when the entity was last updated in "2023-01-01T12:00:00Z" format.
-	UpdatedAt time.Time `json:"UpdatedAt,omitempty" yaml:"UpdatedAt,omitempty"`
+	UpdatedAt time.Time `json:"UpdatedAt,omitempty,omitzero" yaml:"UpdatedAt,omitempty"`
 
 	// UserAgent User-Agent string if created by an API call. Optional.
 	UserAgent string `json:"UserAgent,omitempty" yaml:"UserAgent,omitempty"`
 
 	// UserID UserID if change was made by a user. Automated changes, such as by triggers and resolve, are currently made with the UserID "00000000-0000-0000-0000-000000000000".
-	UserID openapi_types.UUID `json:"UserID,omitempty" yaml:"UserID,omitempty"`
+	UserID openapi_types.UUID `json:"UserID,omitempty,omitzero" yaml:"UserID,omitempty"`
 
 	// ValidationErrors A map of "<space slug>/<trigger slug>/<function name>" to true of Triggers invoking validating functions that did not pass on the configuration data at this Revision. These block Release operations.
 	ValidationErrors map[string]bool `json:"ValidationErrors,omitempty" yaml:"ValidationErrors,omitempty"`
@@ -4359,16 +4442,16 @@ type RevisionData struct {
 	DataSize int64 `json:"DataSize,omitempty" yaml:"DataSize,omitempty"`
 
 	// RevisionID Unique identifier of the Revision.
-	RevisionID openapi_types.UUID `json:"RevisionID,omitempty" yaml:"RevisionID,omitempty"`
+	RevisionID openapi_types.UUID `json:"RevisionID,omitempty,omitzero" yaml:"RevisionID,omitempty"`
 
 	// RevisionNum Sequence number of the Revision within its Unit.
 	RevisionNum int64 `json:"RevisionNum,omitempty" yaml:"RevisionNum,omitempty"`
 
 	// SpaceID Unique identifier of the Space the Unit belongs to.
-	SpaceID openapi_types.UUID `json:"SpaceID,omitempty" yaml:"SpaceID,omitempty"`
+	SpaceID openapi_types.UUID `json:"SpaceID,omitempty,omitzero" yaml:"SpaceID,omitempty"`
 
 	// UnitID Unique identifier of the Unit the Revision belongs to.
-	UnitID openapi_types.UUID `json:"UnitID,omitempty" yaml:"UnitID,omitempty"`
+	UnitID openapi_types.UUID `json:"UnitID,omitempty,omitzero" yaml:"UnitID,omitempty"`
 }
 
 // RevisionMutationSources defines model for RevisionMutationSources.
@@ -4377,13 +4460,13 @@ type RevisionMutationSources struct {
 	MutationSources *ResourceMutationList `json:"MutationSources,omitempty" yaml:"MutationSources,omitempty"`
 
 	// RevisionID Unique identifier of the Revision.
-	RevisionID openapi_types.UUID `json:"RevisionID,omitempty" yaml:"RevisionID,omitempty"`
+	RevisionID openapi_types.UUID `json:"RevisionID,omitempty,omitzero" yaml:"RevisionID,omitempty"`
 
 	// RevisionNum Sequence number of the Revision within its Unit.
 	RevisionNum int64 `json:"RevisionNum,omitempty" yaml:"RevisionNum,omitempty"`
 
 	// UnitID Unique identifier of the Unit the Revision belongs to.
-	UnitID openapi_types.UUID `json:"UnitID,omitempty" yaml:"UnitID,omitempty"`
+	UnitID openapi_types.UUID `json:"UnitID,omitempty,omitzero" yaml:"UnitID,omitempty"`
 }
 
 // Schema defines model for Schema.
@@ -4391,7 +4474,7 @@ type Schema = interface{}
 
 // SelectionChange defines model for SelectionChange.
 type SelectionChange struct {
-	EntityID   openapi_types.UUID `json:"EntityID,omitempty" yaml:"EntityID,omitempty"`
+	EntityID   openapi_types.UUID `json:"EntityID,omitempty,omitzero" yaml:"EntityID,omitempty"`
 	EntityType string             `json:"EntityType,omitempty" yaml:"EntityType,omitempty"`
 	Refreshed  bool               `json:"Refreshed,omitempty" yaml:"Refreshed,omitempty"`
 	Selects    bool               `json:"Selects,omitempty" yaml:"Selects,omitempty"`
@@ -4405,7 +4488,7 @@ type ServiceAccount struct {
 	Annotations map[string]string `json:"Annotations,omitempty" yaml:"Annotations,omitempty"`
 
 	// CreatedAt The timestamp when the entity was created in "2023-01-01T12:00:00Z" format.
-	CreatedAt time.Time `json:"CreatedAt,omitempty" yaml:"CreatedAt,omitempty"`
+	CreatedAt time.Time `json:"CreatedAt,omitempty,omitzero" yaml:"CreatedAt,omitempty"`
 
 	// DeleteGates An optional set of gates that, if any is present, will block deletion.
 	DeleteGates map[string]bool `json:"DeleteGates,omitempty" yaml:"DeleteGates,omitempty"`
@@ -4426,22 +4509,22 @@ type ServiceAccount struct {
 	OrgRole string `json:"OrgRole,omitempty" yaml:"OrgRole,omitempty"`
 
 	// OrganizationID Unique identifier for an organization.
-	OrganizationID openapi_types.UUID `json:"OrganizationID,omitempty" yaml:"OrganizationID,omitempty"`
+	OrganizationID openapi_types.UUID `json:"OrganizationID,omitempty,omitzero" yaml:"OrganizationID,omitempty"`
 
 	// Permissions Permissions to access this service account.
 	Permissions *Permissions `json:"Permissions,omitempty" yaml:"Permissions,omitempty"`
 
 	// ServiceAccountID Unique identifier for a service account.
-	ServiceAccountID openapi_types.UUID `json:"ServiceAccountID,omitempty" yaml:"ServiceAccountID,omitempty"`
+	ServiceAccountID openapi_types.UUID `json:"ServiceAccountID,omitempty,omitzero" yaml:"ServiceAccountID,omitempty"`
 
 	// Slug Unique URL-safe identifier for the entity.
 	Slug string `json:"Slug" yaml:"Slug"`
 
 	// UpdatedAt The timestamp when the entity was last updated in "2023-01-01T12:00:00Z" format.
-	UpdatedAt time.Time `json:"UpdatedAt,omitempty" yaml:"UpdatedAt,omitempty"`
+	UpdatedAt time.Time `json:"UpdatedAt,omitempty,omitzero" yaml:"UpdatedAt,omitempty"`
 
 	// UserID The User the service account acts as. Grant the service account access to other entities by naming this User in their Permissions, or by adding it to a Group.
-	UserID openapi_types.UUID `json:"UserID,omitempty" yaml:"UserID,omitempty"`
+	UserID openapi_types.UUID `json:"UserID,omitempty,omitzero" yaml:"UserID,omitempty"`
 
 	// Version An entity-specific sequence number used for optimistic concurrency control. The value read must be sent in calls to Update.
 	Version int64 `json:"Version,omitempty" yaml:"Version,omitempty"`
@@ -4474,7 +4557,7 @@ type Space struct {
 	ComponentID *openapi_types.UUID `json:"ComponentID,omitempty" yaml:"ComponentID,omitempty"`
 
 	// CreatedAt The timestamp when the entity was created in "2023-01-01T12:00:00Z" format.
-	CreatedAt time.Time `json:"CreatedAt,omitempty" yaml:"CreatedAt,omitempty"`
+	CreatedAt time.Time `json:"CreatedAt,omitempty,omitzero" yaml:"CreatedAt,omitempty"`
 
 	// DeleteGates An optional set of gates that, if any is present, will block deletion.
 	DeleteGates map[string]bool `json:"DeleteGates,omitempty" yaml:"DeleteGates,omitempty"`
@@ -4492,7 +4575,7 @@ type Space struct {
 	Labels map[string]string `json:"Labels,omitempty" yaml:"Labels,omitempty"`
 
 	// OrganizationID Unique identifier for an organization.
-	OrganizationID openapi_types.UUID `json:"OrganizationID,omitempty" yaml:"OrganizationID,omitempty"`
+	OrganizationID openapi_types.UUID `json:"OrganizationID,omitempty,omitzero" yaml:"OrganizationID,omitempty"`
 
 	// Permissions Permissions to access this space.
 	Permissions *Permissions `json:"Permissions,omitempty" yaml:"Permissions,omitempty"`
@@ -4504,7 +4587,7 @@ type Space struct {
 	Slug string `json:"Slug" yaml:"Slug"`
 
 	// SpaceID Unique identifier for a space.
-	SpaceID openapi_types.UUID `json:"SpaceID,omitempty" yaml:"SpaceID,omitempty"`
+	SpaceID openapi_types.UUID `json:"SpaceID,omitempty,omitzero" yaml:"SpaceID,omitempty"`
 
 	// TriggerFilterID Reference to a Filter entity used to identify Triggers that should be invoked on Units within this Space. The Filter's From field must be set to 'Trigger'.
 	TriggerFilterID *openapi_types.UUID `json:"TriggerFilterID,omitempty" yaml:"TriggerFilterID,omitempty"`
@@ -4514,7 +4597,7 @@ type Space struct {
 	TriggerIDs []UUID `json:"TriggerIDs,omitempty" yaml:"TriggerIDs,omitempty"`
 
 	// UpdatedAt The timestamp when the entity was last updated in "2023-01-01T12:00:00Z" format.
-	UpdatedAt       time.Time           `json:"UpdatedAt,omitempty" yaml:"UpdatedAt,omitempty"`
+	UpdatedAt       time.Time           `json:"UpdatedAt,omitempty,omitzero" yaml:"UpdatedAt,omitempty"`
 	UpstreamSpaceID *openapi_types.UUID `json:"UpstreamSpaceID,omitempty" yaml:"UpstreamSpaceID,omitempty"`
 
 	// Version An entity-specific sequence number used for optimistic concurrency control. The value read must be sent in calls to Update.
@@ -4634,7 +4717,7 @@ type Tag struct {
 	ChangeSetID *openapi_types.UUID `json:"ChangeSetID,omitempty" yaml:"ChangeSetID,omitempty"`
 
 	// CreatedAt The timestamp when the entity was created in "2023-01-01T12:00:00Z" format.
-	CreatedAt time.Time `json:"CreatedAt,omitempty" yaml:"CreatedAt,omitempty"`
+	CreatedAt time.Time `json:"CreatedAt,omitempty,omitzero" yaml:"CreatedAt,omitempty"`
 
 	// DeleteGates An optional set of gates that, if any is present, will block deletion.
 	DeleteGates map[string]bool `json:"DeleteGates,omitempty" yaml:"DeleteGates,omitempty"`
@@ -4652,7 +4735,7 @@ type Tag struct {
 	Labels map[string]string `json:"Labels,omitempty" yaml:"Labels,omitempty"`
 
 	// OrganizationID Unique identifier for an organization.
-	OrganizationID openapi_types.UUID `json:"OrganizationID,omitempty" yaml:"OrganizationID,omitempty"`
+	OrganizationID openapi_types.UUID `json:"OrganizationID,omitempty,omitzero" yaml:"OrganizationID,omitempty"`
 
 	// Permissions Permissions to access this tag.
 	Permissions *Permissions `json:"Permissions,omitempty" yaml:"Permissions,omitempty"`
@@ -4664,16 +4747,16 @@ type Tag struct {
 	Slug string `json:"Slug" yaml:"Slug"`
 
 	// SpaceID Unique identifier for a space.
-	SpaceID openapi_types.UUID `json:"SpaceID,omitempty" yaml:"SpaceID,omitempty"`
+	SpaceID openapi_types.UUID `json:"SpaceID,omitempty,omitzero" yaml:"SpaceID,omitempty"`
 
 	// SpaceSlug Slug of the Space this entity belongs to. (readonly)
 	SpaceSlug string `json:"SpaceSlug,omitempty" yaml:"SpaceSlug,omitempty"`
 
 	// TagID TagID uniquely identifies a tag within the system.
-	TagID openapi_types.UUID `json:"TagID,omitempty" yaml:"TagID,omitempty"`
+	TagID openapi_types.UUID `json:"TagID,omitempty,omitzero" yaml:"TagID,omitempty"`
 
 	// UpdatedAt The timestamp when the entity was last updated in "2023-01-01T12:00:00Z" format.
-	UpdatedAt time.Time `json:"UpdatedAt,omitempty" yaml:"UpdatedAt,omitempty"`
+	UpdatedAt time.Time `json:"UpdatedAt,omitempty,omitzero" yaml:"UpdatedAt,omitempty"`
 
 	// Version An entity-specific sequence number used for optimistic concurrency control. The value read must be sent in calls to Update.
 	Version int64 `json:"Version,omitempty" yaml:"Version,omitempty"`
@@ -4694,7 +4777,7 @@ type Target struct {
 	BackingUnitID *openapi_types.UUID `json:"BackingUnitID,omitempty" yaml:"BackingUnitID,omitempty"`
 
 	// CreatedAt The timestamp when the entity was created in "2023-01-01T12:00:00Z" format.
-	CreatedAt time.Time `json:"CreatedAt,omitempty" yaml:"CreatedAt,omitempty"`
+	CreatedAt time.Time `json:"CreatedAt,omitempty,omitzero" yaml:"CreatedAt,omitempty"`
 
 	// DeleteGates An optional set of gates that, if any is present, will block deletion.
 	DeleteGates map[string]bool `json:"DeleteGates,omitempty" yaml:"DeleteGates,omitempty"`
@@ -4715,7 +4798,7 @@ type Target struct {
 	Labels map[string]string `json:"Labels,omitempty" yaml:"Labels,omitempty"`
 
 	// OrganizationID Unique identifier for an organization.
-	OrganizationID openapi_types.UUID `json:"OrganizationID,omitempty" yaml:"OrganizationID,omitempty"`
+	OrganizationID openapi_types.UUID `json:"OrganizationID,omitempty,omitzero" yaml:"OrganizationID,omitempty"`
 
 	// Permissions Permissions to access this target.
 	Permissions *Permissions `json:"Permissions,omitempty" yaml:"Permissions,omitempty"`
@@ -4724,13 +4807,13 @@ type Target struct {
 	Slug string `json:"Slug" yaml:"Slug"`
 
 	// SpaceID Unique identifier for a space.
-	SpaceID openapi_types.UUID `json:"SpaceID,omitempty" yaml:"SpaceID,omitempty"`
+	SpaceID openapi_types.UUID `json:"SpaceID,omitempty,omitzero" yaml:"SpaceID,omitempty"`
 
 	// SpaceSlug Slug of the Space this entity belongs to. (readonly)
 	SpaceSlug string `json:"SpaceSlug,omitempty" yaml:"SpaceSlug,omitempty"`
 
 	// TargetID Unique identifier for a Target.
-	TargetID openapi_types.UUID `json:"TargetID,omitempty" yaml:"TargetID,omitempty"`
+	TargetID openapi_types.UUID `json:"TargetID,omitempty,omitzero" yaml:"TargetID,omitempty"`
 
 	// TriggerFilterID Reference to a Filter entity used to identify Triggers that should be invoked on Units this Target is attached to. The Filter's From field must be set to 'Trigger'.
 	TriggerFilterID *openapi_types.UUID `json:"TriggerFilterID,omitempty" yaml:"TriggerFilterID,omitempty"`
@@ -4740,7 +4823,7 @@ type Target struct {
 	TriggerIDs []UUID `json:"TriggerIDs,omitempty" yaml:"TriggerIDs,omitempty"`
 
 	// UpdatedAt The timestamp when the entity was last updated in "2023-01-01T12:00:00Z" format.
-	UpdatedAt        time.Time           `json:"UpdatedAt,omitempty" yaml:"UpdatedAt,omitempty"`
+	UpdatedAt        time.Time           `json:"UpdatedAt,omitempty,omitzero" yaml:"UpdatedAt,omitempty"`
 	UpstreamTargetID *openapi_types.UUID `json:"UpstreamTargetID,omitempty" yaml:"UpstreamTargetID,omitempty"`
 
 	// Version An entity-specific sequence number used for optimistic concurrency control. The value read must be sent in calls to Update.
@@ -4816,7 +4899,7 @@ type Trigger struct {
 	Clearance      *Clearance          `json:"Clearance,omitempty" yaml:"Clearance,omitempty"`
 
 	// CreatedAt The timestamp when the entity was created in "2023-01-01T12:00:00Z" format.
-	CreatedAt time.Time `json:"CreatedAt,omitempty" yaml:"CreatedAt,omitempty"`
+	CreatedAt time.Time `json:"CreatedAt,omitempty,omitzero" yaml:"CreatedAt,omitempty"`
 
 	// DeleteGates An optional set of gates that, if any is present, will block deletion.
 	DeleteGates map[string]bool `json:"DeleteGates,omitempty" yaml:"DeleteGates,omitempty"`
@@ -4859,7 +4942,7 @@ type Trigger struct {
 	Labels map[string]string `json:"Labels,omitempty" yaml:"Labels,omitempty"`
 
 	// OrganizationID Unique identifier for an organization.
-	OrganizationID openapi_types.UUID `json:"OrganizationID,omitempty" yaml:"OrganizationID,omitempty"`
+	OrganizationID openapi_types.UUID `json:"OrganizationID,omitempty,omitzero" yaml:"OrganizationID,omitempty"`
 
 	// OtherDataSource Specifies the source of additional configuration data to pass to functions that need it (e.g., vet-immutable needs a baseline revision to compare against). Uses revision specifier format such as LastReleasedRevisionNum or Before:HeadRevisionNum. When empty, the function is passed the sources its signature lists in OtherDataExpected.
 	OtherDataSource string `json:"OtherDataSource,omitempty" yaml:"OtherDataSource,omitempty"`
@@ -4874,7 +4957,7 @@ type Trigger struct {
 	Slug string `json:"Slug" yaml:"Slug"`
 
 	// SpaceID Unique identifier for a space.
-	SpaceID openapi_types.UUID `json:"SpaceID,omitempty" yaml:"SpaceID,omitempty"`
+	SpaceID openapi_types.UUID `json:"SpaceID,omitempty,omitzero" yaml:"SpaceID,omitempty"`
 
 	// SpaceSlug Slug of the Space this entity belongs to. (readonly)
 	SpaceSlug string `json:"SpaceSlug,omitempty" yaml:"SpaceSlug,omitempty"`
@@ -4884,13 +4967,13 @@ type Trigger struct {
 	ToolchainType string `json:"ToolchainType" yaml:"ToolchainType"`
 
 	// TriggerID TriggerID uniquely identifies a trigger within the system.
-	TriggerID openapi_types.UUID `json:"TriggerID,omitempty" yaml:"TriggerID,omitempty"`
+	TriggerID openapi_types.UUID `json:"TriggerID,omitempty,omitzero" yaml:"TriggerID,omitempty"`
 
 	// UnitFilterID References a Filter entity (with From=Unit) to restrict which Units this Trigger applies to.
 	UnitFilterID *openapi_types.UUID `json:"UnitFilterID,omitempty" yaml:"UnitFilterID,omitempty"`
 
 	// UpdatedAt The timestamp when the entity was last updated in "2023-01-01T12:00:00Z" format.
-	UpdatedAt         time.Time           `json:"UpdatedAt,omitempty" yaml:"UpdatedAt,omitempty"`
+	UpdatedAt         time.Time           `json:"UpdatedAt,omitempty,omitzero" yaml:"UpdatedAt,omitempty"`
 	UpstreamTriggerID *openapi_types.UUID `json:"UpstreamTriggerID,omitempty" yaml:"UpstreamTriggerID,omitempty"`
 
 	// Validating Validating indicates whether this is a validating function (true) or not (false).
@@ -4949,13 +5032,13 @@ type Unit struct {
 	Conflicts   *MutationConflictList `json:"Conflicts,omitempty" yaml:"Conflicts,omitempty"`
 
 	// CreatedAt The timestamp when the entity was created in "2023-01-01T12:00:00Z" format.
-	CreatedAt time.Time `json:"CreatedAt,omitempty" yaml:"CreatedAt,omitempty"`
+	CreatedAt time.Time `json:"CreatedAt,omitempty,omitzero" yaml:"CreatedAt,omitempty"`
 
 	// DataHash The SHA256 hash of the configuration data, encoded as hexadecimal. It is also the ETag the data endpoint serves, so a caller that listed Units can ask for a body conditionally without fetching it first.
 	DataHash string `json:"DataHash,omitempty" yaml:"DataHash,omitempty"`
 
 	// DataSize The size of the configuration data in bytes. The configuration itself is not part of the Unit; read it from the data endpoint.
-	DataSize int64 `json:"DataSize,omitempty" yaml:"DataSize,omitempty"`
+	DataSize int64 `json:"DataSize,omitempty,omitzero" yaml:"DataSize,omitempty"`
 
 	// DeleteGates An optional set of gates that, if any is present, will block deletion.
 	DeleteGates map[string]bool `json:"DeleteGates,omitempty" yaml:"DeleteGates,omitempty"`
@@ -4973,19 +5056,19 @@ type Unit struct {
 	FromLinkID []UUID `json:"FromLinkID,omitempty" yaml:"FromLinkID,omitempty"`
 
 	// HeadMutationNum Sequence number the head Mutation.
-	HeadMutationNum int64 `json:"HeadMutationNum,omitempty" yaml:"HeadMutationNum,omitempty"`
+	HeadMutationNum int64 `json:"HeadMutationNum,omitempty,omitzero" yaml:"HeadMutationNum,omitempty"`
 
 	// HeadRevisionID Unique identifier of the head Revision -- the same Revision HeadRevisionNum numbers. Use include=HeadRevisionNum to expand it.
-	HeadRevisionID openapi_types.UUID `json:"HeadRevisionID,omitempty" yaml:"HeadRevisionID,omitempty"`
+	HeadRevisionID openapi_types.UUID `json:"HeadRevisionID,omitempty,omitzero" yaml:"HeadRevisionID,omitempty"`
 
 	// HeadRevisionNum Sequence number the head Revision.
-	HeadRevisionNum int64 `json:"HeadRevisionNum,omitempty" yaml:"HeadRevisionNum,omitempty"`
+	HeadRevisionNum int64 `json:"HeadRevisionNum,omitempty,omitzero" yaml:"HeadRevisionNum,omitempty"`
 
 	// HeadUnitActionNum Sequence number of the head unit action (queued operation).
-	HeadUnitActionNum int64 `json:"HeadUnitActionNum,omitempty" yaml:"HeadUnitActionNum,omitempty"`
+	HeadUnitActionNum int64 `json:"HeadUnitActionNum,omitempty,omitzero" yaml:"HeadUnitActionNum,omitempty"`
 
 	// HeadUnitEventNum Sequence number of the head unit event.
-	HeadUnitEventNum int64 `json:"HeadUnitEventNum,omitempty" yaml:"HeadUnitEventNum,omitempty"`
+	HeadUnitEventNum int64 `json:"HeadUnitEventNum,omitempty,omitzero" yaml:"HeadUnitEventNum,omitempty"`
 
 	// HiddenReason The reason the entity is hidden, if it is. A hidden entity is left out of List and Search results, and of what bulk operations act on, unless the include_hidden parameter names its reason or is *, or the where parameter names the entity by Slug or ID. ConfigHub/YAML Units are created hidden with the reason BackingUnit unless given another.
 	HiddenReason string `json:"HiddenReason,omitempty" yaml:"HiddenReason,omitempty"`
@@ -4997,14 +5080,14 @@ type Unit struct {
 	LastChangeDescription string `json:"LastChangeDescription,omitempty" yaml:"LastChangeDescription,omitempty"`
 
 	// LastReleasedRevisionNum Sequence number of the last Revision published in a Release, or for a backing Unit the last Revision its entity took. 0 if there is none.
-	LastReleasedRevisionNum int64            `json:"LastReleasedRevisionNum,omitempty" yaml:"LastReleasedRevisionNum,omitempty"`
+	LastReleasedRevisionNum int64            `json:"LastReleasedRevisionNum,omitempty,omitzero" yaml:"LastReleasedRevisionNum,omitempty"`
 	LinkFindings            *LinkFindingList `json:"LinkFindings,omitempty" yaml:"LinkFindings,omitempty"`
 
 	// NeededPaths Attribute paths that this Unit needs from upstream Units via NeedsProvides Links. Computed from get-needed and stored on data updates.
 	NeededPaths []AttributeValue `json:"NeededPaths,omitempty" yaml:"NeededPaths,omitempty"`
 
 	// OrganizationID Unique identifier for an organization.
-	OrganizationID openapi_types.UUID `json:"OrganizationID,omitempty" yaml:"OrganizationID,omitempty"`
+	OrganizationID openapi_types.UUID `json:"OrganizationID,omitempty,omitzero" yaml:"OrganizationID,omitempty"`
 
 	// PathAnnotations Annotations on locations within the Unit's configuration data, by resource and path.
 	PathAnnotations *PathAnnotationList `json:"PathAnnotations,omitempty" yaml:"PathAnnotations,omitempty"`
@@ -5022,7 +5105,7 @@ type Unit struct {
 	Slug string `json:"Slug" yaml:"Slug"`
 
 	// SpaceID Unique identifier for a space.
-	SpaceID openapi_types.UUID `json:"SpaceID,omitempty" yaml:"SpaceID,omitempty"`
+	SpaceID openapi_types.UUID `json:"SpaceID,omitempty,omitzero" yaml:"SpaceID,omitempty"`
 
 	// SpaceSlug Slug of the Space this entity belongs to. (readonly)
 	SpaceSlug string `json:"SpaceSlug,omitempty" yaml:"SpaceSlug,omitempty"`
@@ -5034,10 +5117,10 @@ type Unit struct {
 	ToolchainType string `json:"ToolchainType" yaml:"ToolchainType"`
 
 	// UnitID Unique identifier for a Unit.
-	UnitID openapi_types.UUID `json:"UnitID,omitempty" yaml:"UnitID,omitempty"`
+	UnitID openapi_types.UUID `json:"UnitID,omitempty,omitzero" yaml:"UnitID,omitempty"`
 
 	// UpdatedAt The timestamp when the entity was last updated in "2023-01-01T12:00:00Z" format.
-	UpdatedAt time.Time `json:"UpdatedAt,omitempty" yaml:"UpdatedAt,omitempty"`
+	UpdatedAt time.Time `json:"UpdatedAt,omitempty,omitzero" yaml:"UpdatedAt,omitempty"`
 
 	// UpstreamRevisionNum Sequence number for the Revision of the Unit this unit was cloned from, or 0. This is updated to the upstream Unit's head revision number when the Unit is upgraded. To change this revision number, change the UpstreamLastMergedRevisionNum of the corresponding Link of UpdateType UpgradeUnit from this Unit to the upstream Unit.
 	UpstreamRevisionNum int64 `json:"UpstreamRevisionNum,omitempty" yaml:"UpstreamRevisionNum,omitempty"`
@@ -5076,10 +5159,10 @@ type UnitAction struct {
 	Action *ActionType `json:"Action,omitempty" yaml:"Action,omitempty"`
 
 	// BridgeWorkerID BridgeWorkerID is the unique identifier of the bridge worker that will process this operation.
-	BridgeWorkerID openapi_types.UUID `json:"BridgeWorkerID,omitempty" yaml:"BridgeWorkerID,omitempty"`
+	BridgeWorkerID openapi_types.UUID `json:"BridgeWorkerID,omitempty,omitzero" yaml:"BridgeWorkerID,omitempty"`
 
 	// CreatedAt The timestamp when the entity was created in "2023-01-01T12:00:00Z" format.
-	CreatedAt time.Time `json:"CreatedAt,omitempty" yaml:"CreatedAt,omitempty"`
+	CreatedAt time.Time `json:"CreatedAt,omitempty,omitzero" yaml:"CreatedAt,omitempty"`
 
 	// Data The result of a dry-run Data-changing action like refresh and import, where the data is not stored in the Unit.
 	Data string `json:"Data,omitempty" yaml:"Data,omitempty"`
@@ -5097,34 +5180,34 @@ type UnitAction struct {
 	ExtraParams string `json:"ExtraParams,omitempty" yaml:"ExtraParams,omitempty"`
 
 	// OrganizationID OrganizationID is the unique identifier of the organization this operation belongs to.
-	OrganizationID openapi_types.UUID `json:"OrganizationID,omitempty" yaml:"OrganizationID,omitempty"`
+	OrganizationID openapi_types.UUID `json:"OrganizationID,omitempty,omitzero" yaml:"OrganizationID,omitempty"`
 
 	// QueuedOperationID QueuedOperationID is the unique identifier for the queued unit action.
-	QueuedOperationID openapi_types.UUID `json:"QueuedOperationID,omitempty" yaml:"QueuedOperationID,omitempty"`
+	QueuedOperationID openapi_types.UUID `json:"QueuedOperationID,omitempty,omitzero" yaml:"QueuedOperationID,omitempty"`
 
 	// RevisionNum RevisionNum is the revision number this operation was performed on.
 	RevisionNum int64 `json:"RevisionNum,omitempty" yaml:"RevisionNum,omitempty"`
 
 	// SpaceID SpaceID is the unique identifier of the space of the unit this operation is performed on.
-	SpaceID openapi_types.UUID `json:"SpaceID,omitempty" yaml:"SpaceID,omitempty"`
+	SpaceID openapi_types.UUID `json:"SpaceID,omitempty,omitzero" yaml:"SpaceID,omitempty"`
 
 	// Status Status indicates the current status of the unit action. v2 statuses: Initializing (being set up), Pending (waiting), Delivered (sent to worker), Progressing (being processed), Completed (success), Failed (error). v1 compatibility: 'pending' = Pending, 'delivered' = Completed (legacy 'delivered' meant work done).
 	Status UnitActionStatus `json:"Status,omitempty" yaml:"Status,omitempty"`
 
 	// TargetID TargetID is the unique identifier of the target this operation is directed to.
-	TargetID openapi_types.UUID `json:"TargetID,omitempty" yaml:"TargetID,omitempty"`
+	TargetID openapi_types.UUID `json:"TargetID,omitempty,omitzero" yaml:"TargetID,omitempty"`
 
 	// UnitActionNum UnitActionNum is the sequence number of this unit action.
 	UnitActionNum int64 `json:"UnitActionNum,omitempty" yaml:"UnitActionNum,omitempty"`
 
 	// UnitID UnitID is the unique identifier of the unit this operation is performed on.
-	UnitID openapi_types.UUID `json:"UnitID,omitempty" yaml:"UnitID,omitempty"`
+	UnitID openapi_types.UUID `json:"UnitID,omitempty,omitzero" yaml:"UnitID,omitempty"`
 
 	// UserAgent User-Agent string of the API call.
 	UserAgent string `json:"UserAgent,omitempty" yaml:"UserAgent,omitempty"`
 
 	// UserID UserID of the user the action was performed by.
-	UserID openapi_types.UUID `json:"UserID,omitempty" yaml:"UserID,omitempty"`
+	UserID openapi_types.UUID `json:"UserID,omitempty,omitzero" yaml:"UserID,omitempty"`
 
 	// UserIsBot Whether the user who requested the action is a bot user.
 	UserIsBot bool `json:"UserIsBot,omitempty" yaml:"UserIsBot,omitempty"`
@@ -5223,13 +5306,13 @@ type UnitData struct {
 	Slug string `json:"Slug,omitempty" yaml:"Slug,omitempty"`
 
 	// SpaceID Unique identifier of the Space the Unit belongs to.
-	SpaceID openapi_types.UUID `json:"SpaceID,omitempty" yaml:"SpaceID,omitempty"`
+	SpaceID openapi_types.UUID `json:"SpaceID,omitempty,omitzero" yaml:"SpaceID,omitempty"`
 
 	// SpaceSlug Slug of the Space the Unit belongs to.
 	SpaceSlug string `json:"SpaceSlug,omitempty" yaml:"SpaceSlug,omitempty"`
 
 	// UnitID Unique identifier of the Unit.
-	UnitID openapi_types.UUID `json:"UnitID,omitempty" yaml:"UnitID,omitempty"`
+	UnitID openapi_types.UUID `json:"UnitID,omitempty,omitzero" yaml:"UnitID,omitempty"`
 }
 
 // UnitDiff defines model for UnitDiff.
@@ -5242,13 +5325,13 @@ type UnitDiff struct {
 	FromRevisionNum int64 `json:"FromRevisionNum,omitempty" yaml:"FromRevisionNum,omitempty"`
 
 	// SpaceID The Space of the Unit
-	SpaceID openapi_types.UUID `json:"SpaceID,omitempty" yaml:"SpaceID,omitempty"`
+	SpaceID openapi_types.UUID `json:"SpaceID,omitempty,omitzero" yaml:"SpaceID,omitempty"`
 
 	// ToRevisionNum The Revision on the To side; 0 when the Unit has none there and the diff is against nothing
 	ToRevisionNum int64 `json:"ToRevisionNum,omitempty" yaml:"ToRevisionNum,omitempty"`
 
 	// UnitID The Unit
-	UnitID openapi_types.UUID `json:"UnitID,omitempty" yaml:"UnitID,omitempty"`
+	UnitID openapi_types.UUID `json:"UnitID,omitempty,omitzero" yaml:"UnitID,omitempty"`
 }
 
 // UnitEvent UnitEvent represents an event of action performed on a Unit's configuration. Each action tracks
@@ -5265,7 +5348,7 @@ type UnitEvent struct {
 	BridgeWorkerID *openapi_types.UUID `json:"BridgeWorkerID,omitempty" yaml:"BridgeWorkerID,omitempty"`
 
 	// CreatedAt The timestamp when the entity was created in "2023-01-01T12:00:00Z" format.
-	CreatedAt time.Time `json:"CreatedAt,omitempty" yaml:"CreatedAt,omitempty"`
+	CreatedAt time.Time `json:"CreatedAt,omitempty,omitzero" yaml:"CreatedAt,omitempty"`
 
 	// EntityType The type of entity.
 	EntityType string `json:"EntityType,omitempty" yaml:"EntityType,omitempty"`
@@ -5275,34 +5358,34 @@ type UnitEvent struct {
 	Message      string `json:"Message,omitempty" yaml:"Message,omitempty"`
 
 	// OrganizationID Unique identifier for an Organization.
-	OrganizationID openapi_types.UUID `json:"OrganizationID,omitempty" yaml:"OrganizationID,omitempty"`
+	OrganizationID openapi_types.UUID `json:"OrganizationID,omitempty,omitzero" yaml:"OrganizationID,omitempty"`
 
 	// QueuedOperationID QueuedOperationID is the unique identifier for the corresponding queued operation.
-	QueuedOperationID openapi_types.UUID `json:"QueuedOperationID,omitempty" yaml:"QueuedOperationID,omitempty"`
+	QueuedOperationID openapi_types.UUID `json:"QueuedOperationID,omitempty,omitzero" yaml:"QueuedOperationID,omitempty"`
 	Result            *ActionResultType  `json:"Result,omitempty" yaml:"Result,omitempty"`
 	RevisionNum       int64              `json:"RevisionNum,omitempty" yaml:"RevisionNum,omitempty"`
 
 	// SpaceID Unique identifier for a space.
-	SpaceID openapi_types.UUID `json:"SpaceID,omitempty" yaml:"SpaceID,omitempty"`
+	SpaceID openapi_types.UUID `json:"SpaceID,omitempty,omitzero" yaml:"SpaceID,omitempty"`
 
 	// SpaceSlug Slug of the Space this entity belongs to. (readonly)
 	SpaceSlug    string             `json:"SpaceSlug,omitempty" yaml:"SpaceSlug,omitempty"`
 	StartedAt    time.Time          `json:"StartedAt,omitempty" yaml:"StartedAt,omitempty"`
 	Status       *ActionStatusType  `json:"Status,omitempty" yaml:"Status,omitempty"`
 	TerminatedAt time.Time          `json:"TerminatedAt" yaml:"TerminatedAt"`
-	UnitEventID  openapi_types.UUID `json:"UnitEventID,omitempty" yaml:"UnitEventID,omitempty"`
+	UnitEventID  openapi_types.UUID `json:"UnitEventID,omitempty,omitzero" yaml:"UnitEventID,omitempty"`
 
 	// UnitEventNum Sequence number for this unit event.
 	UnitEventNum int64 `json:"UnitEventNum,omitempty" yaml:"UnitEventNum,omitempty"`
 
 	// UnitID Unique identifier for a Unit.
-	UnitID openapi_types.UUID `json:"UnitID,omitempty" yaml:"UnitID,omitempty"`
+	UnitID openapi_types.UUID `json:"UnitID,omitempty,omitzero" yaml:"UnitID,omitempty"`
 
 	// UnitSlug Slug of the Unit this entity belongs to. (readonly)
 	UnitSlug string `json:"UnitSlug,omitempty" yaml:"UnitSlug,omitempty"`
 
 	// UpdatedAt The timestamp when the entity was last updated in "2023-01-01T12:00:00Z" format.
-	UpdatedAt time.Time `json:"UpdatedAt,omitempty" yaml:"UpdatedAt,omitempty"`
+	UpdatedAt time.Time `json:"UpdatedAt,omitempty,omitzero" yaml:"UpdatedAt,omitempty"`
 
 	// Version An entity-specific sequence number used for optimistic concurrency control. The value read must be sent in calls to Update.
 	Version int64 `json:"Version,omitempty" yaml:"Version,omitempty"`
@@ -5325,7 +5408,7 @@ type UnitGuardResponse struct {
 
 // UnitMoveRequest defines model for UnitMoveRequest.
 type UnitMoveRequest struct {
-	ToSpaceID openapi_types.UUID `json:"ToSpaceID,omitempty" yaml:"ToSpaceID,omitempty"`
+	ToSpaceID openapi_types.UUID `json:"ToSpaceID,omitempty,omitzero" yaml:"ToSpaceID,omitempty"`
 }
 
 // UnitMoveResponse defines model for UnitMoveResponse.
@@ -5336,7 +5419,7 @@ type UnitMoveResponse struct {
 	Resolving      bool                `json:"Resolving,omitempty" yaml:"Resolving,omitempty"`
 	Slug           string              `json:"Slug,omitempty" yaml:"Slug,omitempty"`
 	TargetID       *openapi_types.UUID `json:"TargetID,omitempty" yaml:"TargetID,omitempty"`
-	UnitID         openapi_types.UUID  `json:"UnitID,omitempty" yaml:"UnitID,omitempty"`
+	UnitID         openapi_types.UUID  `json:"UnitID,omitempty,omitzero" yaml:"UnitID,omitempty"`
 }
 
 // UnitMutationSources defines model for UnitMutationSources.
@@ -5351,13 +5434,13 @@ type UnitMutationSources struct {
 	Slug string `json:"Slug,omitempty" yaml:"Slug,omitempty"`
 
 	// SpaceID Unique identifier of the Space the Unit belongs to.
-	SpaceID openapi_types.UUID `json:"SpaceID,omitempty" yaml:"SpaceID,omitempty"`
+	SpaceID openapi_types.UUID `json:"SpaceID,omitempty,omitzero" yaml:"SpaceID,omitempty"`
 
 	// SpaceSlug Slug of the Space the Unit belongs to.
 	SpaceSlug string `json:"SpaceSlug,omitempty" yaml:"SpaceSlug,omitempty"`
 
 	// UnitID Unique identifier of the Unit.
-	UnitID openapi_types.UUID `json:"UnitID,omitempty" yaml:"UnitID,omitempty"`
+	UnitID openapi_types.UUID `json:"UnitID,omitempty,omitzero" yaml:"UnitID,omitempty"`
 }
 
 // UnitProtectionRequest defines model for UnitProtectionRequest.
@@ -5381,7 +5464,7 @@ type UnitTagRequest struct {
 
 	// Revision Which Unit revision to tag: a named revision ('HeadRevisionNum', 'LastReleasedRevisionNum'), a revision number, an entity reference ('Tag:uuid', 'ChangeSet:uuid', 'Revision:uuid'), any of those prefixed with 'Before:', or 'Remove' to remove the tag from the unit
 	Revision string             `json:"Revision,omitempty" yaml:"Revision,omitempty"`
-	TagID    openapi_types.UUID `json:"TagID,omitempty" yaml:"TagID,omitempty"`
+	TagID    openapi_types.UUID `json:"TagID,omitempty,omitzero" yaml:"TagID,omitempty"`
 }
 
 // UnitTagResponse defines model for UnitTagResponse.
@@ -5622,9 +5705,9 @@ type UploadSpaceResult struct {
 
 // UploadUnitRef defines model for UploadUnitRef.
 type UploadUnitRef struct {
-	SpaceID   openapi_types.UUID `json:"SpaceID,omitempty" yaml:"SpaceID,omitempty"`
+	SpaceID   openapi_types.UUID `json:"SpaceID,omitempty,omitzero" yaml:"SpaceID,omitempty"`
 	SpaceSlug string             `json:"SpaceSlug,omitempty" yaml:"SpaceSlug,omitempty"`
-	UnitID    openapi_types.UUID `json:"UnitID,omitempty" yaml:"UnitID,omitempty"`
+	UnitID    openapi_types.UUID `json:"UnitID,omitempty,omitzero" yaml:"UnitID,omitempty"`
 	UnitSlug  string             `json:"UnitSlug,omitempty" yaml:"UnitSlug,omitempty"`
 }
 
@@ -5667,7 +5750,7 @@ type UploadUnmatchedReference struct {
 // User a User in Confighub.
 type User struct {
 	// CreatedAt The timestamp when the entity was created in "2023-01-01T12:00:00Z" format.
-	CreatedAt time.Time `json:"CreatedAt,omitempty" yaml:"CreatedAt,omitempty"`
+	CreatedAt time.Time `json:"CreatedAt,omitempty,omitzero" yaml:"CreatedAt,omitempty"`
 
 	// DisplayName Friendly name for the entity.
 	DisplayName string `json:"DisplayName,omitempty" yaml:"DisplayName,omitempty"`
@@ -5691,10 +5774,10 @@ type User struct {
 	Slug string `json:"Slug" yaml:"Slug"`
 
 	// UpdatedAt The timestamp when the entity was last updated in "2023-01-01T12:00:00Z" format.
-	UpdatedAt time.Time `json:"UpdatedAt,omitempty" yaml:"UpdatedAt,omitempty"`
+	UpdatedAt time.Time `json:"UpdatedAt,omitempty,omitzero" yaml:"UpdatedAt,omitempty"`
 
 	// UserID Unique identifier for a User.
-	UserID openapi_types.UUID `json:"UserID,omitempty" yaml:"UserID,omitempty"`
+	UserID openapi_types.UUID `json:"UserID,omitempty,omitzero" yaml:"UserID,omitempty"`
 
 	// Username Unique username for a User. Must be unique for all of Confighub.
 	Username string `json:"Username,omitempty" yaml:"Username,omitempty"`
@@ -5705,27 +5788,27 @@ type User struct {
 
 // UserKey defines model for UserKey.
 type UserKey struct {
-	CreatedAt   time.Time          `json:"CreatedAt,omitempty" yaml:"CreatedAt,omitempty"`
+	CreatedAt   time.Time          `json:"CreatedAt,omitempty,omitzero" yaml:"CreatedAt,omitempty"`
 	Description string             `json:"Description,omitempty" yaml:"Description,omitempty"`
-	ExpiresAt   time.Time          `json:"ExpiresAt,omitempty" yaml:"ExpiresAt,omitempty"`
+	ExpiresAt   time.Time          `json:"ExpiresAt,omitempty,omitzero" yaml:"ExpiresAt,omitempty"`
 	Kid         string             `json:"Kid,omitempty" yaml:"Kid,omitempty"`
-	LastUsedAt  time.Time          `json:"LastUsedAt,omitempty" yaml:"LastUsedAt,omitempty"`
+	LastUsedAt  time.Time          `json:"LastUsedAt,omitempty,omitzero" yaml:"LastUsedAt,omitempty"`
 	PublicJWK   interface{}        `json:"PublicJWK,omitempty" yaml:"PublicJWK,omitempty"`
-	UserID      openapi_types.UUID `json:"UserID,omitempty" yaml:"UserID,omitempty"`
-	UserKeyID   openapi_types.UUID `json:"UserKeyID,omitempty" yaml:"UserKeyID,omitempty"`
+	UserID      openapi_types.UUID `json:"UserID,omitempty,omitzero" yaml:"UserID,omitempty"`
+	UserKeyID   openapi_types.UUID `json:"UserKeyID,omitempty,omitzero" yaml:"UserKeyID,omitempty"`
 }
 
 // UserToken defines model for UserToken.
 type UserToken struct {
-	CreatedAt       time.Time          `json:"CreatedAt,omitempty" yaml:"CreatedAt,omitempty"`
-	CreatedByUserID openapi_types.UUID `json:"CreatedByUserID,omitempty" yaml:"CreatedByUserID,omitempty"`
+	CreatedAt       time.Time          `json:"CreatedAt,omitempty,omitzero" yaml:"CreatedAt,omitempty"`
+	CreatedByUserID openapi_types.UUID `json:"CreatedByUserID,omitempty,omitzero" yaml:"CreatedByUserID,omitempty"`
 	Description     string             `json:"Description,omitempty" yaml:"Description,omitempty"`
-	ExpiresAt       time.Time          `json:"ExpiresAt,omitempty" yaml:"ExpiresAt,omitempty"`
+	ExpiresAt       time.Time          `json:"ExpiresAt,omitempty,omitzero" yaml:"ExpiresAt,omitempty"`
 	Jti             string             `json:"Jti,omitempty" yaml:"Jti,omitempty"`
-	LastUsedAt      time.Time          `json:"LastUsedAt,omitempty" yaml:"LastUsedAt,omitempty"`
-	RevokedAt       time.Time          `json:"RevokedAt,omitempty" yaml:"RevokedAt,omitempty"`
-	UserID          openapi_types.UUID `json:"UserID,omitempty" yaml:"UserID,omitempty"`
-	UserTokenID     openapi_types.UUID `json:"UserTokenID,omitempty" yaml:"UserTokenID,omitempty"`
+	LastUsedAt      time.Time          `json:"LastUsedAt,omitempty,omitzero" yaml:"LastUsedAt,omitempty"`
+	RevokedAt       time.Time          `json:"RevokedAt,omitempty,omitzero" yaml:"RevokedAt,omitempty"`
+	UserID          openapi_types.UUID `json:"UserID,omitempty,omitzero" yaml:"UserID,omitempty"`
+	UserTokenID     openapi_types.UUID `json:"UserTokenID,omitempty,omitzero" yaml:"UserTokenID,omitempty"`
 }
 
 // ValidationResult defines model for ValidationResult.
@@ -5765,7 +5848,7 @@ type View struct {
 	Columns []Column `json:"Columns,omitempty" yaml:"Columns,omitempty"`
 
 	// CreatedAt The timestamp when the entity was created in "2023-01-01T12:00:00Z" format.
-	CreatedAt time.Time `json:"CreatedAt,omitempty" yaml:"CreatedAt,omitempty"`
+	CreatedAt time.Time `json:"CreatedAt,omitempty,omitzero" yaml:"CreatedAt,omitempty"`
 
 	// DeleteGates An optional set of gates that, if any is present, will block deletion.
 	DeleteGates map[string]bool `json:"DeleteGates,omitempty" yaml:"DeleteGates,omitempty"`
@@ -5801,7 +5884,7 @@ type View struct {
 	OrderByDirection string `json:"OrderByDirection,omitempty" yaml:"OrderByDirection,omitempty"`
 
 	// OrganizationID Unique identifier for an organization.
-	OrganizationID openapi_types.UUID `json:"OrganizationID,omitempty" yaml:"OrganizationID,omitempty"`
+	OrganizationID openapi_types.UUID `json:"OrganizationID,omitempty,omitzero" yaml:"OrganizationID,omitempty"`
 
 	// Permissions Permissions to access this view.
 	Permissions *Permissions `json:"Permissions,omitempty" yaml:"Permissions,omitempty"`
@@ -5810,20 +5893,20 @@ type View struct {
 	Slug string `json:"Slug" yaml:"Slug"`
 
 	// SpaceID Unique identifier for a space.
-	SpaceID openapi_types.UUID `json:"SpaceID,omitempty" yaml:"SpaceID,omitempty"`
+	SpaceID openapi_types.UUID `json:"SpaceID,omitempty,omitzero" yaml:"SpaceID,omitempty"`
 
 	// SpaceSlug Slug of the Space this entity belongs to. (readonly)
 	SpaceSlug string `json:"SpaceSlug,omitempty" yaml:"SpaceSlug,omitempty"`
 
 	// UpdatedAt The timestamp when the entity was last updated in "2023-01-01T12:00:00Z" format.
-	UpdatedAt      time.Time           `json:"UpdatedAt,omitempty" yaml:"UpdatedAt,omitempty"`
+	UpdatedAt      time.Time           `json:"UpdatedAt,omitempty,omitzero" yaml:"UpdatedAt,omitempty"`
 	UpstreamViewID *openapi_types.UUID `json:"UpstreamViewID,omitempty" yaml:"UpstreamViewID,omitempty"`
 
 	// Version An entity-specific sequence number used for optimistic concurrency control. The value read must be sent in calls to Update.
 	Version int64 `json:"Version,omitempty" yaml:"Version,omitempty"`
 
 	// ViewID ViewID uniquely identifies a view within the system.
-	ViewID openapi_types.UUID `json:"ViewID,omitempty" yaml:"ViewID,omitempty"`
+	ViewID openapi_types.UUID `json:"ViewID,omitempty,omitzero" yaml:"ViewID,omitempty"`
 }
 
 // ViewColumn defines model for ViewColumn.
@@ -6856,7 +6939,7 @@ type ListAllAttestationsParams struct {
 	// expected in a comma-separated list format as in the JSON encoding.
 	// If not specified, all fields are returned.
 	// Entity and parent IDs (like OrganizationID, SpaceID, AttestationID) and Slug are always returned regardless of the select parameter.
-	// Fields used in where and contains filters, and fields named by order_by, are also automatically included.
+	// Fields used in where and contains filters, fields named by order_by, and fields read by the columns of the View named by view are also automatically included.
 	// Example: 'DisplayName,CreatedAt,Labels' will return only those fields plus the required ID and Slug fields.
 	// The whole string must be query-encoded.
 	Select *string `form:"select,omitempty" json:"select,omitempty" yaml:"select,omitempty"`
@@ -6869,6 +6952,15 @@ type ListAllAttestationsParams struct {
 	//
 	// ConfigHub/YAML Units, which hold the configuration of entities, are hidden with the HiddenReason `BackingUnit`.
 	IncludeHidden *string `form:"include_hidden,omitempty" json:"include_hidden,omitempty" yaml:"include_hidden,omitempty"`
+
+	// View UUID of a View whose columns to compute for each Attestation, returned as ViewColumns.
+	//
+	// The View must be in the same Organization as the user credentials, and be a View of Attestation: its Of, or the From of its Filter, must be Attestation.
+	//
+	// If the View has a Filter, the Filter selects the entities as the filter parameter does, so the two may not both be specified.
+	//
+	// The related entities and fields the View's columns read are included and selected automatically, so neither include nor select has to name them.
+	View *string `form:"view,omitempty" json:"view,omitempty" yaml:"view,omitempty"`
 
 	// Limit Maximum number of Attestation entities to return. If not specified, all matching entities are returned. Values greater than 1000 are rejected with 400. When there may be more entities, the response has a ConfigHub-Continue header to pass as the continue parameter of the next request.
 	Limit *int `form:"limit,omitempty" json:"limit,omitempty" yaml:"limit,omitempty"`
@@ -7078,7 +7170,7 @@ type ListAllAttributesParams struct {
 	// expected in a comma-separated list format as in the JSON encoding.
 	// If not specified, all fields are returned.
 	// Entity and parent IDs (like OrganizationID, SpaceID, AttributeID) and Slug are always returned regardless of the select parameter.
-	// Fields used in where and contains filters, and fields named by order_by, are also automatically included.
+	// Fields used in where and contains filters, fields named by order_by, and fields read by the columns of the View named by view are also automatically included.
 	// Example: 'DisplayName,CreatedAt,Labels' will return only those fields plus the required ID and Slug fields.
 	// The whole string must be query-encoded.
 	Select *string `form:"select,omitempty" json:"select,omitempty" yaml:"select,omitempty"`
@@ -7091,6 +7183,15 @@ type ListAllAttributesParams struct {
 	//
 	// ConfigHub/YAML Units, which hold the configuration of entities, are hidden with the HiddenReason `BackingUnit`.
 	IncludeHidden *string `form:"include_hidden,omitempty" json:"include_hidden,omitempty" yaml:"include_hidden,omitempty"`
+
+	// View UUID of a View whose columns to compute for each Attribute, returned as ViewColumns.
+	//
+	// The View must be in the same Organization as the user credentials, and be a View of Attribute: its Of, or the From of its Filter, must be Attribute.
+	//
+	// If the View has a Filter, the Filter selects the entities as the filter parameter does, so the two may not both be specified.
+	//
+	// The related entities and fields the View's columns read are included and selected automatically, so neither include nor select has to name them.
+	View *string `form:"view,omitempty" json:"view,omitempty" yaml:"view,omitempty"`
 
 	// Limit Maximum number of Attribute entities to return. If not specified, all matching entities are returned. Values greater than 1000 are rejected with 400. When there may be more entities, the response has a ConfigHub-Continue header to pass as the continue parameter of the next request.
 	Limit *int `form:"limit,omitempty" json:"limit,omitempty" yaml:"limit,omitempty"`
@@ -7767,7 +7868,7 @@ type ListAllBridgeWorkersParams struct {
 	// expected in a comma-separated list format as in the JSON encoding.
 	// If not specified, all fields are returned.
 	// Entity and parent IDs (like OrganizationID, SpaceID, BridgeWorkerID) and Slug are always returned regardless of the select parameter.
-	// Fields used in where and contains filters, and fields named by order_by, are also automatically included.
+	// Fields used in where and contains filters, fields named by order_by, and fields read by the columns of the View named by view are also automatically included.
 	// Example: 'DisplayName,CreatedAt,Labels' will return only those fields plus the required ID and Slug fields.
 	// The whole string must be query-encoded.
 	Select *string `form:"select,omitempty" json:"select,omitempty" yaml:"select,omitempty"`
@@ -7780,6 +7881,15 @@ type ListAllBridgeWorkersParams struct {
 	//
 	// ConfigHub/YAML Units, which hold the configuration of entities, are hidden with the HiddenReason `BackingUnit`.
 	IncludeHidden *string `form:"include_hidden,omitempty" json:"include_hidden,omitempty" yaml:"include_hidden,omitempty"`
+
+	// View UUID of a View whose columns to compute for each BridgeWorker, returned as ViewColumns.
+	//
+	// The View must be in the same Organization as the user credentials, and be a View of BridgeWorker: its Of, or the From of its Filter, must be BridgeWorker.
+	//
+	// If the View has a Filter, the Filter selects the entities as the filter parameter does, so the two may not both be specified.
+	//
+	// The related entities and fields the View's columns read are included and selected automatically, so neither include nor select has to name them.
+	View *string `form:"view,omitempty" json:"view,omitempty" yaml:"view,omitempty"`
 
 	// Limit Maximum number of BridgeWorker entities to return. If not specified, all matching entities are returned. Values greater than 1000 are rejected with 400. When there may be more entities, the response has a ConfigHub-Continue header to pass as the continue parameter of the next request.
 	Limit *int `form:"limit,omitempty" json:"limit,omitempty" yaml:"limit,omitempty"`
@@ -8213,7 +8323,7 @@ type ListAllChangeOrdersParams struct {
 	// expected in a comma-separated list format as in the JSON encoding.
 	// If not specified, all fields are returned.
 	// Entity and parent IDs (like OrganizationID, SpaceID, ChangeOrderID) and Slug are always returned regardless of the select parameter.
-	// Fields used in where and contains filters, and fields named by order_by, are also automatically included.
+	// Fields used in where and contains filters, fields named by order_by, and fields read by the columns of the View named by view are also automatically included.
 	// Example: 'DisplayName,CreatedAt,Labels' will return only those fields plus the required ID and Slug fields.
 	// The whole string must be query-encoded.
 	Select *string `form:"select,omitempty" json:"select,omitempty" yaml:"select,omitempty"`
@@ -8226,6 +8336,15 @@ type ListAllChangeOrdersParams struct {
 	//
 	// ConfigHub/YAML Units, which hold the configuration of entities, are hidden with the HiddenReason `BackingUnit`.
 	IncludeHidden *string `form:"include_hidden,omitempty" json:"include_hidden,omitempty" yaml:"include_hidden,omitempty"`
+
+	// View UUID of a View whose columns to compute for each ChangeOrder, returned as ViewColumns.
+	//
+	// The View must be in the same Organization as the user credentials, and be a View of ChangeOrder: its Of, or the From of its Filter, must be ChangeOrder.
+	//
+	// If the View has a Filter, the Filter selects the entities as the filter parameter does, so the two may not both be specified.
+	//
+	// The related entities and fields the View's columns read are included and selected automatically, so neither include nor select has to name them.
+	View *string `form:"view,omitempty" json:"view,omitempty" yaml:"view,omitempty"`
 
 	// Limit Maximum number of ChangeOrder entities to return. If not specified, all matching entities are returned. Values greater than 1000 are rejected with 400. When there may be more entities, the response has a ConfigHub-Continue header to pass as the continue parameter of the next request.
 	Limit *int `form:"limit,omitempty" json:"limit,omitempty" yaml:"limit,omitempty"`
@@ -8784,7 +8903,7 @@ type ListAllChangeSetsParams struct {
 	// expected in a comma-separated list format as in the JSON encoding.
 	// If not specified, all fields are returned.
 	// Entity and parent IDs (like OrganizationID, SpaceID, ChangeSetID) and Slug are always returned regardless of the select parameter.
-	// Fields used in where and contains filters, and fields named by order_by, are also automatically included.
+	// Fields used in where and contains filters, fields named by order_by, and fields read by the columns of the View named by view are also automatically included.
 	// Example: 'DisplayName,CreatedAt,Labels' will return only those fields plus the required ID and Slug fields.
 	// The whole string must be query-encoded.
 	Select *string `form:"select,omitempty" json:"select,omitempty" yaml:"select,omitempty"`
@@ -8797,6 +8916,15 @@ type ListAllChangeSetsParams struct {
 	//
 	// ConfigHub/YAML Units, which hold the configuration of entities, are hidden with the HiddenReason `BackingUnit`.
 	IncludeHidden *string `form:"include_hidden,omitempty" json:"include_hidden,omitempty" yaml:"include_hidden,omitempty"`
+
+	// View UUID of a View whose columns to compute for each ChangeSet, returned as ViewColumns.
+	//
+	// The View must be in the same Organization as the user credentials, and be a View of ChangeSet: its Of, or the From of its Filter, must be ChangeSet.
+	//
+	// If the View has a Filter, the Filter selects the entities as the filter parameter does, so the two may not both be specified.
+	//
+	// The related entities and fields the View's columns read are included and selected automatically, so neither include nor select has to name them.
+	View *string `form:"view,omitempty" json:"view,omitempty" yaml:"view,omitempty"`
 
 	// Limit Maximum number of ChangeSet entities to return. If not specified, all matching entities are returned. Values greater than 1000 are rejected with 400. When there may be more entities, the response has a ConfigHub-Continue header to pass as the continue parameter of the next request.
 	Limit *int `form:"limit,omitempty" json:"limit,omitempty" yaml:"limit,omitempty"`
@@ -9415,7 +9543,7 @@ type ListAllChangeWorkflowsParams struct {
 	// expected in a comma-separated list format as in the JSON encoding.
 	// If not specified, all fields are returned.
 	// Entity and parent IDs (like OrganizationID, SpaceID, ChangeWorkflowID) and Slug are always returned regardless of the select parameter.
-	// Fields used in where and contains filters, and fields named by order_by, are also automatically included.
+	// Fields used in where and contains filters, fields named by order_by, and fields read by the columns of the View named by view are also automatically included.
 	// Example: 'DisplayName,CreatedAt,Labels' will return only those fields plus the required ID and Slug fields.
 	// The whole string must be query-encoded.
 	Select *string `form:"select,omitempty" json:"select,omitempty" yaml:"select,omitempty"`
@@ -9428,6 +9556,15 @@ type ListAllChangeWorkflowsParams struct {
 	//
 	// ConfigHub/YAML Units, which hold the configuration of entities, are hidden with the HiddenReason `BackingUnit`.
 	IncludeHidden *string `form:"include_hidden,omitempty" json:"include_hidden,omitempty" yaml:"include_hidden,omitempty"`
+
+	// View UUID of a View whose columns to compute for each ChangeWorkflow, returned as ViewColumns.
+	//
+	// The View must be in the same Organization as the user credentials, and be a View of ChangeWorkflow: its Of, or the From of its Filter, must be ChangeWorkflow.
+	//
+	// If the View has a Filter, the Filter selects the entities as the filter parameter does, so the two may not both be specified.
+	//
+	// The related entities and fields the View's columns read are included and selected automatically, so neither include nor select has to name them.
+	View *string `form:"view,omitempty" json:"view,omitempty" yaml:"view,omitempty"`
 
 	// Limit Maximum number of ChangeWorkflow entities to return. If not specified, all matching entities are returned. Values greater than 1000 are rejected with 400. When there may be more entities, the response has a ConfigHub-Continue header to pass as the continue parameter of the next request.
 	Limit *int `form:"limit,omitempty" json:"limit,omitempty" yaml:"limit,omitempty"`
@@ -9979,7 +10116,7 @@ type BulkDeleteChannelsParams struct {
 	// An example conjunction is:
 	// `CreatedAt >= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.
 	//
-	// Supported attributes for filtering on Channel: Annotations, ChannelID, Commands, Condition, CreatedAt, DeleteGates, DisplayName, EventPosition, HiddenReason, IPAddress, Labels, LastMessage, LastSeenAt, OrganizationID, Permissions, Slug, SpaceID, Subscriptions, UpdatedAt.
+	// Supported attributes for filtering on Channel: Annotations, BackingUnitID, ChannelID, Commands, Condition, CreatedAt, DeleteGates, DisplayName, EventPosition, HiddenReason, IPAddress, Labels, LastMessage, LastSeenAt, OrganizationID, Permissions, Slug, SpaceID, Subscriptions, UpdatedAt, UpstreamChannelID.
 	//
 	// The whole string must be query-encoded.
 	Where *string `form:"where,omitempty" json:"where,omitempty" yaml:"where,omitempty"`
@@ -10037,6 +10174,9 @@ type BulkDeleteChannelsParams struct {
 
 	// Continue The token from the ConfigHub-Continue header of the previous request, to act on the Channel entities after the last one it acted on. The request's other parameters, except limit, must be the same as those of the request that returned the token.
 	Continue *string `form:"continue,omitempty" json:"continue,omitempty" yaml:"continue,omitempty"`
+
+	// FromBackingUnits Prune: of the Channels selected, delete those whose backing Unit is empty, which says the Channel should not exist, and keep the Unit, empty and backing nothing, so that it keeps the Channel's history and a document that comes back revives it. The others are left alone and are not in the response, so a broad selection deletes only what was emptied.
+	FromBackingUnits *bool `form:"from_backing_units,omitempty" json:"from_backing_units,omitempty" yaml:"from_backing_units,omitempty"`
 }
 
 // ListAllChannelsParams defines parameters for ListAllChannels.
@@ -10075,7 +10215,7 @@ type ListAllChannelsParams struct {
 	// An example conjunction is:
 	// `CreatedAt >= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.
 	//
-	// Supported attributes for filtering on Channel: Annotations, ChannelID, Commands, Condition, CreatedAt, DeleteGates, DisplayName, EventPosition, HiddenReason, IPAddress, Labels, LastMessage, LastSeenAt, OrganizationID, Permissions, Slug, SpaceID, Subscriptions, UpdatedAt.
+	// Supported attributes for filtering on Channel: Annotations, BackingUnitID, ChannelID, Commands, Condition, CreatedAt, DeleteGates, DisplayName, EventPosition, HiddenReason, IPAddress, Labels, LastMessage, LastSeenAt, OrganizationID, Permissions, Slug, SpaceID, Subscriptions, UpdatedAt, UpstreamChannelID.
 	//
 	// The whole string must be query-encoded.
 	Where *string `form:"where,omitempty" json:"where,omitempty" yaml:"where,omitempty"`
@@ -10124,7 +10264,7 @@ type ListAllChannelsParams struct {
 	// expected in a comma-separated list format as in the JSON encoding.
 	// If not specified, all fields are returned.
 	// Entity and parent IDs (like OrganizationID, SpaceID, ChannelID) and Slug are always returned regardless of the select parameter.
-	// Fields used in where and contains filters, and fields named by order_by, are also automatically included.
+	// Fields used in where and contains filters, fields named by order_by, and fields read by the columns of the View named by view are also automatically included.
 	// Example: 'DisplayName,CreatedAt,Labels' will return only those fields plus the required ID and Slug fields.
 	// The whole string must be query-encoded.
 	Select *string `form:"select,omitempty" json:"select,omitempty" yaml:"select,omitempty"`
@@ -10138,6 +10278,15 @@ type ListAllChannelsParams struct {
 	// ConfigHub/YAML Units, which hold the configuration of entities, are hidden with the HiddenReason `BackingUnit`.
 	IncludeHidden *string `form:"include_hidden,omitempty" json:"include_hidden,omitempty" yaml:"include_hidden,omitempty"`
 
+	// View UUID of a View whose columns to compute for each Channel, returned as ViewColumns.
+	//
+	// The View must be in the same Organization as the user credentials, and be a View of Channel: its Of, or the From of its Filter, must be Channel.
+	//
+	// If the View has a Filter, the Filter selects the entities as the filter parameter does, so the two may not both be specified.
+	//
+	// The related entities and fields the View's columns read are included and selected automatically, so neither include nor select has to name them.
+	View *string `form:"view,omitempty" json:"view,omitempty" yaml:"view,omitempty"`
+
 	// Limit Maximum number of Channel entities to return. If not specified, all matching entities are returned. Values greater than 1000 are rejected with 400. When there may be more entities, the response has a ConfigHub-Continue header to pass as the continue parameter of the next request.
 	Limit *int `form:"limit,omitempty" json:"limit,omitempty" yaml:"limit,omitempty"`
 
@@ -10145,7 +10294,7 @@ type ListAllChannelsParams struct {
 	//
 	// Field names are case-sensitive and PascalCase, as in the JSON encoding. Sort direction defaults to ASC when the 'DIRECTION:' prefix is omitted.
 	//
-	// Supported attributes for ordering Channel: ChannelID, Condition, CreatedAt, DisplayName, EventPosition, HiddenReason, IPAddress, LastMessage, LastSeenAt, OrganizationID, Slug, SpaceID, UpdatedAt.
+	// Supported attributes for ordering Channel: BackingUnitID, ChannelID, Condition, CreatedAt, DisplayName, EventPosition, HiddenReason, IPAddress, LastMessage, LastSeenAt, OrganizationID, Slug, SpaceID, UpdatedAt, UpstreamChannelID.
 	//
 	// Example: 'DESC:CreatedAt' or 'DisplayName,DESC:CreatedAt'.
 	//
@@ -10226,7 +10375,7 @@ type BulkPatchChannelsParams struct {
 	// An example conjunction is:
 	// `CreatedAt >= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.
 	//
-	// Supported attributes for filtering on Channel: Annotations, ChannelID, Commands, Condition, CreatedAt, DeleteGates, DisplayName, EventPosition, HiddenReason, IPAddress, Labels, LastMessage, LastSeenAt, OrganizationID, Permissions, Slug, SpaceID, Subscriptions, UpdatedAt.
+	// Supported attributes for filtering on Channel: Annotations, BackingUnitID, ChannelID, Commands, Condition, CreatedAt, DeleteGates, DisplayName, EventPosition, HiddenReason, IPAddress, Labels, LastMessage, LastSeenAt, OrganizationID, Permissions, Slug, SpaceID, Subscriptions, UpdatedAt, UpstreamChannelID.
 	//
 	// The whole string must be query-encoded.
 	Where *string `form:"where,omitempty" json:"where,omitempty" yaml:"where,omitempty"`
@@ -10285,7 +10434,352 @@ type BulkPatchChannelsParams struct {
 	// Continue The token from the ConfigHub-Continue header of the previous request, to act on the Channel entities after the last one it acted on. The request's other parameters, except limit, must be the same as those of the request that returned the token.
 	Continue *string `form:"continue,omitempty" json:"continue,omitempty" yaml:"continue,omitempty"`
 
+	// WithBackingUnits Give each Channel written a backing Unit if it has none: a ConfigHub/YAML Unit holding the Channel's configuration, which is then kept in step with it.
+	WithBackingUnits *bool `form:"with_backing_units,omitempty" json:"with_backing_units,omitempty" yaml:"with_backing_units,omitempty"`
+
+	// FromBackingUnits Patch each selected Channel with what its backing Unit holds that it has not taken yet: the change to the Unit since its LastReleasedRevisionNum. The request body is applied after it. Selecting one with no backing Unit is an error, and so are outstanding ValidationErrors on a backing Unit.
+	FromBackingUnits *bool `form:"from_backing_units,omitempty" json:"from_backing_units,omitempty" yaml:"from_backing_units,omitempty"`
+
 	// DryRun If true, report what the write would do without doing it: the write runs, including every check it makes, and is then rolled back. The response is the one the write would return, with the entities as they would be written. An entity a dry run creates is given an ID that the real create will not reuse.
+	DryRun *bool `form:"dry_run,omitempty" json:"dry_run,omitempty" yaml:"dry_run,omitempty"`
+}
+
+// BulkCreateChannelsApplicationMergePatchPlusJSONBody defines parameters for BulkCreateChannels.
+type BulkCreateChannelsApplicationMergePatchPlusJSONBody struct {
+	// Annotations An optional map of Annotation key/value pairs for tools to attach information to entities.
+	Annotations *map[string]*string                 `json:"Annotations" yaml:"Annotations"`
+	Commands    *map[string]*map[string]interface{} `json:"Commands" yaml:"Commands"`
+
+	// DeleteGates An optional set of gates that, if any is present, will block deletion
+	DeleteGates *map[string]*bool `json:"DeleteGates" yaml:"DeleteGates"`
+
+	// DisplayName Friendly name for the entity.
+	DisplayName   *string `json:"DisplayName" yaml:"DisplayName"`
+	EventPosition *int    `json:"EventPosition" yaml:"EventPosition"`
+
+	// HiddenReason The reason the entity is hidden, if it is. A hidden entity is left out of List and Search results, and of what bulk operations act on, unless the include_hidden parameter names its reason or is *, or the where parameter names the entity by Slug or ID. ConfigHub/YAML Units are created hidden with the reason BackingUnit unless given another.
+	HiddenReason *string `json:"HiddenReason" yaml:"HiddenReason"`
+
+	// Labels An optional map of Label key/value pairs to specify identifying attributes of entities for the purpose of grouping and filtering them.
+	Labels      *map[string]*string                 `json:"Labels" yaml:"Labels"`
+	Permissions *map[string]*map[string]interface{} `json:"Permissions" yaml:"Permissions"`
+
+	// Slug Unique URL-safe identifier for the entity.
+	Slug          *string                   `json:"Slug" yaml:"Slug"`
+	Subscriptions *[]map[string]interface{} `json:"Subscriptions" yaml:"Subscriptions"`
+
+	// Version An entity-specific sequence number used for optimistic concurrency control. The value read must be sent in calls to Update.
+	Version *int `json:"Version" yaml:"Version"`
+}
+
+// BulkCreateChannelsParams defines parameters for BulkCreateChannels.
+type BulkCreateChannelsParams struct {
+	// Where The specified string is an expression for the purpose of filtering
+	// the list of Channels returned. The expression syntax was inspired by SQL.
+	// It supports conjunctions using `AND` of relational expressions of the form *attribute*
+	// *operator* *attribute_or_literal*. The attribute names are case-sensitive and PascalCase,
+	// as in the JSON encoding.
+	// Strings support the following operators: `<`, `>`, `<=`, `>=`, `=`, `!=`, `LIKE`, `NOT LIKE`, `ILIKE`, `~~`, `!~~`, `~`, `~*`, `!~`, `!~*`, `IN`, `NOT IN`.
+	// String pattern operators: `LIKE` and `~~` for pattern matching with `%` and `_` wildcards,
+	// `ILIKE` for case-insensitive pattern matching, `NOT LIKE` and `!~~` for negated pattern matching.
+	// String regex operators: `~` for regex matching, `~*` for case-insensitive regex,
+	// `!~` and `!~*` for regex not matching (case-sensitive and insensitive).
+	// Integers support the following operators: `<`, `>`, `<=`, `>=`, `=`, `!=`, `IN`, `NOT IN`.
+	// UUIDs and boolean attributes support equality and inequality only.
+	// UUID and time literals must be quoted as string literals.
+	// String literals are quoted with single quotes, such as `'string'`.
+	// Time literals use the same form as when serialized as JSON,
+	// such as: `CreatedAt > '2025-02-18T23:16:34'`.
+	// Integer and boolean literals are also supported for attributes of those types.
+	// Arrays support the `?` operator to to match any element of the array,
+	// as in `FromLinkID ? '7c61626f-ddbe-41af-93f6-b69f4ab6d308'`.
+	// Arrays can perform LEN() to check for length, as in `LEN(FromLinkID) > 0`.
+	// An attribute naming a list of other entities can be filtered on their attributes with a `*` segment,
+	// as in `FromLink.*.Slug = 'upgrade-app'`, which holds when any element satisfies it.
+	// Without the `*` such a reference is an error, since it names no single value to compare.
+	// Map support the dot notation to specify a particular map key, as in `Labels.tier = 'Backend'`.
+	// Maps support `IS NULL` and `IS NOT NULL` with dot notation to check for key absence or presence,
+	// as in `Labels.tier IS NULL` (key doesn't exist) or `Labels.tier IS NOT NULL` (key exists).
+	// Comparison results can be tested with `IS TRUE`, `IS FALSE`, `IS NOT TRUE`, and `IS NOT FALSE`.
+	// These are useful for nullable columns: `MergeSourceID = '<uuid>' IS NOT FALSE` matches rows where MergeSourceID equals the value OR is NULL.
+	// The `IN` and `NOT IN` operators accept a comma-separated list of values in parentheses,
+	// such as `Slug IN ('slugone', 'slugtwo')` or `Labels.environment IN ('prod', 'staging')`.
+	// Conjunctions are supported using the `AND` operator.
+	// An example conjunction is:
+	// `CreatedAt >= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.
+	//
+	// Supported attributes for filtering on Channel: Annotations, BackingUnitID, ChannelID, Commands, Condition, CreatedAt, DeleteGates, DisplayName, EventPosition, HiddenReason, IPAddress, Labels, LastMessage, LastSeenAt, OrganizationID, Permissions, Slug, SpaceID, Subscriptions, UpdatedAt, UpstreamChannelID.
+	//
+	// The whole string must be query-encoded.
+	Where *string `form:"where,omitempty" json:"where,omitempty" yaml:"where,omitempty"`
+
+	// Filter UUID of a Filter entity to apply to the Channel list.
+	//
+	// The Filter must be in the same Organization as the user credentials.
+	//
+	// The Filter's From field must match the entity type being filtered (Channel).
+	//
+	// For Space-resident entities, if the Filter has a FromSpaceID, it must match the operation's SpaceID.
+	//
+	// The Filter's Where clause will be combined with any explicit 'where' parameter using AND logic.
+	//
+	// If both 'filter' and 'where' parameters are specified, they are combined with AND logic.
+	Filter *string `form:"filter,omitempty" json:"filter,omitempty" yaml:"filter,omitempty"`
+
+	// Contains Free text search that approximately matches the specified string against string fields and map keys/values.
+	//
+	// The search is case-insensitive and uses pattern matching to find entities containing the text.
+	//
+	// Searchable string fields include attributes like Slug, DisplayName, and string-typed custom fields.
+	//
+	// For map fields (like Labels and Annotations), the search matches both map keys and values.
+	//
+	// The search uses OR logic across all searchable fields, so matching any field will return the entity.
+	//
+	// If both 'where' and 'contains' parameters are specified, they are combined with AND logic.
+	//
+	// Searchable fields for Channel include string and map-type attributes from the queryable attributes list.
+	//
+	// The whole string must be query-encoded.
+	Contains *string `form:"contains,omitempty" json:"contains,omitempty" yaml:"contains,omitempty"`
+
+	// IncludeHidden Hidden Channel entities, those with a HiddenReason, are left out of the results, or of what a bulk operation acts on, unless this names their HiddenReason.
+	//
+	// It is a comma-separated list of HiddenReasons, or `*` for all of them.
+	//
+	// A where clause naming the entities, by their Slug or ID with `=` or `IN`, or naming HiddenReason at all, also returns hidden entities it selects.
+	//
+	// ConfigHub/YAML Units, which hold the configuration of entities, are hidden with the HiddenReason `BackingUnit`.
+	IncludeHidden *string `form:"include_hidden,omitempty" json:"include_hidden,omitempty" yaml:"include_hidden,omitempty"`
+
+	// Include Include clause for expanding related entities in the response for Channel.
+	// The attribute names are case-sensitive, PascalCase, and
+	// expected in a comma-separated list format as in the JSON encoding.
+	//
+	// Supported attributes for Channel are OrganizationID, SpaceID.
+	//
+	// The whole string must be query-encoded.
+	Include *string `form:"include,omitempty" json:"include,omitempty" yaml:"include,omitempty"`
+
+	// Limit Maximum number of Channel entities to act on, in ID order. A request that names limit or continue also stops when it runs short of time, and returns a ConfigHub-Continue header to pass as the continue parameter of the next request; keep sending requests until a response has none. If neither is specified, the request acts on every selected entity.
+	Limit *int `form:"limit,omitempty" json:"limit,omitempty" yaml:"limit,omitempty"`
+
+	// Continue The token from the ConfigHub-Continue header of the previous request, to act on the Channel entities after the last one it acted on. The request's other parameters, except limit, must be the same as those of the request that returned the token.
+	Continue *string `form:"continue,omitempty" json:"continue,omitempty" yaml:"continue,omitempty"`
+
+	// NamePrefixes Comma-separated list of prefixes to apply to cloned Channel names
+	NamePrefixes *string `form:"name_prefixes,omitempty" json:"name_prefixes,omitempty" yaml:"name_prefixes,omitempty"`
+
+	// VariantLabels Comma-separated list of labels with multiple values for cloned Channel labels, in the format of key1=value1|value2,key2=value1|value2|value3
+	VariantLabels *string `form:"variant_labels,omitempty" json:"variant_labels,omitempty" yaml:"variant_labels,omitempty"`
+
+	// NamePattern A string for clone names, use the prefix 'template:' for a Go-template with .SourceEntitySlug to access the original entity's slug and .Labels to access variant labels, example: 'template:{{.SourceEntitySlug}}-{{.Labels.env}}'
+	NamePattern *string `form:"name_pattern,omitempty" json:"name_pattern,omitempty" yaml:"name_pattern,omitempty"`
+
+	// WhereSpace The specified string is an expression for the purpose of filtering
+	// the list of Spaces returned. The expression syntax was inspired by SQL.
+	// It supports conjunctions using `AND` of relational expressions of the form *attribute*
+	// *operator* *attribute_or_literal*. The attribute names are case-sensitive and PascalCase,
+	// as in the JSON encoding.
+	// Strings support the following operators: `<`, `>`, `<=`, `>=`, `=`, `!=`, `LIKE`, `NOT LIKE`, `ILIKE`, `~~`, `!~~`, `~`, `~*`, `!~`, `!~*`, `IN`, `NOT IN`.
+	// String pattern operators: `LIKE` and `~~` for pattern matching with `%` and `_` wildcards,
+	// `ILIKE` for case-insensitive pattern matching, `NOT LIKE` and `!~~` for negated pattern matching.
+	// String regex operators: `~` for regex matching, `~*` for case-insensitive regex,
+	// `!~` and `!~*` for regex not matching (case-sensitive and insensitive).
+	// Integers support the following operators: `<`, `>`, `<=`, `>=`, `=`, `!=`, `IN`, `NOT IN`.
+	// UUIDs and boolean attributes support equality and inequality only.
+	// UUID and time literals must be quoted as string literals.
+	// String literals are quoted with single quotes, such as `'string'`.
+	// Time literals use the same form as when serialized as JSON,
+	// such as: `CreatedAt > '2025-02-18T23:16:34'`.
+	// Integer and boolean literals are also supported for attributes of those types.
+	// Arrays support the `?` operator to to match any element of the array,
+	// as in `FromLinkID ? '7c61626f-ddbe-41af-93f6-b69f4ab6d308'`.
+	// Arrays can perform LEN() to check for length, as in `LEN(FromLinkID) > 0`.
+	// An attribute naming a list of other entities can be filtered on their attributes with a `*` segment,
+	// as in `FromLink.*.Slug = 'upgrade-app'`, which holds when any element satisfies it.
+	// Without the `*` such a reference is an error, since it names no single value to compare.
+	// Map support the dot notation to specify a particular map key, as in `Labels.tier = 'Backend'`.
+	// Maps support `IS NULL` and `IS NOT NULL` with dot notation to check for key absence or presence,
+	// as in `Labels.tier IS NULL` (key doesn't exist) or `Labels.tier IS NOT NULL` (key exists).
+	// Comparison results can be tested with `IS TRUE`, `IS FALSE`, `IS NOT TRUE`, and `IS NOT FALSE`.
+	// These are useful for nullable columns: `MergeSourceID = '<uuid>' IS NOT FALSE` matches rows where MergeSourceID equals the value OR is NULL.
+	// The `IN` and `NOT IN` operators accept a comma-separated list of values in parentheses,
+	// such as `Slug IN ('slugone', 'slugtwo')` or `Labels.environment IN ('prod', 'staging')`.
+	// Conjunctions are supported using the `AND` operator.
+	// An example conjunction is:
+	// `CreatedAt >= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.
+	//
+	// Supported attributes for filtering on Space: Annotations, AttributeFilterID, AttributeHash, AttributeIDs, BackingUnitID, ComponentID, CreatedAt, DeleteGates, DisplayName, HiddenReason, Labels, OrganizationID, Permissions, ReleaseTargetID, Slug, SpaceID, TriggerFilterID, TriggerHash, TriggerIDs, UpdatedAt, UpstreamSpaceID.
+	//
+	// Where expression to select destination spaces for cloning channels
+	//
+	// The whole string must be query-encoded.
+	WhereSpace *string `form:"where_space,omitempty" json:"where_space,omitempty" yaml:"where_space,omitempty"`
+
+	// FilterSpace UUID of a Filter entity to apply to the Space list.
+	//
+	// The Filter must be in the same Organization as the user credentials.
+	//
+	// The Filter's From field must match the entity type being filtered (Space).
+	//
+	// For Space-resident entities, if the Filter has a FromSpaceID, it must match the operation's SpaceID.
+	//
+	// The Filter's Where clause will be combined with any explicit 'where' parameter using AND logic.
+	//
+	// If both 'filter' and 'where' parameters are specified, they are combined with AND logic.
+	FilterSpace *string `form:"filter_space,omitempty" json:"filter_space,omitempty" yaml:"filter_space,omitempty"`
+
+	// AllowExists Allowed values are true and false. Default is false. When true, reports success when an entity already exists and returns the existing entity
+	AllowExists *string `form:"allow_exists,omitempty" json:"allow_exists,omitempty" yaml:"allow_exists,omitempty"`
+
+	// WithBackingUnits Give each Channel written a backing Unit if it has none: a ConfigHub/YAML Unit holding the Channel's configuration, which is then kept in step with it.
+	WithBackingUnits *bool `form:"with_backing_units,omitempty" json:"with_backing_units,omitempty" yaml:"with_backing_units,omitempty"`
+
+	// FromBackingUnits Create Channels from the ConfigHub/YAML Units where_unit and filter_unit select, each in its Unit's Space, and each with its Unit as its backing Unit. The request body is applied after the Unit's document. Units of other toolchains or describing other entity types are passed over; outstanding ValidationErrors on a Unit are an error. Takes none of the parameters that select entities to clone, name the clones or choose their Spaces.
+	FromBackingUnits *bool `form:"from_backing_units,omitempty" json:"from_backing_units,omitempty" yaml:"from_backing_units,omitempty"`
+
+	// WhereUnit The specified string is an expression for the purpose of filtering
+	// the list of Units returned. The expression syntax was inspired by SQL.
+	// It supports conjunctions using `AND` of relational expressions of the form *attribute*
+	// *operator* *attribute_or_literal*. The attribute names are case-sensitive and PascalCase,
+	// as in the JSON encoding.
+	// Strings support the following operators: `<`, `>`, `<=`, `>=`, `=`, `!=`, `LIKE`, `NOT LIKE`, `ILIKE`, `~~`, `!~~`, `~`, `~*`, `!~`, `!~*`, `IN`, `NOT IN`.
+	// String pattern operators: `LIKE` and `~~` for pattern matching with `%` and `_` wildcards,
+	// `ILIKE` for case-insensitive pattern matching, `NOT LIKE` and `!~~` for negated pattern matching.
+	// String regex operators: `~` for regex matching, `~*` for case-insensitive regex,
+	// `!~` and `!~*` for regex not matching (case-sensitive and insensitive).
+	// Integers support the following operators: `<`, `>`, `<=`, `>=`, `=`, `!=`, `IN`, `NOT IN`.
+	// UUIDs and boolean attributes support equality and inequality only.
+	// UUID and time literals must be quoted as string literals.
+	// String literals are quoted with single quotes, such as `'string'`.
+	// Time literals use the same form as when serialized as JSON,
+	// such as: `CreatedAt > '2025-02-18T23:16:34'`.
+	// Integer and boolean literals are also supported for attributes of those types.
+	// Arrays support the `?` operator to to match any element of the array,
+	// as in `FromLinkID ? '7c61626f-ddbe-41af-93f6-b69f4ab6d308'`.
+	// Arrays can perform LEN() to check for length, as in `LEN(FromLinkID) > 0`.
+	// An attribute naming a list of other entities can be filtered on their attributes with a `*` segment,
+	// as in `FromLink.*.Slug = 'upgrade-app'`, which holds when any element satisfies it.
+	// Without the `*` such a reference is an error, since it names no single value to compare.
+	// Map support the dot notation to specify a particular map key, as in `Labels.tier = 'Backend'`.
+	// Maps support `IS NULL` and `IS NOT NULL` with dot notation to check for key absence or presence,
+	// as in `Labels.tier IS NULL` (key doesn't exist) or `Labels.tier IS NOT NULL` (key exists).
+	// Comparison results can be tested with `IS TRUE`, `IS FALSE`, `IS NOT TRUE`, and `IS NOT FALSE`.
+	// These are useful for nullable columns: `MergeSourceID = '<uuid>' IS NOT FALSE` matches rows where MergeSourceID equals the value OR is NULL.
+	// The `IN` and `NOT IN` operators accept a comma-separated list of values in parentheses,
+	// such as `Slug IN ('slugone', 'slugtwo')` or `Labels.environment IN ('prod', 'staging')`.
+	// Conjunctions are supported using the `AND` operator.
+	// An example conjunction is:
+	// `CreatedAt >= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.
+	//
+	// Supported attributes for filtering on Unit: Annotations, ApplyGates, ApplyWarnings, ChangeSetID, Conflicts, CreatedAt, DataHash, DeleteGates, DestroyGates, DisplayName, FromLinkID, HeadRevisionID, HeadRevisionNum, HeadUnitActionNum, HeadUnitEventNum, HiddenReason, Labels, LastChangeDescription, LastReleasedRevisionNum, LinkFindings, NeededPaths, OrganizationID, Permissions, ProvidedPaths, ProviderType, Slug, SpaceID, TargetID, ToolchainType, UnitID, UpdatedAt, UpstreamRevisionNum, UpstreamSpaceID, UpstreamUnitID, ValidationErrors, ValidationTriggerIDs, ValidationWarnings, ValueTriggerIDs, Values.
+	//
+	// The Units to create entities from, with from_backing_units.
+	//
+	// The whole string must be query-encoded.
+	WhereUnit *string `form:"where_unit,omitempty" json:"where_unit,omitempty" yaml:"where_unit,omitempty"`
+
+	// FilterUnit A Filter, by ID, over the Units to create entities from, with from_backing_units.
+	FilterUnit *string `form:"filter_unit,omitempty" json:"filter_unit,omitempty" yaml:"filter_unit,omitempty"`
+
+	// PatchExisting With from_backing_units, patch a Channel a selected Unit already backs with what the Unit holds that it has not taken yet, as a bulk patch with from_backing_units does, rather than report that the Unit backs it. The request body is applied after it. Without it, such a Unit is an error, or with allow_exists the Channel is returned as it is.
+	PatchExisting *bool `form:"patch_existing,omitempty" json:"patch_existing,omitempty" yaml:"patch_existing,omitempty"`
+
+	// DryRun If true, report what the write would do without doing it: the write runs, including every check it makes, and is then rolled back. The response is the one the write would return, with the entities as they would be written. An entity a dry run creates is given an ID that the real create will not reuse.
+	DryRun *bool `form:"dry_run,omitempty" json:"dry_run,omitempty" yaml:"dry_run,omitempty"`
+}
+
+// BulkMoveChannelsParams defines parameters for BulkMoveChannels.
+type BulkMoveChannelsParams struct {
+	// Where The specified string is an expression for the purpose of filtering
+	// the list of Channels returned. The expression syntax was inspired by SQL.
+	// It supports conjunctions using `AND` of relational expressions of the form *attribute*
+	// *operator* *attribute_or_literal*. The attribute names are case-sensitive and PascalCase,
+	// as in the JSON encoding.
+	// Strings support the following operators: `<`, `>`, `<=`, `>=`, `=`, `!=`, `LIKE`, `NOT LIKE`, `ILIKE`, `~~`, `!~~`, `~`, `~*`, `!~`, `!~*`, `IN`, `NOT IN`.
+	// String pattern operators: `LIKE` and `~~` for pattern matching with `%` and `_` wildcards,
+	// `ILIKE` for case-insensitive pattern matching, `NOT LIKE` and `!~~` for negated pattern matching.
+	// String regex operators: `~` for regex matching, `~*` for case-insensitive regex,
+	// `!~` and `!~*` for regex not matching (case-sensitive and insensitive).
+	// Integers support the following operators: `<`, `>`, `<=`, `>=`, `=`, `!=`, `IN`, `NOT IN`.
+	// UUIDs and boolean attributes support equality and inequality only.
+	// UUID and time literals must be quoted as string literals.
+	// String literals are quoted with single quotes, such as `'string'`.
+	// Time literals use the same form as when serialized as JSON,
+	// such as: `CreatedAt > '2025-02-18T23:16:34'`.
+	// Integer and boolean literals are also supported for attributes of those types.
+	// Arrays support the `?` operator to to match any element of the array,
+	// as in `FromLinkID ? '7c61626f-ddbe-41af-93f6-b69f4ab6d308'`.
+	// Arrays can perform LEN() to check for length, as in `LEN(FromLinkID) > 0`.
+	// An attribute naming a list of other entities can be filtered on their attributes with a `*` segment,
+	// as in `FromLink.*.Slug = 'upgrade-app'`, which holds when any element satisfies it.
+	// Without the `*` such a reference is an error, since it names no single value to compare.
+	// Map support the dot notation to specify a particular map key, as in `Labels.tier = 'Backend'`.
+	// Maps support `IS NULL` and `IS NOT NULL` with dot notation to check for key absence or presence,
+	// as in `Labels.tier IS NULL` (key doesn't exist) or `Labels.tier IS NOT NULL` (key exists).
+	// Comparison results can be tested with `IS TRUE`, `IS FALSE`, `IS NOT TRUE`, and `IS NOT FALSE`.
+	// These are useful for nullable columns: `MergeSourceID = '<uuid>' IS NOT FALSE` matches rows where MergeSourceID equals the value OR is NULL.
+	// The `IN` and `NOT IN` operators accept a comma-separated list of values in parentheses,
+	// such as `Slug IN ('slugone', 'slugtwo')` or `Labels.environment IN ('prod', 'staging')`.
+	// Conjunctions are supported using the `AND` operator.
+	// An example conjunction is:
+	// `CreatedAt >= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.
+	//
+	// Supported attributes for filtering on Channel: Annotations, BackingUnitID, ChannelID, Commands, Condition, CreatedAt, DeleteGates, DisplayName, EventPosition, HiddenReason, IPAddress, Labels, LastMessage, LastSeenAt, OrganizationID, Permissions, Slug, SpaceID, Subscriptions, UpdatedAt, UpstreamChannelID.
+	//
+	// The whole string must be query-encoded.
+	Where *string `form:"where,omitempty" json:"where,omitempty" yaml:"where,omitempty"`
+
+	// Filter UUID of a Filter entity to apply to the Channel list.
+	//
+	// The Filter must be in the same Organization as the user credentials.
+	//
+	// The Filter's From field must match the entity type being filtered (Channel).
+	//
+	// For Space-resident entities, if the Filter has a FromSpaceID, it must match the operation's SpaceID.
+	//
+	// The Filter's Where clause will be combined with any explicit 'where' parameter using AND logic.
+	//
+	// If both 'filter' and 'where' parameters are specified, they are combined with AND logic.
+	Filter *string `form:"filter,omitempty" json:"filter,omitempty" yaml:"filter,omitempty"`
+
+	// Contains Free text search that approximately matches the specified string against string fields and map keys/values.
+	//
+	// The search is case-insensitive and uses pattern matching to find entities containing the text.
+	//
+	// Searchable string fields include attributes like Slug, DisplayName, and string-typed custom fields.
+	//
+	// For map fields (like Labels and Annotations), the search matches both map keys and values.
+	//
+	// The search uses OR logic across all searchable fields, so matching any field will return the entity.
+	//
+	// If both 'where' and 'contains' parameters are specified, they are combined with AND logic.
+	//
+	// Searchable fields for Channel include string and map-type attributes from the queryable attributes list.
+	//
+	// The whole string must be query-encoded.
+	Contains *string `form:"contains,omitempty" json:"contains,omitempty" yaml:"contains,omitempty"`
+
+	// IncludeHidden Hidden Channel entities, those with a HiddenReason, are left out of the results, or of what a bulk operation acts on, unless this names their HiddenReason.
+	//
+	// It is a comma-separated list of HiddenReasons, or `*` for all of them.
+	//
+	// A where clause naming the entities, by their Slug or ID with `=` or `IN`, or naming HiddenReason at all, also returns hidden entities it selects.
+	//
+	// ConfigHub/YAML Units, which hold the configuration of entities, are hidden with the HiddenReason `BackingUnit`.
+	IncludeHidden *string `form:"include_hidden,omitempty" json:"include_hidden,omitempty" yaml:"include_hidden,omitempty"`
+
+	// Include Include clause for expanding related entities in the response for Channel.
+	// The attribute names are case-sensitive, PascalCase, and
+	// expected in a comma-separated list format as in the JSON encoding.
+	//
+	// Supported attributes for Channel are OrganizationID, SpaceID.
+	//
+	// The whole string must be query-encoded.
+	Include *string `form:"include,omitempty" json:"include,omitempty" yaml:"include,omitempty"`
+
+	// DryRun Report what the move would do, and what would stop it, without moving anything
 	DryRun *bool `form:"dry_run,omitempty" json:"dry_run,omitempty" yaml:"dry_run,omitempty"`
 }
 
@@ -10380,7 +10874,7 @@ type ListAllCommandRunsParams struct {
 	// expected in a comma-separated list format as in the JSON encoding.
 	// If not specified, all fields are returned.
 	// Entity and parent IDs (like OrganizationID, SpaceID, CommandRunID) and Slug are always returned regardless of the select parameter.
-	// Fields used in where and contains filters, and fields named by order_by, are also automatically included.
+	// Fields used in where and contains filters, fields named by order_by, and fields read by the columns of the View named by view are also automatically included.
 	// Example: 'DisplayName,CreatedAt,Labels' will return only those fields plus the required ID and Slug fields.
 	// The whole string must be query-encoded.
 	Select *string `form:"select,omitempty" json:"select,omitempty" yaml:"select,omitempty"`
@@ -10392,7 +10886,7 @@ type ListAllCommandRunsParams struct {
 	//
 	// Field names are case-sensitive and PascalCase, as in the JSON encoding. Sort direction defaults to ASC when the 'DIRECTION:' prefix is omitted.
 	//
-	// Supported attributes for ordering CommandRun: ChannelID, Command, CommandRunID, CompletedAt, CreatedAt, CreatedBy, Deadline, DeliveredAt, OrganizationID, SpaceID, Status, TargetID, TimeoutAt, UnitID.
+	// Supported attributes for ordering CommandRun: ChannelID, Command, CommandRunID, CompletedAt, CreatedAt, CreatedBy, Deadline, DeliveredAt, OrganizationID, Status, TargetID, TimeoutAt, UnitID.
 	//
 	// Example: 'DESC:CreatedAt' or 'DisplayName,DESC:CreatedAt'.
 	//
@@ -10494,7 +10988,7 @@ type ListComponentsParams struct {
 	// expected in a comma-separated list format as in the JSON encoding.
 	// If not specified, all fields are returned.
 	// Entity and parent IDs (like OrganizationID, SpaceID, ComponentID) and Slug are always returned regardless of the select parameter.
-	// Fields used in where and contains filters, and fields named by order_by, are also automatically included.
+	// Fields used in where and contains filters, fields named by order_by, and fields read by the columns of the View named by view are also automatically included.
 	// Example: 'DisplayName,CreatedAt,Labels' will return only those fields plus the required ID and Slug fields.
 	// The whole string must be query-encoded.
 	Select *string `form:"select,omitempty" json:"select,omitempty" yaml:"select,omitempty"`
@@ -10507,6 +11001,15 @@ type ListComponentsParams struct {
 	//
 	// ConfigHub/YAML Units, which hold the configuration of entities, are hidden with the HiddenReason `BackingUnit`.
 	IncludeHidden *string `form:"include_hidden,omitempty" json:"include_hidden,omitempty" yaml:"include_hidden,omitempty"`
+
+	// View UUID of a View whose columns to compute for each Component, returned as ViewColumns.
+	//
+	// The View must be in the same Organization as the user credentials, and be a View of Component: its Of, or the From of its Filter, must be Component.
+	//
+	// If the View has a Filter, the Filter selects the entities as the filter parameter does, so the two may not both be specified.
+	//
+	// The related entities and fields the View's columns read are included and selected automatically, so neither include nor select has to name them.
+	View *string `form:"view,omitempty" json:"view,omitempty" yaml:"view,omitempty"`
 
 	// Limit Maximum number of Component entities to return. If not specified, all matching entities are returned. Values greater than 1000 are rejected with 400. When there may be more entities, the response has a ConfigHub-Continue header to pass as the continue parameter of the next request.
 	Limit *int `form:"limit,omitempty" json:"limit,omitempty" yaml:"limit,omitempty"`
@@ -10563,7 +11066,7 @@ type GetComponentParams struct {
 	// expected in a comma-separated list format as in the JSON encoding.
 	// If not specified, all fields are returned.
 	// Entity and parent IDs (like OrganizationID, SpaceID, ComponentID) and Slug are always returned regardless of the select parameter.
-	// Fields used in where and contains filters, and fields named by order_by, are also automatically included.
+	// Fields used in where and contains filters, fields named by order_by, and fields read by the columns of the View named by view are also automatically included.
 	// Example: 'DisplayName,CreatedAt,Labels' will return only those fields plus the required ID and Slug fields.
 	// The whole string must be query-encoded.
 	Select *string `form:"select,omitempty" json:"select,omitempty" yaml:"select,omitempty"`
@@ -10821,7 +11324,7 @@ type ListAllFiltersParams struct {
 	// expected in a comma-separated list format as in the JSON encoding.
 	// If not specified, all fields are returned.
 	// Entity and parent IDs (like OrganizationID, SpaceID, FilterID) and Slug are always returned regardless of the select parameter.
-	// Fields used in where and contains filters, and fields named by order_by, are also automatically included.
+	// Fields used in where and contains filters, fields named by order_by, and fields read by the columns of the View named by view are also automatically included.
 	// Example: 'DisplayName,CreatedAt,Labels' will return only those fields plus the required ID and Slug fields.
 	// The whole string must be query-encoded.
 	Select *string `form:"select,omitempty" json:"select,omitempty" yaml:"select,omitempty"`
@@ -10834,6 +11337,15 @@ type ListAllFiltersParams struct {
 	//
 	// ConfigHub/YAML Units, which hold the configuration of entities, are hidden with the HiddenReason `BackingUnit`.
 	IncludeHidden *string `form:"include_hidden,omitempty" json:"include_hidden,omitempty" yaml:"include_hidden,omitempty"`
+
+	// View UUID of a View whose columns to compute for each Filter, returned as ViewColumns.
+	//
+	// The View must be in the same Organization as the user credentials, and be a View of Filter: its Of, or the From of its Filter, must be Filter.
+	//
+	// If the View has a Filter, the Filter selects the entities as the filter parameter does, so the two may not both be specified.
+	//
+	// The related entities and fields the View's columns read are included and selected automatically, so neither include nor select has to name them.
+	View *string `form:"view,omitempty" json:"view,omitempty" yaml:"view,omitempty"`
 
 	// Limit Maximum number of Filter entities to return. If not specified, all matching entities are returned. Values greater than 1000 are rejected with 400. When there may be more entities, the response has a ConfigHub-Continue header to pass as the continue parameter of the next request.
 	Limit *int `form:"limit,omitempty" json:"limit,omitempty" yaml:"limit,omitempty"`
@@ -11503,7 +12015,7 @@ type InvokeFunctionsOnOrgParams struct {
 	// TriggersPassed When true, return units that pass trigger validation; when false (default), return units that fail. Only applies when where_trigger or trigger_filter is specified.
 	TriggersPassed *bool `form:"triggers_passed,omitempty" json:"triggers_passed,omitempty" yaml:"triggers_passed,omitempty"`
 
-	// View View slug or UUID. Applies the View's column definitions to extract values for each unit. If the View has a FilterID, its filter is ANDed with other filters. The View must have Of=Unit or a Filter with From=Unit.
+	// View UUID of a View of Unit. Its Filter selects the Units as the filter parameter does, so the two may not both be specified.
 	View *string `form:"view,omitempty" json:"view,omitempty" yaml:"view,omitempty"`
 }
 
@@ -11583,7 +12095,7 @@ type ListGroupsParams struct {
 	// expected in a comma-separated list format as in the JSON encoding.
 	// If not specified, all fields are returned.
 	// Entity and parent IDs (like OrganizationID, SpaceID, GroupID) and Slug are always returned regardless of the select parameter.
-	// Fields used in where and contains filters, and fields named by order_by, are also automatically included.
+	// Fields used in where and contains filters, fields named by order_by, and fields read by the columns of the View named by view are also automatically included.
 	// Example: 'DisplayName,CreatedAt,Labels' will return only those fields plus the required ID and Slug fields.
 	// The whole string must be query-encoded.
 	Select *string `form:"select,omitempty" json:"select,omitempty" yaml:"select,omitempty"`
@@ -11596,6 +12108,15 @@ type ListGroupsParams struct {
 	//
 	// ConfigHub/YAML Units, which hold the configuration of entities, are hidden with the HiddenReason `BackingUnit`.
 	IncludeHidden *string `form:"include_hidden,omitempty" json:"include_hidden,omitempty" yaml:"include_hidden,omitempty"`
+
+	// View UUID of a View whose columns to compute for each Group, returned as ViewColumns.
+	//
+	// The View must be in the same Organization as the user credentials, and be a View of Group: its Of, or the From of its Filter, must be Group.
+	//
+	// If the View has a Filter, the Filter selects the entities as the filter parameter does, so the two may not both be specified.
+	//
+	// The related entities and fields the View's columns read are included and selected automatically, so neither include nor select has to name them.
+	View *string `form:"view,omitempty" json:"view,omitempty" yaml:"view,omitempty"`
 
 	// Limit Maximum number of Group entities to return. If not specified, all matching entities are returned. Values greater than 1000 are rejected with 400. When there may be more entities, the response has a ConfigHub-Continue header to pass as the continue parameter of the next request.
 	Limit *int `form:"limit,omitempty" json:"limit,omitempty" yaml:"limit,omitempty"`
@@ -11628,7 +12149,7 @@ type GetGroupParams struct {
 	// expected in a comma-separated list format as in the JSON encoding.
 	// If not specified, all fields are returned.
 	// Entity and parent IDs (like OrganizationID, SpaceID, GroupID) and Slug are always returned regardless of the select parameter.
-	// Fields used in where and contains filters, and fields named by order_by, are also automatically included.
+	// Fields used in where and contains filters, fields named by order_by, and fields read by the columns of the View named by view are also automatically included.
 	// Example: 'DisplayName,CreatedAt,Labels' will return only those fields plus the required ID and Slug fields.
 	// The whole string must be query-encoded.
 	Select *string `form:"select,omitempty" json:"select,omitempty" yaml:"select,omitempty"`
@@ -11822,7 +12343,7 @@ type ListAllInvocationsParams struct {
 	// expected in a comma-separated list format as in the JSON encoding.
 	// If not specified, all fields are returned.
 	// Entity and parent IDs (like OrganizationID, SpaceID, InvocationID) and Slug are always returned regardless of the select parameter.
-	// Fields used in where and contains filters, and fields named by order_by, are also automatically included.
+	// Fields used in where and contains filters, fields named by order_by, and fields read by the columns of the View named by view are also automatically included.
 	// Example: 'DisplayName,CreatedAt,Labels' will return only those fields plus the required ID and Slug fields.
 	// The whole string must be query-encoded.
 	Select *string `form:"select,omitempty" json:"select,omitempty" yaml:"select,omitempty"`
@@ -11835,6 +12356,15 @@ type ListAllInvocationsParams struct {
 	//
 	// ConfigHub/YAML Units, which hold the configuration of entities, are hidden with the HiddenReason `BackingUnit`.
 	IncludeHidden *string `form:"include_hidden,omitempty" json:"include_hidden,omitempty" yaml:"include_hidden,omitempty"`
+
+	// View UUID of a View whose columns to compute for each Invocation, returned as ViewColumns.
+	//
+	// The View must be in the same Organization as the user credentials, and be a View of Invocation: its Of, or the From of its Filter, must be Invocation.
+	//
+	// If the View has a Filter, the Filter selects the entities as the filter parameter does, so the two may not both be specified.
+	//
+	// The related entities and fields the View's columns read are included and selected automatically, so neither include nor select has to name them.
+	View *string `form:"view,omitempty" json:"view,omitempty" yaml:"view,omitempty"`
 
 	// Limit Maximum number of Invocation entities to return. If not specified, all matching entities are returned. Values greater than 1000 are rejected with 400. When there may be more entities, the response has a ConfigHub-Continue header to pass as the continue parameter of the next request.
 	Limit *int `form:"limit,omitempty" json:"limit,omitempty" yaml:"limit,omitempty"`
@@ -12522,7 +13052,7 @@ type SearchListLinksParams struct {
 	// expected in a comma-separated list format as in the JSON encoding.
 	// If not specified, all fields are returned.
 	// Entity and parent IDs (like OrganizationID, SpaceID, LinkID) and Slug are always returned regardless of the select parameter.
-	// Fields used in where and contains filters, and fields named by order_by, are also automatically included.
+	// Fields used in where and contains filters, fields named by order_by, and fields read by the columns of the View named by view are also automatically included.
 	// Example: 'DisplayName,CreatedAt,Labels' will return only those fields plus the required ID and Slug fields.
 	// The whole string must be query-encoded.
 	Select *string `form:"select,omitempty" json:"select,omitempty" yaml:"select,omitempty"`
@@ -12535,6 +13065,15 @@ type SearchListLinksParams struct {
 	//
 	// ConfigHub/YAML Units, which hold the configuration of entities, are hidden with the HiddenReason `BackingUnit`.
 	IncludeHidden *string `form:"include_hidden,omitempty" json:"include_hidden,omitempty" yaml:"include_hidden,omitempty"`
+
+	// View UUID of a View whose columns to compute for each Link, returned as ViewColumns.
+	//
+	// The View must be in the same Organization as the user credentials, and be a View of Link: its Of, or the From of its Filter, must be Link.
+	//
+	// If the View has a Filter, the Filter selects the entities as the filter parameter does, so the two may not both be specified.
+	//
+	// The related entities and fields the View's columns read are included and selected automatically, so neither include nor select has to name them.
+	View *string `form:"view,omitempty" json:"view,omitempty" yaml:"view,omitempty"`
 
 	// Limit Maximum number of Link entities to return. If not specified, all matching entities are returned. Values greater than 1000 are rejected with 400. When there may be more entities, the response has a ConfigHub-Continue header to pass as the continue parameter of the next request.
 	Limit *int `form:"limit,omitempty" json:"limit,omitempty" yaml:"limit,omitempty"`
@@ -13057,7 +13596,7 @@ type ListOrganizationsParams struct {
 	// expected in a comma-separated list format as in the JSON encoding.
 	// If not specified, all fields are returned.
 	// Entity and parent IDs (like OrganizationID, SpaceID, OrganizationID) and Slug are always returned regardless of the select parameter.
-	// Fields used in where and contains filters, and fields named by order_by, are also automatically included.
+	// Fields used in where and contains filters, fields named by order_by, and fields read by the columns of the View named by view are also automatically included.
 	// Example: 'DisplayName,CreatedAt,Labels' will return only those fields plus the required ID and Slug fields.
 	// The whole string must be query-encoded.
 	Select *string `form:"select,omitempty" json:"select,omitempty" yaml:"select,omitempty"`
@@ -13070,6 +13609,15 @@ type ListOrganizationsParams struct {
 	//
 	// ConfigHub/YAML Units, which hold the configuration of entities, are hidden with the HiddenReason `BackingUnit`.
 	IncludeHidden *string `form:"include_hidden,omitempty" json:"include_hidden,omitempty" yaml:"include_hidden,omitempty"`
+
+	// View UUID of a View whose columns to compute for each Organization, returned as ViewColumns.
+	//
+	// The View must be in the same Organization as the user credentials, and be a View of Organization: its Of, or the From of its Filter, must be Organization.
+	//
+	// If the View has a Filter, the Filter selects the entities as the filter parameter does, so the two may not both be specified.
+	//
+	// The related entities and fields the View's columns read are included and selected automatically, so neither include nor select has to name them.
+	View *string `form:"view,omitempty" json:"view,omitempty" yaml:"view,omitempty"`
 }
 
 // CreateOrganizationParams defines parameters for CreateOrganization.
@@ -13094,7 +13642,7 @@ type GetOrganizationParams struct {
 	// expected in a comma-separated list format as in the JSON encoding.
 	// If not specified, all fields are returned.
 	// Entity and parent IDs (like OrganizationID, SpaceID, OrganizationID) and Slug are always returned regardless of the select parameter.
-	// Fields used in where and contains filters, and fields named by order_by, are also automatically included.
+	// Fields used in where and contains filters, fields named by order_by, and fields read by the columns of the View named by view are also automatically included.
 	// Example: 'DisplayName,CreatedAt,Labels' will return only those fields plus the required ID and Slug fields.
 	// The whole string must be query-encoded.
 	Select *string `form:"select,omitempty" json:"select,omitempty" yaml:"select,omitempty"`
@@ -13176,6 +13724,15 @@ type ListOrganizationMembersParams struct {
 	//
 	// The whole string must be query-encoded.
 	Contains *string `form:"contains,omitempty" json:"contains,omitempty" yaml:"contains,omitempty"`
+
+	// View UUID of a View whose columns to compute for each OrganizationMember, returned as ViewColumns.
+	//
+	// The View must be in the same Organization as the user credentials, and be a View of OrganizationMember: its Of, or the From of its Filter, must be OrganizationMember.
+	//
+	// If the View has a Filter, the Filter selects the entities as the filter parameter does, so the two may not both be specified.
+	//
+	// The related entities and fields the View's columns read are included and selected automatically, so neither include nor select has to name them.
+	View *string `form:"view,omitempty" json:"view,omitempty" yaml:"view,omitempty"`
 }
 
 // PromoteParams defines parameters for Promote.
@@ -13274,7 +13831,7 @@ type ListAllReleasesParams struct {
 	// expected in a comma-separated list format as in the JSON encoding.
 	// If not specified, all fields are returned.
 	// Entity and parent IDs (like OrganizationID, SpaceID, ReleaseID) and Slug are always returned regardless of the select parameter.
-	// Fields used in where and contains filters, and fields named by order_by, are also automatically included.
+	// Fields used in where and contains filters, fields named by order_by, and fields read by the columns of the View named by view are also automatically included.
 	// Example: 'DisplayName,CreatedAt,Labels' will return only those fields plus the required ID and Slug fields.
 	// The whole string must be query-encoded.
 	Select *string `form:"select,omitempty" json:"select,omitempty" yaml:"select,omitempty"`
@@ -13287,6 +13844,15 @@ type ListAllReleasesParams struct {
 	//
 	// ConfigHub/YAML Units, which hold the configuration of entities, are hidden with the HiddenReason `BackingUnit`.
 	IncludeHidden *string `form:"include_hidden,omitempty" json:"include_hidden,omitempty" yaml:"include_hidden,omitempty"`
+
+	// View UUID of a View whose columns to compute for each Release, returned as ViewColumns.
+	//
+	// The View must be in the same Organization as the user credentials, and be a View of Release: its Of, or the From of its Filter, must be Release.
+	//
+	// If the View has a Filter, the Filter selects the entities as the filter parameter does, so the two may not both be specified.
+	//
+	// The related entities and fields the View's columns read are included and selected automatically, so neither include nor select has to name them.
+	View *string `form:"view,omitempty" json:"view,omitempty" yaml:"view,omitempty"`
 
 	// Limit Maximum number of Release entities to return. If not specified, all matching entities are returned. Values greater than 1000 are rejected with 400. When there may be more entities, the response has a ConfigHub-Continue header to pass as the continue parameter of the next request.
 	Limit *int `form:"limit,omitempty" json:"limit,omitempty" yaml:"limit,omitempty"`
@@ -13411,7 +13977,7 @@ type ListAllResourcesParams struct {
 	// expected in a comma-separated list format as in the JSON encoding.
 	// If not specified, all fields are returned.
 	// Entity and parent IDs (like OrganizationID, SpaceID, ResourceID) and Slug are always returned regardless of the select parameter.
-	// Fields used in where and contains filters, and fields named by order_by, are also automatically included.
+	// Fields used in where and contains filters, fields named by order_by, and fields read by the columns of the View named by view are also automatically included.
 	// Example: 'DisplayName,CreatedAt,Labels' will return only those fields plus the required ID and Slug fields.
 	// The whole string must be query-encoded.
 	Select *string `form:"select,omitempty" json:"select,omitempty" yaml:"select,omitempty"`
@@ -13424,6 +13990,15 @@ type ListAllResourcesParams struct {
 	//
 	// ConfigHub/YAML Units, which hold the configuration of entities, are hidden with the HiddenReason `BackingUnit`.
 	IncludeHidden *string `form:"include_hidden,omitempty" json:"include_hidden,omitempty" yaml:"include_hidden,omitempty"`
+
+	// View UUID of a View whose columns to compute for each Resource, returned as ViewColumns.
+	//
+	// The View must be in the same Organization as the user credentials, and be a View of Resource: its Of, or the From of its Filter, must be Resource.
+	//
+	// If the View has a Filter, the Filter selects the entities as the filter parameter does, so the two may not both be specified.
+	//
+	// The related entities and fields the View's columns read are included and selected automatically, so neither include nor select has to name them.
+	View *string `form:"view,omitempty" json:"view,omitempty" yaml:"view,omitempty"`
 
 	// Limit Maximum number of Resource entities to return. If not specified, all matching entities are returned. Values greater than 1000 are rejected with 400. When there may be more entities, the response has a ConfigHub-Continue header to pass as the continue parameter of the next request.
 	Limit *int `form:"limit,omitempty" json:"limit,omitempty" yaml:"limit,omitempty"`
@@ -13450,9 +14025,6 @@ type ListAllResourcesParams struct {
 
 	// Offset Deprecated: use continue. Number of Resource entities to skip before returning results. Cannot be combined with continue.
 	Offset *int `form:"offset,omitempty" json:"offset,omitempty" yaml:"offset,omitempty"`
-
-	// View UUID of a View whose columns to extract for each resource, returned as ViewColumns. DataPath columns are read from the stored JSON rather than by invoking a function.
-	View *string `form:"view,omitempty" json:"view,omitempty" yaml:"view,omitempty"`
 
 	// RawData Return each resource's configuration in its original toolchain-native form, as RawData on the response envelope. Off by default: the bodies are bulk, and a table view needs only the queryable Data projection.
 	RawData *bool `form:"raw_data,omitempty" json:"raw_data,omitempty" yaml:"raw_data,omitempty"`
@@ -13639,7 +14211,7 @@ type ListAllReviewCommentsParams struct {
 	// expected in a comma-separated list format as in the JSON encoding.
 	// If not specified, all fields are returned.
 	// Entity and parent IDs (like OrganizationID, SpaceID, ReviewCommentID) and Slug are always returned regardless of the select parameter.
-	// Fields used in where and contains filters, and fields named by order_by, are also automatically included.
+	// Fields used in where and contains filters, fields named by order_by, and fields read by the columns of the View named by view are also automatically included.
 	// Example: 'DisplayName,CreatedAt,Labels' will return only those fields plus the required ID and Slug fields.
 	// The whole string must be query-encoded.
 	Select *string `form:"select,omitempty" json:"select,omitempty" yaml:"select,omitempty"`
@@ -13652,6 +14224,15 @@ type ListAllReviewCommentsParams struct {
 	//
 	// ConfigHub/YAML Units, which hold the configuration of entities, are hidden with the HiddenReason `BackingUnit`.
 	IncludeHidden *string `form:"include_hidden,omitempty" json:"include_hidden,omitempty" yaml:"include_hidden,omitempty"`
+
+	// View UUID of a View whose columns to compute for each ReviewComment, returned as ViewColumns.
+	//
+	// The View must be in the same Organization as the user credentials, and be a View of ReviewComment: its Of, or the From of its Filter, must be ReviewComment.
+	//
+	// If the View has a Filter, the Filter selects the entities as the filter parameter does, so the two may not both be specified.
+	//
+	// The related entities and fields the View's columns read are included and selected automatically, so neither include nor select has to name them.
+	View *string `form:"view,omitempty" json:"view,omitempty" yaml:"view,omitempty"`
 
 	// Limit Maximum number of ReviewComment entities to return. If not specified, all matching entities are returned. Values greater than 1000 are rejected with 400. When there may be more entities, the response has a ConfigHub-Continue header to pass as the continue parameter of the next request.
 	Limit *int `form:"limit,omitempty" json:"limit,omitempty" yaml:"limit,omitempty"`
@@ -13882,7 +14463,7 @@ type ListAllRevisionsParams struct {
 	// expected in a comma-separated list format as in the JSON encoding.
 	// If not specified, all fields are returned.
 	// Entity and parent IDs (like OrganizationID, SpaceID, RevisionID) and Slug are always returned regardless of the select parameter.
-	// Fields used in where and contains filters, and fields named by order_by, are also automatically included.
+	// Fields used in where and contains filters, fields named by order_by, and fields read by the columns of the View named by view are also automatically included.
 	// Example: 'DisplayName,CreatedAt,Labels' will return only those fields plus the required ID and Slug fields.
 	// The whole string must be query-encoded.
 	Select *string `form:"select,omitempty" json:"select,omitempty" yaml:"select,omitempty"`
@@ -13895,6 +14476,15 @@ type ListAllRevisionsParams struct {
 	//
 	// ConfigHub/YAML Units, which hold the configuration of entities, are hidden with the HiddenReason `BackingUnit`.
 	IncludeHidden *string `form:"include_hidden,omitempty" json:"include_hidden,omitempty" yaml:"include_hidden,omitempty"`
+
+	// View UUID of a View whose columns to compute for each Revision, returned as ViewColumns.
+	//
+	// The View must be in the same Organization as the user credentials, and be a View of Revision: its Of, or the From of its Filter, must be Revision.
+	//
+	// If the View has a Filter, the Filter selects the entities as the filter parameter does, so the two may not both be specified.
+	//
+	// The related entities and fields the View's columns read are included and selected automatically, so neither include nor select has to name them.
+	View *string `form:"view,omitempty" json:"view,omitempty" yaml:"view,omitempty"`
 
 	// Limit Maximum number of Revision entities to return. If not specified, all matching entities are returned. Values greater than 1000 are rejected with 400. When there may be more entities, the response has a ConfigHub-Continue header to pass as the continue parameter of the next request.
 	Limit *int `form:"limit,omitempty" json:"limit,omitempty" yaml:"limit,omitempty"`
@@ -14022,7 +14612,7 @@ type SearchRevisionDataParams struct {
 	// expected in a comma-separated list format as in the JSON encoding.
 	// If not specified, all fields are returned.
 	// Entity and parent IDs (like OrganizationID, SpaceID, RevisionID) and Slug are always returned regardless of the select parameter.
-	// Fields used in where and contains filters, and fields named by order_by, are also automatically included.
+	// Fields used in where and contains filters, fields named by order_by, and fields read by the columns of the View named by view are also automatically included.
 	// Example: 'DisplayName,CreatedAt,Labels' will return only those fields plus the required ID and Slug fields.
 	// The whole string must be query-encoded.
 	Select *string `form:"select,omitempty" json:"select,omitempty" yaml:"select,omitempty"`
@@ -14162,7 +14752,7 @@ type SearchRevisionMutationSourcesParams struct {
 	// expected in a comma-separated list format as in the JSON encoding.
 	// If not specified, all fields are returned.
 	// Entity and parent IDs (like OrganizationID, SpaceID, RevisionID) and Slug are always returned regardless of the select parameter.
-	// Fields used in where and contains filters, and fields named by order_by, are also automatically included.
+	// Fields used in where and contains filters, fields named by order_by, and fields read by the columns of the View named by view are also automatically included.
 	// Example: 'DisplayName,CreatedAt,Labels' will return only those fields plus the required ID and Slug fields.
 	// The whole string must be query-encoded.
 	Select *string `form:"select,omitempty" json:"select,omitempty" yaml:"select,omitempty"`
@@ -14300,7 +14890,7 @@ type ListServiceAccountsParams struct {
 	// expected in a comma-separated list format as in the JSON encoding.
 	// If not specified, all fields are returned.
 	// Entity and parent IDs (like OrganizationID, SpaceID, ServiceAccountID) and Slug are always returned regardless of the select parameter.
-	// Fields used in where and contains filters, and fields named by order_by, are also automatically included.
+	// Fields used in where and contains filters, fields named by order_by, and fields read by the columns of the View named by view are also automatically included.
 	// Example: 'DisplayName,CreatedAt,Labels' will return only those fields plus the required ID and Slug fields.
 	// The whole string must be query-encoded.
 	Select *string `form:"select,omitempty" json:"select,omitempty" yaml:"select,omitempty"`
@@ -14313,6 +14903,15 @@ type ListServiceAccountsParams struct {
 	//
 	// ConfigHub/YAML Units, which hold the configuration of entities, are hidden with the HiddenReason `BackingUnit`.
 	IncludeHidden *string `form:"include_hidden,omitempty" json:"include_hidden,omitempty" yaml:"include_hidden,omitempty"`
+
+	// View UUID of a View whose columns to compute for each ServiceAccount, returned as ViewColumns.
+	//
+	// The View must be in the same Organization as the user credentials, and be a View of ServiceAccount: its Of, or the From of its Filter, must be ServiceAccount.
+	//
+	// If the View has a Filter, the Filter selects the entities as the filter parameter does, so the two may not both be specified.
+	//
+	// The related entities and fields the View's columns read are included and selected automatically, so neither include nor select has to name them.
+	View *string `form:"view,omitempty" json:"view,omitempty" yaml:"view,omitempty"`
 
 	// Limit Maximum number of ServiceAccount entities to return. If not specified, all matching entities are returned. Values greater than 1000 are rejected with 400. When there may be more entities, the response has a ConfigHub-Continue header to pass as the continue parameter of the next request.
 	Limit *int `form:"limit,omitempty" json:"limit,omitempty" yaml:"limit,omitempty"`
@@ -14363,7 +14962,7 @@ type GetServiceAccountParams struct {
 	// expected in a comma-separated list format as in the JSON encoding.
 	// If not specified, all fields are returned.
 	// Entity and parent IDs (like OrganizationID, SpaceID, ServiceAccountID) and Slug are always returned regardless of the select parameter.
-	// Fields used in where and contains filters, and fields named by order_by, are also automatically included.
+	// Fields used in where and contains filters, fields named by order_by, and fields read by the columns of the View named by view are also automatically included.
 	// Example: 'DisplayName,CreatedAt,Labels' will return only those fields plus the required ID and Slug fields.
 	// The whole string must be query-encoded.
 	Select *string `form:"select,omitempty" json:"select,omitempty" yaml:"select,omitempty"`
@@ -14504,7 +15103,7 @@ type ListSpacesParams struct {
 	// expected in a comma-separated list format as in the JSON encoding.
 	// If not specified, all fields are returned.
 	// Entity and parent IDs (like OrganizationID, SpaceID, SpaceID) and Slug are always returned regardless of the select parameter.
-	// Fields used in where and contains filters, and fields named by order_by, are also automatically included.
+	// Fields used in where and contains filters, fields named by order_by, and fields read by the columns of the View named by view are also automatically included.
 	// Example: 'DisplayName,CreatedAt,Labels' will return only those fields plus the required ID and Slug fields.
 	// The whole string must be query-encoded.
 	Select *string `form:"select,omitempty" json:"select,omitempty" yaml:"select,omitempty"`
@@ -14517,6 +15116,15 @@ type ListSpacesParams struct {
 	//
 	// ConfigHub/YAML Units, which hold the configuration of entities, are hidden with the HiddenReason `BackingUnit`.
 	IncludeHidden *string `form:"include_hidden,omitempty" json:"include_hidden,omitempty" yaml:"include_hidden,omitempty"`
+
+	// View UUID of a View whose columns to compute for each Space, returned as ViewColumns.
+	//
+	// The View must be in the same Organization as the user credentials, and be a View of Space: its Of, or the From of its Filter, must be Space.
+	//
+	// If the View has a Filter, the Filter selects the entities as the filter parameter does, so the two may not both be specified.
+	//
+	// The related entities and fields the View's columns read are included and selected automatically, so neither include nor select has to name them.
+	View *string `form:"view,omitempty" json:"view,omitempty" yaml:"view,omitempty"`
 
 	// Limit Maximum number of Space entities to return. If not specified, all matching entities are returned. Values greater than 1000 are rejected with 400. When there may be more entities, the response has a ConfigHub-Continue header to pass as the continue parameter of the next request.
 	Limit *int `form:"limit,omitempty" json:"limit,omitempty" yaml:"limit,omitempty"`
@@ -14588,7 +15196,7 @@ type GetSpaceParams struct {
 	// expected in a comma-separated list format as in the JSON encoding.
 	// If not specified, all fields are returned.
 	// Entity and parent IDs (like OrganizationID, SpaceID, SpaceID) and Slug are always returned regardless of the select parameter.
-	// Fields used in where and contains filters, and fields named by order_by, are also automatically included.
+	// Fields used in where and contains filters, fields named by order_by, and fields read by the columns of the View named by view are also automatically included.
 	// Example: 'DisplayName,CreatedAt,Labels' will return only those fields plus the required ID and Slug fields.
 	// The whole string must be query-encoded.
 	Select *string `form:"select,omitempty" json:"select,omitempty" yaml:"select,omitempty"`
@@ -14731,7 +15339,7 @@ type ListExtendedAttestationsParams struct {
 	// expected in a comma-separated list format as in the JSON encoding.
 	// If not specified, all fields are returned.
 	// Entity and parent IDs (like OrganizationID, SpaceID, AttestationID) and Slug are always returned regardless of the select parameter.
-	// Fields used in where and contains filters, and fields named by order_by, are also automatically included.
+	// Fields used in where and contains filters, fields named by order_by, and fields read by the columns of the View named by view are also automatically included.
 	// Example: 'DisplayName,CreatedAt,Labels' will return only those fields plus the required ID and Slug fields.
 	// The whole string must be query-encoded.
 	Select *string `form:"select,omitempty" json:"select,omitempty" yaml:"select,omitempty"`
@@ -14744,6 +15352,15 @@ type ListExtendedAttestationsParams struct {
 	//
 	// ConfigHub/YAML Units, which hold the configuration of entities, are hidden with the HiddenReason `BackingUnit`.
 	IncludeHidden *string `form:"include_hidden,omitempty" json:"include_hidden,omitempty" yaml:"include_hidden,omitempty"`
+
+	// View UUID of a View whose columns to compute for each Attestation, returned as ViewColumns.
+	//
+	// The View must be in the same Organization as the user credentials, and be a View of Attestation: its Of, or the From of its Filter, must be Attestation.
+	//
+	// If the View has a Filter, the Filter selects the entities as the filter parameter does, so the two may not both be specified.
+	//
+	// The related entities and fields the View's columns read are included and selected automatically, so neither include nor select has to name them.
+	View *string `form:"view,omitempty" json:"view,omitempty" yaml:"view,omitempty"`
 
 	// Limit Maximum number of Attestation entities to return. If not specified, all matching entities are returned. Values greater than 1000 are rejected with 400. When there may be more entities, the response has a ConfigHub-Continue header to pass as the continue parameter of the next request.
 	Limit *int `form:"limit,omitempty" json:"limit,omitempty" yaml:"limit,omitempty"`
@@ -14791,7 +15408,7 @@ type GetExtendedAttestationParams struct {
 	// expected in a comma-separated list format as in the JSON encoding.
 	// If not specified, all fields are returned.
 	// Entity and parent IDs (like OrganizationID, SpaceID, AttestationID) and Slug are always returned regardless of the select parameter.
-	// Fields used in where and contains filters, and fields named by order_by, are also automatically included.
+	// Fields used in where and contains filters, fields named by order_by, and fields read by the columns of the View named by view are also automatically included.
 	// Example: 'DisplayName,CreatedAt,Labels' will return only those fields plus the required ID and Slug fields.
 	// The whole string must be query-encoded.
 	Select *string `form:"select,omitempty" json:"select,omitempty" yaml:"select,omitempty"`
@@ -14882,7 +15499,7 @@ type ListAttributesParams struct {
 	// expected in a comma-separated list format as in the JSON encoding.
 	// If not specified, all fields are returned.
 	// Entity and parent IDs (like OrganizationID, SpaceID, AttributeID) and Slug are always returned regardless of the select parameter.
-	// Fields used in where and contains filters, and fields named by order_by, are also automatically included.
+	// Fields used in where and contains filters, fields named by order_by, and fields read by the columns of the View named by view are also automatically included.
 	// Example: 'DisplayName,CreatedAt,Labels' will return only those fields plus the required ID and Slug fields.
 	// The whole string must be query-encoded.
 	Select *string `form:"select,omitempty" json:"select,omitempty" yaml:"select,omitempty"`
@@ -14895,6 +15512,15 @@ type ListAttributesParams struct {
 	//
 	// ConfigHub/YAML Units, which hold the configuration of entities, are hidden with the HiddenReason `BackingUnit`.
 	IncludeHidden *string `form:"include_hidden,omitempty" json:"include_hidden,omitempty" yaml:"include_hidden,omitempty"`
+
+	// View UUID of a View whose columns to compute for each Attribute, returned as ViewColumns.
+	//
+	// The View must be in the same Organization as the user credentials, and be a View of Attribute: its Of, or the From of its Filter, must be Attribute.
+	//
+	// If the View has a Filter, the Filter selects the entities as the filter parameter does, so the two may not both be specified.
+	//
+	// The related entities and fields the View's columns read are included and selected automatically, so neither include nor select has to name them.
+	View *string `form:"view,omitempty" json:"view,omitempty" yaml:"view,omitempty"`
 
 	// Limit Maximum number of Attribute entities to return. If not specified, all matching entities are returned. Values greater than 1000 are rejected with 400. When there may be more entities, the response has a ConfigHub-Continue header to pass as the continue parameter of the next request.
 	Limit *int `form:"limit,omitempty" json:"limit,omitempty" yaml:"limit,omitempty"`
@@ -14948,7 +15574,7 @@ type GetAttributeParams struct {
 	// expected in a comma-separated list format as in the JSON encoding.
 	// If not specified, all fields are returned.
 	// Entity and parent IDs (like OrganizationID, SpaceID, AttributeID) and Slug are always returned regardless of the select parameter.
-	// Fields used in where and contains filters, and fields named by order_by, are also automatically included.
+	// Fields used in where and contains filters, fields named by order_by, and fields read by the columns of the View named by view are also automatically included.
 	// Example: 'DisplayName,CreatedAt,Labels' will return only those fields plus the required ID and Slug fields.
 	// The whole string must be query-encoded.
 	Select *string `form:"select,omitempty" json:"select,omitempty" yaml:"select,omitempty"`
@@ -15087,7 +15713,7 @@ type ListBridgeWorkersParams struct {
 	// expected in a comma-separated list format as in the JSON encoding.
 	// If not specified, all fields are returned.
 	// Entity and parent IDs (like OrganizationID, SpaceID, BridgeWorkerID) and Slug are always returned regardless of the select parameter.
-	// Fields used in where and contains filters, and fields named by order_by, are also automatically included.
+	// Fields used in where and contains filters, fields named by order_by, and fields read by the columns of the View named by view are also automatically included.
 	// Example: 'DisplayName,CreatedAt,Labels' will return only those fields plus the required ID and Slug fields.
 	// The whole string must be query-encoded.
 	Select *string `form:"select,omitempty" json:"select,omitempty" yaml:"select,omitempty"`
@@ -15100,6 +15726,15 @@ type ListBridgeWorkersParams struct {
 	//
 	// ConfigHub/YAML Units, which hold the configuration of entities, are hidden with the HiddenReason `BackingUnit`.
 	IncludeHidden *string `form:"include_hidden,omitempty" json:"include_hidden,omitempty" yaml:"include_hidden,omitempty"`
+
+	// View UUID of a View whose columns to compute for each BridgeWorker, returned as ViewColumns.
+	//
+	// The View must be in the same Organization as the user credentials, and be a View of BridgeWorker: its Of, or the From of its Filter, must be BridgeWorker.
+	//
+	// If the View has a Filter, the Filter selects the entities as the filter parameter does, so the two may not both be specified.
+	//
+	// The related entities and fields the View's columns read are included and selected automatically, so neither include nor select has to name them.
+	View *string `form:"view,omitempty" json:"view,omitempty" yaml:"view,omitempty"`
 
 	// Limit Maximum number of BridgeWorker entities to return. If not specified, all matching entities are returned. Values greater than 1000 are rejected with 400. When there may be more entities, the response has a ConfigHub-Continue header to pass as the continue parameter of the next request.
 	Limit *int `form:"limit,omitempty" json:"limit,omitempty" yaml:"limit,omitempty"`
@@ -15156,7 +15791,7 @@ type GetBridgeWorkerParams struct {
 	// expected in a comma-separated list format as in the JSON encoding.
 	// If not specified, all fields are returned.
 	// Entity and parent IDs (like OrganizationID, SpaceID, BridgeWorkerID) and Slug are always returned regardless of the select parameter.
-	// Fields used in where and contains filters, and fields named by order_by, are also automatically included.
+	// Fields used in where and contains filters, fields named by order_by, and fields read by the columns of the View named by view are also automatically included.
 	// Example: 'DisplayName,CreatedAt,Labels' will return only those fields plus the required ID and Slug fields.
 	// The whole string must be query-encoded.
 	Select *string `form:"select,omitempty" json:"select,omitempty" yaml:"select,omitempty"`
@@ -15286,7 +15921,7 @@ type ListChangeOrdersParams struct {
 	// expected in a comma-separated list format as in the JSON encoding.
 	// If not specified, all fields are returned.
 	// Entity and parent IDs (like OrganizationID, SpaceID, ChangeOrderID) and Slug are always returned regardless of the select parameter.
-	// Fields used in where and contains filters, and fields named by order_by, are also automatically included.
+	// Fields used in where and contains filters, fields named by order_by, and fields read by the columns of the View named by view are also automatically included.
 	// Example: 'DisplayName,CreatedAt,Labels' will return only those fields plus the required ID and Slug fields.
 	// The whole string must be query-encoded.
 	Select *string `form:"select,omitempty" json:"select,omitempty" yaml:"select,omitempty"`
@@ -15299,6 +15934,15 @@ type ListChangeOrdersParams struct {
 	//
 	// ConfigHub/YAML Units, which hold the configuration of entities, are hidden with the HiddenReason `BackingUnit`.
 	IncludeHidden *string `form:"include_hidden,omitempty" json:"include_hidden,omitempty" yaml:"include_hidden,omitempty"`
+
+	// View UUID of a View whose columns to compute for each ChangeOrder, returned as ViewColumns.
+	//
+	// The View must be in the same Organization as the user credentials, and be a View of ChangeOrder: its Of, or the From of its Filter, must be ChangeOrder.
+	//
+	// If the View has a Filter, the Filter selects the entities as the filter parameter does, so the two may not both be specified.
+	//
+	// The related entities and fields the View's columns read are included and selected automatically, so neither include nor select has to name them.
+	View *string `form:"view,omitempty" json:"view,omitempty" yaml:"view,omitempty"`
 
 	// Limit Maximum number of ChangeOrder entities to return. If not specified, all matching entities are returned. Values greater than 1000 are rejected with 400. When there may be more entities, the response has a ConfigHub-Continue header to pass as the continue parameter of the next request.
 	Limit *int `form:"limit,omitempty" json:"limit,omitempty" yaml:"limit,omitempty"`
@@ -15355,7 +15999,7 @@ type GetChangeOrderParams struct {
 	// expected in a comma-separated list format as in the JSON encoding.
 	// If not specified, all fields are returned.
 	// Entity and parent IDs (like OrganizationID, SpaceID, ChangeOrderID) and Slug are always returned regardless of the select parameter.
-	// Fields used in where and contains filters, and fields named by order_by, are also automatically included.
+	// Fields used in where and contains filters, fields named by order_by, and fields read by the columns of the View named by view are also automatically included.
 	// Example: 'DisplayName,CreatedAt,Labels' will return only those fields plus the required ID and Slug fields.
 	// The whole string must be query-encoded.
 	Select *string `form:"select,omitempty" json:"select,omitempty" yaml:"select,omitempty"`
@@ -15508,7 +16152,7 @@ type ListChangeSetsParams struct {
 	// expected in a comma-separated list format as in the JSON encoding.
 	// If not specified, all fields are returned.
 	// Entity and parent IDs (like OrganizationID, SpaceID, ChangeSetID) and Slug are always returned regardless of the select parameter.
-	// Fields used in where and contains filters, and fields named by order_by, are also automatically included.
+	// Fields used in where and contains filters, fields named by order_by, and fields read by the columns of the View named by view are also automatically included.
 	// Example: 'DisplayName,CreatedAt,Labels' will return only those fields plus the required ID and Slug fields.
 	// The whole string must be query-encoded.
 	Select *string `form:"select,omitempty" json:"select,omitempty" yaml:"select,omitempty"`
@@ -15521,6 +16165,15 @@ type ListChangeSetsParams struct {
 	//
 	// ConfigHub/YAML Units, which hold the configuration of entities, are hidden with the HiddenReason `BackingUnit`.
 	IncludeHidden *string `form:"include_hidden,omitempty" json:"include_hidden,omitempty" yaml:"include_hidden,omitempty"`
+
+	// View UUID of a View whose columns to compute for each ChangeSet, returned as ViewColumns.
+	//
+	// The View must be in the same Organization as the user credentials, and be a View of ChangeSet: its Of, or the From of its Filter, must be ChangeSet.
+	//
+	// If the View has a Filter, the Filter selects the entities as the filter parameter does, so the two may not both be specified.
+	//
+	// The related entities and fields the View's columns read are included and selected automatically, so neither include nor select has to name them.
+	View *string `form:"view,omitempty" json:"view,omitempty" yaml:"view,omitempty"`
 
 	// Limit Maximum number of ChangeSet entities to return. If not specified, all matching entities are returned. Values greater than 1000 are rejected with 400. When there may be more entities, the response has a ConfigHub-Continue header to pass as the continue parameter of the next request.
 	Limit *int `form:"limit,omitempty" json:"limit,omitempty" yaml:"limit,omitempty"`
@@ -15577,7 +16230,7 @@ type GetChangeSetParams struct {
 	// expected in a comma-separated list format as in the JSON encoding.
 	// If not specified, all fields are returned.
 	// Entity and parent IDs (like OrganizationID, SpaceID, ChangeSetID) and Slug are always returned regardless of the select parameter.
-	// Fields used in where and contains filters, and fields named by order_by, are also automatically included.
+	// Fields used in where and contains filters, fields named by order_by, and fields read by the columns of the View named by view are also automatically included.
 	// Example: 'DisplayName,CreatedAt,Labels' will return only those fields plus the required ID and Slug fields.
 	// The whole string must be query-encoded.
 	Select *string `form:"select,omitempty" json:"select,omitempty" yaml:"select,omitempty"`
@@ -15706,7 +16359,7 @@ type ListChangeWorkflowsParams struct {
 	// expected in a comma-separated list format as in the JSON encoding.
 	// If not specified, all fields are returned.
 	// Entity and parent IDs (like OrganizationID, SpaceID, ChangeWorkflowID) and Slug are always returned regardless of the select parameter.
-	// Fields used in where and contains filters, and fields named by order_by, are also automatically included.
+	// Fields used in where and contains filters, fields named by order_by, and fields read by the columns of the View named by view are also automatically included.
 	// Example: 'DisplayName,CreatedAt,Labels' will return only those fields plus the required ID and Slug fields.
 	// The whole string must be query-encoded.
 	Select *string `form:"select,omitempty" json:"select,omitempty" yaml:"select,omitempty"`
@@ -15719,6 +16372,15 @@ type ListChangeWorkflowsParams struct {
 	//
 	// ConfigHub/YAML Units, which hold the configuration of entities, are hidden with the HiddenReason `BackingUnit`.
 	IncludeHidden *string `form:"include_hidden,omitempty" json:"include_hidden,omitempty" yaml:"include_hidden,omitempty"`
+
+	// View UUID of a View whose columns to compute for each ChangeWorkflow, returned as ViewColumns.
+	//
+	// The View must be in the same Organization as the user credentials, and be a View of ChangeWorkflow: its Of, or the From of its Filter, must be ChangeWorkflow.
+	//
+	// If the View has a Filter, the Filter selects the entities as the filter parameter does, so the two may not both be specified.
+	//
+	// The related entities and fields the View's columns read are included and selected automatically, so neither include nor select has to name them.
+	View *string `form:"view,omitempty" json:"view,omitempty" yaml:"view,omitempty"`
 
 	// Limit Maximum number of ChangeWorkflow entities to return. If not specified, all matching entities are returned. Values greater than 1000 are rejected with 400. When there may be more entities, the response has a ConfigHub-Continue header to pass as the continue parameter of the next request.
 	Limit *int `form:"limit,omitempty" json:"limit,omitempty" yaml:"limit,omitempty"`
@@ -15772,7 +16434,7 @@ type GetChangeWorkflowParams struct {
 	// expected in a comma-separated list format as in the JSON encoding.
 	// If not specified, all fields are returned.
 	// Entity and parent IDs (like OrganizationID, SpaceID, ChangeWorkflowID) and Slug are always returned regardless of the select parameter.
-	// Fields used in where and contains filters, and fields named by order_by, are also automatically included.
+	// Fields used in where and contains filters, fields named by order_by, and fields read by the columns of the View named by view are also automatically included.
 	// Example: 'DisplayName,CreatedAt,Labels' will return only those fields plus the required ID and Slug fields.
 	// The whole string must be query-encoded.
 	Select *string `form:"select,omitempty" json:"select,omitempty" yaml:"select,omitempty"`
@@ -15869,7 +16531,7 @@ type ListChannelsParams struct {
 	// An example conjunction is:
 	// `CreatedAt >= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.
 	//
-	// Supported attributes for filtering on Channel: Annotations, ChannelID, Commands, Condition, CreatedAt, DeleteGates, DisplayName, EventPosition, HiddenReason, IPAddress, Labels, LastMessage, LastSeenAt, OrganizationID, Permissions, Slug, SpaceID, Subscriptions, UpdatedAt.
+	// Supported attributes for filtering on Channel: Annotations, BackingUnitID, ChannelID, Commands, Condition, CreatedAt, DeleteGates, DisplayName, EventPosition, HiddenReason, IPAddress, Labels, LastMessage, LastSeenAt, OrganizationID, Permissions, Slug, SpaceID, Subscriptions, UpdatedAt, UpstreamChannelID.
 	//
 	// The whole string must be query-encoded.
 	Where *string `form:"where,omitempty" json:"where,omitempty" yaml:"where,omitempty"`
@@ -15918,7 +16580,7 @@ type ListChannelsParams struct {
 	// expected in a comma-separated list format as in the JSON encoding.
 	// If not specified, all fields are returned.
 	// Entity and parent IDs (like OrganizationID, SpaceID, ChannelID) and Slug are always returned regardless of the select parameter.
-	// Fields used in where and contains filters, and fields named by order_by, are also automatically included.
+	// Fields used in where and contains filters, fields named by order_by, and fields read by the columns of the View named by view are also automatically included.
 	// Example: 'DisplayName,CreatedAt,Labels' will return only those fields plus the required ID and Slug fields.
 	// The whole string must be query-encoded.
 	Select *string `form:"select,omitempty" json:"select,omitempty" yaml:"select,omitempty"`
@@ -15932,6 +16594,15 @@ type ListChannelsParams struct {
 	// ConfigHub/YAML Units, which hold the configuration of entities, are hidden with the HiddenReason `BackingUnit`.
 	IncludeHidden *string `form:"include_hidden,omitempty" json:"include_hidden,omitempty" yaml:"include_hidden,omitempty"`
 
+	// View UUID of a View whose columns to compute for each Channel, returned as ViewColumns.
+	//
+	// The View must be in the same Organization as the user credentials, and be a View of Channel: its Of, or the From of its Filter, must be Channel.
+	//
+	// If the View has a Filter, the Filter selects the entities as the filter parameter does, so the two may not both be specified.
+	//
+	// The related entities and fields the View's columns read are included and selected automatically, so neither include nor select has to name them.
+	View *string `form:"view,omitempty" json:"view,omitempty" yaml:"view,omitempty"`
+
 	// Limit Maximum number of Channel entities to return. If not specified, all matching entities are returned. Values greater than 1000 are rejected with 400. When there may be more entities, the response has a ConfigHub-Continue header to pass as the continue parameter of the next request.
 	Limit *int `form:"limit,omitempty" json:"limit,omitempty" yaml:"limit,omitempty"`
 
@@ -15939,7 +16610,7 @@ type ListChannelsParams struct {
 	//
 	// Field names are case-sensitive and PascalCase, as in the JSON encoding. Sort direction defaults to ASC when the 'DIRECTION:' prefix is omitted.
 	//
-	// Supported attributes for ordering Channel: ChannelID, Condition, CreatedAt, DisplayName, EventPosition, HiddenReason, IPAddress, LastMessage, LastSeenAt, OrganizationID, Slug, SpaceID, UpdatedAt.
+	// Supported attributes for ordering Channel: BackingUnitID, ChannelID, Condition, CreatedAt, DisplayName, EventPosition, HiddenReason, IPAddress, LastMessage, LastSeenAt, OrganizationID, Slug, SpaceID, UpdatedAt, UpstreamChannelID.
 	//
 	// Example: 'DESC:CreatedAt' or 'DisplayName,DESC:CreatedAt'.
 	//
@@ -15958,6 +16629,9 @@ type ListChannelsParams struct {
 
 // CreateChannelParams defines parameters for CreateChannel.
 type CreateChannelParams struct {
+	// WithBackingUnits Give each Channel written a backing Unit if it has none: a ConfigHub/YAML Unit holding the Channel's configuration, which is then kept in step with it.
+	WithBackingUnits *bool `form:"with_backing_units,omitempty" json:"with_backing_units,omitempty" yaml:"with_backing_units,omitempty"`
+
 	// AllowExists Allowed values are true and false. Default is false. When true, reports success when an entity already exists and returns the existing entity
 	AllowExists *string `form:"allow_exists,omitempty" json:"allow_exists,omitempty" yaml:"allow_exists,omitempty"`
 
@@ -15981,7 +16655,7 @@ type GetChannelParams struct {
 	// expected in a comma-separated list format as in the JSON encoding.
 	// If not specified, all fields are returned.
 	// Entity and parent IDs (like OrganizationID, SpaceID, ChannelID) and Slug are always returned regardless of the select parameter.
-	// Fields used in where and contains filters, and fields named by order_by, are also automatically included.
+	// Fields used in where and contains filters, fields named by order_by, and fields read by the columns of the View named by view are also automatically included.
 	// Example: 'DisplayName,CreatedAt,Labels' will return only those fields plus the required ID and Slug fields.
 	// The whole string must be query-encoded.
 	Select *string `form:"select,omitempty" json:"select,omitempty" yaml:"select,omitempty"`
@@ -16023,6 +16697,12 @@ type PatchChannelParams struct {
 
 // UpdateChannelParams defines parameters for UpdateChannel.
 type UpdateChannelParams struct {
+	// DryRun If true, report what the write would do without doing it: the write runs, including every check it makes, and is then rolled back. The response is the one the write would return, with the entities as they would be written. An entity a dry run creates is given an ID that the real create will not reuse.
+	DryRun *bool `form:"dry_run,omitempty" json:"dry_run,omitempty" yaml:"dry_run,omitempty"`
+}
+
+// UpdateChannelDocumentParams defines parameters for UpdateChannelDocument.
+type UpdateChannelDocumentParams struct {
 	// DryRun If true, report what the write would do without doing it: the write runs, including every check it makes, and is then rolled back. The response is the one the write would return, with the entities as they would be written. An entity a dry run creates is given an ID that the real create will not reuse.
 	DryRun *bool `form:"dry_run,omitempty" json:"dry_run,omitempty" yaml:"dry_run,omitempty"`
 }
@@ -16124,7 +16804,7 @@ type ListCommandRunsParams struct {
 	// expected in a comma-separated list format as in the JSON encoding.
 	// If not specified, all fields are returned.
 	// Entity and parent IDs (like OrganizationID, SpaceID, CommandRunID) and Slug are always returned regardless of the select parameter.
-	// Fields used in where and contains filters, and fields named by order_by, are also automatically included.
+	// Fields used in where and contains filters, fields named by order_by, and fields read by the columns of the View named by view are also automatically included.
 	// Example: 'DisplayName,CreatedAt,Labels' will return only those fields plus the required ID and Slug fields.
 	// The whole string must be query-encoded.
 	Select *string `form:"select,omitempty" json:"select,omitempty" yaml:"select,omitempty"`
@@ -16136,7 +16816,7 @@ type ListCommandRunsParams struct {
 	//
 	// Field names are case-sensitive and PascalCase, as in the JSON encoding. Sort direction defaults to ASC when the 'DIRECTION:' prefix is omitted.
 	//
-	// Supported attributes for ordering CommandRun: ChannelID, Command, CommandRunID, CompletedAt, CreatedAt, CreatedBy, Deadline, DeliveredAt, OrganizationID, SpaceID, Status, TargetID, TimeoutAt, UnitID.
+	// Supported attributes for ordering CommandRun: ChannelID, Command, CommandRunID, CompletedAt, CreatedAt, CreatedBy, Deadline, DeliveredAt, OrganizationID, Status, TargetID, TimeoutAt, UnitID.
 	//
 	// Example: 'DESC:CreatedAt' or 'DisplayName,DESC:CreatedAt'.
 	//
@@ -16169,7 +16849,7 @@ type GetCommandRunParams struct {
 	// expected in a comma-separated list format as in the JSON encoding.
 	// If not specified, all fields are returned.
 	// Entity and parent IDs (like OrganizationID, SpaceID, CommandRunID) and Slug are always returned regardless of the select parameter.
-	// Fields used in where and contains filters, and fields named by order_by, are also automatically included.
+	// Fields used in where and contains filters, fields named by order_by, and fields read by the columns of the View named by view are also automatically included.
 	// Example: 'DisplayName,CreatedAt,Labels' will return only those fields plus the required ID and Slug fields.
 	// The whole string must be query-encoded.
 	Select *string `form:"select,omitempty" json:"select,omitempty" yaml:"select,omitempty"`
@@ -16266,7 +16946,7 @@ type ListFiltersParams struct {
 	// expected in a comma-separated list format as in the JSON encoding.
 	// If not specified, all fields are returned.
 	// Entity and parent IDs (like OrganizationID, SpaceID, FilterID) and Slug are always returned regardless of the select parameter.
-	// Fields used in where and contains filters, and fields named by order_by, are also automatically included.
+	// Fields used in where and contains filters, fields named by order_by, and fields read by the columns of the View named by view are also automatically included.
 	// Example: 'DisplayName,CreatedAt,Labels' will return only those fields plus the required ID and Slug fields.
 	// The whole string must be query-encoded.
 	Select *string `form:"select,omitempty" json:"select,omitempty" yaml:"select,omitempty"`
@@ -16279,6 +16959,15 @@ type ListFiltersParams struct {
 	//
 	// ConfigHub/YAML Units, which hold the configuration of entities, are hidden with the HiddenReason `BackingUnit`.
 	IncludeHidden *string `form:"include_hidden,omitempty" json:"include_hidden,omitempty" yaml:"include_hidden,omitempty"`
+
+	// View UUID of a View whose columns to compute for each Filter, returned as ViewColumns.
+	//
+	// The View must be in the same Organization as the user credentials, and be a View of Filter: its Of, or the From of its Filter, must be Filter.
+	//
+	// If the View has a Filter, the Filter selects the entities as the filter parameter does, so the two may not both be specified.
+	//
+	// The related entities and fields the View's columns read are included and selected automatically, so neither include nor select has to name them.
+	View *string `form:"view,omitempty" json:"view,omitempty" yaml:"view,omitempty"`
 
 	// Limit Maximum number of Filter entities to return. If not specified, all matching entities are returned. Values greater than 1000 are rejected with 400. When there may be more entities, the response has a ConfigHub-Continue header to pass as the continue parameter of the next request.
 	Limit *int `form:"limit,omitempty" json:"limit,omitempty" yaml:"limit,omitempty"`
@@ -16338,7 +17027,7 @@ type GetFilterParams struct {
 	// expected in a comma-separated list format as in the JSON encoding.
 	// If not specified, all fields are returned.
 	// Entity and parent IDs (like OrganizationID, SpaceID, FilterID) and Slug are always returned regardless of the select parameter.
-	// Fields used in where and contains filters, and fields named by order_by, are also automatically included.
+	// Fields used in where and contains filters, fields named by order_by, and fields read by the columns of the View named by view are also automatically included.
 	// Example: 'DisplayName,CreatedAt,Labels' will return only those fields plus the required ID and Slug fields.
 	// The whole string must be query-encoded.
 	Select *string `form:"select,omitempty" json:"select,omitempty" yaml:"select,omitempty"`
@@ -16559,7 +17248,7 @@ type InvokeFunctionsParams struct {
 	// TriggersPassed When true, return units that pass trigger validation; when false (default), return units that fail. Only applies when where_trigger or trigger_filter is specified.
 	TriggersPassed *bool `form:"triggers_passed,omitempty" json:"triggers_passed,omitempty" yaml:"triggers_passed,omitempty"`
 
-	// View View slug or UUID. Applies the View's column definitions to extract values for each unit. If the View has a FilterID, its filter is ANDed with other filters. The View must have Of=Unit or a Filter with From=Unit.
+	// View UUID of a View of Unit. Its Filter selects the Units as the filter parameter does, so the two may not both be specified.
 	View *string `form:"view,omitempty" json:"view,omitempty" yaml:"view,omitempty"`
 }
 
@@ -16650,7 +17339,7 @@ type ListInvocationsParams struct {
 	// expected in a comma-separated list format as in the JSON encoding.
 	// If not specified, all fields are returned.
 	// Entity and parent IDs (like OrganizationID, SpaceID, InvocationID) and Slug are always returned regardless of the select parameter.
-	// Fields used in where and contains filters, and fields named by order_by, are also automatically included.
+	// Fields used in where and contains filters, fields named by order_by, and fields read by the columns of the View named by view are also automatically included.
 	// Example: 'DisplayName,CreatedAt,Labels' will return only those fields plus the required ID and Slug fields.
 	// The whole string must be query-encoded.
 	Select *string `form:"select,omitempty" json:"select,omitempty" yaml:"select,omitempty"`
@@ -16663,6 +17352,15 @@ type ListInvocationsParams struct {
 	//
 	// ConfigHub/YAML Units, which hold the configuration of entities, are hidden with the HiddenReason `BackingUnit`.
 	IncludeHidden *string `form:"include_hidden,omitempty" json:"include_hidden,omitempty" yaml:"include_hidden,omitempty"`
+
+	// View UUID of a View whose columns to compute for each Invocation, returned as ViewColumns.
+	//
+	// The View must be in the same Organization as the user credentials, and be a View of Invocation: its Of, or the From of its Filter, must be Invocation.
+	//
+	// If the View has a Filter, the Filter selects the entities as the filter parameter does, so the two may not both be specified.
+	//
+	// The related entities and fields the View's columns read are included and selected automatically, so neither include nor select has to name them.
+	View *string `form:"view,omitempty" json:"view,omitempty" yaml:"view,omitempty"`
 
 	// Limit Maximum number of Invocation entities to return. If not specified, all matching entities are returned. Values greater than 1000 are rejected with 400. When there may be more entities, the response has a ConfigHub-Continue header to pass as the continue parameter of the next request.
 	Limit *int `form:"limit,omitempty" json:"limit,omitempty" yaml:"limit,omitempty"`
@@ -16716,7 +17414,7 @@ type GetInvocationParams struct {
 	// expected in a comma-separated list format as in the JSON encoding.
 	// If not specified, all fields are returned.
 	// Entity and parent IDs (like OrganizationID, SpaceID, InvocationID) and Slug are always returned regardless of the select parameter.
-	// Fields used in where and contains filters, and fields named by order_by, are also automatically included.
+	// Fields used in where and contains filters, fields named by order_by, and fields read by the columns of the View named by view are also automatically included.
 	// Example: 'DisplayName,CreatedAt,Labels' will return only those fields plus the required ID and Slug fields.
 	// The whole string must be query-encoded.
 	Select *string `form:"select,omitempty" json:"select,omitempty" yaml:"select,omitempty"`
@@ -16854,7 +17552,7 @@ type ListLinksParams struct {
 	// expected in a comma-separated list format as in the JSON encoding.
 	// If not specified, all fields are returned.
 	// Entity and parent IDs (like OrganizationID, SpaceID, LinkID) and Slug are always returned regardless of the select parameter.
-	// Fields used in where and contains filters, and fields named by order_by, are also automatically included.
+	// Fields used in where and contains filters, fields named by order_by, and fields read by the columns of the View named by view are also automatically included.
 	// Example: 'DisplayName,CreatedAt,Labels' will return only those fields plus the required ID and Slug fields.
 	// The whole string must be query-encoded.
 	Select *string `form:"select,omitempty" json:"select,omitempty" yaml:"select,omitempty"`
@@ -16867,6 +17565,15 @@ type ListLinksParams struct {
 	//
 	// ConfigHub/YAML Units, which hold the configuration of entities, are hidden with the HiddenReason `BackingUnit`.
 	IncludeHidden *string `form:"include_hidden,omitempty" json:"include_hidden,omitempty" yaml:"include_hidden,omitempty"`
+
+	// View UUID of a View whose columns to compute for each Link, returned as ViewColumns.
+	//
+	// The View must be in the same Organization as the user credentials, and be a View of Link: its Of, or the From of its Filter, must be Link.
+	//
+	// If the View has a Filter, the Filter selects the entities as the filter parameter does, so the two may not both be specified.
+	//
+	// The related entities and fields the View's columns read are included and selected automatically, so neither include nor select has to name them.
+	View *string `form:"view,omitempty" json:"view,omitempty" yaml:"view,omitempty"`
 
 	// Limit Maximum number of Link entities to return. If not specified, all matching entities are returned. Values greater than 1000 are rejected with 400. When there may be more entities, the response has a ConfigHub-Continue header to pass as the continue parameter of the next request.
 	Limit *int `form:"limit,omitempty" json:"limit,omitempty" yaml:"limit,omitempty"`
@@ -16920,7 +17627,7 @@ type GetLinkParams struct {
 	// expected in a comma-separated list format as in the JSON encoding.
 	// If not specified, all fields are returned.
 	// Entity and parent IDs (like OrganizationID, SpaceID, LinkID) and Slug are always returned regardless of the select parameter.
-	// Fields used in where and contains filters, and fields named by order_by, are also automatically included.
+	// Fields used in where and contains filters, fields named by order_by, and fields read by the columns of the View named by view are also automatically included.
 	// Example: 'DisplayName,CreatedAt,Labels' will return only those fields plus the required ID and Slug fields.
 	// The whole string must be query-encoded.
 	Select *string `form:"select,omitempty" json:"select,omitempty" yaml:"select,omitempty"`
@@ -17079,7 +17786,7 @@ type ListExtendedReleasesParams struct {
 	// expected in a comma-separated list format as in the JSON encoding.
 	// If not specified, all fields are returned.
 	// Entity and parent IDs (like OrganizationID, SpaceID, ReleaseID) and Slug are always returned regardless of the select parameter.
-	// Fields used in where and contains filters, and fields named by order_by, are also automatically included.
+	// Fields used in where and contains filters, fields named by order_by, and fields read by the columns of the View named by view are also automatically included.
 	// Example: 'DisplayName,CreatedAt,Labels' will return only those fields plus the required ID and Slug fields.
 	// The whole string must be query-encoded.
 	Select *string `form:"select,omitempty" json:"select,omitempty" yaml:"select,omitempty"`
@@ -17092,6 +17799,15 @@ type ListExtendedReleasesParams struct {
 	//
 	// ConfigHub/YAML Units, which hold the configuration of entities, are hidden with the HiddenReason `BackingUnit`.
 	IncludeHidden *string `form:"include_hidden,omitempty" json:"include_hidden,omitempty" yaml:"include_hidden,omitempty"`
+
+	// View UUID of a View whose columns to compute for each Release, returned as ViewColumns.
+	//
+	// The View must be in the same Organization as the user credentials, and be a View of Release: its Of, or the From of its Filter, must be Release.
+	//
+	// If the View has a Filter, the Filter selects the entities as the filter parameter does, so the two may not both be specified.
+	//
+	// The related entities and fields the View's columns read are included and selected automatically, so neither include nor select has to name them.
+	View *string `form:"view,omitempty" json:"view,omitempty" yaml:"view,omitempty"`
 
 	// Limit Maximum number of Release entities to return. If not specified, all matching entities are returned. Values greater than 1000 are rejected with 400. When there may be more entities, the response has a ConfigHub-Continue header to pass as the continue parameter of the next request.
 	Limit *int `form:"limit,omitempty" json:"limit,omitempty" yaml:"limit,omitempty"`
@@ -17139,7 +17855,7 @@ type GetExtendedReleaseParams struct {
 	// expected in a comma-separated list format as in the JSON encoding.
 	// If not specified, all fields are returned.
 	// Entity and parent IDs (like OrganizationID, SpaceID, ReleaseID) and Slug are always returned regardless of the select parameter.
-	// Fields used in where and contains filters, and fields named by order_by, are also automatically included.
+	// Fields used in where and contains filters, fields named by order_by, and fields read by the columns of the View named by view are also automatically included.
 	// Example: 'DisplayName,CreatedAt,Labels' will return only those fields plus the required ID and Slug fields.
 	// The whole string must be query-encoded.
 	Select *string `form:"select,omitempty" json:"select,omitempty" yaml:"select,omitempty"`
@@ -17262,7 +17978,7 @@ type ListTagsParams struct {
 	// expected in a comma-separated list format as in the JSON encoding.
 	// If not specified, all fields are returned.
 	// Entity and parent IDs (like OrganizationID, SpaceID, TagID) and Slug are always returned regardless of the select parameter.
-	// Fields used in where and contains filters, and fields named by order_by, are also automatically included.
+	// Fields used in where and contains filters, fields named by order_by, and fields read by the columns of the View named by view are also automatically included.
 	// Example: 'DisplayName,CreatedAt,Labels' will return only those fields plus the required ID and Slug fields.
 	// The whole string must be query-encoded.
 	Select *string `form:"select,omitempty" json:"select,omitempty" yaml:"select,omitempty"`
@@ -17275,6 +17991,15 @@ type ListTagsParams struct {
 	//
 	// ConfigHub/YAML Units, which hold the configuration of entities, are hidden with the HiddenReason `BackingUnit`.
 	IncludeHidden *string `form:"include_hidden,omitempty" json:"include_hidden,omitempty" yaml:"include_hidden,omitempty"`
+
+	// View UUID of a View whose columns to compute for each Tag, returned as ViewColumns.
+	//
+	// The View must be in the same Organization as the user credentials, and be a View of Tag: its Of, or the From of its Filter, must be Tag.
+	//
+	// If the View has a Filter, the Filter selects the entities as the filter parameter does, so the two may not both be specified.
+	//
+	// The related entities and fields the View's columns read are included and selected automatically, so neither include nor select has to name them.
+	View *string `form:"view,omitempty" json:"view,omitempty" yaml:"view,omitempty"`
 
 	// Limit Maximum number of Tag entities to return. If not specified, all matching entities are returned. Values greater than 1000 are rejected with 400. When there may be more entities, the response has a ConfigHub-Continue header to pass as the continue parameter of the next request.
 	Limit *int `form:"limit,omitempty" json:"limit,omitempty" yaml:"limit,omitempty"`
@@ -17331,7 +18056,7 @@ type GetTagParams struct {
 	// expected in a comma-separated list format as in the JSON encoding.
 	// If not specified, all fields are returned.
 	// Entity and parent IDs (like OrganizationID, SpaceID, TagID) and Slug are always returned regardless of the select parameter.
-	// Fields used in where and contains filters, and fields named by order_by, are also automatically included.
+	// Fields used in where and contains filters, fields named by order_by, and fields read by the columns of the View named by view are also automatically included.
 	// Example: 'DisplayName,CreatedAt,Labels' will return only those fields plus the required ID and Slug fields.
 	// The whole string must be query-encoded.
 	Select *string `form:"select,omitempty" json:"select,omitempty" yaml:"select,omitempty"`
@@ -17459,7 +18184,7 @@ type ListTargetsParams struct {
 	// expected in a comma-separated list format as in the JSON encoding.
 	// If not specified, all fields are returned.
 	// Entity and parent IDs (like OrganizationID, SpaceID, TargetID) and Slug are always returned regardless of the select parameter.
-	// Fields used in where and contains filters, and fields named by order_by, are also automatically included.
+	// Fields used in where and contains filters, fields named by order_by, and fields read by the columns of the View named by view are also automatically included.
 	// Example: 'DisplayName,CreatedAt,Labels' will return only those fields plus the required ID and Slug fields.
 	// The whole string must be query-encoded.
 	Select *string `form:"select,omitempty" json:"select,omitempty" yaml:"select,omitempty"`
@@ -17472,6 +18197,15 @@ type ListTargetsParams struct {
 	//
 	// ConfigHub/YAML Units, which hold the configuration of entities, are hidden with the HiddenReason `BackingUnit`.
 	IncludeHidden *string `form:"include_hidden,omitempty" json:"include_hidden,omitempty" yaml:"include_hidden,omitempty"`
+
+	// View UUID of a View whose columns to compute for each Target, returned as ViewColumns.
+	//
+	// The View must be in the same Organization as the user credentials, and be a View of Target: its Of, or the From of its Filter, must be Target.
+	//
+	// If the View has a Filter, the Filter selects the entities as the filter parameter does, so the two may not both be specified.
+	//
+	// The related entities and fields the View's columns read are included and selected automatically, so neither include nor select has to name them.
+	View *string `form:"view,omitempty" json:"view,omitempty" yaml:"view,omitempty"`
 
 	// Limit Maximum number of Target entities to return. If not specified, all matching entities are returned. Values greater than 1000 are rejected with 400. When there may be more entities, the response has a ConfigHub-Continue header to pass as the continue parameter of the next request.
 	Limit *int `form:"limit,omitempty" json:"limit,omitempty" yaml:"limit,omitempty"`
@@ -17531,7 +18265,7 @@ type GetTargetParams struct {
 	// expected in a comma-separated list format as in the JSON encoding.
 	// If not specified, all fields are returned.
 	// Entity and parent IDs (like OrganizationID, SpaceID, TargetID) and Slug are always returned regardless of the select parameter.
-	// Fields used in where and contains filters, and fields named by order_by, are also automatically included.
+	// Fields used in where and contains filters, fields named by order_by, and fields read by the columns of the View named by view are also automatically included.
 	// Example: 'DisplayName,CreatedAt,Labels' will return only those fields plus the required ID and Slug fields.
 	// The whole string must be query-encoded.
 	Select *string `form:"select,omitempty" json:"select,omitempty" yaml:"select,omitempty"`
@@ -17676,7 +18410,7 @@ type ListTriggersParams struct {
 	// expected in a comma-separated list format as in the JSON encoding.
 	// If not specified, all fields are returned.
 	// Entity and parent IDs (like OrganizationID, SpaceID, TriggerID) and Slug are always returned regardless of the select parameter.
-	// Fields used in where and contains filters, and fields named by order_by, are also automatically included.
+	// Fields used in where and contains filters, fields named by order_by, and fields read by the columns of the View named by view are also automatically included.
 	// Example: 'DisplayName,CreatedAt,Labels' will return only those fields plus the required ID and Slug fields.
 	// The whole string must be query-encoded.
 	Select *string `form:"select,omitempty" json:"select,omitempty" yaml:"select,omitempty"`
@@ -17689,6 +18423,15 @@ type ListTriggersParams struct {
 	//
 	// ConfigHub/YAML Units, which hold the configuration of entities, are hidden with the HiddenReason `BackingUnit`.
 	IncludeHidden *string `form:"include_hidden,omitempty" json:"include_hidden,omitempty" yaml:"include_hidden,omitempty"`
+
+	// View UUID of a View whose columns to compute for each Trigger, returned as ViewColumns.
+	//
+	// The View must be in the same Organization as the user credentials, and be a View of Trigger: its Of, or the From of its Filter, must be Trigger.
+	//
+	// If the View has a Filter, the Filter selects the entities as the filter parameter does, so the two may not both be specified.
+	//
+	// The related entities and fields the View's columns read are included and selected automatically, so neither include nor select has to name them.
+	View *string `form:"view,omitempty" json:"view,omitempty" yaml:"view,omitempty"`
 
 	// Limit Maximum number of Trigger entities to return. If not specified, all matching entities are returned. Values greater than 1000 are rejected with 400. When there may be more entities, the response has a ConfigHub-Continue header to pass as the continue parameter of the next request.
 	Limit *int `form:"limit,omitempty" json:"limit,omitempty" yaml:"limit,omitempty"`
@@ -17742,7 +18485,7 @@ type GetTriggerParams struct {
 	// expected in a comma-separated list format as in the JSON encoding.
 	// If not specified, all fields are returned.
 	// Entity and parent IDs (like OrganizationID, SpaceID, TriggerID) and Slug are always returned regardless of the select parameter.
-	// Fields used in where and contains filters, and fields named by order_by, are also automatically included.
+	// Fields used in where and contains filters, fields named by order_by, and fields read by the columns of the View named by view are also automatically included.
 	// Example: 'DisplayName,CreatedAt,Labels' will return only those fields plus the required ID and Slug fields.
 	// The whole string must be query-encoded.
 	Select *string `form:"select,omitempty" json:"select,omitempty" yaml:"select,omitempty"`
@@ -17903,7 +18646,7 @@ type ListUnitsParams struct {
 	// expected in a comma-separated list format as in the JSON encoding.
 	// If not specified, all fields are returned.
 	// Entity and parent IDs (like OrganizationID, SpaceID, UnitID) and Slug are always returned regardless of the select parameter.
-	// Fields used in where and contains filters, and fields named by order_by, are also automatically included.
+	// Fields used in where and contains filters, fields named by order_by, and fields read by the columns of the View named by view are also automatically included.
 	// Example: 'DisplayName,CreatedAt,Labels' will return only those fields plus the required ID and Slug fields.
 	// The whole string must be query-encoded.
 	Select *string `form:"select,omitempty" json:"select,omitempty" yaml:"select,omitempty"`
@@ -17916,6 +18659,15 @@ type ListUnitsParams struct {
 	//
 	// ConfigHub/YAML Units, which hold the configuration of entities, are hidden with the HiddenReason `BackingUnit`.
 	IncludeHidden *string `form:"include_hidden,omitempty" json:"include_hidden,omitempty" yaml:"include_hidden,omitempty"`
+
+	// View UUID of a View whose columns to compute for each Unit, returned as ViewColumns.
+	//
+	// The View must be in the same Organization as the user credentials, and be a View of Unit: its Of, or the From of its Filter, must be Unit.
+	//
+	// If the View has a Filter, the Filter selects the entities as the filter parameter does, so the two may not both be specified.
+	//
+	// The related entities and fields the View's columns read are included and selected automatically, so neither include nor select has to name them.
+	View *string `form:"view,omitempty" json:"view,omitempty" yaml:"view,omitempty"`
 
 	// Limit Maximum number of Unit entities to return. If not specified, all matching entities are returned. Values greater than 1000 are rejected with 400. When there may be more entities, the response has a ConfigHub-Continue header to pass as the continue parameter of the next request.
 	Limit *int `form:"limit,omitempty" json:"limit,omitempty" yaml:"limit,omitempty"`
@@ -17957,9 +18709,6 @@ type ListUnitsParams struct {
 
 	// TriggersPassed When true, return units that pass trigger validation; when false (default), return units that fail. Only applies when where_trigger or trigger_filter is specified.
 	TriggersPassed *bool `form:"triggers_passed,omitempty" json:"triggers_passed,omitempty" yaml:"triggers_passed,omitempty"`
-
-	// View View slug or UUID. Applies the View's column definitions to extract values for each unit. If the View has a FilterID, its filter is ANDed with other filters. The View must have Of=Unit or a Filter with From=Unit.
-	View *string `form:"view,omitempty" json:"view,omitempty" yaml:"view,omitempty"`
 }
 
 // CreateUnitParams defines parameters for CreateUnit.
@@ -18013,7 +18762,7 @@ type GetUnitParams struct {
 	// expected in a comma-separated list format as in the JSON encoding.
 	// If not specified, all fields are returned.
 	// Entity and parent IDs (like OrganizationID, SpaceID, UnitID) and Slug are always returned regardless of the select parameter.
-	// Fields used in where and contains filters, and fields named by order_by, are also automatically included.
+	// Fields used in where and contains filters, fields named by order_by, and fields read by the columns of the View named by view are also automatically included.
 	// Example: 'DisplayName,CreatedAt,Labels' will return only those fields plus the required ID and Slug fields.
 	// The whole string must be query-encoded.
 	Select *string `form:"select,omitempty" json:"select,omitempty" yaml:"select,omitempty"`
@@ -18446,7 +19195,7 @@ type ListExtendedMutationsParams struct {
 	// expected in a comma-separated list format as in the JSON encoding.
 	// If not specified, all fields are returned.
 	// Entity and parent IDs (like OrganizationID, SpaceID, MutationID) and Slug are always returned regardless of the select parameter.
-	// Fields used in where and contains filters, and fields named by order_by, are also automatically included.
+	// Fields used in where and contains filters, fields named by order_by, and fields read by the columns of the View named by view are also automatically included.
 	// Example: 'DisplayName,CreatedAt,Labels' will return only those fields plus the required ID and Slug fields.
 	// The whole string must be query-encoded.
 	Select *string `form:"select,omitempty" json:"select,omitempty" yaml:"select,omitempty"`
@@ -18459,6 +19208,15 @@ type ListExtendedMutationsParams struct {
 	//
 	// ConfigHub/YAML Units, which hold the configuration of entities, are hidden with the HiddenReason `BackingUnit`.
 	IncludeHidden *string `form:"include_hidden,omitempty" json:"include_hidden,omitempty" yaml:"include_hidden,omitempty"`
+
+	// View UUID of a View whose columns to compute for each Mutation, returned as ViewColumns.
+	//
+	// The View must be in the same Organization as the user credentials, and be a View of Mutation: its Of, or the From of its Filter, must be Mutation.
+	//
+	// If the View has a Filter, the Filter selects the entities as the filter parameter does, so the two may not both be specified.
+	//
+	// The related entities and fields the View's columns read are included and selected automatically, so neither include nor select has to name them.
+	View *string `form:"view,omitempty" json:"view,omitempty" yaml:"view,omitempty"`
 
 	// Limit Maximum number of Mutation entities to return. If not specified, all matching entities are returned. Values greater than 1000 are rejected with 400. When there may be more entities, the response has a ConfigHub-Continue header to pass as the continue parameter of the next request.
 	Limit *int `form:"limit,omitempty" json:"limit,omitempty" yaml:"limit,omitempty"`
@@ -18500,7 +19258,7 @@ type GetExtendedMutationParams struct {
 	// expected in a comma-separated list format as in the JSON encoding.
 	// If not specified, all fields are returned.
 	// Entity and parent IDs (like OrganizationID, SpaceID, MutationID) and Slug are always returned regardless of the select parameter.
-	// Fields used in where and contains filters, and fields named by order_by, are also automatically included.
+	// Fields used in where and contains filters, fields named by order_by, and fields read by the columns of the View named by view are also automatically included.
 	// Example: 'DisplayName,CreatedAt,Labels' will return only those fields plus the required ID and Slug fields.
 	// The whole string must be query-encoded.
 	Select *string `form:"select,omitempty" json:"select,omitempty" yaml:"select,omitempty"`
@@ -18593,7 +19351,7 @@ type ListExtendedResourcesParams struct {
 	// expected in a comma-separated list format as in the JSON encoding.
 	// If not specified, all fields are returned.
 	// Entity and parent IDs (like OrganizationID, SpaceID, ResourceID) and Slug are always returned regardless of the select parameter.
-	// Fields used in where and contains filters, and fields named by order_by, are also automatically included.
+	// Fields used in where and contains filters, fields named by order_by, and fields read by the columns of the View named by view are also automatically included.
 	// Example: 'DisplayName,CreatedAt,Labels' will return only those fields plus the required ID and Slug fields.
 	// The whole string must be query-encoded.
 	Select *string `form:"select,omitempty" json:"select,omitempty" yaml:"select,omitempty"`
@@ -18606,6 +19364,15 @@ type ListExtendedResourcesParams struct {
 	//
 	// ConfigHub/YAML Units, which hold the configuration of entities, are hidden with the HiddenReason `BackingUnit`.
 	IncludeHidden *string `form:"include_hidden,omitempty" json:"include_hidden,omitempty" yaml:"include_hidden,omitempty"`
+
+	// View UUID of a View whose columns to compute for each Resource, returned as ViewColumns.
+	//
+	// The View must be in the same Organization as the user credentials, and be a View of Resource: its Of, or the From of its Filter, must be Resource.
+	//
+	// If the View has a Filter, the Filter selects the entities as the filter parameter does, so the two may not both be specified.
+	//
+	// The related entities and fields the View's columns read are included and selected automatically, so neither include nor select has to name them.
+	View *string `form:"view,omitempty" json:"view,omitempty" yaml:"view,omitempty"`
 
 	// Limit Maximum number of Resource entities to return. If not specified, all matching entities are returned. Values greater than 1000 are rejected with 400. When there may be more entities, the response has a ConfigHub-Continue header to pass as the continue parameter of the next request.
 	Limit *int `form:"limit,omitempty" json:"limit,omitempty" yaml:"limit,omitempty"`
@@ -18633,9 +19400,6 @@ type ListExtendedResourcesParams struct {
 	// Offset Deprecated: use continue. Number of Resource entities to skip before returning results. Cannot be combined with continue.
 	Offset *int `form:"offset,omitempty" json:"offset,omitempty" yaml:"offset,omitempty"`
 
-	// View UUID of a View whose columns to extract for each resource, returned as ViewColumns. DataPath columns are read from the stored JSON rather than by invoking a function.
-	View *string `form:"view,omitempty" json:"view,omitempty" yaml:"view,omitempty"`
-
 	// RawData Return each resource's configuration in its original toolchain-native form, as RawData on the response envelope. Off by default: the bodies are bulk, and a table view needs only the queryable Data projection.
 	RawData *bool `form:"raw_data,omitempty" json:"raw_data,omitempty" yaml:"raw_data,omitempty"`
 }
@@ -18656,13 +19420,10 @@ type GetExtendedResourceParams struct {
 	// expected in a comma-separated list format as in the JSON encoding.
 	// If not specified, all fields are returned.
 	// Entity and parent IDs (like OrganizationID, SpaceID, ResourceID) and Slug are always returned regardless of the select parameter.
-	// Fields used in where and contains filters, and fields named by order_by, are also automatically included.
+	// Fields used in where and contains filters, fields named by order_by, and fields read by the columns of the View named by view are also automatically included.
 	// Example: 'DisplayName,CreatedAt,Labels' will return only those fields plus the required ID and Slug fields.
 	// The whole string must be query-encoded.
 	Select *string `form:"select,omitempty" json:"select,omitempty" yaml:"select,omitempty"`
-
-	// View UUID of a View whose columns to extract for each resource, returned as ViewColumns. DataPath columns are read from the stored JSON rather than by invoking a function.
-	View *string `form:"view,omitempty" json:"view,omitempty" yaml:"view,omitempty"`
 
 	// RawData Return each resource's configuration in its original toolchain-native form, as RawData on the response envelope. Off by default: the bodies are bulk, and a table view needs only the queryable Data projection.
 	RawData *bool `form:"raw_data,omitempty" json:"raw_data,omitempty" yaml:"raw_data,omitempty"`
@@ -18753,7 +19514,7 @@ type ListReviewCommentsParams struct {
 	// expected in a comma-separated list format as in the JSON encoding.
 	// If not specified, all fields are returned.
 	// Entity and parent IDs (like OrganizationID, SpaceID, ReviewCommentID) and Slug are always returned regardless of the select parameter.
-	// Fields used in where and contains filters, and fields named by order_by, are also automatically included.
+	// Fields used in where and contains filters, fields named by order_by, and fields read by the columns of the View named by view are also automatically included.
 	// Example: 'DisplayName,CreatedAt,Labels' will return only those fields plus the required ID and Slug fields.
 	// The whole string must be query-encoded.
 	Select *string `form:"select,omitempty" json:"select,omitempty" yaml:"select,omitempty"`
@@ -18766,6 +19527,15 @@ type ListReviewCommentsParams struct {
 	//
 	// ConfigHub/YAML Units, which hold the configuration of entities, are hidden with the HiddenReason `BackingUnit`.
 	IncludeHidden *string `form:"include_hidden,omitempty" json:"include_hidden,omitempty" yaml:"include_hidden,omitempty"`
+
+	// View UUID of a View whose columns to compute for each ReviewComment, returned as ViewColumns.
+	//
+	// The View must be in the same Organization as the user credentials, and be a View of ReviewComment: its Of, or the From of its Filter, must be ReviewComment.
+	//
+	// If the View has a Filter, the Filter selects the entities as the filter parameter does, so the two may not both be specified.
+	//
+	// The related entities and fields the View's columns read are included and selected automatically, so neither include nor select has to name them.
+	View *string `form:"view,omitempty" json:"view,omitempty" yaml:"view,omitempty"`
 
 	// Limit Maximum number of ReviewComment entities to return. If not specified, all matching entities are returned. Values greater than 1000 are rejected with 400. When there may be more entities, the response has a ConfigHub-Continue header to pass as the continue parameter of the next request.
 	Limit *int `form:"limit,omitempty" json:"limit,omitempty" yaml:"limit,omitempty"`
@@ -18813,7 +19583,7 @@ type GetReviewCommentParams struct {
 	// expected in a comma-separated list format as in the JSON encoding.
 	// If not specified, all fields are returned.
 	// Entity and parent IDs (like OrganizationID, SpaceID, ReviewCommentID) and Slug are always returned regardless of the select parameter.
-	// Fields used in where and contains filters, and fields named by order_by, are also automatically included.
+	// Fields used in where and contains filters, fields named by order_by, and fields read by the columns of the View named by view are also automatically included.
 	// Example: 'DisplayName,CreatedAt,Labels' will return only those fields plus the required ID and Slug fields.
 	// The whole string must be query-encoded.
 	Select *string `form:"select,omitempty" json:"select,omitempty" yaml:"select,omitempty"`
@@ -18937,7 +19707,7 @@ type ListExtendedRevisionsParams struct {
 	// expected in a comma-separated list format as in the JSON encoding.
 	// If not specified, all fields are returned.
 	// Entity and parent IDs (like OrganizationID, SpaceID, RevisionID) and Slug are always returned regardless of the select parameter.
-	// Fields used in where and contains filters, and fields named by order_by, are also automatically included.
+	// Fields used in where and contains filters, fields named by order_by, and fields read by the columns of the View named by view are also automatically included.
 	// Example: 'DisplayName,CreatedAt,Labels' will return only those fields plus the required ID and Slug fields.
 	// The whole string must be query-encoded.
 	Select *string `form:"select,omitempty" json:"select,omitempty" yaml:"select,omitempty"`
@@ -18950,6 +19720,15 @@ type ListExtendedRevisionsParams struct {
 	//
 	// ConfigHub/YAML Units, which hold the configuration of entities, are hidden with the HiddenReason `BackingUnit`.
 	IncludeHidden *string `form:"include_hidden,omitempty" json:"include_hidden,omitempty" yaml:"include_hidden,omitempty"`
+
+	// View UUID of a View whose columns to compute for each Revision, returned as ViewColumns.
+	//
+	// The View must be in the same Organization as the user credentials, and be a View of Revision: its Of, or the From of its Filter, must be Revision.
+	//
+	// If the View has a Filter, the Filter selects the entities as the filter parameter does, so the two may not both be specified.
+	//
+	// The related entities and fields the View's columns read are included and selected automatically, so neither include nor select has to name them.
+	View *string `form:"view,omitempty" json:"view,omitempty" yaml:"view,omitempty"`
 
 	// Limit Maximum number of Revision entities to return. If not specified, all matching entities are returned. Values greater than 1000 are rejected with 400. When there may be more entities, the response has a ConfigHub-Continue header to pass as the continue parameter of the next request.
 	Limit *int `form:"limit,omitempty" json:"limit,omitempty" yaml:"limit,omitempty"`
@@ -18994,7 +19773,7 @@ type GetExtendedRevisionParams struct {
 	// expected in a comma-separated list format as in the JSON encoding.
 	// If not specified, all fields are returned.
 	// Entity and parent IDs (like OrganizationID, SpaceID, RevisionID) and Slug are always returned regardless of the select parameter.
-	// Fields used in where and contains filters, and fields named by order_by, are also automatically included.
+	// Fields used in where and contains filters, fields named by order_by, and fields read by the columns of the View named by view are also automatically included.
 	// Example: 'DisplayName,CreatedAt,Labels' will return only those fields plus the required ID and Slug fields.
 	// The whole string must be query-encoded.
 	Select *string `form:"select,omitempty" json:"select,omitempty" yaml:"select,omitempty"`
@@ -19287,7 +20066,7 @@ type ListViewsParams struct {
 	// expected in a comma-separated list format as in the JSON encoding.
 	// If not specified, all fields are returned.
 	// Entity and parent IDs (like OrganizationID, SpaceID, ViewID) and Slug are always returned regardless of the select parameter.
-	// Fields used in where and contains filters, and fields named by order_by, are also automatically included.
+	// Fields used in where and contains filters, fields named by order_by, and fields read by the columns of the View named by view are also automatically included.
 	// Example: 'DisplayName,CreatedAt,Labels' will return only those fields plus the required ID and Slug fields.
 	// The whole string must be query-encoded.
 	Select *string `form:"select,omitempty" json:"select,omitempty" yaml:"select,omitempty"`
@@ -19300,6 +20079,15 @@ type ListViewsParams struct {
 	//
 	// ConfigHub/YAML Units, which hold the configuration of entities, are hidden with the HiddenReason `BackingUnit`.
 	IncludeHidden *string `form:"include_hidden,omitempty" json:"include_hidden,omitempty" yaml:"include_hidden,omitempty"`
+
+	// View UUID of a View whose columns to compute for each View, returned as ViewColumns.
+	//
+	// The View must be in the same Organization as the user credentials, and be a View of View: its Of, or the From of its Filter, must be View.
+	//
+	// If the View has a Filter, the Filter selects the entities as the filter parameter does, so the two may not both be specified.
+	//
+	// The related entities and fields the View's columns read are included and selected automatically, so neither include nor select has to name them.
+	View *string `form:"view,omitempty" json:"view,omitempty" yaml:"view,omitempty"`
 
 	// Limit Maximum number of View entities to return. If not specified, all matching entities are returned. Values greater than 1000 are rejected with 400. When there may be more entities, the response has a ConfigHub-Continue header to pass as the continue parameter of the next request.
 	Limit *int `form:"limit,omitempty" json:"limit,omitempty" yaml:"limit,omitempty"`
@@ -19353,7 +20141,7 @@ type GetViewParams struct {
 	// expected in a comma-separated list format as in the JSON encoding.
 	// If not specified, all fields are returned.
 	// Entity and parent IDs (like OrganizationID, SpaceID, ViewID) and Slug are always returned regardless of the select parameter.
-	// Fields used in where and contains filters, and fields named by order_by, are also automatically included.
+	// Fields used in where and contains filters, fields named by order_by, and fields read by the columns of the View named by view are also automatically included.
 	// Example: 'DisplayName,CreatedAt,Labels' will return only those fields plus the required ID and Slug fields.
 	// The whole string must be query-encoded.
 	Select *string `form:"select,omitempty" json:"select,omitempty" yaml:"select,omitempty"`
@@ -19592,7 +20380,7 @@ type ListAllTagsParams struct {
 	// expected in a comma-separated list format as in the JSON encoding.
 	// If not specified, all fields are returned.
 	// Entity and parent IDs (like OrganizationID, SpaceID, TagID) and Slug are always returned regardless of the select parameter.
-	// Fields used in where and contains filters, and fields named by order_by, are also automatically included.
+	// Fields used in where and contains filters, fields named by order_by, and fields read by the columns of the View named by view are also automatically included.
 	// Example: 'DisplayName,CreatedAt,Labels' will return only those fields plus the required ID and Slug fields.
 	// The whole string must be query-encoded.
 	Select *string `form:"select,omitempty" json:"select,omitempty" yaml:"select,omitempty"`
@@ -19605,6 +20393,15 @@ type ListAllTagsParams struct {
 	//
 	// ConfigHub/YAML Units, which hold the configuration of entities, are hidden with the HiddenReason `BackingUnit`.
 	IncludeHidden *string `form:"include_hidden,omitempty" json:"include_hidden,omitempty" yaml:"include_hidden,omitempty"`
+
+	// View UUID of a View whose columns to compute for each Tag, returned as ViewColumns.
+	//
+	// The View must be in the same Organization as the user credentials, and be a View of Tag: its Of, or the From of its Filter, must be Tag.
+	//
+	// If the View has a Filter, the Filter selects the entities as the filter parameter does, so the two may not both be specified.
+	//
+	// The related entities and fields the View's columns read are included and selected automatically, so neither include nor select has to name them.
+	View *string `form:"view,omitempty" json:"view,omitempty" yaml:"view,omitempty"`
 
 	// Limit Maximum number of Tag entities to return. If not specified, all matching entities are returned. Values greater than 1000 are rejected with 400. When there may be more entities, the response has a ConfigHub-Continue header to pass as the continue parameter of the next request.
 	Limit *int `form:"limit,omitempty" json:"limit,omitempty" yaml:"limit,omitempty"`
@@ -20224,7 +21021,7 @@ type ListAllTargetsParams struct {
 	// expected in a comma-separated list format as in the JSON encoding.
 	// If not specified, all fields are returned.
 	// Entity and parent IDs (like OrganizationID, SpaceID, TargetID) and Slug are always returned regardless of the select parameter.
-	// Fields used in where and contains filters, and fields named by order_by, are also automatically included.
+	// Fields used in where and contains filters, fields named by order_by, and fields read by the columns of the View named by view are also automatically included.
 	// Example: 'DisplayName,CreatedAt,Labels' will return only those fields plus the required ID and Slug fields.
 	// The whole string must be query-encoded.
 	Select *string `form:"select,omitempty" json:"select,omitempty" yaml:"select,omitempty"`
@@ -20237,6 +21034,15 @@ type ListAllTargetsParams struct {
 	//
 	// ConfigHub/YAML Units, which hold the configuration of entities, are hidden with the HiddenReason `BackingUnit`.
 	IncludeHidden *string `form:"include_hidden,omitempty" json:"include_hidden,omitempty" yaml:"include_hidden,omitempty"`
+
+	// View UUID of a View whose columns to compute for each Target, returned as ViewColumns.
+	//
+	// The View must be in the same Organization as the user credentials, and be a View of Target: its Of, or the From of its Filter, must be Target.
+	//
+	// If the View has a Filter, the Filter selects the entities as the filter parameter does, so the two may not both be specified.
+	//
+	// The related entities and fields the View's columns read are included and selected automatically, so neither include nor select has to name them.
+	View *string `form:"view,omitempty" json:"view,omitempty" yaml:"view,omitempty"`
 
 	// Limit Maximum number of Target entities to return. If not specified, all matching entities are returned. Values greater than 1000 are rejected with 400. When there may be more entities, the response has a ConfigHub-Continue header to pass as the continue parameter of the next request.
 	Limit *int `form:"limit,omitempty" json:"limit,omitempty" yaml:"limit,omitempty"`
@@ -20925,7 +21731,7 @@ type ListAllTriggersParams struct {
 	// expected in a comma-separated list format as in the JSON encoding.
 	// If not specified, all fields are returned.
 	// Entity and parent IDs (like OrganizationID, SpaceID, TriggerID) and Slug are always returned regardless of the select parameter.
-	// Fields used in where and contains filters, and fields named by order_by, are also automatically included.
+	// Fields used in where and contains filters, fields named by order_by, and fields read by the columns of the View named by view are also automatically included.
 	// Example: 'DisplayName,CreatedAt,Labels' will return only those fields plus the required ID and Slug fields.
 	// The whole string must be query-encoded.
 	Select *string `form:"select,omitempty" json:"select,omitempty" yaml:"select,omitempty"`
@@ -20938,6 +21744,15 @@ type ListAllTriggersParams struct {
 	//
 	// ConfigHub/YAML Units, which hold the configuration of entities, are hidden with the HiddenReason `BackingUnit`.
 	IncludeHidden *string `form:"include_hidden,omitempty" json:"include_hidden,omitempty" yaml:"include_hidden,omitempty"`
+
+	// View UUID of a View whose columns to compute for each Trigger, returned as ViewColumns.
+	//
+	// The View must be in the same Organization as the user credentials, and be a View of Trigger: its Of, or the From of its Filter, must be Trigger.
+	//
+	// If the View has a Filter, the Filter selects the entities as the filter parameter does, so the two may not both be specified.
+	//
+	// The related entities and fields the View's columns read are included and selected automatically, so neither include nor select has to name them.
+	View *string `form:"view,omitempty" json:"view,omitempty" yaml:"view,omitempty"`
 
 	// Limit Maximum number of Trigger entities to return. If not specified, all matching entities are returned. Values greater than 1000 are rejected with 400. When there may be more entities, the response has a ConfigHub-Continue header to pass as the continue parameter of the next request.
 	Limit *int `form:"limit,omitempty" json:"limit,omitempty" yaml:"limit,omitempty"`
@@ -21671,7 +22486,7 @@ type ListAllUnitsParams struct {
 	// expected in a comma-separated list format as in the JSON encoding.
 	// If not specified, all fields are returned.
 	// Entity and parent IDs (like OrganizationID, SpaceID, UnitID) and Slug are always returned regardless of the select parameter.
-	// Fields used in where and contains filters, and fields named by order_by, are also automatically included.
+	// Fields used in where and contains filters, fields named by order_by, and fields read by the columns of the View named by view are also automatically included.
 	// Example: 'DisplayName,CreatedAt,Labels' will return only those fields plus the required ID and Slug fields.
 	// The whole string must be query-encoded.
 	Select *string `form:"select,omitempty" json:"select,omitempty" yaml:"select,omitempty"`
@@ -21684,6 +22499,15 @@ type ListAllUnitsParams struct {
 	//
 	// ConfigHub/YAML Units, which hold the configuration of entities, are hidden with the HiddenReason `BackingUnit`.
 	IncludeHidden *string `form:"include_hidden,omitempty" json:"include_hidden,omitempty" yaml:"include_hidden,omitempty"`
+
+	// View UUID of a View whose columns to compute for each Unit, returned as ViewColumns.
+	//
+	// The View must be in the same Organization as the user credentials, and be a View of Unit: its Of, or the From of its Filter, must be Unit.
+	//
+	// If the View has a Filter, the Filter selects the entities as the filter parameter does, so the two may not both be specified.
+	//
+	// The related entities and fields the View's columns read are included and selected automatically, so neither include nor select has to name them.
+	View *string `form:"view,omitempty" json:"view,omitempty" yaml:"view,omitempty"`
 
 	// Limit Maximum number of Unit entities to return. If not specified, all matching entities are returned. Values greater than 1000 are rejected with 400. When there may be more entities, the response has a ConfigHub-Continue header to pass as the continue parameter of the next request.
 	Limit *int `form:"limit,omitempty" json:"limit,omitempty" yaml:"limit,omitempty"`
@@ -21725,9 +22549,6 @@ type ListAllUnitsParams struct {
 
 	// TriggersPassed When true, return units that pass trigger validation; when false (default), return units that fail. Only applies when where_trigger or trigger_filter is specified.
 	TriggersPassed *bool `form:"triggers_passed,omitempty" json:"triggers_passed,omitempty" yaml:"triggers_passed,omitempty"`
-
-	// View View slug or UUID. Applies the View's column definitions to extract values for each unit. If the View has a FilterID, its filter is ANDed with other filters. The View must have Of=Unit or a Filter with From=Unit.
-	View *string `form:"view,omitempty" json:"view,omitempty" yaml:"view,omitempty"`
 }
 
 // BulkPatchUnitsApplicationMergePatchPlusJSONBody defines parameters for BulkPatchUnits.
@@ -22701,7 +23522,7 @@ type SearchUnitDataParams struct {
 	// expected in a comma-separated list format as in the JSON encoding.
 	// If not specified, all fields are returned.
 	// Entity and parent IDs (like OrganizationID, SpaceID, UnitID) and Slug are always returned regardless of the select parameter.
-	// Fields used in where and contains filters, and fields named by order_by, are also automatically included.
+	// Fields used in where and contains filters, fields named by order_by, and fields read by the columns of the View named by view are also automatically included.
 	// Example: 'DisplayName,CreatedAt,Labels' will return only those fields plus the required ID and Slug fields.
 	// The whole string must be query-encoded.
 	Select *string `form:"select,omitempty" json:"select,omitempty" yaml:"select,omitempty"`
@@ -22714,6 +23535,9 @@ type SearchUnitDataParams struct {
 	//
 	// ConfigHub/YAML Units, which hold the configuration of entities, are hidden with the HiddenReason `BackingUnit`.
 	IncludeHidden *string `form:"include_hidden,omitempty" json:"include_hidden,omitempty" yaml:"include_hidden,omitempty"`
+
+	// View UUID of a View of Unit. Its Filter selects the Units as the filter parameter does, so the two may not both be specified.
+	View *string `form:"view,omitempty" json:"view,omitempty" yaml:"view,omitempty"`
 
 	// Limit Maximum number of Unit entities to return. If not specified, all matching entities are returned. Values greater than 1000 are rejected with 400. When there may be more entities, the response has a ConfigHub-Continue header to pass as the continue parameter of the next request.
 	Limit *int `form:"limit,omitempty" json:"limit,omitempty" yaml:"limit,omitempty"`
@@ -22755,9 +23579,6 @@ type SearchUnitDataParams struct {
 
 	// TriggersPassed When true, return units that pass trigger validation; when false (default), return units that fail. Only applies when where_trigger or trigger_filter is specified.
 	TriggersPassed *bool `form:"triggers_passed,omitempty" json:"triggers_passed,omitempty" yaml:"triggers_passed,omitempty"`
-
-	// View View slug or UUID. Applies the View's column definitions to extract values for each unit. If the View has a FilterID, its filter is ANDed with other filters. The View must have Of=Unit or a Filter with From=Unit.
-	View *string `form:"view,omitempty" json:"view,omitempty" yaml:"view,omitempty"`
 }
 
 // SearchUnitDiffParams defines parameters for SearchUnitDiff.
@@ -22842,6 +23663,9 @@ type SearchUnitDiffParams struct {
 	// ConfigHub/YAML Units, which hold the configuration of entities, are hidden with the HiddenReason `BackingUnit`.
 	IncludeHidden *string `form:"include_hidden,omitempty" json:"include_hidden,omitempty" yaml:"include_hidden,omitempty"`
 
+	// View UUID of a View of Unit. Its Filter selects the Units as the filter parameter does, so the two may not both be specified.
+	View *string `form:"view,omitempty" json:"view,omitempty" yaml:"view,omitempty"`
+
 	// Limit Maximum number of Unit entities to return. If not specified, all matching entities are returned. Values greater than 1000 are rejected with 400. When there may be more entities, the response has a ConfigHub-Continue header to pass as the continue parameter of the next request.
 	Limit *int `form:"limit,omitempty" json:"limit,omitempty" yaml:"limit,omitempty"`
 
@@ -22882,9 +23706,6 @@ type SearchUnitDiffParams struct {
 
 	// TriggersPassed When true, return units that pass trigger validation; when false (default), return units that fail. Only applies when where_trigger or trigger_filter is specified.
 	TriggersPassed *bool `form:"triggers_passed,omitempty" json:"triggers_passed,omitempty" yaml:"triggers_passed,omitempty"`
-
-	// View View slug or UUID. Applies the View's column definitions to extract values for each unit. If the View has a FilterID, its filter is ANDed with other filters. The View must have Of=Unit or a Filter with From=Unit.
-	View *string `form:"view,omitempty" json:"view,omitempty" yaml:"view,omitempty"`
 
 	// From The Revision on the From side: a number, a Revision ID, HeadRevisionNum, LastReleasedRevisionNum, Tag:<id>, ChangeSet:<id>, or ChangeOrder:<id>, any of them optionally prefixed with Before:.
 	From *string `form:"from,omitempty" json:"from,omitempty" yaml:"from,omitempty"`
@@ -23107,7 +23928,7 @@ type SearchUnitMutationSourcesParams struct {
 	// expected in a comma-separated list format as in the JSON encoding.
 	// If not specified, all fields are returned.
 	// Entity and parent IDs (like OrganizationID, SpaceID, UnitID) and Slug are always returned regardless of the select parameter.
-	// Fields used in where and contains filters, and fields named by order_by, are also automatically included.
+	// Fields used in where and contains filters, fields named by order_by, and fields read by the columns of the View named by view are also automatically included.
 	// Example: 'DisplayName,CreatedAt,Labels' will return only those fields plus the required ID and Slug fields.
 	// The whole string must be query-encoded.
 	Select *string `form:"select,omitempty" json:"select,omitempty" yaml:"select,omitempty"`
@@ -23120,6 +23941,9 @@ type SearchUnitMutationSourcesParams struct {
 	//
 	// ConfigHub/YAML Units, which hold the configuration of entities, are hidden with the HiddenReason `BackingUnit`.
 	IncludeHidden *string `form:"include_hidden,omitempty" json:"include_hidden,omitempty" yaml:"include_hidden,omitempty"`
+
+	// View UUID of a View of Unit. Its Filter selects the Units as the filter parameter does, so the two may not both be specified.
+	View *string `form:"view,omitempty" json:"view,omitempty" yaml:"view,omitempty"`
 
 	// Limit Maximum number of Unit entities to return. If not specified, all matching entities are returned. Values greater than 1000 are rejected with 400. When there may be more entities, the response has a ConfigHub-Continue header to pass as the continue parameter of the next request.
 	Limit *int `form:"limit,omitempty" json:"limit,omitempty" yaml:"limit,omitempty"`
@@ -23161,9 +23985,6 @@ type SearchUnitMutationSourcesParams struct {
 
 	// TriggersPassed When true, return units that pass trigger validation; when false (default), return units that fail. Only applies when where_trigger or trigger_filter is specified.
 	TriggersPassed *bool `form:"triggers_passed,omitempty" json:"triggers_passed,omitempty" yaml:"triggers_passed,omitempty"`
-
-	// View View slug or UUID. Applies the View's column definitions to extract values for each unit. If the View has a FilterID, its filter is ANDed with other filters. The View must have Of=Unit or a Filter with From=Unit.
-	View *string `form:"view,omitempty" json:"view,omitempty" yaml:"view,omitempty"`
 }
 
 // UploadParams defines parameters for Upload.
@@ -23253,7 +24074,7 @@ type ListUsersParams struct {
 	// expected in a comma-separated list format as in the JSON encoding.
 	// If not specified, all fields are returned.
 	// Entity and parent IDs (like OrganizationID, SpaceID, UserID) and Slug are always returned regardless of the select parameter.
-	// Fields used in where and contains filters, and fields named by order_by, are also automatically included.
+	// Fields used in where and contains filters, fields named by order_by, and fields read by the columns of the View named by view are also automatically included.
 	// Example: 'DisplayName,CreatedAt,Labels' will return only those fields plus the required ID and Slug fields.
 	// The whole string must be query-encoded.
 	Select *string `form:"select,omitempty" json:"select,omitempty" yaml:"select,omitempty"`
@@ -23266,6 +24087,15 @@ type ListUsersParams struct {
 	//
 	// ConfigHub/YAML Units, which hold the configuration of entities, are hidden with the HiddenReason `BackingUnit`.
 	IncludeHidden *string `form:"include_hidden,omitempty" json:"include_hidden,omitempty" yaml:"include_hidden,omitempty"`
+
+	// View UUID of a View whose columns to compute for each User, returned as ViewColumns.
+	//
+	// The View must be in the same Organization as the user credentials, and be a View of User: its Of, or the From of its Filter, must be User.
+	//
+	// If the View has a Filter, the Filter selects the entities as the filter parameter does, so the two may not both be specified.
+	//
+	// The related entities and fields the View's columns read are included and selected automatically, so neither include nor select has to name them.
+	View *string `form:"view,omitempty" json:"view,omitempty" yaml:"view,omitempty"`
 
 	// Limit Maximum number of User entities to return. If not specified, all matching entities are returned. Values greater than 1000 are rejected with 400. When there may be more entities, the response has a ConfigHub-Continue header to pass as the continue parameter of the next request.
 	Limit *int `form:"limit,omitempty" json:"limit,omitempty" yaml:"limit,omitempty"`
@@ -23298,7 +24128,7 @@ type GetUserParams struct {
 	// expected in a comma-separated list format as in the JSON encoding.
 	// If not specified, all fields are returned.
 	// Entity and parent IDs (like OrganizationID, SpaceID, UserID) and Slug are always returned regardless of the select parameter.
-	// Fields used in where and contains filters, and fields named by order_by, are also automatically included.
+	// Fields used in where and contains filters, fields named by order_by, and fields read by the columns of the View named by view are also automatically included.
 	// Example: 'DisplayName,CreatedAt,Labels' will return only those fields plus the required ID and Slug fields.
 	// The whole string must be query-encoded.
 	Select *string `form:"select,omitempty" json:"select,omitempty" yaml:"select,omitempty"`
@@ -23494,7 +24324,7 @@ type ListAllViewsParams struct {
 	// expected in a comma-separated list format as in the JSON encoding.
 	// If not specified, all fields are returned.
 	// Entity and parent IDs (like OrganizationID, SpaceID, ViewID) and Slug are always returned regardless of the select parameter.
-	// Fields used in where and contains filters, and fields named by order_by, are also automatically included.
+	// Fields used in where and contains filters, fields named by order_by, and fields read by the columns of the View named by view are also automatically included.
 	// Example: 'DisplayName,CreatedAt,Labels' will return only those fields plus the required ID and Slug fields.
 	// The whole string must be query-encoded.
 	Select *string `form:"select,omitempty" json:"select,omitempty" yaml:"select,omitempty"`
@@ -23507,6 +24337,15 @@ type ListAllViewsParams struct {
 	//
 	// ConfigHub/YAML Units, which hold the configuration of entities, are hidden with the HiddenReason `BackingUnit`.
 	IncludeHidden *string `form:"include_hidden,omitempty" json:"include_hidden,omitempty" yaml:"include_hidden,omitempty"`
+
+	// View UUID of a View whose columns to compute for each View, returned as ViewColumns.
+	//
+	// The View must be in the same Organization as the user credentials, and be a View of View: its Of, or the From of its Filter, must be View.
+	//
+	// If the View has a Filter, the Filter selects the entities as the filter parameter does, so the two may not both be specified.
+	//
+	// The related entities and fields the View's columns read are included and selected automatically, so neither include nor select has to name them.
+	View *string `form:"view,omitempty" json:"view,omitempty" yaml:"view,omitempty"`
 
 	// Limit Maximum number of View entities to return. If not specified, all matching entities are returned. Values greater than 1000 are rejected with 400. When there may be more entities, the response has a ConfigHub-Continue header to pass as the continue parameter of the next request.
 	Limit *int `form:"limit,omitempty" json:"limit,omitempty" yaml:"limit,omitempty"`
@@ -24067,6 +24906,12 @@ type BulkMoveChangeWorkflowsJSONRequestBody = MoveRequest
 // BulkPatchChannelsApplicationMergePatchPlusJSONRequestBody defines body for BulkPatchChannels for application/merge-patch+json ContentType.
 type BulkPatchChannelsApplicationMergePatchPlusJSONRequestBody BulkPatchChannelsApplicationMergePatchPlusJSONBody
 
+// BulkCreateChannelsApplicationMergePatchPlusJSONRequestBody defines body for BulkCreateChannels for application/merge-patch+json ContentType.
+type BulkCreateChannelsApplicationMergePatchPlusJSONRequestBody BulkCreateChannelsApplicationMergePatchPlusJSONBody
+
+// BulkMoveChannelsJSONRequestBody defines body for BulkMoveChannels for application/json ContentType.
+type BulkMoveChannelsJSONRequestBody = MoveRequest
+
 // CreateComponentJSONRequestBody defines body for CreateComponent for application/json ContentType.
 type CreateComponentJSONRequestBody = Component
 
@@ -24219,6 +25064,9 @@ type UpdateChannelJSONRequestBody = Channel
 
 // ReportCommandRunResultJSONRequestBody defines body for ReportCommandRunResult for application/json ContentType.
 type ReportCommandRunResultJSONRequestBody = CommandRunResult
+
+// UpdateChannelDocumentJSONRequestBody defines body for UpdateChannelDocument for application/json ContentType.
+type UpdateChannelDocumentJSONRequestBody = EntityDocumentEdit
 
 // PollChannelJSONRequestBody defines body for PollChannel for application/json ContentType.
 type PollChannelJSONRequestBody = ChannelPollRequest

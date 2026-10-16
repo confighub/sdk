@@ -47,6 +47,7 @@ var organizationMemberCustomColumnDependencies = map[string][]string{}
 
 func init() {
 	addStandardListFlags(organizationMemberListCmd)
+	enableViewFlag(organizationMemberListCmd)
 	organizationMemberCmd.AddCommand(organizationMemberListCmd)
 }
 
@@ -61,6 +62,7 @@ func organizationMemberListCmdRun(cmd *cobra.Command, args []string) error {
 		cubapi.NewWhere(where), cubapi.ListOpts{
 			Filter:   filterID,
 			Contains: contains,
+			View:     listViewFor("cub organization-member list"),
 		})
 	if err != nil {
 		return err

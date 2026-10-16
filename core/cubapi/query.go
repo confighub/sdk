@@ -184,6 +184,10 @@ type ListOpts struct {
 	// or 'Field' terms. They are ordered by their IDs after the fields named,
 	// and by their IDs alone when it is empty.
 	OrderBy string
+	// View is the UUID of a View of the entity type listed. Each entity returned
+	// carries the values of the View's columns as ViewColumns, and the View's
+	// Filter, if it has one, selects the entities as Filter does.
+	View string
 }
 
 // MaxListPageSize is the most entities the server returns in one page.
@@ -258,6 +262,7 @@ func ListUnits(ctx context.Context, c *Client, where Where, opts ListOpts, with 
 		Contains:      ptrIf(opts.Contains),
 		IncludeHidden: ptrIf(opts.IncludeHidden),
 		OrderBy:       ptrIf(opts.OrderBy),
+		View:          ptrIf(opts.View),
 	}
 	for _, fn := range with {
 		fn(params)
@@ -288,6 +293,7 @@ func ListSpaces(ctx context.Context, c *Client, where Where, opts ListOpts, with
 		Contains:      ptrIf(opts.Contains),
 		IncludeHidden: ptrIf(opts.IncludeHidden),
 		OrderBy:       ptrIf(opts.OrderBy),
+		View:          ptrIf(opts.View),
 	}
 	for _, fn := range with {
 		fn(params)
@@ -315,6 +321,7 @@ func ListComponents(ctx context.Context, c *Client, where Where, opts ListOpts) 
 		Contains:      ptrIf(opts.Contains),
 		IncludeHidden: ptrIf(opts.IncludeHidden),
 		OrderBy:       ptrIf(opts.OrderBy),
+		View:          ptrIf(opts.View),
 	}
 	return ReadPages(opts, func(limit *int, token *string) (*http.Response, *[]goclientnew.ExtendedComponent, error) {
 		params.Limit, params.Continue = limit, token
@@ -339,6 +346,7 @@ func ListServiceAccounts(ctx context.Context, c *Client, where Where, opts ListO
 		Contains:      ptrIf(opts.Contains),
 		IncludeHidden: ptrIf(opts.IncludeHidden),
 		OrderBy:       ptrIf(opts.OrderBy),
+		View:          ptrIf(opts.View),
 	}
 	return ReadPages(opts, func(limit *int, token *string) (*http.Response, *[]goclientnew.ExtendedServiceAccount, error) {
 		params.Limit, params.Continue = limit, token
@@ -364,6 +372,7 @@ func ListOrganizations(ctx context.Context, c *Client, where Where, opts ListOpt
 		Filter:        ptrIf(opts.Filter),
 		Contains:      ptrIf(opts.Contains),
 		IncludeHidden: ptrIf(opts.IncludeHidden),
+		View:          ptrIf(opts.View),
 	}
 	res, err := c.API.ListOrganizationsWithResponse(ctx, params)
 	if IsAPIError(err, res) {
@@ -387,6 +396,7 @@ func ListOrganizationMembers(ctx context.Context, c *Client, organizationID gocl
 		Where:    ptrIf(where.String()),
 		Filter:   ptrIf(opts.Filter),
 		Contains: ptrIf(opts.Contains),
+		View:     ptrIf(opts.View),
 	}
 	res, err := c.API.ListOrganizationMembersWithResponse(ctx, organizationID, params)
 	if IsAPIError(err, res) {
@@ -410,6 +420,7 @@ func ListUsers(ctx context.Context, c *Client, where Where, opts ListOpts) ([]*g
 		Contains:      ptrIf(opts.Contains),
 		IncludeHidden: ptrIf(opts.IncludeHidden),
 		OrderBy:       ptrIf(opts.OrderBy),
+		View:          ptrIf(opts.View),
 	}
 	return ReadPages(opts, func(limit *int, token *string) (*http.Response, *[]goclientnew.ExtendedUser, error) {
 		params.Limit, params.Continue = limit, token
@@ -434,6 +445,7 @@ func ListGroups(ctx context.Context, c *Client, where Where, opts ListOpts) ([]*
 		Contains:      ptrIf(opts.Contains),
 		IncludeHidden: ptrIf(opts.IncludeHidden),
 		OrderBy:       ptrIf(opts.OrderBy),
+		View:          ptrIf(opts.View),
 	}
 	return ReadPages(opts, func(limit *int, token *string) (*http.Response, *[]goclientnew.ExtendedGroup, error) {
 		params.Limit, params.Continue = limit, token
@@ -458,6 +470,7 @@ func ListTargets(ctx context.Context, c *Client, where Where, opts ListOpts) ([]
 		Contains:      ptrIf(opts.Contains),
 		IncludeHidden: ptrIf(opts.IncludeHidden),
 		OrderBy:       ptrIf(opts.OrderBy),
+		View:          ptrIf(opts.View),
 	}
 	return ReadPages(opts, func(limit *int, token *string) (*http.Response, *[]goclientnew.ExtendedTarget, error) {
 		params.Limit, params.Continue = limit, token
@@ -482,6 +495,7 @@ func ListTriggers(ctx context.Context, c *Client, where Where, opts ListOpts) ([
 		Contains:      ptrIf(opts.Contains),
 		IncludeHidden: ptrIf(opts.IncludeHidden),
 		OrderBy:       ptrIf(opts.OrderBy),
+		View:          ptrIf(opts.View),
 	}
 	return ReadPages(opts, func(limit *int, token *string) (*http.Response, *[]goclientnew.ExtendedTrigger, error) {
 		params.Limit, params.Continue = limit, token
@@ -508,6 +522,7 @@ func ListFilters(ctx context.Context, c *Client, where Where, opts ListOpts, wit
 		Contains:      ptrIf(opts.Contains),
 		IncludeHidden: ptrIf(opts.IncludeHidden),
 		OrderBy:       ptrIf(opts.OrderBy),
+		View:          ptrIf(opts.View),
 	}
 	for _, fn := range with {
 		fn(params)
@@ -536,6 +551,7 @@ func ListInvocations(ctx context.Context, c *Client, where Where, opts ListOpts)
 		Contains:      ptrIf(opts.Contains),
 		IncludeHidden: ptrIf(opts.IncludeHidden),
 		OrderBy:       ptrIf(opts.OrderBy),
+		View:          ptrIf(opts.View),
 	}
 	return ReadPages(opts, func(limit *int, token *string) (*http.Response, *[]goclientnew.ExtendedInvocation, error) {
 		params.Limit, params.Continue = limit, token
@@ -560,6 +576,7 @@ func ListChangeSets(ctx context.Context, c *Client, where Where, opts ListOpts) 
 		Contains:      ptrIf(opts.Contains),
 		IncludeHidden: ptrIf(opts.IncludeHidden),
 		OrderBy:       ptrIf(opts.OrderBy),
+		View:          ptrIf(opts.View),
 	}
 	return ReadPages(opts, func(limit *int, token *string) (*http.Response, *[]goclientnew.ExtendedChangeSet, error) {
 		params.Limit, params.Continue = limit, token
@@ -584,6 +601,7 @@ func ListChangeOrders(ctx context.Context, c *Client, where Where, opts ListOpts
 		Contains:      ptrIf(opts.Contains),
 		IncludeHidden: ptrIf(opts.IncludeHidden),
 		OrderBy:       ptrIf(opts.OrderBy),
+		View:          ptrIf(opts.View),
 	}
 	return ReadPages(opts, func(limit *int, token *string) (*http.Response, *[]goclientnew.ExtendedChangeOrder, error) {
 		params.Limit, params.Continue = limit, token
@@ -608,6 +626,7 @@ func ListChangeWorkflows(ctx context.Context, c *Client, where Where, opts ListO
 		Contains:      ptrIf(opts.Contains),
 		IncludeHidden: ptrIf(opts.IncludeHidden),
 		OrderBy:       ptrIf(opts.OrderBy),
+		View:          ptrIf(opts.View),
 	}
 	return ReadPages(opts, func(limit *int, token *string) (*http.Response, *[]goclientnew.ExtendedChangeWorkflow, error) {
 		params.Limit, params.Continue = limit, token
@@ -632,6 +651,7 @@ func ListTags(ctx context.Context, c *Client, where Where, opts ListOpts) ([]*go
 		Contains:      ptrIf(opts.Contains),
 		IncludeHidden: ptrIf(opts.IncludeHidden),
 		OrderBy:       ptrIf(opts.OrderBy),
+		View:          ptrIf(opts.View),
 	}
 	return ReadPages(opts, func(limit *int, token *string) (*http.Response, *[]goclientnew.ExtendedTag, error) {
 		params.Limit, params.Continue = limit, token
@@ -656,6 +676,7 @@ func ListAttestations(ctx context.Context, c *Client, where Where, opts ListOpts
 		Contains:      ptrIf(opts.Contains),
 		IncludeHidden: ptrIf(opts.IncludeHidden),
 		OrderBy:       ptrIf(opts.OrderBy),
+		View:          ptrIf(opts.View),
 	}
 	return ReadPages(opts, func(limit *int, token *string) (*http.Response, *[]goclientnew.ExtendedAttestation, error) {
 		params.Limit, params.Continue = limit, token
@@ -680,6 +701,7 @@ func ListViews(ctx context.Context, c *Client, where Where, opts ListOpts) ([]*g
 		Contains:      ptrIf(opts.Contains),
 		IncludeHidden: ptrIf(opts.IncludeHidden),
 		OrderBy:       ptrIf(opts.OrderBy),
+		View:          ptrIf(opts.View),
 	}
 	return ReadPages(opts, func(limit *int, token *string) (*http.Response, *[]goclientnew.ExtendedView, error) {
 		params.Limit, params.Continue = limit, token
@@ -709,6 +731,7 @@ func ListResources(ctx context.Context, c *Client, where Where, opts ListOpts, w
 		Contains:      ptrIf(opts.Contains),
 		IncludeHidden: ptrIf(opts.IncludeHidden),
 		OrderBy:       ptrIf(opts.OrderBy),
+		View:          ptrIf(opts.View),
 	}
 	for _, fn := range with {
 		fn(params)
@@ -736,6 +759,7 @@ func ListAttributes(ctx context.Context, c *Client, where Where, opts ListOpts) 
 		Contains:      ptrIf(opts.Contains),
 		IncludeHidden: ptrIf(opts.IncludeHidden),
 		OrderBy:       ptrIf(opts.OrderBy),
+		View:          ptrIf(opts.View),
 	}
 	return ReadPages(opts, func(limit *int, token *string) (*http.Response, *[]goclientnew.ExtendedAttribute, error) {
 		params.Limit, params.Continue = limit, token
@@ -761,6 +785,7 @@ func ListLinks(ctx context.Context, c *Client, where Where, opts ListOpts) ([]*g
 		Contains:      ptrIf(opts.Contains),
 		IncludeHidden: ptrIf(opts.IncludeHidden),
 		OrderBy:       ptrIf(opts.OrderBy),
+		View:          ptrIf(opts.View),
 	}
 	return ReadPages(opts, func(limit *int, token *string) (*http.Response, *[]goclientnew.ExtendedLink, error) {
 		params.Limit, params.Continue = limit, token
@@ -785,6 +810,7 @@ func ListChannels(ctx context.Context, c *Client, where Where, opts ListOpts, wi
 		Contains:      ptrIf(opts.Contains),
 		IncludeHidden: ptrIf(opts.IncludeHidden),
 		OrderBy:       ptrIf(opts.OrderBy),
+		View:          ptrIf(opts.View),
 	}
 	for _, fn := range with {
 		fn(params)
@@ -864,6 +890,7 @@ func ListBridgeWorkers(ctx context.Context, c *Client, where Where, opts ListOpt
 		Contains:      ptrIf(opts.Contains),
 		IncludeHidden: ptrIf(opts.IncludeHidden),
 		OrderBy:       ptrIf(opts.OrderBy),
+		View:          ptrIf(opts.View),
 	}
 	for _, fn := range with {
 		fn(params)

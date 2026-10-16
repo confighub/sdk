@@ -54,6 +54,7 @@ With no name, --patch updates every channel --where selects.
 
 func init() {
 	addStandardUpdateFlags(channelUpdateCmd)
+	addFieldEditFlags(channelUpdateCmd, "Channel")
 	enableOptionalSpace(channelUpdateCmd)
 	channelUpdateCmd.Flags().BoolVar(&isPatch, "patch", false, "use patch API")
 	channelUpdateCmd.Flags().StringSliceVar(&channelUpdateArgs.permissions, "permission", []string{}, permissionUpdateHelp)
@@ -61,6 +62,8 @@ func init() {
 	channelUpdateCmd.Flags().StringVar(&channelUpdateArgs.subscriptions, "subscriptions", "", "the events the channel watches, as a JSON file or - for stdin")
 	channelUpdateCmd.Flags().Int64Var(&channelUpdateArgs.eventPosition, "event-position", 0, "move the channel's bookmark into the event log")
 	enableWhereFlag(channelUpdateCmd)
+	addBackingUnitFlags(channelUpdateCmd, "Channel", false, false)
+	addFromBackingUnitsFlags(channelUpdateCmd, "Channel", false)
 	channelCmd.AddCommand(channelUpdateCmd)
 }
 
@@ -222,6 +225,9 @@ func channelUpdateCmdRun(cmd *cobra.Command, args []string) error {
 	if positionChanged {
 		newBody.EventPosition = channelUpdateArgs.eventPosition
 	}
+	if err := applyFieldEdits("Channel", newBody); err != nil {
+		return err
+	}
 
 	channelRes, err := cubClientNew.UpdateChannelWithResponse(ctx, currentChannel.SpaceID, currentChannel.ChannelID, &goclientnew.UpdateChannelParams{DryRun: dryRunParam()}, *newBody)
 	if cubapi.IsAPIError(err, channelRes) {
@@ -245,6 +251,8 @@ func runBulkChannelUpdate(enhancer func(map[string]interface{})) error {
 	}
 	params := &goclientnew.BulkPatchChannelsParams{Where: &where}
 	params.IncludeHidden = includeHiddenParam()
+	params.WithBackingUnits = withBackingUnitsParam()
+	params.FromBackingUnits = fromBackingUnitsParam()
 	params.DryRun = dryRunParam()
 	bulkRes, err := cubClientNew.BulkPatchChannelsWithBodyWithResponse(ctx, params,
 		"application/merge-patch+json", bytes.NewReader(patchData))

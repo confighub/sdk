@@ -15,13 +15,16 @@ import (
 )
 
 var filterUpdateCmd = &cobra.Command{
-	Use:   "update [<slug or id>] [<from>] [options...]",
+	Use:   "update [<slug or id> [<from>]] [options...]",
 	Short: "Update a filter or multiple filters",
 	Long: getCommandHelp(`Update a filter or multiple filters using bulk operations.
 
+A filter's From, the entity type it selects, cannot change once the filter is created. It may be
+given after the slug, as on create, and then has to be the filter's From.
+
 Single filter update:
 `+"```"+`
-  cub filter update my-filter Unit --where-field "Labels.Environment = 'staging'"
+  cub filter update my-filter --where-field "Labels.Environment = 'staging'"
 `+"```"+`
 
 Bulk update with --patch:
@@ -30,7 +33,7 @@ Update multiple filters at once based on search criteria. Requires --patch flag 
 
 Examples:
 `+"```"+`
-  # Update From type for all filters
+  # Update all filters of Spaces
   cub filter update --patch --where "From = 'Space'" --from-stdin < patch.json
 
   # Update where clause for specific filters
@@ -93,9 +96,8 @@ func checkFilterUpdateConflictingArgs(args []string) bool {
 		}
 
 	} else {
-		// Single create mode validation
-		if len(args) != 2 {
-			failOnError(errors.New("single filter update requires: <slug> <from> [options...]"))
+		if len(args) > 2 {
+			failOnError(errors.New("single filter update takes: <slug or id> [<from>] [options...]"))
 		}
 
 		if filter != "" || where != "" || len(filterIdentifiers) > 0 {
@@ -217,9 +219,10 @@ func filterUpdateCmdRun(cmd *cobra.Command, args []string) error {
 		return runBulkFilterUpdate()
 	}
 
-	// Single filter update logic
-	if len(args) < 2 {
-		return errors.New("single filter update requires: <slug or id> <from> [options...]")
+	// From is immutable: when given, the server refuses any but the filter's own.
+	from := ""
+	if len(args) > 1 {
+		from = args[1]
 	}
 
 	currentFilterEnvelope, err := resolveFilter(args[0], selectedSpaceID, "*") // get all fields for RMW
@@ -245,7 +248,9 @@ func filterUpdateCmdRun(cmd *cobra.Command, args []string) error {
 		// Create enhancer function for filter-specific fields
 		enhancer := func(patchMap map[string]interface{}) {
 			// Add filter-specific fields
-			patchMap["From"] = args[1]
+			if from != "" {
+				patchMap["From"] = from
+			}
 			if filterUpdateArgs.whereField != "" {
 				patchMap["Where"] = filterUpdateArgs.whereField
 			}
@@ -316,7 +321,9 @@ func filterUpdateCmdRun(cmd *cobra.Command, args []string) error {
 
 	// If this was set from stdin, it will be overridden
 	currentFilter.SpaceID = spaceID
-	currentFilter.From = args[1]
+	if from != "" {
+		currentFilter.From = from
+	}
 
 	// Set optional fields from flags
 	if filterUpdateArgs.whereField != "" {

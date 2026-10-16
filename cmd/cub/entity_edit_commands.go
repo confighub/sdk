@@ -166,6 +166,45 @@ func init() {
 		},
 	})
 	addEntityEditCommand(entityEdit{
+		parent: channelCmd,
+		entity: "channel",
+		resolve: func(ref string) (*editedEntity, error) {
+			d, err := resolveChannel(ref, selectedSpaceID, "ChannelID,Slug,SpaceID,BackingUnitID")
+			if err != nil {
+				return nil, err
+			}
+			return &editedEntity{spaceID: d.Channel.SpaceID, id: d.Channel.ChannelID, slug: d.Channel.Slug, backingUnitID: d.Channel.BackingUnitID}, nil
+		},
+		getDocument: func(e *editedEntity) (*goclientnew.EntityDocument, error) {
+			res, err := cubClientNew.GetChannelDocumentWithResponse(ctx, e.spaceID, e.id)
+			return readDocument(res, err, func(r *goclientnew.GetChannelDocumentResponse) *goclientnew.EntityDocument { return r.JSON200 })
+		},
+		updateDocument: func(e *editedEntity, edit goclientnew.EntityDocumentEdit) (bool, error) {
+			res, err := cubClientNew.UpdateChannelDocumentWithResponse(ctx, e.spaceID, e.id, &goclientnew.UpdateChannelDocumentParams{}, edit)
+			return documentUpdated("channel", res, err,
+				func(r *goclientnew.UpdateChannelDocumentResponse) *goclientnew.Channel { return r.JSON200 },
+				func(x *goclientnew.Channel) (string, string) { return x.Slug, x.ChannelID.String() },
+				func(x *goclientnew.Channel) { displayChannelDetails(x) })
+		},
+		applyFromBackingUnit: func(e *editedEntity) error {
+			where := fmt.Sprintf("ChannelID = '%s'", e.id)
+			res, err := cubClientNew.BulkPatchChannelsWithBodyWithResponse(ctx,
+				&goclientnew.BulkPatchChannelsParams{Where: &where, FromBackingUnits: fromBackingUnitsTrue()},
+				"application/merge-patch+json", bytes.NewReader([]byte("{}")))
+			return appliedFromBackingUnit("channel", where, res, err,
+				func(r *goclientnew.BulkPatchChannelsResponse) (*[]goclientnew.ChannelCreateOrUpdateResponse, *[]goclientnew.ChannelCreateOrUpdateResponse) {
+					return r.JSON200, r.JSON207
+				},
+				func(r *goclientnew.ChannelCreateOrUpdateResponse) *goclientnew.ResponseError { return r.Error },
+				func(r *goclientnew.ChannelCreateOrUpdateResponse) string {
+					if r.Channel == nil {
+						return ""
+					}
+					return fmt.Sprintf("%s (ID: %s)", r.Channel.Slug, r.Channel.ChannelID)
+				})
+		},
+	})
+	addEntityEditCommand(entityEdit{
 		parent: invocationCmd,
 		entity: "invocation",
 		resolve: func(ref string) (*editedEntity, error) {

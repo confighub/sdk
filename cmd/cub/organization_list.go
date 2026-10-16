@@ -49,6 +49,7 @@ var organizationCustomColumnDependencies = map[string][]string{}
 
 func init() {
 	addStandardListFlags(organizationListCmd)
+	enableViewFlag(organizationListCmd)
 	organizationCmd.AddCommand(organizationListCmd)
 }
 
@@ -66,6 +67,7 @@ func organizationListCmdRun(cmd *cobra.Command, args []string) error {
 		Filter:        filterID,
 		Contains:      contains,
 		IncludeHidden: includeHidden,
+		View:          listViewFor("cub organization list"),
 	})
 	if err != nil {
 		return err

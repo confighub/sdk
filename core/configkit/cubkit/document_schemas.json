@@ -308,6 +308,78 @@
       },
       "type": "object"
     },
+    "CommandOption": {
+      "properties": {
+        "Choices": {
+          "items": {
+            "type": "string"
+          },
+          "type": "array"
+        },
+        "DataType": {
+          "type": "string"
+        },
+        "Description": {
+          "type": "string"
+        },
+        "Example": {
+          "type": "string"
+        },
+        "Name": {
+          "type": "string"
+        },
+        "Required": {
+          "type": "boolean"
+        },
+        "Schema": {
+          "$ref": "#/definitions/Schema"
+        }
+      },
+      "type": "object"
+    },
+    "CommandSignature": {
+      "properties": {
+        "Attributes": {
+          "additionalProperties": {},
+          "type": "object"
+        },
+        "Description": {
+          "type": "string"
+        },
+        "Options": {
+          "items": {
+            "$ref": "#/definitions/CommandOption"
+          },
+          "type": "array"
+        },
+        "Returns": {
+          "$ref": "#/definitions/Schema"
+        }
+      },
+      "type": "object"
+    },
+    "EventSubscription": {
+      "properties": {
+        "EventTypes": {
+          "description": "The event types to deliver, such as release.published. Empty means all.",
+          "items": {
+            "type": "string"
+          },
+          "type": "array"
+        },
+        "SpaceID": {
+          "description": "Restricts delivery to events about one Space. It has to name a Space when the Channel is written; a Space deleted later leaves the subscription matching nothing.",
+          "format": "uuid",
+          "type": "string"
+        },
+        "TargetID": {
+          "description": "Restricts delivery to events about one Target. It has to name a Target when the Channel is written; a Target deleted later leaves the subscription matching nothing.",
+          "format": "uuid",
+          "type": "string"
+        }
+      },
+      "type": "object"
+    },
     "FunctionArgument": {
       "properties": {
         "Evaluator": {
@@ -890,6 +962,79 @@
       ],
       "type": "object"
     },
+    "Channel": {
+      "additionalProperties": false,
+      "properties": {
+        "Annotations": {
+          "additionalProperties": {
+            "maxLength": 1024,
+            "pattern": "^(.|\\n)*$",
+            "type": "string"
+          },
+          "description": "An optional map of Annotation key/value pairs for tools to attach information to entities.",
+          "type": "object"
+        },
+        "Commands": {
+          "additionalProperties": {
+            "$ref": "#/definitions/CommandSignature"
+          },
+          "description": "The commands the channel handles, by name, each with its signature. Set here, out of band; a connecting client verifies its handlers against them.",
+          "type": "object"
+        },
+        "DeleteGates": {
+          "additionalProperties": {
+            "type": "boolean"
+          },
+          "description": "An optional set of gates that, if any is present, will block deletion.",
+          "type": "object"
+        },
+        "DisplayName": {
+          "description": "Friendly name for the entity.",
+          "type": "string"
+        },
+        "EntityType": {
+          "description": "The type of entity the document describes.",
+          "enum": [
+            "Channel"
+          ]
+        },
+        "Labels": {
+          "additionalProperties": {
+            "maxLength": 128,
+            "pattern": "^[\\-_@/#$%\u0026~+=!?.,:;(){}\\[\\]\u003c\u003e|A-Za-z0-9](([\\-_@/#$%\u0026~+=!?.,:;(){}\\[\\]\u003c\u003e|A-Za-z0-9]| )*[\\-_@/#$%\u0026~+=!?.,:;(){}\\[\\]\u003c\u003e|A-Za-z0-9])?$",
+            "type": "string"
+          },
+          "description": "An optional map of Label key/value pairs to specify identifying attributes of entities for the purpose of grouping and filtering them.",
+          "type": "object"
+        },
+        "Permissions": {
+          "allOf": [
+            {
+              "$ref": "#/definitions/Permissions"
+            }
+          ],
+          "description": "Permissions to access this Channel. Claim: acquire its lease and poll it. Use: run a command on it."
+        },
+        "Slug": {
+          "description": "Unique URL-safe identifier for the entity.",
+          "maxLength": 128,
+          "pattern": "^[A-Za-z0-9]([\\-_.A-Za-z0-9]*[A-Za-z0-9])?$",
+          "type": "string"
+        },
+        "Subscriptions": {
+          "description": "Filters over the event log. An event after EventPosition that matches any of them is delivered to the client.",
+          "items": {
+            "$ref": "#/definitions/EventSubscription"
+          },
+          "type": "array"
+        }
+      },
+      "required": [
+        "EntityType",
+        "Slug"
+      ],
+      "type": "object"
+    },
     "Component": {
       "additionalProperties": false,
       "properties": {
@@ -992,7 +1137,7 @@
           ]
         },
         "From": {
-          "description": "From specifies the type of entity (Unit, Space, etc.) to filter, in PascalCase.",
+          "description": "From specifies the type of entity (Unit, Space, etc.) to filter, in PascalCase. Required on create, and immutable.",
           "type": "string"
         },
         "FromSpace": {

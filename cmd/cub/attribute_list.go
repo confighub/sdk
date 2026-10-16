@@ -59,6 +59,7 @@ var attributeCustomColumnDependencies = map[string][]string{}
 func init() {
 	addStandardListFlags(attributeListCmd)
 	enableListPagingFlags(attributeListCmd)
+	enableViewFlag(attributeListCmd)
 	attributeCmd.AddCommand(attributeListCmd)
 }
 
@@ -138,5 +139,6 @@ func apiListAllAttributes(where cubapi.Where, selectParam string, filterParam st
 		Filter:        filterParam,
 		Contains:      contains,
 		IncludeHidden: includeHidden,
+		View:          listViewFor("cub attribute list"),
 	})
 }

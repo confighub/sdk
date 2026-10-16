@@ -73,6 +73,7 @@ var invocationCustomColumnDependencies = map[string][]string{}
 func init() {
 	addStandardListFlags(invocationListCmd)
 	enableListPagingFlags(invocationListCmd)
+	enableViewFlag(invocationListCmd)
 	invocationCmd.AddCommand(invocationListCmd)
 }
 
@@ -152,5 +153,6 @@ func apiListAllInvocations(where cubapi.Where, selectParam string, filterParam s
 		Filter:        filterParam,
 		Contains:      contains,
 		IncludeHidden: includeHidden,
+		View:          listViewFor("cub invocation list"),
 	})
 }

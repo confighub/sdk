@@ -86,10 +86,14 @@ selects the Triggers in the upstream space. Permissions are copied too. Triggers
 they run where they are, so every variant runs the same ones.
 
 Metadata flags are split by what they target, space vs. unit, as on "cub variant upload":
-  --space-label / --space-annotation /       set on the new space, merged onto the values copied
-  --space-delete-gate                        from the upstream space.
-  --unit-label / --unit-annotation /         set on every cloned unit, merged onto each clone's
-  --unit-delete-gate / --unit-destroy-gate   copied values. Destroy gates are unit-only (spaces have
+  --space-label / --space-annotation        set on the new space, merged onto the values copied
+                                             from the upstream space.
+  --space-delete-gate                        the new space's delete gates. The upstream space's
+                                             are not copied.
+  --unit-label / --unit-annotation           set on every cloned unit, merged onto each clone's
+                                             copied values.
+  --unit-delete-gate / --unit-destroy-gate   every cloned unit's gates. The upstream units' are
+                                             not copied. Destroy gates are unit-only (spaces have
                                              no destroy gates). Use --unit-delete-gate critical to
                                              protect a prod variant's units.
   --permission                               add to, or with a leading "-" remove from, the
@@ -204,7 +208,7 @@ func init() {
 	variantCreateCmd.Flags().StringSliceVar(&variantCreateArgs.unitLabels, "unit-label", []string{}, "label key=value to set on every cloned unit (repeatable); merged onto each unit's copied labels")
 	variantCreateCmd.Flags().StringVar(&variantCreateArgs.changeDesc, "change-desc", "", "change description recorded on each cloned unit")
 	variantCreateCmd.Flags().StringVar(&variantCreateArgs.changesetSlug, "changeset", "", "changeset to put the cloned units in, as <slug> or <space>/<slug>")
-	variantCreateCmd.Flags().StringSliceVar(&variantCreateArgs.spaceDeleteGates, "space-delete-gate", []string{}, "delete gate key[=true] to set on the new space (repeatable); merged onto the delete gates copied from the upstream space")
+	variantCreateCmd.Flags().StringSliceVar(&variantCreateArgs.spaceDeleteGates, "space-delete-gate", []string{}, "delete gate key[=true] to set on the new space (repeatable); the upstream space's delete gates are not copied")
 	variantCreateCmd.Flags().StringSliceVar(&variantCreateArgs.unitDeleteGates, "unit-delete-gate", []string{}, "delete gate key[=true] to set on every cloned unit (repeatable); e.g. --unit-delete-gate critical to protect a prod variant")
 	variantCreateCmd.Flags().StringSliceVar(&variantCreateArgs.unitDestroyGates, "unit-destroy-gate", []string{}, "destroy gate key[=true] to set on every cloned unit (repeatable); destroy gates are unit-only (spaces have no destroy gates)")
 	variantCreateCmd.Flags().BoolVar(&variantCreateArgs.noArgoApp, "no-argo-app", false, "skip auto-creating the Argo CD Application, Sveltos ClusterProfile, or Flux OCIRepository and Kustomization, when --target is a cub-cluster target")
@@ -466,12 +470,13 @@ func cloneVariantSpace(variantName string, upstreamSpace *goclientnew.Space) (*g
 		params.AllowExists = &allowExistsStr
 	}
 
-	// Build the space patch. An empty patch ("null") copies all upstream
-	// fields unchanged; --space-label / --space-annotation / --space-delete-gate
-	// add a merge patch (via the shared EnhancePatchData) so the given keys are
-	// layered onto the copied labels/annotations/delete-gates (RFC 7386 merge —
-	// upstream keys survive). TargetID is reserved as a space annotation; --target
-	// sets it post-clone.
+	// Build the space patch. An empty patch ("null") copies the upstream
+	// fields other than its delete gates, which a clone never inherits;
+	// --space-label / --space-annotation add a merge patch (via the shared
+	// EnhancePatchData) so the given keys are layered onto the copied
+	// labels/annotations (RFC 7386 merge — upstream keys survive), and
+	// --space-delete-gate sets the clone's delete gates. TargetID is reserved
+	// as a space annotation; --target sets it post-clone.
 	for _, a := range variantCreateArgs.spaceAnnotations {
 		switch strings.SplitN(a, "=", 2)[0] {
 		case "TargetID":
@@ -548,8 +553,9 @@ func cloneVariantUnits(upstreamSpaceID, newSpaceID uuid.UUID, targetID, changese
 	}
 
 	// Build the unit merge patch via the shared EnhancePatchData, which
-	// layers --unit-label, --unit-annotation and --unit-delete-gate onto each
-	// clone's copied fields. The retarget (TargetID), --unit-destroy-gate,
+	// layers --unit-label and --unit-annotation onto each clone's copied
+	// fields and sets --unit-delete-gate as its delete gates (a clone never
+	// inherits the source Unit's gates). The retarget (TargetID), --unit-destroy-gate,
 	// --change-desc and --changeset are unit-specific fields EnhancePatchData
 	// doesn't model, so they go through the enhancer callback. The enhancer is
 	// nil when none applies, so a flagless clone keeps the prior "null" no-op

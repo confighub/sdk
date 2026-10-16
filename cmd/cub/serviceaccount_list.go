@@ -49,6 +49,7 @@ func init() {
 	enableContainsFlag(serviceAccountListCmd)
 	enableListPagingFlags(serviceAccountListCmd)
 	addStandardListDisplayFlags(serviceAccountListCmd)
+	enableViewFlag(serviceAccountListCmd)
 	serviceAccountCmd.AddCommand(serviceAccountListCmd)
 }
 
@@ -67,6 +68,7 @@ func serviceAccountListCmdRun(_ *cobra.Command, _ []string) error {
 		Filter:        filterID,
 		Contains:      contains,
 		IncludeHidden: includeHidden,
+		View:          listViewFor("cub serviceaccount list"),
 	})
 	if err != nil {
 		return err

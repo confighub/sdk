@@ -19,20 +19,20 @@ import (
 type FunctionContext struct {
 	ToolchainType     workerapi.ToolchainType `description:"ToolchainType of the configuration data and function handlers"`
 	UnitSlug          string                  `description:"Slug of the configuration Unit"`
-	UnitID            uuid.UUID               `description:"Unique ID of the configuration Unit"`
+	UnitID            uuid.UUID               `json:",omitempty,omitzero" description:"Unique ID of the configuration Unit"`
 	UnitLabels        map[string]string       `description:"Labels of the configuration Unit"`
 	UnitAnnotations   map[string]string       `description:"Annotations of the configuration Unit"`
-	SpaceID           uuid.UUID               `description:"ID of the Space of the configuration Unit"`
+	SpaceID           uuid.UUID               `json:",omitempty,omitzero" description:"ID of the Space of the configuration Unit"`
 	SpaceSlug         string                  `description:"Slug of the Space of the configuration Unit"`
 	SpaceLabels       map[string]string       `description:"Labels of the Space of the configuration Unit"`
 	SpaceAnnotations  map[string]string       `description:"Annotations of the Space of the configuration Unit"`
-	OrganizationID    uuid.UUID               `description:"ID of the Organization of the configuration Unit"`
-	TargetID          uuid.UUID               `json:",omitempty" description:"ID of the Unit's Target; optional"`
-	BridgeWorkerID    uuid.UUID               `json:",omitempty" description:"ID of the BridgeWorker that executes the function; optional; if not present, the function is executed by the Internal Function Executor"`
+	OrganizationID    uuid.UUID               `json:",omitempty,omitzero" description:"ID of the Organization of the configuration Unit"`
+	TargetID          uuid.UUID               `json:",omitempty,omitzero" description:"ID of the Unit's Target; optional"`
+	BridgeWorkerID    uuid.UUID               `json:",omitempty,omitzero" description:"ID of the BridgeWorker that executes the function; optional; if not present, the function is executed by the Internal Function Executor"`
 	TargetFacts       map[string]string       `json:",omitempty" description:"Facts of the Target where the function is executed; only populated when the Unit has a Target with non-empty Facts; optional"`
-	RevisionID        uuid.UUID               `description:"Unique ID of the configuration Revision"`
+	RevisionID        uuid.UUID               `json:",omitempty,omitzero" description:"Unique ID of the configuration Revision"`
 	RevisionNum       int64                   `description:"Current/previous HeadRevisionNum of the configuration Unit"`
-	QueuedOperationID uuid.UUID               `description:"Unique ID of the operation this function is executed under"`
+	QueuedOperationID uuid.UUID               `json:",omitempty,omitzero" description:"Unique ID of the operation this function is executed under"`
 	NotLive           bool                    `description:"True if the configuration has never been applied or has been destroyed; not set for Revision invocations"`
 	PreviousDataHash  DataHash                `json:",omitempty" description:"SHA256 hash of the previous copy of the data, for determining whether it has been changed since it was last written"`
 
@@ -277,13 +277,13 @@ func ParseAndValidateWhereResource(whereResource string) ([]*VisitorRelationalEx
 
 // FunctionIDs contains the IDs related to a function invocation.
 type FunctionIDs struct {
-	OrganizationID uuid.UUID `description:"ID of the Unit's Organization"`
-	SpaceID        uuid.UUID `description:"ID of the Unit's Space"`
+	OrganizationID uuid.UUID `json:",omitempty,omitzero" description:"ID of the Unit's Organization"`
+	SpaceID        uuid.UUID `json:",omitempty,omitzero" description:"ID of the Unit's Space"`
 	SpaceSlug      string    `json:",omitempty" description:"Slug of the Unit's Space"`
-	UnitID         uuid.UUID `description:"ID of the Unit the configuration data is associated with"`
+	UnitID         uuid.UUID `json:",omitempty,omitzero" description:"ID of the Unit the configuration data is associated with"`
 	UnitSlug       string    `json:",omitempty" description:"Slug of the Unit"`
-	RevisionID     uuid.UUID `description:"ID of the Revision the configuration data is associated with"`
-	TargetID       uuid.UUID `json:",omitempty" description:"ID of the Unit's Target; optional"`
+	RevisionID     uuid.UUID `json:",omitempty,omitzero" description:"ID of the Revision the configuration data is associated with"`
+	TargetID       uuid.UUID `json:",omitempty,omitzero" description:"ID of the Unit's Target; optional"`
 }
 
 // FunctionInvocationSuccessResponse contains the data returned from a successful function invocation.

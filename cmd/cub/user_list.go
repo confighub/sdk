@@ -51,6 +51,7 @@ var userCustomColumnDependencies = map[string][]string{}
 func init() {
 	addStandardListFlags(userListCmd)
 	enableListPagingFlags(userListCmd)
+	enableViewFlag(userListCmd)
 	userCmd.AddCommand(userListCmd)
 }
 
@@ -70,6 +71,7 @@ func userListCmdRun(cmd *cobra.Command, args []string) error {
 		Filter:        filterID,
 		Contains:      contains,
 		IncludeHidden: includeHidden,
+		View:          listViewFor("cub user list"),
 	})
 	if err != nil {
 		return err

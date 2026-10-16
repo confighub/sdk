@@ -4,8 +4,6 @@
 package main
 
 import (
-	"strings"
-
 	"github.com/google/uuid"
 	"github.com/spf13/cobra"
 
@@ -115,37 +113,22 @@ var resourceCustomColumnDependencies = map[string][]string{}
 // resourceListRawData requests each resource's original configuration.
 var resourceListRawData bool
 
-// resourceViewSlug names a View whose columns shape the output.
-var resourceViewSlug string
-
 func init() {
 	addStandardListFlags(resourceListCmd)
 	enableListPagingFlags(resourceListCmd)
 	resourceListCmd.Flags().BoolVar(&resourceListRawData, "raw-data", false,
 		"include each resource's configuration in its original form (YAML for Kubernetes), as RawData in --json output")
-	resourceListCmd.Flags().StringVar(&resourceViewSlug, "view", "",
-		"view slug or UUID whose columns to display; DataPath columns are read from the stored configuration")
+	enableViewFlag(resourceListCmd)
 	resourceCmd.AddCommand(resourceListCmd)
 }
 
 func resourceListCmdRun(cmd *cobra.Command, args []string) error {
-	// Resolve the view slug before any space promotion, since the view may live in a space that
-	// the slug has to be resolved against.
-	viewID := ""
-	if resourceViewSlug != "" {
-		viewUUID, viewErr := resolveViewID(resourceViewSlug)
-		if viewErr != nil {
-			return viewErr
-		}
-		viewID = viewUUID.String()
-	}
-
 	filterID, err := parseFilterFlag(filter)
 	if err != nil {
 		return err
 	}
 
-	extendedResources, err := apiListResources(selectedSpaceID, where, selectFields, filterID, viewID)
+	extendedResources, err := apiListResources(selectedSpaceID, where, selectFields, filterID)
 	if err != nil {
 		return err
 	}
@@ -169,12 +152,6 @@ func displayResourceList(resources []*goclientnew.ExtendedResource) {
 	if displayRequestedColumns(resources, resourceAliases, nil) {
 		return
 	}
-	// With a view active, its columns replace the default ones.
-	if resourceViewSlug != "" && len(resources) > 0 && resources[0].View != nil && len(resources[0].View.Columns) > 0 {
-		displayResourceViewColumns(resources)
-		return
-	}
-
 	table := tableView()
 	if !noheader {
 		table.SetHeader([]string{"Space", "Unit", "Target", "Type", "Name"})
@@ -210,38 +187,9 @@ func displayResourceList(resources []*goclientnew.ExtendedResource) {
 	table.Render()
 }
 
-// displayResourceViewColumns renders the table from the View's column definitions. A path that
-// selected several values produced several entries sharing a name, which are joined so that one
-// resource stays one row.
-func displayResourceViewColumns(resources []*goclientnew.ExtendedResource) {
-	view := resources[0].View
-	table := tableView()
-	if !noheader {
-		headers := make([]string, 0, len(view.Columns))
-		for _, col := range view.Columns {
-			headers = append(headers, col.Name)
-		}
-		table.SetHeader(headers)
-	}
-	for _, r := range resources {
-		values := make(map[string][]string, len(view.Columns))
-		for _, vc := range r.ViewColumns {
-			if vc.Value != "" {
-				values[vc.Name] = append(values[vc.Name], vc.Value)
-			}
-		}
-		row := make([]string, 0, len(view.Columns))
-		for _, col := range view.Columns {
-			row = append(row, strings.Join(values[col.Name], ", "))
-		}
-		table.Append(row)
-	}
-	table.Render()
-}
-
 // apiListResources lists resources via the org-level endpoint, scoped to a single space by a
 // SpaceID clause unless spaceID is "*" (list across all spaces).
-func apiListResources(spaceID string, whereFilter string, selectParam string, filterParam string, viewID string) ([]*goclientnew.ExtendedResource, error) {
+func apiListResources(spaceID string, whereFilter string, selectParam string, filterParam string) ([]*goclientnew.ExtendedResource, error) {
 	where := cubapi.NewWhere(whereFilter)
 	if spaceID != "*" {
 		where = where.SpaceID(goclientnew.UUID(uuid.MustParse(spaceID)))
@@ -257,12 +205,10 @@ func apiListResources(spaceID string, whereFilter string, selectParam string, fi
 		Filter:        filterParam,
 		Contains:      contains,
 		IncludeHidden: includeHidden,
+		View:          listViewFor("cub resource list"),
 	}, func(params *goclientnew.ListAllResourcesParams) {
 		if resourceListRawData {
 			params.RawData = &resourceListRawData
-		}
-		if viewID != "" {
-			params.View = &viewID
 		}
 	})
 }

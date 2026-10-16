@@ -82,6 +82,7 @@ func init() {
 	enableListPagingFlags(releaseListCmd)
 	releaseListCmd.Flags().StringVar(&releaseDistinctOn, "distinct-on", "",
 		`with --space "*", what to return at most one release per: Space, the default, or Off for every release that matches, which needs --where or --filter`)
+	enableViewFlag(releaseListCmd)
 	releaseCmd.AddCommand(releaseListCmd)
 }
 
@@ -281,6 +282,9 @@ func apiListReleases(spaceID string, whereFilter string, selectParam string, fil
 	if contains != "" {
 		newParams.Contains = &contains
 	}
+	if view := listViewFor("cub release list"); view != "" {
+		newParams.View = &view
+	}
 	if includeHidden != "" {
 		newParams.IncludeHidden = &includeHidden
 	}
@@ -317,6 +321,9 @@ func apiSearchListReleases(whereFilter string, selectParam string, filterParam s
 	}
 	if contains != "" {
 		newParams.Contains = &contains
+	}
+	if view := listViewFor("cub release list"); view != "" {
+		newParams.View = &view
 	}
 	if includeHidden != "" {
 		newParams.IncludeHidden = &includeHidden

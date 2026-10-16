@@ -82,6 +82,7 @@ func init() {
 	enableContainsFlag(componentListCmd)
 	enableListPagingFlags(componentListCmd)
 	addStandardListDisplayFlags(componentListCmd)
+	enableViewFlag(componentListCmd)
 	componentCmd.AddCommand(componentListCmd)
 }
 
@@ -100,6 +101,7 @@ func componentListCmdRun(_ *cobra.Command, _ []string) error {
 		Filter:        filterID,
 		Contains:      contains,
 		IncludeHidden: includeHidden,
+		View:          listViewFor("cub component list"),
 	})
 	if err != nil {
 		return err

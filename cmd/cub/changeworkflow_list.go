@@ -64,6 +64,7 @@ var changeWorkflowCustomColumnDependencies = map[string][]string{}
 func init() {
 	addStandardListFlags(changeworkflowListCmd)
 	enableListPagingFlags(changeworkflowListCmd)
+	enableViewFlag(changeworkflowListCmd)
 	changeworkflowCmd.AddCommand(changeworkflowListCmd)
 }
 
@@ -159,5 +160,6 @@ func apiListAllChangeWorkflows(where cubapi.Where, selectParam string, filterPar
 		Filter:        filterParam,
 		Contains:      contains,
 		IncludeHidden: includeHidden,
+		View:          listViewFor("cub changeworkflow list"),
 	})
 }

@@ -5,8 +5,6 @@ package main
 
 import (
 	"fmt"
-	"sort"
-	"strconv"
 	"strings"
 
 	"github.com/confighub/sdk/core/cubapi"
@@ -118,7 +116,6 @@ var columns []string
 var whereTrigger string
 var triggerFilter string
 var triggersPassed bool
-var viewSlug string
 
 // Default columns to display when --columns is not specified
 // var defaultUnitColumns = []string{"Name", "Space", "Target", "Status", "LastAction", "DataBytes", "HeadRevisionNum", "HeadMutationNum", "ValidationErrors", "LastChangeDescription"}
@@ -202,23 +199,13 @@ func init() {
 	unitListCmd.Flags().StringVar(&whereTrigger, "where-trigger", "", "where expression to match triggers for validation filtering")
 	unitListCmd.Flags().StringVar(&triggerFilter, "trigger-filter", "", "Filter UUID (with From=Trigger) for trigger validation filtering")
 	unitListCmd.Flags().BoolVar(&triggersPassed, "triggers-passed", false, "return units passing trigger validation (default: return failing units)")
-	unitListCmd.Flags().StringVar(&viewSlug, "view", "", "view slug or UUID to apply column definitions and optional filtering")
+	enableViewFlag(unitListCmd)
 	unitCmd.AddCommand(unitListCmd)
 }
 
 func unitListCmdRun(cmd *cobra.Command, args []string) error {
 	var err error
-
-	// Resolve view slug/UUID to a UUID before space promotion, since the view
-	// may reside in a specific space that we need to resolve the slug against.
-	viewID := ""
-	if viewSlug != "" {
-		viewUUID, viewErr := resolveViewID(viewSlug)
-		if viewErr != nil {
-			return viewErr
-		}
-		viewID = viewUUID.String()
-	}
+	viewID := listViewFor("cub unit list")
 
 	// Promote to org-level search when data/trigger/view filters are used with a specific space
 	if whereData != "" || whereTrigger != "" || triggerFilter != "" || viewID != "" {
@@ -262,155 +249,7 @@ func getExtendedUnitSlug(extendedUnit *goclientnew.ExtendedUnit) string {
 }
 
 func displayExtendedUnitList(units []*goclientnew.ExtendedUnit) {
-	cols := effectiveColumns()
-	// When a view is active and units have View metadata, display view columns
-	if viewSlug != "" && len(cols) == 0 && len(units) > 0 && units[0].View != nil && len(units[0].View.Columns) > 0 {
-		displayViewColumnList(units)
-		return
-	}
-	DisplayListGeneric(units, cols, defaultUnitColumns, unitAliases, unitCustomColumns)
-}
-
-// displayViewColumnList displays units using the View's column definitions.
-// It builds the table from ViewColumns data, sorts by GroupBy/OrderByDirection,
-// and handles numeric sorting for int columns.
-func displayViewColumnList(units []*goclientnew.ExtendedUnit) {
-	view := units[0].View
-	viewCols := view.Columns
-
-	// Build column name list for headers
-	colNames := make([]string, len(viewCols))
-	for i, col := range viewCols {
-		colNames[i] = col.Name
-	}
-
-	// Sort units by GroupBy/OrderByDirection columns
-	sortViewUnits(units, viewCols)
-
-	// Build table
-	table := tableView()
-	if !noheader {
-		table.SetHeader(colNames)
-	}
-
-	for _, eu := range units {
-		row := make([]string, len(viewCols))
-		for i, col := range viewCols {
-			row[i] = getViewColumnValue(eu, col.Name)
-		}
-		table.Append(row)
-	}
-
-	table.Render()
-}
-
-// getViewColumnValue finds the value of a named column from an ExtendedUnit's ViewColumns.
-func getViewColumnValue(eu *goclientnew.ExtendedUnit, name string) string {
-	for _, vc := range eu.ViewColumns {
-		if vc.Name == name {
-			return vc.Value
-		}
-	}
-	return ""
-}
-
-// sortViewUnits sorts units by the View's ordering columns.
-// Top-level GroupBy/OrderBy take priority, then column-level GroupBy/OrderByDirection in column order.
-// GroupBy implies ascending order unless OrderByDirection is specified.
-// Non-empty OrderByDirection implies ordering by that column.
-// Int columns are sorted numerically.
-func sortViewUnits(units []*goclientnew.ExtendedUnit, viewCols []goclientnew.Column) {
-	view := units[0].View
-
-	// Collect ordering columns in priority order
-	type orderCol struct {
-		name      string
-		ascending bool
-		isInt     bool
-	}
-	var orderCols []orderCol
-
-	// Helper to find a column's DataType by name
-	colDataType := func(name string) string {
-		for _, c := range viewCols {
-			if c.Name == name {
-				return c.DataType
-			}
-		}
-		return ""
-	}
-
-	// Top-level GroupBy takes first priority
-	if view.GroupBy != "" {
-		dir := view.OrderByDirection
-		if dir == "" {
-			dir = "ASC"
-		}
-		orderCols = append(orderCols, orderCol{
-			name: view.GroupBy, ascending: dir != "DESC", isInt: colDataType(view.GroupBy) == "int",
-		})
-	}
-
-	// Top-level OrderBy takes next priority (if different from GroupBy)
-	if view.OrderBy != "" && view.OrderBy != view.GroupBy {
-		dir := view.OrderByDirection
-		if dir == "" {
-			dir = "ASC"
-		}
-		orderCols = append(orderCols, orderCol{
-			name: view.OrderBy, ascending: dir != "DESC", isInt: colDataType(view.OrderBy) == "int",
-		})
-	}
-
-	// Column-level ordering follows, in column order
-	for _, col := range viewCols {
-		// Skip columns already handled by top-level
-		if col.Name == view.GroupBy || col.Name == view.OrderBy {
-			continue
-		}
-		dir := col.OrderByDirection
-		if col.GroupBy && dir == "" {
-			dir = "ASC"
-		}
-		if dir == "" {
-			continue
-		}
-		orderCols = append(orderCols, orderCol{
-			name:      col.Name,
-			ascending: dir != "DESC",
-			isInt:     col.DataType == "int",
-		})
-	}
-	if len(orderCols) == 0 {
-		return
-	}
-
-	sort.SliceStable(units, func(i, j int) bool {
-		for _, oc := range orderCols {
-			vi := getViewColumnValue(units[i], oc.name)
-			vj := getViewColumnValue(units[j], oc.name)
-			if vi == vj {
-				continue
-			}
-			less := false
-			if oc.isInt {
-				ni, ei := strconv.ParseInt(vi, 10, 64)
-				nj, ej := strconv.ParseInt(vj, 10, 64)
-				if ei == nil && ej == nil {
-					less = ni < nj
-				} else {
-					less = vi < vj
-				}
-			} else {
-				less = vi < vj
-			}
-			if oc.ascending {
-				return less
-			}
-			return !less
-		}
-		return false
-	})
+	DisplayListGeneric(units, effectiveColumns(), defaultUnitColumns, unitAliases, unitCustomColumns)
 }
 
 func apiListUnits(spaceID string, whereFilter string, selectParam string) ([]*goclientnew.Unit, error) {
@@ -457,6 +296,7 @@ func apiListAllUnits(where cubapi.Where, resourceType string, whereData string, 
 		Filter:        filterParam,
 		Contains:      contains,
 		IncludeHidden: includeHidden,
+		View:          viewParam,
 	}, func(p *goclientnew.ListAllUnitsParams) {
 		if resourceType != "" {
 			p.ResourceType = &resourceType
@@ -472,9 +312,6 @@ func apiListAllUnits(where cubapi.Where, resourceType string, whereData string, 
 		}
 		if triggersPassed {
 			p.TriggersPassed = &triggersPassed
-		}
-		if viewParam != "" {
-			p.View = &viewParam
 		}
 	})
 }

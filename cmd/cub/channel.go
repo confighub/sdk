@@ -19,6 +19,11 @@ declares and watches is set here, on the channel, not by the client that connect
 	PersistentPreRunE: spacePreRunE,
 }
 
+// buildWhereClauseFromChannels selects the channels named by slug or UUID.
+func buildWhereClauseFromChannels(channelIDs []string) (string, error) {
+	return buildWhereClauseFromIdentifiers(channelIDs, "ChannelID", "Slug")
+}
+
 func init() {
 	addSpaceFlags(channelCmd)
 	rootCmd.AddCommand(channelCmd)

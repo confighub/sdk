@@ -43,6 +43,7 @@ var attestationAliases = map[string]string{
 func init() {
 	addStandardListFlags(attestationListCmd)
 	enableListPagingFlags(attestationListCmd)
+	enableViewFlag(attestationListCmd)
 	attestationCmd.AddCommand(attestationListCmd)
 }
 
@@ -62,6 +63,7 @@ func attestationListCmdRun(cmd *cobra.Command, args []string) error {
 		Filter:        filterID,
 		Contains:      contains,
 		IncludeHidden: includeHidden,
+		View:          listViewFor("cub attestation list"),
 	})
 	if err != nil {
 		return err

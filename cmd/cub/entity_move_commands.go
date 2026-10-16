@@ -139,6 +139,22 @@ func init() {
 		},
 	})
 	addEntityMoveCommand(entityMove{
+		parent:         channelCmd,
+		entity:         "channel",
+		plural:         "channels",
+		identifierFlag: "channel",
+		about:          "Its command runs move with it. A channel a client holds the lease of is not moved: stop the client first.",
+		buildWhere:     buildWhereClauseFromChannels,
+		move: func(params entityMoveParams, body goclientnew.MoveRequest) (int, *[]goclientnew.MoveResponse, *[]goclientnew.MoveResponse, error) {
+			resp, err := cubClientNew.BulkMoveChannelsWithResponse(ctx, &goclientnew.BulkMoveChannelsParams{
+				IncludeHidden: includeHiddenParam(), Where: &params.where, Filter: params.filter, DryRun: params.dryRun}, body)
+			if cubapi.IsAPIError(err, resp) {
+				return 0, nil, nil, cubapi.InterpretErrorGeneric(err, resp)
+			}
+			return resp.StatusCode(), resp.JSON200, resp.JSON207, nil
+		},
+	})
+	addEntityMoveCommand(entityMove{
 		parent:         attributeCmd,
 		entity:         "attribute",
 		plural:         "attributes",

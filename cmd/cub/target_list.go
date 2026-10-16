@@ -42,6 +42,7 @@ var targetCustomColumnDependencies = map[string][]string{}
 func init() {
 	addStandardListFlags(targetListCmd)
 	enableListPagingFlags(targetListCmd)
+	enableViewFlag(targetListCmd)
 	targetCmd.AddCommand(targetListCmd)
 }
 
@@ -103,5 +104,6 @@ func apiListAllTargets(where cubapi.Where, selectParam string, filterParam strin
 		Filter:        filterParam,
 		Contains:      contains,
 		IncludeHidden: includeHidden,
+		View:          listViewFor("cub target list"),
 	})
 }

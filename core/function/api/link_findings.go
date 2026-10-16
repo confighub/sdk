@@ -29,13 +29,13 @@ const (
 // Findings are outstanding until the Link resolves cleanly or is deleted: each resolve of a
 // Link replaces the findings that carry its LinkID and leaves the others' alone.
 type LinkFinding struct {
-	LinkID   uuid.UUID         `description:"The Link whose resolve recorded the finding"`
+	LinkID   uuid.UUID         `json:",omitempty,omitzero" description:"The Link whose resolve recorded the finding"`
 	Reason   LinkFindingReason `description:"What the resolve could not do: NeededNotFound, ProvidedNotFound, or ResolveFailed"`
 	Resource ResourceInfo      `json:",omitzero" description:"The resource the finding is about, in the Unit Reason names; empty for a finding about the resolve as a whole"`
 	Path     ResolvedPath      `json:",omitempty" description:"The path the finding is about; empty for a resource-level finding"`
 	Key      string            `json:",omitempty" description:"The Key of the Link's entry the finding is about, when the entry has one"`
 	Entry    string            `json:",omitempty" description:"The Link's entry the finding is about, as its list and position, such as ManualBindings[0]"`
-	UnitID   uuid.UUID         `json:",omitzero" description:"The other Unit involved: the Link's upstream Unit"`
+	UnitID   uuid.UUID         `json:",omitzero,omitempty" description:"The other Unit involved: the Link's upstream Unit"`
 	Details  string            `json:",omitempty" description:"Explanation the Reason alone cannot carry, such as the error a failed resolve reported"`
 }
 

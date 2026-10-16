@@ -65,6 +65,7 @@ var tagCustomColumnDependencies = map[string][]string{}
 func init() {
 	addStandardListFlags(tagListCmd)
 	enableListPagingFlags(tagListCmd)
+	enableViewFlag(tagListCmd)
 	tagCmd.AddCommand(tagListCmd)
 }
 
@@ -149,5 +150,6 @@ func apiListAllTags(where cubapi.Where, selectParam string, filterParam string) 
 		Filter:        filterParam,
 		Contains:      contains,
 		IncludeHidden: includeHidden,
+		View:          listViewFor("cub tag list"),
 	})
 }

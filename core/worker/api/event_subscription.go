@@ -68,7 +68,7 @@ type EventLogEntry struct {
 	SubjectEntityType string `description:"Entity type the event is about."`
 
 	// SubjectEntityID is the id of the entity the event is about.
-	SubjectEntityID uuid.UUID `description:"Id of the entity the event is about."`
+	SubjectEntityID uuid.UUID `json:",omitempty,omitzero" description:"Id of the entity the event is about."`
 
 	// SpaceID is the event's Space scope, if any (UUID string).
 	SpaceID string `json:",omitempty" description:"Space scope, if any."`

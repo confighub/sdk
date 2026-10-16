@@ -511,6 +511,10 @@
       "Annotations": {
         "dataType": "map[string]string"
       },
+      "BackingUnitID": {
+        "dataType": "uuid",
+        "references": "Unit"
+      },
       "ChannelID": {
         "dataType": "uuid"
       },
@@ -568,6 +572,10 @@
       },
       "UpdatedAt": {
         "dataType": "time"
+      },
+      "UpstreamChannelID": {
+        "dataType": "uuid",
+        "references": "Channel"
       }
     },
     "CommandRun": {

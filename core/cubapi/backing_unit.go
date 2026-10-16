@@ -59,6 +59,13 @@ var backedEntityFinders = []backedEntityFinder{
 		}
 		return qualifiedName(found[0].Space, found[0].Filter.Slug), true, nil
 	}},
+	{"Channel", func(ctx context.Context, c *Client, where Where) (string, bool, error) {
+		found, err := ListChannels(ctx, c, where, bySpace)
+		if err != nil || len(found) == 0 || found[0].Channel == nil {
+			return "", false, err
+		}
+		return qualifiedName(found[0].Space, found[0].Channel.Slug), true, nil
+	}},
 	{"Invocation", func(ctx context.Context, c *Client, where Where) (string, bool, error) {
 		found, err := ListInvocations(ctx, c, where, bySpace)
 		if err != nil || len(found) == 0 || found[0].Invocation == nil {

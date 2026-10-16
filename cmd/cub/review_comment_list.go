@@ -57,6 +57,7 @@ func init() {
 	addStandardListFlags(reviewCommentListCmd)
 	enableListPagingFlags(reviewCommentListCmd)
 	enableOptionalSpace(reviewCommentListCmd)
+	enableViewFlag(reviewCommentListCmd)
 	reviewCommentCmd.AddCommand(reviewCommentListCmd)
 }
 
@@ -118,6 +119,9 @@ func apiListReviewComments(spaceID, unitID uuid.UUID, whereFilter string, select
 	}
 	if contains != "" {
 		params.Contains = &contains
+	}
+	if view := listViewFor("cub review-comment list"); view != "" {
+		params.View = &view
 	}
 	if includeHidden != "" {
 		params.IncludeHidden = &includeHidden

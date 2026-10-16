@@ -46,6 +46,7 @@ var channelCustomColumnDependencies = map[string][]string{}
 func init() {
 	addStandardListFlags(channelListCmd)
 	enableListPagingFlags(channelListCmd)
+	enableViewFlag(channelListCmd)
 	channelCmd.AddCommand(channelListCmd)
 }
 
@@ -78,6 +79,7 @@ func apiListChannels(spaceID string, whereFilter string, selectParam string, fil
 		Filter:        filterParam,
 		Contains:      contains,
 		IncludeHidden: includeHidden,
+		View:          listViewFor("cub channel list"),
 	})
 }
 

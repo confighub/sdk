@@ -131,5 +131,6 @@ func displayExtendedSpaceDetails(extendedSpace *goclientnew.ExtendedSpace) {
 	view.Append([]string{"# Targets", fmt.Sprintf("%d", extendedSpace.TotalTargetCount)})
 	view.Append([]string{"# Triggers", fmt.Sprintf("%d", totalCountMap(extendedSpace.TriggerCountByEventType))})
 	view.Append([]string{"# Attributes", fmt.Sprintf("%d", extendedSpace.TotalAttributeCount)})
+	view.Append([]string{"# Channels", fmt.Sprintf("%d", extendedSpace.TotalChannelCount)})
 	view.Render()
 }

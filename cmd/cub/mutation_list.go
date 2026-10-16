@@ -79,6 +79,7 @@ func init() {
 	addStandardListFlags(mutationListCmd)
 	enableListPagingFlags(mutationListCmd)
 	enableOptionalSpace(mutationListCmd)
+	enableViewFlag(mutationListCmd)
 	mutationCmd.AddCommand(mutationListCmd)
 }
 
@@ -205,6 +206,9 @@ func apiListMutations(spaceID string, unitID string, whereFilter string, selectP
 	}
 	if contains != "" {
 		newParams.Contains = &contains
+	}
+	if view := listViewFor("cub mutation list"); view != "" {
+		newParams.View = &view
 	}
 	if includeHidden != "" {
 		newParams.IncludeHidden = &includeHidden

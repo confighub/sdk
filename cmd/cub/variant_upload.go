@@ -124,6 +124,10 @@ Space slug comes from --space-pattern (a Go template over .Labels), or from --sp
 set it explicitly. --unit-label and --unit-annotation set labels and annotations on
 every written Unit.
 
+A Space is a Variant of one Component. An upload into a Space that is already a Variant
+of a different Component is refused, dry run included, rather than moving the Space; to
+move it on purpose, run "cub space update --patch <space> --component <component>" first.
+
 --owner sets the Owner label of the Component, not of the Space, once the upload has
 succeeded. A Component's owner is its own Owner label, or else the Owner label all of
 its Spaces share. When the Component already has a different owner, the upload is

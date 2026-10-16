@@ -162,6 +162,23 @@ func init() {
 		},
 	})
 	addEntityRenameCommand(entityRename{
+		parent: channelCmd,
+		entity: "channel",
+		about:  "A bot or caller that names the channel by its old name no longer finds it.",
+		resolve: func(ref string) (*renamedEntity, error) {
+			d, err := resolveChannel(ref, selectedSpaceID, "ChannelID,Slug,DisplayName,SpaceID")
+			if err != nil {
+				return nil, err
+			}
+			return &renamedEntity{spaceID: d.Channel.SpaceID, id: d.Channel.ChannelID, slug: d.Channel.Slug, displayName: d.Channel.DisplayName}, nil
+		},
+		patch: func(e *renamedEntity, patch []byte) (any, error) {
+			res, err := cubClientNew.PatchChannelWithBodyWithResponse(ctx, e.spaceID, e.id,
+				&goclientnew.PatchChannelParams{DryRun: dryRunParam()}, mergePatchContentType, bytes.NewReader(patch))
+			return patchedEntity(res, err, func(r *goclientnew.PatchChannelResponse) *goclientnew.Channel { return r.JSON200 })
+		},
+	})
+	addEntityRenameCommand(entityRename{
 		parent: tagCmd,
 		entity: "tag",
 		about: "A tag that a changeset or changeorder made is named after it, and renaming the\n" +

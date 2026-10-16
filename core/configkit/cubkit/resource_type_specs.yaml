@@ -66,6 +66,34 @@ resourceTypes:
     path: AttestationPrerequisites
   scope: Space
   type: ChangeWorkflow
+- applyPriority: 500
+  listTypes:
+  - path: Commands.*.Options.*.Choices
+    type: atomic
+  - path: Subscriptions
+    type: atomic
+  mapKeyPaths:
+  - DeleteGates.*
+  - Labels.*
+  - Annotations.*
+  - Permissions.*
+  - Permissions.*.UserIDs.*
+  - Permissions.*.GroupIDs.*
+  - Commands.*
+  - Commands.*.Options.*.Schema.definitions.*
+  - Commands.*.Options.*.Schema.properties.*
+  - Commands.*.Options.*.Schema.patternProperties.*
+  - Commands.*.Options.*.Schema.dependencies.*
+  - Commands.*.Returns.definitions.*
+  - Commands.*.Returns.properties.*
+  - Commands.*.Returns.patternProperties.*
+  - Commands.*.Returns.dependencies.*
+  - Commands.*.Attributes.*
+  mergeKeys:
+  - key: Name
+    path: Commands.*.Options
+  scope: Space
+  type: Channel
 - applyPriority: 100
   attributes:
     resource-name:
@@ -86,6 +114,8 @@ resourceTypes:
   type: Component
 - applyPriority: 200
   attributes:
+    immutable:
+    - path: From
     resource-name:
     - optional: true
       path: FromSpace

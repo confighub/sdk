@@ -109,11 +109,11 @@ func ValidateActionResultBaseMeta(arbm *ActionResultBaseMeta) error {
 
 // ActionResult is a result of action from the Bridgeworker
 type ActionResult struct {
-	UnitID  uuid.UUID `description:"UUID of the Unit on which the action is performed"`
-	SpaceID uuid.UUID `description:"UUID of the Space of the Unit on which the action is performed"`
+	UnitID  uuid.UUID `json:",omitempty,omitzero" description:"UUID of the Unit on which the action is performed"`
+	SpaceID uuid.UUID `json:",omitempty,omitzero" description:"UUID of the Space of the Unit on which the action is performed"`
 	// OrganizationID comes from the worker
 	// QueuedOperationID links this result back to the original operation request.
-	QueuedOperationID uuid.UUID `description:"UUID of the operation corresponding to the action request"`
+	QueuedOperationID uuid.UUID `json:",omitempty,omitzero" description:"UUID of the operation corresponding to the action request"`
 	ActionResultBaseMeta
 	Data []byte `json:",omitempty" swaggertype:"string" format:"byte" description:"Updated configuration Data of the Unit (for refresh and import)"`
 	// ErrorMessages contains warning or error messages to surface to the user.

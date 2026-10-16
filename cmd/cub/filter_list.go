@@ -85,6 +85,7 @@ func init() {
 	filterListCmd.Flags().StringVar(&entityType, "entity-type", "", "Entity type to filter for (e.g., Space). Must be specified together with --entity-id.")
 	filterListCmd.Flags().StringVar(&entityID, "entity-id", "", "Entity ID or slug to filter for. Must be specified together with --entity-type.")
 
+	enableViewFlag(filterListCmd)
 	filterCmd.AddCommand(filterListCmd)
 }
 
@@ -188,6 +189,7 @@ func apiListAllFilters(where cubapi.Where, selectParam string) ([]*goclientnew.E
 		Include:       filterListInclude,
 		Contains:      contains,
 		IncludeHidden: includeHidden,
+		View:          listViewFor("cub filter list"),
 	}, with...)
 }
 
@@ -198,7 +200,7 @@ func validateEntityParameters() error {
 	}
 
 	if entityType != "" {
-		supportedTypes := []string{"Space", "Filter", "View", "Invocation", "Trigger", "Tag", "ChangeSet", "ChangeOrder", "ChangeWorkflow", "Target", "BridgeWorker", "Unit", "Link", "Set"}
+		supportedTypes := []string{"Space", "Component", "ServiceAccount", "Filter", "View", "Invocation", "Trigger", "Tag", "ChangeSet", "ChangeOrder", "ChangeWorkflow", "Target", "BridgeWorker", "Unit", "Link", "Attribute", "Channel"}
 		found := false
 		for _, supported := range supportedTypes {
 			if entityType == supported {
@@ -214,7 +216,7 @@ func validateEntityParameters() error {
 }
 
 // parseEntityIdentifierForFilter parses a single entity identifier for both organization-level and space-resident entities
-// Supports: Space (organization-level) and all space-resident entities
+// Supports: Space, Component and ServiceAccount (organization-level) and the space-resident entities
 func parseEntityIdentifierForFilter(
 	identifier string,
 	entityType string,
@@ -232,6 +234,20 @@ func parseEntityIdentifierForFilter(
 			return "", "", fmt.Errorf("failed to resolve Space %s: %w", identifier, err)
 		}
 		return entityType, space.Space.SpaceID.String(), nil
+
+	case "Component":
+		componentUUID, err := resolveComponentID(identifier)
+		if err != nil {
+			return "", "", fmt.Errorf("failed to resolve Component %s: %w", identifier, err)
+		}
+		return entityType, componentUUID.String(), nil
+
+	case "ServiceAccount":
+		serviceAccount, err := resolveServiceAccount(identifier, "ServiceAccountID,Slug")
+		if err != nil {
+			return "", "", fmt.Errorf("failed to resolve ServiceAccount %s: %w", identifier, err)
+		}
+		return entityType, serviceAccount.ServiceAccount.ServiceAccountID.String(), nil
 
 	case "Filter":
 		filterUUID, err := resolveFilterID(identifier)
@@ -323,6 +339,13 @@ func parseEntityIdentifierForFilter(
 			return "", "", fmt.Errorf("failed to resolve Attribute %s: %w", identifier, err)
 		}
 		return entityType, attributeUUID.String(), nil
+
+	case "Channel":
+		channelUUID, err := resolveChannelID(identifier)
+		if err != nil {
+			return "", "", fmt.Errorf("failed to resolve Channel %s: %w", identifier, err)
+		}
+		return entityType, channelUUID.String(), nil
 
 	default:
 		return "", "", fmt.Errorf("unsupported entity type: %s", entityType)

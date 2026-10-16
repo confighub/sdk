@@ -490,7 +490,12 @@ func displayListResults[Entity ModelConstraint](entities []*Entity, getSlug func
 	alt := isAlternativeOutput()
 
 	if (!quiet || verbose) && !alt {
-		display(entities)
+		// The columns --view names replace the list's own, unless columns are requested.
+		if listView != nil && len(effectiveColumns()) == 0 {
+			displayViewColumns(entities, listView)
+		} else {
+			display(entities)
+		}
 	}
 	if spec.Kind == OutputName && getSlug != nil {
 		// Don't print as table. Extra whitespace makes the output harder to use in scripts.

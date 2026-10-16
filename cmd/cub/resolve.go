@@ -210,6 +210,14 @@ func resolveFilterID(ref string) (uuid.UUID, error) {
 	return filter.Filter.FilterID, nil
 }
 
+func resolveChannelID(ref string) (uuid.UUID, error) {
+	channel, err := resolveChannel(ref, defaultSpaceID(), idSelect("ChannelID"))
+	if err != nil {
+		return uuid.Nil, err
+	}
+	return channel.Channel.ChannelID, nil
+}
+
 func resolveViewID(ref string) (uuid.UUID, error) {
 	view, err := resolveView(ref, defaultSpaceID(), idSelect("ViewID"))
 	if err != nil {

@@ -95,6 +95,7 @@ func init() {
 	revisionListCmd.Flags().StringVar(&revisionChangeOrderSlug, "change-order", "", "filter revisions by change order slug, space/slug, or UUID: the revisions the change landed on, in whichever space they are in")
 	revisionListCmd.Flags().StringVar(&revisionChangeSetStartTag, "changeset-starttag", "", "filter revisions by changeset start tag slug or UUID")
 	revisionListCmd.Flags().StringVar(&revisionChangeSetEndTag, "changeset-endtag", "", "filter revisions by changeset end tag slug or UUID")
+	enableViewFlag(revisionListCmd)
 	revisionCmd.AddCommand(revisionListCmd)
 }
 
@@ -404,6 +405,9 @@ func apiListRevisions(spaceID string, unitID string, whereFilter string, selectP
 	if contains != "" {
 		newParams.Contains = &contains
 	}
+	if view := listViewFor("cub revision list"); view != "" {
+		newParams.View = &view
+	}
 	if includeHidden != "" {
 		newParams.IncludeHidden = &includeHidden
 	}
@@ -452,6 +456,9 @@ func apiSearchListRevisions(whereFilter string, selectParam string, filterParam 
 	}
 	if contains != "" {
 		newParams.Contains = &contains
+	}
+	if view := listViewFor("cub revision list"); view != "" {
+		newParams.View = &view
 	}
 	if includeHidden != "" {
 		newParams.IncludeHidden = &includeHidden

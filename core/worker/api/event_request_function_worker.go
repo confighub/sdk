@@ -22,7 +22,7 @@ type FunctionWorkerEventRequest struct {
 // FunctionWorkerPayload holds the specific data for a function worker request.
 type FunctionWorkerPayload struct {
 	// QueuedOperationID is the identifier of the original queued operation request.
-	QueuedOperationID uuid.UUID `description:"QueuedOperationID is the identifier of the original queued operation request."`
+	QueuedOperationID uuid.UUID `json:",omitempty,omitzero" description:"QueuedOperationID is the identifier of the original queued operation request."`
 
 	// InvocationRequest encapsulates the full request for invoking one or more functions,
 	// including context, configuration data, function calls, and execution options.

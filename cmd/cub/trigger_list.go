@@ -91,6 +91,7 @@ var triggerCustomColumnDependencies = map[string][]string{}
 func init() {
 	addStandardListFlags(triggerListCmd)
 	enableListPagingFlags(triggerListCmd)
+	enableViewFlag(triggerListCmd)
 	triggerCmd.AddCommand(triggerListCmd)
 }
 
@@ -180,5 +181,6 @@ func apiListAllTriggers(where cubapi.Where, selectParam string, filterParam stri
 		Filter:        filterParam,
 		Contains:      contains,
 		IncludeHidden: includeHidden,
+		View:          listViewFor("cub trigger list"),
 	})
 }

@@ -213,7 +213,7 @@ type MutationConflict struct {
 	// unit for upgrade/merge, or the link target for resolve). Set by the
 	// caller after PatchMutations returns; PatchMutations itself doesn't know
 	// about ConfigHub units. Zero when not set or not applicable.
-	UnitID uuid.UUID `json:",omitempty" description:"ID of the other unit involved in the conflict (upstream for upgrade/merge, link target for resolve)"`
+	UnitID uuid.UUID `json:",omitempty,omitzero" description:"ID of the other unit involved in the conflict (upstream for upgrade/merge, link target for resolve)"`
 	// Details carries text the Reason alone cannot: which invocation failed and what it
 	// reported, for ReplayFailed. The path-level reasons need no explanation beyond Reason,
 	// Resource, and Path, and leave this empty.

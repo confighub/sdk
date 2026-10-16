@@ -85,6 +85,7 @@ var linkCustomColumnDependencies = map[string][]string{}
 func init() {
 	addStandardListFlags(linkListCmd)
 	enableListPagingFlags(linkListCmd)
+	enableViewFlag(linkListCmd)
 	linkCmd.AddCommand(linkListCmd)
 }
 
@@ -200,5 +201,6 @@ func apiListAllLinks(where cubapi.Where, selectParam string, filterParam string)
 		Filter:        filterParam,
 		Contains:      contains,
 		IncludeHidden: includeHidden,
+		View:          listViewFor("cub link list"),
 	})
 }

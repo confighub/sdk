@@ -15,7 +15,10 @@ var channelDeleteCmd = &cobra.Command{
 	Use:   "delete [<name or id>]",
 	Short: "Delete a channel or multiple channels",
 	Args:  cobra.MaximumNArgs(1),
-	Long: getCommandHelp(`Delete a Channel. With no name, delete every channel --where selects.
+	Long: getCommandHelp(`Delete a Channel, with its command runs. With no name, delete every channel --where selects.
+
+A Channel with a run still in flight is not deleted: cancel its Pending runs with
+`+"`cub commandrun cancel`"+`, and wait for its Delivered runs to complete or time out.
 
 Examples:
 `+"```"+`
