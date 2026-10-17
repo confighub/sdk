@@ -57,7 +57,7 @@ func init() {
 	componentUpdateCmd.Flags().BoolVar(&isPatch, "patch", false, "use patch API")
 	componentUpdateCmd.Flags().StringSliceVar(&componentUpdateArgs.permissions, "permission", []string{}, permissionUpdateHelp)
 	componentUpdateCmd.Flags().StringSliceVar(&componentUpdateArgs.allowedChangeWorkflows, "allowed-change-workflow", []string{}, "ChangeWorkflow, as <space>/<slug> or UUID, to allow, or -<ChangeWorkflow> to stop allowing (can be repeated or comma-separated)")
-	componentUpdateCmd.Flags().BoolVar(&componentUpdateArgs.changeWorkflowRequired, "change-workflow-required", false, "require a ChangeWorkflow to promote and release")
+	componentUpdateCmd.Flags().BoolVar(&componentUpdateArgs.changeWorkflowRequired, "change-workflow-required", false, "require a ChangeWorkflow to promote and release, and to open a changeset on the variants' units")
 	enableWhereFlag(componentUpdateCmd)
 	addBackingUnitFlags(componentUpdateCmd, "Component", true, false)
 	addFromBackingUnitsFlags(componentUpdateCmd, "Component", false)

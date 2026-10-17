@@ -23,6 +23,7 @@ var applyArgs struct {
 	dryRun           bool
 	prune            bool
 	backingUnitSpace string
+	changeWorkflow   string
 }
 
 var applyCmd = &cobra.Command{
@@ -81,6 +82,7 @@ func init() {
 	applyCmd.Flags().BoolVar(&applyArgs.adopt, "adopt", false, "take over entities another source owns")
 	applyCmd.Flags().BoolVar(&applyArgs.dryRun, "dry-run", false, "report what would be created and updated, and change nothing")
 	applyCmd.Flags().BoolVar(&applyArgs.prune, "prune", false, "take the documents given as all the source's, and delete the entities it applied before whose documents are not among them")
+	applyCmd.Flags().StringVar(&applyArgs.changeWorkflow, "change-workflow", "", "ChangeWorkflow (slug, space/slug, or UUID) governing the changeset the writes are recorded in, which a space whose Component requires one needs; a governed changeset is left open, since closing it is gated")
 	applyCmd.Flags().StringVar(&applyArgs.backingUnitSpace, "backing-unit-space", "", "space, by slug, for the backing Unit of a Space document, which is in no space of its own; required with one")
 	rootCmd.AddCommand(applyCmd)
 }
@@ -113,6 +115,13 @@ func applyCmdRun(cmd *cobra.Command, args []string) error {
 			Adopt:            applyArgs.adopt,
 			BackingUnitSpace: applyArgs.backingUnitSpace,
 		}},
+	}
+	if applyArgs.changeWorkflow != "" {
+		changeWorkflowID, err := resolveChangeWorkflowID(applyArgs.changeWorkflow)
+		if err != nil {
+			return fmt.Errorf("failed to resolve --change-workflow: %w", err)
+		}
+		req.ChangeWorkflowID = &changeWorkflowID
 	}
 	var with []func(*goclientnew.UploadParams)
 	showMutations := shouldDisplayMutations()

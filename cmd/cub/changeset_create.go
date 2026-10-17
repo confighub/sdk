@@ -35,6 +35,12 @@ Examples:
   # Create a changeset
   cub changeset create --space my-space hotfix-changeset --description "Hotfix changes"
 
+  # Create a changeset and ask alice to review it
+  cub changeset create --space my-space hotfix-changeset --request-review alice
+
+  # Create a changeset whose closing is gated by a ChangeWorkflow with no stages
+  cub changeset create --space my-space hotfix-changeset --change-workflow platform/changeset-review
+
   # Create a changeset from JSON
   cub changeset create --space my-space -o json my-changeset --from-stdin < changeset.json
 ` + "```" + `
@@ -72,6 +78,7 @@ var changesetCreateArgs struct {
 	filterSpace    string
 	variantLabels  []string
 	namePattern    string
+	changeWorkflow string
 }
 
 func init() {
@@ -82,6 +89,8 @@ func init() {
 
 	// Single create specific flags
 	changesetCreateCmd.Flags().StringVar(&changesetCreateArgs.description, "description", "", "human-readable description of the change")
+	enableChangeSetRequestReviewFlag(changesetCreateCmd)
+	changesetCreateCmd.Flags().StringVar(&changesetCreateArgs.changeWorkflow, "change-workflow", "", "identifier (slug, space/slug, or UUID) of the ChangeWorkflow whose Final gates closing the changeset; it must have no stages, and cannot be changed later")
 
 	// Bulk create specific flags
 	changesetCreateCmd.Flags().StringSliceVar(&changesetCreateArgs.destSpaces, "dest-space", []string{}, "destination spaces for bulk create (can be repeated or comma-separated)")
@@ -123,6 +132,12 @@ func checkChangeSetCreateConflictingArgs(args []string) (bool, error) {
 
 		if changesetCreateArgs.namePattern != "" && len(changesetCreateArgs.variantLabels) == 0 {
 			return false, errors.New("--name-pattern requires --variant-labels to be set")
+		}
+		if len(requestReviewFlags) > 0 {
+			return false, errors.New("--request-review can only be used with single changeset creation")
+		}
+		if changesetCreateArgs.changeWorkflow != "" {
+			return false, errors.New("--change-workflow can only be used with single changeset creation")
 		}
 	} else {
 		// Single create mode validation
@@ -206,6 +221,21 @@ func runSingleChangeSetCreate(args []string) error {
 	// Set description if provided
 	if changesetCreateArgs.description != "" {
 		newBody.Description = changesetCreateArgs.description
+	}
+	if len(requestReviewFlags) > 0 {
+		requests, err := applyChangeSetReviewRequestFlags(newBody.ReviewRequests)
+		if err != nil {
+			return err
+		}
+		newBody.ReviewRequests = requests
+	}
+
+	if changesetCreateArgs.changeWorkflow != "" {
+		changeWorkflow, err := resolveChangeWorkflow(changesetCreateArgs.changeWorkflow, defaultSpaceID(), "*")
+		if err != nil {
+			return errors.Wrap(err, "failed to parse change-workflow")
+		}
+		newBody.ChangeWorkflowID = &changeWorkflow.ChangeWorkflow.ChangeWorkflowID
 	}
 
 	// Create params with AllowExists if needed

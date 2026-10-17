@@ -4,6 +4,10 @@
 package main
 
 import (
+	"fmt"
+	"strings"
+	"time"
+
 	goclientnew "github.com/confighub/sdk/core/openapi/goclient-new"
 	"github.com/spf13/cobra"
 )
@@ -70,6 +74,9 @@ func displayExtendedChangeSetDetails(extendedChangeSet *goclientnew.ExtendedChan
 	}
 
 	view.Append([]string{"Created At", changesetDetails.CreatedAt.String()})
+	if changesetDetails.UserID != nil {
+		view.Append([]string{"Created By ID", changesetDetails.UserID.String()})
+	}
 	view.Append([]string{"Updated At", changesetDetails.UpdatedAt.String()})
 	view.Append([]string{"Labels", labelsToString(changesetDetails.Labels)})
 	view.Append([]string{"Delete Gates", deleteGatesToString(changesetDetails.DeleteGates)})
@@ -85,6 +92,21 @@ func displayExtendedChangeSetDetails(extendedChangeSet *goclientnew.ExtendedChan
 	}
 	if changesetDetails.Description != "" {
 		view.Append([]string{"Description", changesetDetails.Description})
+	}
+	if len(changesetDetails.ReviewRequests) > 0 {
+		view.Append([]string{"Review Requests", changeSetReviewRequestsSummary(changesetDetails.ReviewRequests)})
+	}
+	if changesetDetails.ChangeWorkflowID != nil {
+		view.Append([]string{"Change Workflow ID", changesetDetails.ChangeWorkflowID.String()})
+	}
+	if changesetDetails.ChangeWorkflow != nil && len(changesetDetails.ChangeWorkflow.Final.Prerequisites) > 0 {
+		view.Append([]string{"Close Prerequisites", strings.Join(changesetDetails.ChangeWorkflow.Final.Prerequisites, ", ")})
+	}
+	if len(changesetDetails.InScopeSpaceIDs) > 0 {
+		view.Append([]string{"In Scope Spaces", fmt.Sprintf("%d", len(changesetDetails.InScopeSpaceIDs))})
+	}
+	if override := changesetDetails.CloseOverride; override != nil {
+		view.Append([]string{"Close Forced", fmt.Sprintf("by %s at %s: %s", override.UserID, override.OverriddenAt.Format(time.RFC3339), override.Reason)})
 	}
 
 	view.Render()

@@ -5758,7 +5758,7 @@
           {
             "name": "where",
             "in": "query",
-            "description": "The specified string is an expression for the purpose of filtering\nthe list of ChangeSets returned. The expression syntax was inspired by SQL.\nIt supports conjunctions using `AND` of relational expressions of the form *attribute*\n*operator* *attribute_or_literal*. The attribute names are case-sensitive and PascalCase,\nas in the JSON encoding.\nStrings support the following operators: `\u003c`, `\u003e`, `\u003c=`, `\u003e=`, `=`, `!=`, `LIKE`, `NOT LIKE`, `ILIKE`, `~~`, `!~~`, `~`, `~*`, `!~`, `!~*`, `IN`, `NOT IN`.\nString pattern operators: `LIKE` and `~~` for pattern matching with `%` and `_` wildcards,\n`ILIKE` for case-insensitive pattern matching, `NOT LIKE` and `!~~` for negated pattern matching.\nString regex operators: `~` for regex matching, `~*` for case-insensitive regex,\n`!~` and `!~*` for regex not matching (case-sensitive and insensitive).\nIntegers support the following operators: `\u003c`, `\u003e`, `\u003c=`, `\u003e=`, `=`, `!=`, `IN`, `NOT IN`.\nUUIDs and boolean attributes support equality and inequality only.\nUUID and time literals must be quoted as string literals.\nString literals are quoted with single quotes, such as `'string'`.\nTime literals use the same form as when serialized as JSON,\nsuch as: `CreatedAt \u003e '2025-02-18T23:16:34'`.\nInteger and boolean literals are also supported for attributes of those types.\nArrays support the `?` operator to to match any element of the array,\nas in `FromLinkID ? '7c61626f-ddbe-41af-93f6-b69f4ab6d308'`.\nArrays can perform LEN() to check for length, as in `LEN(FromLinkID) \u003e 0`.\nAn attribute naming a list of other entities can be filtered on their attributes with a `*` segment,\nas in `FromLink.*.Slug = 'upgrade-app'`, which holds when any element satisfies it.\nWithout the `*` such a reference is an error, since it names no single value to compare.\nMap support the dot notation to specify a particular map key, as in `Labels.tier = 'Backend'`.\nMaps support `IS NULL` and `IS NOT NULL` with dot notation to check for key absence or presence,\nas in `Labels.tier IS NULL` (key doesn't exist) or `Labels.tier IS NOT NULL` (key exists).\nComparison results can be tested with `IS TRUE`, `IS FALSE`, `IS NOT TRUE`, and `IS NOT FALSE`.\nThese are useful for nullable columns: `MergeSourceID = '\u003cuuid\u003e' IS NOT FALSE` matches rows where MergeSourceID equals the value OR is NULL.\nThe `IN` and `NOT IN` operators accept a comma-separated list of values in parentheses,\nsuch as `Slug IN ('slugone', 'slugtwo')` or `Labels.environment IN ('prod', 'staging')`.\nConjunctions are supported using the `AND` operator.\nAn example conjunction is:\n`CreatedAt \u003e= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.\n\nSupported attributes for filtering on ChangeSet: Annotations, ChangeSetID, CreatedAt, DeleteGates, Description, DisplayName, EndTagID, HiddenReason, Labels, OrganizationID, Permissions, Slug, SpaceID, StartTagID, StartTagIsPriorRevision, State, UpdatedAt.\n\nThe whole string must be query-encoded.",
+            "description": "The specified string is an expression for the purpose of filtering\nthe list of ChangeSets returned. The expression syntax was inspired by SQL.\nIt supports conjunctions using `AND` of relational expressions of the form *attribute*\n*operator* *attribute_or_literal*. The attribute names are case-sensitive and PascalCase,\nas in the JSON encoding.\nStrings support the following operators: `\u003c`, `\u003e`, `\u003c=`, `\u003e=`, `=`, `!=`, `LIKE`, `NOT LIKE`, `ILIKE`, `~~`, `!~~`, `~`, `~*`, `!~`, `!~*`, `IN`, `NOT IN`.\nString pattern operators: `LIKE` and `~~` for pattern matching with `%` and `_` wildcards,\n`ILIKE` for case-insensitive pattern matching, `NOT LIKE` and `!~~` for negated pattern matching.\nString regex operators: `~` for regex matching, `~*` for case-insensitive regex,\n`!~` and `!~*` for regex not matching (case-sensitive and insensitive).\nIntegers support the following operators: `\u003c`, `\u003e`, `\u003c=`, `\u003e=`, `=`, `!=`, `IN`, `NOT IN`.\nUUIDs and boolean attributes support equality and inequality only.\nUUID and time literals must be quoted as string literals.\nString literals are quoted with single quotes, such as `'string'`.\nTime literals use the same form as when serialized as JSON,\nsuch as: `CreatedAt \u003e '2025-02-18T23:16:34'`.\nInteger and boolean literals are also supported for attributes of those types.\nArrays support the `?` operator to to match any element of the array,\nas in `FromLinkID ? '7c61626f-ddbe-41af-93f6-b69f4ab6d308'`.\nArrays can perform LEN() to check for length, as in `LEN(FromLinkID) \u003e 0`.\nAn attribute naming a list of other entities can be filtered on their attributes with a `*` segment,\nas in `FromLink.*.Slug = 'upgrade-app'`, which holds when any element satisfies it.\nWithout the `*` such a reference is an error, since it names no single value to compare.\nMap support the dot notation to specify a particular map key, as in `Labels.tier = 'Backend'`.\nMaps support `IS NULL` and `IS NOT NULL` with dot notation to check for key absence or presence,\nas in `Labels.tier IS NULL` (key doesn't exist) or `Labels.tier IS NOT NULL` (key exists).\nComparison results can be tested with `IS TRUE`, `IS FALSE`, `IS NOT TRUE`, and `IS NOT FALSE`.\nThese are useful for nullable columns: `MergeSourceID = '\u003cuuid\u003e' IS NOT FALSE` matches rows where MergeSourceID equals the value OR is NULL.\nThe `IN` and `NOT IN` operators accept a comma-separated list of values in parentheses,\nsuch as `Slug IN ('slugone', 'slugtwo')` or `Labels.environment IN ('prod', 'staging')`.\nConjunctions are supported using the `AND` operator.\nAn example conjunction is:\n`CreatedAt \u003e= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.\n\nSupported attributes for filtering on ChangeSet: Annotations, ChangeSetID, ChangeWorkflow, ChangeWorkflowID, CloseOverride, CreatedAt, DeleteGates, Description, DisplayName, EndTagID, HiddenReason, InScopeSpaceIDs, Labels, OrganizationID, Permissions, ReviewRequests, Slug, SpaceID, StartTagID, StartTagIsPriorRevision, State, UpdatedAt, UserID.\n\nThe whole string must be query-encoded.",
             "required": false,
             "schema": {
               "type": "string"
@@ -5960,7 +5960,7 @@
           {
             "name": "where",
             "in": "query",
-            "description": "The specified string is an expression for the purpose of filtering\nthe list of ChangeSets returned. The expression syntax was inspired by SQL.\nIt supports conjunctions using `AND` of relational expressions of the form *attribute*\n*operator* *attribute_or_literal*. The attribute names are case-sensitive and PascalCase,\nas in the JSON encoding.\nStrings support the following operators: `\u003c`, `\u003e`, `\u003c=`, `\u003e=`, `=`, `!=`, `LIKE`, `NOT LIKE`, `ILIKE`, `~~`, `!~~`, `~`, `~*`, `!~`, `!~*`, `IN`, `NOT IN`.\nString pattern operators: `LIKE` and `~~` for pattern matching with `%` and `_` wildcards,\n`ILIKE` for case-insensitive pattern matching, `NOT LIKE` and `!~~` for negated pattern matching.\nString regex operators: `~` for regex matching, `~*` for case-insensitive regex,\n`!~` and `!~*` for regex not matching (case-sensitive and insensitive).\nIntegers support the following operators: `\u003c`, `\u003e`, `\u003c=`, `\u003e=`, `=`, `!=`, `IN`, `NOT IN`.\nUUIDs and boolean attributes support equality and inequality only.\nUUID and time literals must be quoted as string literals.\nString literals are quoted with single quotes, such as `'string'`.\nTime literals use the same form as when serialized as JSON,\nsuch as: `CreatedAt \u003e '2025-02-18T23:16:34'`.\nInteger and boolean literals are also supported for attributes of those types.\nArrays support the `?` operator to to match any element of the array,\nas in `FromLinkID ? '7c61626f-ddbe-41af-93f6-b69f4ab6d308'`.\nArrays can perform LEN() to check for length, as in `LEN(FromLinkID) \u003e 0`.\nAn attribute naming a list of other entities can be filtered on their attributes with a `*` segment,\nas in `FromLink.*.Slug = 'upgrade-app'`, which holds when any element satisfies it.\nWithout the `*` such a reference is an error, since it names no single value to compare.\nMap support the dot notation to specify a particular map key, as in `Labels.tier = 'Backend'`.\nMaps support `IS NULL` and `IS NOT NULL` with dot notation to check for key absence or presence,\nas in `Labels.tier IS NULL` (key doesn't exist) or `Labels.tier IS NOT NULL` (key exists).\nComparison results can be tested with `IS TRUE`, `IS FALSE`, `IS NOT TRUE`, and `IS NOT FALSE`.\nThese are useful for nullable columns: `MergeSourceID = '\u003cuuid\u003e' IS NOT FALSE` matches rows where MergeSourceID equals the value OR is NULL.\nThe `IN` and `NOT IN` operators accept a comma-separated list of values in parentheses,\nsuch as `Slug IN ('slugone', 'slugtwo')` or `Labels.environment IN ('prod', 'staging')`.\nConjunctions are supported using the `AND` operator.\nAn example conjunction is:\n`CreatedAt \u003e= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.\n\nSupported attributes for filtering on ChangeSet: Annotations, ChangeSetID, CreatedAt, DeleteGates, Description, DisplayName, EndTagID, HiddenReason, Labels, OrganizationID, Permissions, Slug, SpaceID, StartTagID, StartTagIsPriorRevision, State, UpdatedAt.\n\nThe whole string must be query-encoded.",
+            "description": "The specified string is an expression for the purpose of filtering\nthe list of ChangeSets returned. The expression syntax was inspired by SQL.\nIt supports conjunctions using `AND` of relational expressions of the form *attribute*\n*operator* *attribute_or_literal*. The attribute names are case-sensitive and PascalCase,\nas in the JSON encoding.\nStrings support the following operators: `\u003c`, `\u003e`, `\u003c=`, `\u003e=`, `=`, `!=`, `LIKE`, `NOT LIKE`, `ILIKE`, `~~`, `!~~`, `~`, `~*`, `!~`, `!~*`, `IN`, `NOT IN`.\nString pattern operators: `LIKE` and `~~` for pattern matching with `%` and `_` wildcards,\n`ILIKE` for case-insensitive pattern matching, `NOT LIKE` and `!~~` for negated pattern matching.\nString regex operators: `~` for regex matching, `~*` for case-insensitive regex,\n`!~` and `!~*` for regex not matching (case-sensitive and insensitive).\nIntegers support the following operators: `\u003c`, `\u003e`, `\u003c=`, `\u003e=`, `=`, `!=`, `IN`, `NOT IN`.\nUUIDs and boolean attributes support equality and inequality only.\nUUID and time literals must be quoted as string literals.\nString literals are quoted with single quotes, such as `'string'`.\nTime literals use the same form as when serialized as JSON,\nsuch as: `CreatedAt \u003e '2025-02-18T23:16:34'`.\nInteger and boolean literals are also supported for attributes of those types.\nArrays support the `?` operator to to match any element of the array,\nas in `FromLinkID ? '7c61626f-ddbe-41af-93f6-b69f4ab6d308'`.\nArrays can perform LEN() to check for length, as in `LEN(FromLinkID) \u003e 0`.\nAn attribute naming a list of other entities can be filtered on their attributes with a `*` segment,\nas in `FromLink.*.Slug = 'upgrade-app'`, which holds when any element satisfies it.\nWithout the `*` such a reference is an error, since it names no single value to compare.\nMap support the dot notation to specify a particular map key, as in `Labels.tier = 'Backend'`.\nMaps support `IS NULL` and `IS NOT NULL` with dot notation to check for key absence or presence,\nas in `Labels.tier IS NULL` (key doesn't exist) or `Labels.tier IS NOT NULL` (key exists).\nComparison results can be tested with `IS TRUE`, `IS FALSE`, `IS NOT TRUE`, and `IS NOT FALSE`.\nThese are useful for nullable columns: `MergeSourceID = '\u003cuuid\u003e' IS NOT FALSE` matches rows where MergeSourceID equals the value OR is NULL.\nThe `IN` and `NOT IN` operators accept a comma-separated list of values in parentheses,\nsuch as `Slug IN ('slugone', 'slugtwo')` or `Labels.environment IN ('prod', 'staging')`.\nConjunctions are supported using the `AND` operator.\nAn example conjunction is:\n`CreatedAt \u003e= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.\n\nSupported attributes for filtering on ChangeSet: Annotations, ChangeSetID, ChangeWorkflow, ChangeWorkflowID, CloseOverride, CreatedAt, DeleteGates, Description, DisplayName, EndTagID, HiddenReason, InScopeSpaceIDs, Labels, OrganizationID, Permissions, ReviewRequests, Slug, SpaceID, StartTagID, StartTagIsPriorRevision, State, UpdatedAt, UserID.\n\nThe whole string must be query-encoded.",
             "required": false,
             "schema": {
               "type": "string"
@@ -6035,10 +6035,10 @@
           {
             "name": "order_by",
             "in": "query",
-            "description": "Comma-separated list of fields to sort ChangeSet results by, each in the form 'ASC|DESC:FieldName' or just 'FieldName'.\n\nField names are case-sensitive and PascalCase, as in the JSON encoding. Sort direction defaults to ASC when the 'DIRECTION:' prefix is omitted.\n\nSupported attributes for ordering ChangeSet: ChangeSetID, CreatedAt, Description, DisplayName, EndTagID, HiddenReason, OrganizationID, Slug, SpaceID, StartTagID, StartTagIsPriorRevision, State, UpdatedAt.\n\nExample: 'DESC:CreatedAt' or 'DisplayName,DESC:CreatedAt'.\n\nResults are ordered by the ChangeSet's ID after the fields named, and by the ID alone if none are.\n\nThe whole string must be query-encoded.",
+            "description": "Comma-separated list of fields to sort ChangeSet results by, each in the form 'ASC|DESC:FieldName' or just 'FieldName'.\n\nField names are case-sensitive and PascalCase, as in the JSON encoding. Sort direction defaults to ASC when the 'DIRECTION:' prefix is omitted.\n\nSupported attributes for ordering ChangeSet: ChangeSetID, ChangeWorkflowID, CreatedAt, Description, DisplayName, EndTagID, HiddenReason, OrganizationID, Slug, SpaceID, StartTagID, StartTagIsPriorRevision, State, UpdatedAt, UserID.\n\nExample: 'DESC:CreatedAt' or 'DisplayName,DESC:CreatedAt'.\n\nResults are ordered by the ChangeSet's ID after the fields named, and by the ID alone if none are.\n\nThe whole string must be query-encoded.",
             "required": false,
             "schema": {
-              "pattern": "^\\s*(?:(?:[Aa][Ss][Cc]|[Dd][Ee][Ss][Cc])\\s*:\\s*)?(ChangeSetID|CreatedAt|Description|DisplayName|EndTagID|HiddenReason|OrganizationID|Slug|SpaceID|StartTagID|StartTagIsPriorRevision|State|UpdatedAt)\\s*(?:,\\s*(?:(?:[Aa][Ss][Cc]|[Dd][Ee][Ss][Cc])\\s*:\\s*)?(?:ChangeSetID|CreatedAt|Description|DisplayName|EndTagID|HiddenReason|OrganizationID|Slug|SpaceID|StartTagID|StartTagIsPriorRevision|State|UpdatedAt)\\s*)*$",
+              "pattern": "^\\s*(?:(?:[Aa][Ss][Cc]|[Dd][Ee][Ss][Cc])\\s*:\\s*)?(ChangeSetID|ChangeWorkflowID|CreatedAt|Description|DisplayName|EndTagID|HiddenReason|OrganizationID|Slug|SpaceID|StartTagID|StartTagIsPriorRevision|State|UpdatedAt|UserID)\\s*(?:,\\s*(?:(?:[Aa][Ss][Cc]|[Dd][Ee][Ss][Cc])\\s*:\\s*)?(?:ChangeSetID|ChangeWorkflowID|CreatedAt|Description|DisplayName|EndTagID|HiddenReason|OrganizationID|Slug|SpaceID|StartTagID|StartTagIsPriorRevision|State|UpdatedAt|UserID)\\s*)*$",
               "type": "string"
             }
           },
@@ -6148,7 +6148,7 @@
           {
             "name": "where",
             "in": "query",
-            "description": "The specified string is an expression for the purpose of filtering\nthe list of ChangeSets returned. The expression syntax was inspired by SQL.\nIt supports conjunctions using `AND` of relational expressions of the form *attribute*\n*operator* *attribute_or_literal*. The attribute names are case-sensitive and PascalCase,\nas in the JSON encoding.\nStrings support the following operators: `\u003c`, `\u003e`, `\u003c=`, `\u003e=`, `=`, `!=`, `LIKE`, `NOT LIKE`, `ILIKE`, `~~`, `!~~`, `~`, `~*`, `!~`, `!~*`, `IN`, `NOT IN`.\nString pattern operators: `LIKE` and `~~` for pattern matching with `%` and `_` wildcards,\n`ILIKE` for case-insensitive pattern matching, `NOT LIKE` and `!~~` for negated pattern matching.\nString regex operators: `~` for regex matching, `~*` for case-insensitive regex,\n`!~` and `!~*` for regex not matching (case-sensitive and insensitive).\nIntegers support the following operators: `\u003c`, `\u003e`, `\u003c=`, `\u003e=`, `=`, `!=`, `IN`, `NOT IN`.\nUUIDs and boolean attributes support equality and inequality only.\nUUID and time literals must be quoted as string literals.\nString literals are quoted with single quotes, such as `'string'`.\nTime literals use the same form as when serialized as JSON,\nsuch as: `CreatedAt \u003e '2025-02-18T23:16:34'`.\nInteger and boolean literals are also supported for attributes of those types.\nArrays support the `?` operator to to match any element of the array,\nas in `FromLinkID ? '7c61626f-ddbe-41af-93f6-b69f4ab6d308'`.\nArrays can perform LEN() to check for length, as in `LEN(FromLinkID) \u003e 0`.\nAn attribute naming a list of other entities can be filtered on their attributes with a `*` segment,\nas in `FromLink.*.Slug = 'upgrade-app'`, which holds when any element satisfies it.\nWithout the `*` such a reference is an error, since it names no single value to compare.\nMap support the dot notation to specify a particular map key, as in `Labels.tier = 'Backend'`.\nMaps support `IS NULL` and `IS NOT NULL` with dot notation to check for key absence or presence,\nas in `Labels.tier IS NULL` (key doesn't exist) or `Labels.tier IS NOT NULL` (key exists).\nComparison results can be tested with `IS TRUE`, `IS FALSE`, `IS NOT TRUE`, and `IS NOT FALSE`.\nThese are useful for nullable columns: `MergeSourceID = '\u003cuuid\u003e' IS NOT FALSE` matches rows where MergeSourceID equals the value OR is NULL.\nThe `IN` and `NOT IN` operators accept a comma-separated list of values in parentheses,\nsuch as `Slug IN ('slugone', 'slugtwo')` or `Labels.environment IN ('prod', 'staging')`.\nConjunctions are supported using the `AND` operator.\nAn example conjunction is:\n`CreatedAt \u003e= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.\n\nSupported attributes for filtering on ChangeSet: Annotations, ChangeSetID, CreatedAt, DeleteGates, Description, DisplayName, EndTagID, HiddenReason, Labels, OrganizationID, Permissions, Slug, SpaceID, StartTagID, StartTagIsPriorRevision, State, UpdatedAt.\n\nThe whole string must be query-encoded.",
+            "description": "The specified string is an expression for the purpose of filtering\nthe list of ChangeSets returned. The expression syntax was inspired by SQL.\nIt supports conjunctions using `AND` of relational expressions of the form *attribute*\n*operator* *attribute_or_literal*. The attribute names are case-sensitive and PascalCase,\nas in the JSON encoding.\nStrings support the following operators: `\u003c`, `\u003e`, `\u003c=`, `\u003e=`, `=`, `!=`, `LIKE`, `NOT LIKE`, `ILIKE`, `~~`, `!~~`, `~`, `~*`, `!~`, `!~*`, `IN`, `NOT IN`.\nString pattern operators: `LIKE` and `~~` for pattern matching with `%` and `_` wildcards,\n`ILIKE` for case-insensitive pattern matching, `NOT LIKE` and `!~~` for negated pattern matching.\nString regex operators: `~` for regex matching, `~*` for case-insensitive regex,\n`!~` and `!~*` for regex not matching (case-sensitive and insensitive).\nIntegers support the following operators: `\u003c`, `\u003e`, `\u003c=`, `\u003e=`, `=`, `!=`, `IN`, `NOT IN`.\nUUIDs and boolean attributes support equality and inequality only.\nUUID and time literals must be quoted as string literals.\nString literals are quoted with single quotes, such as `'string'`.\nTime literals use the same form as when serialized as JSON,\nsuch as: `CreatedAt \u003e '2025-02-18T23:16:34'`.\nInteger and boolean literals are also supported for attributes of those types.\nArrays support the `?` operator to to match any element of the array,\nas in `FromLinkID ? '7c61626f-ddbe-41af-93f6-b69f4ab6d308'`.\nArrays can perform LEN() to check for length, as in `LEN(FromLinkID) \u003e 0`.\nAn attribute naming a list of other entities can be filtered on their attributes with a `*` segment,\nas in `FromLink.*.Slug = 'upgrade-app'`, which holds when any element satisfies it.\nWithout the `*` such a reference is an error, since it names no single value to compare.\nMap support the dot notation to specify a particular map key, as in `Labels.tier = 'Backend'`.\nMaps support `IS NULL` and `IS NOT NULL` with dot notation to check for key absence or presence,\nas in `Labels.tier IS NULL` (key doesn't exist) or `Labels.tier IS NOT NULL` (key exists).\nComparison results can be tested with `IS TRUE`, `IS FALSE`, `IS NOT TRUE`, and `IS NOT FALSE`.\nThese are useful for nullable columns: `MergeSourceID = '\u003cuuid\u003e' IS NOT FALSE` matches rows where MergeSourceID equals the value OR is NULL.\nThe `IN` and `NOT IN` operators accept a comma-separated list of values in parentheses,\nsuch as `Slug IN ('slugone', 'slugtwo')` or `Labels.environment IN ('prod', 'staging')`.\nConjunctions are supported using the `AND` operator.\nAn example conjunction is:\n`CreatedAt \u003e= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.\n\nSupported attributes for filtering on ChangeSet: Annotations, ChangeSetID, ChangeWorkflow, ChangeWorkflowID, CloseOverride, CreatedAt, DeleteGates, Description, DisplayName, EndTagID, HiddenReason, InScopeSpaceIDs, Labels, OrganizationID, Permissions, ReviewRequests, Slug, SpaceID, StartTagID, StartTagIsPriorRevision, State, UpdatedAt, UserID.\n\nThe whole string must be query-encoded.",
             "required": false,
             "schema": {
               "type": "string"
@@ -6236,6 +6236,12 @@
                     "description": "An optional map of Annotation key/value pairs for tools to attach information to entities.",
                     "nullable": true
                   },
+                  "ChangeWorkflowID": {
+                    "type": "string",
+                    "description": "",
+                    "format": "uuid",
+                    "nullable": true
+                  },
                   "DeleteGates": {
                     "type": "object",
                     "additionalProperties": {
@@ -6272,6 +6278,15 @@
                   "Permissions": {
                     "type": "object",
                     "additionalProperties": {
+                      "type": "object",
+                      "nullable": true
+                    },
+                    "description": "",
+                    "nullable": true
+                  },
+                  "ReviewRequests": {
+                    "type": "array",
+                    "items": {
                       "type": "object",
                       "nullable": true
                     },
@@ -6413,7 +6428,7 @@
           {
             "name": "where",
             "in": "query",
-            "description": "The specified string is an expression for the purpose of filtering\nthe list of ChangeSets returned. The expression syntax was inspired by SQL.\nIt supports conjunctions using `AND` of relational expressions of the form *attribute*\n*operator* *attribute_or_literal*. The attribute names are case-sensitive and PascalCase,\nas in the JSON encoding.\nStrings support the following operators: `\u003c`, `\u003e`, `\u003c=`, `\u003e=`, `=`, `!=`, `LIKE`, `NOT LIKE`, `ILIKE`, `~~`, `!~~`, `~`, `~*`, `!~`, `!~*`, `IN`, `NOT IN`.\nString pattern operators: `LIKE` and `~~` for pattern matching with `%` and `_` wildcards,\n`ILIKE` for case-insensitive pattern matching, `NOT LIKE` and `!~~` for negated pattern matching.\nString regex operators: `~` for regex matching, `~*` for case-insensitive regex,\n`!~` and `!~*` for regex not matching (case-sensitive and insensitive).\nIntegers support the following operators: `\u003c`, `\u003e`, `\u003c=`, `\u003e=`, `=`, `!=`, `IN`, `NOT IN`.\nUUIDs and boolean attributes support equality and inequality only.\nUUID and time literals must be quoted as string literals.\nString literals are quoted with single quotes, such as `'string'`.\nTime literals use the same form as when serialized as JSON,\nsuch as: `CreatedAt \u003e '2025-02-18T23:16:34'`.\nInteger and boolean literals are also supported for attributes of those types.\nArrays support the `?` operator to to match any element of the array,\nas in `FromLinkID ? '7c61626f-ddbe-41af-93f6-b69f4ab6d308'`.\nArrays can perform LEN() to check for length, as in `LEN(FromLinkID) \u003e 0`.\nAn attribute naming a list of other entities can be filtered on their attributes with a `*` segment,\nas in `FromLink.*.Slug = 'upgrade-app'`, which holds when any element satisfies it.\nWithout the `*` such a reference is an error, since it names no single value to compare.\nMap support the dot notation to specify a particular map key, as in `Labels.tier = 'Backend'`.\nMaps support `IS NULL` and `IS NOT NULL` with dot notation to check for key absence or presence,\nas in `Labels.tier IS NULL` (key doesn't exist) or `Labels.tier IS NOT NULL` (key exists).\nComparison results can be tested with `IS TRUE`, `IS FALSE`, `IS NOT TRUE`, and `IS NOT FALSE`.\nThese are useful for nullable columns: `MergeSourceID = '\u003cuuid\u003e' IS NOT FALSE` matches rows where MergeSourceID equals the value OR is NULL.\nThe `IN` and `NOT IN` operators accept a comma-separated list of values in parentheses,\nsuch as `Slug IN ('slugone', 'slugtwo')` or `Labels.environment IN ('prod', 'staging')`.\nConjunctions are supported using the `AND` operator.\nAn example conjunction is:\n`CreatedAt \u003e= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.\n\nSupported attributes for filtering on ChangeSet: Annotations, ChangeSetID, CreatedAt, DeleteGates, Description, DisplayName, EndTagID, HiddenReason, Labels, OrganizationID, Permissions, Slug, SpaceID, StartTagID, StartTagIsPriorRevision, State, UpdatedAt.\n\nThe whole string must be query-encoded.",
+            "description": "The specified string is an expression for the purpose of filtering\nthe list of ChangeSets returned. The expression syntax was inspired by SQL.\nIt supports conjunctions using `AND` of relational expressions of the form *attribute*\n*operator* *attribute_or_literal*. The attribute names are case-sensitive and PascalCase,\nas in the JSON encoding.\nStrings support the following operators: `\u003c`, `\u003e`, `\u003c=`, `\u003e=`, `=`, `!=`, `LIKE`, `NOT LIKE`, `ILIKE`, `~~`, `!~~`, `~`, `~*`, `!~`, `!~*`, `IN`, `NOT IN`.\nString pattern operators: `LIKE` and `~~` for pattern matching with `%` and `_` wildcards,\n`ILIKE` for case-insensitive pattern matching, `NOT LIKE` and `!~~` for negated pattern matching.\nString regex operators: `~` for regex matching, `~*` for case-insensitive regex,\n`!~` and `!~*` for regex not matching (case-sensitive and insensitive).\nIntegers support the following operators: `\u003c`, `\u003e`, `\u003c=`, `\u003e=`, `=`, `!=`, `IN`, `NOT IN`.\nUUIDs and boolean attributes support equality and inequality only.\nUUID and time literals must be quoted as string literals.\nString literals are quoted with single quotes, such as `'string'`.\nTime literals use the same form as when serialized as JSON,\nsuch as: `CreatedAt \u003e '2025-02-18T23:16:34'`.\nInteger and boolean literals are also supported for attributes of those types.\nArrays support the `?` operator to to match any element of the array,\nas in `FromLinkID ? '7c61626f-ddbe-41af-93f6-b69f4ab6d308'`.\nArrays can perform LEN() to check for length, as in `LEN(FromLinkID) \u003e 0`.\nAn attribute naming a list of other entities can be filtered on their attributes with a `*` segment,\nas in `FromLink.*.Slug = 'upgrade-app'`, which holds when any element satisfies it.\nWithout the `*` such a reference is an error, since it names no single value to compare.\nMap support the dot notation to specify a particular map key, as in `Labels.tier = 'Backend'`.\nMaps support `IS NULL` and `IS NOT NULL` with dot notation to check for key absence or presence,\nas in `Labels.tier IS NULL` (key doesn't exist) or `Labels.tier IS NOT NULL` (key exists).\nComparison results can be tested with `IS TRUE`, `IS FALSE`, `IS NOT TRUE`, and `IS NOT FALSE`.\nThese are useful for nullable columns: `MergeSourceID = '\u003cuuid\u003e' IS NOT FALSE` matches rows where MergeSourceID equals the value OR is NULL.\nThe `IN` and `NOT IN` operators accept a comma-separated list of values in parentheses,\nsuch as `Slug IN ('slugone', 'slugtwo')` or `Labels.environment IN ('prod', 'staging')`.\nConjunctions are supported using the `AND` operator.\nAn example conjunction is:\n`CreatedAt \u003e= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.\n\nSupported attributes for filtering on ChangeSet: Annotations, ChangeSetID, ChangeWorkflow, ChangeWorkflowID, CloseOverride, CreatedAt, DeleteGates, Description, DisplayName, EndTagID, HiddenReason, InScopeSpaceIDs, Labels, OrganizationID, Permissions, ReviewRequests, Slug, SpaceID, StartTagID, StartTagIsPriorRevision, State, UpdatedAt, UserID.\n\nThe whole string must be query-encoded.",
             "required": false,
             "schema": {
               "type": "string"
@@ -6555,6 +6570,12 @@
                     "description": "An optional map of Annotation key/value pairs for tools to attach information to entities.",
                     "nullable": true
                   },
+                  "ChangeWorkflowID": {
+                    "type": "string",
+                    "description": "",
+                    "format": "uuid",
+                    "nullable": true
+                  },
                   "DeleteGates": {
                     "type": "object",
                     "additionalProperties": {
@@ -6591,6 +6612,15 @@
                   "Permissions": {
                     "type": "object",
                     "additionalProperties": {
+                      "type": "object",
+                      "nullable": true
+                    },
+                    "description": "",
+                    "nullable": true
+                  },
+                  "ReviewRequests": {
+                    "type": "array",
+                    "items": {
                       "type": "object",
                       "nullable": true
                     },
@@ -6734,7 +6764,7 @@
           {
             "name": "where",
             "in": "query",
-            "description": "The specified string is an expression for the purpose of filtering\nthe list of ChangeSets returned. The expression syntax was inspired by SQL.\nIt supports conjunctions using `AND` of relational expressions of the form *attribute*\n*operator* *attribute_or_literal*. The attribute names are case-sensitive and PascalCase,\nas in the JSON encoding.\nStrings support the following operators: `\u003c`, `\u003e`, `\u003c=`, `\u003e=`, `=`, `!=`, `LIKE`, `NOT LIKE`, `ILIKE`, `~~`, `!~~`, `~`, `~*`, `!~`, `!~*`, `IN`, `NOT IN`.\nString pattern operators: `LIKE` and `~~` for pattern matching with `%` and `_` wildcards,\n`ILIKE` for case-insensitive pattern matching, `NOT LIKE` and `!~~` for negated pattern matching.\nString regex operators: `~` for regex matching, `~*` for case-insensitive regex,\n`!~` and `!~*` for regex not matching (case-sensitive and insensitive).\nIntegers support the following operators: `\u003c`, `\u003e`, `\u003c=`, `\u003e=`, `=`, `!=`, `IN`, `NOT IN`.\nUUIDs and boolean attributes support equality and inequality only.\nUUID and time literals must be quoted as string literals.\nString literals are quoted with single quotes, such as `'string'`.\nTime literals use the same form as when serialized as JSON,\nsuch as: `CreatedAt \u003e '2025-02-18T23:16:34'`.\nInteger and boolean literals are also supported for attributes of those types.\nArrays support the `?` operator to to match any element of the array,\nas in `FromLinkID ? '7c61626f-ddbe-41af-93f6-b69f4ab6d308'`.\nArrays can perform LEN() to check for length, as in `LEN(FromLinkID) \u003e 0`.\nAn attribute naming a list of other entities can be filtered on their attributes with a `*` segment,\nas in `FromLink.*.Slug = 'upgrade-app'`, which holds when any element satisfies it.\nWithout the `*` such a reference is an error, since it names no single value to compare.\nMap support the dot notation to specify a particular map key, as in `Labels.tier = 'Backend'`.\nMaps support `IS NULL` and `IS NOT NULL` with dot notation to check for key absence or presence,\nas in `Labels.tier IS NULL` (key doesn't exist) or `Labels.tier IS NOT NULL` (key exists).\nComparison results can be tested with `IS TRUE`, `IS FALSE`, `IS NOT TRUE`, and `IS NOT FALSE`.\nThese are useful for nullable columns: `MergeSourceID = '\u003cuuid\u003e' IS NOT FALSE` matches rows where MergeSourceID equals the value OR is NULL.\nThe `IN` and `NOT IN` operators accept a comma-separated list of values in parentheses,\nsuch as `Slug IN ('slugone', 'slugtwo')` or `Labels.environment IN ('prod', 'staging')`.\nConjunctions are supported using the `AND` operator.\nAn example conjunction is:\n`CreatedAt \u003e= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.\n\nSupported attributes for filtering on ChangeSet: Annotations, ChangeSetID, CreatedAt, DeleteGates, Description, DisplayName, EndTagID, HiddenReason, Labels, OrganizationID, Permissions, Slug, SpaceID, StartTagID, StartTagIsPriorRevision, State, UpdatedAt.\n\nThe whole string must be query-encoded.",
+            "description": "The specified string is an expression for the purpose of filtering\nthe list of ChangeSets returned. The expression syntax was inspired by SQL.\nIt supports conjunctions using `AND` of relational expressions of the form *attribute*\n*operator* *attribute_or_literal*. The attribute names are case-sensitive and PascalCase,\nas in the JSON encoding.\nStrings support the following operators: `\u003c`, `\u003e`, `\u003c=`, `\u003e=`, `=`, `!=`, `LIKE`, `NOT LIKE`, `ILIKE`, `~~`, `!~~`, `~`, `~*`, `!~`, `!~*`, `IN`, `NOT IN`.\nString pattern operators: `LIKE` and `~~` for pattern matching with `%` and `_` wildcards,\n`ILIKE` for case-insensitive pattern matching, `NOT LIKE` and `!~~` for negated pattern matching.\nString regex operators: `~` for regex matching, `~*` for case-insensitive regex,\n`!~` and `!~*` for regex not matching (case-sensitive and insensitive).\nIntegers support the following operators: `\u003c`, `\u003e`, `\u003c=`, `\u003e=`, `=`, `!=`, `IN`, `NOT IN`.\nUUIDs and boolean attributes support equality and inequality only.\nUUID and time literals must be quoted as string literals.\nString literals are quoted with single quotes, such as `'string'`.\nTime literals use the same form as when serialized as JSON,\nsuch as: `CreatedAt \u003e '2025-02-18T23:16:34'`.\nInteger and boolean literals are also supported for attributes of those types.\nArrays support the `?` operator to to match any element of the array,\nas in `FromLinkID ? '7c61626f-ddbe-41af-93f6-b69f4ab6d308'`.\nArrays can perform LEN() to check for length, as in `LEN(FromLinkID) \u003e 0`.\nAn attribute naming a list of other entities can be filtered on their attributes with a `*` segment,\nas in `FromLink.*.Slug = 'upgrade-app'`, which holds when any element satisfies it.\nWithout the `*` such a reference is an error, since it names no single value to compare.\nMap support the dot notation to specify a particular map key, as in `Labels.tier = 'Backend'`.\nMaps support `IS NULL` and `IS NOT NULL` with dot notation to check for key absence or presence,\nas in `Labels.tier IS NULL` (key doesn't exist) or `Labels.tier IS NOT NULL` (key exists).\nComparison results can be tested with `IS TRUE`, `IS FALSE`, `IS NOT TRUE`, and `IS NOT FALSE`.\nThese are useful for nullable columns: `MergeSourceID = '\u003cuuid\u003e' IS NOT FALSE` matches rows where MergeSourceID equals the value OR is NULL.\nThe `IN` and `NOT IN` operators accept a comma-separated list of values in parentheses,\nsuch as `Slug IN ('slugone', 'slugtwo')` or `Labels.environment IN ('prod', 'staging')`.\nConjunctions are supported using the `AND` operator.\nAn example conjunction is:\n`CreatedAt \u003e= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.\n\nSupported attributes for filtering on ChangeSet: Annotations, ChangeSetID, ChangeWorkflow, ChangeWorkflowID, CloseOverride, CreatedAt, DeleteGates, Description, DisplayName, EndTagID, HiddenReason, InScopeSpaceIDs, Labels, OrganizationID, Permissions, ReviewRequests, Slug, SpaceID, StartTagID, StartTagIsPriorRevision, State, UpdatedAt, UserID.\n\nThe whole string must be query-encoded.",
             "required": false,
             "schema": {
               "type": "string"
@@ -7438,7 +7468,7 @@
                   },
                   "Final": {
                     "type": "object",
-                    "description": "What the last stage must satisfy for the rollout to read as completed. Nothing is promoted into it: a stage's prerequisites gate entry to the stage after it, so the last stage's gate nothing.",
+                    "description": "What the last stage must satisfy for the rollout to read as completed. Nothing is promoted into it: a stage's prerequisites gate entry to the stage after it, so the last stage's gate nothing. In a workflow with no stages, which governs a ChangeSet, what every Space the ChangeSet was opened in must satisfy for it to close.",
                     "nullable": true
                   },
                   "HiddenReason": {
@@ -7475,7 +7505,7 @@
                       "type": "object",
                       "nullable": true
                     },
-                    "description": "The stages a change is promoted through, in order. Ordered between stages and unordered within one. At least one is required.",
+                    "description": "The stages a change is promoted through, in order. Ordered between stages and unordered within one. A workflow governing a ChangeOrder needs at least one; one governing a ChangeSet has none.",
                     "nullable": true
                   },
                   "Version": {
@@ -7839,7 +7869,7 @@
                   },
                   "Final": {
                     "type": "object",
-                    "description": "What the last stage must satisfy for the rollout to read as completed. Nothing is promoted into it: a stage's prerequisites gate entry to the stage after it, so the last stage's gate nothing.",
+                    "description": "What the last stage must satisfy for the rollout to read as completed. Nothing is promoted into it: a stage's prerequisites gate entry to the stage after it, so the last stage's gate nothing. In a workflow with no stages, which governs a ChangeSet, what every Space the ChangeSet was opened in must satisfy for it to close.",
                     "nullable": true
                   },
                   "HiddenReason": {
@@ -7876,7 +7906,7 @@
                       "type": "object",
                       "nullable": true
                     },
-                    "description": "The stages a change is promoted through, in order. Ordered between stages and unordered within one. At least one is required.",
+                    "description": "The stages a change is promoted through, in order. Ordered between stages and unordered within one. A workflow governing a ChangeOrder needs at least one; one governing a ChangeSet has none.",
                     "nullable": true
                   },
                   "Version": {
@@ -9974,7 +10004,7 @@
             }
           },
           "200": {
-            "description": "The Component a set of Variants make up. Each Variant is a Space naming the Component with ComponentID. The Component decides which ChangeWorkflows promotions and releases of its Variants may use, and whether one is required.",
+            "description": "The Component a set of Variants make up. Each Variant is a Space naming the Component with ComponentID. The Component decides which ChangeWorkflows promotions and releases of its Variants, and ChangeSets opened on their Units, may use, and whether one is required.",
             "content": {
               "application/json": {
                 "schema": {
@@ -10393,7 +10423,7 @@
             }
           },
           "200": {
-            "description": "The Component a set of Variants make up. Each Variant is a Space naming the Component with ComponentID. The Component decides which ChangeWorkflows promotions and releases of its Variants may use, and whether one is required.",
+            "description": "The Component a set of Variants make up. Each Variant is a Space naming the Component with ComponentID. The Component decides which ChangeWorkflows promotions and releases of its Variants, and ChangeSets opened on their Units, may use, and whether one is required.",
             "content": {
               "application/json": {
                 "schema": {
@@ -10513,7 +10543,7 @@
             }
           },
           "200": {
-            "description": "The Component a set of Variants make up. Each Variant is a Space naming the Component with ComponentID. The Component decides which ChangeWorkflows promotions and releases of its Variants may use, and whether one is required.",
+            "description": "The Component a set of Variants make up. Each Variant is a Space naming the Component with ComponentID. The Component decides which ChangeWorkflows promotions and releases of its Variants, and ChangeSets opened on their Units, may use, and whether one is required.",
             "content": {
               "application/json": {
                 "schema": {
@@ -10727,7 +10757,7 @@
             }
           },
           "200": {
-            "description": "The Component a set of Variants make up. Each Variant is a Space naming the Component with ComponentID. The Component decides which ChangeWorkflows promotions and releases of its Variants may use, and whether one is required.",
+            "description": "The Component a set of Variants make up. Each Variant is a Space naming the Component with ComponentID. The Component decides which ChangeWorkflows promotions and releases of its Variants, and ChangeSets opened on their Units, may use, and whether one is required.",
             "content": {
               "application/json": {
                 "schema": {
@@ -25631,7 +25661,7 @@
           {
             "name": "where",
             "in": "query",
-            "description": "The specified string is an expression for the purpose of filtering\nthe list of ChangeSets returned. The expression syntax was inspired by SQL.\nIt supports conjunctions using `AND` of relational expressions of the form *attribute*\n*operator* *attribute_or_literal*. The attribute names are case-sensitive and PascalCase,\nas in the JSON encoding.\nStrings support the following operators: `\u003c`, `\u003e`, `\u003c=`, `\u003e=`, `=`, `!=`, `LIKE`, `NOT LIKE`, `ILIKE`, `~~`, `!~~`, `~`, `~*`, `!~`, `!~*`, `IN`, `NOT IN`.\nString pattern operators: `LIKE` and `~~` for pattern matching with `%` and `_` wildcards,\n`ILIKE` for case-insensitive pattern matching, `NOT LIKE` and `!~~` for negated pattern matching.\nString regex operators: `~` for regex matching, `~*` for case-insensitive regex,\n`!~` and `!~*` for regex not matching (case-sensitive and insensitive).\nIntegers support the following operators: `\u003c`, `\u003e`, `\u003c=`, `\u003e=`, `=`, `!=`, `IN`, `NOT IN`.\nUUIDs and boolean attributes support equality and inequality only.\nUUID and time literals must be quoted as string literals.\nString literals are quoted with single quotes, such as `'string'`.\nTime literals use the same form as when serialized as JSON,\nsuch as: `CreatedAt \u003e '2025-02-18T23:16:34'`.\nInteger and boolean literals are also supported for attributes of those types.\nArrays support the `?` operator to to match any element of the array,\nas in `FromLinkID ? '7c61626f-ddbe-41af-93f6-b69f4ab6d308'`.\nArrays can perform LEN() to check for length, as in `LEN(FromLinkID) \u003e 0`.\nAn attribute naming a list of other entities can be filtered on their attributes with a `*` segment,\nas in `FromLink.*.Slug = 'upgrade-app'`, which holds when any element satisfies it.\nWithout the `*` such a reference is an error, since it names no single value to compare.\nMap support the dot notation to specify a particular map key, as in `Labels.tier = 'Backend'`.\nMaps support `IS NULL` and `IS NOT NULL` with dot notation to check for key absence or presence,\nas in `Labels.tier IS NULL` (key doesn't exist) or `Labels.tier IS NOT NULL` (key exists).\nComparison results can be tested with `IS TRUE`, `IS FALSE`, `IS NOT TRUE`, and `IS NOT FALSE`.\nThese are useful for nullable columns: `MergeSourceID = '\u003cuuid\u003e' IS NOT FALSE` matches rows where MergeSourceID equals the value OR is NULL.\nThe `IN` and `NOT IN` operators accept a comma-separated list of values in parentheses,\nsuch as `Slug IN ('slugone', 'slugtwo')` or `Labels.environment IN ('prod', 'staging')`.\nConjunctions are supported using the `AND` operator.\nAn example conjunction is:\n`CreatedAt \u003e= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.\n\nSupported attributes for filtering on ChangeSet: Annotations, ChangeSetID, CreatedAt, DeleteGates, Description, DisplayName, EndTagID, HiddenReason, Labels, OrganizationID, Permissions, Slug, SpaceID, StartTagID, StartTagIsPriorRevision, State, UpdatedAt.\n\nThe whole string must be query-encoded.",
+            "description": "The specified string is an expression for the purpose of filtering\nthe list of ChangeSets returned. The expression syntax was inspired by SQL.\nIt supports conjunctions using `AND` of relational expressions of the form *attribute*\n*operator* *attribute_or_literal*. The attribute names are case-sensitive and PascalCase,\nas in the JSON encoding.\nStrings support the following operators: `\u003c`, `\u003e`, `\u003c=`, `\u003e=`, `=`, `!=`, `LIKE`, `NOT LIKE`, `ILIKE`, `~~`, `!~~`, `~`, `~*`, `!~`, `!~*`, `IN`, `NOT IN`.\nString pattern operators: `LIKE` and `~~` for pattern matching with `%` and `_` wildcards,\n`ILIKE` for case-insensitive pattern matching, `NOT LIKE` and `!~~` for negated pattern matching.\nString regex operators: `~` for regex matching, `~*` for case-insensitive regex,\n`!~` and `!~*` for regex not matching (case-sensitive and insensitive).\nIntegers support the following operators: `\u003c`, `\u003e`, `\u003c=`, `\u003e=`, `=`, `!=`, `IN`, `NOT IN`.\nUUIDs and boolean attributes support equality and inequality only.\nUUID and time literals must be quoted as string literals.\nString literals are quoted with single quotes, such as `'string'`.\nTime literals use the same form as when serialized as JSON,\nsuch as: `CreatedAt \u003e '2025-02-18T23:16:34'`.\nInteger and boolean literals are also supported for attributes of those types.\nArrays support the `?` operator to to match any element of the array,\nas in `FromLinkID ? '7c61626f-ddbe-41af-93f6-b69f4ab6d308'`.\nArrays can perform LEN() to check for length, as in `LEN(FromLinkID) \u003e 0`.\nAn attribute naming a list of other entities can be filtered on their attributes with a `*` segment,\nas in `FromLink.*.Slug = 'upgrade-app'`, which holds when any element satisfies it.\nWithout the `*` such a reference is an error, since it names no single value to compare.\nMap support the dot notation to specify a particular map key, as in `Labels.tier = 'Backend'`.\nMaps support `IS NULL` and `IS NOT NULL` with dot notation to check for key absence or presence,\nas in `Labels.tier IS NULL` (key doesn't exist) or `Labels.tier IS NOT NULL` (key exists).\nComparison results can be tested with `IS TRUE`, `IS FALSE`, `IS NOT TRUE`, and `IS NOT FALSE`.\nThese are useful for nullable columns: `MergeSourceID = '\u003cuuid\u003e' IS NOT FALSE` matches rows where MergeSourceID equals the value OR is NULL.\nThe `IN` and `NOT IN` operators accept a comma-separated list of values in parentheses,\nsuch as `Slug IN ('slugone', 'slugtwo')` or `Labels.environment IN ('prod', 'staging')`.\nConjunctions are supported using the `AND` operator.\nAn example conjunction is:\n`CreatedAt \u003e= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.\n\nSupported attributes for filtering on ChangeSet: Annotations, ChangeSetID, ChangeWorkflow, ChangeWorkflowID, CloseOverride, CreatedAt, DeleteGates, Description, DisplayName, EndTagID, HiddenReason, InScopeSpaceIDs, Labels, OrganizationID, Permissions, ReviewRequests, Slug, SpaceID, StartTagID, StartTagIsPriorRevision, State, UpdatedAt, UserID.\n\nThe whole string must be query-encoded.",
             "required": false,
             "schema": {
               "type": "string"
@@ -25706,10 +25736,10 @@
           {
             "name": "order_by",
             "in": "query",
-            "description": "Comma-separated list of fields to sort ChangeSet results by, each in the form 'ASC|DESC:FieldName' or just 'FieldName'.\n\nField names are case-sensitive and PascalCase, as in the JSON encoding. Sort direction defaults to ASC when the 'DIRECTION:' prefix is omitted.\n\nSupported attributes for ordering ChangeSet: ChangeSetID, CreatedAt, Description, DisplayName, EndTagID, HiddenReason, OrganizationID, Slug, SpaceID, StartTagID, StartTagIsPriorRevision, State, UpdatedAt.\n\nExample: 'DESC:CreatedAt' or 'DisplayName,DESC:CreatedAt'.\n\nResults are ordered by the ChangeSet's ID after the fields named, and by the ID alone if none are.\n\nThe whole string must be query-encoded.",
+            "description": "Comma-separated list of fields to sort ChangeSet results by, each in the form 'ASC|DESC:FieldName' or just 'FieldName'.\n\nField names are case-sensitive and PascalCase, as in the JSON encoding. Sort direction defaults to ASC when the 'DIRECTION:' prefix is omitted.\n\nSupported attributes for ordering ChangeSet: ChangeSetID, ChangeWorkflowID, CreatedAt, Description, DisplayName, EndTagID, HiddenReason, OrganizationID, Slug, SpaceID, StartTagID, StartTagIsPriorRevision, State, UpdatedAt, UserID.\n\nExample: 'DESC:CreatedAt' or 'DisplayName,DESC:CreatedAt'.\n\nResults are ordered by the ChangeSet's ID after the fields named, and by the ID alone if none are.\n\nThe whole string must be query-encoded.",
             "required": false,
             "schema": {
-              "pattern": "^\\s*(?:(?:[Aa][Ss][Cc]|[Dd][Ee][Ss][Cc])\\s*:\\s*)?(ChangeSetID|CreatedAt|Description|DisplayName|EndTagID|HiddenReason|OrganizationID|Slug|SpaceID|StartTagID|StartTagIsPriorRevision|State|UpdatedAt)\\s*(?:,\\s*(?:(?:[Aa][Ss][Cc]|[Dd][Ee][Ss][Cc])\\s*:\\s*)?(?:ChangeSetID|CreatedAt|Description|DisplayName|EndTagID|HiddenReason|OrganizationID|Slug|SpaceID|StartTagID|StartTagIsPriorRevision|State|UpdatedAt)\\s*)*$",
+              "pattern": "^\\s*(?:(?:[Aa][Ss][Cc]|[Dd][Ee][Ss][Cc])\\s*:\\s*)?(ChangeSetID|ChangeWorkflowID|CreatedAt|Description|DisplayName|EndTagID|HiddenReason|OrganizationID|Slug|SpaceID|StartTagID|StartTagIsPriorRevision|State|UpdatedAt|UserID)\\s*(?:,\\s*(?:(?:[Aa][Ss][Cc]|[Dd][Ee][Ss][Cc])\\s*:\\s*)?(?:ChangeSetID|ChangeWorkflowID|CreatedAt|Description|DisplayName|EndTagID|HiddenReason|OrganizationID|Slug|SpaceID|StartTagID|StartTagIsPriorRevision|State|UpdatedAt|UserID)\\s*)*$",
               "type": "string"
             }
           },
@@ -26244,6 +26274,12 @@
                     "description": "An optional map of Annotation key/value pairs for tools to attach information to entities.",
                     "nullable": true
                   },
+                  "ChangeWorkflowID": {
+                    "type": "string",
+                    "description": "",
+                    "format": "uuid",
+                    "nullable": true
+                  },
                   "DeleteGates": {
                     "type": "object",
                     "additionalProperties": {
@@ -26280,6 +26316,15 @@
                   "Permissions": {
                     "type": "object",
                     "additionalProperties": {
+                      "type": "object",
+                      "nullable": true
+                    },
+                    "description": "",
+                    "nullable": true
+                  },
+                  "ReviewRequests": {
+                    "type": "array",
+                    "items": {
                       "type": "object",
                       "nullable": true
                     },
@@ -27185,7 +27230,7 @@
                   },
                   "Final": {
                     "type": "object",
-                    "description": "What the last stage must satisfy for the rollout to read as completed. Nothing is promoted into it: a stage's prerequisites gate entry to the stage after it, so the last stage's gate nothing.",
+                    "description": "What the last stage must satisfy for the rollout to read as completed. Nothing is promoted into it: a stage's prerequisites gate entry to the stage after it, so the last stage's gate nothing. In a workflow with no stages, which governs a ChangeSet, what every Space the ChangeSet was opened in must satisfy for it to close.",
                     "nullable": true
                   },
                   "HiddenReason": {
@@ -27222,7 +27267,7 @@
                       "type": "object",
                       "nullable": true
                     },
-                    "description": "The stages a change is promoted through, in order. Ordered between stages and unordered within one. At least one is required.",
+                    "description": "The stages a change is promoted through, in order. Ordered between stages and unordered within one. A workflow governing a ChangeOrder needs at least one; one governing a ChangeSet has none.",
                     "nullable": true
                   },
                   "Version": {
@@ -39697,6 +39742,24 @@
             }
           },
           {
+            "name": "force_close",
+            "in": "query",
+            "description": "Close a ChangeSet a ChangeWorkflow governs although the gates of the workflow's Final do not hold. Applies to a write that clears a Unit's ChangeSetID, which closes its ChangeSet. Requires force_reason, and Edit permission on the ChangeSet, whose CloseOverride records the override.",
+            "required": false,
+            "schema": {
+              "type": "boolean"
+            }
+          },
+          {
+            "name": "force_reason",
+            "in": "query",
+            "description": "Why a ChangeSet's gates are overridden; required with force_close.",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
             "name": "include",
             "in": "query",
             "description": "Comma-separated parts of the result to return in addition to the Unit: ConfigData for the configuration the operation produced, MutationSources for what set each value in it, and Diff for what the operation changed, path by path with the values on both sides. None is a field of a Unit, and each costs something to return, so they are returned only when named. A dry run stores nothing, so this is the only way to see what it would have produced.\n\nSupported values: ConfigData, MutationSources, Diff.",
@@ -40121,6 +40184,24 @@
             "name": "subgroup",
             "in": "query",
             "description": "User-defined category for the Mutation. Must be alphanumeric, at most 64 characters. The prefix 'ConfigHub' is reserved.",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "force_close",
+            "in": "query",
+            "description": "Close a ChangeSet a ChangeWorkflow governs although the gates of the workflow's Final do not hold. Applies to a write that clears a Unit's ChangeSetID, which closes its ChangeSet. Requires force_reason, and Edit permission on the ChangeSet, whose CloseOverride records the override.",
+            "required": false,
+            "schema": {
+              "type": "boolean"
+            }
+          },
+          {
+            "name": "force_reason",
+            "in": "query",
+            "description": "Why a ChangeSet's gates are overridden; required with force_close.",
             "required": false,
             "schema": {
               "type": "string"
@@ -49752,6 +49833,24 @@
             "schema": {
               "type": "string"
             }
+          },
+          {
+            "name": "force_close",
+            "in": "query",
+            "description": "Close a ChangeSet a ChangeWorkflow governs although the gates of the workflow's Final do not hold. Applies to a write that clears a Unit's ChangeSetID, which closes its ChangeSet. Requires force_reason, and Edit permission on the ChangeSet, whose CloseOverride records the override.",
+            "required": false,
+            "schema": {
+              "type": "boolean"
+            }
+          },
+          {
+            "name": "force_reason",
+            "in": "query",
+            "description": "Why a ChangeSet's gates are overridden; required with force_close.",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
           }
         ],
         "requestBody": {
@@ -56613,6 +56712,40 @@
             "x-go-type-skip-optional-pointer": true,
             "x-omitzero": true
           },
+          "ChangeWorkflow": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/ChangeWorkflowSpec"
+              }
+            ],
+            "description": "ChangeWorkflow is a copy of the ChangeWorkflow ChangeWorkflowID names, taken when the ChangeSet was created, so editing the workflow afterwards does not change what closing this ChangeSet is judged against. Empty is a ChangeSet no workflow governs. (readonly)",
+            "readOnly": true,
+            "x-confighub-where": {
+              "dataType": "JSON"
+            }
+          },
+          "ChangeWorkflowID": {
+            "type": "string",
+            "description": "ChangeWorkflowID is the ChangeWorkflow that gates closing this ChangeSet: its Final prerequisites, evaluated over every Space in InScopeSpaceIDs. The workflow must have no Stages, and its Final may not name Released or Healthy. Settable at creation and immutable afterwards. When a Unit in a Space that is a Variant of a Component joins the ChangeSet, the workflow must be one the Component allows, and is required if the Component requires one.",
+            "format": "uuid",
+            "example": "248df4b7-aa70-47b8-a036-33ac447e668d",
+            "x-confighub-where": {
+              "dataType": "uuid",
+              "references": "ChangeWorkflow"
+            }
+          },
+          "CloseOverride": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/ChangeSetCloseOverride"
+              }
+            ],
+            "description": "CloseOverride records a close forced past the ChangeWorkflow's gates: who forced it, when, why, and which gates did not hold. (readonly)",
+            "readOnly": true,
+            "x-confighub-where": {
+              "dataType": "JSON"
+            }
+          },
           "CreatedAt": {
             "type": "string",
             "description": "The timestamp when the entity was created in \"2023-01-01T12:00:00Z\" format.",
@@ -56682,6 +56815,19 @@
             },
             "x-go-type-skip-optional-pointer": true
           },
+          "InScopeSpaceIDs": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/UUID"
+            },
+            "description": "InScopeSpaceIDs are the Spaces of the Units the ChangeSet has been opened on. A Space is added when the first of its Units joins, and is not removed. Closing a ChangeSet governed by a ChangeWorkflow is gated over every one of them. (readonly)",
+            "readOnly": true,
+            "x-confighub-where": {
+              "dataType": "[]uuid",
+              "references": "Space"
+            },
+            "x-go-type-skip-optional-pointer": true
+          },
           "Labels": {
             "type": "object",
             "additionalProperties": {
@@ -56718,6 +56864,17 @@
             "x-confighub-where": {
               "dataType": "map[string]map[string]map[uuid]bool"
             }
+          },
+          "ReviewRequests": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/ChangeSetReviewRequest"
+            },
+            "description": "ReviewRequests records whose review the change is waiting for: for each, the User, and when and by whom the review was requested. A request is not cleared when the review is given; whether a reviewer has reviewed is read from their Attestations. A merge patch replaces the list whole. At most 256.",
+            "x-confighub-where": {
+              "dataType": "JSON"
+            },
+            "x-go-type-skip-optional-pointer": true
           },
           "Slug": {
             "maxLength": 128,
@@ -56792,6 +56949,17 @@
             "x-go-type-skip-optional-pointer": true,
             "x-omitzero": true
           },
+          "UserID": {
+            "type": "string",
+            "description": "The User who created the ChangeSet. Absent for ChangeSets created before it was recorded. (readonly)",
+            "format": "uuid",
+            "readOnly": true,
+            "example": "248df4b7-aa70-47b8-a036-33ac447e668d",
+            "x-confighub-where": {
+              "dataType": "uuid",
+              "references": "User"
+            }
+          },
           "Version": {
             "type": "integer",
             "description": "An entity-specific sequence number used for optimistic concurrency control. The value read must be sent in calls to Update.",
@@ -56801,6 +56969,62 @@
           }
         },
         "description": "Defines an entity changeset."
+      },
+      "ChangeSetCloseOverride": {
+        "type": "object",
+        "properties": {
+          "FailedGates": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            },
+            "x-go-type-skip-optional-pointer": true
+          },
+          "OverriddenAt": {
+            "type": "string",
+            "format": "date-time",
+            "example": "2006-01-02T15:04:05Z07:00",
+            "x-go-type-skip-optional-pointer": true,
+            "x-omitzero": true
+          },
+          "Reason": {
+            "type": "string",
+            "x-go-type-skip-optional-pointer": true
+          },
+          "UserID": {
+            "type": "string",
+            "format": "uuid",
+            "example": "248df4b7-aa70-47b8-a036-33ac447e668d",
+            "x-go-type-skip-optional-pointer": true,
+            "x-omitzero": true
+          }
+        }
+      },
+      "ChangeSetCloseResult": {
+        "type": "object",
+        "properties": {
+          "ChangeSetID": {
+            "type": "string",
+            "description": "The ChangeSet the write closed, or would have closed.",
+            "format": "uuid",
+            "example": "248df4b7-aa70-47b8-a036-33ac447e668d",
+            "x-go-type-skip-optional-pointer": true,
+            "x-omitzero": true
+          },
+          "Forced": {
+            "type": "boolean",
+            "description": "The close was forced past gates that did not hold, which the ChangeSet's CloseOverride records.",
+            "x-go-type-skip-optional-pointer": true
+          },
+          "Gates": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/PromoteGateResult"
+            },
+            "description": "Each Final prerequisite of the ChangeSet's ChangeWorkflow, evaluated over each Space the ChangeSet was opened in.",
+            "x-go-type-skip-optional-pointer": true
+          }
+        }
       },
       "ChangeSetCreateOrUpdateResponse": {
         "type": "object",
@@ -56813,10 +57037,42 @@
           }
         }
       },
+      "ChangeSetReviewRequest": {
+        "required": [
+          "UserID"
+        ],
+        "type": "object",
+        "properties": {
+          "RequestedAt": {
+            "type": "string",
+            "description": "When the review was requested, by the server's clock. A new request is stamped with the current time, and an existing one keeps its time; sending a later time than the one recorded re-requests the review, and stamps it with the current time.",
+            "format": "date-time",
+            "example": "2006-01-02T15:04:05Z07:00",
+            "x-go-type-skip-optional-pointer": true,
+            "x-omitzero": true
+          },
+          "RequestedByUserID": {
+            "type": "string",
+            "description": "Who requested the review, or last re-requested it. Set by the server.",
+            "format": "uuid",
+            "readOnly": true,
+            "example": "248df4b7-aa70-47b8-a036-33ac447e668d",
+            "x-go-type-skip-optional-pointer": true,
+            "x-omitzero": true
+          },
+          "UserID": {
+            "type": "string",
+            "description": "The User asked to review.",
+            "format": "uuid",
+            "example": "248df4b7-aa70-47b8-a036-33ac447e668d",
+            "x-go-type-skip-optional-pointer": true,
+            "x-omitzero": true
+          }
+        }
+      },
       "ChangeWorkflow": {
         "required": [
-          "Slug",
-          "Stages"
+          "Slug"
         ],
         "type": "object",
         "properties": {
@@ -56919,7 +57175,7 @@
                 "$ref": "#/components/schemas/ChangeWorkflowFinalStage"
               }
             ],
-            "description": "Final is what the last stage must satisfy for the rollout to read as completed. Nothing is promoted into it: a stage's prerequisites gate entry to the stage after it, so the last stage's gate nothing.",
+            "description": "Final is what the last stage must satisfy for the rollout to read as completed. Nothing is promoted into it: a stage's prerequisites gate entry to the stage after it, so the last stage's gate nothing. In a workflow with no stages, which governs a ChangeSet, it is what every Space the ChangeSet was opened in must satisfy for it to close.",
             "x-confighub-where": {
               "dataType": "JSON"
             }
@@ -57014,7 +57270,7 @@
             "items": {
               "$ref": "#/components/schemas/ChangeWorkflowStage"
             },
-            "description": "Stages is the series a change is promoted through, in order. Ordered between stages and unordered within one. At least one is required.",
+            "description": "Stages is the series a change is promoted through, in order. Ordered between stages and unordered within one. A workflow governing a ChangeOrder needs at least one; one governing a ChangeSet has none.",
             "x-confighub-where": {
               "dataType": "JSON"
             },
@@ -57154,7 +57410,7 @@
           },
           "Expression": {
             "type": "string",
-            "description": "The check itself, carrying the \"cel:\" prefix. Evaluated against the Space under consideration, the change order being promoted, and that Space's Release. Compiled when the workflow is written.",
+            "description": "The check itself, carrying the \"cel:\" prefix. Evaluated against the Space under consideration, the change order being promoted, and that Space's Release; closing a ChangeSet binds Space and ChangeSet, with ChangeOrder and Release null. Compiled when the workflow is written.",
             "x-go-type-skip-optional-pointer": true
           },
           "Name": {
@@ -57165,9 +57421,6 @@
         }
       },
       "ChangeWorkflowSpec": {
-        "required": [
-          "Stages"
-        ],
         "type": "object",
         "properties": {
           "AttestationPrerequisites": {
@@ -57192,14 +57445,14 @@
                 "$ref": "#/components/schemas/ChangeWorkflowFinalStage"
               }
             ],
-            "description": "What the last stage must satisfy for the rollout to read as completed. Nothing is promoted into it: a stage's prerequisites gate entry to the stage after it, so the last stage's gate nothing."
+            "description": "What the last stage must satisfy for the rollout to read as completed. Nothing is promoted into it: a stage's prerequisites gate entry to the stage after it, so the last stage's gate nothing. In a workflow with no stages, which governs a ChangeSet, what every Space the ChangeSet was opened in must satisfy for it to close."
           },
           "Stages": {
             "type": "array",
             "items": {
               "$ref": "#/components/schemas/ChangeWorkflowStage"
             },
-            "description": "The stages a change is promoted through, in order. Ordered between stages and unordered within one. At least one is required.",
+            "description": "The stages a change is promoted through, in order. Ordered between stages and unordered within one. A workflow governing a ChangeOrder needs at least one; one governing a ChangeSet has none.",
             "x-go-type-skip-optional-pointer": true
           }
         }
@@ -57964,7 +58217,7 @@
             "items": {
               "$ref": "#/components/schemas/UUID"
             },
-            "description": "The set of ChangeWorkflows that can be used for promotions and releases of this component's Variants. Changing it requires Manage permission on the component. (optional)",
+            "description": "The set of ChangeWorkflows that can be used for promotions and releases of this component's Variants, and for ChangeSets opened on their Units: a ChangeOrder or ChangeSet is governed by one workflow, which every component it reaches has to allow. Changing it requires Manage permission on the component. (optional)",
             "x-confighub-where": {
               "dataType": "[]uuid",
               "references": "ChangeWorkflow"
@@ -57996,7 +58249,7 @@
           },
           "ChangeWorkflowRequired": {
             "type": "boolean",
-            "description": "Whether a ChangeWorkflow must be used for promotions and releases of this component's Variants. Changing it requires Manage permission on the component. (optional)",
+            "description": "Whether a ChangeWorkflow must be used for promotions and releases of this component's Variants, and by ChangeSets opened on their Units. Changing it requires Manage permission on the component. (optional)",
             "x-confighub-where": {
               "dataType": "bool"
             },
@@ -58137,7 +58390,7 @@
             "x-go-type-skip-optional-pointer": true
           }
         },
-        "description": "The Component a set of Variants make up. Each Variant is a Space naming the Component with ComponentID. The Component decides which ChangeWorkflows promotions and releases of its Variants may use, and whether one is required."
+        "description": "The Component a set of Variants make up. Each Variant is a Space naming the Component with ComponentID. The Component decides which ChangeWorkflows promotions and releases of its Variants, and ChangeSets opened on their Units, may use, and whether one is required."
       },
       "ComponentCreateOrUpdateResponse": {
         "type": "object",
@@ -67008,6 +67261,14 @@
       "UnitCreateOrUpdateResponse": {
         "type": "object",
         "properties": {
+          "ChangeSetClose": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/ChangeSetCloseResult"
+              }
+            ],
+            "description": "The gates closing the Unit's ChangeSet was judged against, when the write closed, or on a dry run would close, a ChangeSet a ChangeWorkflow governs. Returned for every Unit of the ChangeSet the write detaches. A close the gates refuse fails every such Unit alike, so a write detaching nothing else answers with the refusal alone, whose items name each gate that does not hold, by Space."
+          },
           "ConfigData": {
             "type": "string",
             "description": "The configuration the operation produced; returned when include names ConfigData.",
@@ -67839,7 +68100,13 @@
           },
           "ChangeSetID": {
             "type": "string",
-            "description": "An existing ChangeSet to record the writes in. Default: one new ChangeSet per Space.",
+            "description": "An existing ChangeSet to record the writes in. Default: one new ChangeSet per Space. The upload closes it afterwards, unless a ChangeWorkflow governs it.",
+            "format": "uuid",
+            "example": "248df4b7-aa70-47b8-a036-33ac447e668d"
+          },
+          "ChangeWorkflowID": {
+            "type": "string",
+            "description": "The ChangeWorkflow governing the ChangeSet the upload opens, which a Space whose Component requires one needs. A ChangeSet a ChangeWorkflow governs is left open, with the Units the upload wrote in it, since closing it is gated on the workflow's Final prerequisites. Not accepted with ChangeSetID, whose ChangeSet names its own.",
             "format": "uuid",
             "example": "248df4b7-aa70-47b8-a036-33ac447e668d"
           },
@@ -67998,6 +68265,11 @@
             "description": "The ChangeSet the writes were recorded in. Absent on a dry run.",
             "format": "uuid",
             "example": "248df4b7-aa70-47b8-a036-33ac447e668d"
+          },
+          "ChangeSetOpen": {
+            "type": "boolean",
+            "description": "The upload left the ChangeSet open, with the Units it wrote in it, because a ChangeWorkflow governs it: closing it is gated on the workflow's Final prerequisites.",
+            "x-go-type-skip-optional-pointer": true
           },
           "Duplicates": {
             "type": "array",

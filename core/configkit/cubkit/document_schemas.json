@@ -185,7 +185,7 @@
           "type": "string"
         },
         "Expression": {
-          "description": "The check itself, carrying the \"cel:\" prefix. Evaluated against the Space under consideration, the change order being promoted, and that Space's Release. Compiled when the workflow is written.",
+          "description": "The check itself, carrying the \"cel:\" prefix. Evaluated against the Space under consideration, the change order being promoted, and that Space's Release; closing a ChangeSet binds Space and ChangeSet, with ChangeOrder and Release null. Compiled when the workflow is written.",
           "type": "string"
         },
         "Name": {
@@ -923,7 +923,7 @@
               "$ref": "#/definitions/ChangeWorkflowFinalStage"
             }
           ],
-          "description": "Final is what the last stage must satisfy for the rollout to read as completed. Nothing is promoted into it: a stage's prerequisites gate entry to the stage after it, so the last stage's gate nothing."
+          "description": "Final is what the last stage must satisfy for the rollout to read as completed. Nothing is promoted into it: a stage's prerequisites gate entry to the stage after it, so the last stage's gate nothing. In a workflow with no stages, which governs a ChangeSet, it is what every Space the ChangeSet was opened in must satisfy for it to close."
         },
         "Labels": {
           "additionalProperties": {
@@ -949,7 +949,7 @@
           "type": "string"
         },
         "Stages": {
-          "description": "Stages is the series a change is promoted through, in order. Ordered between stages and unordered within one. At least one is required.",
+          "description": "Stages is the series a change is promoted through, in order. Ordered between stages and unordered within one. A workflow governing a ChangeOrder needs at least one; one governing a ChangeSet has none.",
           "items": {
             "$ref": "#/definitions/ChangeWorkflowStage"
           },
@@ -1057,7 +1057,7 @@
           "type": "object"
         },
         "ChangeWorkflowRequired": {
-          "description": "Whether a ChangeWorkflow must be used for promotions and releases of this component's Variants. Changing it requires Manage permission on the component. (optional)",
+          "description": "Whether a ChangeWorkflow must be used for promotions and releases of this component's Variants, and by ChangeSets opened on their Units. Changing it requires Manage permission on the component. (optional)",
           "type": "boolean"
         },
         "DeleteGates": {

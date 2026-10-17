@@ -210,7 +210,7 @@ func checkChangeOrderCreateConflictingArgs(args []string) (bool, error) {
 		if changeorderCreateArgs.component != "" {
 			return false, errors.New("--component can only be used with single changeorder creation")
 		}
-		if len(changeorderRequestReviews) > 0 {
+		if len(requestReviewFlags) > 0 {
 			return false, errors.New("--request-review can only be used with single changeorder creation")
 		}
 	} else {
@@ -319,7 +319,7 @@ func runSingleChangeOrderCreate(args []string) error {
 	if changeorderCreateArgs.description != "" {
 		newBody.Description = changeorderCreateArgs.description
 	}
-	if len(changeorderRequestReviews) > 0 {
+	if len(requestReviewFlags) > 0 {
 		requests, err := applyReviewRequestFlags(newBody.ReviewRequests)
 		if err != nil {
 			return err

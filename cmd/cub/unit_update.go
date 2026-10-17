@@ -212,6 +212,8 @@ var (
 	filterMutation          string
 	tag                     string
 	ifMatchDataHash         string
+	forceCloseChangeSet     bool
+	forceCloseReason        string
 )
 
 func init() {
@@ -240,6 +242,8 @@ func init() {
 	unitUpdateCmd.Flags().StringVar(&mergeExternalSource, "merge-external-source", "", "external source identifier for merge-on-update")
 	unitUpdateCmd.Flags().BoolVar(&mergeEnableSubtraction, "merge-enable-subtraction", false, "also subtract the target's local differences from the patch during --upgrade and --merge-source, on top of the stored path protection that preserves overrides by default (no effect on --merge-source Self)")
 	unitUpdateCmd.Flags().StringVar(&tag, "tag", "", "UUID of tag to attach to (new) head revision")
+	unitUpdateCmd.Flags().BoolVar(&forceCloseChangeSet, "force-close", false, "with --changeset -, close a changeset its ChangeWorkflow governs although the gates of the workflow's Final do not hold; requires --force-reason, and is recorded on the changeset")
+	unitUpdateCmd.Flags().StringVar(&forceCloseReason, "force-reason", "", "why the changeset's gates are overridden; required with --force-close")
 	unitUpdateCmd.Flags().StringVar(&ifMatchDataHash, "if-match", "", "write the config data given only if the unit's configuration is still the one with this DataHash (as cub unit get shows it), so that a change made since it was read is not overwritten; refused, writing nothing, when it is not")
 	enableWhereFlag(unitUpdateCmd)
 	enableFilterFlag(unitUpdateCmd)
@@ -258,6 +262,13 @@ var restoreValues = map[string]struct{}{
 func checkConflictingArgs(args []string) bool {
 	// Check for bulk patch mode (no positional args)
 	isBulkPatchMode := len(args) == 0
+
+	if forceCloseChangeSet && changesetSlug != "-" {
+		failOnError(errors.New("--force-close closes a changeset, which --patch --changeset - does"))
+	}
+	if forceCloseChangeSet != (forceCloseReason != "") {
+		failOnError(errors.New("--force-close and --force-reason are used together: a close forced past a ChangeWorkflow's gates is recorded with the reason for it"))
+	}
 
 	if isBulkPatchMode {
 		if !isPatch {
@@ -736,6 +747,10 @@ func unitUpdateCmdRun(cmd *cobra.Command, args []string) error {
 		failOnError(err)
 		newParams.Tag = &tagID
 	}
+	if forceCloseChangeSet {
+		newParams.ForceClose = &forceCloseChangeSet
+		newParams.ForceReason = &forceCloseReason
+	}
 
 	// Perform the update
 
@@ -1044,6 +1059,10 @@ func runBulkUnitUpdate() error {
 		tagID, err := resolveTagID(tag)
 		failOnError(err)
 		params.Tag = &tagID
+	}
+	if forceCloseChangeSet {
+		params.ForceClose = &forceCloseChangeSet
+		params.ForceReason = &forceCloseReason
 	}
 
 	// Save prior unit state so mutation display can tell new changes from prior ones.

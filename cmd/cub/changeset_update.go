@@ -22,6 +22,12 @@ var changesetUpdateCmd = &cobra.Command{
 Single changeset update:
 `+"```"+`
   cub changeset update my-changeset --description "Updated description"
+
+  # Ask alice and bob to review the change. Asking again re-requests a review
+  cub changeset update my-changeset --request-review alice,bob
+
+  # Withdraw a review request
+  cub changeset update my-changeset --withdraw-review-request alice
 `+"```"+`
 
 Bulk update with --patch:
@@ -63,6 +69,8 @@ func init() {
 
 	// Single update specific flags
 	changesetUpdateCmd.Flags().StringVar(&changesetUpdateArgs.description, "description", "", "human-readable description of the change")
+	enableChangeSetRequestReviewFlag(changesetUpdateCmd)
+	enableChangeSetWithdrawReviewRequestFlag(changesetUpdateCmd)
 
 	changesetCmd.AddCommand(changesetUpdateCmd)
 }
@@ -79,6 +87,10 @@ func checkChangeSetUpdateConflictingArgs(args []string) bool {
 		// Check for mutual exclusivity between --changeset and --where flags
 		if len(changesetIdentifiers) > 0 && where != "" {
 			failOnError(fmt.Errorf("--changeset and --where flags are mutually exclusive"))
+		}
+		// Each change set has its own list, which a merge patch would replace whole.
+		if reviewRequestFlagsGiven() {
+			failOnError(errors.New("--request-review and --withdraw-review-request update one changeset at a time"))
 		}
 
 	} else {
@@ -199,11 +211,28 @@ func changesetUpdateCmdRun(cmd *cobra.Command, args []string) error {
 	if changesetPatch {
 		// Single changeset patch mode
 
+		var reviewRequests []goclientnew.ChangeSetReviewRequest
+		if reviewRequestFlagsGiven() {
+			reviewRequests, err = applyChangeSetReviewRequestFlags(currentChangeSet.ReviewRequests)
+			if err != nil {
+				return err
+			}
+			if reviewRequests == nil {
+				reviewRequests = []goclientnew.ChangeSetReviewRequest{}
+			}
+		}
+
 		// Build patch data using BuildPatchData with changeset enhancer
 		changesetEnhancer := func(patchData map[string]interface{}) {
 			// Add changeset-specific fields
 			if changesetUpdateArgs.description != "" {
 				patchData["Description"] = changesetUpdateArgs.description
+			}
+			// A merge patch replaces the list whole, so it is sent whole, with the Version it was
+			// read at, so that a request somebody else added meanwhile is not dropped.
+			if reviewRequests != nil {
+				patchData["ReviewRequests"] = reviewRequests
+				patchData["Version"] = currentChangeSet.Version
 			}
 		}
 
@@ -262,6 +291,13 @@ func changesetUpdateCmdRun(cmd *cobra.Command, args []string) error {
 	// Set changeset-specific fields from flags
 	if changesetUpdateArgs.description != "" {
 		currentChangeSet.Description = changesetUpdateArgs.description
+	}
+	if reviewRequestFlagsGiven() {
+		requests, err := applyChangeSetReviewRequestFlags(currentChangeSet.ReviewRequests)
+		if err != nil {
+			return err
+		}
+		currentChangeSet.ReviewRequests = requests
 	}
 
 	changesetRes, err := cubClientNew.UpdateChangeSetWithResponse(ctx, spaceID, currentChangeSet.ChangeSetID, &goclientnew.UpdateChangeSetParams{DryRun: dryRunParam()}, *currentChangeSet)

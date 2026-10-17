@@ -40,6 +40,7 @@ type variantUploadOptions struct {
 	annotations      []string
 	spaceLabels      []string
 	changeDesc       string
+	changeWorkflow   string
 	tag              string
 	subgroup         string
 	dryRun           bool
@@ -225,6 +226,7 @@ func init() {
 	_ = variantUploadCmd.Flags().MarkDeprecated("label", "use --unit-label")
 	_ = variantUploadCmd.Flags().MarkDeprecated("annotation", "use --unit-annotation")
 	variantUploadCmd.Flags().StringVar(&variantUploadArgs.changeDesc, "change-desc", "", "change description recorded on each written Unit")
+	variantUploadCmd.Flags().StringVar(&variantUploadArgs.changeWorkflow, "change-workflow", "", "ChangeWorkflow (slug, space/slug, or UUID) governing the changeset the upload records its writes in, which a space whose Component requires one needs; a governed changeset is left open, since closing it is gated")
 	addClearanceFlag(variantUploadCmd)
 	variantUploadCmd.Flags().StringVar(&variantUploadArgs.tag, "tag", "", "tag (slug, space/slug, or UUID) to put on the revision each Unit the upload writes is left at")
 	variantUploadCmd.Flags().StringVar(&variantUploadArgs.subgroup, "subgroup", "", "category recorded on the mutations of each Unit write of the upload: alphanumeric, at most 64 characters")
@@ -323,6 +325,13 @@ func variantUploadCmdRun(cmd *cobra.Command, args []string) error {
 			Client:        "cub",
 			ClientVersion: Version,
 		},
+	}
+	if a.changeWorkflow != "" {
+		changeWorkflowID, err := resolveChangeWorkflowID(a.changeWorkflow)
+		if err != nil {
+			return fmt.Errorf("failed to resolve --change-workflow: %w", err)
+		}
+		req.ChangeWorkflowID = &changeWorkflowID
 	}
 	if len(changeClearance) > 0 {
 		clearance, clearanceErr := parseClearanceSpecs(changeClearance)
@@ -780,6 +789,11 @@ func reportUploadRevert(result *goclientnew.UploadResult) {
 			ref := s.ChangeSetID.String()
 			if cs, err := cubapi.ResolveChangeSet(ctx, cubClient, cubapi.RefFromID(*s.ChangeSetID), cubapi.ResolveOpts{}); err == nil && cs.ChangeSet != nil {
 				ref = cs.ChangeSet.Slug
+			}
+			if s.ChangeSetOpen {
+				tprint("")
+				tprint("Changeset %s is governed by a ChangeWorkflow and was left open; close it with:", ref)
+				tprint("  cub variant changeset close %s %s", s.SpaceSlug, ref)
 			}
 			tprint("")
 			tprint("Revert this upload of %s with:", s.SpaceSlug)

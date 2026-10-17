@@ -49,8 +49,8 @@ func init() {
 	addStandardCreateFlags(componentCreateCmd)
 	addFieldEditFlags(componentCreateCmd, "Component")
 	componentCreateCmd.Flags().StringSliceVar(&componentCreateArgs.permissions, "permission", []string{}, permissionCreateHelp)
-	componentCreateCmd.Flags().StringSliceVar(&componentCreateArgs.allowedChangeWorkflows, "allowed-change-workflow", []string{}, "ChangeWorkflow, as <space>/<slug> or UUID, that promotions and releases may use (can be repeated or comma-separated)")
-	componentCreateCmd.Flags().BoolVar(&componentCreateArgs.changeWorkflowRequired, "change-workflow-required", false, "require a ChangeWorkflow to promote and release")
+	componentCreateCmd.Flags().StringSliceVar(&componentCreateArgs.allowedChangeWorkflows, "allowed-change-workflow", []string{}, "ChangeWorkflow, as <space>/<slug> or UUID, that promotions, releases, and changesets opened on the variants' units may use (can be repeated or comma-separated)")
+	componentCreateCmd.Flags().BoolVar(&componentCreateArgs.changeWorkflowRequired, "change-workflow-required", false, "require a ChangeWorkflow to promote and release, and to open a changeset on the variants' units")
 	addBackingUnitFlags(componentCreateCmd, "Component", true, true)
 	componentCmd.AddCommand(componentCreateCmd)
 }

@@ -388,6 +388,16 @@
       "ChangeSetID": {
         "dataType": "uuid"
       },
+      "ChangeWorkflow": {
+        "dataType": "JSON"
+      },
+      "ChangeWorkflowID": {
+        "dataType": "uuid",
+        "references": "ChangeWorkflow"
+      },
+      "CloseOverride": {
+        "dataType": "JSON"
+      },
       "CreatedAt": {
         "dataType": "time"
       },
@@ -408,6 +418,10 @@
       "HiddenReason": {
         "dataType": "string"
       },
+      "InScopeSpaceIDs": {
+        "dataType": "[]uuid",
+        "references": "Space"
+      },
       "Labels": {
         "dataType": "map[string]string"
       },
@@ -418,6 +432,9 @@
       },
       "Permissions": {
         "dataType": "map[string]map[string]map[uuid]bool"
+      },
+      "ReviewRequests": {
+        "dataType": "JSON"
       },
       "Slug": {
         "dataType": "string"
@@ -440,6 +457,10 @@
       },
       "UpdatedAt": {
         "dataType": "time"
+      },
+      "UserID": {
+        "dataType": "uuid",
+        "references": "User"
       }
     },
     "ChangeWorkflow": {

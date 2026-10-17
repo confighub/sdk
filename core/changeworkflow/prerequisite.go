@@ -26,7 +26,13 @@ const (
 	celSpaceVariable       = "Space"
 	celChangeOrderVariable = "ChangeOrder"
 	celReleaseVariable     = "Release"
+	celChangeSetVariable   = "ChangeSet"
 )
+
+// celPrerequisiteVariables are every name an expression may read. One expression can be named by
+// a ChangeOrder's gates and a ChangeSet's, so all are declared for both, and those an evaluation
+// has no entity for are bound as null.
+var celPrerequisiteVariables = []string{celSpaceVariable, celChangeOrderVariable, celReleaseVariable, celChangeSetVariable}
 
 // CELPrerequisiteExpression returns the expression a prerequisite carries and
 // whether it carries one, so a caller can tell a name it does not recognize from
@@ -68,29 +74,42 @@ func EvaluateCELPrerequisite(expression string, space *goclientnew.Space,
 // model types, which marshal to the same JSON the generated client types do, so both answer an
 // expression the same way. A nil pointer binds as null.
 func EvaluateCELPrerequisiteEntities(expression string, space, changeOrder, release any) (bool, error) {
+	return evaluateCELPrerequisite(expression, map[string]any{
+		celSpaceVariable:       space,
+		celChangeOrderVariable: changeOrder,
+		celReleaseVariable:     release,
+	})
+}
+
+// EvaluateCELChangeSetPrerequisite reports whether space satisfies expression for closing
+// changeSet, a ChangeSet a ChangeWorkflow governs. The ChangeSet is bound as ChangeSet, and
+// ChangeOrder and Release as null: closing a ChangeSet is not a promotion or a release of
+// anything, so an expression written for those fails rather than answering for a ChangeSet.
+func EvaluateCELChangeSetPrerequisite(expression string, space, changeSet any) (bool, error) {
+	return evaluateCELPrerequisite(expression, map[string]any{
+		celSpaceVariable:     space,
+		celChangeSetVariable: changeSet,
+	})
+}
+
+// evaluateCELPrerequisite evaluates expression with each entity of bindings bound under its
+// name, and every variable it does not name bound as null.
+func evaluateCELPrerequisite(expression string, bindings map[string]any) (bool, error) {
 	program, err := celPrerequisiteProgram(expression)
 	if err != nil {
 		return false, err
 	}
 
-	spaceValue, err := celEntityValue(space)
-	if err != nil {
-		return false, errors.Wrap(err, "encode Space for prerequisite expression")
-	}
-	changeOrderValue, err := celEntityValue(changeOrder)
-	if err != nil {
-		return false, errors.Wrap(err, "encode ChangeOrder for prerequisite expression")
-	}
-	releaseValue, err := celEntityValue(release)
-	if err != nil {
-		return false, errors.Wrap(err, "encode Release for prerequisite expression")
+	activation := make(map[string]any, len(celPrerequisiteVariables))
+	for _, name := range celPrerequisiteVariables {
+		value, err := celEntityValue(bindings[name])
+		if err != nil {
+			return false, errors.Wrapf(err, "encode %s for prerequisite expression", name)
+		}
+		activation[name] = value
 	}
 
-	value, _, err := program.Eval(map[string]any{
-		celSpaceVariable:       spaceValue,
-		celChangeOrderVariable: changeOrderValue,
-		celReleaseVariable:     releaseValue,
-	})
+	value, _, err := program.Eval(activation)
 	if err != nil {
 		return false, errors.Wrapf(err, "evaluate prerequisite expression %q", expression)
 	}
@@ -103,11 +122,11 @@ func EvaluateCELPrerequisiteEntities(expression string, space, changeOrder, rele
 }
 
 func celPrerequisiteProgram(expression string) (cel.Program, error) {
-	env, err := cel.NewEnv(
-		cel.Variable(celSpaceVariable, cel.DynType),
-		cel.Variable(celChangeOrderVariable, cel.DynType),
-		cel.Variable(celReleaseVariable, cel.DynType),
-	)
+	options := make([]cel.EnvOption, 0, len(celPrerequisiteVariables))
+	for _, name := range celPrerequisiteVariables {
+		options = append(options, cel.Variable(name, cel.DynType))
+	}
+	env, err := cel.NewEnv(options...)
 	if err != nil {
 		return nil, errors.Wrap(err, "create CEL environment")
 	}

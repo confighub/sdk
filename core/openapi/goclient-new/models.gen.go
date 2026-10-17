@@ -1122,6 +1122,15 @@ type ChangeSet struct {
 	// ChangeSetID ChangeSetID uniquely identifies a changeset within the system.
 	ChangeSetID openapi_types.UUID `json:"ChangeSetID,omitempty,omitzero" yaml:"ChangeSetID,omitempty"`
 
+	// ChangeWorkflow ChangeWorkflow is a copy of the ChangeWorkflow ChangeWorkflowID names, taken when the ChangeSet was created, so editing the workflow afterwards does not change what closing this ChangeSet is judged against. Empty is a ChangeSet no workflow governs. (readonly)
+	ChangeWorkflow *ChangeWorkflowSpec `json:"ChangeWorkflow,omitempty" yaml:"ChangeWorkflow,omitempty"`
+
+	// ChangeWorkflowID ChangeWorkflowID is the ChangeWorkflow that gates closing this ChangeSet: its Final prerequisites, evaluated over every Space in InScopeSpaceIDs. The workflow must have no Stages, and its Final may not name Released or Healthy. Settable at creation and immutable afterwards. When a Unit in a Space that is a Variant of a Component joins the ChangeSet, the workflow must be one the Component allows, and is required if the Component requires one.
+	ChangeWorkflowID *openapi_types.UUID `json:"ChangeWorkflowID,omitempty" yaml:"ChangeWorkflowID,omitempty"`
+
+	// CloseOverride CloseOverride records a close forced past the ChangeWorkflow's gates: who forced it, when, why, and which gates did not hold. (readonly)
+	CloseOverride *ChangeSetCloseOverride `json:"CloseOverride,omitempty" yaml:"CloseOverride,omitempty"`
+
 	// CreatedAt The timestamp when the entity was created in "2023-01-01T12:00:00Z" format.
 	CreatedAt time.Time `json:"CreatedAt,omitempty,omitzero" yaml:"CreatedAt,omitempty"`
 
@@ -1143,6 +1152,9 @@ type ChangeSet struct {
 	// HiddenReason The reason the entity is hidden, if it is. A hidden entity is left out of List and Search results, and of what bulk operations act on, unless the include_hidden parameter names its reason or is *, or the where parameter names the entity by Slug or ID. ConfigHub/YAML Units are created hidden with the reason BackingUnit unless given another.
 	HiddenReason string `json:"HiddenReason,omitempty" yaml:"HiddenReason,omitempty"`
 
+	// InScopeSpaceIDs InScopeSpaceIDs are the Spaces of the Units the ChangeSet has been opened on. A Space is added when the first of its Units joins, and is not removed. Closing a ChangeSet governed by a ChangeWorkflow is gated over every one of them. (readonly)
+	InScopeSpaceIDs []UUID `json:"InScopeSpaceIDs,omitempty" yaml:"InScopeSpaceIDs,omitempty"`
+
 	// Labels An optional map of Label key/value pairs to specify identifying attributes of entities for the purpose of grouping and filtering them.
 	Labels map[string]string `json:"Labels,omitempty" yaml:"Labels,omitempty"`
 
@@ -1151,6 +1163,9 @@ type ChangeSet struct {
 
 	// Permissions Permissions to access this change set.
 	Permissions *Permissions `json:"Permissions,omitempty" yaml:"Permissions,omitempty"`
+
+	// ReviewRequests ReviewRequests records whose review the change is waiting for: for each, the User, and when and by whom the review was requested. A request is not cleared when the review is given; whether a reviewer has reviewed is read from their Attestations. A merge patch replaces the list whole. At most 256.
+	ReviewRequests []ChangeSetReviewRequest `json:"ReviewRequests,omitempty" yaml:"ReviewRequests,omitempty"`
 
 	// Slug Unique URL-safe identifier for the entity.
 	Slug string `json:"Slug" yaml:"Slug"`
@@ -1173,8 +1188,31 @@ type ChangeSet struct {
 	// UpdatedAt The timestamp when the entity was last updated in "2023-01-01T12:00:00Z" format.
 	UpdatedAt time.Time `json:"UpdatedAt,omitempty,omitzero" yaml:"UpdatedAt,omitempty"`
 
+	// UserID The User who created the ChangeSet. Absent for ChangeSets created before it was recorded. (readonly)
+	UserID *openapi_types.UUID `json:"UserID,omitempty" yaml:"UserID,omitempty"`
+
 	// Version An entity-specific sequence number used for optimistic concurrency control. The value read must be sent in calls to Update.
 	Version int64 `json:"Version,omitempty" yaml:"Version,omitempty"`
+}
+
+// ChangeSetCloseOverride defines model for ChangeSetCloseOverride.
+type ChangeSetCloseOverride struct {
+	FailedGates  []string           `json:"FailedGates,omitempty" yaml:"FailedGates,omitempty"`
+	OverriddenAt time.Time          `json:"OverriddenAt,omitempty,omitzero" yaml:"OverriddenAt,omitempty"`
+	Reason       string             `json:"Reason,omitempty" yaml:"Reason,omitempty"`
+	UserID       openapi_types.UUID `json:"UserID,omitempty,omitzero" yaml:"UserID,omitempty"`
+}
+
+// ChangeSetCloseResult defines model for ChangeSetCloseResult.
+type ChangeSetCloseResult struct {
+	// ChangeSetID The ChangeSet the write closed, or would have closed.
+	ChangeSetID openapi_types.UUID `json:"ChangeSetID,omitempty,omitzero" yaml:"ChangeSetID,omitempty"`
+
+	// Forced The close was forced past gates that did not hold, which the ChangeSet's CloseOverride records.
+	Forced bool `json:"Forced,omitempty" yaml:"Forced,omitempty"`
+
+	// Gates Each Final prerequisite of the ChangeSet's ChangeWorkflow, evaluated over each Space the ChangeSet was opened in.
+	Gates []PromoteGateResult `json:"Gates,omitempty" yaml:"Gates,omitempty"`
 }
 
 // ChangeSetCreateOrUpdateResponse defines model for ChangeSetCreateOrUpdateResponse.
@@ -1182,6 +1220,18 @@ type ChangeSetCreateOrUpdateResponse struct {
 	// ChangeSet Defines an entity changeset.
 	ChangeSet *ChangeSet     `json:"ChangeSet,omitempty" yaml:"ChangeSet,omitempty"`
 	Error     *ResponseError `json:"Error,omitempty" yaml:"Error,omitempty"`
+}
+
+// ChangeSetReviewRequest defines model for ChangeSetReviewRequest.
+type ChangeSetReviewRequest struct {
+	// RequestedAt When the review was requested, by the server's clock. A new request is stamped with the current time, and an existing one keeps its time; sending a later time than the one recorded re-requests the review, and stamps it with the current time.
+	RequestedAt time.Time `json:"RequestedAt,omitempty,omitzero" yaml:"RequestedAt,omitempty"`
+
+	// RequestedByUserID Who requested the review, or last re-requested it. Set by the server.
+	RequestedByUserID openapi_types.UUID `json:"RequestedByUserID,omitempty,omitzero" yaml:"RequestedByUserID,omitempty"`
+
+	// UserID The User asked to review.
+	UserID openapi_types.UUID `json:"UserID,omitzero" yaml:"UserID"`
 }
 
 // ChangeWorkflow Declares how a change is promoted: the ordered stages it moves through, which Spaces each stage selects, and the gates that have to pass before it enters one.
@@ -1211,7 +1261,7 @@ type ChangeWorkflow struct {
 	// EntityType The type of entity.
 	EntityType string `json:"EntityType,omitempty" yaml:"EntityType,omitempty"`
 
-	// Final Final is what the last stage must satisfy for the rollout to read as completed. Nothing is promoted into it: a stage's prerequisites gate entry to the stage after it, so the last stage's gate nothing.
+	// Final Final is what the last stage must satisfy for the rollout to read as completed. Nothing is promoted into it: a stage's prerequisites gate entry to the stage after it, so the last stage's gate nothing. In a workflow with no stages, which governs a ChangeSet, it is what every Space the ChangeSet was opened in must satisfy for it to close.
 	Final *ChangeWorkflowFinalStage `json:"Final,omitempty" yaml:"Final,omitempty"`
 
 	// Hash SHA256 hash of the change workflow's Stages, Final, CustomPrerequisites and AttestationPrerequisites encoded as hexadecimal. (readonly)
@@ -1238,8 +1288,8 @@ type ChangeWorkflow struct {
 	// SpaceSlug Slug of the Space this entity belongs to. (readonly)
 	SpaceSlug string `json:"SpaceSlug,omitempty" yaml:"SpaceSlug,omitempty"`
 
-	// Stages Stages is the series a change is promoted through, in order. Ordered between stages and unordered within one. At least one is required.
-	Stages []ChangeWorkflowStage `json:"Stages" yaml:"Stages"`
+	// Stages Stages is the series a change is promoted through, in order. Ordered between stages and unordered within one. A workflow governing a ChangeOrder needs at least one; one governing a ChangeSet has none.
+	Stages []ChangeWorkflowStage `json:"Stages,omitempty" yaml:"Stages,omitempty"`
 
 	// UpdatedAt The timestamp when the entity was last updated in "2023-01-01T12:00:00Z" format.
 	UpdatedAt                time.Time           `json:"UpdatedAt,omitempty,omitzero" yaml:"UpdatedAt,omitempty"`
@@ -1300,7 +1350,7 @@ type ChangeWorkflowPrerequisite struct {
 	// Description What the gate checks, in the author's words. A promotion this gate holds up reports the prerequisite by Name, so this is where the reason lives. Read by nobody: it is not part of what the gate evaluates.
 	Description string `json:"Description,omitempty" yaml:"Description,omitempty"`
 
-	// Expression The check itself, carrying the "cel:" prefix. Evaluated against the Space under consideration, the change order being promoted, and that Space's Release. Compiled when the workflow is written.
+	// Expression The check itself, carrying the "cel:" prefix. Evaluated against the Space under consideration, the change order being promoted, and that Space's Release; closing a ChangeSet binds Space and ChangeSet, with ChangeOrder and Release null. Compiled when the workflow is written.
 	Expression string `json:"Expression" yaml:"Expression"`
 
 	// Name What a stage or Final gates on. Unique within a workflow, and refused if it shadows a built-in name.
@@ -1315,11 +1365,11 @@ type ChangeWorkflowSpec struct {
 	// CustomPrerequisites The checks a stage or Final may gate on beyond the built-in ones. Declared once and named wherever they apply.
 	CustomPrerequisites []ChangeWorkflowPrerequisite `json:"CustomPrerequisites,omitempty" yaml:"CustomPrerequisites,omitempty"`
 
-	// Final What the last stage must satisfy for the rollout to read as completed. Nothing is promoted into it: a stage's prerequisites gate entry to the stage after it, so the last stage's gate nothing.
+	// Final What the last stage must satisfy for the rollout to read as completed. Nothing is promoted into it: a stage's prerequisites gate entry to the stage after it, so the last stage's gate nothing. In a workflow with no stages, which governs a ChangeSet, what every Space the ChangeSet was opened in must satisfy for it to close.
 	Final *ChangeWorkflowFinalStage `json:"Final,omitempty" yaml:"Final,omitempty"`
 
-	// Stages The stages a change is promoted through, in order. Ordered between stages and unordered within one. At least one is required.
-	Stages []ChangeWorkflowStage `json:"Stages" yaml:"Stages"`
+	// Stages The stages a change is promoted through, in order. Ordered between stages and unordered within one. A workflow governing a ChangeOrder needs at least one; one governing a ChangeSet has none.
+	Stages []ChangeWorkflowStage `json:"Stages,omitempty" yaml:"Stages,omitempty"`
 }
 
 // ChangeWorkflowStage defines model for ChangeWorkflowStage.
@@ -1581,16 +1631,16 @@ type CommandSignature struct {
 	Returns     *Schema                `json:"Returns,omitempty" yaml:"Returns,omitempty"`
 }
 
-// Component The Component a set of Variants make up. Each Variant is a Space naming the Component with ComponentID. The Component decides which ChangeWorkflows promotions and releases of its Variants may use, and whether one is required.
+// Component The Component a set of Variants make up. Each Variant is a Space naming the Component with ComponentID. The Component decides which ChangeWorkflows promotions and releases of its Variants, and ChangeSets opened on their Units, may use, and whether one is required.
 type Component struct {
-	// AllowedChangeWorkflowIDs The set of ChangeWorkflows that can be used for promotions and releases of this component's Variants. Changing it requires Manage permission on the component. (optional)
+	// AllowedChangeWorkflowIDs The set of ChangeWorkflows that can be used for promotions and releases of this component's Variants, and for ChangeSets opened on their Units: a ChangeOrder or ChangeSet is governed by one workflow, which every component it reaches has to allow. Changing it requires Manage permission on the component. (optional)
 	AllowedChangeWorkflowIDs []UUID `json:"AllowedChangeWorkflowIDs,omitempty" yaml:"AllowedChangeWorkflowIDs,omitempty"`
 
 	// Annotations An optional map of Annotation key/value pairs for tools to attach information to entities.
 	Annotations   map[string]string   `json:"Annotations,omitempty" yaml:"Annotations,omitempty"`
 	BackingUnitID *openapi_types.UUID `json:"BackingUnitID,omitempty" yaml:"BackingUnitID,omitempty"`
 
-	// ChangeWorkflowRequired Whether a ChangeWorkflow must be used for promotions and releases of this component's Variants. Changing it requires Manage permission on the component. (optional)
+	// ChangeWorkflowRequired Whether a ChangeWorkflow must be used for promotions and releases of this component's Variants, and by ChangeSets opened on their Units. Changing it requires Manage permission on the component. (optional)
 	ChangeWorkflowRequired bool `json:"ChangeWorkflowRequired,omitempty" yaml:"ChangeWorkflowRequired,omitempty"`
 
 	// ComponentID Unique identifier for a component.
@@ -1633,7 +1683,7 @@ type Component struct {
 
 // ComponentCreateOrUpdateResponse defines model for ComponentCreateOrUpdateResponse.
 type ComponentCreateOrUpdateResponse struct {
-	// Component The Component a set of Variants make up. Each Variant is a Space naming the Component with ComponentID. The Component decides which ChangeWorkflows promotions and releases of its Variants may use, and whether one is required.
+	// Component The Component a set of Variants make up. Each Variant is a Space naming the Component with ComponentID. The Component decides which ChangeWorkflows promotions and releases of its Variants, and ChangeSets opened on their Units, may use, and whether one is required.
 	Component *Component     `json:"Component,omitempty" yaml:"Component,omitempty"`
 	Error     *ResponseError `json:"Error,omitempty" yaml:"Error,omitempty"`
 }
@@ -2043,7 +2093,7 @@ type ExtendedChannel struct {
 
 // ExtendedComponent defines model for ExtendedComponent.
 type ExtendedComponent struct {
-	// Component The Component a set of Variants make up. Each Variant is a Space naming the Component with ComponentID. The Component decides which ChangeWorkflows promotions and releases of its Variants may use, and whether one is required.
+	// Component The Component a set of Variants make up. Each Variant is a Space naming the Component with ComponentID. The Component decides which ChangeWorkflows promotions and releases of its Variants, and ChangeSets opened on their Units, may use, and whether one is required.
 	Component *Component     `json:"Component,omitempty" yaml:"Component,omitempty"`
 	Error     *ResponseError `json:"Error,omitempty" yaml:"Error,omitempty"`
 
@@ -2339,7 +2389,7 @@ type ExtendedSpace struct {
 	AttributeFilter *Filter     `json:"AttributeFilter,omitempty" yaml:"AttributeFilter,omitempty"`
 	Attributes      []Attribute `json:"Attributes,omitempty" yaml:"Attributes,omitempty"`
 
-	// Component The Component a set of Variants make up. Each Variant is a Space naming the Component with ComponentID. The Component decides which ChangeWorkflows promotions and releases of its Variants may use, and whether one is required.
+	// Component The Component a set of Variants make up. Each Variant is a Space naming the Component with ComponentID. The Component decides which ChangeWorkflows promotions and releases of its Variants, and ChangeSets opened on their Units, may use, and whether one is required.
 	Component      *Component     `json:"Component,omitempty" yaml:"Component,omitempty"`
 	Error          *ResponseError `json:"Error,omitempty" yaml:"Error,omitempty"`
 	GatedUnitCount int64          `json:"GatedUnitCount,omitempty" yaml:"GatedUnitCount,omitempty"`
@@ -5235,6 +5285,9 @@ type UnitConflictsResponse struct {
 
 // UnitCreateOrUpdateResponse defines model for UnitCreateOrUpdateResponse.
 type UnitCreateOrUpdateResponse struct {
+	// ChangeSetClose The gates closing the Unit's ChangeSet was judged against, when the write closed, or on a dry run would close, a ChangeSet a ChangeWorkflow governs. Returned for every Unit of the ChangeSet the write detaches. A close the gates refuse fails every such Unit alike, so a write detaching nothing else answers with the refusal alone, whose items name each gate that does not hold, by Space.
+	ChangeSetClose *ChangeSetCloseResult `json:"ChangeSetClose,omitempty" yaml:"ChangeSetClose,omitempty"`
+
 	// ConfigData The configuration the operation produced; returned when include names ConfigData.
 	ConfigData string                `json:"ConfigData,omitempty" yaml:"ConfigData,omitempty"`
 	Conflicts  *MutationConflictList `json:"Conflicts,omitempty" yaml:"Conflicts,omitempty"`
@@ -5570,8 +5623,11 @@ type UploadRequest struct {
 	ChangeDescription    string `json:"ChangeDescription,omitempty" yaml:"ChangeDescription,omitempty"`
 	ChangeSetDescription string `json:"ChangeSetDescription,omitempty" yaml:"ChangeSetDescription,omitempty"`
 
-	// ChangeSetID An existing ChangeSet to record the writes in. Default: one new ChangeSet per Space.
+	// ChangeSetID An existing ChangeSet to record the writes in. Default: one new ChangeSet per Space. The upload closes it afterwards, unless a ChangeWorkflow governs it.
 	ChangeSetID *openapi_types.UUID `json:"ChangeSetID,omitempty" yaml:"ChangeSetID,omitempty"`
+
+	// ChangeWorkflowID The ChangeWorkflow governing the ChangeSet the upload opens, which a Space whose Component requires one needs. A ChangeSet a ChangeWorkflow governs is left open, with the Units the upload wrote in it, since closing it is gated on the workflow's Final prerequisites. Not accepted with ChangeSetID, whose ChangeSet names its own.
+	ChangeWorkflowID *openapi_types.UUID `json:"ChangeWorkflowID,omitempty" yaml:"ChangeWorkflowID,omitempty"`
 
 	// Clearance The guarded reasons the Unit writes are cleared for. A path whose guards this does not cover is not written, and the withheld change is reported in the Unit's Conflicts.
 	Clearance *Clearance `json:"Clearance,omitempty" yaml:"Clearance,omitempty"`
@@ -5651,6 +5707,9 @@ type UploadSpaceResult struct {
 
 	// ChangeSetID The ChangeSet the writes were recorded in. Absent on a dry run.
 	ChangeSetID *openapi_types.UUID `json:"ChangeSetID,omitempty" yaml:"ChangeSetID,omitempty"`
+
+	// ChangeSetOpen The upload left the ChangeSet open, with the Units it wrote in it, because a ChangeWorkflow governs it: closing it is gated on the workflow's Final prerequisites.
+	ChangeSetOpen bool `json:"ChangeSetOpen,omitempty" yaml:"ChangeSetOpen,omitempty"`
 
 	// Duplicates Resources this upload writes that other Units deployed to the same Target also define: the Space's other Units, and when the Space has a Target, Units elsewhere on that Target.
 	Duplicates []UploadDuplicate  `json:"Duplicates,omitempty" yaml:"Duplicates,omitempty"`
@@ -8715,7 +8774,7 @@ type BulkDeleteChangeSetsParams struct {
 	// An example conjunction is:
 	// `CreatedAt >= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.
 	//
-	// Supported attributes for filtering on ChangeSet: Annotations, ChangeSetID, CreatedAt, DeleteGates, Description, DisplayName, EndTagID, HiddenReason, Labels, OrganizationID, Permissions, Slug, SpaceID, StartTagID, StartTagIsPriorRevision, State, UpdatedAt.
+	// Supported attributes for filtering on ChangeSet: Annotations, ChangeSetID, ChangeWorkflow, ChangeWorkflowID, CloseOverride, CreatedAt, DeleteGates, Description, DisplayName, EndTagID, HiddenReason, InScopeSpaceIDs, Labels, OrganizationID, Permissions, ReviewRequests, Slug, SpaceID, StartTagID, StartTagIsPriorRevision, State, UpdatedAt, UserID.
 	//
 	// The whole string must be query-encoded.
 	Where *string `form:"where,omitempty" json:"where,omitempty" yaml:"where,omitempty"`
@@ -8814,7 +8873,7 @@ type ListAllChangeSetsParams struct {
 	// An example conjunction is:
 	// `CreatedAt >= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.
 	//
-	// Supported attributes for filtering on ChangeSet: Annotations, ChangeSetID, CreatedAt, DeleteGates, Description, DisplayName, EndTagID, HiddenReason, Labels, OrganizationID, Permissions, Slug, SpaceID, StartTagID, StartTagIsPriorRevision, State, UpdatedAt.
+	// Supported attributes for filtering on ChangeSet: Annotations, ChangeSetID, ChangeWorkflow, ChangeWorkflowID, CloseOverride, CreatedAt, DeleteGates, Description, DisplayName, EndTagID, HiddenReason, InScopeSpaceIDs, Labels, OrganizationID, Permissions, ReviewRequests, Slug, SpaceID, StartTagID, StartTagIsPriorRevision, State, UpdatedAt, UserID.
 	//
 	// The whole string must be query-encoded.
 	Where *string `form:"where,omitempty" json:"where,omitempty" yaml:"where,omitempty"`
@@ -8893,7 +8952,7 @@ type ListAllChangeSetsParams struct {
 	//
 	// Field names are case-sensitive and PascalCase, as in the JSON encoding. Sort direction defaults to ASC when the 'DIRECTION:' prefix is omitted.
 	//
-	// Supported attributes for ordering ChangeSet: ChangeSetID, CreatedAt, Description, DisplayName, EndTagID, HiddenReason, OrganizationID, Slug, SpaceID, StartTagID, StartTagIsPriorRevision, State, UpdatedAt.
+	// Supported attributes for ordering ChangeSet: ChangeSetID, ChangeWorkflowID, CreatedAt, Description, DisplayName, EndTagID, HiddenReason, OrganizationID, Slug, SpaceID, StartTagID, StartTagIsPriorRevision, State, UpdatedAt, UserID.
 	//
 	// Example: 'DESC:CreatedAt' or 'DisplayName,DESC:CreatedAt'.
 	//
@@ -8913,7 +8972,8 @@ type ListAllChangeSetsParams struct {
 // BulkPatchChangeSetsApplicationMergePatchPlusJSONBody defines parameters for BulkPatchChangeSets.
 type BulkPatchChangeSetsApplicationMergePatchPlusJSONBody struct {
 	// Annotations An optional map of Annotation key/value pairs for tools to attach information to entities.
-	Annotations *map[string]*string `json:"Annotations" yaml:"Annotations"`
+	Annotations      *map[string]*string `json:"Annotations" yaml:"Annotations"`
+	ChangeWorkflowID *openapi_types.UUID `json:"ChangeWorkflowID" yaml:"ChangeWorkflowID"`
 
 	// DeleteGates An optional set of gates that, if any is present, will block deletion
 	DeleteGates *map[string]*bool `json:"DeleteGates" yaml:"DeleteGates"`
@@ -8926,8 +8986,9 @@ type BulkPatchChangeSetsApplicationMergePatchPlusJSONBody struct {
 	HiddenReason *string `json:"HiddenReason" yaml:"HiddenReason"`
 
 	// Labels An optional map of Label key/value pairs to specify identifying attributes of entities for the purpose of grouping and filtering them.
-	Labels      *map[string]*string                 `json:"Labels" yaml:"Labels"`
-	Permissions *map[string]*map[string]interface{} `json:"Permissions" yaml:"Permissions"`
+	Labels         *map[string]*string                 `json:"Labels" yaml:"Labels"`
+	Permissions    *map[string]*map[string]interface{} `json:"Permissions" yaml:"Permissions"`
+	ReviewRequests *[]map[string]interface{}           `json:"ReviewRequests" yaml:"ReviewRequests"`
 
 	// Slug Unique URL-safe identifier for the entity.
 	Slug *string `json:"Slug" yaml:"Slug"`
@@ -8972,7 +9033,7 @@ type BulkPatchChangeSetsParams struct {
 	// An example conjunction is:
 	// `CreatedAt >= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.
 	//
-	// Supported attributes for filtering on ChangeSet: Annotations, ChangeSetID, CreatedAt, DeleteGates, Description, DisplayName, EndTagID, HiddenReason, Labels, OrganizationID, Permissions, Slug, SpaceID, StartTagID, StartTagIsPriorRevision, State, UpdatedAt.
+	// Supported attributes for filtering on ChangeSet: Annotations, ChangeSetID, ChangeWorkflow, ChangeWorkflowID, CloseOverride, CreatedAt, DeleteGates, Description, DisplayName, EndTagID, HiddenReason, InScopeSpaceIDs, Labels, OrganizationID, Permissions, ReviewRequests, Slug, SpaceID, StartTagID, StartTagIsPriorRevision, State, UpdatedAt, UserID.
 	//
 	// The whole string must be query-encoded.
 	Where *string `form:"where,omitempty" json:"where,omitempty" yaml:"where,omitempty"`
@@ -9038,7 +9099,8 @@ type BulkPatchChangeSetsParams struct {
 // BulkCreateChangeSetsApplicationMergePatchPlusJSONBody defines parameters for BulkCreateChangeSets.
 type BulkCreateChangeSetsApplicationMergePatchPlusJSONBody struct {
 	// Annotations An optional map of Annotation key/value pairs for tools to attach information to entities.
-	Annotations *map[string]*string `json:"Annotations" yaml:"Annotations"`
+	Annotations      *map[string]*string `json:"Annotations" yaml:"Annotations"`
+	ChangeWorkflowID *openapi_types.UUID `json:"ChangeWorkflowID" yaml:"ChangeWorkflowID"`
 
 	// DeleteGates An optional set of gates that, if any is present, will block deletion
 	DeleteGates *map[string]*bool `json:"DeleteGates" yaml:"DeleteGates"`
@@ -9051,8 +9113,9 @@ type BulkCreateChangeSetsApplicationMergePatchPlusJSONBody struct {
 	HiddenReason *string `json:"HiddenReason" yaml:"HiddenReason"`
 
 	// Labels An optional map of Label key/value pairs to specify identifying attributes of entities for the purpose of grouping and filtering them.
-	Labels      *map[string]*string                 `json:"Labels" yaml:"Labels"`
-	Permissions *map[string]*map[string]interface{} `json:"Permissions" yaml:"Permissions"`
+	Labels         *map[string]*string                 `json:"Labels" yaml:"Labels"`
+	Permissions    *map[string]*map[string]interface{} `json:"Permissions" yaml:"Permissions"`
+	ReviewRequests *[]map[string]interface{}           `json:"ReviewRequests" yaml:"ReviewRequests"`
 
 	// Slug Unique URL-safe identifier for the entity.
 	Slug *string `json:"Slug" yaml:"Slug"`
@@ -9097,7 +9160,7 @@ type BulkCreateChangeSetsParams struct {
 	// An example conjunction is:
 	// `CreatedAt >= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.
 	//
-	// Supported attributes for filtering on ChangeSet: Annotations, ChangeSetID, CreatedAt, DeleteGates, Description, DisplayName, EndTagID, HiddenReason, Labels, OrganizationID, Permissions, Slug, SpaceID, StartTagID, StartTagIsPriorRevision, State, UpdatedAt.
+	// Supported attributes for filtering on ChangeSet: Annotations, ChangeSetID, ChangeWorkflow, ChangeWorkflowID, CloseOverride, CreatedAt, DeleteGates, Description, DisplayName, EndTagID, HiddenReason, InScopeSpaceIDs, Labels, OrganizationID, Permissions, ReviewRequests, Slug, SpaceID, StartTagID, StartTagIsPriorRevision, State, UpdatedAt, UserID.
 	//
 	// The whole string must be query-encoded.
 	Where *string `form:"where,omitempty" json:"where,omitempty" yaml:"where,omitempty"`
@@ -9262,7 +9325,7 @@ type BulkMoveChangeSetsParams struct {
 	// An example conjunction is:
 	// `CreatedAt >= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.
 	//
-	// Supported attributes for filtering on ChangeSet: Annotations, ChangeSetID, CreatedAt, DeleteGates, Description, DisplayName, EndTagID, HiddenReason, Labels, OrganizationID, Permissions, Slug, SpaceID, StartTagID, StartTagIsPriorRevision, State, UpdatedAt.
+	// Supported attributes for filtering on ChangeSet: Annotations, ChangeSetID, ChangeWorkflow, ChangeWorkflowID, CloseOverride, CreatedAt, DeleteGates, Description, DisplayName, EndTagID, HiddenReason, InScopeSpaceIDs, Labels, OrganizationID, Permissions, ReviewRequests, Slug, SpaceID, StartTagID, StartTagIsPriorRevision, State, UpdatedAt, UserID.
 	//
 	// The whole string must be query-encoded.
 	Where *string `form:"where,omitempty" json:"where,omitempty" yaml:"where,omitempty"`
@@ -9567,7 +9630,7 @@ type BulkPatchChangeWorkflowsApplicationMergePatchPlusJSONBody struct {
 	// DisplayName Friendly name for the entity.
 	DisplayName *string `json:"DisplayName" yaml:"DisplayName"`
 
-	// Final What the last stage must satisfy for the rollout to read as completed. Nothing is promoted into it: a stage's prerequisites gate entry to the stage after it, so the last stage's gate nothing.
+	// Final What the last stage must satisfy for the rollout to read as completed. Nothing is promoted into it: a stage's prerequisites gate entry to the stage after it, so the last stage's gate nothing. In a workflow with no stages, which governs a ChangeSet, what every Space the ChangeSet was opened in must satisfy for it to close.
 	Final *map[string]interface{} `json:"Final" yaml:"Final"`
 
 	// HiddenReason The reason the entity is hidden, if it is. A hidden entity is left out of List and Search results, and of what bulk operations act on, unless the include_hidden parameter names its reason or is *, or the where parameter names the entity by Slug or ID. ConfigHub/YAML Units are created hidden with the reason BackingUnit unless given another.
@@ -9580,7 +9643,7 @@ type BulkPatchChangeWorkflowsApplicationMergePatchPlusJSONBody struct {
 	// Slug Unique URL-safe identifier for the entity.
 	Slug *string `json:"Slug" yaml:"Slug"`
 
-	// Stages The stages a change is promoted through, in order. Ordered between stages and unordered within one. At least one is required.
+	// Stages The stages a change is promoted through, in order. Ordered between stages and unordered within one. A workflow governing a ChangeOrder needs at least one; one governing a ChangeSet has none.
 	Stages *[]map[string]interface{} `json:"Stages" yaml:"Stages"`
 
 	// Version An entity-specific sequence number used for optimistic concurrency control. The value read must be sent in calls to Update.
@@ -9709,7 +9772,7 @@ type BulkCreateChangeWorkflowsApplicationMergePatchPlusJSONBody struct {
 	// DisplayName Friendly name for the entity.
 	DisplayName *string `json:"DisplayName" yaml:"DisplayName"`
 
-	// Final What the last stage must satisfy for the rollout to read as completed. Nothing is promoted into it: a stage's prerequisites gate entry to the stage after it, so the last stage's gate nothing.
+	// Final What the last stage must satisfy for the rollout to read as completed. Nothing is promoted into it: a stage's prerequisites gate entry to the stage after it, so the last stage's gate nothing. In a workflow with no stages, which governs a ChangeSet, what every Space the ChangeSet was opened in must satisfy for it to close.
 	Final *map[string]interface{} `json:"Final" yaml:"Final"`
 
 	// HiddenReason The reason the entity is hidden, if it is. A hidden entity is left out of List and Search results, and of what bulk operations act on, unless the include_hidden parameter names its reason or is *, or the where parameter names the entity by Slug or ID. ConfigHub/YAML Units are created hidden with the reason BackingUnit unless given another.
@@ -9722,7 +9785,7 @@ type BulkCreateChangeWorkflowsApplicationMergePatchPlusJSONBody struct {
 	// Slug Unique URL-safe identifier for the entity.
 	Slug *string `json:"Slug" yaml:"Slug"`
 
-	// Stages The stages a change is promoted through, in order. Ordered between stages and unordered within one. At least one is required.
+	// Stages The stages a change is promoted through, in order. Ordered between stages and unordered within one. A workflow governing a ChangeOrder needs at least one; one governing a ChangeSet has none.
 	Stages *[]map[string]interface{} `json:"Stages" yaml:"Stages"`
 
 	// Version An entity-specific sequence number used for optimistic concurrency control. The value read must be sent in calls to Update.
@@ -16062,7 +16125,7 @@ type ListChangeSetsParams struct {
 	// An example conjunction is:
 	// `CreatedAt >= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.
 	//
-	// Supported attributes for filtering on ChangeSet: Annotations, ChangeSetID, CreatedAt, DeleteGates, Description, DisplayName, EndTagID, HiddenReason, Labels, OrganizationID, Permissions, Slug, SpaceID, StartTagID, StartTagIsPriorRevision, State, UpdatedAt.
+	// Supported attributes for filtering on ChangeSet: Annotations, ChangeSetID, ChangeWorkflow, ChangeWorkflowID, CloseOverride, CreatedAt, DeleteGates, Description, DisplayName, EndTagID, HiddenReason, InScopeSpaceIDs, Labels, OrganizationID, Permissions, ReviewRequests, Slug, SpaceID, StartTagID, StartTagIsPriorRevision, State, UpdatedAt, UserID.
 	//
 	// The whole string must be query-encoded.
 	Where *string `form:"where,omitempty" json:"where,omitempty" yaml:"where,omitempty"`
@@ -16141,7 +16204,7 @@ type ListChangeSetsParams struct {
 	//
 	// Field names are case-sensitive and PascalCase, as in the JSON encoding. Sort direction defaults to ASC when the 'DIRECTION:' prefix is omitted.
 	//
-	// Supported attributes for ordering ChangeSet: ChangeSetID, CreatedAt, Description, DisplayName, EndTagID, HiddenReason, OrganizationID, Slug, SpaceID, StartTagID, StartTagIsPriorRevision, State, UpdatedAt.
+	// Supported attributes for ordering ChangeSet: ChangeSetID, ChangeWorkflowID, CreatedAt, Description, DisplayName, EndTagID, HiddenReason, OrganizationID, Slug, SpaceID, StartTagID, StartTagIsPriorRevision, State, UpdatedAt, UserID.
 	//
 	// Example: 'DESC:CreatedAt' or 'DisplayName,DESC:CreatedAt'.
 	//
@@ -16198,7 +16261,8 @@ type GetChangeSetParams struct {
 // PatchChangeSetApplicationMergePatchPlusJSONBody defines parameters for PatchChangeSet.
 type PatchChangeSetApplicationMergePatchPlusJSONBody struct {
 	// Annotations An optional map of Annotation key/value pairs for tools to attach information to entities.
-	Annotations *map[string]*string `json:"Annotations" yaml:"Annotations"`
+	Annotations      *map[string]*string `json:"Annotations" yaml:"Annotations"`
+	ChangeWorkflowID *openapi_types.UUID `json:"ChangeWorkflowID" yaml:"ChangeWorkflowID"`
 
 	// DeleteGates An optional set of gates that, if any is present, will block deletion
 	DeleteGates *map[string]*bool `json:"DeleteGates" yaml:"DeleteGates"`
@@ -16211,8 +16275,9 @@ type PatchChangeSetApplicationMergePatchPlusJSONBody struct {
 	HiddenReason *string `json:"HiddenReason" yaml:"HiddenReason"`
 
 	// Labels An optional map of Label key/value pairs to specify identifying attributes of entities for the purpose of grouping and filtering them.
-	Labels      *map[string]*string                 `json:"Labels" yaml:"Labels"`
-	Permissions *map[string]*map[string]interface{} `json:"Permissions" yaml:"Permissions"`
+	Labels         *map[string]*string                 `json:"Labels" yaml:"Labels"`
+	Permissions    *map[string]*map[string]interface{} `json:"Permissions" yaml:"Permissions"`
+	ReviewRequests *[]map[string]interface{}           `json:"ReviewRequests" yaml:"ReviewRequests"`
 
 	// Slug Unique URL-safe identifier for the entity.
 	Slug *string `json:"Slug" yaml:"Slug"`
@@ -16416,7 +16481,7 @@ type PatchChangeWorkflowApplicationMergePatchPlusJSONBody struct {
 	// DisplayName Friendly name for the entity.
 	DisplayName *string `json:"DisplayName" yaml:"DisplayName"`
 
-	// Final What the last stage must satisfy for the rollout to read as completed. Nothing is promoted into it: a stage's prerequisites gate entry to the stage after it, so the last stage's gate nothing.
+	// Final What the last stage must satisfy for the rollout to read as completed. Nothing is promoted into it: a stage's prerequisites gate entry to the stage after it, so the last stage's gate nothing. In a workflow with no stages, which governs a ChangeSet, what every Space the ChangeSet was opened in must satisfy for it to close.
 	Final *map[string]interface{} `json:"Final" yaml:"Final"`
 
 	// HiddenReason The reason the entity is hidden, if it is. A hidden entity is left out of List and Search results, and of what bulk operations act on, unless the include_hidden parameter names its reason or is *, or the where parameter names the entity by Slug or ID. ConfigHub/YAML Units are created hidden with the reason BackingUnit unless given another.
@@ -16429,7 +16494,7 @@ type PatchChangeWorkflowApplicationMergePatchPlusJSONBody struct {
 	// Slug Unique URL-safe identifier for the entity.
 	Slug *string `json:"Slug" yaml:"Slug"`
 
-	// Stages The stages a change is promoted through, in order. Ordered between stages and unordered within one. At least one is required.
+	// Stages The stages a change is promoted through, in order. Ordered between stages and unordered within one. A workflow governing a ChangeOrder needs at least one; one governing a ChangeSet has none.
 	Stages *[]map[string]interface{} `json:"Stages" yaml:"Stages"`
 
 	// Version An entity-specific sequence number used for optimistic concurrency control. The value read must be sent in calls to Update.
@@ -18881,6 +18946,12 @@ type PatchUnitParams struct {
 	// Subgroup User-defined category for the Mutation. Must be alphanumeric, at most 64 characters. The prefix 'ConfigHub' is reserved.
 	Subgroup *string `form:"subgroup,omitempty" json:"subgroup,omitempty" yaml:"subgroup,omitempty"`
 
+	// ForceClose Close a ChangeSet a ChangeWorkflow governs although the gates of the workflow's Final do not hold. Applies to a write that clears a Unit's ChangeSetID, which closes its ChangeSet. Requires force_reason, and Edit permission on the ChangeSet, whose CloseOverride records the override.
+	ForceClose *bool `form:"force_close,omitempty" json:"force_close,omitempty" yaml:"force_close,omitempty"`
+
+	// ForceReason Why a ChangeSet's gates are overridden; required with force_close.
+	ForceReason *string `form:"force_reason,omitempty" json:"force_reason,omitempty" yaml:"force_reason,omitempty"`
+
 	// Include Comma-separated parts of the result to return in addition to the Unit: ConfigData for the configuration the operation produced, MutationSources for what set each value in it, and Diff for what the operation changed, path by path with the values on both sides. None is a field of a Unit, and each costs something to return, so they are returned only when named. A dry run stores nothing, so this is the only way to see what it would have produced.
 	//
 	// Supported values: ConfigData, MutationSources, Diff.
@@ -18999,6 +19070,12 @@ type UpdateUnitParams struct {
 
 	// Subgroup User-defined category for the Mutation. Must be alphanumeric, at most 64 characters. The prefix 'ConfigHub' is reserved.
 	Subgroup *string `form:"subgroup,omitempty" json:"subgroup,omitempty" yaml:"subgroup,omitempty"`
+
+	// ForceClose Close a ChangeSet a ChangeWorkflow governs although the gates of the workflow's Final do not hold. Applies to a write that clears a Unit's ChangeSetID, which closes its ChangeSet. Requires force_reason, and Edit permission on the ChangeSet, whose CloseOverride records the override.
+	ForceClose *bool `form:"force_close,omitempty" json:"force_close,omitempty" yaml:"force_close,omitempty"`
+
+	// ForceReason Why a ChangeSet's gates are overridden; required with force_close.
+	ForceReason *string `form:"force_reason,omitempty" json:"force_reason,omitempty" yaml:"force_reason,omitempty"`
 
 	// Include Comma-separated parts of the result to return in addition to the Unit: ConfigData for the configuration the operation produced, MutationSources for what set each value in it, and Diff for what the operation changed, path by path with the values on both sides. None is a field of a Unit, and each costs something to return, so they are returned only when named. A dry run stores nothing, so this is the only way to see what it would have produced.
 	//
@@ -22761,6 +22838,12 @@ type BulkPatchUnitsParams struct {
 
 	// Subgroup User-defined category for the Mutation. Must be alphanumeric, at most 64 characters. The prefix 'ConfigHub' is reserved.
 	Subgroup *string `form:"subgroup,omitempty" json:"subgroup,omitempty" yaml:"subgroup,omitempty"`
+
+	// ForceClose Close a ChangeSet a ChangeWorkflow governs although the gates of the workflow's Final do not hold. Applies to a write that clears a Unit's ChangeSetID, which closes its ChangeSet. Requires force_reason, and Edit permission on the ChangeSet, whose CloseOverride records the override.
+	ForceClose *bool `form:"force_close,omitempty" json:"force_close,omitempty" yaml:"force_close,omitempty"`
+
+	// ForceReason Why a ChangeSet's gates are overridden; required with force_close.
+	ForceReason *string `form:"force_reason,omitempty" json:"force_reason,omitempty" yaml:"force_reason,omitempty"`
 }
 
 // BulkCreateUnitsApplicationMergePatchPlusJSONBody defines parameters for BulkCreateUnits.
