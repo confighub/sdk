@@ -21,7 +21,7 @@ var viewUpdateCmd = &cobra.Command{
 
 Single view update:
 `+"```"+`
-  cub view update my-view --column Unit.Slug --column Unit.Status --order-by Unit.CreatedAt --order-by-direction DESC
+  cub view update --space my-space my-view --column Unit.Slug --column Unit.ValidationErrors --order-by Unit.CreatedAt --order-by-direction DESC
 `+"```"+`
 
 Bulk update with --patch:

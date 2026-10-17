@@ -43,14 +43,11 @@ func getFormattedContent(content string) string {
 	return content
 }
 
+// getFormattedOverview returns what --help-overview prints. An agent gets the agent overview
+// followed by the CLI overview: the first says what an agent needs to know about ConfigHub
+// and how to act, and the second holds the conventions every command shares, which people
+// read too, so each fact is written in one place.
 func getFormattedOverview() string {
-	if IsAgent {
-		content, err := agentsFS.ReadFile("cub-agent-overview.md")
-		if err == nil {
-			return string(content)
-		}
-	}
-
 	content, err := overviewFS.ReadFile("cub-overview.md")
 	if err != nil {
 		// Fallback to simple text if markdown can't be read
@@ -58,7 +55,11 @@ func getFormattedOverview() string {
 	}
 
 	if IsAgent {
-		return string(content)
+		agentContent, err := agentsFS.ReadFile("cub-agent-overview.md")
+		if err != nil {
+			return string(content)
+		}
+		return string(agentContent) + "\n" + string(content)
 	}
 
 	return getFormattedContent(string(content))

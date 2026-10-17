@@ -37,7 +37,7 @@ Examples:
   echo '{"DisplayName": "archived-v1.0"}' | cub tag update --patch --tag release-v1.0,release-v1.1 --from-stdin
 
   # Update labels for tags in multiple spaces
-  cub tag update --patch --where "Labels.version = '1.0'" --label status=deprecated
+  cub tag update --space my-space --patch --where "Labels.version = '1.0'" --label status=deprecated
 `+"```"+`
 `, ""),
 	Args:        cobra.MinimumNArgs(0), // Allow 0 args for bulk mode

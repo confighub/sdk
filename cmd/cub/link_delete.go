@@ -29,16 +29,16 @@ Delete multiple links at once based on search criteria.
 Examples:
 `+"```"+`
   # Delete all links to a specific unit
-  cub link delete --where "ToUnitID = 'unit-uuid'"
+  cub link delete --space my-space --where "ToUnitID = 'unit-uuid'"
 
-  # Delete cross-space links
-  cub link delete --where "ToSpaceID != SpaceID"
+  # Delete the links in a space that point to units in other spaces
+  cub link delete --space my-space --where "ToSpaceID != SpaceID"
 
-  # Delete links across all spaces
+  # Delete links across the organization: without --space, --where spans every space
   cub link delete --where "Labels.cleanup = 'true'"
 
   # Delete specific links by slug
-  cub link delete --link my-link,another-link
+  cub link delete --space my-space --link my-link,another-link
 `+"```"+`
 `, ""),
 	Args:        cobra.MaximumNArgs(1), // Allow 0 or 1 args (0 for bulk mode)

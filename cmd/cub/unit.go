@@ -28,8 +28,8 @@ Units are explained at https://docs.confighub.com/background/entities/unit/.`
 
 Unit lifecycle workflow:
 1. Create units from configuration files ('unit create')
-2. Inspect and modify units using functions ('function do')
-3. Validate configuration ('function do' with validation functions)
+2. Inspect and modify units using functions ('function get', 'function set')
+3. Validate configuration ('function vet')
 4. Approve the space's changes ('variant approve') where its change workflow requires it
 5. Publish a Release for the space ('release publish'), which Argo CD / Flux pull
 

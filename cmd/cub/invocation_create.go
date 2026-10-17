@@ -39,8 +39,8 @@ Toolchain Types:
 - AppConfig/TOML: For application TOML configurations
 - AppConfig/INI: For application INI configurations
 - AppConfig/Env: For application Env configurations
-- AppConfig/YAML: For application YAML configurations
 - AppConfig/JSON: For application JSON configurations
+- AppConfig/Text: For application plain-text configurations
 
 Example Functions:
 
@@ -48,7 +48,6 @@ Example Functions:
   - vet-placeholders: Ensure no placeholders exist
   - set-default-names: Set default names for resources
   - set-annotation: Set annotations on resources
-  - ensure-context: Ensure context annotations are present
 
 Function arguments can be provided as positional arguments or as named arguments using --argumentname=value syntax.
 Once a named argument is used, all subsequent arguments must be named. Use "--" to separate command flags from function arguments when using named function arguments.

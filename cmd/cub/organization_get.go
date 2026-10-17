@@ -13,9 +13,9 @@ import (
 
 var organizationGetCmd = &cobra.Command{
 	Use:   "get <slug or id>",
-	Short: "Get details about a organization",
+	Short: "Get details about an organization",
 	Args:  cobra.ExactArgs(1),
-	Long: getCommandHelp(`Get detailed information about a organization including its ID, slug, display name, and additional details.
+	Long: getCommandHelp(`Get detailed information about an organization including its ID, slug, display name, and additional details.
 
 Examples:
 `+"```"+`
@@ -23,7 +23,7 @@ Examples:
   cub organization get my-organization
 
   # Get organization details in JSON format
-  cub organization get --json my-organization
+  cub organization get -o json my-organization
 
   # Get the organization's ID
   cub organization get my-organization -o jq=.Organization.OrganizationID

@@ -28,16 +28,16 @@ Delete multiple tags at once based on search criteria.
 Examples:
 `+"```"+`
   # Delete all tags created before a specific date
-  cub tag delete --where "CreatedAt < '2024-01-01'"
+  cub tag delete --space my-space --where "CreatedAt < '2024-01-01'"
 
   # Delete tags with specific labels
-  cub tag delete --where "Labels.archived = 'true'"
+  cub tag delete --space my-space --where "Labels.archived = 'true'"
 
-  # Delete tags across all spaces
+  # Delete tags across the organization: without --space, --where spans every space
   cub tag delete --where "Labels.cleanup = 'true'"
 
   # Delete specific tags by slug
-  cub tag delete --tag old-tag,deprecated-tag
+  cub tag delete --space my-space --tag old-tag,deprecated-tag
 `+"```"+`
 
 A tag is not deleted while it marks revisions in other spaces, or while a change set, change order

@@ -23,7 +23,7 @@ Examples:
   cub view get --space my-space unit-view
 
   # Get details about a view in JSON format
-  cub view get --space my-space --json summary-view
+  cub view get --space my-space -o json summary-view
 `+"```"+`
 `, ""),
 	RunE: viewGetCmdRun,

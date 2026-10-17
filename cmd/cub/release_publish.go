@@ -18,11 +18,11 @@ var releasePublishCmd = &cobra.Command{
 	Short:       "Publish a release",
 	Args:        cobra.ExactArgs(1),
 	Annotations: map[string]string{"OrgLevel": ""},
-	Long: getCommandHelp(`Publish a Release for the Space's release Target, bundling the Units in <space-slug> that are assigned to that Target.
+	Long: getCommandHelp(`Publish a Release for the Space's release Target, bundling the Units in <variant> that are assigned to that Target.
 
-<space-slug> is the Space whose Units are bundled (and becomes the Release's
-Space); a Space ID is also accepted. The consuming Target is the Space's
-ReleaseTargetID, set via `+"`cub space create/update --release-target`"+`.
+<variant> is the Space whose Units are bundled (and becomes the Release's
+Space), named as <component>/<variant>, or by the Space's slug or ID. The
+consuming Target is the Space's ReleaseTargetID, set with --release-target on `+"`cub space create`"+` or `+"`cub space update`"+`.
 
 By default each bundled Unit is captured at its head Revision. Pass --revision
 to instead pin each Unit to the highest-numbered Revision carrying a Tag. A Unit
@@ -56,6 +56,12 @@ orders they belong to; Include, the default, releases them.
 
 --dry-run publishes in a transaction that is rolled back, reporting the Release
 that would be published or why it would be refused.
+
+A publish is refused when a bundled Unit has outstanding ValidationErrors on the
+Revision it would bundle, or when that Revision is part of a ChangeSet that has not
+closed or is not where the ChangeSet ended. It is also refused when the Component
+requires a ChangeWorkflow and the Release is not of a ChangeOrder that has one (for
+a ChangeOrder, the Component of the ChangeOrder's Space). --dry-run reports why.
 
 A revision number, a Revision ID and the named revisions each pick out a
 Revision of one Unit, so they are not accepted. Slugs resolve like any other

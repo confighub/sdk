@@ -31,8 +31,7 @@ func init() {
 	unitTreeCmd.Flags().StringVar(&unitTreeArgs.edgeType, "edge", "clone", "Edge type for tree relationships (clone, link)")
 	unitTreeCmd.Flags().StringVar(&unitTreeArgs.nodeType, "node", "unit", "Node type for tree display (unit, space)")
 
-	// Add standard list flags
-	addSpaceFlags(unitTreeCmd)
+	// Add standard list flags. --space and --variant come from cub unit.
 	addStandardListFlags(unitTreeCmd)
 	unitTreeCmd.Flags().StringVar(&resourceType, "resource-type", "", "resource-type filter")
 	unitTreeCmd.Flags().StringVar(&whereData, "where-data", "", "where data filter")
@@ -53,36 +52,31 @@ The tree can display either unit names or space names as nodes:
 - 'unit' (default): Shows unit names as tree nodes, with space names in a second column
 - 'space': Shows space names as tree nodes, with unit names in a second column
 
-By default, shows a simple tree structure. When --columns is specified, displays a hybrid
-tree + tabular view with the tree on the left, complementary info in the second column,
-and specified columns on the right.
-
-Default columns for hybrid view: Status, UpgradeNeeded, UnreleasedChanges, ValidationErrors
+By default the tree is shown on the left, complementary info in the second column, and
+columns on the right: UpgradeNeeded, UnreleasedChanges and Unit.ValidationErrors. --columns
+replaces those columns, and -q shows the tree alone.
 
 Examples:
 ` + "```" + `
-  # Show simple clone tree for all units in current space (clone is default)
-  cub unit tree
+  # Show simple clone tree for all units in a space (clone is default)
+  cub unit tree --space my-space
 
   # Show link-based tree showing dependency relationships
-  cub unit tree --edge link
+  cub unit tree --space my-space --edge link
 
   # Show tree with space names as nodes
-  cub unit tree --node space
-
-  # Show hybrid tree + tabular view with default columns
-  cub unit tree --columns
+  cub unit tree --space my-space --node space
 
   # Show hybrid view with custom columns for link relationships
-  cub unit tree --edge link --columns UpgradeNeeded,UnreleasedChanges,Unit.Labels.Environment
+  cub unit tree --space my-space --edge link --columns UpgradeNeeded,UnreleasedChanges,Unit.Labels.Environment
 
   # Show clone tree for specific units
-  cub unit tree --where "Labels.environment = 'production'"
+  cub unit tree --space my-space --where "Labels.environment = 'production'"
 
   # Show link tree for specific units
-  cub unit tree --edge link --where "Labels.tier = 'web'"
+  cub unit tree --space my-space --edge link --where "Labels.tier = 'web'"
 
-  # Show tree across all spaces
+  # Show tree across all spaces in the organization (no --space)
   cub unit tree
 
   # Show link tree across all spaces with custom columns
@@ -92,7 +86,7 @@ Examples:
   cub unit tree --node space --columns UnreleasedChanges
 
   # Explicitly specify clone edge type
-  cub unit tree --edge clone
+  cub unit tree --space my-space --edge clone
  ` + "```" + `
  `
 

@@ -39,7 +39,7 @@ Examples:
   cub tag create --space my-space production-deploy --label version=1.0 --label environment=prod
 
   # Create a tag with a display name
-  cub tag create --space my-space --json my-tag --from-stdin < tag.json
+  cub tag create --space my-space -o json my-tag --from-stdin < tag.json
 ` + "```" + `
 
 BULK TAG CREATION:

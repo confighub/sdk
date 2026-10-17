@@ -146,13 +146,13 @@ const (
 
 var clusterCmd = &cobra.Command{
 	Use:   "cluster",
-	Short: "Manage clusters wired into ConfigHub via Argo CD or Sveltos",
+	Short: "Manage clusters wired into ConfigHub via Argo CD, Sveltos or Flux",
 	Long: `The cluster subcommands wire a Kubernetes cluster into ConfigHub: a controller
-in the cluster (Argo CD, or Sveltos) pulls its config from ConfigHub's OCI
+in the cluster (Argo CD, Sveltos or Flux) pulls its config from ConfigHub's OCI
 registry as the cluster's service account, so adding an Argo Application is a
 single cub unit create and no worker runs anywhere.
 
-  cub cluster attach   wire a cluster you already have into ConfigHub
+  cub cluster attach   wire a cluster you already have into ConfigHub (Argo CD only)
   cub cluster detach   the inverse: remove the wiring, leave the cluster running
   cub cluster up       create a local kind cluster, then attach it
   cub cluster down     the inverse: detach, then delete the kind cluster

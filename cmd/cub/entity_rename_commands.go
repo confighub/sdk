@@ -212,8 +212,8 @@ func init() {
 	addEntityRenameCommand(entityRename{
 		parent: changeorderCmd,
 		entity: "changeorder",
-		about: "The tags it made, <slug>-co-start, <slug>-co-end and <slug>-co-restore, are renamed with\n" +
-			"it. An end tag it was created with, which another change made, keeps its name.",
+		about: "The tags it made, <slug>-co-start, <slug>-co-end, <slug>-co-restore and <slug>-co-publish,\n" +
+			"are renamed with it. An end tag it was created with, which another change made, keeps its name.",
 		resolve: func(ref string) (*renamedEntity, error) {
 			d, err := resolveChangeOrder(ref, selectedSpaceID, "ChangeOrderID,Slug,DisplayName,SpaceID")
 			if err != nil {

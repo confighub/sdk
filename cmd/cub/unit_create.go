@@ -69,7 +69,7 @@ Single Unit Examples:
   cub unit create --space my-space myunit config.yaml --from-stdin
 
   # Clone an existing unit
-  cub unit create --space my-space --json --from-stdin myclone --upstream-unit sample-deployment
+  cub unit create --space my-space -o json --from-stdin myclone --upstream-unit sample-deployment
 
   # Clone it as it stood before a change order, so a following upgrade replays the change into it
   cub unit create --space my-space myclone --upstream-unit sample-deployment \
@@ -128,14 +128,14 @@ Clone existing unit:
 
 Key flags for agents:
 - --wait: Wait for triggers and validation to complete (recommended)
-- --json: Get structured response with unit ID and details
+- -o json: Get structured response with unit ID and details
 - --verbose: Show detailed creation information
 - --from-stdin: Read additional metadata from stdin (for cloning)
 - --label: Add labels for organization and filtering
 
 Post-creation workflow:
-1. Use 'function do get-placeholders' to check for placeholder values
-2. Use 'function do' commands to modify configuration as needed
+1. Use 'function get get-placeholders' to check for placeholder values
+2. Use 'function set' to modify configuration as needed
 3. Use 'variant approve' if the change workflow requires an approval
 4. Use 'release publish' to publish the space, which Argo CD / Flux pull
 

@@ -28,6 +28,10 @@ of the change order's Space decides only which workflows it may be promoted unde
 AllowedChangeWorkflowIDs and ChangeWorkflowRequired.
 
 "cub changeorder create --change-workflow" names the workflow a change order is promoted under.
+
+A workflow with no stages governs ChangeSets rather than ChangeOrders: its Final prerequisites
+must hold in every Space the ChangeSet was opened in for the ChangeSet to close.
+"cub changeset create --change-workflow" names the workflow a ChangeSet is governed by.
 `, ""),
 	PersistentPreRunE: spacePreRunE,
 }

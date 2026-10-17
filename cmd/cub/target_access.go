@@ -36,10 +36,12 @@ var targetAccessCmd = &cobra.Command{
 	Short: "Get temporary kubectl access to a cluster",
 	Long: getCommandHelp(`
 Request temporary kubectl access by invoking the generate-kubecontext
-function on an access policy unit applied to a target. The unit must
+function on an access policy unit assigned to a target. The unit must
 contain a ServiceAccount with the confighub.com/generate-kubecontext: allow
-annotation and must have been applied to the target. The function runs on
-the worker named by --worker, which must be running in the cluster.
+annotation and must have been published in a Release for the target. The
+function runs on the worker named by --worker: a worker process you run in
+the cluster that serves generate-kubecontext, since ConfigHub itself holds no
+credentials to the cluster.
 
 The resulting kubeconfig is encrypted end-to-end — the ConfigHub server
 never sees the credentials.`, `

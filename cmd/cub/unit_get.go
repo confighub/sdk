@@ -62,7 +62,7 @@ Important flags for agents:
 - -o mutations: Show the mutation diff for the current head revision
 
 For the raw configuration bytes, use the dedicated subcommand:
-- cub unit data <unit> [--filename <path>]  — prints or writes the configuration
+- cub unit data <unit> [-O <path>]  — prints the configuration, or writes it to a file
 
 Common agent patterns:
   # Download unit for local editing
@@ -86,7 +86,7 @@ func init() {
 	unitGetCmd.Flags().BoolVar(&dataOnly, "data-only", false, "show config data without other response details")
 	_ = unitGetCmd.Flags().MarkDeprecated("data-only", "use 'cub unit data <unit>'")
 	unitGetCmd.Flags().StringVar(&flagFilename, "filename", "", "write config data to file instead of stdout (only works with --data-only)")
-	_ = unitGetCmd.Flags().MarkDeprecated("filename", "use 'cub unit data --filename'")
+	_ = unitGetCmd.Flags().MarkDeprecated("filename", "use 'cub unit data -O <file>'")
 	unitCmd.AddCommand(unitGetCmd)
 }
 

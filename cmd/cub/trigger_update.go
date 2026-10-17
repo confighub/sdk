@@ -43,19 +43,19 @@ Update multiple triggers at once based on search criteria. Requires --patch flag
 Examples:
 `+"```"+`
   # Disable all triggers for a specific function
-  cub trigger update --patch --where "FunctionName = 'vet-cel'" --disable
+  cub trigger update --space my-space --patch --where "FunctionName = 'vet-cel'" --disable
 
   # Enable all disabled triggers
-  cub trigger update --patch --where "Disabled = true" --enable
+  cub trigger update --space my-space --patch --where "Disabled = true" --enable
 
-  # Update worker for all triggers of a certain type using JSON patch
-  echo '{"BridgeWorkerID": "worker-uuid"}' | cub trigger update --patch --where "ToolchainType = 'Kubernetes/YAML'" --from-stdin
+  # Point the triggers that run an external function at another worker serving it
+  cub trigger update --space my-space --patch --where "FunctionName = 'vet-team-policy'" --worker new-worker
 
   # Mark triggers as warn mode
-  cub trigger update --patch --where "Event = 'Mutation'" --warn
+  cub trigger update --space my-space --patch --where "Event = 'Mutation'" --warn
 
   # Update specific triggers by slug
-  cub trigger update --patch --trigger my-trigger,another-trigger --disable
+  cub trigger update --space my-space --patch --trigger my-trigger,another-trigger --disable
 `+"```"+`
 `, ""),
 	Args:        cobra.MinimumNArgs(0), // Allow 0 args for bulk mode

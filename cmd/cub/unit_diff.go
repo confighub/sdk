@@ -91,7 +91,7 @@ Examples:
   cub unit diff my-unit -o mutations
 
   # The same, with the unchanged fields around each change
-  cub unit diff my-unit -o mutations --context
+  cub unit diff my-unit -o mutations --diff-context
 `+"```"+`
 `, ""),
 	Args: cobra.RangeArgs(1, 3),
@@ -120,7 +120,7 @@ func init() {
 	// structured diff, and json/yaml/jq/yq print the structured one as data.
 	unitDiffCmd.Flags().StringVarP(&outputFormat, "output", "o", "",
 		`Output format: "mutations" replaces the text diff with a structured, path-by-path diff; json, yaml, jq=<expr> and yq=<expr> print that diff as data.`)
-	unitDiffCmd.Flags().BoolVar(&unitDiffArgs.context, "context", false, "with -o mutations or a data format, also show the unchanged paths around each change: every unchanged field and element of each map and list a change is in, up to the resource")
+	unitDiffCmd.Flags().BoolVar(&unitDiffArgs.context, "diff-context", false, "with -o mutations or a data format, also show the unchanged paths around each change: every unchanged field and element of each map and list a change is in, up to the resource")
 	unitDiffCmd.Flags().BoolVar(&unitDiffArgs.displayMutations, "display-mutations", false, "display resource mutations instead of text diff")
 	_ = unitDiffCmd.Flags().MarkDeprecated("display-mutations", "use -o mutations")
 	enableOptionalSpace(unitDiffCmd)
@@ -418,7 +418,7 @@ func runRevisionDiff(cmd *cobra.Command, args []string) error {
 	}
 	structuredDiff := unitDiffArgs.displayMutations || outputSpec.Kind != OutputDefault
 	if unitDiffArgs.context && !structuredDiff {
-		return fmt.Errorf("--context applies to the structured diff: add -o mutations, or a data format")
+		return fmt.Errorf("--diff-context applies to the structured diff: add -o mutations, or a data format")
 	}
 
 	if unitDiffArgs.file != "" {
@@ -434,9 +434,9 @@ func runRevisionDiff(cmd *cobra.Command, args []string) error {
 	}
 
 	// Comparing two units means comparing what they say now, so the from side defaults to
-	// their heads rather than to the live revision. The live default belongs to a diff of one
-	// unit against itself; applied to a cross-unit diff it fails outright on a unit that has
-	// never been applied, which every unit in a base space has in common.
+	// their heads rather than to the last released revision. That default belongs to a diff of
+	// one unit against itself; applied to a cross-unit diff it fails outright on a unit that has
+	// never been released, which every unit in a base space has in common.
 	if unitDiffArgs.withUnit != "" && unitDiffArgs.fromRev == defaultFrom && len(args) == 1 {
 		unitDiffArgs.fromRev = defaultTo
 		revFrom = defaultTo

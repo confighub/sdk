@@ -21,7 +21,7 @@ var changeorderCreateCmd = &cobra.Command{
 	Long:        getChangeOrderCreateHelp(),
 	Args:        cobra.MinimumNArgs(0), // Allow 0 args for bulk mode
 	RunE:        changeorderCreateCmdRun,
-	Annotations: map[string]string{"OrgLevel": ""},
+	Annotations: map[string]string{"OrgLevel": "", componentScopeAnnotation: ""},
 }
 
 func getChangeOrderCreateHelp() string {
@@ -60,6 +60,10 @@ Examples:
   cub changeorder create --space my-space bump-base-image --component my-app
   cub changeorder create --space my-space bump-base-image --component my-app \
     --where-space-field "Labels.Region = 'use2'"
+
+  # --component also names the Component of --variant, so this one resides in my-app's base
+  # and is headed for my-app's spaces
+  cub changeorder create --variant base --component my-app bump-base-image
 
   # Create one governed by a change workflow. The workflow says in what order the spaces the
   # change is headed for are promoted: each stage is the spaces its selector matches among them.
@@ -131,7 +135,6 @@ var changeorderCreateArgs struct {
 	variantLabels    []string
 	namePattern      string
 	changeWorkflow   string
-	component        string
 	invocation       string
 	params           []string
 	whereUnit        string
@@ -159,7 +162,6 @@ func init() {
 	changeorderCreateCmd.Flags().StringVar(&changeorderCreateArgs.whereUnit, "where-unit", "", "where expression selecting which units of each space in scope the change order covers; without one it covers every unit. It takes what --where does on unit list, attributes of what a unit refers to included, as in \"Space.Labels.Environment = 'prod'\". Only for --update-type Invoke. Unlike the spaces, this is asked again on every read, so a unit added to a space afterwards counts as not having had the invocation run on it")
 	changeorderCreateCmd.Flags().StringVar(&changeorderCreateArgs.unitFilter, "unit-filter", "", "filter entity (slug, space/slug, or UUID, with From=Unit) narrowing the same selection as --where-unit, conjoined with it. Only for --update-type Invoke")
 	changeorderCreateCmd.Flags().StringVar(&changeorderCreateArgs.endTag, "end-tag", "", "tag (slug, space/slug, or UUID) marking the last revision of each unit to promote; without one, each unit's head revision is the end. The change order always creates its own start and end tags -- this one is read to find the boundary, recorded as AdoptedEndTagID, and never written to, since the change order also marks the units it carries no changes for")
-	changeorderCreateCmd.Flags().StringVar(&changeorderCreateArgs.component, "component", "", "Component (slug or UUID) whose spaces this change order is headed for: adds \"ComponentID = '<id>'\" to --where-space-field, which the server evaluates into its in-scope spaces")
 
 	// Bulk create specific flags
 	changeorderCreateCmd.Flags().StringSliceVar(&changeorderCreateArgs.destSpaces, "dest-space", []string{}, "destination spaces for bulk create (can be repeated or comma-separated)")
@@ -207,7 +209,7 @@ func checkChangeOrderCreateConflictingArgs(args []string) (bool, error) {
 			return false, errors.New("--change-workflow can only be used with single changeorder creation")
 		}
 
-		if changeorderCreateArgs.component != "" {
+		if componentFlag != "" && variantFlag == "" {
 			return false, errors.New("--component can only be used with single changeorder creation")
 		}
 		if len(requestReviewFlags) > 0 {
@@ -258,7 +260,7 @@ func checkChangeOrderCreateConflictingArgs(args []string) (bool, error) {
 // over Spaces, which the server evaluates into its in-scope spaces.
 func changeOrderCreateHasSpaceSelection() bool {
 	return changeorderCreateArgs.whereSpaceField != "" || changeorderCreateArgs.spaceFilter != "" ||
-		changeorderCreateArgs.component != ""
+		componentFlag != ""
 }
 
 // resolveChangeWorkflowForChangeOrder resolves --change-workflow to the ChangeWorkflow governing
@@ -377,8 +379,8 @@ func runSingleChangeOrderCreate(args []string) error {
 	if changeorderCreateArgs.whereSpaceField != "" {
 		newBody.WhereSpace = changeorderCreateArgs.whereSpaceField
 	}
-	if changeorderCreateArgs.component != "" {
-		componentID, err := resolveComponentID(changeorderCreateArgs.component)
+	if componentFlag != "" {
+		componentID, err := resolveComponentID(componentFlag)
 		if err != nil {
 			return errors.Wrap(err, "failed to parse component")
 		}

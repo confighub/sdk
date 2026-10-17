@@ -27,14 +27,14 @@ Delete multiple targets at once based on search criteria.
 
 Examples:
 `+"```"+`
-  # Delete targets for specific toolchain
-  cub target delete --where "ToolchainType = 'Kubernetes/YAML'"
+  # Delete the targets of decommissioned clusters
+  cub target delete --space my-space --where "Labels.cluster-state = 'decommissioned'"
 
-  # Delete targets across all spaces
+  # Delete targets across the organization: without --space, --where spans every space
   cub target delete --where "Labels.cleanup = 'true'"
 
   # Delete specific targets by slug
-  cub target delete --target my-target,another-target
+  cub target delete --space my-space --target my-target,another-target
 `+"```"+`
 
 A Target is not deleted while Units, Spaces or Releases reference it. The error names them.

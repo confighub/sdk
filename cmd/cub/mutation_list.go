@@ -15,8 +15,6 @@ import (
 	goclientnew "github.com/confighub/sdk/core/openapi/goclient-new"
 )
 
-var byUnitID bool
-
 var mutationListCmd = &cobra.Command{
 	Use:   "list <unit>",
 	Short: "List mutations",
@@ -38,8 +36,8 @@ Examples:
   # List mutations in JSON format
   cub mutation list --space my-space -o json my-ns
 
-  # List mutations using unit ID instead of slug
-  cub mutation list --space my-space --by-unit-id 61f26b06-3c34-4363-8b9d-7d0a7c2b5f1c
+  # List mutations of a unit named by its ID instead of its slug
+  cub mutation list --space my-space 61f26b06-3c34-4363-8b9d-7d0a7c2b5f1c
 
   # List mutations with custom JQ filter
   cub mutation list --space my-space -o jq='.[].MutationNum' my-ns
@@ -49,7 +47,7 @@ Examples:
 
   # List mutations that set a particular image. The function invoked is a FunctionInvocation
   # object in the response, and --where names it the same way.
-  cub mutation list --space my-space --where "FunctionInvocation.FunctionName = 'set-image' AND FunctionInvocation.Arguments.?ParameterName=container-image.Value LIKE 'nginx%'" my-ns
+  cub mutation list --space my-space --where "FunctionInvocation.FunctionName = 'set-container-image' AND FunctionInvocation.Arguments.?ParameterName=container-image.Value LIKE 'nginx%'" my-ns
 
   # List mutations whose function took a given value as any argument
   cub mutation list --space my-space --where "FunctionInvocation.Arguments.*.Value = 'production'" my-ns

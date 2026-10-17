@@ -94,7 +94,7 @@ Examples:
     --space my-space \
     get-replicas \
     --quiet \
-    --show output -o jq='.[].Value'
+    --show output -o jq='.Output[].Value'
 
   # Filter deployments with more than 1 replica
   cub function do \
@@ -182,6 +182,7 @@ func addIncludeContextFlags(flags *pflag.FlagSet) {
 	flags.BoolVar(&functionIncludeConflicts, "include-conflicts", false, "pass each unit's outstanding merge conflicts to the functions, for functions that reason about them (e.g. vet-no-merge-conflicts)")
 	flags.BoolVar(&functionIncludeLinkFindings, "include-link-findings", false, "pass what the resolves of each unit's links could not do to the functions, for functions that reason about it (e.g. vet-no-link-findings)")
 }
+
 var revisionIdentifier string
 var functionChangesetSlug string
 var functionToolchainType string
@@ -544,7 +545,7 @@ type invokeArgs struct {
 	Clearance string
 	// Guards names the reasons this invocation states about the paths it writes, so a later
 	// operation must be cleared for them.
-	Guards      string
+	Guards string
 	// IncludeDiff asks for the Diff of what the invocation changes even when -o mutations was
 	// not given, for a command that shows it by default.
 	IncludeDiff bool

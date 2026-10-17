@@ -13,8 +13,9 @@ import (
 
 var unitCancelCmd = &cobra.Command{
 	Use:   "cancel [<unit-slug>]",
-	Short: "Cancel operations for units",
-	Long: getCommandHelp(`Cancel operations for units.
+	Short: "Cancel worker operations for units",
+	Long: getCommandHelp(`Cancel the operations queued for, or in progress on, a worker for units, such as
+invoking an external function.
 
 Examples:
 `+"```"+`
@@ -22,17 +23,14 @@ Examples:
   cub unit cancel my-unit
 
   # Cancel operations for all units with specific label
-  cub unit cancel --where "Labels.Tier = 'backend'"
-
-  # Cancel operations for units in a specific space
-  cub unit cancel --space my-space --where "Status = 'Progressing'"
+  cub unit cancel --space my-space --where "Labels.Tier = 'backend'"
 
   # Cancel operations for one component's units in dev
   COMPONENT_ID=$(cub component get api -o jq=.Component.ComponentID)
   cub unit cancel --where "Space.ComponentID = '$COMPONENT_ID' AND Space.Labels.Environment = 'dev'"
 
   # Cancel operations for specific units by slug
-  cub unit cancel --unit my-unit,another-unit
+  cub unit cancel --space my-space --unit my-unit,another-unit
 
   # Cancel operations across all spaces
   cub unit cancel --where "Slug = 'backend'"

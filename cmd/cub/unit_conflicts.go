@@ -57,7 +57,7 @@ selection, and both take --dry-run, which reports what the request would do and
 writes nothing.
 
 Applying changes the configuration data, so the unit goes through the same
-trigger pass as any other change and may pick up an ApplyGate. --wait, on by
+trigger pass as any other change and may pick up a ValidationError. --wait, on by
 default, waits for that pass to finish before returning.
 
 Examples:

@@ -16,7 +16,7 @@ var revisionDataCmd = &cobra.Command{
 	Short: "Show the config data of a revision",
 	Long: getCommandHelp(`Display the configuration data of a specific unit revision, as text.
 
-Replaces 'cub revision get --data-only'.`, ""),
+Replaces the --data-only flag of cub revision get.`, ""),
 	Args: cobra.ExactArgs(2),
 	RunE: runRevisionData,
 }

@@ -36,7 +36,7 @@ Examples:
   # Delete views with no columns defined
   cub view delete --where "Columns IS NULL OR Columns = '[]'"
 
-  # Delete views across all spaces
+  # Delete views across the organization: without --space, --where spans every space
   cub view delete --where "Labels.cleanup = 'true'"
 
   # Delete specific views by slug

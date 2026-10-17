@@ -31,9 +31,12 @@ assertion, so ConfigHub never receives or stores a secret. This replaces the
 worker secret, which ConfigHub generates, stores, returns through the API, and
 receives again on every token refresh.
 
-Identities are named one of two ways. Use --worker to name a worker and have it
-resolved to the bot user it runs as, which is what an operator usually wants;
-use --user to name an identity directly.
+For a service account, use "cub serviceaccount key", which requires Impersonate
+permission on the service account rather than the admin or manager role.
+
+Identities are named one of two ways. Use --worker to name a worker (workers are
+deprecated) and have it resolved to the bot user it runs as; use --user to name
+an identity directly.
 
 Registering a key hands out an identity: whoever holds the private key
 authenticates as that identity from then on. It requires the admin or manager

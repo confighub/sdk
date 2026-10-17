@@ -22,7 +22,8 @@ import (
 var workerKeyCmd = &cobra.Command{
 	Use:   "key",
 	Short: "Manage the keys a worker authenticates with",
-	Long: getCommandHelp(`Manage the public keys a worker authenticates with.
+	Long: getCommandHelp(`Manage the public keys a worker authenticates with. Workers are deprecated; a
+service account's keys are managed with "cub serviceaccount key".
 
 The holder of the matching private key authenticates by signing a short-lived
 assertion, so ConfigHub never receives or stores a secret. This replaces the

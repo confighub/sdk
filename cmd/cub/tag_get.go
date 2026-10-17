@@ -21,7 +21,7 @@ Examples:
   cub tag get --space my-space release-v1.0
 
   # Get details about a tag in JSON format
-  cub tag get --space my-space --json production-deploy
+  cub tag get --space my-space -o json production-deploy
 `+"```"+`
 `, ""),
 	RunE: tagGetCmdRun,

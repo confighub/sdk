@@ -84,7 +84,7 @@ Flags for mutating invocations:
 
 Some function names are retained as deprecated aliases and should not be used in
 new work: yq (use get-yq), yq-i (use set-yq), set-image/get-image (use
-set-container-image/get-container-image), cel-validate (use vet-cel),
+set-container-image/get-container-image), cel-validate (use vet-celexpr),
 no-placeholders (use vet-placeholders).
 'cub function list' marks each one in its description.`
 

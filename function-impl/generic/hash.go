@@ -43,7 +43,7 @@ func registerSetHash(fh handler.FunctionRegistry, converter configkit.ConfigConv
 			Hermetic:              true,
 			Idempotent:            true,
 			Replayable:            true,
-			Description:           "Computes a SHA-256 hash of all values at the specified path and stores it at the resource provider's context path for Hash (e.g., confighub.com/Hash annotation for Kubernetes)",
+			Description:           "Computes a SHA-256 hash of all values at the specified path and stores it at the resource provider's context path for Hash (e.g., confighub.com/Hash annotation for Kubernetes). It applies to every resource that has the path, of any type, so narrow it with a where-resource filter",
 			FunctionType:          api.FunctionTypeCustom,
 			AffectedResourceTypes: []api.ResourceType{api.ResourceTypeAny},
 		},
@@ -84,7 +84,7 @@ func registerGetHash(fh handler.FunctionRegistry, converter configkit.ConfigConv
 			// left alone: the hash is computed from the upstream data while a Link resolves
 			// and written to the downstream Unit, rather than kept in the resource it
 			// describes, where it is a revision behind whatever it is hashing.
-			Description:           "Computes a SHA-256 hash of all values at the specified path and returns it, without modifying the configuration data. Returns the same hash set-hash stores. Use as an UpstreamGetter on a TransformPaths Link to propagate a content hash to another Unit.",
+			Description:           "Computes a SHA-256 hash of all values at the specified path and returns it, without modifying the configuration data. Returns the same hash set-hash stores. Use as an UpstreamGetter on a TransformPaths Link to propagate a content hash to another Unit. It reads every resource that has the path, of any type, so narrow it with a where-resource filter.",
 			FunctionType:          api.FunctionTypeCustom,
 			AffectedResourceTypes: []api.ResourceType{api.ResourceTypeAny},
 		},

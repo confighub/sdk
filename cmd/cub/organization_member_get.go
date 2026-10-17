@@ -10,14 +10,14 @@ import (
 
 var organizationMemberGetCmd = &cobra.Command{
 	Use:   "get <organization-member>",
-	Short: "Get details about a organization-member",
+	Short: "Get details about an organization member",
 	Args:  cobra.ExactArgs(1),
-	Long: getCommandHelp(`Get detailed information about a organization-member in an organization including its ID, User ID, and Organization ID.
+	Long: getCommandHelp(`Get detailed information about an organization member in an organization including its ID, User ID, and Organization ID.
 
 Examples:
 `+"```"+`
-  # Get details about a organization-member
-  cub organization-member get --json my-organization-member
+  # Get details about an organization member
+  cub organization-member get -o json my-organization-member
 
   # Get the member's User ID
   cub organization-member get my-organization-member -o jq=.OrganizationMember.UserID

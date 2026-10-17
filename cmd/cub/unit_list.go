@@ -23,7 +23,7 @@ var unitListCmd = &cobra.Command{
 }
 
 func getUnitListHelp() string {
-	baseHelp := `List units you have access to in a space. The output includes slugs, data size, head revision, validation errors, and last change timestamp.
+	baseHelp := `List units you have access to in a space, or across the organization without --space. The output includes slugs, data size, head revision, validation errors, and last change timestamp.
 
 Examples:
 ` + "```" + `
@@ -89,7 +89,7 @@ Key filtering patterns for agents:
 Configuration state:
 - Find units with unreleased changes: --where 'HeadRevisionNum > LastReleasedRevisionNum AND TargetID IS NOT NULL'
 - Find never-released units: --where 'LastReleasedRevisionNum = 0'
-- Find units with placeholders: Use 'function do get-placeholders' instead
+- Find units with placeholders: Use 'function get get-placeholders' instead
 
 Validation:
 - Find units with validation errors: --where 'LEN(ValidationErrors) > 0'

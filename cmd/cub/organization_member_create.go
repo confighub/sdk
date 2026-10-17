@@ -13,18 +13,17 @@ import (
 
 var organizationMemberCreateCmd = &cobra.Command{
 	Use:   "create <organization-member>",
-	Short: "Create a organization-member",
+	Short: "Add a user to the organization",
 	Args:  cobra.ExactArgs(1),
-	Long: getCommandHelp(`Create a new organization-member as a collaborative context for a project or team.
+	Long: getCommandHelp(`Add an existing user to the organization. The user is named in JSON by ExternalID, the user's
+ID in the identity provider, read with --from-stdin or --filename; the argument names the member
+only in the output. Membership is held by the identity provider, and adding a member requires
+an organization admin.
 
 Examples:
 `+"```"+`
-  # Create a new organization-member named "my-organization-member" with verbose output, reading configuration from stdin
-  # Verbose output prints the details of the created entity
-  cub organization-member create --verbose --json --from-stdin my-organization-member
-
-  # Create a new organization-member with minimal output
-  cub organization-member create my-organization-member
+  # Add a user to the organization by their identity provider ID
+  echo '{"ExternalID": "8a1c3d0e-5b7f-4e2a-9c61-0f4b2d7e9a13"}' | cub organization-member create --from-stdin new-member
 `+"```"+`
 `, ""),
 	RunE: organizationMemberCreateCmdRun,

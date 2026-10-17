@@ -30,7 +30,19 @@ func getTriggerCreateHelp() string {
 
 SINGLE TRIGGER CREATION:
 
-Create a new trigger to automate actions on resources.
+Create a new trigger: a function that runs automatically on units when an event happens.
+
+A trigger runs on the units of every space that selects it, and on the units whose Target
+selects it. A space with neither WhereTrigger nor TriggerFilterID selects the triggers in it;
+one with either selects the triggers those match (cub space update --where-trigger or
+--trigger-filter), and a Target selects triggers the same way (cub target update). Within a selecting space, narrow
+which units a trigger runs on with --unit-filter or --where-unit-field. Instead of a single
+function, a trigger can run a stored invocation (--invocation).
+
+A validating trigger whose function fails records a ValidationError on the unit, which blocks
+publishing a Release of it, promoting past a stage that requires Validated, and closing a
+ChangeSet whose workflow requires it, until the configuration or the trigger is fixed. With --warn, a
+failure records a ValidationWarning instead, which blocks nothing.
 
 Events:
 
@@ -46,8 +58,8 @@ Toolchain Types:
   - AppConfig/TOML: For application TOML configurations
   - AppConfig/INI: For application INI configurations
   - AppConfig/Env: For application Env configurations
-  - AppConfig/YAML: For application YAML configurations
   - AppConfig/JSON: For application JSON configurations
+  - AppConfig/Text: For application plain-text configurations
 
 Example Functions:
 
@@ -57,7 +69,6 @@ Example Functions:
   - vet-no-merge-conflicts: Fail while a merge has changes still withheld on the unit
   - set-default-names: Set default names for cloned resources
   - set-annotation: Set annotations on resources
-  - ensure-context: Ensure context annotations are present
 
 Function arguments can be provided as positional arguments or as named arguments using --argumentname=value syntax.
 Once a named argument is used, all subsequent arguments must be named. Use "--" to separate command flags from function arguments when using named function arguments.
@@ -70,25 +81,25 @@ triggers based on filters and creates multiple new triggers with optional modifi
 Single Trigger Examples:
 ` + "```" + `
   # Create a trigger to validate replicas > 1 for Deployments
-  cub trigger create --space my-space --json replicated Mutation Kubernetes/YAML vet-cel 'r.kind != "Deployment" || r.spec.replicas > 1'
+  cub trigger create --space my-space -o json replicated Mutation Kubernetes/YAML vet-cel 'r.kind != "Deployment" || r.spec.replicas > 1'
 
   # Create a trigger to enforce low resource usage (replicas < 10)
-  cub trigger create --space my-space --json lowcost Mutation Kubernetes/YAML vet-cel 'r.kind != "Deployment" || r.spec.replicas < 10'
+  cub trigger create --space my-space -o json lowcost Mutation Kubernetes/YAML vet-cel 'r.kind != "Deployment" || r.spec.replicas < 10'
 
   # Create a trigger to ensure no placeholders exist in resources
-  cub trigger create --space my-space --json complete Mutation Kubernetes/YAML vet-placeholders
+  cub trigger create --space my-space -o json complete Mutation Kubernetes/YAML vet-placeholders
 
-  # Create a trigger to ensure context annotations
-  cub trigger create --space my-space --json annotate-resources Mutation Kubernetes/YAML ensure-context true
+  # Create a trigger to label every resource with its owning team
+  cub trigger create --space my-space -o json label-team Mutation Kubernetes/YAML set-label team payments
 
   # Create a trigger to set default names for cloned resources
-  cub trigger create --space my-space --json rename PostClone Kubernetes/YAML set-default-names
+  cub trigger create --space my-space -o json rename PostClone Kubernetes/YAML set-default-names
 
   # Create a trigger to add a "cloned=true" annotation after cloning
-  cub trigger create --space my-space --json stamp PostClone Kubernetes/YAML set-annotation cloned true
+  cub trigger create --space my-space -o json stamp PostClone Kubernetes/YAML set-annotation cloned true
 
   # Using named arguments for clarity (note the "--" separator)
-  cub trigger create --space my-space --json stamp PostClone Kubernetes/YAML -- set-annotation --annotation-key=cloned --annotation-value=true
+  cub trigger create --space my-space -o json stamp PostClone Kubernetes/YAML -- set-annotation --annotation-key=cloned --annotation-value=true
 ` + "```" + `
 
 Bulk Create Examples:

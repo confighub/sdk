@@ -21,8 +21,9 @@ func getServiceAccountCommandGroupHelp() string {
 
 A service account is an identity for something that is not a person, such as a CI pipeline or an
 agent. It has an identity of its own in ConfigHub, created with it, which is not linked to any person
-or to any account in the identity provider; the only way to authenticate as it is with one of its
-keys. The identity's ID is the service account's UserID.
+or to any account in the identity provider; the only ways to authenticate as it are with one of its
+keys (cub serviceaccount key) or with a long-lived token (cub serviceaccount token). The identity's
+ID is the service account's UserID.
 
 Grant a service account access by naming it in an entity's permissions
 (--permission View:serviceaccount:<name>), by adding it to a group
@@ -33,8 +34,8 @@ Anyone in the organization may create a service account and becomes its manager.
 role given to it cannot be above the caller's own, and changing the role requires Manage permission
 on the service account.
 
-Deleting a service account deletes its keys and disables its identity, which is kept so that the
-changes it made stay recorded under its UserID.`
+Deleting a service account deletes its keys, revokes its long-lived tokens, and disables its
+identity, which is kept so that the changes it made stay recorded under its UserID.`
 
 	agentContext := `Service accounts are organization-level, so these commands take no --space.
 

@@ -16,7 +16,7 @@ import (
 var triggerListCmd = &cobra.Command{
 	Use:   "list",
 	Short: "List triggers",
-	Long: getCommandHelp(`List triggers you have access to in a space or across all spaces. The output includes slugs, worker slugs, events, validation status, disabled status, enforcement status, toolchain types, function names, and the number of arguments.
+	Long: getCommandHelp(`List triggers you have access to in a space or across all spaces. The output includes slugs, worker slugs, events, whether each validates, is disabled, or only warns, toolchain types, function names, and the number of arguments.
 
 Examples:
 `+"```"+`

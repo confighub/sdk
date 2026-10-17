@@ -17,8 +17,8 @@ var serviceAccountDeleteCmd = &cobra.Command{
 	Args:  cobra.MaximumNArgs(1),
 	Long: getCommandHelp(`Delete a ServiceAccount entity, or the ServiceAccounts --where selects.
 
-Deleting a service account deletes the keys registered to its user and disables the user. The user
-is kept, so that what it did stays on record.
+Deleting a service account deletes the keys registered to its user, revokes its long-lived tokens,
+and disables the user. The user is kept, so that what it did stays on record.
 
 Examples:
 `+"```"+`

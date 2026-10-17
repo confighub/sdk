@@ -19,18 +19,18 @@ import (
 var unitActionListCmd = &cobra.Command{
 	Use:   "list [unit-slug]",
 	Short: "List unit actions",
-	Long: getCommandHelp(`List unit actions for a specific unit, or across all units when no unit is specified. When listing across units, at most one unit action is returned per unit (the latest one, ordered by UnitActionNum). Omit --space to search across all spaces in the organization.
+	Long: getCommandHelp(`List unit actions for a specific unit, or across all units when no unit is specified. A unit action is an operation queued for a worker, such as invoking an external function on the unit. When listing across units, at most one unit action is returned per unit (the latest one, ordered by UnitActionNum). Omit --space to search across all spaces in the organization.
 
 Examples:
 `+"```"+`
   # List unit actions for a specific unit
   cub unit-action list --space my-space my-unit
 
-  # List the latest Apply unit action per unit in the space
-  cub unit-action list --space my-space --where "Action = 'Apply'"
+  # List the latest function invocation queued for a worker, per unit in the space
+  cub unit-action list --space my-space --where "Action = 'InvokeFunctions'"
 
-  # List the latest Apply unit actions started within the past 15 minutes across all spaces
-  cub unit-action list --where "Action = 'Apply' AND CreatedAt > '2026-04-15T12:00:00Z'"
+  # List the latest function invocations started since a given time across all spaces
+  cub unit-action list --where "Action = 'InvokeFunctions' AND CreatedAt > '2026-04-15T12:00:00Z'"
 `+"```"+`
 `, ""),
 	Args:        cobra.RangeArgs(0, 1),

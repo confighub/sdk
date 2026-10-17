@@ -25,7 +25,7 @@ Examples:
   cub changeworkflow get --space workflows myapp-main-line
 
   # Get a change workflow in JSON format, which is also what --filename takes
-  cub changeworkflow get --space workflows --json myapp-main-line
+  cub changeworkflow get --space workflows -o json myapp-main-line
 `+"```"+`
 `, ""),
 	RunE: changeworkflowGetCmdRun,

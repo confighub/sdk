@@ -49,7 +49,7 @@ removes the wiring and leaves the cluster running.
 Where the cluster's credentials come from is --provider:
 
   kubeconfig  (default) your kubeconfig — $KUBECONFIG or ~/.kube/config, or
-              --kubeconfig — at its current context, or the one --context names.
+              --kubeconfig — at its current context, or the one --kube-context names.
   eks         the AWS CLI: "aws eks update-kubeconfig" for the cluster named by
               --cluster (defaults to the cluster name), honoring --aws-region and
               --aws-profile or the usual AWS environment. The kubeconfig
@@ -123,7 +123,7 @@ Examples:
   cub cluster attach staging
 
   # Attach a named context from a specific kubeconfig
-  cub cluster attach prod-eu --kubeconfig ~/.kube/eu.yaml --context prod-eu
+  cub cluster attach prod-eu --kubeconfig ~/.kube/eu.yaml --kube-context prod-eu
 
   # Attach a cluster that already runs Argo CD, without argobot
   cub cluster attach shared --no-argocd --no-argobot
@@ -144,7 +144,7 @@ func init() {
 	clusterAttachCmd.Flags().StringVar(&clusterAttachArgs.provider, "provider", clusterProviderKubeconfig, "where the cluster's credentials come from: kubeconfig, eks or kind")
 	clusterAttachCmd.Flags().StringVar(&clusterAttachArgs.cluster, "cluster", "", "the cluster's name at the provider (--provider eks or kind; defaults to the cluster name)")
 	clusterAttachCmd.Flags().StringVar(&clusterAttachArgs.kubeconfig, "kubeconfig", "", "--provider kubeconfig: the kubeconfig to read the cluster from (defaults to $KUBECONFIG or ~/.kube/config)")
-	clusterAttachCmd.Flags().StringVar(&clusterAttachArgs.kubeContext, "context", "", "--provider kubeconfig: the kube context to attach (defaults to the kubeconfig's current context)")
+	clusterAttachCmd.Flags().StringVar(&clusterAttachArgs.kubeContext, "kube-context", "", "--provider kubeconfig: the kube context to attach (defaults to the kubeconfig's current context)")
 	clusterAttachCmd.Flags().StringVar(&clusterAttachArgs.awsRegion, "aws-region", "", "--provider eks: the cluster's AWS region (defaults to the AWS CLI's: AWS_REGION or the profile's)")
 	clusterAttachCmd.Flags().StringVar(&clusterAttachArgs.awsProfile, "aws-profile", "", "--provider eks: the AWS CLI profile (defaults to AWS_PROFILE)")
 	clusterAttachCmd.Flags().BoolVar(&clusterAttachArgs.grantAccess, "grant-access", false, "--provider eks: if your AWS identity has no access entry on the cluster, add one with cluster-admin")
@@ -367,7 +367,7 @@ func clusterAttachRun(out io.Writer, opts clusterAttachOptions) error {
 // clusterAttachCheckProviderFlags validates --provider and the flags that
 // belong to each provider, and fills --cluster from the cluster name where a provider
 // names the cluster itself. Flags of another provider are refused rather than
-// ignored: a --context passed with --provider eks means the user expected it
+// ignored: a --kube-context passed with --provider eks means the user expected it
 // to do something.
 func clusterAttachCheckProviderFlags(opts *clusterAttachOptions) error {
 	kubeconfigFlags := opts.kubeconfig != "" || opts.kubeContext != ""
@@ -375,18 +375,18 @@ func clusterAttachCheckProviderFlags(opts *clusterAttachOptions) error {
 	switch opts.provider {
 	case clusterProviderKubeconfig:
 		if opts.cluster != "" {
-			return fmt.Errorf("--cluster applies to --provider eks or kind; with --provider kubeconfig name the cluster with --context")
+			return fmt.Errorf("--cluster applies to --provider eks or kind; with --provider kubeconfig name the cluster with --kube-context")
 		}
 		if eksFlags {
 			return fmt.Errorf("--aws-region, --aws-profile and --grant-access apply to --provider eks only")
 		}
 	case clusterProviderEKS:
 		if kubeconfigFlags {
-			return fmt.Errorf("--kubeconfig and --context apply to --provider kubeconfig only; --provider eks resolves the kubeconfig itself")
+			return fmt.Errorf("--kubeconfig and --kube-context apply to --provider kubeconfig only; --provider eks resolves the kubeconfig itself")
 		}
 	case clusterProviderKind:
 		if kubeconfigFlags {
-			return fmt.Errorf("--kubeconfig and --context apply to --provider kubeconfig only; --provider kind resolves the kubeconfig itself")
+			return fmt.Errorf("--kubeconfig and --kube-context apply to --provider kubeconfig only; --provider kind resolves the kubeconfig itself")
 		}
 		if eksFlags {
 			return fmt.Errorf("--aws-region, --aws-profile and --grant-access apply to --provider eks only")
@@ -420,7 +420,7 @@ func clusterDescribeKubeconfigSource(kubeconfig, kubeContext string) string {
 // clusterKubectlConfigViewArgs builds the `kubectl config view` invocation that
 // exports one context as a standalone kubeconfig: --minify keeps only that
 // context and what it references, --flatten inlines certificate files, and
-// --raw stops the certificate data being redacted. --kubeconfig and --context
+// --raw stops the certificate data being redacted. The kubeconfig and kube context
 // are passed through only when set, so kubectl's own loading rules
 // ($KUBECONFIG, ~/.kube/config, current-context) apply otherwise.
 func clusterKubectlConfigViewArgs(kubeconfig, kubeContext string) []string {
@@ -454,7 +454,7 @@ func clusterExportKubeconfig(ctx context.Context, kubeconfig, kubeContext string
 		if kubeContext != "" {
 			return nil, fmt.Errorf("context %q not found in %s", kubeContext, clusterDescribeKubeconfigSource(kubeconfig, ""))
 		}
-		return nil, fmt.Errorf("no current context in %s; pass --context", clusterDescribeKubeconfigSource(kubeconfig, ""))
+		return nil, fmt.Errorf("no current context in %s; pass --kube-context", clusterDescribeKubeconfigSource(kubeconfig, ""))
 	}
 	return stdout.Bytes(), nil
 }

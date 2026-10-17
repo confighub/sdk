@@ -12,7 +12,7 @@ import (
 var organizationListCmd = &cobra.Command{
 	Use:   "list",
 	Short: "List organizations",
-	Long: getCommandHelp(`List organizations you have access to in this organization. The output includes display names, slugs, and organization IDs.
+	Long: getCommandHelp(`List the organizations you have access to. The output includes display names, slugs, and organization IDs.
 
 Examples:
 `+"```"+`

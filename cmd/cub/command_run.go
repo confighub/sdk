@@ -52,7 +52,7 @@ hold until it reaches a terminal status.
 
 Examples:
 `+"```"+`
-  cub commandrun get 3f1c…9ab2 --wait
+  cub commandrun get 3f1c6b2e-8d4a-4f7e-9a21-5c0d7e4b9ab2 --wait
 `+"```"+`
 `, ""),
 	Annotations: map[string]string{"OrgLevel": ""},

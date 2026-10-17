@@ -35,7 +35,9 @@ and otherwise read from stdin using the flag --from-stdin or --replace-from-stdi
 Unit configuration data can be provided in multiple ways:
 
   1. From a local or remote configuration file, or from stdin (by specifying "-")
-  2. By restoring to a previous revision (using --restore)
+  2. By restoring to a previous revision (using --restore). A unit created since v0.2.16
+     begins with an empty revision 1 that precedes its first content, so restoring to revision 1
+     empties it; check cub revision list before restoring by number
   3. By upgrading from the upstream unit (using --upgrade)
   4. By performing a 3-way merge with another unit (using --merge-source, --merge-base, --merge-end)
 
@@ -59,16 +61,16 @@ Examples:
   # Restore a unit to revision 5
   cub unit update --space my-space myunit --restore 5
 
-  # Restore a unit to 2 revisions ago (relative to head)
+  # Restore a unit to 2 revisions ago (relative to head). A promotion or upload that walked a
+  # range of upstream changes wrote one revision per change, so to undo one of those, restore
+  # Before:ChangeOrder:<slug> or Before:ChangeSet:<slug> instead of counting back
   cub unit update --space my-space myunit --restore -2
 
   # Restore a unit using a specific revision ID
   cub unit update --space my-space myunit --restore 550e8400-e29b-41d4-a716-446655440000
 
-  # Restore a unit to the live revision
-  cub unit update --space my-space myunit --restore LastReleasedRevisionNum
-
-  # Restore a unit to the last released revision
+  # Restore a unit to the revision last published in a Release. For a backing unit, that is
+  # the revision its entity holds
   cub unit update --space my-space myunit --restore LastReleasedRevisionNum
 
   # Restore a unit to a tagged revision (supports space/tag syntax)
@@ -116,13 +118,13 @@ Patch Mode Examples:
   cub unit update --patch --space my-space myunit --filename patch.json --change-desc "Updated annotations" --label patched=true
 
   # Bulk patch with change description and labels
-  cub unit update --patch --where "Slug LIKE 'app-%'" --change-desc "Metadata review" --label reviewed=2024-01
+  cub unit update --space my-space --patch --where "Slug LIKE 'app-%'" --change-desc "Metadata review" --label reviewed=2024-01
 
   # Bulk patch across all spaces with metadata
   cub unit update --patch --where "UpstreamRevisionNum > 0" --change-desc "Upgrade all" --upgrade
 
   # Bulk restore with change description
-  cub unit update --patch --where "Slug IN ('unit1', 'unit2')" --restore LastReleasedRevisionNum --change-desc "Restored to last released revision"
+  cub unit update --space my-space --patch --where "Slug IN ('unit1', 'unit2')" --restore LastReleasedRevisionNum --change-desc "Restored to last released revision"
 
   # Bulk patch with data from stdin plus metadata (just an example; use cub unit set-target for this case)
   echo '{"TargetID": null}' | cub unit update --patch --unit unit1,unit2,unit3 --from-stdin --change-desc "Cleared targets"
@@ -158,8 +160,8 @@ Upgrade from upstream:
   cub unit update --space SPACE my-unit --upgrade
 
 Bulk patch operations:
-  cub unit update --patch --where "Slug LIKE 'app-%'" --restore LastReleasedRevisionNum --change-desc "Restored apps"
-  cub unit update --patch --where "Labels.tier = 'platform'" --label updated=true --change-desc "Updated platform units"
+  cub unit update --space my-space --patch --where "Slug LIKE 'app-%'" --restore LastReleasedRevisionNum --change-desc "Restored apps"
+  cub unit update --space my-space --patch --where "Labels.tier = 'platform'" --label updated=true --change-desc "Updated platform units"
 
 Key flags for agents:
 - --wait: Wait for triggers and validation to complete (recommended)
@@ -180,8 +182,8 @@ Key flags for agents:
 - --unit: Target specific units by slug/UUID for bulk patch operations (requires --patch with no unit argument)
 
 Post-update workflow:
-1. Use 'function do get-placeholders' to check for placeholder values
-2. Use 'function do' commands to modify configuration as needed
+1. Use 'function get get-placeholders' to check for placeholder values
+2. Use 'function set' to modify configuration as needed
 3. Use 'variant approve' if the change workflow requires an approval
 4. Use 'release publish' to publish the space, which Argo CD / Flux pull
 

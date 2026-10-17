@@ -21,16 +21,14 @@ and adopt it as the current context when you want to, or ask for that up front w
 Examples:
 `+"```"+`
   # Create with parameters
-  cub context create my-context \
-    --server=https://api.confighub.com \
-    --space=default
+  cub context create my-context --server=https://hub.confighub.com
 
   # Create one for a second server and authenticate it, still working in the current one
   cub context create local-9091 --server=http://localhost:9091
   cub --context local-9091 auth login
 
   # Create it and switch to it
-  cub context create staging --server=https://api.confighub.com --use
+  cub context create staging --server=https://hub.confighub.com --use
 `+"```"+`
 `, ""),
 	Args: cobra.RangeArgs(0, 1),

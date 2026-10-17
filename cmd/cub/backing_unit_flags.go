@@ -33,7 +33,7 @@ func addBackingUnitFlags(cmd *cobra.Command, entityName string, organizationLeve
 		fmt.Sprintf("give each %s the bulk operation writes a backing Unit if it has none: a ConfigHub/YAML Unit holding its configuration, kept in step with it", entityName))
 	if organizationLevel {
 		cmd.Flags().StringVar(&backingUnitArgs.backingUnitSpace, "backing-unit-space", "",
-			fmt.Sprintf("space, by slug or UUID, for the backing Units --with-backing-units creates; required with it, since a %s is in no space of its own", entityName))
+			fmt.Sprintf("space, by slug or UUID, for the backing Units --with-backing-units creates; required with it, since %s %s is in no space of its own", indefiniteArticle(entityName), entityName))
 	}
 	run := cmd.RunE
 	cmd.RunE = func(cmd *cobra.Command, args []string) error {
@@ -54,11 +54,11 @@ func addBackingUnitFlags(cmd *cobra.Command, entityName string, organizationLeve
 func addFromBackingUnitsFlags(cmd *cobra.Command, entityName string, create bool) {
 	if create {
 		cmd.Flags().BoolVar(&backingUnitArgs.fromBackingUnits, "from-backing-units", false,
-			fmt.Sprintf("create a %s from each ConfigHub/YAML Unit --where-unit, --filter-unit and --space select that describes one, in the Unit's space, with the Unit as its backing Unit", entityName))
+			fmt.Sprintf("create %s %s from each ConfigHub/YAML Unit --where-unit, --filter-unit and --space select that describes one, in the Unit's space, with the Unit as its backing Unit", indefiniteArticle(entityName), entityName))
 		cmd.Flags().StringVar(&backingUnitArgs.whereUnit, "where-unit", "", "where expression over Units selecting those to create from, with --from-backing-units")
 		cmd.Flags().StringVar(&backingUnitArgs.filterUnit, "filter-unit", "", "filter, by slug or UUID, over Units selecting those to create from, with --from-backing-units")
 		cmd.Flags().BoolVar(&backingUnitArgs.patchExisting, "patch-existing", false,
-			fmt.Sprintf("with --from-backing-units, patch a %s a selected Unit already backs with what the Unit holds that it has not taken yet, rather than report that the Unit backs it", entityName))
+			fmt.Sprintf("with --from-backing-units, patch %s %s a selected Unit already backs with what the Unit holds that it has not taken yet, rather than report that the Unit backs it", indefiniteArticle(entityName), entityName))
 	} else {
 		cmd.Flags().BoolVar(&backingUnitArgs.fromBackingUnits, "from-backing-units", false,
 			fmt.Sprintf("patch each %s selected with what its backing Unit holds that it has not taken yet; the patch the other flags make is applied after it", entityName))

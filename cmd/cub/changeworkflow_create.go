@@ -58,8 +58,16 @@ A stage's gates are its entry gates: they are checked over the stage before it, 
 stage's over the space the change order was created in, where the change already is -- which is
 why the flag leaves the first stage without them. The final stage's are what the last stage must
 satisfy for the rollout to read as completed, which no promotion can gate because no hop is left.
-A rollout whose stages gate differently from one another is written in a file, as is one gating
-its first stage or declaring custom prerequisites.
+A rollout whose stages gate differently from one another sets each stage's gates with
+--stage-prerequisites, and which Spaces it selects with --stage-where-space.
+
+A workflow with no stages governs ChangeSets rather than ChangeOrders: its Final prerequisites
+must hold in every Space the ChangeSet was opened in for the ChangeSet to close ("cub changeset
+create --change-workflow"). Create one with --final-prerequisites and no --stage, declaring any
+custom or attestation prerequisite it names with --custom-prerequisite or
+--attestation-prerequisite. Validated, custom and attestation prerequisites can gate closing a
+ChangeSet; Released and Healthy cannot, since a change is released only after its ChangeSet has
+closed.
 
 Single Examples:
 ` + "```" + `
@@ -75,9 +83,16 @@ Single Examples:
   # Then create a change order governed by it
   cub changeorder create --space myapp-base bump-base-image \
     --change-workflow workflows/myapp-main-line
+
+  # A workflow with no stages, which gates closing a ChangeSet on its Units validating
+  # and on an approval
+  cub changeworkflow create --space workflows changeset-review \
+    --attestation-prerequisite one-approver --attestation-prerequisite-count one-approver=1 \
+    --final-prerequisites "Validated;one-approver"
+  cub changeset create --space myapp-base tls-rollout --change-workflow workflows/changeset-review
 ` + "```" + `
 
-A workflow file holds the entity, so its fields are the ones "cub changeworkflow get --json"
+A workflow file holds the entity, so its fields are the ones "cub changeworkflow get -o json"
 prints:
 ` + "```" + `
   Stages:
@@ -161,8 +176,8 @@ func init() {
 	enableFilterFlag(changeworkflowCreateCmd)
 
 	// Single create specific flags
-	changeworkflowCreateCmd.Flags().StringSliceVar(&changeworkflowCreateArgs.stages, "stage", nil, "name of one stage of the workflow (can be repeated or comma-separated), given in the order a change is promoted through them. A stage selects the Spaces labeled \"Labels."+changeWorkflowStageLabel+" = '<name>'\", which is what \"cub variant create --stage\" sets; a stage selecting its Spaces some other way is written in a file")
-	changeworkflowCreateCmd.Flags().StringSliceVar(&changeworkflowCreateArgs.prerequisites, "prerequisites", nil, "gates given to every stage after the first and to the final stage (can be repeated or comma-separated): "+strings.Join(knownPrerequisites, ", ")+". A stage's gates are checked over every Space of the stage before it, and the first stage's over the change order's own space, which is why the first stage is not given them. A custom prerequisite is declared under CustomPrerequisites and gated on by name, which only a file can carry")
+	changeworkflowCreateCmd.Flags().StringSliceVar(&changeworkflowCreateArgs.stages, "stage", nil, "name of one stage of the workflow (can be repeated or comma-separated), given in the order a change is promoted through them. A stage selects the Spaces labeled \"Labels."+changeWorkflowStageLabel+" = '<name>'\", which is what \"cub variant create --stage\" sets; --stage-where-space selects a stage's Spaces some other way")
+	changeworkflowCreateCmd.Flags().StringSliceVar(&changeworkflowCreateArgs.prerequisites, "prerequisites", nil, "gates given to every stage after the first and to the final stage (can be repeated or comma-separated): "+strings.Join(knownPrerequisites, ", ")+". A stage's gates are checked over every Space of the stage before it, and the first stage's over the change order's own space, which is why the first stage is not given them. A custom prerequisite is declared with --custom-prerequisite and gated on by name")
 
 	// Bulk create specific flags
 	changeworkflowCreateCmd.Flags().StringSliceVar(&changeworkflowCreateArgs.changeworkflowSlugs, "changeworkflow", []string{}, "target specific change workflows by slug or UUID for bulk create (can be repeated or comma-separated)")
@@ -225,21 +240,10 @@ func checkChangeWorkflowCreateConflictingArgs(args []string) (bool, error) {
 			)
 		}
 
-		// The two ways to say what the workflow is. They answer the same question, so giving both
-		// leaves no way to tell which was meant, and giving neither creates a workflow with no
-		// stages, which no change order could be promoted under.
-		fromFile := flagPopulateModelFromStdin || flagFilename != ""
-		fromFlags := len(changeworkflowCreateArgs.stages) > 0 || len(changeworkflowCreateArgs.prerequisites) > 0
-
-		if fromFile && fromFlags {
-			return false, errors.New("--filename/--from-stdin and --stage/--prerequisites are mutually exclusive: the file is the workflow")
-		}
-		if !fromFile && !fromFlags {
-			return false, errors.New("a ChangeWorkflow needs stages: name them with --stage, or give the whole workflow with --filename (or --from-stdin)")
-		}
-		// The gates are carried by the stages, so there have to be some.
-		if len(changeworkflowCreateArgs.prerequisites) > 0 && len(changeworkflowCreateArgs.stages) == 0 {
-			return false, errors.New("--prerequisites needs at least one --stage")
+		if err := checkChangeWorkflowDefinition(flagPopulateModelFromStdin || flagFilename != "",
+			changeworkflowCreateArgs.stages, changeworkflowCreateArgs.prerequisites,
+			changeworkflowCreateLists.given()); err != nil {
+			return false, err
 		}
 	}
 
@@ -261,6 +265,28 @@ func checkChangeWorkflowCreateConflictingArgs(args []string) (bool, error) {
 	}
 
 	return isBulkCreateMode, nil
+}
+
+// checkChangeWorkflowDefinition checks that a single create says what the workflow is, one way.
+// --stage and --prerequisites build the stages, and a file is the whole workflow; they answer the
+// same question, so giving both leaves no way to tell which was meant. The other list flags edit
+// whichever of the two built the workflow, and on their own describe a workflow with no stages,
+// which governs ChangeSets: its Final prerequisites, and the declarations they name. Giving
+// nothing at all would create a workflow that gates nothing.
+func checkChangeWorkflowDefinition(fromFile bool, stages, prerequisites []string, listsGiven bool) error {
+	fromStageFlags := len(stages) > 0 || len(prerequisites) > 0
+	if fromFile && fromStageFlags {
+		return errors.New("--filename/--from-stdin and --stage/--prerequisites are mutually exclusive: the file is the workflow")
+	}
+	if !fromFile && !fromStageFlags && !listsGiven {
+		return errors.New("a ChangeWorkflow needs stages, or, to govern ChangeSets, Final prerequisites: name them with --stage or --final-prerequisites, or give the whole workflow with --filename (or --from-stdin)")
+	}
+	// --prerequisites gates the hops between stages, so there have to be some; the gates of a
+	// workflow with none are its Final prerequisites.
+	if len(prerequisites) > 0 && len(stages) == 0 {
+		return errors.New("--prerequisites needs at least one --stage; a workflow with no stages, which governs ChangeSets, is gated with --final-prerequisites")
+	}
+	return nil
 }
 
 func changeworkflowCreateCmdRun(cmd *cobra.Command, args []string) error {

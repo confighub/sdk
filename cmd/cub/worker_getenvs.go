@@ -13,12 +13,14 @@ import (
 var workerEnvsCmd = &cobra.Command{
 	Use:   "get-envs <worker-slug>",
 	Args:  cobra.ExactArgs(1),
-	Short: "Get Bridge Worker environment variables",
-	Long: getCommandHelp(`Get Bridge Worker environment variables.
+	Short: "Get a worker's environment variables",
+	Long: getCommandHelp(`Get the environment variables a worker process authenticates with: the worker's ID and
+secret. The output holds the secret, so write it where the process
+reads it rather than printing it into a shared log.
 
 Examples:
 `+"```"+`
-  # Get the environment variables for a Bridge Worker
+  # Get the environment variables for a worker
   cub worker get-envs <worker-slug>
 
   # Emit plain KEY=value lines (no shell prefix, no comments). Suitable for

@@ -28,13 +28,15 @@ Single unit mode:
 
 Bulk mode:
 `+"```"+`
-  cub unit set-target <target-slug> --where "Slug LIKE 'app-%'"
-  cub unit set-target <target-slug> --unit unit1,unit2,unit3
+  cub unit set-target --space my-space <target-slug> --where "Slug LIKE 'app-%'"
+  cub unit set-target --space my-space <target-slug> --unit unit1,unit2,unit3
 `+"```"+`
 
 Use "-" as target-slug to unset/clear the target.
 
-Targets typically are created by workers, but may also be created using cub target create.`, ""),
+Targets are created with cub target create, or by cub cluster attach. A unit created or
+updated with no Target takes its Space's release Target (cub space update --release-target),
+and in a Space that has one, a unit that takes a Target cannot be set to any other.`, ""),
 	Args:        cobra.RangeArgs(1, 2),
 	Annotations: map[string]string{"OrgLevel": ""},
 	RunE:        unitSetTargetCmdRun,

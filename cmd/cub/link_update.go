@@ -47,9 +47,9 @@ Examples:
   echo '{"Labels": {"env": "prod"}}' | cub link update --patch --where "DisplayName LIKE 'app-%'" --from-stdin
 
   # Update labels for multiple links using --label flag
-  cub link update --patch --where "DisplayName LIKE 'app-%'" --label env=prod,team=backend
+  cub link update --space my-space --patch --where "DisplayName LIKE 'app-%'" --label env=prod,team=backend
 
-  # Update links across all spaces
+  # Update links across the organization: without --space, --where spans every space
   cub link update --patch --where "ToSpaceID = 'old-space-id'" --from-stdin
 
   # Update specific links by slug

@@ -17,7 +17,7 @@ var groupGetCmd = &cobra.Command{
 Examples:
 `+"```"+`
   # Get details about a group
-  cub group get --json my-group
+  cub group get -o json my-group
 `+"```"+`
 `, ""),
 	RunE: groupGetCmdRun,

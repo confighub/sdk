@@ -14,9 +14,25 @@ import (
 )
 
 var runCmd = &cobra.Command{
-	Use:               "run",
-	Short:             "invoke a function",
-	Long:              getCommandHelp(`invoke a function`, ""),
+	Use:   "run",
+	Short: "invoke a function",
+	Long: getCommandHelp(`Invoke one function, giving its parameters as cub flags as well as positional arguments.
+
+Each function is a subcommand of cub run, built from the function list cub keeps in
+functions.json beside its config file. Load or refresh that list with --reload (or start
+over with --reset), and then see a function's parameters with cub run <function> --help:
+`+"```"+`
+  cub run --reload
+  cub run set-replicas --help
+`+"```"+`
+
+Each parameter is then a flag of the function's subcommand: set-replicas takes --replicas.
+
+Like cub function do, cub run accepts a function of any kind, so it does not refuse a
+mutating function where a read was meant; cub function get, set and vet do. Without
+--space, --unit, --where or --filter it runs on every unit in the organization, so name
+the units, and preview a mutating function with --dry-run -o mutations. Unlike the
+function verbs, it does not wait for the change to finish unless --wait is given.`, ""),
 	Annotations:       map[string]string{"OrgLevel": ""},
 	PersistentPreRunE: spacePreRunE,
 	RunE:              RunRunCmd,

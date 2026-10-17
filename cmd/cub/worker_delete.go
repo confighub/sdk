@@ -13,38 +13,33 @@ import (
 
 var bridgeworkerDeleteCmd = &cobra.Command{
 	Use:   "delete [<name>]",
-	Short: "Delete a bridgeworker or multiple bridgeworkers",
-	Long: getCommandHelp(`Delete a bridgeworker or multiple bridgeworkers using bulk operations.
+	Short: "Delete a worker or multiple workers",
+	Long: getCommandHelp(`Delete a worker or multiple workers using bulk operations.
 
-Single bridgeworker delete:
+Single worker delete:
 `+"```"+`
-  cub worker delete my-worker
+  cub worker delete --space my-space my-worker
 `+"```"+`
 
 Bulk delete with --where:
 
-Delete multiple bridgeworkers at once based on search criteria.
+Delete multiple workers at once based on search criteria.
 
 Examples:
 `+"```"+`
-  # Delete all disabled bridgeworkers
-  cub worker delete --where "Disabled = true"
+  # Delete the workers in a space that are no longer connected
+  cub worker delete --space my-space --where "Condition = 'Disconnected'"
 
-  # Delete bridgeworkers with specific status
-  cub worker delete --where "Status = 'inactive'"
-
-  # Delete bridgeworkers across all spaces
+  # Delete workers across the organization: without --space, --where spans every space
   cub worker delete --where "Labels.cleanup = 'true'"
 
-  # Delete specific bridgeworkers by name
-  cub worker delete --worker my-worker,another-worker
+  # Delete specific workers by name
+  cub worker delete --space my-space --worker my-worker,another-worker
 `+"```"+`
 
-A worker is not deleted while Targets name it, and its Targets are not deleted with it. The
-error names them. Pass --detach to leave those Targets without a worker:
-`+"```"+`
-  cub worker delete --detach my-worker
-`+"```"+`
+A worker is not deleted while Triggers or Invocations name it, and --detach does not clear
+them; the error names them. Point them at another worker first (--worker on cub trigger update
+or cub invocation update), or delete them.
 `, ""),
 	Args:        cobra.MaximumNArgs(1), // Allow 0 or 1 args (0 for bulk mode)
 	RunE:        bridgeworkerDeleteCmdRun,
@@ -59,7 +54,7 @@ func init() {
 	addStandardDeleteFlags(bridgeworkerDeleteCmd)
 	enableWhereFlag(bridgeworkerDeleteCmd)
 	enableFilterFlag(bridgeworkerDeleteCmd)
-	bridgeworkerDeleteCmd.Flags().StringSliceVar(&workerDeleteIdentifiers, "worker", []string{}, "target specific bridgeworkers by name or UUID for bulk delete (can be repeated or comma-separated)")
+	bridgeworkerDeleteCmd.Flags().StringSliceVar(&workerDeleteIdentifiers, "worker", []string{}, "target specific workers by name or UUID for bulk delete (can be repeated or comma-separated)")
 	addDetachFlag(bridgeworkerDeleteCmd)
 	workerCmd.AddCommand(bridgeworkerDeleteCmd)
 }
@@ -77,7 +72,7 @@ func checkWorkerDeleteConflictingArgs(args []string) bool {
 	} else {
 		// Single delete mode validation
 		if len(args) != 1 {
-			failOnError(fmt.Errorf("single bridgeworker delete requires exactly one argument: <name>"))
+			failOnError(fmt.Errorf("single worker delete requires exactly one argument: <name>"))
 		}
 
 		if filter != "" || where != "" || len(workerDeleteIdentifiers) > 0 {

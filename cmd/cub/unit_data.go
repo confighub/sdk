@@ -10,7 +10,7 @@ func init() {
 		"Show the config data of a unit",
 		`Display the configuration data of a unit, as text.
 
-Replaces 'cub unit get --data-only'. Use --output-file / -O to write the data
+Replaces the --data-only flag of cub unit get. Use --output-file / -O to write the data
 to a file instead of stdout.
 
 With --where, reads every unit the clause selects in one request rather than one

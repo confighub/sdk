@@ -33,7 +33,9 @@ var (
 var authLoginCmd = &cobra.Command{
 	Use:   "login",
 	Short: "Log into ConfigHub",
-	Long: getCommandHelp(`Authenticate the CLI to ConfigHub via Browser Login
+	Long: getCommandHelp(`Authenticate the CLI to ConfigHub, by signing in through the browser, or, for a service
+account or other identity with a registered key, by signing with its private key, which needs
+no browser.
 
 By default the credentials are stored in the context matching what you logged
 into, which may be a different context than the current one (or a new one) if you
@@ -55,18 +57,18 @@ Examples:
   # Create a new context and login with a specific server
   cub auth login --new-context --server https://hub.confighub.com
 
-  # Login as a worker using environment variables
-  cub auth login --as-worker
+  # Login by signing with a key stored under ~/.confighub/keys, such as a service account's
+  cub auth login --private-key=ci-runner
 
   # Login by signing with a private key held in $CONFIGHUB_AUTH_PRIVATE_KEY
   # (naming a key as well as setting the variable is an error, not a preference)
   cub auth login --private-key
 
-  # Login by signing with a key stored under ~/.confighub/keys
-  cub auth login --private-key=ci-runner
-
   # Login by signing with a key at an explicit path
   cub auth login --private-key=./deploy.jwk
+
+  # Login as a worker (workers are deprecated) using environment variables
+  cub auth login --as-worker
 
   # Login without automatically opening browser
   cub auth login --no-browser
@@ -85,7 +87,7 @@ func init() {
 	// sentinel because an empty one is indistinguishable from "not given".
 	authLoginCmd.Flags().Lookup("private-key").NoOptDefVal = privateKeyFromEnv
 	authLoginCmd.Flags().StringVar(&serverURL, "server", "", "Server URL to authenticate to (e.g., https://hub.confighub.com)")
-	authLoginCmd.Flags().StringVar(&organizationSearchTerm, "organization", "", "Organization partial name or ID to authenticate to (e.g., Fuz or org_1234567890)")
+	authLoginCmd.Flags().StringVar(&organizationSearchTerm, "organization", "", "Organization partial name or ID to authenticate to (e.g., Acme, or the organization's UUID)")
 	authLoginCmd.Flags().BoolVar(&newContext, "new-context", false, "Create a new context during login")
 	authLoginCmd.Flags().BoolVar(&noBrowser, "no-browser", false, "Do not automatically open browser for authentication")
 	authCmd.AddCommand(authLoginCmd)

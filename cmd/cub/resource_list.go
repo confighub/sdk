@@ -21,7 +21,7 @@ Resources can be filtered by their metadata (ResourceType, ResourceName, Toolcha
 SpaceID, TargetID) and by their configuration data. Data paths use dot notation, and a literal
 dot within a key is escaped as ~1 (for example Data.metadata.labels.app~1kubernetes~1io/name).
 
-TargetID mirrors the containing unit's, so it selects resources by where they will be applied.
+TargetID mirrors the containing unit's, so it selects resources by the Target they are released to.
 Resources of units with no target have no TargetID.
 
 Attributes of the containing unit and space are addressed with a prefix -- Unit.Slug,

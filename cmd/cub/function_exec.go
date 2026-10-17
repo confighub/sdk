@@ -44,11 +44,11 @@ argument, write the quote that whitespace follows with a backslash before it.
 
 Like do, exec accepts any kind of function and applies no kind restriction to the
 list, which is the point of it: one request can inspect, mutate, and validate. For
-a single invocation, prefer cub function get/set/vet.
+a single invocation, prefer cub function get, set or vet.
 
 Example:
 `+"```"+`
-  cub function exec functions.txt --where "Slug = 'mydeployment'
+  cub function exec --space my-space functions.txt --where "Slug = 'mydeployment'"
 `+"```"+`
 
 Where functions.txt contains:

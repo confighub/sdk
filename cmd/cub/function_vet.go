@@ -29,8 +29,9 @@ For invoking non-mutating inspection functions (e.g. get-container-image), use
 'cub function get'. For mutating functions (e.g. set-container-image), use
 'cub function set'. 'cub function do' is the mixed escape hatch.
 
-The same validating functions are what a Trigger runs to attach an ApplyGate;
-running one here is the ad hoc audit of the same check. See 'cub trigger create'.`
+The same validating functions are what a Trigger runs to record a ValidationError on
+a unit, which blocks publishing a Release of it; running one here is the ad hoc audit
+of the same check. See 'cub trigger create'.`
 
 func init() {
 	registerFunctionVerbFlags(functionVetCmd)

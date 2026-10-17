@@ -22,11 +22,12 @@ Withdrawal takes the release out of service: it is no longer published for downl
 but the release itself is retained. Use `+"`cub release delete`"+` to remove it.
 
 The release is located by its ID regardless of which Space it lives in, so --space
-is not required (a Release lives in its bundled Units' Space, which need not be the
-caller's default).
+is not required.
 
-If any Unit in the release's bundle has an outstanding DestroyGate, the withdrawal
-is blocked until the gate clears.
+If any Unit in the release's Space that is assigned to the Space's current release
+Target has an outstanding DestroyGate, the withdrawal is blocked until the gate
+clears. Those are the Units the Space would release now, which can differ from the
+ones this release bundled if Units were added, moved or retargeted since.
 
 Examples:
 `+"```"+`

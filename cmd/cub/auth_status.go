@@ -24,9 +24,11 @@ token is still valid. It loads the token for the active context, checks its expi
 locally, and then calls the server's /me endpoint to confirm the token is accepted.
 
 If the session is not authenticated or the token has expired, the command exits with a
-non-zero status and prints instructions to run 'cub auth login'. Re-authentication
-requires an interactive browser sign-in, so an agent cannot complete it on the user's
-behalf and must ask the user to run 'cub auth login'.
+non-zero status and prints instructions to run 'cub auth login'. For a context that
+authenticates with a private key, such as a service account's, 'cub auth login' renews the
+session from the key with no browser, so an agent can run it. Otherwise re-authentication
+is an interactive browser sign-in, which an agent cannot complete on the user's behalf, so
+it must ask the user to run 'cub auth login'.
 
 It also compares the client and server versions. Pre-1.0, a change in the second version
 number is not backward compatible, so a cub older than the server exits non-zero telling
@@ -47,23 +49,30 @@ func init() {
 }
 
 // reauthInstructions is the actionable guidance returned to an agent when the
-// session is not usable. Re-authentication is an interactive browser flow, so the
-// agent must hand the task to the user rather than attempting it itself.
-const reauthInstructions = "Ask the user to run 'cub auth login' to re-authenticate. " +
-	"This is an interactive browser sign-in that an agent cannot complete on the user's behalf."
+// session is not usable. A context that authenticates with a private key renews
+// from it without a person, so the agent can do that itself; any other context
+// needs an interactive browser sign-in, so the agent must hand it to the user.
+func reauthInstructions(ctx *Context) string {
+	if ctx != nil && ctx.Metadata.PrivateKey != "" {
+		return "Run 'cub auth login' to re-authenticate: this context authenticates with a private key, " +
+			"so it renews the session from the key without a browser."
+	}
+	return "Ask the user to run 'cub auth login' to re-authenticate. " +
+		"This is an interactive browser sign-in that an agent cannot complete on the user's behalf."
+}
 
 func authStatusCmdRun(cmd *cobra.Command, args []string) error {
 	ctx := contextManager.ActiveContext()
 	tokenData, err := contextManager.LoadTokenData(ctx)
 	if err != nil || tokenData.AccessToken == "" {
-		return fmt.Errorf("not authenticated: no access token found for context %q. %s", ctx.Name, reauthInstructions)
+		return fmt.Errorf("not authenticated: no access token found for context %q. %s", ctx.Name, reauthInstructions(ctx))
 	}
 
 	// Check expiration locally first to avoid a server round trip on an obviously
 	// expired token.
 	if expiry, ok := tokenExpiry(tokenData.AccessToken); ok && time.Now().After(expiry) {
 		return fmt.Errorf("not authenticated: access token expired at %s. %s",
-			expiry.Format(time.RFC3339), reauthInstructions)
+			expiry.Format(time.RFC3339), reauthInstructions(ctx))
 	}
 
 	// Verify against the server. A token can be rejected (revoked, signed by a
@@ -75,7 +84,7 @@ func authStatusCmdRun(cmd *cobra.Command, args []string) error {
 	}
 	if res.StatusCode() == http.StatusUnauthorized {
 		return fmt.Errorf("not authenticated: server %s rejected the access token (401 Unauthorized). %s",
-			ctx.Coordinate.ServerURL, reauthInstructions)
+			ctx.Coordinate.ServerURL, reauthInstructions(ctx))
 	}
 	if res.JSON200 == nil {
 		return fmt.Errorf("unexpected response from server %s while verifying authentication: %s",

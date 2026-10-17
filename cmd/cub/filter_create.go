@@ -30,13 +30,19 @@ SINGLE FILTER CREATION:
 
 Create a new filter to define entity filter expressions.
 
-From Types:
+From Types: the entity type the filter selects, such as
 
   - Unit: Filter units
   - Space: Filter spaces
+  - Component: Filter components
+  - Revision: Filter revisions
   - Trigger: Filter triggers
-  - Worker: Filter workers
   - Target: Filter targets
+  - ChangeSet, ChangeOrder: Filter change sets and change orders
+  - BridgeWorker: Filter workers
+
+Most other entity types are accepted too, named as in the API, such as Link, Tag, Invocation,
+Mutation, ReviewComment, Resource, ServiceAccount and Release.
 
 Examples:
 ` + "```" + `

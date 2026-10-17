@@ -39,7 +39,7 @@ func registerRenderConfigMap(fh handler.FunctionRegistry, converter configkit.Co
 				{
 					ParameterName: "immutable",
 					Required:      false,
-					Description:   "If true (default), produces a hashed-name immutable ConfigMap. If false, a stable-name mutable ConfigMap. Replaces the bridge's RevisionHistoryLimit option (0 == false).",
+					Description:   "If true (default), produces a hashed-name immutable ConfigMap. If false, a stable-name mutable ConfigMap.",
 					DataType:      api.DataTypeBool,
 					Example:       "true",
 				},

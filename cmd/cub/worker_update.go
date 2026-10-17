@@ -15,25 +15,25 @@ import (
 
 var bridgeworkerUpdateCmd = &cobra.Command{
 	Use:   "update [<name>]",
-	Short: "Update a bridge worker or multiple bridge workers",
-	Long: getCommandHelp(`Update a bridge worker or multiple bridge workers using bulk operations.
+	Short: "Update a worker or multiple workers",
+	Long: getCommandHelp(`Update a worker or multiple workers using bulk operations.
 
-Single bridge worker update:
+Single worker update:
 `+"```"+`
   cub worker update --space my-space my-worker
 `+"```"+`
 
 Bulk update with --patch:
 
-Update multiple bridge workers at once based on search criteria. Requires --patch flag with no positional arguments.
+Update multiple workers at once based on search criteria. Requires --patch flag with no positional arguments.
 
 Examples:
 `+"```"+`
-  # Update all bridge workers with specific labels using JSON patch
-  echo '{"Labels": {"env": "prod"}}' | cub worker update --patch --where "Labels.tier = 'backend'" --from-stdin
+  # Update all workers with specific labels using JSON patch
+  echo '{"Labels": {"env": "prod"}}' | cub worker update --space my-space --patch --where "Labels.tier = 'backend'" --from-stdin
 
-  # Update specific bridge workers by slug
-  cub worker update --patch --worker my-worker,another-worker --from-stdin < patch.json
+  # Update specific workers by slug
+  cub worker update --space my-space --patch --worker my-worker,another-worker --from-stdin < patch.json
 `+"```"+`
 `, ""),
 	Args:        cobra.MaximumNArgs(1), // Allow 0 args for bulk mode
@@ -53,7 +53,7 @@ func init() {
 	bridgeworkerUpdateCmd.Flags().BoolVar(&workerPatch, "patch", false, "use patch API for individual or bulk operations")
 	enableWhereFlag(bridgeworkerUpdateCmd)
 	enableFilterFlag(bridgeworkerUpdateCmd)
-	bridgeworkerUpdateCmd.Flags().StringSliceVar(&workerIdentifiers, "worker", []string{}, "target specific bridge workers by slug or UUID for bulk patch (can be repeated or comma-separated)")
+	bridgeworkerUpdateCmd.Flags().StringSliceVar(&workerIdentifiers, "worker", []string{}, "target specific workers by slug or UUID for bulk patch (can be repeated or comma-separated)")
 	bridgeworkerUpdateCmd.Flags().StringSliceVar(&workerUpdatePermissions, "permission", []string{}, permissionUpdateHelp)
 	bridgeworkerUpdateCmd.Flags().StringVar(&workerUpdateOrgRole, "org-role", "", "organization-level role for the worker (e.g., admin, manager, editor, user, viewer, creator, none)")
 	workerCmd.AddCommand(bridgeworkerUpdateCmd)
@@ -92,7 +92,7 @@ func bridgeworkerUpdateCmdRun(cmd *cobra.Command, args []string) error {
 
 	// Regular update mode validation
 	if len(args) != 1 {
-		return errors.New("single bridge worker update requires: <name>")
+		return errors.New("single worker update requires: <name>")
 	}
 
 	// Check that bulk-only flags are not used in single mode
@@ -187,7 +187,7 @@ func workerIndividualPatchCmdRun(cmd *cobra.Command, args []string) error {
 	}
 
 	workerDetails := workerRes.JSON200
-	displayUpdateResults(workerDetails, "bridge worker", args[0], workerDetails.BridgeWorkerID.String(), displayWorkerDetails)
+	displayUpdateResults(workerDetails, "worker", args[0], workerDetails.BridgeWorkerID.String(), displayWorkerDetails)
 	return nil
 }
 
@@ -257,9 +257,9 @@ func workerBulkPatchCmdRun(cmd *cobra.Command, args []string) error {
 		if resp.Error != nil {
 			failureCount++
 			if resp.BridgeWorker != nil {
-				fmt.Printf("Failed to update bridge worker %s: %s\n", resp.BridgeWorker.Slug, resp.Error.Message)
+				fmt.Printf("Failed to update worker %s: %s\n", resp.BridgeWorker.Slug, resp.Error.Message)
 			} else {
-				fmt.Printf("Failed to update bridge worker: %s\n", resp.Error.Message)
+				fmt.Printf("Failed to update worker: %s\n", resp.Error.Message)
 			}
 		} else if resp.BridgeWorker != nil {
 			successCount++
@@ -272,7 +272,7 @@ func workerBulkPatchCmdRun(cmd *cobra.Command, args []string) error {
 	fmt.Printf("\nBulk patch completed: %d succeeded, %d failed\n", successCount, failureCount)
 
 	if failureCount > 0 {
-		return errors.New("some bridge workers failed to update")
+		return errors.New("some workers failed to update")
 	}
 
 	return nil

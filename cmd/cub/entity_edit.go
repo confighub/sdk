@@ -51,25 +51,26 @@ func addEntityEditCommand(edit entityEdit) {
 	command := edit.parent.Name()
 	cmd := &cobra.Command{
 		Use:   "edit <" + command + ">",
-		Short: fmt.Sprintf("Edit a %s in your system's editor", edit.entity),
-		Long: getCommandHelp(fmt.Sprintf(`Open a %[1]s in the editor named by the EDITOR environment variable, or vi if it is not
+		Short: fmt.Sprintf("Edit %s %s in your system's editor", indefiniteArticle(edit.entity), edit.entity),
+		Long: getCommandHelp(fmt.Sprintf(`Open %[2]s %[1]s in the editor named by the EDITOR environment variable, or vi if it is not
 set, as a document: the fields an update can set, with the entities the %[1]s refers to named
 rather than identified by ID. When the editor exits, the %[1]s is updated with what changed:
 fields left alone keep what the %[1]s holds, and fields removed are cleared. If nothing changed,
 no update is made. If the %[1]s changed since it was read, the update is refused; edit it again.
 
-A %[1]s with a backing Unit is edited through the Unit: the edit is saved as a Revision of the
+%[3]s %[1]s with a backing Unit is edited through the Unit: the edit is saved as a Revision of the
 Unit, the Unit's triggers run, and the %[1]s is then updated from the Unit, unless they report
 validation errors. The edit is refused when the Unit has changes the %[1]s has not taken, unless
 --force is given, which applies them along with the edit.
 
-An edit that cannot be saved is left in a file, whose name is reported.`, edit.entity),
+An edit that cannot be saved is left in a file, whose name is reported.`, edit.entity,
+			indefiniteArticle(edit.entity), capitalizeFirst(indefiniteArticle(edit.entity))),
 			fmt.Sprintf(`
-  # Edit a %[2]s
+  # Edit %[3]s %[2]s
   cub %[1]s edit my-%[1]s
 
   # Edit it with another editor
-  EDITOR="code --wait" cub %[1]s edit my-%[1]s`, command, edit.entity)),
+  EDITOR="code --wait" cub %[1]s edit my-%[1]s`, command, edit.entity, indefiniteArticle(edit.entity))),
 		Args: cobra.ExactArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
 			return runEntityEdit(edit, args[0])
@@ -273,4 +274,20 @@ func editThroughBackingUnit(entityName, command, entitySlug string, unitID gocli
 			unitName, entityName, command)
 	}
 	return nil
+}
+
+// indefiniteArticle is the article that goes before noun in help text, so that a template
+// shared by every entity type reads "an invocation" as well as "a trigger".
+func indefiniteArticle(noun string) string {
+	if noun != "" && strings.ContainsRune("aeioAEIO", rune(noun[0])) {
+		return "an"
+	}
+	return "a"
+}
+
+func capitalizeFirst(s string) string {
+	if s == "" {
+		return s
+	}
+	return strings.ToUpper(s[:1]) + s[1:]
 }

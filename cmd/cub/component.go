@@ -50,9 +50,9 @@ naming it with ComponentID.
 upload' and 'cub variant create'. It shows those variants as a deployment graph and is where config
 changes are promoted downstream.`
 
-	agentContext := `'list', 'create', 'get', 'update' and 'delete' operate on the Component entity by slug or UUID.
-'open' shows a Component's variants: the spaces naming it with ComponentID, which 'cub variant
-upload' sets and 'cub variant create' inherits from the upstream space.
+	agentContext := `The Component is named by slug or UUID. 'cub variant upload' sets a space's ComponentID, and
+'cub variant create' inherits it from the upstream space. 'cub component tree' prints the
+variants and how they are linked; 'cub space list --component my-app' lists them.
 
 The equivalent raw query is:
   COMPONENT_ID=$(cub component get my-app -o jq=.Component.ComponentID)

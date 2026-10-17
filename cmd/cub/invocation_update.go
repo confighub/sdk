@@ -46,14 +46,14 @@ Update multiple invocations at once based on search criteria. Requires --patch f
 
 Examples:
 `+"```"+`
-  # Update worker for all invocations of a certain type using JSON patch
-  echo '{"BridgeWorkerID": "worker-uuid"}' | cub invocation update --patch --where "ToolchainType = 'Kubernetes/YAML'" --from-stdin
+  # Point the invocations that run an external function at another worker serving it
+  cub invocation update --space my-space --patch --where "FunctionInvocations.*.FunctionName = 'vet-team-policy'" --worker new-worker
 
   # Repoint every invocation still on a deprecated function to its replacement
   echo '{"FunctionInvocations": [{"FunctionName": "vet-cel"}]}' | cub invocation update --patch --where "FunctionInvocations.*.FunctionName = 'cel-validate'" --from-stdin
 
   # Update specific invocations by slug
-  cub invocation update --patch --invocation my-invocation,another-invocation --worker new-worker
+  cub invocation update --space my-space --patch --invocation my-invocation,another-invocation --worker new-worker
 `+"```"+`
 `, ""),
 	Args:        cobra.MinimumNArgs(0), // Allow 0 args for bulk mode

@@ -125,14 +125,14 @@ func init() {
 	variantDemoteCmd.Flags().StringVar(&variantDemoteArgs.targetStage, "target-stage", "", "stage of the change order's ChangeWorkflow whose spaces to demote")
 	variantDemoteCmd.Flags().StringVar(&variantDemoteArgs.expectedPlan, "expected-plan", "", "the Plan a --dry-run of the same demotion returned; nothing is written if the demotion would now do anything different")
 	variantDemoteCmd.Flags().BoolVar(&variantDemoteArgs.dryRun, "dry-run", false, "report the units that would be restored, and the later revisions the restore would drop, without changing anything")
-	variantDemoteCmd.Flags().BoolVar(&variantDemoteArgs.context, "context", false, "with -o mutations, also show the unchanged paths around each change: every unchanged field and element of each map and list a change is in, up to the resource")
+	variantDemoteCmd.Flags().BoolVar(&variantDemoteArgs.context, "diff-context", false, "with -o mutations, also show the unchanged paths around each change: every unchanged field and element of each map and list a change is in, up to the resource")
 	addStandardDisplayFlags(variantDemoteCmd)
 	variantCmd.AddCommand(variantDemoteCmd)
 }
 
 func variantDemoteCmdRun(cmd *cobra.Command, args []string) error {
 	if variantDemoteArgs.context && !shouldDisplayMutations() {
-		return errors.New("--context applies to the structured diff: add -o mutations")
+		return errors.New("--diff-context applies to the structured diff: add -o mutations")
 	}
 	if variantDemoteArgs.changeorderSlug == "" {
 		return errors.New("demote needs --change-order: what it undoes is one named change, and which units that is comes from the change order")

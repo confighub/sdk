@@ -28,16 +28,16 @@ Delete multiple triggers at once based on search criteria.
 Examples:
 `+"```"+`
   # Delete all disabled triggers
-  cub trigger delete --where "Disabled = true"
+  cub trigger delete --space my-space --where "Disabled = true"
 
   # Delete triggers for specific function
-  cub trigger delete --where "FunctionName = 'validate'"
+  cub trigger delete --space my-space --where "FunctionName = 'cel-validate'"
 
-  # Delete triggers across all spaces
+  # Delete triggers across the organization: without --space, --where spans every space
   cub trigger delete --where "Labels.cleanup = 'true'"
 
   # Delete specific triggers by slug
-  cub trigger delete --trigger my-trigger,another-trigger
+  cub trigger delete --space my-space --trigger my-trigger,another-trigger
 `+"```"+`
 `, ""),
 	Args:        cobra.MaximumNArgs(1), // Allow 0 or 1 args (0 for bulk mode)

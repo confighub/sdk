@@ -36,7 +36,7 @@ Examples:
   cub space list -o json
 
   # List spaces with custom JQ filter
-  cub space list -o jq='.[].Slug'
+  cub space list -o jq='.[].Space.Slug'
 
   # List spaces matching a specific criteria
   cub space list --where "Labels.Environment = 'prod'"
@@ -49,12 +49,12 @@ Examples:
  ` + "```" + `
 `
 
-	agentContext := `Essential first step for discovering available spaces and setting up context.
+	agentContext := `Essential first step for discovering available spaces.
 
 Agent discovery workflow:
 1. Run 'space list' immediately after authentication to see available spaces
 2. Choose appropriate space for your operations
-3. Set default context or use --space flag for subsequent commands
+3. Pass --space, or name entities as <space>/<slug>, on subsequent commands
 
 Common agent patterns:
 

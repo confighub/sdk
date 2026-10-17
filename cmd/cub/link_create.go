@@ -52,13 +52,13 @@ specific pointers, or run cub link update --make-current on them afterward.
 Single Link Examples:
 `+"```"+`
   # Create a link between a deployment and its namespace in the same space
-  cub link create --space my-space --json to-ns my-deployment my-ns --wait
+  cub link create --space my-space -o json to-ns my-deployment my-ns --wait
 
   # Create a link for a complex application to its namespace
-  cub link create --space my-space --json headlamp-to-ns headlamp my-ns --wait
+  cub link create --space my-space -o json headlamp-to-ns headlamp my-ns --wait
 
   # Create a link between a cloned unit and a namespace
-  cub link create --space my-space --json clone-to-ns my-clone my-ns --wait
+  cub link create --space my-space -o json clone-to-ns my-clone my-ns --wait
 
   # Create a link to a namespace in another space, spelled either way. The link is created in
   # --space, where the from unit is

@@ -28,13 +28,13 @@ Delete multiple units at once based on search criteria.
 Examples:
 `+"```"+`
   # Delete all units with specific label
-  cub unit delete --where "Labels.Tier = 'backend'"
+  cub unit delete --space my-space --where "Labels.Tier = 'backend'"
 
-  # Delete units across all spaces
+  # Delete units across the organization: without --space, --where spans every space
   cub unit delete --where "Labels.cleanup = 'true'"
 
   # Delete specific units by slug
-  cub unit delete --unit my-unit,another-unit
+  cub unit delete --space my-space --unit my-unit,another-unit
 `+"```"+`
 
 A unit is not deleted while units outside the delete link to it, including its clones. The error

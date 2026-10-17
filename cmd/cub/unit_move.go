@@ -18,7 +18,7 @@ var unitMoveCmd = &cobra.Command{
 	Short: "Move units to another space",
 	Long: getCommandHelp(`Move units, and the links from them, to another space.
 
-A unit keeps its identity: its revisions, mutations, events, links, clones and approvals
+A unit keeps its identity: its revisions, mutations, events, links, clones and attestations
 come with it. Moving requires Manage permission on each unit and CreateChildren permission
 on the destination space.
 

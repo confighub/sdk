@@ -34,7 +34,7 @@ Update multiple filters at once based on search criteria. Requires --patch flag 
 Examples:
 `+"```"+`
   # Update all filters of Spaces
-  cub filter update --patch --where "From = 'Space'" --from-stdin < patch.json
+  cub filter update --space my-space --patch --where "From = 'Space'" --from-stdin < patch.json
 
   # Update where clause for specific filters
   echo '{"Where": "Labels.Environment = 'production'"}' | cub filter update --patch --filter-entity my-filter,another-filter --from-stdin

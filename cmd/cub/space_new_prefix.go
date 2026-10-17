@@ -15,7 +15,7 @@ import (
 var spaceNewPrefixCmd = &cobra.Command{
 	Use:   "new-prefix",
 	Short: "Generate a random space name that is not a prefix of existing spaces",
-	Long: getCommandHelp(`Generate a random space name using cubbyname.Random() until finding one that is not a prefix of any existing space.
+	Long: getCommandHelp(`Generate random space names until finding one that is not a prefix of any existing space.
 
 This command is useful for creating unique space names that won't conflict with existing spaces.
 

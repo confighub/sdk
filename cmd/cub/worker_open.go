@@ -10,14 +10,14 @@ import (
 
 var workerOpenCmd = &cobra.Command{
 	Use:         "open",
-	Short:       "Open the bridge worker list in the web UI",
+	Short:       "Open the worker list in the web UI",
 	Args:        cobra.NoArgs,
 	Annotations: map[string]string{"OrgLevel": ""},
-	Long: getCommandHelp(`Open the web UI on the bridge worker list.
+	Long: getCommandHelp(`Open the web UI on the worker list.
 
 Examples:
 `+"```"+`
-  # Open the bridge worker list
+  # Open the worker list
   cub worker open
 
   # Print the URL instead of opening a browser

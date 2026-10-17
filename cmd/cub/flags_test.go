@@ -10,6 +10,7 @@ import (
 	goclientnew "github.com/confighub/sdk/core/openapi/goclient-new"
 	"github.com/google/uuid"
 	"github.com/spf13/cobra"
+	"github.com/spf13/pflag"
 )
 
 func setDisplayNameAndHiddenReasonFlags(t *testing.T, displayName, hiddenReason string) {
@@ -224,4 +225,37 @@ func TestCreateAndUpdateSetDisplayNameAndHiddenReason(t *testing.T) {
 	if checked < 30 {
 		t.Errorf("checked %d create and update commands, expected the whole tree", checked)
 	}
+}
+
+// A command's own flag of the same name as one a parent declares persistent
+// replaces it on that command, silently: "cub --context prod variant promote"
+// would set promote's flag, not select the context, and with a boolean flag
+// take "prod" as a positional argument.
+func TestNoFlagShadowsAParentsPersistentFlag(t *testing.T) {
+	var visit func(cmd *cobra.Command)
+	visit = func(cmd *cobra.Command) {
+		for _, child := range cmd.Commands() {
+			// The commands under cub run are made from the cached function list, whose
+			// parameters, such as resource-type, can share a name with a cub run flag.
+			// They are not registered where no list is cached, as under CI.
+			if child == runCmd {
+				continue
+			}
+			visit(child)
+		}
+		for parent := cmd.Parent(); parent != nil; parent = parent.Parent() {
+			parent.PersistentFlags().VisitAll(func(persistent *pflag.Flag) {
+				// A command's own persistent flags are in Flags() only once cobra has
+				// merged them, which executing any command does.
+				own := cmd.Flags().Lookup(persistent.Name)
+				if own == nil {
+					own = cmd.PersistentFlags().Lookup(persistent.Name)
+				}
+				if own != nil && own != persistent {
+					t.Errorf("%s declares --%s, which hides the --%s of %s", cmd.CommandPath(), persistent.Name, persistent.Name, parent.CommandPath())
+				}
+			})
+		}
+	}
+	visit(rootCmd)
 }

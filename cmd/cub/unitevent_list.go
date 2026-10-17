@@ -19,18 +19,18 @@ import (
 var unitEventListCmd = &cobra.Command{
 	Use:   "list [unit-slug]",
 	Short: "List unit events",
-	Long: getCommandHelp(`List unit events for a specific unit, or across all units when no unit is specified. Omit --space to search across all spaces in the organization.
+	Long: getCommandHelp(`List unit events for a specific unit, or across all units when no unit is specified. A unit event is the result a worker reported for a unit action. Omit --space to search across all spaces in the organization.
 
 Examples:
 `+"```"+`
   # List unit events for a specific unit
   cub unit-event list --space my-space my-unit
 
-  # List failed Apply events in the space
-  cub unit-event list --space my-space --where "Action = 'Apply' AND Result = 'Failed'"
+  # List failed function invocations in the space
+  cub unit-event list --space my-space --where "Action = 'InvokeFunctions' AND Result = 'FunctionInvocationFailed'"
 
-  # List Apply events started within the past 15 minutes across all spaces
-  cub unit-event list --where "Action = 'Apply' AND CreatedAt > '2026-04-15T12:00:00Z'"
+  # List function invocation events started since a given time across all spaces
+  cub unit-event list --where "Action = 'InvokeFunctions' AND CreatedAt > '2026-04-15T12:00:00Z'"
 `+"```"+`
 `, ""),
 	Args:        cobra.RangeArgs(0, 1),

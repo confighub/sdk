@@ -21,7 +21,7 @@ Examples:
   cub invocation list --space my-space
 
   # List invocations across all spaces
-  cub invocation list --where "FunctionName = 'vet-cel'"
+  cub invocation list --where "FunctionInvocations.*.FunctionName = 'vet-cel'"
 
   # List invocations without headers for scripting
   cub invocation list --space my-space --no-headers
@@ -41,8 +41,8 @@ Examples:
   # Find invocations still calling a deprecated function
   cub invocation list --where "FunctionInvocations.*.FunctionName = 'cel-validate'"
 
-  # Find invocations whose first function is set-image
-  cub invocation list --space my-space --where "FunctionInvocations.0.FunctionName = 'set-image'"
+  # Find invocations whose first function is set-container-image
+  cub invocation list --space my-space --where "FunctionInvocations.0.FunctionName = 'set-container-image'"
 `+"```"+`
 `, ""),
 	Args:        cobra.ExactArgs(0),

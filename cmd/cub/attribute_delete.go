@@ -28,12 +28,12 @@ Delete multiple attributes at once based on search criteria.
 Examples:
 `+"```"+`
   # Delete all attributes for a specific toolchain
-  cub attribute delete --where "ToolchainType = 'Kubernetes/YAML'"
+  cub attribute delete --space my-space --where "ToolchainType = 'Kubernetes/YAML'"
 
   # Delete specific attributes by slug
-  cub attribute delete --attribute my-attr,another-attr
+  cub attribute delete --space my-space --attribute my-attr,another-attr
 
-  # Delete attributes across all spaces
+  # Delete attributes across the organization: without --space, --where spans every space
   cub attribute delete --where "Labels.cleanup = 'true'"
 `+"```"+`
 `, ""),

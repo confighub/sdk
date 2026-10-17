@@ -23,7 +23,7 @@ var invocationInvokeCmd = &cobra.Command{
 	Long: getCommandHelp(`Execute a stored Invocation, supplying values for its declared parameters.
 
 The operation class is selected by the verb so that an AI agent's permissions can
-be constrained by the command, mirroring 'cub function get/set/vet':
+be constrained by the command, mirroring cub function get, set and vet:
 
   cub invocation invoke get <invocation>   # non-mutating Invocations only
   cub invocation invoke set <invocation>   # mutating Invocations only

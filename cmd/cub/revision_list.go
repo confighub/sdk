@@ -48,8 +48,8 @@ Examples:
   # List revisions in JSON format
   cub revision list --space my-space -o json my-ns
 
-  # List revisions using unit ID instead of slug
-  cub revision list --space my-space --by-unit-id 61f26b06-3c34-4363-8b9d-7d0a7c2b5f1c
+  # List revisions of a unit named by its ID instead of its slug
+  cub revision list --space my-space 61f26b06-3c34-4363-8b9d-7d0a7c2b5f1c
 
   # List revisions with custom JQ filter
   cub revision list --space my-space -o jq='.[].RevisionNum' my-ns

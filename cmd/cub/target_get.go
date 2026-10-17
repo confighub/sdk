@@ -21,9 +21,9 @@ var targetGetCmd = &cobra.Command{
 Examples:
 `+"```"+`
   # Get details about a target
-  cub target get --space my-space --json my-target
+  cub target get --space my-space -o json my-target
 
-  # Wait for target to be created (e.g., by a worker registering)
+  # Wait for a target to be created by another process, such as cub cluster attach
   cub target get --space my-space --wait my-target
 `+"```"+`
 `, ""),

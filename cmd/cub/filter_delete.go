@@ -28,16 +28,16 @@ Delete multiple filters at once based on search criteria.
 Examples:
 `+"```"+`
   # Delete all filters for Units
-  cub filter delete --where "From = 'Unit'"
+  cub filter delete --space my-space --where "From = 'Unit'"
 
   # Delete filters with specific resource type
-  cub filter delete --where "ResourceType = 'apps/v1/Deployment'"
+  cub filter delete --space my-space --where "ResourceType = 'apps/v1/Deployment'"
 
-  # Delete filters across all spaces
+  # Delete filters across the organization: without --space, --where spans every space
   cub filter delete --where "Labels.cleanup = 'true'"
 
   # Delete specific filters by slug
-  cub filter delete --filter-entity my-filter,another-filter
+  cub filter delete --space my-space --filter-entity my-filter,another-filter
 `+"```"+`
 `, ""),
 	Args:        cobra.MaximumNArgs(1), // Allow 0 or 1 args (0 for bulk mode)

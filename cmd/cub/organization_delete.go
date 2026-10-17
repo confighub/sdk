@@ -10,8 +10,8 @@ import (
 
 var organizationDeleteCmd = &cobra.Command{
 	Use:   "delete <slug or id>",
-	Short: "Delete a organization",
-	Long: getCommandHelp(`Delete a organization.
+	Short: "Delete an organization",
+	Long: getCommandHelp(`Delete an organization.
 	This is a highly restricted action authorized only to the owner of the Organization`, ""),
 	Args: cobra.ExactArgs(1),
 	RunE: organizationDeleteCmdRun,

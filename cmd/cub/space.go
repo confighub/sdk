@@ -162,6 +162,11 @@ func resolveVariant(componentRef, variant string, selectParam string) (*goclient
 // and can therefore run without a space.
 const spaceOptionalAnnotation = "SpaceOptional"
 
+// componentScopeAnnotation marks a command that reads --component as a term of its
+// own as well as the Component of --variant, so --component may be given without
+// --variant there.
+const componentScopeAnnotation = "ComponentScope"
+
 // enableOptionalSpace marks a command as able to run without a space.
 //
 // It is for the commands that take an entity reference and resolve it: a UUID
@@ -194,7 +199,7 @@ func spacePreRunE(cmd *cobra.Command, args []string) error {
 	if err := globalPreRun(cmd, args); err != nil {
 		return err
 	}
-	if componentFlag != "" && variantFlag == "" {
+	if _, componentScope := cmd.Annotations[componentScopeAnnotation]; componentFlag != "" && variantFlag == "" && !componentScope {
 		return fmt.Errorf("--component names the component of --variant: pass --variant <variant> with it, or --variant <component>/<variant>")
 	}
 	if variantFlag != "" {

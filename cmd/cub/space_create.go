@@ -34,23 +34,25 @@ var spaceCreateCmd = &cobra.Command{
 	Use:   "create [space]",
 	Short: "Create a space",
 	Args:  cobra.RangeArgs(0, 1),
-	Long: getCommandHelp(`Create a new space as a collaborative context for a project or team.
+	Long: getCommandHelp(`Create a new space as a collaborative context for a project or team. A space that is a variant
+of a Component names it with --component; a space whose Units are released names the Target its
+Releases are for with --release-target, which its Units then take.
 
 Single space creation examples:
 `+"```"+`
   # Create a new space named "my-space" with verbose output, reading configuration from stdin
   # Verbose output prints the details of the created entity
-  cub space create --verbose --json --from-stdin my-space
+  cub space create --verbose -o json --from-stdin my-space
 
   # Create a new space with minimal output
   cub space create my-space
 
-  # Create a space and set it as the default in the current context
-  cub space create my-space --set-context
-
   # Create a space in the "website" Component, with the well-known Space labels, as shown by "cub space list"
   cub space create website-canary --component website --variant canary --stage Canary \
     --environment Prod --region us-east1
+
+  # Create a space whose Releases are for the Target prod-cluster in the infra space
+  cub space create website-prod --component website --variant prod --release-target infra/prod-cluster
 `+"```"+`
 
 Bulk creation examples:

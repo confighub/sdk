@@ -22,7 +22,7 @@ Examples:
 `+"```"+`
   # Create a new organization named "my-organization" with verbose output, reading configuration from stdin
   # Verbose output prints the details of the created entity
-  cub organization create --verbose --json --from-stdin my-organization
+  cub organization create --verbose -o json --from-stdin my-organization
 
   # Create a new organization with minimal output
   cub organization create my-organization --email-domain example.com

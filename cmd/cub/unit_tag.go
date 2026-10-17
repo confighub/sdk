@@ -49,20 +49,20 @@ has been published at it.
 
 Examples:
 `+"```"+`
-  # Tag head revision of a single unit (uses current space)
-  cub unit tag my-tag --unit my-unit
+  # Tag head revision of a single unit
+  cub unit tag --space my-space my-tag --unit my-unit
 
   # Tag the last released revision of all units with specific label
-  cub unit tag release-v1 --revision LastReleasedRevisionNum --where "Labels.version = 'v1'"
+  cub unit tag --space my-space release-v1 --revision LastReleasedRevisionNum --where "Labels.version = 'v1'"
 
   # Tag whatever revision a changeset ended on, across the units it touched
   cub unit tag release-v1 --revision ChangeSet:rollout --where "Space.Slug = 'prod'"
 
   # Remove tag from units
-  cub unit tag my-tag --revision Remove --unit my-unit,another-unit
+  cub unit tag --space my-space my-tag --revision Remove --unit my-unit,another-unit
 
   # Remove tag using shorthand
-  cub unit tag my-tag --revision - --where "Labels.cleanup = 'true'"
+  cub unit tag --space my-space my-tag --revision - --where "Labels.cleanup = 'true'"
 
   # Tag units across all spaces with space/tag syntax
   cub unit tag production/prod-release --where "Labels.env = 'production'"

@@ -58,7 +58,7 @@ Examples:
   cub channel create --space dev --channel argobot --dest-space staging,prod
 
   # Clone a channel once per region, labeled with it
-  cub channel create --space dev --channel argobot --variant-labels region=us|eu \
+  cub channel create --space dev --channel argobot --variant-labels 'region=us|eu' \
     --name-pattern 'template:{{.SourceEntitySlug}}-{{.Labels.region}}'
 `+"```"+`
 `, ""),

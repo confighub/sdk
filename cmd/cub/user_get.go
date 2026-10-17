@@ -17,7 +17,7 @@ var userGetCmd = &cobra.Command{
 Examples:
 `+"```"+`
   # Get details about a user
-  cub user get --json my-user
+  cub user get -o json my-user
 
   # Get the user's ID
   cub user get my-user -o jq=.User.UserID

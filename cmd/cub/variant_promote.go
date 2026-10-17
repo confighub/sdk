@@ -206,7 +206,7 @@ func init() {
 	variantPromoteCmd.Flags().StringVar(&variantPromoteArgs.filterSpace, "filter-space", "", "filter over spaces selecting the spaces to promote")
 	variantPromoteCmd.Flags().BoolVar(&variantPromoteArgs.dryRun, "dry-run", false, "preview the units that would be upgraded and added without changing anything")
 	variantPromoteCmd.Flags().BoolVar(&variantPromoteArgs.includeConfigData, "include-config-data", false, "return the configuration each unit write produces, or with --dry-run would produce, as ConfigData in structured output (-o json, -o yaml, -o jq=...)")
-	variantPromoteCmd.Flags().BoolVar(&variantPromoteArgs.context, "context", false, "with -o mutations, also show the unchanged paths around each change: every unchanged field and element of each map and list a change is in, up to the resource")
+	variantPromoteCmd.Flags().BoolVar(&variantPromoteArgs.context, "diff-context", false, "with -o mutations, also show the unchanged paths around each change: every unchanged field and element of each map and list a change is in, up to the resource")
 	variantPromoteCmd.Flags().BoolVar(&variantPromoteArgs.squash, "squash", false, "merge each unit's range as one rebased diff in one revision instead of walking it: by default a promotion re-runs the upstream's recorded function invocations against each unit where it can, and records one revision per upstream revision that has an effect there")
 	variantPromoteCmd.Flags().StringVar(&variantPromoteArgs.priorRevisions, "prior-revisions", "", "with --change-order, what to do for a unit that has not merged as far as the change order's start on its upstream: Include (the default) merges the upstream revisions before the start first, as revisions that do not carry the change order; Skip merges only the change order's range, as though the unit had already merged as far as its start, and those revisions do not arrive later; Error refuses, naming the unit, the link, and the revisions; All merges them as Include does and also marks every unit the change does not change at its head, so the next promotion brings it up to this space. Defaults to the change order's PriorRevisions")
 	variantPromoteCmd.Flags().BoolVar(&variantPromoteArgs.force, "force", false, "promote past ChangeWorkflow gates that do not hold; requires --force-reason, and is recorded on the change order")
@@ -223,7 +223,7 @@ func init() {
 
 func variantPromoteCmdRun(cmd *cobra.Command, args []string) error {
 	if variantPromoteArgs.context && !shouldDisplayMutations() {
-		return errors.New("--context applies to the structured diff: add -o mutations")
+		return errors.New("--diff-context applies to the structured diff: add -o mutations")
 	}
 	haveSelector := variantPromoteArgs.whereSpace != "" || variantPromoteArgs.filterSpace != ""
 	if len(args) > 0 && haveSelector {

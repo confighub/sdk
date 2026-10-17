@@ -28,12 +28,12 @@ Delete multiple changeorders at once based on search criteria.
 Examples:
 `+"```"+`
   # Delete all changeorders created before a specific date
-  cub changeorder delete --where "CreatedAt < '2024-01-01'"
+  cub changeorder delete --space my-space --where "CreatedAt < '2024-01-01'"
 
   # Delete changeorders with specific descriptions
-  cub changeorder delete --where "Description LIKE '%deprecated%'"
+  cub changeorder delete --space my-space --where "Description LIKE '%deprecated%'"
 
-  # Delete changeorders across all spaces
+  # Delete changeorders across the organization: without --space, --where spans every space
   cub changeorder delete --where "Labels.cleanup = 'true'"
 
   # Delete specific changeorders by slug

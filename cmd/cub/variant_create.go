@@ -165,7 +165,7 @@ Examples:
   # Point the cloned units at a target and stamp the new space's TargetID annotation.
   # For an OCI target, this also sets the new space's release target, so the variant
   # can be published with "cub release publish" without further setup.
-  cub variant create test website-prod --target website-test/cluster
+  cub variant create test website-prod --target infra/test-cluster
 
   # Deploy to a "cub cluster up" cluster: clones the base, retargets it, and creates
   # the Argo CD Application so the cluster picks up the deployment (skip with --no-argo-app).

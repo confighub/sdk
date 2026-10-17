@@ -35,10 +35,10 @@ Update multiple attributes at once based on search criteria. Requires --patch fl
 Examples:
 `+"```"+`
   # Update description of all attributes matching a filter
-  cub attribute update --patch --where "ToolchainType = 'Kubernetes/YAML'" --description "Updated"
+  cub attribute update --space my-space --patch --where "ToolchainType = 'Kubernetes/YAML'" --description "Updated"
 
   # Update specific attributes by slug
-  cub attribute update --patch --attribute my-attr,another-attr --description "Updated"
+  cub attribute update --space my-space --patch --attribute my-attr,another-attr --description "Updated"
 `+"```"+`
 `, ""),
 	Args:        cobra.MinimumNArgs(0),

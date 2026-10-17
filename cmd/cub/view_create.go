@@ -36,13 +36,13 @@ Examples:
   cub view create --space my-space unit-view unit-filter --column Unit.Slug --column Unit.DisplayName --column Space.Slug
 
   # Create a view with grouping and ordering
-  cub view create --space my-space summary-view deployment-filter --column Unit.Labels.Environment --column Unit.Status --group-by Unit.Labels.Environment --order-by Unit.CreatedAt --order-by-direction DESC
+  cub view create --space my-space summary-view deployment-filter --column Unit.Labels.Environment --column Unit.ValidationErrors --group-by Unit.Labels.Environment --order-by Unit.CreatedAt --order-by-direction DESC
 
   # Create a view with custom columns and sorting
   cub view create --space my-space detailed-view my-filter --column Unit.Slug --column Unit.HeadRevisionNum --column UpstreamUnit.HeadRevisionNum --order-by Unit.UpdatedAt
 
   # Create a view from JSON
-  cub view create --space my-space --json my-view --from-stdin < view.json
+  cub view create --space my-space -o json my-view --from-stdin < view.json
 ` + "```" + `
 
 BULK VIEW CREATION:
@@ -69,11 +69,11 @@ Column Names:
 
 Columns should be specified in the format used by list commands, such as:
 
-  - Unit.Slug, Unit.DisplayName, Unit.Status
+  - Unit.Slug, Unit.DisplayName, Unit.LastReleasedRevisionNum
   - Space.Slug, Space.DisplayName
   - Labels.Environment, Labels.Version
   - UpstreamUnit.HeadRevisionNum, UpstreamUnit.Slug
-  - Target.Slug, Target.ToolchainType`
+  - Target.Slug, Target.DisplayName`
 
 	return getCommandHelp(baseHelp, "")
 }

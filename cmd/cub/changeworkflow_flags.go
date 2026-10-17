@@ -38,6 +38,13 @@ func addChangeWorkflowListFlags(cmd *cobra.Command, stages *[]string) *changeWor
 	return flags
 }
 
+// given reports whether any of the flags was given, which on a create is enough to say what the
+// workflow is: a workflow governing ChangeSets has no stages, only Final prerequisites and the
+// declarations they name.
+func (flags *changeWorkflowListFlags) given() bool {
+	return flags.stages.given() || flags.finalPrerequisites != "" || flags.custom.given() || flags.attestation.given()
+}
+
 // newChangeWorkflowStageMember makes the stage --stage names when the workflow does not have it.
 func newChangeWorkflowStageMember(name string) (map[string]any, error) {
 	stage, err := changeWorkflowStage(name)

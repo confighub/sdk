@@ -23,7 +23,7 @@ var mutationGetCmd = &cobra.Command{
 Examples:
 `+"```"+`
   # Get details about a specific mutation in JSON format
-  cub mutation get --space my-space --json my-deployment 3
+  cub mutation get --space my-space -o json my-deployment 3
 `+"```"+`
 `, ""),
 	RunE: mutationGetCmdRun,

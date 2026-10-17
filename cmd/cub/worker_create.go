@@ -16,12 +16,12 @@ var workerCreateCmd = &cobra.Command{
 	Short: "Create a worker",
 	Long: getCommandHelp(`Create a worker in your environment.
 
-The worker-slug must be unique within a space. Workers can be used to:
+The worker-slug must be unique within a space. A worker serves external functions, which
+are invoked by naming the worker on a request, Trigger or Invocation.
 
-  1. Run custom functions, invoked by naming the worker on a request, Trigger or Invocation
-  2. Serve as an identity a GitOps tool pulls a Target's Releases as, by granting the
-     worker's bot user View and ViewChildren on the Target (--is-server-worker needs no
-     process to run)
+Workers are otherwise deprecated. The identity a GitOps tool pulls a Target's Releases as
+is a service account (cub serviceaccount create) granted View and ViewChildren on the
+Target. Existing server workers (--is-server-worker) that pull Releases keep working.
 
 Examples:
 `+"```"+`
@@ -32,10 +32,10 @@ Examples:
   cub worker create --space my-space worker-1
   eval "$(cub worker get-envs --space my-space worker-1)"
 
-  # Create a server-hosted worker and let it pull from a Target
-  cub worker create --space infra --is-server-worker argo
-  bot=$(cub worker get --space infra argo -o jq=.BridgeWorker.UserID)
-  cub target update --space infra prod --permission View:$bot --permission ViewChildren:$bot
+  # The identity a GitOps tool pulls a Target's Releases as is a service account, not a worker
+  cub serviceaccount create argo
+  cub target update --space infra prod --permission View:serviceaccount:argo --permission ViewChildren:serviceaccount:argo
+  cub serviceaccount token create argo
 `+"```"+`
 `, ""),
 	RunE: workerCreateCmdRun,

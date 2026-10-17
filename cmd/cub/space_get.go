@@ -24,7 +24,7 @@ Examples:
   cub space get my-space
 
   # Get space details in JSON format
-  cub space get --json my-space
+  cub space get -o json my-space
 `+"```"+`
 `, ""),
 	RunE: spaceGetCmdRun,

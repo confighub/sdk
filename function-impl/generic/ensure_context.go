@@ -14,7 +14,8 @@ import (
 	"github.com/confighub/sdk/core/third_party/gaby"
 )
 
-// Deprecated: This functionality should be implemented in bridges going forward.
+// Deprecated: a Release already records where each resource came from, in its
+// confighub.com/origin annotation, without writing context into the configuration data.
 func registerEnsureContext(fh handler.FunctionRegistry, converter configkit.ConfigConverter, resourceProvider yamlkit.ResourceProvider) {
 	if err := fh.RegisterFunction("ensure-context", &handler.FunctionRegistration{
 		FunctionSignature: api.FunctionSignature{
@@ -31,7 +32,7 @@ func registerEnsureContext(fh handler.FunctionRegistry, converter configkit.Conf
 			Validating:            false,
 			Hermetic:              true,
 			Idempotent:            true,
-			Description:           "[Deprecated] It is recommended to bridge implementers to do this in the bridge instead so as not to clutter configuration data. Set function context values (e.g., unit slug, space ID) in configuration resource/element attributes (if possible) if add-context is true and remove the context if false. These values can be used to find the corresponding unit in ConfigHub, such as with `cub k8s source`.",
+			Description:           "[Deprecated: a Release stamps each Kubernetes resource with a confighub.com/origin annotation instead, without cluttering configuration data] Set function context values (e.g., unit slug, space ID) in configuration resource/element attributes (if possible) if add-context is true and remove the context if false. These values can be used to find the corresponding unit in ConfigHub, such as with `cub k8s source`.",
 			FunctionType:          api.FunctionTypeCustom,
 			AffectedResourceTypes: []api.ResourceType{api.ResourceTypeAny},
 		},

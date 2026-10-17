@@ -23,7 +23,8 @@ var groupAddWorkerCmd = &cobra.Command{
 	Short: "Add a worker to a group",
 	Args:  cobra.ExactArgs(2),
 	Long: getCommandHelp(`Add a worker's bot user to a group, so that the group's grants in entities' Permissions
-apply to the worker. Other users' groups are managed in the identity provider. The worker is
+apply to the worker. Workers are deprecated; add a service account with "cub group add <group>
+serviceaccount:<name>" instead. Other users' groups are managed in the identity provider. The worker is
 named as <space>/<slug>, by ID, or by a slug only one space holds. The worker picks up the
 change the next time it authenticates.
 
@@ -50,7 +51,8 @@ var groupRemoveWorkerCmd = &cobra.Command{
 	Use:   "remove-worker <group> <worker>",
 	Short: "Remove a worker from a group",
 	Args:  cobra.ExactArgs(2),
-	Long: getCommandHelp(`Remove a worker's bot user from a group. The worker is named as <space>/<slug>, by ID, or
+	Long: getCommandHelp(`Remove a worker's bot user from a group. Workers are deprecated; a service account is
+removed with "cub group remove". The worker is named as <space>/<slug>, by ID, or
 by a slug only one space holds. The worker keeps the group until it next authenticates.
 
 `+groupWorkerAuthorization+`

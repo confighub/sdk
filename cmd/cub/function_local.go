@@ -39,11 +39,11 @@ Examples:
   # Execute set-container-image function on local file
   cub function local deployment.yaml set-container-image nginx nginx:1.25-alpine --toolchain Kubernetes/YAML
 
-  # Execute yq function on local file to extract a field
-  cub function local config.yaml yq '.spec.replicas' --toolchain Kubernetes/YAML
+  # Execute get-yq on a local file to extract a field
+  cub function local config.yaml get-yq '.spec.replicas' --toolchain Kubernetes/YAML
 
   # Execute function with named parameters
-  cub function local -- deployment.yaml set-int-path --apiVersion=apps/v1 --kind=Deployment --path=spec.replicas --value=3
+  cub function local -- deployment.yaml set-int-path --resource-type=apps/v1/Deployment --path=spec.replicas --attribute-value=3
 
   # Read from stdin
   cat deployment.yaml | cub function local - set-replicas 3 --toolchain Kubernetes/YAML

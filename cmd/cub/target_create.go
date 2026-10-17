@@ -22,8 +22,9 @@ var targetCreateCmd = &cobra.Command{
 
 A Target is where a Space's Releases are destined: a Space releases to the Target named by
 its ReleaseTargetID, and a GitOps tool such as Argo CD or Flux pulls those Releases from
-ConfigHub's OCI registry. The identity that pulls, such as a worker's bot user, needs View
-and ViewChildren on the Target, granted with --permission or "cub target update --permission".
+ConfigHub's OCI registry. The identity that pulls, a service account, needs View and
+ViewChildren on the Target, granted with --permission or "cub target update --permission".
+"cub cluster attach" creates the Target, the service account and the grants in one step.
 
 Without a slug, the command clones the targets --where, --filter or --target select, into the
 spaces --dest-space, --where-space or --filter-space select and/or under the names --name-prefix,
@@ -32,9 +33,9 @@ clones. Each clone lists the Triggers its WhereTrigger and TriggerFilterID selec
   # Create a Target
   cub target create --space infra prod
 
-  # Create a Target a worker's bot user can pull from
+  # Create a Target the service account argo can pull from
   cub target create --space infra prod \
-    --permission View:<bot-user-id> --permission ViewChildren:<bot-user-id>
+    --permission View:serviceaccount:argo --permission ViewChildren:serviceaccount:argo
 
   # Clone a Space's Targets into other Spaces
   cub target create --space infra --dest-space infra-east,infra-west

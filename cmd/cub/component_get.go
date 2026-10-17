@@ -28,7 +28,7 @@ Examples:
   cub component get my-app
 
   # Get component details in JSON format
-  cub component get --json my-app
+  cub component get -o json my-app
 
   # Get the component's ID
   cub component get my-app -o jq=.Component.ComponentID

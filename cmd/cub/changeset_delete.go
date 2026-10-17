@@ -28,12 +28,12 @@ Delete multiple changesets at once based on search criteria.
 Examples:
 `+"```"+`
   # Delete all changesets created before a specific date
-  cub changeset delete --where "CreatedAt < '2024-01-01'"
+  cub changeset delete --space my-space --where "CreatedAt < '2024-01-01'"
 
   # Delete changesets with specific descriptions
-  cub changeset delete --where "Description LIKE '%deprecated%'"
+  cub changeset delete --space my-space --where "Description LIKE '%deprecated%'"
 
-  # Delete changesets across all spaces
+  # Delete changesets across the organization: without --space, --where spans every space
   cub changeset delete --where "Labels.cleanup = 'true'"
 
   # Delete specific changesets by slug

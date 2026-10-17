@@ -49,24 +49,25 @@ func addEntityRenameCommand(spec entityRename) {
 	command := spec.parent.Name()
 	cmd := &cobra.Command{
 		Use:   fmt.Sprintf("rename <%s> <new-slug>", command),
-		Short: fmt.Sprintf("Rename a %s", spec.entity),
-		Long: getCommandHelp(fmt.Sprintf(`Rename a %[1]s: change its slug. A display name that is the same as the slug changes with
+		Short: fmt.Sprintf("Rename %s %s", indefiniteArticle(spec.entity), spec.entity),
+		Long: getCommandHelp(fmt.Sprintf(`Rename %[5]s %[1]s: change its slug. A display name that is the same as the slug changes with
 it; --display-name sets the display name instead.
 
-A %[1]s keeps its identity: everything that refers to it by ID keeps doing so. A where
+%[6]s %[1]s keeps its identity: everything that refers to it by ID keeps doing so. A where
 expression that names it by slug, such as "Slug = 'old-name'", stops matching it.
 %[2]s
 --dry-run reports whether the rename would succeed without making it.
 
 Examples:
 `+"```"+`
-  # Rename a %[1]s
+  # Rename %[5]s %[1]s
   cub %[3]s rename my-%[3]s my-new-%[3]s%[4]s
 
   # Rename it and set its display name
   cub %[3]s rename my-%[3]s my-new-%[3]s --display-name "My new %[1]s"%[4]s
 `+"```"+`
-`, spec.entity, spec.aboutParagraph(), command, spec.forceExample()), ""),
+`, spec.entity, spec.aboutParagraph(), command, spec.forceExample(),
+			indefiniteArticle(spec.entity), capitalizeFirst(indefiniteArticle(spec.entity))), ""),
 		Args: cobra.ExactArgs(2),
 		RunE: func(cmd *cobra.Command, args []string) error {
 			return runEntityRename(spec, args[0], args[1], cmd.Flags().Changed("display-name"))
@@ -88,7 +89,7 @@ Examples:
 
 func runEntityRename(spec entityRename, ref, newSlug string, displayNameGiven bool) error {
 	if spec.forceReason != "" && !renameArgs.force {
-		return fmt.Errorf("renaming a %s needs --force: %s", spec.entity, spec.forceReason)
+		return fmt.Errorf("renaming %s %s needs --force: %s", indefiniteArticle(spec.entity), spec.entity, spec.forceReason)
 	}
 	entity, err := spec.resolve(ref)
 	if err != nil {

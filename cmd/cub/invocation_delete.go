@@ -28,16 +28,16 @@ Delete multiple invocations at once based on search criteria.
 Examples:
 `+"```"+`
   # Delete all invocations for a specific function
-  cub invocation delete --where "FunctionName = 'validate'"
+  cub invocation delete --space my-space --where "FunctionInvocations.*.FunctionName = 'vet-celexpr'"
 
   # Delete invocations for specific toolchain
-  cub invocation delete --where "ToolchainType = 'Kubernetes/YAML'"
+  cub invocation delete --space my-space --where "ToolchainType = 'Kubernetes/YAML'"
 
-  # Delete invocations across all spaces
+  # Delete invocations across the organization: without --space, --where spans every space
   cub invocation delete --where "Labels.cleanup = 'true'"
 
   # Delete specific invocations by slug
-  cub invocation delete --invocation my-invocation,another-invocation
+  cub invocation delete --space my-space --invocation my-invocation,another-invocation
 `+"```"+`
 `, ""),
 	Args:        cobra.MaximumNArgs(1), // Allow 0 or 1 args (0 for bulk mode)

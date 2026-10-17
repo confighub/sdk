@@ -22,10 +22,10 @@ var triggerGetCmd = &cobra.Command{
 Examples:
 `+"```"+`
   # Get details about a trigger that validates replicas
-  cub trigger get --space my-space --json validate-replicas
+  cub trigger get --space my-space -o json validate-replicas
 
   # Get details about a trigger that enforces low resource usage
-  cub trigger get --space my-space --json enforce-low-cost
+  cub trigger get --space my-space -o json enforce-low-cost
 `+"```"+`
 `, ""),
 	RunE: triggerGetCmdRun,
