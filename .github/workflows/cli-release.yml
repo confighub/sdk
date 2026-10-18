@@ -185,5 +185,10 @@ jobs:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
           set -euo pipefail
-          gh release upload ${{ github.ref_name }} bin/install.sh --clobber
-          gh release edit ${{ github.ref_name }} --draft=false --latest
+          tag=${{ github.ref_name }}
+          gh release upload "$tag" bin/install.sh --clobber
+          # Mark this release latest only if no published release is newer. An
+          # older tag whose build finishes after a newer one's must not take latest.
+          highest=$( { gh release list --exclude-drafts --limit 100 --json tagName -q '.[].tagName'; echo "$tag"; } | sort -V | tail -1)
+          if [ "$highest" = "$tag" ]; then latest=true; else latest=false; fi
+          gh release edit "$tag" --draft=false --latest="$latest"
