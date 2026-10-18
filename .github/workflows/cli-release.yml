@@ -10,8 +10,15 @@ name: Build and Release CLI Binaries
 #                                       as a Sigstore bundle
 #   cub-<os>-<arch>.sbom.sigstore.json  the SBOM as a signed attestation about
 #                                       the binary, as a Sigstore bundle
+#   install.sh                          the install script, defaulting to this
+#                                       release; confighub.com/cub/install.sh
+#                                       redirects to the latest release's copy
 # The signing identity of both is this workflow at the release tag. README.md
 # has the verify commands.
+#
+# The release is created as a draft and published by the last job, once every
+# binary and the install script are attached. Until then the previous release
+# stays latest, so the latest release always has binaries to install.
 # The notices job doubles as a license gate: a forbidden or restricted (copyleft)
 # dependency fails it, and no binary is uploaded.
 #
@@ -53,8 +60,10 @@ jobs:
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
-          # Create the release if it doesn't exist yet
+          # Create the release as a draft if it doesn't exist yet; publish
+          # makes it public once everything is attached.
           gh release create ${{ github.ref_name }} \
+            --draft \
             --title "${{ github.ref_name }}" \
             --generate-notes 2>/dev/null || true
           gh release upload ${{ github.ref_name }} \
@@ -153,3 +162,33 @@ jobs:
             ./bin/cub-${{ matrix.goos }}-${{ matrix.goarch }}.sigstore.json \
             ./bin/cub-${{ matrix.goos }}-${{ matrix.goarch }}.sbom.sigstore.json \
             --clobber
+
+  publish:
+    needs: build-binaries
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      - name: Fill in this release as the install script's default version
+        run: |
+          set -euo pipefail
+          mkdir -p bin
+          sed 's|^VERSION="${VERSION:-latest}"$|VERSION="${VERSION:-${{ github.ref_name }}}"|' install.sh > bin/install.sh
+          # The match is on the script's exact text, so an edit to that line
+          # fails the release rather than attaching a script that says latest.
+          grep -qx 'VERSION="${VERSION:-${{ github.ref_name }}}"' bin/install.sh
+
+      - name: Attach the install script and publish the release
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          set -euo pipefail
+          tag=${{ github.ref_name }}
+          gh release upload "$tag" bin/install.sh --clobber
+          # Mark this release latest only if no published release is newer. An
+          # older tag whose build finishes after a newer one's must not take latest.
+          highest=$( { gh release list --exclude-drafts --limit 100 --json tagName -q '.[].tagName'; echo "$tag"; } | sort -V | tail -1)
+          if [ "$highest" = "$tag" ]; then latest=true; else latest=false; fi
+          gh release edit "$tag" --draft=false --latest="$latest"
