@@ -80,6 +80,8 @@ func TestHelpExampleChecks(t *testing.T) {
 		{example: "cub unit list -Z", want: "cub unit list has no flag -Z"},
 		{example: "cub unit frobnicate", want: `cub unit has no subcommand "frobnicate"`},
 		{example: "cub unit <verb> --help"},
+		{example: "cub <entity> explain --where"},
+		{example: "cub <entity> explain --frobnicate", want: `no subcommand of cub in place of <entity> takes "explain --frobnicate"`},
 		{example: "cub frobnicate", want: `cub has no subcommand "frobnicate"`},
 		{example: "cub helm install my-release my-chart"},
 	}
@@ -161,8 +163,13 @@ func checkHelpExample(example string) string {
 	if len(words) == 0 || words[0] != "cub" {
 		return ""
 	}
-	words = words[1:]
-	c := rootCmd
+	return checkHelpExampleWords(rootCmd, words[1:])
+}
+
+// checkHelpExampleWords checks the words of an example that follow command c. A placeholder
+// where a subcommand goes, as in `cub <entity> explain --where`, stands for one of c's
+// subcommands, so the example holds when the rest of it holds for one of them.
+func checkHelpExampleWords(c *cobra.Command, words []string) string {
 	for len(words) > 0 {
 		var next *cobra.Command
 		for _, sub := range c.Commands() {
@@ -178,6 +185,14 @@ func checkHelpExample(example string) string {
 	}
 	if c == rootCmd && len(words) > 0 && helpExampleUntreedCommands[words[0]] {
 		return ""
+	}
+	if len(words) > 1 && helpExamplePosition.MatchString(words[0]) && !strings.HasPrefix(words[1], "-") && c.HasSubCommands() {
+		for _, sub := range c.Commands() {
+			if checkHelpExampleWords(sub, words[1:]) == "" {
+				return ""
+			}
+		}
+		return fmt.Sprintf("no subcommand of %s in place of %s takes %q", c.CommandPath(), words[0], strings.Join(words[1:], " "))
 	}
 	if len(words) > 0 && !strings.HasPrefix(words[0], "-") && !helpExamplePosition.MatchString(words[0]) &&
 		(c == rootCmd || !c.Runnable()) {

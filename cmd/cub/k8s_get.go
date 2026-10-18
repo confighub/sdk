@@ -294,7 +294,7 @@ func unitSection(resource *k8sResource, unit *k8sUnit) *k8sdescribe.Section {
 		if unit.unit.LastReleasedRevisionNum > 0 {
 			appendField("Last Released Revision", fmt.Sprintf("%d", unit.unit.LastReleasedRevisionNum))
 		}
-		appendField("Unit Labels", labelsToString(unit.unit.Labels))
+		appendField("Unit Labels", mapToString(unit.unit.Labels))
 		appendField("Validation Errors", strings.Join(sortedMapKeys(unit.unit.ValidationErrors), ", "))
 		appendField("Last Change", unit.unit.LastChangeDescription)
 	}

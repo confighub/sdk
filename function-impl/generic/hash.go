@@ -38,12 +38,15 @@ func registerSetHash(fh handler.FunctionRegistry, converter configkit.ConfigConv
 					ValueConstraints: api.ValueConstraints{Regexp: api.PathRegexpString},
 				},
 			},
-			Mutating:              true,
-			Validating:            false,
-			Hermetic:              true,
-			Idempotent:            true,
-			Replayable:            true,
-			Description:           "Computes a SHA-256 hash of all values at the specified path and stores it at the resource provider's context path for Hash (e.g., confighub.com/Hash annotation for Kubernetes). It applies to every resource that has the path, of any type, so narrow it with a where-resource filter",
+			Mutating:   true,
+			Validating: false,
+			Hermetic:   true,
+			Idempotent: true,
+			Replayable: true,
+			// On a Kubernetes ConfigMap the annotation it writes is the provided path of the
+			// configmap-hash attribute, which render-configmap writes too: set-hash is how a
+			// ConfigMap authored as Kubernetes/YAML offers the hash Needs/Provides delivers.
+			Description:           "Computes a SHA-256 hash of all values at the specified path and stores it at the resource provider's context path for Hash: the confighub.com/Hash annotation for Kubernetes. On a ConfigMap, that annotation is the hash Needs/Provides offers to the pod templates that need it, which hold confighubplaceholder in their own confighub.com/Hash annotation, so a change to the ConfigMap rolls the pods. It applies to every resource that has the path, of any type, so narrow it with a where-resource filter",
 			FunctionType:          api.FunctionTypeCustom,
 			AffectedResourceTypes: []api.ResourceType{api.ResourceTypeAny},
 		},

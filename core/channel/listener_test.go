@@ -19,6 +19,7 @@ import (
 	"github.com/stretchr/testify/require"
 
 	"github.com/confighub/sdk/core/cubapi"
+	funcapi "github.com/confighub/sdk/core/function/api"
 	goclientnew "github.com/confighub/sdk/core/openapi/goclient-new"
 )
 
@@ -423,4 +424,52 @@ func TestClientRenewsTheSessionOnce(t *testing.T) {
 	defer mu.Unlock()
 	assert.Equal(t, 2, auths, "one authentication to start, one renewal for every request the first session refused")
 	assert.Equal(t, 8, refused)
+}
+
+// fakeInvoker is an executor that records the request and answers with the configuration it
+// would have produced.
+type fakeInvoker struct {
+	mu       sync.Mutex
+	requests []funcapi.FunctionInvocationRequest
+}
+
+func (f *fakeInvoker) Invoke(_ context.Context, request *funcapi.FunctionInvocationRequest) (*funcapi.FunctionInvocationResponse, error) {
+	f.mu.Lock()
+	defer f.mu.Unlock()
+	f.requests = append(f.requests, *request)
+	return &funcapi.FunctionInvocationResponse{Success: true, FunctionInvocationSuccessResponse: funcapi.FunctionInvocationSuccessResponse{ConfigData: request.ConfigData + "# done\n"}}, nil
+}
+
+// The functions protocol rides on one command: a run of it carries the whole invocation
+// request, the executor gets exactly that, and its response is the run's result. A run
+// without the request is Rejected rather than executed.
+func TestListenerServesFunctions(t *testing.T) {
+	fake, server := newFakeChannel(t, FunctionInvokeCommand)
+	client := newTestClient(t, server)
+	invoker := &fakeInvoker{}
+	listener := NewListener(client, cubapi.ParseRef("bot"), Options{Concurrency: 1, Logger: testLogger(t)}).HandleFunctions(invoker)
+
+	request := funcapi.FunctionInvocationRequest{ConfigData: "replicas: 1\n", FunctionInvocations: funcapi.FunctionInvocationList{{FunctionName: "set-replicas"}, {FunctionName: "set-image"}}}
+	batch := runMessage(FunctionInvokeCommand, map[string]any{FunctionRequestParam: request})
+	empty := runMessage(FunctionInvokeCommand, map[string]any{})
+	fake.enqueue(batch, empty)
+
+	ctx, cancel := context.WithCancel(context.Background())
+	done := make(chan error, 1)
+	go func() { done <- listener.Run(ctx) }()
+	fake.waitResults(2)
+	cancel()
+	require.ErrorIs(t, <-done, context.Canceled)
+
+	fake.mu.Lock()
+	defer fake.mu.Unlock()
+	invoker.mu.Lock()
+	defer invoker.mu.Unlock()
+	require.Len(t, invoker.requests, 1, "the executor got the batch, and nothing for the empty run")
+	assert.Equal(t, "replicas: 1\n", invoker.requests[0].ConfigData)
+	assert.Len(t, invoker.requests[0].FunctionInvocations, 2, "the whole list, in one request")
+	assert.Equal(t, string(StatusCompleted), fake.results[batch.CommandRun.CommandRunID].Status)
+	assert.Equal(t, "replicas: 1\n# done\n", fake.results[batch.CommandRun.CommandRunID].Result["ConfigData"])
+	assert.Equal(t, string(StatusRejected), fake.results[empty.CommandRun.CommandRunID].Status)
+	assert.Contains(t, fake.results[empty.CommandRun.CommandRunID].ErrorMessage, "carries no request")
 }

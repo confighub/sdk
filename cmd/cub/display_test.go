@@ -4,6 +4,7 @@
 package main
 
 import (
+	"bytes"
 	"strings"
 	"testing"
 	"unicode/utf8"
@@ -178,5 +179,40 @@ func TestTruncateWithEllipsis(t *testing.T) {
 				t.Errorf("result %q is not valid UTF-8", got)
 			}
 		})
+	}
+}
+
+// TestTableViewTrimsTrailingSpace checks that a table's last column is not padded
+// out to its longest value, while the columns before it still line up.
+func TestTableViewTrimsTrailingSpace(t *testing.T) {
+	var out bytes.Buffer
+	table := tableViewTo(&out)
+	table.Append([]string{"ID", "1234"})
+	table.Append([]string{"Facts", strings.Repeat("x", 200)})
+	table.Append([]string{"Name", "target"})
+	table.Render()
+
+	want := "ID       1234\n" +
+		"Facts    " + strings.Repeat("x", 200) + "\n" +
+		"Name     target\n"
+	if out.String() != want {
+		t.Fatalf("table rendered as\n%q\nwant\n%q", out.String(), want)
+	}
+}
+
+// TestMapToLinesRow checks that a get command's map row puts one sorted pair per
+// line, each starting where the column does.
+func TestMapToLinesRow(t *testing.T) {
+	var out bytes.Buffer
+	table := tableViewTo(&out)
+	table.Append([]string{"Facts", mapToLines(map[string]string{"Team": "payments", "Cluster.KubernetesVersion": "1.31.2"})})
+	table.Append([]string{"Labels", mapToLines(nil)})
+	table.Render()
+
+	want := "Facts     Cluster.KubernetesVersion=1.31.2\n" +
+		"          Team=payments\n" +
+		"Labels\n"
+	if out.String() != want {
+		t.Fatalf("table rendered as\n%q\nwant\n%q", out.String(), want)
 	}
 }

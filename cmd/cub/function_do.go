@@ -196,6 +196,7 @@ var parameterizedInvocationParams map[string]any
 
 func init() {
 	functionDoCmd.Flags().StringVar(&workerSlug, "worker", "", "worker to execute the function")
+	functionDoCmd.Flags().StringVar(&functionChannel, "channel", "", "channel whose client executes the function, as a run of the command the channel declares for it")
 	enableShowFlag(functionDoCmd)
 	functionDoCmd.Flags().BoolVar(&outputOnly, "output-only", false, "show output without other response details")
 	_ = functionDoCmd.Flags().MarkDeprecated("output-only", "use --show output")
@@ -244,6 +245,7 @@ func init() {
 var (
 	resolvedTriggers    []goclientnew.Trigger
 	resolvedInvocations []goclientnew.Invocation
+	functionChannel     string
 )
 
 func newFunctionInvocationsRequest() *goclientnew.FunctionInvocationsRequest {
@@ -263,6 +265,14 @@ func newFunctionInvocationsRequest() *goclientnew.FunctionInvocationsRequest {
 		}
 		workerID := goclientnew.UUID(workerUUID)
 		req.BridgeWorkerID = &workerID
+	}
+	if functionChannel != "" {
+		channel, err := resolveChannel(functionChannel, selectedSpaceID, idSelect("ChannelID"))
+		if err != nil {
+			failOnError(err)
+		}
+		channelID := channel.Channel.ChannelID
+		req.ChannelID = &channelID
 	}
 
 	// Reset caches; this may be the second call in a process (run.go uses

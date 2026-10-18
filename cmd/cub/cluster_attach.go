@@ -100,7 +100,7 @@ And in ConfigHub:
                       is the config bundle Argo pulls.
   argo-<name>         a service account with no organization role, the
                       cluster's identity: the target grants its user View,
-                      ViewChildren and EditChildren; Argo CD pulls with a token
+                      Edit, ViewChildren and EditChildren; Argo CD pulls with a token
                       of it and argobot runs as it with a key.
 
 The OCI target is gated: a "no-placeholders" Trigger in the cluster Space

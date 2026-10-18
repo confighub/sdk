@@ -24,10 +24,12 @@ but the release itself is retained. Use `+"`cub release delete`"+` to remove it.
 The release is located by its ID regardless of which Space it lives in, so --space
 is not required.
 
-If any Unit in the release's Space that is assigned to the Space's current release
-Target has an outstanding DestroyGate, the withdrawal is blocked until the gate
-clears. Those are the Units the Space would release now, which can differ from the
-ones this release bundled if Units were added, moved or retargeted since.
+If any Unit the release bundled has an outstanding DestroyGate, the withdrawal is
+blocked until the gate clears. The check covers the Units in this release's bundle
+as they are now, even ones since moved to another Target or Space or left with no
+Target. A Unit added to the release Target after this release was published is not
+in its bundle and does not block it, and a bundled Unit since deleted has no gate
+to check.
 
 Examples:
 `+"```"+`

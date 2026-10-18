@@ -22,7 +22,7 @@ var spaceUpdateArgs struct {
 	component       string
 	permissions     []string
 	refreshTriggers bool
-	spaceLabels     spaceLabelFlagValues
+	spaceLabels     standardLabelFlagValues
 }
 
 var spaceUpdateCmd = &cobra.Command{
@@ -66,7 +66,7 @@ func init() {
 	spaceUpdateCmd.Flags().StringVar(&spaceUpdateArgs.releaseTarget, "release-target", "", "Target to use as the default release Target for Units in this Space, addressed as <target-space>/<target-slug> (a bare <target-slug> resolves in --space; a Target ID is also accepted; use '-' to clear)")
 	spaceUpdateCmd.Flags().StringVar(&spaceUpdateArgs.component, "component", "", "slug or ID of the Component the Space is a Variant of (use '-' to clear)")
 	spaceUpdateCmd.Flags().StringSliceVar(&spaceUpdateArgs.permissions, "permission", []string{}, permissionUpdateHelp)
-	spaceUpdateArgs.spaceLabels = addStandardSpaceLabelFlags(spaceUpdateCmd)
+	spaceUpdateArgs.spaceLabels = addStandardLabelFlags(spaceUpdateCmd, "Space", standardSpaceLabels)
 	spaceUpdateCmd.Flags().BoolVar(&spaceUpdateArgs.refreshTriggers, "refresh-triggers", false, "re-list the Triggers the space selects (with WhereTrigger and/or TriggerFilterID, or the ones in it with neither) even if these fields have not changed")
 	enableWhereFlag(spaceUpdateCmd)
 	enableFilterFlag(spaceUpdateCmd)

@@ -21,6 +21,9 @@ or compose a command:
   defaults and arguments change between releases.
 - `cub <entity> explain [Field.Path]`: the fields of an entity, from the API's schema. The field
   names are the ones `-o json`, `-o jq=...`, `--select` and `--where` use.
+- `cub <entity> explain --where [Attribute]`: the attributes a `--where` on that entity accepts,
+  with their types and how each is written, as in `Labels.<key>` or `UpstreamUnit.<attribute>`.
+  Not every field is one, so check here before composing an expression.
 - `cub function list --space SPACE --toolchain Kubernetes/YAML` and
   `cub function explain FUNCTION --space SPACE`: what functions exist, and their parameters.
 - The documentation as raw markdown: `https://docs.confighub.com/markdown/index.md` lists every
@@ -62,8 +65,8 @@ instead: a service account, which logs in with a key and renews from it without 
   boundaries as Tags.
 - **Delivery.** A **Target** is where a Space's configuration is delivered. **`cub release publish`**
   bundles the Units of a Space that are assigned to its release Target as a **Release**, which the
-  controller pulls. A Release's live status reports what the controller did with it, when
-  something reports it.
+  controller pulls from the Space's OCI repository, which `cub space get` shows. A Release's live
+  status reports what the controller did with it, when something reports it.
 - **Identity and automation.** A **ServiceAccount** is an identity for something that is not a
   person: a pipeline, an agent, or the controller pulling Releases. A **Channel** carries events and
   commands to whatever claims it. A **Worker** is needed only to serve external functions.

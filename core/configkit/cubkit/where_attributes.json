@@ -1270,6 +1270,9 @@
       "ManifestDigest": {
         "dataType": "string"
       },
+      "OCIRepositoryURL": {
+        "dataType": "string"
+      },
       "OrganizationID": {
         "dataType": "uuid",
         "references": "Organization",
@@ -1429,10 +1432,12 @@
     },
     "Revision": {
       "ApplyGates": {
-        "dataType": "map[string]bool"
+        "dataType": "map[string]bool",
+        "deprecatedAliasOf": "ValidationErrors"
       },
       "ApplyWarnings": {
-        "dataType": "map[string]bool"
+        "dataType": "map[string]bool",
+        "deprecatedAliasOf": "ValidationWarnings"
       },
       "Attestations": {
         "dataType": "map[uuid]string",
@@ -1621,6 +1626,9 @@
       },
       "Labels": {
         "dataType": "map[string]string"
+      },
+      "OCIRepositoryURL": {
+        "dataType": "string"
       },
       "OrganizationID": {
         "dataType": "uuid",
@@ -1898,10 +1906,12 @@
         "dataType": "map[string]string"
       },
       "ApplyGates": {
-        "dataType": "map[string]bool"
+        "dataType": "map[string]bool",
+        "deprecatedAliasOf": "ValidationErrors"
       },
       "ApplyWarnings": {
-        "dataType": "map[string]bool"
+        "dataType": "map[string]bool",
+        "deprecatedAliasOf": "ValidationWarnings"
       },
       "ChangeSetID": {
         "dataType": "uuid",

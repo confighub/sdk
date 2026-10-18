@@ -18,6 +18,10 @@ var spaceGetCmd = &cobra.Command{
 	Args:  cobra.ExactArgs(1),
 	Long: getCommandHelp(`Get detailed information about a space including its ID, name, and organization details.
 
+For a space with a release target, the OCI Repository row is where its releases are published:
+the oci:// URL to give Argo CD as an Application's repoURL, or Flux as an OCIRepository's url,
+with the tag latest to follow the newest release or a release's manifest digest to pin it.
+
 Examples:
 `+"```"+`
   # Get space details in table format
@@ -25,6 +29,9 @@ Examples:
 
   # Get space details in JSON format
   cub space get -o json my-space
+
+  # The OCI repository the space's releases are published to
+  cub space get my-space -o jq=.Space.OCIRepositoryURL
 `+"```"+`
 `, ""),
 	RunE: spaceGetCmdRun,
@@ -56,6 +63,7 @@ func displaySpaceDetailsInView(spaceDetails *goclientnew.Space, view *tablewrite
 	view.Append([]string{"Annotations", annotationsToString(spaceDetails.Annotations)})
 	view.Append([]string{"Permissions", permissionsToString(spaceDetails.Permissions)})
 	view.Append([]string{"Where Trigger", spaceDetails.WhereTrigger})
+	view.Append([]string{"OCI Repository", spaceDetails.OCIRepositoryURL})
 	view.Append([]string{"Organization ID", spaceDetails.OrganizationID.String()})
 }
 

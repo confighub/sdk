@@ -91,7 +91,7 @@ func displayServiceAccountList(serviceAccounts []*goclientnew.ExtendedServiceAcc
 			serviceAccount.Slug,
 			serviceAccount.OrgRole,
 			serviceAccount.UserID.String(),
-			labelsToString(serviceAccount.Labels),
+			mapToString(serviceAccount.Labels),
 		})
 	}
 	table.Render()

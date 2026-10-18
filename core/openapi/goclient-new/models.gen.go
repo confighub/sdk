@@ -702,14 +702,14 @@ type Binding struct {
 // BindingList defines model for BindingList.
 type BindingList = []Binding
 
-// BridgeWorker BridgeWorker represents a bridge worker in ConfigHub.
-// A bridge worker is a worker program that connects ConfigHub to external systems and targets.
-// It acts as a bridge between ConfigHub and the infrastructure where configurations need
-// to be applied. Bridge workers are responsible for executing configuration changes on
-// remote targets and reporting status back to ConfigHub.
+// BridgeWorker BridgeWorker represents a worker in ConfigHub: an identity, with a secret,
+// for a program that connects to ConfigHub to serve external functions. Workers are deprecated
+// for anything else: a ServiceAccount is the identity for automation, including a GitOps tool
+// pulling Releases, and a Channel carries events and commands. Configuration reaches clusters
+// only through Releases, so a worker does not apply it to targets.
 // When starting a bridge worker program, both the BridgeWorkerID and Secret are
 // required for authentication with the ConfigHub server. These credentials allow the
-// bridge worker to establish a secure connection and receive configuration actions.
+// bridge worker to establish a secure connection and receive function invocations.
 type BridgeWorker struct {
 	// Annotations An optional map of Annotation key/value pairs for tools to attach information to entities.
 	Annotations map[string]string `json:"Annotations,omitempty" yaml:"Annotations,omitempty"`
@@ -795,14 +795,14 @@ type BridgeWorker struct {
 
 // BridgeWorkerCreateOrUpdateResponse defines model for BridgeWorkerCreateOrUpdateResponse.
 type BridgeWorkerCreateOrUpdateResponse struct {
-	// BridgeWorker BridgeWorker represents a bridge worker in ConfigHub.
-	// A bridge worker is a worker program that connects ConfigHub to external systems and targets.
-	// It acts as a bridge between ConfigHub and the infrastructure where configurations need
-	// to be applied. Bridge workers are responsible for executing configuration changes on
-	// remote targets and reporting status back to ConfigHub.
+	// BridgeWorker BridgeWorker represents a worker in ConfigHub: an identity, with a secret,
+	// for a program that connects to ConfigHub to serve external functions. Workers are deprecated
+	// for anything else: a ServiceAccount is the identity for automation, including a GitOps tool
+	// pulling Releases, and a Channel carries events and commands. Configuration reaches clusters
+	// only through Releases, so a worker does not apply it to targets.
 	// When starting a bridge worker program, both the BridgeWorkerID and Secret are
 	// required for authentication with the ConfigHub server. These credentials allow the
-	// bridge worker to establish a secure connection and receive configuration actions.
+	// bridge worker to establish a secure connection and receive function invocations.
 	BridgeWorker *BridgeWorker  `json:"BridgeWorker,omitempty" yaml:"BridgeWorker,omitempty"`
 	Error        *ResponseError `json:"Error,omitempty" yaml:"Error,omitempty"`
 }
@@ -1012,7 +1012,7 @@ type ChangeOrder struct {
 	// An example conjunction is:
 	// `CreatedAt >= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.
 	//
-	// Supported attributes for filtering on Space: Annotations, AttributeFilterID, AttributeHash, AttributeIDs, BackingUnitID, ComponentID, CreatedAt, DeleteGates, DisplayName, HiddenReason, Labels, OrganizationID, Permissions, ReleaseTargetID, Slug, SpaceID, TriggerFilterID, TriggerHash, TriggerIDs, UpdatedAt, UpstreamSpaceID.
+	// Supported attributes for filtering on Space: Annotations, AttributeFilterID, AttributeHash, AttributeIDs, BackingUnitID, ComponentID, CreatedAt, DeleteGates, DisplayName, HiddenReason, Labels, OCIRepositoryURL, OrganizationID, Permissions, ReleaseTargetID, Slug, SpaceID, TriggerFilterID, TriggerHash, TriggerIDs, UpdatedAt, UpstreamSpaceID.
 	//
 	// The whole string must be query-encoded.
 	WhereSpace string `json:"WhereSpace,omitempty" yaml:"WhereSpace,omitempty"`
@@ -1979,14 +1979,14 @@ type ExtendedAttribute struct {
 
 // ExtendedBridgeWorker defines model for ExtendedBridgeWorker.
 type ExtendedBridgeWorker struct {
-	// BridgeWorker BridgeWorker represents a bridge worker in ConfigHub.
-	// A bridge worker is a worker program that connects ConfigHub to external systems and targets.
-	// It acts as a bridge between ConfigHub and the infrastructure where configurations need
-	// to be applied. Bridge workers are responsible for executing configuration changes on
-	// remote targets and reporting status back to ConfigHub.
+	// BridgeWorker BridgeWorker represents a worker in ConfigHub: an identity, with a secret,
+	// for a program that connects to ConfigHub to serve external functions. Workers are deprecated
+	// for anything else: a ServiceAccount is the identity for automation, including a GitOps tool
+	// pulling Releases, and a Channel carries events and commands. Configuration reaches clusters
+	// only through Releases, so a worker does not apply it to targets.
 	// When starting a bridge worker program, both the BridgeWorkerID and Secret are
 	// required for authentication with the ConfigHub server. These credentials allow the
-	// bridge worker to establish a secure connection and receive configuration actions.
+	// bridge worker to establish a secure connection and receive function invocations.
 	BridgeWorker *BridgeWorker  `json:"BridgeWorker,omitempty" yaml:"BridgeWorker,omitempty"`
 	Error        *ResponseError `json:"Error,omitempty" yaml:"Error,omitempty"`
 
@@ -2137,14 +2137,14 @@ type ExtendedGroup struct {
 
 // ExtendedInvocation defines model for ExtendedInvocation.
 type ExtendedInvocation struct {
-	// BridgeWorker BridgeWorker represents a bridge worker in ConfigHub.
-	// A bridge worker is a worker program that connects ConfigHub to external systems and targets.
-	// It acts as a bridge between ConfigHub and the infrastructure where configurations need
-	// to be applied. Bridge workers are responsible for executing configuration changes on
-	// remote targets and reporting status back to ConfigHub.
+	// BridgeWorker BridgeWorker represents a worker in ConfigHub: an identity, with a secret,
+	// for a program that connects to ConfigHub to serve external functions. Workers are deprecated
+	// for anything else: a ServiceAccount is the identity for automation, including a GitOps tool
+	// pulling Releases, and a Channel carries events and commands. Configuration reaches clusters
+	// only through Releases, so a worker does not apply it to targets.
 	// When starting a bridge worker program, both the BridgeWorkerID and Secret are
 	// required for authentication with the ConfigHub server. These credentials allow the
-	// bridge worker to establish a secure connection and receive configuration actions.
+	// bridge worker to establish a secure connection and receive function invocations.
 	BridgeWorker *BridgeWorker  `json:"BridgeWorker,omitempty" yaml:"BridgeWorker,omitempty"`
 	Error        *ResponseError `json:"Error,omitempty" yaml:"Error,omitempty"`
 
@@ -2472,14 +2472,14 @@ type ExtendedTarget struct {
 
 // ExtendedTrigger defines model for ExtendedTrigger.
 type ExtendedTrigger struct {
-	// BridgeWorker BridgeWorker represents a bridge worker in ConfigHub.
-	// A bridge worker is a worker program that connects ConfigHub to external systems and targets.
-	// It acts as a bridge between ConfigHub and the infrastructure where configurations need
-	// to be applied. Bridge workers are responsible for executing configuration changes on
-	// remote targets and reporting status back to ConfigHub.
+	// BridgeWorker BridgeWorker represents a worker in ConfigHub: an identity, with a secret,
+	// for a program that connects to ConfigHub to serve external functions. Workers are deprecated
+	// for anything else: a ServiceAccount is the identity for automation, including a GitOps tool
+	// pulling Releases, and a Channel carries events and commands. Configuration reaches clusters
+	// only through Releases, so a worker does not apply it to targets.
 	// When starting a bridge worker program, both the BridgeWorkerID and Secret are
 	// required for authentication with the ConfigHub server. These credentials allow the
-	// bridge worker to establish a secure connection and receive configuration actions.
+	// bridge worker to establish a secure connection and receive function invocations.
 	BridgeWorker *BridgeWorker  `json:"BridgeWorker,omitempty" yaml:"BridgeWorker,omitempty"`
 	Error        *ResponseError `json:"Error,omitempty" yaml:"Error,omitempty"`
 
@@ -2711,6 +2711,7 @@ type FunctionInvocationsRequest struct {
 
 	// ChangeDescription ChangeDescription is a description of the change being made, if any.
 	ChangeDescription   string                  `json:"ChangeDescription,omitempty" yaml:"ChangeDescription,omitempty"`
+	ChannelID           *openapi_types.UUID     `json:"ChannelID,omitempty" yaml:"ChannelID,omitempty"`
 	FunctionInvocations *FunctionInvocationList `json:"FunctionInvocations" yaml:"FunctionInvocations"`
 
 	// IncludeConflicts Put the Unit's outstanding merge conflicts in the FunctionContext, for functions that reason about them
@@ -3807,16 +3808,16 @@ type PromoteUnitResult struct {
 
 // QueuedOperation UnitAction is a record of an operation queued for a Worker, such as a function invocation on a unit. Operations are delivered to the worker in creation order; if the worker is disconnected, pending operations are delivered when it reconnects. One or more UnitEvents will correspond to each UnitAction.
 type QueuedOperation struct {
-	// Action Action is the type of action to be performed by the bridge worker.
+	// Action Action is the type of action to be performed by the worker, such as InvokeFunctions or Cancel. UnitActions queued for bridge workers, which have been removed, can carry the actions they performed, such as Apply.
 	Action *ActionType `json:"Action,omitempty" yaml:"Action,omitempty"`
 
-	// BridgeWorkerID BridgeWorkerID is the unique identifier of the bridge worker that will process this operation.
+	// BridgeWorkerID BridgeWorkerID is the unique identifier of the worker that will process this operation.
 	BridgeWorkerID openapi_types.UUID `json:"BridgeWorkerID,omitempty,omitzero" yaml:"BridgeWorkerID,omitempty"`
 
 	// CreatedAt The timestamp when the entity was created in "2023-01-01T12:00:00Z" format.
 	CreatedAt time.Time `json:"CreatedAt,omitempty,omitzero" yaml:"CreatedAt,omitempty"`
 
-	// Data The result of a dry-run Data-changing action like refresh and import, where the data is not stored in the Unit.
+	// Data Data is the result the worker reported for a finished function invocation: its FunctionInvocationResponse, as JSON.
 	Data string `json:"Data,omitempty" yaml:"Data,omitempty"`
 
 	// Dependencies Unused. No longer populated or consulted for delivery; retained for schema compatibility and scheduled for removal.
@@ -3909,8 +3910,11 @@ type Release struct {
 	LiveStatus *ReleaseLiveStatus `json:"LiveStatus,omitempty" yaml:"LiveStatus,omitempty"`
 
 	// ManifestDigest OCI digest (sha256:...) of the Release's OCI image manifest.
-	ManifestDigest string             `json:"ManifestDigest,omitempty" yaml:"ManifestDigest,omitempty"`
-	OrganizationID openapi_types.UUID `json:"OrganizationID,omitempty,omitzero" yaml:"OrganizationID,omitempty"`
+	ManifestDigest string `json:"ManifestDigest,omitempty" yaml:"ManifestDigest,omitempty"`
+
+	// OCIRepositoryURL The OCI repository the Release is served from: its Space's, as the Space's OCIRepositoryURL says, while the Release is Published. It is oci://<registry host>:<port>/space/<space slug>, for a GitOps operator such as Argo CD or Flux to pull: its tag latest is the newest Release published for the Space's current release Target, and a ManifestDigest pins one. The registry is the one GET /api/info advertises to the same caller (OCIHost and OCIPort). Derived when the entity is read rather than stored, and returned whatever select names. (readonly)
+	OCIRepositoryURL string             `json:"OCIRepositoryURL,omitempty" yaml:"OCIRepositoryURL,omitempty"`
+	OrganizationID   openapi_types.UUID `json:"OrganizationID,omitempty,omitzero" yaml:"OrganizationID,omitempty"`
 
 	// Permissions Permissions to access this release.
 	Permissions *Permissions `json:"Permissions,omitempty" yaml:"Permissions,omitempty"`
@@ -4584,6 +4588,9 @@ type Space struct {
 	// Labels An optional map of Label key/value pairs to specify identifying attributes of entities for the purpose of grouping and filtering them.
 	Labels map[string]string `json:"Labels,omitempty" yaml:"Labels,omitempty"`
 
+	// OCIRepositoryURL The OCI repository the Space's Releases are served from, set when the Space has a ReleaseTargetID. It is oci://<registry host>:<port>/space/<space slug>, for a GitOps operator such as Argo CD or Flux to pull: its tag latest is the newest Release published for the Space's current release Target, and a ManifestDigest pins one. The registry is the one GET /api/info advertises to the same caller (OCIHost and OCIPort). Derived when the entity is read rather than stored, and returned whatever select names. (readonly)
+	OCIRepositoryURL string `json:"OCIRepositoryURL,omitempty" yaml:"OCIRepositoryURL,omitempty"`
+
 	// OrganizationID Unique identifier for an organization.
 	OrganizationID openapi_types.UUID `json:"OrganizationID,omitempty,omitzero" yaml:"OrganizationID,omitempty"`
 
@@ -5165,16 +5172,16 @@ type Unit struct {
 
 // UnitAction UnitAction is a record of an operation queued for a Worker, such as a function invocation on a unit. Operations are delivered to the worker in creation order; if the worker is disconnected, pending operations are delivered when it reconnects. One or more UnitEvents will correspond to each UnitAction.
 type UnitAction struct {
-	// Action Action is the type of action to be performed by the bridge worker.
+	// Action Action is the type of action to be performed by the worker, such as InvokeFunctions or Cancel. UnitActions queued for bridge workers, which have been removed, can carry the actions they performed, such as Apply.
 	Action *ActionType `json:"Action,omitempty" yaml:"Action,omitempty"`
 
-	// BridgeWorkerID BridgeWorkerID is the unique identifier of the bridge worker that will process this operation.
+	// BridgeWorkerID BridgeWorkerID is the unique identifier of the worker that will process this operation.
 	BridgeWorkerID openapi_types.UUID `json:"BridgeWorkerID,omitempty,omitzero" yaml:"BridgeWorkerID,omitempty"`
 
 	// CreatedAt The timestamp when the entity was created in "2023-01-01T12:00:00Z" format.
 	CreatedAt time.Time `json:"CreatedAt,omitempty,omitzero" yaml:"CreatedAt,omitempty"`
 
-	// Data The result of a dry-run Data-changing action like refresh and import, where the data is not stored in the Unit.
+	// Data Data is the result the worker reported for a finished function invocation: its FunctionInvocationResponse, as JSON.
 	Data string `json:"Data,omitempty" yaml:"Data,omitempty"`
 
 	// Dependencies Unused. No longer populated or consulted for delivery; retained for schema compatibility and scheduled for removal.
@@ -5347,17 +5354,21 @@ type UnitDiff struct {
 	UnitID openapi_types.UUID `json:"UnitID,omitempty,omitzero" yaml:"UnitID,omitempty"`
 }
 
-// UnitEvent UnitEvent represents an event of action performed on a Unit's configuration. Each action tracks
-// the lifecycle of applying, destroying, or refreshing a Unit's configuration in the target
-// live system. The event captures the current status of the operation, any configuration
-// drift detected, and timing information about when the action started and completed.
-// Actions are atomic from ConfigHub's perspective but may involve multiple steps
-// in the connected Bridge. The status and drift detection help track the health
-// and consistency of the provisioned configuration compared to what is defined in the Unit.
+// UnitEvent UnitEvent records the outcome of a UnitAction on a Unit: the result a worker reported for an
+// operation queued for it, such as a function invocation on the Unit completing or failing, or a
+// cancellation being acknowledged, and the failure of an operation that could not be delivered to
+// its worker. Each event records the action, its result and status, any message, and when the
+// operation started and ended. UnitEvents are numbered per Unit by UnitEventNum.
+//
+// UnitEvents do not report on live systems. Configuration reaches live systems through Releases,
+// which GitOps tools such as Argo CD and Flux pull. Events written by bridge workers, which applied,
+// destroyed, and refreshed Units in live systems and have been removed, can remain in a Unit's
+// history, but are no longer written.
 type UnitEvent struct {
+	// Action Action is the action of the UnitAction this event reports on, such as InvokeFunctions or Cancel. Events written by bridge workers, which have been removed, can carry the actions they performed, such as Apply.
 	Action *ActionType `json:"Action,omitempty" yaml:"Action,omitempty"`
 
-	// BridgeWorkerID BridgeWorkerID is the ID of the bridge worker that performed this action: the worker that reported the result.
+	// BridgeWorkerID BridgeWorkerID is the ID of the worker the UnitAction was queued for: the worker that reported the result.
 	BridgeWorkerID *openapi_types.UUID `json:"BridgeWorkerID,omitempty" yaml:"BridgeWorkerID,omitempty"`
 
 	// CreatedAt The timestamp when the entity was created in "2023-01-01T12:00:00Z" format.
@@ -5368,27 +5379,41 @@ type UnitEvent struct {
 
 	// HiddenReason The reason the entity is hidden, if it is. A hidden entity is left out of List and Search results, and of what bulk operations act on, unless the include_hidden parameter names its reason or is *, or the where parameter names the entity by Slug or ID. ConfigHub/YAML Units are created hidden with the reason BackingUnit unless given another.
 	HiddenReason string `json:"HiddenReason,omitempty" yaml:"HiddenReason,omitempty"`
-	Message      string `json:"Message,omitempty" yaml:"Message,omitempty"`
+
+	// Message Message is the message reported with the result, by the worker or, for an operation that failed before reaching it, by ConfigHub.
+	Message string `json:"Message,omitempty" yaml:"Message,omitempty"`
 
 	// OrganizationID Unique identifier for an Organization.
 	OrganizationID openapi_types.UUID `json:"OrganizationID,omitempty,omitzero" yaml:"OrganizationID,omitempty"`
 
-	// QueuedOperationID QueuedOperationID is the unique identifier for the corresponding queued operation.
+	// QueuedOperationID QueuedOperationID is the unique identifier of the UnitAction this event reports on.
 	QueuedOperationID openapi_types.UUID `json:"QueuedOperationID,omitempty,omitzero" yaml:"QueuedOperationID,omitempty"`
-	Result            *ActionResultType  `json:"Result,omitempty" yaml:"Result,omitempty"`
-	RevisionNum       int64              `json:"RevisionNum,omitempty" yaml:"RevisionNum,omitempty"`
+
+	// Result Result is what the action produced: FunctionInvocationCompleted or FunctionInvocationFailed for a function invocation, and None otherwise. Events written by bridge workers, which have been removed, can carry the results they reported.
+	Result *ActionResultType `json:"Result,omitempty" yaml:"Result,omitempty"`
+
+	// RevisionNum RevisionNum is the number of the Unit's Revision the action was performed on.
+	RevisionNum int64 `json:"RevisionNum,omitempty" yaml:"RevisionNum,omitempty"`
 
 	// SpaceID Unique identifier for a space.
 	SpaceID openapi_types.UUID `json:"SpaceID,omitempty,omitzero" yaml:"SpaceID,omitempty"`
 
 	// SpaceSlug Slug of the Space this entity belongs to. (readonly)
-	SpaceSlug    string             `json:"SpaceSlug,omitempty" yaml:"SpaceSlug,omitempty"`
-	StartedAt    time.Time          `json:"StartedAt,omitempty" yaml:"StartedAt,omitempty"`
-	Status       *ActionStatusType  `json:"Status,omitempty" yaml:"Status,omitempty"`
-	TerminatedAt time.Time          `json:"TerminatedAt" yaml:"TerminatedAt"`
-	UnitEventID  openapi_types.UUID `json:"UnitEventID,omitempty,omitzero" yaml:"UnitEventID,omitempty"`
+	SpaceSlug string `json:"SpaceSlug,omitempty" yaml:"SpaceSlug,omitempty"`
 
-	// UnitEventNum Sequence number for this unit event.
+	// StartedAt StartedAt is when the operation started, in "2023-01-01T12:00:00Z" format.
+	StartedAt time.Time `json:"StartedAt,omitempty" yaml:"StartedAt,omitempty"`
+
+	// Status Status is the state of the operation the event reports: None, Pending, Submitted, Progressing, Completed, Failed, Canceled, or Aborted.
+	Status *ActionStatusType `json:"Status,omitempty" yaml:"Status,omitempty"`
+
+	// TerminatedAt TerminatedAt is when the operation ended, in "2023-01-01T12:00:00Z" format. It is absent for an operation that had not ended when the event was recorded.
+	TerminatedAt time.Time `json:"TerminatedAt" yaml:"TerminatedAt"`
+
+	// UnitEventID UnitEventID is the unique identifier for this UnitEvent.
+	UnitEventID openapi_types.UUID `json:"UnitEventID,omitempty,omitzero" yaml:"UnitEventID,omitempty"`
+
+	// UnitEventNum UnitEventNum is the sequence number of this UnitEvent among the Unit's UnitEvents.
 	UnitEventNum int64 `json:"UnitEventNum,omitempty" yaml:"UnitEventNum,omitempty"`
 
 	// UnitID Unique identifier for a Unit.
@@ -6455,7 +6480,7 @@ type BulkDeleteSpacesParams struct {
 	// An example conjunction is:
 	// `CreatedAt >= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.
 	//
-	// Supported attributes for filtering on Space: Annotations, AttributeFilterID, AttributeHash, AttributeIDs, BackingUnitID, ComponentID, CreatedAt, DeleteGates, DisplayName, HiddenReason, Labels, OrganizationID, Permissions, ReleaseTargetID, Slug, SpaceID, TriggerFilterID, TriggerHash, TriggerIDs, UpdatedAt, UpstreamSpaceID.
+	// Supported attributes for filtering on Space: Annotations, AttributeFilterID, AttributeHash, AttributeIDs, BackingUnitID, ComponentID, CreatedAt, DeleteGates, DisplayName, HiddenReason, Labels, OCIRepositoryURL, OrganizationID, Permissions, ReleaseTargetID, Slug, SpaceID, TriggerFilterID, TriggerHash, TriggerIDs, UpdatedAt, UpstreamSpaceID.
 	//
 	// The whole string must be query-encoded.
 	Where *string `form:"where,omitempty" json:"where,omitempty" yaml:"where,omitempty"`
@@ -6594,7 +6619,7 @@ type BulkPatchSpacesParams struct {
 	// An example conjunction is:
 	// `CreatedAt >= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.
 	//
-	// Supported attributes for filtering on Space: Annotations, AttributeFilterID, AttributeHash, AttributeIDs, BackingUnitID, ComponentID, CreatedAt, DeleteGates, DisplayName, HiddenReason, Labels, OrganizationID, Permissions, ReleaseTargetID, Slug, SpaceID, TriggerFilterID, TriggerHash, TriggerIDs, UpdatedAt, UpstreamSpaceID.
+	// Supported attributes for filtering on Space: Annotations, AttributeFilterID, AttributeHash, AttributeIDs, BackingUnitID, ComponentID, CreatedAt, DeleteGates, DisplayName, HiddenReason, Labels, OCIRepositoryURL, OrganizationID, Permissions, ReleaseTargetID, Slug, SpaceID, TriggerFilterID, TriggerHash, TriggerIDs, UpdatedAt, UpstreamSpaceID.
 	//
 	// The whole string must be query-encoded.
 	Where *string `form:"where,omitempty" json:"where,omitempty" yaml:"where,omitempty"`
@@ -6736,7 +6761,7 @@ type BulkCreateSpacesParams struct {
 	// An example conjunction is:
 	// `CreatedAt >= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.
 	//
-	// Supported attributes for filtering on Space: Annotations, AttributeFilterID, AttributeHash, AttributeIDs, BackingUnitID, ComponentID, CreatedAt, DeleteGates, DisplayName, HiddenReason, Labels, OrganizationID, Permissions, ReleaseTargetID, Slug, SpaceID, TriggerFilterID, TriggerHash, TriggerIDs, UpdatedAt, UpstreamSpaceID.
+	// Supported attributes for filtering on Space: Annotations, AttributeFilterID, AttributeHash, AttributeIDs, BackingUnitID, ComponentID, CreatedAt, DeleteGates, DisplayName, HiddenReason, Labels, OCIRepositoryURL, OrganizationID, Permissions, ReleaseTargetID, Slug, SpaceID, TriggerFilterID, TriggerHash, TriggerIDs, UpdatedAt, UpstreamSpaceID.
 	//
 	// The whole string must be query-encoded.
 	Where *string `form:"where,omitempty" json:"where,omitempty" yaml:"where,omitempty"`
@@ -7530,7 +7555,7 @@ type BulkCreateAttributesParams struct {
 	// An example conjunction is:
 	// `CreatedAt >= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.
 	//
-	// Supported attributes for filtering on Space: Annotations, AttributeFilterID, AttributeHash, AttributeIDs, BackingUnitID, ComponentID, CreatedAt, DeleteGates, DisplayName, HiddenReason, Labels, OrganizationID, Permissions, ReleaseTargetID, Slug, SpaceID, TriggerFilterID, TriggerHash, TriggerIDs, UpdatedAt, UpstreamSpaceID.
+	// Supported attributes for filtering on Space: Annotations, AttributeFilterID, AttributeHash, AttributeIDs, BackingUnitID, ComponentID, CreatedAt, DeleteGates, DisplayName, HiddenReason, Labels, OCIRepositoryURL, OrganizationID, Permissions, ReleaseTargetID, Slug, SpaceID, TriggerFilterID, TriggerHash, TriggerIDs, UpdatedAt, UpstreamSpaceID.
 	//
 	// Where expression to select destination spaces for cloning attributes
 	//
@@ -8711,7 +8736,7 @@ type BulkCreateChangeOrdersParams struct {
 	// An example conjunction is:
 	// `CreatedAt >= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.
 	//
-	// Supported attributes for filtering on Space: Annotations, AttributeFilterID, AttributeHash, AttributeIDs, BackingUnitID, ComponentID, CreatedAt, DeleteGates, DisplayName, HiddenReason, Labels, OrganizationID, Permissions, ReleaseTargetID, Slug, SpaceID, TriggerFilterID, TriggerHash, TriggerIDs, UpdatedAt, UpstreamSpaceID.
+	// Supported attributes for filtering on Space: Annotations, AttributeFilterID, AttributeHash, AttributeIDs, BackingUnitID, ComponentID, CreatedAt, DeleteGates, DisplayName, HiddenReason, Labels, OCIRepositoryURL, OrganizationID, Permissions, ReleaseTargetID, Slug, SpaceID, TriggerFilterID, TriggerHash, TriggerIDs, UpdatedAt, UpstreamSpaceID.
 	//
 	// Where expression to select destination spaces for cloning change orders
 	//
@@ -9262,7 +9287,7 @@ type BulkCreateChangeSetsParams struct {
 	// An example conjunction is:
 	// `CreatedAt >= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.
 	//
-	// Supported attributes for filtering on Space: Annotations, AttributeFilterID, AttributeHash, AttributeIDs, BackingUnitID, ComponentID, CreatedAt, DeleteGates, DisplayName, HiddenReason, Labels, OrganizationID, Permissions, ReleaseTargetID, Slug, SpaceID, TriggerFilterID, TriggerHash, TriggerIDs, UpdatedAt, UpstreamSpaceID.
+	// Supported attributes for filtering on Space: Annotations, AttributeFilterID, AttributeHash, AttributeIDs, BackingUnitID, ComponentID, CreatedAt, DeleteGates, DisplayName, HiddenReason, Labels, OCIRepositoryURL, OrganizationID, Permissions, ReleaseTargetID, Slug, SpaceID, TriggerFilterID, TriggerHash, TriggerIDs, UpdatedAt, UpstreamSpaceID.
 	//
 	// Where expression to select destination spaces for cloning change sets
 	//
@@ -9930,7 +9955,7 @@ type BulkCreateChangeWorkflowsParams struct {
 	// An example conjunction is:
 	// `CreatedAt >= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.
 	//
-	// Supported attributes for filtering on Space: Annotations, AttributeFilterID, AttributeHash, AttributeIDs, BackingUnitID, ComponentID, CreatedAt, DeleteGates, DisplayName, HiddenReason, Labels, OrganizationID, Permissions, ReleaseTargetID, Slug, SpaceID, TriggerFilterID, TriggerHash, TriggerIDs, UpdatedAt, UpstreamSpaceID.
+	// Supported attributes for filtering on Space: Annotations, AttributeFilterID, AttributeHash, AttributeIDs, BackingUnitID, ComponentID, CreatedAt, DeleteGates, DisplayName, HiddenReason, Labels, OCIRepositoryURL, OrganizationID, Permissions, ReleaseTargetID, Slug, SpaceID, TriggerFilterID, TriggerHash, TriggerIDs, UpdatedAt, UpstreamSpaceID.
 	//
 	// Where expression to select destination spaces for cloning change workflows
 	//
@@ -10633,7 +10658,7 @@ type BulkCreateChannelsParams struct {
 	// An example conjunction is:
 	// `CreatedAt >= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.
 	//
-	// Supported attributes for filtering on Space: Annotations, AttributeFilterID, AttributeHash, AttributeIDs, BackingUnitID, ComponentID, CreatedAt, DeleteGates, DisplayName, HiddenReason, Labels, OrganizationID, Permissions, ReleaseTargetID, Slug, SpaceID, TriggerFilterID, TriggerHash, TriggerIDs, UpdatedAt, UpstreamSpaceID.
+	// Supported attributes for filtering on Space: Annotations, AttributeFilterID, AttributeHash, AttributeIDs, BackingUnitID, ComponentID, CreatedAt, DeleteGates, DisplayName, HiddenReason, Labels, OCIRepositoryURL, OrganizationID, Permissions, ReleaseTargetID, Slug, SpaceID, TriggerFilterID, TriggerHash, TriggerIDs, UpdatedAt, UpstreamSpaceID.
 	//
 	// Where expression to select destination spaces for cloning channels
 	//
@@ -11705,7 +11730,7 @@ type BulkCreateFiltersParams struct {
 	// An example conjunction is:
 	// `CreatedAt >= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.
 	//
-	// Supported attributes for filtering on Space: Annotations, AttributeFilterID, AttributeHash, AttributeIDs, BackingUnitID, ComponentID, CreatedAt, DeleteGates, DisplayName, HiddenReason, Labels, OrganizationID, Permissions, ReleaseTargetID, Slug, SpaceID, TriggerFilterID, TriggerHash, TriggerIDs, UpdatedAt, UpstreamSpaceID.
+	// Supported attributes for filtering on Space: Annotations, AttributeFilterID, AttributeHash, AttributeIDs, BackingUnitID, ComponentID, CreatedAt, DeleteGates, DisplayName, HiddenReason, Labels, OCIRepositoryURL, OrganizationID, Permissions, ReleaseTargetID, Slug, SpaceID, TriggerFilterID, TriggerHash, TriggerIDs, UpdatedAt, UpstreamSpaceID.
 	//
 	// Where expression to select destination spaces for cloning filters
 	//
@@ -12718,7 +12743,7 @@ type BulkCreateInvocationsParams struct {
 	// An example conjunction is:
 	// `CreatedAt >= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.
 	//
-	// Supported attributes for filtering on Space: Annotations, AttributeFilterID, AttributeHash, AttributeIDs, BackingUnitID, ComponentID, CreatedAt, DeleteGates, DisplayName, HiddenReason, Labels, OrganizationID, Permissions, ReleaseTargetID, Slug, SpaceID, TriggerFilterID, TriggerHash, TriggerIDs, UpdatedAt, UpstreamSpaceID.
+	// Supported attributes for filtering on Space: Annotations, AttributeFilterID, AttributeHash, AttributeIDs, BackingUnitID, ComponentID, CreatedAt, DeleteGates, DisplayName, HiddenReason, Labels, OCIRepositoryURL, OrganizationID, Permissions, ReleaseTargetID, Slug, SpaceID, TriggerFilterID, TriggerHash, TriggerIDs, UpdatedAt, UpstreamSpaceID.
 	//
 	// Where expression to select destination spaces for cloning invocations
 	//
@@ -13805,7 +13830,7 @@ type ListAllReleasesParams struct {
 	// An example conjunction is:
 	// `CreatedAt >= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.
 	//
-	// Supported attributes for filtering on Release: Annotations, ChangeOrderID, CreatedAt, DeleteGates, Digest, HiddenReason, Labels, LiveStatus, ManifestDigest, OrganizationID, Permissions, Published, ReleaseID, ReleaseNum, SkippedUnits, SpaceID, TagID, TargetID, UnitCount, UpdatedAt, UserID.
+	// Supported attributes for filtering on Release: Annotations, ChangeOrderID, CreatedAt, DeleteGates, Digest, HiddenReason, Labels, LiveStatus, ManifestDigest, OCIRepositoryURL, OrganizationID, Permissions, Published, ReleaseID, ReleaseNum, SkippedUnits, SpaceID, TagID, TargetID, UnitCount, UpdatedAt, UserID.
 	//
 	// The whole string must be query-encoded.
 	Where *string `form:"where,omitempty" json:"where,omitempty" yaml:"where,omitempty"`
@@ -15079,7 +15104,7 @@ type ListSpacesParams struct {
 	// An example conjunction is:
 	// `CreatedAt >= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.
 	//
-	// Supported attributes for filtering on Space: Annotations, AttributeFilterID, AttributeHash, AttributeIDs, BackingUnitID, ComponentID, CreatedAt, DeleteGates, DisplayName, HiddenReason, Labels, OrganizationID, Permissions, ReleaseTargetID, Slug, SpaceID, TriggerFilterID, TriggerHash, TriggerIDs, UpdatedAt, UpstreamSpaceID.
+	// Supported attributes for filtering on Space: Annotations, AttributeFilterID, AttributeHash, AttributeIDs, BackingUnitID, ComponentID, CreatedAt, DeleteGates, DisplayName, HiddenReason, Labels, OCIRepositoryURL, OrganizationID, Permissions, ReleaseTargetID, Slug, SpaceID, TriggerFilterID, TriggerHash, TriggerIDs, UpdatedAt, UpstreamSpaceID.
 	//
 	// The whole string must be query-encoded.
 	Where *string `form:"where,omitempty" json:"where,omitempty" yaml:"where,omitempty"`
@@ -17761,7 +17786,7 @@ type ListExtendedReleasesParams struct {
 	// An example conjunction is:
 	// `CreatedAt >= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.
 	//
-	// Supported attributes for filtering on Release: Annotations, ChangeOrderID, CreatedAt, DeleteGates, Digest, HiddenReason, Labels, LiveStatus, ManifestDigest, OrganizationID, Permissions, Published, ReleaseID, ReleaseNum, SkippedUnits, SpaceID, TagID, TargetID, UnitCount, UpdatedAt, UserID.
+	// Supported attributes for filtering on Release: Annotations, ChangeOrderID, CreatedAt, DeleteGates, Digest, HiddenReason, Labels, LiveStatus, ManifestDigest, OCIRepositoryURL, OrganizationID, Permissions, Published, ReleaseID, ReleaseNum, SkippedUnits, SpaceID, TagID, TargetID, UnitCount, UpdatedAt, UserID.
 	//
 	// The whole string must be query-encoded.
 	Where *string `form:"where,omitempty" json:"where,omitempty" yaml:"where,omitempty"`
@@ -20752,7 +20777,7 @@ type BulkCreateTagsParams struct {
 	// An example conjunction is:
 	// `CreatedAt >= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.
 	//
-	// Supported attributes for filtering on Space: Annotations, AttributeFilterID, AttributeHash, AttributeIDs, BackingUnitID, ComponentID, CreatedAt, DeleteGates, DisplayName, HiddenReason, Labels, OrganizationID, Permissions, ReleaseTargetID, Slug, SpaceID, TriggerFilterID, TriggerHash, TriggerIDs, UpdatedAt, UpstreamSpaceID.
+	// Supported attributes for filtering on Space: Annotations, AttributeFilterID, AttributeHash, AttributeIDs, BackingUnitID, ComponentID, CreatedAt, DeleteGates, DisplayName, HiddenReason, Labels, OCIRepositoryURL, OrganizationID, Permissions, ReleaseTargetID, Slug, SpaceID, TriggerFilterID, TriggerHash, TriggerIDs, UpdatedAt, UpstreamSpaceID.
 	//
 	// Where expression to select destination spaces for cloning tags
 	//
@@ -21408,7 +21433,7 @@ type BulkCreateTargetsParams struct {
 	// An example conjunction is:
 	// `CreatedAt >= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.
 	//
-	// Supported attributes for filtering on Space: Annotations, AttributeFilterID, AttributeHash, AttributeIDs, BackingUnitID, ComponentID, CreatedAt, DeleteGates, DisplayName, HiddenReason, Labels, OrganizationID, Permissions, ReleaseTargetID, Slug, SpaceID, TriggerFilterID, TriggerHash, TriggerIDs, UpdatedAt, UpstreamSpaceID.
+	// Supported attributes for filtering on Space: Annotations, AttributeFilterID, AttributeHash, AttributeIDs, BackingUnitID, ComponentID, CreatedAt, DeleteGates, DisplayName, HiddenReason, Labels, OCIRepositoryURL, OrganizationID, Permissions, ReleaseTargetID, Slug, SpaceID, TriggerFilterID, TriggerHash, TriggerIDs, UpdatedAt, UpstreamSpaceID.
 	//
 	// Where expression to select destination spaces for cloning targets
 	//
@@ -22163,7 +22188,7 @@ type BulkCreateTriggersParams struct {
 	// An example conjunction is:
 	// `CreatedAt >= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.
 	//
-	// Supported attributes for filtering on Space: Annotations, AttributeFilterID, AttributeHash, AttributeIDs, BackingUnitID, ComponentID, CreatedAt, DeleteGates, DisplayName, HiddenReason, Labels, OrganizationID, Permissions, ReleaseTargetID, Slug, SpaceID, TriggerFilterID, TriggerHash, TriggerIDs, UpdatedAt, UpstreamSpaceID.
+	// Supported attributes for filtering on Space: Annotations, AttributeFilterID, AttributeHash, AttributeIDs, BackingUnitID, ComponentID, CreatedAt, DeleteGates, DisplayName, HiddenReason, Labels, OCIRepositoryURL, OrganizationID, Permissions, ReleaseTargetID, Slug, SpaceID, TriggerFilterID, TriggerHash, TriggerIDs, UpdatedAt, UpstreamSpaceID.
 	//
 	// Where expression to select destination spaces for cloning triggers
 	//
@@ -23031,7 +23056,7 @@ type BulkCreateUnitsParams struct {
 	// An example conjunction is:
 	// `CreatedAt >= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.
 	//
-	// Supported attributes for filtering on Space: Annotations, AttributeFilterID, AttributeHash, AttributeIDs, BackingUnitID, ComponentID, CreatedAt, DeleteGates, DisplayName, HiddenReason, Labels, OrganizationID, Permissions, ReleaseTargetID, Slug, SpaceID, TriggerFilterID, TriggerHash, TriggerIDs, UpdatedAt, UpstreamSpaceID.
+	// Supported attributes for filtering on Space: Annotations, AttributeFilterID, AttributeHash, AttributeIDs, BackingUnitID, ComponentID, CreatedAt, DeleteGates, DisplayName, HiddenReason, Labels, OCIRepositoryURL, OrganizationID, Permissions, ReleaseTargetID, Slug, SpaceID, TriggerFilterID, TriggerHash, TriggerIDs, UpdatedAt, UpstreamSpaceID.
 	//
 	// Where expression to select destination spaces for cloning units
 	//
@@ -24720,7 +24745,7 @@ type BulkCreateViewsParams struct {
 	// An example conjunction is:
 	// `CreatedAt >= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.
 	//
-	// Supported attributes for filtering on Space: Annotations, AttributeFilterID, AttributeHash, AttributeIDs, BackingUnitID, ComponentID, CreatedAt, DeleteGates, DisplayName, HiddenReason, Labels, OrganizationID, Permissions, ReleaseTargetID, Slug, SpaceID, TriggerFilterID, TriggerHash, TriggerIDs, UpdatedAt, UpstreamSpaceID.
+	// Supported attributes for filtering on Space: Annotations, AttributeFilterID, AttributeHash, AttributeIDs, BackingUnitID, ComponentID, CreatedAt, DeleteGates, DisplayName, HiddenReason, Labels, OCIRepositoryURL, OrganizationID, Permissions, ReleaseTargetID, Slug, SpaceID, TriggerFilterID, TriggerHash, TriggerIDs, UpdatedAt, UpstreamSpaceID.
 	//
 	// Where expression to select destination spaces for cloning views
 	//

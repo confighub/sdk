@@ -43,6 +43,9 @@ Examples:
   # List releases in JSON format
   cub release list --space my-space -o json
 
+  # The OCI repository and manifest digest of each release, to pull or pin one
+  cub release list --space my-space -o jq='.[].Release | .OCIRepositoryURL + "@" + .ManifestDigest'
+
   # The newest release of each space (organization-wide search)
   cub release list
 

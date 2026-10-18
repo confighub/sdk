@@ -209,6 +209,7 @@ func main() {
 
 	// Override the help function to handle --help-overview
 	rootCmd.SetHelpFunc(func(cmd *cobra.Command, args []string) {
+		failOnError(unknownSubcommandError(cmd))
 		if helpOverview {
 			fmt.Print(getFormattedOverview())
 			return

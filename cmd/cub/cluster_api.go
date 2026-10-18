@@ -393,11 +393,12 @@ func clusterCreateGateTrigger(spaceID uuid.UUID, slug string) (uuid.UUID, error)
 }
 
 // clusterCreateOCITarget creates the cluster's Target and grants the cluster
-// service account's user View, ViewChildren and EditChildren on it.
+// service account's user View, Edit, ViewChildren and EditChildren on it.
 // ViewChildren is what authorizes Argo, pulling as that service account, to
 // pull the Releases of every Space that releases to the Target; View is what
-// lets argobot, running as the same service account, find it; and EditChildren
-// is what lets argobot record each Release's LiveStatus.
+// lets argobot, running as the same service account, find it; Edit is what
+// lets argobot store the facts it collects from the cluster on it; and
+// EditChildren is what lets argobot record each Release's LiveStatus.
 // annotations (may be nil) are attached to the Target, e.g. the URL-TargetUI
 // deep link. whereTrigger selects the Triggers that gate Units bound to this
 // Target; the server resolves it into TriggerIDs here, so any Trigger it
@@ -405,6 +406,7 @@ func clusterCreateGateTrigger(spaceID uuid.UUID, slug string) (uuid.UUID, error)
 func clusterCreateOCITarget(spaceID, botUserID uuid.UUID, slug, displayName string, annotations map[string]string, whereTrigger string) (uuid.UUID, error) {
 	permissions := goclientnew.Permissions{
 		"View":         {UserIDs: map[string]bool{botUserID.String(): true}},
+		"Edit":         {UserIDs: map[string]bool{botUserID.String(): true}},
 		"ViewChildren": {UserIDs: map[string]bool{botUserID.String(): true}},
 		"EditChildren": {UserIDs: map[string]bool{botUserID.String(): true}},
 	}

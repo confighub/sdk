@@ -27,7 +27,7 @@ var spaceCreateArgs struct {
 	permissions   []string
 	variantLabels []string
 	namePattern   string
-	spaceLabels   spaceLabelFlagValues
+	spaceLabels   standardLabelFlagValues
 }
 
 var spaceCreateCmd = &cobra.Command{
@@ -80,7 +80,7 @@ func init() {
 	spaceCreateCmd.Flags().StringVar(&spaceCreateArgs.component, "component", "", "slug or ID of the Component the Space is a Variant of")
 	spaceCreateCmd.Flags().StringSliceVar(&spaceCreateArgs.permissions, "permission", []string{}, permissionCreateHelp)
 	spaceCreateCmd.Flags().StringSliceVar(&spaceCreateArgs.variantLabels, "variant-labels", []string{}, "labels for bulk create in the format of key1=value1|value2,key2=value1|value2|value3")
-	spaceCreateArgs.spaceLabels = addStandardSpaceLabelFlags(spaceCreateCmd)
+	spaceCreateArgs.spaceLabels = addStandardLabelFlags(spaceCreateCmd, "Space", standardSpaceLabels)
 	spaceCreateCmd.Flags().StringVar(&spaceCreateArgs.namePattern, "name-pattern", "", "a pattern string for name generation of clones, prefix 'template:' to use a Go template with .SourceEntitySlug to access the original Space and .Labels to access variant labels, example: 'template:{{.SourceEntitySlug}}-{{.Labels.env}}'")
 	enableWhereFlag(spaceCreateCmd)
 	enableFilterFlag(spaceCreateCmd)

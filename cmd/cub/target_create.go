@@ -33,6 +33,9 @@ clones. Each clone lists the Triggers its WhereTrigger and TriggerFilterID selec
   # Create a Target
   cub target create --space infra prod
 
+  # Create a Target with the well-known Target labels, as shown by "cub target list"
+  cub target create --space infra prod-east --owner Platform --environment Prod --region us-east1
+
   # Create a Target the service account argo can pull from
   cub target create --space infra prod \
     --permission View:serviceaccount:argo --permission ViewChildren:serviceaccount:argo
@@ -58,6 +61,7 @@ var targetCreateArgs struct {
 	namePrefixes  []string
 	variantLabels []string
 	namePattern   string
+	targetLabels  standardLabelFlagValues
 }
 
 var fromTarget string
@@ -69,6 +73,7 @@ func init() {
 	targetCreateCmd.Flags().StringVar(&fromTarget, "from-target", "", "target to copy from another space")
 	targetCreateCmd.Flags().StringVar(&fromTargetSpace, "from-target-space", "", "space of target to copy")
 	targetCreateCmd.Flags().StringSliceVar(&targetCreateArgs.permissions, "permission", []string{}, permissionCreateHelp)
+	targetCreateArgs.targetLabels = addStandardLabelFlags(targetCreateCmd, "Target", standardTargetLabels)
 	enableFactFlag(targetCreateCmd)
 	targetCreateCmd.Flags().StringVar(&targetCreateArgs.whereTrigger, "where-trigger", "", "filter expression to identify Triggers that should be invoked on Units associated with this Target (use '-' to clear)")
 	targetCreateCmd.Flags().StringVar(&targetCreateArgs.triggerFilter, "trigger-filter", "", "Filter slug or UUID to identify Triggers that should be invoked on Units associated with this Target (use '-' to clear)")
@@ -140,6 +145,7 @@ func checkTargetCreateConflictingArgs(args []string) (bool, error) {
 }
 
 func targetCreateCmdRun(cmd *cobra.Command, args []string) error {
+	targetCreateArgs.targetLabels.apply()
 	isBulkCreateMode, err := checkTargetCreateConflictingArgs(args)
 	if err != nil {
 		return err

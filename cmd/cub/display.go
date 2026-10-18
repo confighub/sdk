@@ -37,7 +37,7 @@ func tableView() *tablewriter.Table {
 // tableViewTo is tableView writing somewhere other than stdout, for callers
 // that need the rendered table as text (e.g. to indent it).
 func tableViewTo(w io.Writer) *tablewriter.Table {
-	table := tablewriter.NewWriter(w)
+	table := tablewriter.NewWriter(&trailingSpaceTrimmer{w: w})
 	table.SetAutoWrapText(false)
 	table.SetAutoFormatHeaders(true)
 	table.SetHeaderAlignment(tablewriter.ALIGN_LEFT)
@@ -53,7 +53,7 @@ func tableViewTo(w io.Writer) *tablewriter.Table {
 }
 
 func detailView() *tablewriter.Table {
-	table := tablewriter.NewWriter(os.Stdout)
+	table := tablewriter.NewWriter(&trailingSpaceTrimmer{w: os.Stdout})
 	table.SetAutoWrapText(false)
 	table.SetAutoFormatHeaders(true)
 	table.SetHeaderAlignment(tablewriter.ALIGN_LEFT)
@@ -68,16 +68,62 @@ func detailView() *tablewriter.Table {
 	return table
 }
 
-func mapToString(m map[string]string) string {
-	var arr []string
-	for key, value := range m {
-		arr = append(arr, fmt.Sprintf("%s=%s", key, value))
+// trailingSpaceTrimmer passes writes through to w without the spaces that end
+// each line. tablewriter pads every cell to its column's width, the last cell
+// of a row included, so without it one long value, such as a Target's Facts,
+// pads every other row of the table out to its length.
+type trailingSpaceTrimmer struct {
+	w io.Writer
+	// pending counts the spaces held back until something other than the end
+	// of the line follows them.
+	pending int
+}
+
+func (t *trailingSpaceTrimmer) Write(p []byte) (int, error) {
+	out := make([]byte, 0, len(p))
+	for _, b := range p {
+		switch b {
+		case ' ':
+			t.pending++
+		case '\n':
+			t.pending = 0
+			out = append(out, b)
+		default:
+			for ; t.pending > 0; t.pending-- {
+				out = append(out, ' ')
+			}
+			out = append(out, b)
+		}
 	}
-	return strings.Join(arr, ",")
+	if _, err := t.w.Write(out); err != nil {
+		return 0, err
+	}
+	return len(p), nil
+}
+
+// mapToString renders a map on one line, as comma-separated key=value pairs
+// sorted by key, for a cell of a list table.
+func mapToString(m map[string]string) string {
+	return strings.Join(sortedKeyValues(m), ",")
+}
+
+// mapToLines renders a map one key=value pair per line, sorted by key, for a
+// row of a get command's table: a value such as a Target's list of CRDs is
+// long enough that pairs run together on a single line.
+func mapToLines(m map[string]string) string {
+	return strings.Join(sortedKeyValues(m), "\n")
+}
+
+func sortedKeyValues(m map[string]string) []string {
+	pairs := make([]string, 0, len(m))
+	for _, key := range sortedMapKeys(m) {
+		pairs = append(pairs, key+"="+m[key])
+	}
+	return pairs
 }
 
 func labelsToString(labels map[string]string) string {
-	return mapToString(labels)
+	return mapToLines(labels)
 }
 
 func deleteGatesToString(deleteGates map[string]bool) string {
@@ -92,7 +138,7 @@ func deleteGatesToString(deleteGates map[string]bool) string {
 }
 
 func annotationsToString(annotations map[string]string) string {
-	return mapToString(annotations)
+	return mapToLines(annotations)
 }
 
 func permissionsToString(permissions *goclientnew.Permissions) string {

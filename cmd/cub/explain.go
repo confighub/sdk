@@ -22,6 +22,7 @@ var explainSchemas = map[*cobra.Command]string{}
 // that holds objects.
 func addExplainCmd(parent *cobra.Command, schemaName string) {
 	explainSchemas[parent] = schemaName
+	var where bool
 	cmd := &cobra.Command{
 		Use:   "explain [field]",
 		Short: fmt.Sprintf("Explain %s fields from the OpenAPI spec", schemaName),
@@ -33,17 +34,29 @@ enum values resolved through referenced schemas. When the field holds an
 object, or a list or map of them, the fields of that object are listed too.
 
 A field of an object is named by its path, with the names separated by dots.
-A path goes through a list or a map without naming an element.`, schemaName),
+A path goes through a list or a map without naming an element.
+
+With --where, lists instead the attributes a --where expression over %[1]s
+entities can name, with their types and how each is written, or describes the
+one named. Like the fields, they come from the OpenAPI spec this cub was built
+with, which publishes the attributes the server accepts.`, schemaName),
 		Example: fmt.Sprintf(`  %[1]s explain
-  %[1]s explain Labels`, parent.CommandPath()),
+  %[1]s explain Labels
+  %[1]s explain --where
+  %[1]s explain --where Labels`, parent.CommandPath()),
 		Args: cobra.MaximumNArgs(1),
 		// Override the parent's PersistentPreRunE so explain works offline,
 		// without requiring auth or a resolvable space.
 		PersistentPreRunE: func(cmd *cobra.Command, args []string) error { return nil },
 		RunE: func(cmd *cobra.Command, args []string) error {
+			if where {
+				return runExplainWhere(parent.CommandPath(), schemaName, args)
+			}
 			return runExplain(parent.CommandPath(), schemaName, args)
 		},
 	}
+	cmd.Flags().BoolVar(&where, "where", false,
+		"List the attributes a --where expression over "+schemaName+" entities can name, or describe the one named, instead of the fields")
 	parent.AddCommand(cmd)
 }
 

@@ -38,6 +38,10 @@ identified by an OCI reference via one of the following flags:
                            "latest", which selects the space's newest release.
   --bundle-digest <digest> The release's bundle content digest (sha256:...).
 
+The OCI Repository row is the oci:// URL the release is pulled from, its space's. A GitOps
+operator pinned to this release pulls that repository at the Manifest Digest: Argo CD's
+targetRevision, or Flux's ref.digest.
+
 Examples:
 `+"```"+`
   # Get details about release 3 of a space
@@ -57,6 +61,9 @@ Examples:
 
   # Get a release by its bundle content digest
   cub release get --space my-space --bundle-digest sha256:1111...
+
+  # The OCI repository and manifest digest that pin a deployment to release 3
+  cub release get --space my-space 3 -o jq='.Release.OCIRepositoryURL + "@" + .Release.ManifestDigest'
 `+"```"+`
 `, ""),
 	RunE: releaseGetCmdRun,
@@ -259,6 +266,9 @@ func displayExtendedReleaseDetails(er *goclientnew.ExtendedRelease) {
 	view.Append([]string{"Bundle Base Name", rel.BundleBaseName})
 	view.Append([]string{"Digest", rel.Digest})
 	view.Append([]string{"Manifest Digest", rel.ManifestDigest})
+	if rel.OCIRepositoryURL != "" {
+		view.Append([]string{"OCI Repository", rel.OCIRepositoryURL})
+	}
 	if rel.DataSize > 0 {
 		view.Append([]string{"Data Size", strconv.FormatInt(rel.DataSize, 10) + " bytes"})
 	}

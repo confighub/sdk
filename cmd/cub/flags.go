@@ -311,7 +311,7 @@ func enableSelectFlag(cmd *cobra.Command) {
 }
 
 func enableWhereFlag(cmd *cobra.Command) {
-	cmd.Flags().StringVar(&where, "where", "", "Filter expression using SQL-inspired syntax. Supports conjunctions with AND. String operators: =, !=, <, >, <=, >=, LIKE, NOT LIKE, ILIKE, ~~, !~~, ~, ~*, !~, !~*. Pattern matching with LIKE/ILIKE uses % and _ wildcards. Regex operators (~, ~*, !~, !~*) support POSIX regular expressions. A related entity is referenced by prefix, as in \"UpstreamUnit.Slug = 'base'\"; when the reference names a list, a * segment matches any element, as in \"FromLink.*.Slug = 'upgrade-app'\". Examples: \"Slug LIKE 'app-%'\", \"DisplayName ILIKE '%backend%'\", \"Slug ~ '^[a-z]+-[0-9]+$'\"")
+	cmd.Flags().StringVar(&where, "where", "", "Filter expression using SQL-inspired syntax. Supports conjunctions with AND. String operators: =, !=, <, >, <=, >=, LIKE, NOT LIKE, ILIKE, ~~, !~~, ~, ~*, !~, !~*. Pattern matching with LIKE/ILIKE uses % and _ wildcards. Regex operators (~, ~*, !~, !~*) support POSIX regular expressions. A related entity is referenced by prefix, as in \"UpstreamUnit.Slug = 'base'\"; when the reference names a list, a * segment matches any element, as in \"FromLink.*.Slug = 'upgrade-app'\". Examples: \"Slug LIKE 'app-%'\", \"DisplayName ILIKE '%backend%'\", \"Slug ~ '^[a-z]+-[0-9]+$'\". 'cub <entity> explain --where' lists the attributes an entity's expressions can name")
 	enableIncludeHiddenFlag(cmd)
 }
 

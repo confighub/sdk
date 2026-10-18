@@ -238,7 +238,7 @@ func displayExtendedUnitDetails(unitDetails *goclientnew.ExtendedUnit) {
 		}
 
 		if len(unitDetails.Unit.Values) != 0 {
-			view.Append([]string{"Values", mapToString(unitDetails.Unit.Values)})
+			view.Append([]string{"Values", mapToLines(unitDetails.Unit.Values)})
 		}
 
 		// Show From Links if available (expanded)

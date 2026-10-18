@@ -23,6 +23,9 @@ type Attribute struct {
 	// Expandable says the reference can prefix an attribute of what it names, as UpstreamUnitID
 	// does in UpstreamUnit.Slug: the entity's endpoints expand it.
 	Expandable bool `json:"expandable,omitempty"`
+	// DeprecatedAliasOf is the attribute a deprecated name stands for, as ApplyGates stands for
+	// ValidationErrors: expressions may still name it, but should name the attribute instead.
+	DeprecatedAliasOf string `json:"deprecatedAliasOf,omitempty"`
 }
 
 // AttributeTable is what a where expression can name, by entity type and then attribute name.

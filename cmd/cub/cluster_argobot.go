@@ -224,7 +224,7 @@ type clusterArgobotOptions struct {
 	clusterSpaceID       uuid.UUID       // the cluster Space, where argobot's Channel is created
 	clusterSpaceSlug     string          // its slug, the Space part of argobot's CONFIGHUB_CHANNEL
 	targetID             uuid.UUID       // the cluster's OCI target, which the Channel subscribes to
-	ociTargetRef         string          // "<prefix>/target" — argobot's release target
+	ociTargetRef         string          // "<prefix>/target" — argobot's release target, and its CONFIGHUB_TARGET
 	serviceAccountUserID uuid.UUID       // the cluster service account's user, granted Claim on the Channel
 	privateKey           json.RawMessage // the service account's private key (goes into the out-of-band Secret)
 	apiURLForContainer   string          // ConfigHub API URL as argobot (in-cluster) reaches it
@@ -308,15 +308,16 @@ func clusterInstallArgobot(out io.Writer, o clusterArgobotOptions) error {
 		return fmt.Errorf("create argobot channel: %w", err)
 	}
 
-	// 4. Point argobot at this ConfigHub and its Channel. set-env upserts
-	// literal env vars; the key stays a secretKeyRef (supplied out of band,
-	// step 6).
-	fmt.Fprintln(out, "Configuring argobot (CONFIGHUB_URL, CONFIGHUB_CHANNEL)...")
+	// 4. Point argobot at this ConfigHub, its Channel, and the Target it
+	// stores the cluster's facts on. set-env upserts literal env vars; the key
+	// stays a secretKeyRef (supplied out of band, step 6).
+	fmt.Fprintln(out, "Configuring argobot (CONFIGHUB_URL, CONFIGHUB_CHANNEL, CONFIGHUB_TARGET)...")
 	if err := runCub("function", "do", "--quiet",
 		"--space", argobotSpace, "--unit", clusterArgobotUnitSlug,
 		"set-env", clusterArgobotContainer,
 		"CONFIGHUB_URL="+o.apiURLForContainer,
-		"CONFIGHUB_CHANNEL="+channelRef); err != nil {
+		"CONFIGHUB_CHANNEL="+channelRef,
+		"CONFIGHUB_TARGET="+o.ociTargetRef); err != nil {
 		return fmt.Errorf("configure argobot env: %w", err)
 	}
 

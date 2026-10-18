@@ -19,6 +19,7 @@ var targetUpdateArgs struct {
 	triggerFilter   string
 	permissions     []string
 	refreshTriggers bool
+	targetLabels    standardLabelFlagValues
 }
 
 var targetUpdateCmd = &cobra.Command{
@@ -28,7 +29,10 @@ var targetUpdateCmd = &cobra.Command{
 
 Single target update:
 `+"```"+`
-  cub target update --space my-space my-target
+  cub target update --space my-space my-target --from-stdin
+
+  # Set the well-known Target labels, as shown by "cub target list"
+  cub target update --space my-space --patch my-target --owner Platform --environment Prod --region us-east1
 `+"```"+`
 
 Bulk update with --patch:
@@ -38,7 +42,10 @@ Update multiple targets at once based on search criteria. Requires --patch flag 
 Examples:
 `+"```"+`
   # Label all targets with a specific label using JSON patch
-  echo '{"Labels": {"tier": "prod"}}' | cub target update --patch --where "Labels.environment = 'prod'" --from-stdin
+  echo '{"Labels": {"tier": "prod"}}' | cub target update --patch --where "Labels.Environment = 'Prod'" --from-stdin
+
+  # Set the Owner label of every Target in a region
+  cub target update --patch --where "Labels.Region = 'us-east1'" --owner Platform
 
   # Update specific targets by slug
   cub target update --patch --target my-target,another-target --from-stdin < patch.json
@@ -63,6 +70,7 @@ func init() {
 	targetUpdateCmd.Flags().StringSliceVar(&targetUpdateArgs.permissions, "permission", []string{}, permissionUpdateHelp)
 	targetUpdateCmd.Flags().StringVar(&targetUpdateArgs.whereTrigger, "where-trigger", "", "filter expression to identify Triggers that should be invoked on Units associated with this Target (use '-' to clear)")
 	targetUpdateCmd.Flags().StringVar(&targetUpdateArgs.triggerFilter, "trigger-filter", "", "Filter slug or UUID to identify Triggers that should be invoked on Units associated with this Target (use '-' to clear)")
+	targetUpdateArgs.targetLabels = addStandardLabelFlags(targetUpdateCmd, "Target", standardTargetLabels)
 	enableFactFlag(targetUpdateCmd)
 	targetUpdateCmd.Flags().BoolVar(&targetUpdateArgs.refreshTriggers, "refresh-triggers", false, "re-list the Triggers matching WhereTrigger and/or TriggerFilterID even if these fields have not changed")
 	addBackingUnitFlags(targetUpdateCmd, "Target", false, false)
@@ -77,6 +85,7 @@ func init() {
 func targetUpdateCmdRun(cmd *cobra.Command, args []string) error {
 	// TODO: Refactor to checkTargetUpdateConflictingArgs
 
+	targetUpdateArgs.targetLabels.apply()
 	if err := validateStdinFlags(); err != nil {
 		return err
 	}

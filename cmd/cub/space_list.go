@@ -149,13 +149,13 @@ var spaceCustomColumns = func() map[string]func(any) string {
 
 var spaceListArgs struct {
 	component   string
-	spaceLabels spaceLabelFlagValues
+	spaceLabels standardLabelFlagValues
 }
 
 func init() {
 	addStandardListFlags(spaceListCmd)
 	spaceListCmd.Flags().StringVar(&spaceListArgs.component, "component", "", "only list Spaces that are Variants of the Component with this slug; ANDed with --where")
-	spaceListArgs.spaceLabels = addStandardSpaceLabelFilterFlags(spaceListCmd)
+	spaceListArgs.spaceLabels = addStandardLabelFilterFlags(spaceListCmd, "Space", standardSpaceLabels)
 	enableListPagingFlags(spaceListCmd)
 	enableViewFlag(spaceListCmd)
 	spaceCmd.AddCommand(spaceListCmd)
