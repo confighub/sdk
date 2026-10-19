@@ -54,8 +54,17 @@ const (
 	// link to the Target's external UI. The literal "{slug}" token in the
 	// value is substituted by the UI with the Space slug. `cub cluster up`
 	// sets it on the OCI target so a Unit links straight to its Argo CD
-	// Application.
+	// Application. Each controller-app Unit in the apps Space carries the same
+	// key with the name already substituted, linking it to its own Application
+	// or ClusterProfile (see clusterUnitTargetUIAnnotations).
 	clusterAnnotationTargetUI = "URL-TargetUI"
+
+	// clusterAnnotationClusterUnitID is set on each Space a cluster's controller
+	// deploys (the apps Space and every deployment variant): the UnitID of the
+	// Unit in the apps Space holding the Argo CD Application, Sveltos
+	// ClusterProfile or Flux Kustomization that deploys it. Like UpstreamSpaceID,
+	// it is an ID, so a client finds the Unit without knowing its Space.
+	clusterAnnotationClusterUnitID = "ClusterUnitID"
 
 	// clusterAnnotationArgoAppsSpace is stamped on the OCI target and names the
 	// Space that holds the cluster's Argo CD Application Units (the app-of-apps

@@ -425,18 +425,32 @@ func clusterCreateOCITarget(spaceID, botUserID uuid.UUID, slug, displayName stri
 	return res.JSON200.TargetID, nil
 }
 
+// clusterUnitTargetUIAnnotations returns the annotations for a controller-app
+// Unit whose Application or ClusterProfile is named name: the target's
+// URL-TargetUI with "{slug}" replaced by that name, so the Unit links to its own
+// page in the controller's UI. It returns nil when the target has no UI link (a
+// Flux cluster, or one not created by `cub cluster up`).
+func clusterUnitTargetUIAnnotations(targetAnnotations map[string]string, name string) map[string]string {
+	template := targetAnnotations[clusterAnnotationTargetUI]
+	if template == "" {
+		return nil
+	}
+	return map[string]string{clusterAnnotationTargetUI: strings.ReplaceAll(template, "{slug}", name)}
+}
+
 // clusterCreateK8sYAMLUnit creates a Kubernetes/YAML Unit with the given
 // manifest bytes, bound to the OCI target. Used for the root app-of-apps Unit
 // and for each child Argo Application Unit in the apps Space; the target it
 // binds to lives in the cluster (target-prefix) Space, so the binding is
-// cross-Space.
-func clusterCreateK8sYAMLUnit(spaceID, targetID uuid.UUID, slug, displayName string, manifest []byte) (uuid.UUID, error) {
+// cross-Space. annotations (may be nil) are attached to the Unit.
+func clusterCreateK8sYAMLUnit(spaceID, targetID uuid.UUID, slug, displayName string, annotations map[string]string, manifest []byte) (uuid.UUID, error) {
 	body := goclientnew.Unit{
 		SpaceID:       spaceID,
 		Slug:          slug,
 		DisplayName:   displayName,
 		ToolchainType: "Kubernetes/YAML",
 		TargetID:      &targetID,
+		Annotations:   annotations,
 	}
 	res, err := cubClientNew.CreateUnitWithResponse(ctx, spaceID, &goclientnew.CreateUnitParams{}, body)
 	if cubapi.IsAPIError(err, res) {
@@ -467,6 +481,22 @@ func clusterSetReleaseTarget(spaceID, targetID uuid.UUID) error {
 	}
 	if _, err := patchSpace(spaceID, patchData); err != nil {
 		return fmt.Errorf("set release target on space: %w", err)
+	}
+	return nil
+}
+
+// clusterSetClusterUnitID sets ClusterUnitID on the Space spaceID to the Unit
+// whose Application, ClusterProfile or Kustomization deploys it. The merge patch
+// leaves the Space's other annotations alone.
+func clusterSetClusterUnitID(spaceID, unitID uuid.UUID) error {
+	patchData, err := json.Marshal(map[string]interface{}{
+		"Annotations": map[string]string{clusterAnnotationClusterUnitID: unitID.String()},
+	})
+	if err != nil {
+		return err
+	}
+	if _, err := patchSpace(spaceID, patchData); err != nil {
+		return fmt.Errorf("set %s on space: %w", clusterAnnotationClusterUnitID, err)
 	}
 	return nil
 }

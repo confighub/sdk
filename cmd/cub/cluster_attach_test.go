@@ -319,3 +319,35 @@ func TestClusterNameArg(t *testing.T) {
 		})
 	}
 }
+
+func TestClusterUnitTargetUIAnnotations(t *testing.T) {
+	cases := []struct {
+		name              string
+		targetAnnotations map[string]string
+		unitName          string
+		want              map[string]string
+	}{
+		{
+			"argo application",
+			map[string]string{clusterAnnotationTargetUI: "http://localhost:31080/applications/argocd/{slug}"},
+			"web-dev",
+			map[string]string{clusterAnnotationTargetUI: "http://localhost:31080/applications/argocd/web-dev"},
+		},
+		{
+			"sveltos root profile",
+			map[string]string{clusterAnnotationTargetUI: clusterSveltosTargetUI(31080)},
+			clusterSveltosRootProfile,
+			map[string]string{clusterAnnotationTargetUI: "http://localhost:31080/sveltos/profile/confighub-root/ClusterProfile"},
+		},
+		{"target without a UI link", map[string]string{clusterAnnotationController: clusterControllerFlux}, "web-dev", nil},
+		{"target without annotations", nil, "web-dev", nil},
+	}
+	for _, tc := range cases {
+		t.Run(tc.name, func(t *testing.T) {
+			got := clusterUnitTargetUIAnnotations(tc.targetAnnotations, tc.unitName)
+			if !reflect.DeepEqual(got, tc.want) {
+				t.Errorf("got %v, want %v", got, tc.want)
+			}
+		})
+	}
+}

@@ -329,6 +329,41 @@ func clusterSpaceByName(name string) (*clusterSpace, error) {
 // clusterReadEnvFile parses the cluster's env file, returning an empty map if it
 // is unreadable — every value has a fallback, so a missing file is not an error
 // here.
+// clusterControllerUIOfSpace returns the controller UI page of what deploys the
+// Space: the URL-TargetUI of the Unit its ClusterUnitID annotation names, the
+// Argo CD Application or Sveltos ClusterProfile in the cluster's apps Space.
+func clusterControllerUIOfSpace(spaceSlug string, spaceAnnotations map[string]string) (string, error) {
+	unitID := spaceAnnotations[clusterAnnotationClusterUnitID]
+	if unitID == "" {
+		return "", fmt.Errorf("space %q has no %s annotation: no cluster controller deploys it", spaceSlug, clusterAnnotationClusterUnitID)
+	}
+	unit, err := resolveUnit(unitID, "", "UnitID,Slug,Annotations")
+	if err != nil {
+		return "", fmt.Errorf("resolve the unit that deploys space %q: %w", spaceSlug, err)
+	}
+	url := unit.Unit.Annotations[clusterAnnotationTargetUI]
+	if url == "" {
+		return "", fmt.Errorf("unit %q, which deploys space %q, has no %s annotation: its controller has no UI, or the unit predates the annotation",
+			unit.Unit.Slug, spaceSlug, clusterAnnotationTargetUI)
+	}
+	return url, nil
+}
+
+// openControllerUI launches the browser on a page of a cluster controller's UI,
+// or prints it with --print-url. Unlike openWebUI it adds no organization: the
+// page is not ConfigHub's.
+func openControllerUI(url string) error {
+	if printURL {
+		tprintRaw(url)
+		return nil
+	}
+	if err := open.Start(url); err != nil {
+		return fmt.Errorf("failed to open browser on %s: %w", url, err)
+	}
+	tprint("Opened in the cluster controller's UI: %s", url)
+	return nil
+}
+
 func clusterReadEnvFile(name string) map[string]string {
 	contents, err := os.ReadFile(clusterEnvFilePath(name))
 	if err != nil {

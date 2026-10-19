@@ -774,7 +774,10 @@ func clusterAttach(out io.Writer, spec clusterAttachSpec, addRollback func(func(
 		return result, err
 	}
 
+	// rootName is the root's name in the controller, which its URL-TargetUI
+	// links to. Flux has no UI, so it needs none.
 	var rootManifest []byte
+	var rootName string
 	switch {
 	case sveltos:
 		if err := clusterSveltosApplyOCICreds(ctx, kubeconfigPath, pullToken, out); err != nil {
@@ -782,6 +785,7 @@ func clusterAttach(out io.Writer, spec clusterAttachSpec, addRollback func(func(
 		}
 		fmt.Fprintf(out, "Creating root ClusterProfile Unit %q in apps space %q...\n", clusterRootUnitSlug, appsSlug)
 		rootManifest = clusterSveltosRootProfileManifest(rootRepoURL, clusterSveltosPollInterval(!spec.noArgobot), ociInsecure)
+		rootName = clusterSveltosRootProfile
 	case flux:
 		if err := clusterFluxApplyOCICreds(ctx, kubeconfigPath, ociURLForArgo, pullToken, out); err != nil {
 			return result, err
@@ -794,9 +798,18 @@ func clusterAttach(out io.Writer, spec clusterAttachSpec, addRollback func(func(
 		}
 		fmt.Fprintf(out, "Creating root Application Unit %q in apps space %q...\n", clusterRootUnitSlug, appsSlug)
 		rootManifest = clusterArgoRootAppManifest(appsSlug, rootRepoURL)
+		rootName = appsSlug
 	}
-	rootUnitID, err := clusterCreateK8sYAMLUnit(appsSpaceID, targetID, clusterRootUnitSlug, clusterRootUnitSlug, rootManifest)
+	var rootAnnotations map[string]string
+	if rootName != "" {
+		rootAnnotations = clusterUnitTargetUIAnnotations(targetAnnotations, rootName)
+	}
+	rootUnitID, err := clusterCreateK8sYAMLUnit(appsSpaceID, targetID, clusterRootUnitSlug, clusterRootUnitSlug, rootAnnotations, rootManifest)
 	if err != nil {
+		return result, err
+	}
+	// The root deploys the apps Space's own Release.
+	if err := clusterSetClusterUnitID(appsSpaceID, rootUnitID); err != nil {
 		return result, err
 	}
 
