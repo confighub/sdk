@@ -50,6 +50,9 @@ trigger take a bare KEY=VALUE and record it on the paths that change wrote --
 the guard analogue of --protect. Use this command to guard a path no change of
 yours is writing, and to remove a guard, which no change can do.
 
+It prints the unit's PathAnnotations with -o json, yaml, jq or yq, or after its
+confirmation with --verbose.
+
 Examples:
 `+"```"+`
   # Say why this image is what it is: a link maintains it
@@ -216,12 +219,20 @@ func unitSetGuardCmdRun(_ *cobra.Command, args []string) error {
 		return cubapi.InterpretErrorGeneric(err, res)
 	}
 
-	resp := res.JSON200
+	// The unit's PathAnnotations are what -o and --verbose ask for; by default the command
+	// only says it succeeded.
+	var pathAnnotations *goclientnew.PathAnnotationList
+	if res.JSON200 != nil {
+		pathAnnotations = res.JSON200.PathAnnotations
+	}
+	if renderPayload(pathAnnotations) {
+		return nil
+	}
 	if !quiet {
 		fmt.Printf("Guards set on unit %s (%s)\n", args[0], configUnit.Unit.UnitID.String())
 	}
-	if resp != nil && resp.PathAnnotations != nil {
-		displayJSON(resp.PathAnnotations)
+	if verbose && pathAnnotations != nil {
+		displayJSON(pathAnnotations)
 	}
 	return nil
 }

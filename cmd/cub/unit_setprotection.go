@@ -31,8 +31,14 @@ RESOURCE_TYPE and RESOURCE_NAME identify the resource (e.g. apps/v1/Deployment
 and default/myapp) and PATH is a resolved path within that resource. Repeat
 either flag to set several paths or resources at once, and combine them to
 protect some paths and re-open others in one revision. A path that is not
-already present inherits the closest ancestor mutation's provenance. Setting
-protection creates a new revision only if it changes.
+already present inherits the closest ancestor mutation's provenance. Protecting
+a path does not protect a path beneath it that a change of its own wrote, such
+as an env entry's value set after the entry was added: name that path too, and
+check the result with 'cub unit blame', which marks a protected field P.
+Setting protection creates a new revision only if it changes.
+
+It prints the unit's MutationSources with -o json, yaml, jq or yq, or after its
+confirmation with --verbose.
 
 Examples:
 `+"```"+`
@@ -129,12 +135,20 @@ func unitSetProtectionCmdRun(_ *cobra.Command, args []string) error {
 		return cubapi.InterpretErrorGeneric(err, res)
 	}
 
-	resp := res.JSON200
+	// The unit's MutationSources, every resource's, are what -o and --verbose ask for; by
+	// default the command only says it succeeded.
+	var mutationSources *goclientnew.ResourceMutationList
+	if res.JSON200 != nil {
+		mutationSources = res.JSON200.MutationSources
+	}
+	if renderPayload(mutationSources) {
+		return nil
+	}
 	if !quiet {
 		fmt.Printf("Protection set on unit %s (%s)\n", args[0], configUnit.Unit.UnitID.String())
 	}
-	if resp != nil && resp.MutationSources != nil {
-		displayJSON(resp.MutationSources)
+	if verbose && mutationSources != nil {
+		displayJSON(mutationSources)
 	}
 	return nil
 }
