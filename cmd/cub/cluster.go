@@ -66,33 +66,22 @@ const (
 	// it is an ID, so a client finds the Unit without knowing its Space.
 	clusterAnnotationClusterUnitID = "ClusterUnitID"
 
-	// clusterAnnotationArgoAppsSpace is stamped on the OCI target and names the
-	// Space that holds the cluster's Argo CD Application Units (the app-of-apps
-	// and every child app). API clients resolve that Space from the target
-	// through this annotation. `cub cluster up` keeps those Units in a dedicated
-	// apps Space (the target-prefix Space slug + clusterArgoAppsSuffix), separate
-	// from the Space that holds the target, so the value is that apps
-	// Space slug rather than the target's own Space.
-	clusterAnnotationArgoAppsSpace = "confighub.com/argo-apps-space"
-
-	// clusterAnnotationSveltosAppsSpace is the Sveltos counterpart of
-	// clusterAnnotationArgoAppsSpace: stamped on a Sveltos cluster's OCI target,
-	// it names the apps Space holding the root and child ClusterProfile Units,
-	// where `cub variant create --target` adds a deployment's ClusterProfile.
-	clusterAnnotationSveltosAppsSpace = "confighub.com/sveltos-apps-space"
+	// clusterAnnotationAppsSpace is stamped on the OCI target and names the
+	// Space that holds the cluster's controller Units: the root and every child
+	// Argo CD Application, Sveltos ClusterProfile or Flux OCIRepository and
+	// Kustomization, where `cub variant create --target` adds a deployment's.
+	// API clients resolve that Space from the target through this annotation.
+	// `cub cluster up` keeps those Units in a dedicated apps Space, separate from
+	// the Space that holds the target, so the value is that apps Space slug
+	// rather than the target's own Space. The key is the same for every
+	// controller; clusterAnnotationController on the same target says which.
+	clusterAnnotationAppsSpace = "confighub.com/apps-space"
 
 	// clusterAnnotationSveltosPollInterval records, on a Sveltos cluster's OCI
 	// target, Sveltos's own poll interval (remoteURL.interval) for the cluster's
 	// profiles, so `cub variant create --target` gives a deployment's profile the
 	// same one as the root.
 	clusterAnnotationSveltosPollInterval = "confighub.com/sveltos-poll-interval"
-
-	// clusterAnnotationFluxAppsSpace is the Flux counterpart of
-	// clusterAnnotationArgoAppsSpace: stamped on a Flux cluster's OCI target, it
-	// names the apps Space holding the root and child Flux Units, where `cub
-	// variant create --target` adds a deployment's OCIRepository and
-	// Kustomization.
-	clusterAnnotationFluxAppsSpace = "confighub.com/flux-apps-space"
 
 	// clusterAnnotationFluxPollInterval records, on a Flux cluster's OCI target,
 	// the OCIRepositories' poll interval (spec.interval), so `cub variant create

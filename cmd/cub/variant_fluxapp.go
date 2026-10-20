@@ -27,16 +27,16 @@ import (
 // short, so `cub variant create` only adds the Unit, and the variant's first
 // `cub release publish` republishes the apps Space with it, as with Sveltos.
 //
-// The signal is the confighub.com/flux-apps-space annotation `cub cluster up`
-// stamps on the OCI target. A target without it is not a Flux cluster target
-// and this is a no-op.
+// The signal is the confighub.com/apps-space annotation `cub cluster up` stamps
+// on the OCI target, with confighub.com/cluster-controller flux. Any other
+// target is not a Flux cluster target and this is a no-op.
 
 // createVariantFluxApp adds the Flux Unit for a deployment variant to the
 // cluster's apps Space when its target is a cub-cluster Flux target, and
 // releases it when the cluster has argobot (see publishVariantFluxApp). It
 // reports whether it did anything.
 func createVariantFluxApp(out io.Writer, target *goclientnew.Target, variantSpace *goclientnew.Space, targetID uuid.UUID) (bool, error) {
-	appsSpaceSlug := target.Annotations[clusterAnnotationFluxAppsSpace]
+	appsSpaceSlug := clusterAppsSpaceSlug(target, clusterControllerFlux)
 	if appsSpaceSlug == "" {
 		return false, nil
 	}
@@ -116,6 +116,6 @@ func clusterFluxReleasesOnCreate(target *goclientnew.Target) bool {
 // release publish` of the variant, and acts only for a cluster without argobot,
 // whose Units createVariantFluxApp leaves unreleased.
 func publishVariantFluxApp(out io.Writer, spaceID uuid.UUID) error {
-	return publishVariantAppsUnit(out, spaceID, clusterAnnotationFluxAppsSpace, "Flux Kustomization",
+	return publishVariantAppsUnit(out, spaceID, clusterControllerFlux, "Flux Kustomization",
 		func(target *goclientnew.Target) bool { return !clusterFluxReleasesOnCreate(target) })
 }

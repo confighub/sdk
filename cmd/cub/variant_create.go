@@ -133,17 +133,17 @@ Because they link to the draft's units, discarding a draft takes --detach, which
 
   cub space delete --recursive --detach <variant-space>
 
-When --target points at a cub-cluster Argo target (an OCI target carrying the
-confighub.com/argo-apps-space annotation that "cub cluster up" stamps), this command also creates the
+When --target points at a cub-cluster target (an OCI target carrying the confighub.com/apps-space
+annotation that "cub cluster up" stamps) whose confighub.com/cluster-controller is argo, this command also creates the
 Argo CD Application that makes the new deployment live: a Kubernetes/YAML unit named after the new
 space, added to the cluster's apps space and pulling the new space's OCI Release. The apps space's
 Release is republished so the cluster's root app-of-apps picks it up on its next sync. For a
-cluster from "cub cluster up --controller sveltos" (a target carrying
-confighub.com/sveltos-apps-space), it adds a Sveltos ClusterProfile unit instead, but does not
+cluster from "cub cluster up --controller sveltos" (whose target's
+confighub.com/cluster-controller is sveltos), it adds a Sveltos ClusterProfile unit instead, but does not
 republish the apps space: a ClusterProfile whose Release does not exist yet fails, and Sveltos then
 backs it off. The new space's first "cub release publish" republishes the apps space with it, and
 the cluster's root ClusterProfile applies it. For a cluster from "cub cluster up --controller flux"
-(a target carrying confighub.com/flux-apps-space), it adds a unit holding a Flux OCIRepository and
+(whose target's confighub.com/cluster-controller is flux), it adds a unit holding a Flux OCIRepository and
 Kustomization. With argobot on the cluster, the apps space is republished at once, as for Argo CD;
 with --no-argobot, the new space's first "cub release publish" republishes it, as for Sveltos, since
 Flux backs off an OCIRepository whose Release does not exist yet. This is a no-op for ordinary
@@ -324,7 +324,8 @@ func variantCreateCmdRun(cmd *cobra.Command, args []string) (retErr error) {
 	}
 
 	// Step 5: if the target is a cub-cluster Argo target (carries the
-	// confighub.com/argo-apps-space annotation), auto-create the Argo CD
+	// confighub.com/apps-space annotation, with confighub.com/cluster-controller
+	// argo), auto-create the Argo CD
 	// Application Unit for this deployment and republish the cluster's apps
 	// Space so Argo becomes aware of it — folding the manual "tell the cluster
 	// about the deployment" step into this command. A no-op for ordinary
@@ -334,11 +335,11 @@ func variantCreateCmdRun(cmd *cobra.Command, args []string) (retErr error) {
 			return err
 		}
 		// The Sveltos counterpart: a target from `cub cluster up --controller
-		// sveltos` carries confighub.com/sveltos-apps-space instead.
+		// sveltos` carries confighub.com/cluster-controller sveltos instead.
 		if _, err := createVariantSveltosProfile(cmd.OutOrStdout(), target, newSpace, *targetID); err != nil {
 			return err
 		}
-		// And the Flux one: confighub.com/flux-apps-space.
+		// And the Flux one: confighub.com/cluster-controller flux.
 		if _, err := createVariantFluxApp(cmd.OutOrStdout(), target, newSpace, *targetID); err != nil {
 			return err
 		}

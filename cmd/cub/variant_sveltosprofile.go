@@ -25,9 +25,9 @@ import (
 // wait out the backoff. So `cub variant create` only adds the Unit, and the
 // variant's first `cub release publish` republishes the apps Space with it.
 //
-// The signal is the confighub.com/sveltos-apps-space annotation `cub cluster
-// up` stamps on the OCI target. A target without it is not a Sveltos cluster
-// target and this is a no-op.
+// The signal is the confighub.com/apps-space annotation `cub cluster up` stamps
+// on the OCI target, with confighub.com/cluster-controller sveltos. Any other
+// target is not a Sveltos cluster target and this is a no-op.
 
 // createVariantSveltosProfile adds the ClusterProfile Unit for a deployment
 // variant to the cluster's apps Space when its target is a cub-cluster Sveltos
@@ -39,7 +39,7 @@ import (
 // bound to the same OCI target, so it lands in the apps Space's Release bundle
 // the root profile deploys.
 func createVariantSveltosProfile(out io.Writer, target *goclientnew.Target, variantSpace *goclientnew.Space, targetID uuid.UUID) (bool, error) {
-	appsSpaceSlug := target.Annotations[clusterAnnotationSveltosAppsSpace]
+	appsSpaceSlug := clusterAppsSpaceSlug(target, clusterControllerSveltos)
 	if appsSpaceSlug == "" {
 		return false, nil
 	}
@@ -104,16 +104,25 @@ func createVariantSveltosProfile(out io.Writer, target *goclientnew.Target, vari
 // not release to a cub-cluster Sveltos target, whose apps Space has no Unit for
 // it, or whose Unit was released already.
 func publishVariantSveltosProfile(out io.Writer, spaceID uuid.UUID) error {
-	return publishVariantAppsUnit(out, spaceID, clusterAnnotationSveltosAppsSpace, "Sveltos ClusterProfile", nil)
+	return publishVariantAppsUnit(out, spaceID, clusterControllerSveltos, "Sveltos ClusterProfile", nil)
 }
 
-// publishVariantAppsUnit republishes the apps Space named by the
-// appsSpaceAnnotation of the release target of the Space spaceID, when that
+// clusterAppsSpaceSlug returns the apps Space slug the OCI target of a cluster
+// running controller names, or "" when target is not one.
+func clusterAppsSpaceSlug(target *goclientnew.Target, controller string) string {
+	if target.Annotations[clusterAnnotationController] != controller {
+		return ""
+	}
+	return target.Annotations[clusterAnnotationAppsSpace]
+}
+
+// publishVariantAppsUnit republishes the apps Space of the release target of
+// the Space spaceID, when that target is a cluster running controller and its
 // apps Space holds a Unit for the Space that has not been released yet. kind
 // names the Unit's object in the message. deferred, when not nil, says whether
 // the target is one whose Units wait for this publish; for any other it is a
 // no-op.
-func publishVariantAppsUnit(out io.Writer, spaceID uuid.UUID, appsSpaceAnnotation, kind string, deferred func(*goclientnew.Target) bool) error {
+func publishVariantAppsUnit(out io.Writer, spaceID uuid.UUID, controller, kind string, deferred func(*goclientnew.Target) bool) error {
 	space, err := resolveSpace(spaceID.String(), "SpaceID,Slug,ReleaseTargetID")
 	if err != nil {
 		return err
@@ -128,13 +137,13 @@ func publishVariantAppsUnit(out io.Writer, spaceID uuid.UUID, appsSpaceAnnotatio
 	if err != nil {
 		return nil
 	}
-	appsSpaceSlug := target.Target.Annotations[appsSpaceAnnotation]
+	appsSpaceSlug := clusterAppsSpaceSlug(target.Target, controller)
 	if appsSpaceSlug == "" || (deferred != nil && !deferred(target.Target)) {
 		return nil
 	}
 	appsSpace, err := resolveSpace(appsSpaceSlug, "SpaceID")
 	if err != nil {
-		return fmt.Errorf("resolve apps space %q from target annotation %s: %w", appsSpaceSlug, appsSpaceAnnotation, err)
+		return fmt.Errorf("resolve apps space %q from target annotation %s: %w", appsSpaceSlug, clusterAnnotationAppsSpace, err)
 	}
 	unit, err := resolveUnit(space.Space.Slug, appsSpace.Space.SpaceID.String(), "UnitID,HeadRevisionNum,LastReleasedRevisionNum")
 	if err != nil || unit.Unit.LastReleasedRevisionNum >= unit.Unit.HeadRevisionNum {

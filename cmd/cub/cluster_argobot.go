@@ -21,7 +21,7 @@ import (
 // any other component: a shared base installed from its published OCI config
 // bundle and a per-cluster downstream variant. The child Argo Application that
 // makes argobot live is created by `cub variant create --target` itself — the
-// cluster's OCI target carries the confighub.com/argo-apps-space annotation, so
+// cluster's OCI target carries the confighub.com/apps-space annotation, so
 // creating the argobot variant against it auto-creates the Application Unit in
 // the apps Space (see createVariantArgoApp). argobot is just the first user
 // of that path.
@@ -82,7 +82,7 @@ const clusterArgobotEventReleasePublished = "release.published"
 // clusterArgobotDeps carries the cluster-derived values the argobot install
 // needs from clusterAttach — the pieces of a freshly attached cluster argobot
 // binds to. The child Argo Application is created by `cub variant create` from
-// the OCI target's argo-apps-space annotation, so the install itself only needs
+// the OCI target's apps-space annotation, so the install itself only needs
 // the identity argobot runs as (for the Channel grant and the out-of-band
 // Secret) and the kubeconfig.
 type clusterArgobotDeps struct {
@@ -244,7 +244,7 @@ type clusterArgobotOptions struct {
 // It creates argobot's units and publishes argobot's own variant Release. The
 // child Argo Application Unit that makes argobot live is created in the apps
 // Space by `cub variant create --target` (step 2), auto-derived from the OCI
-// target's argo-apps-space annotation — the same path any deployment variant
+// target's apps-space annotation — the same path any deployment variant
 // uses. The caller publishes the apps Space's Release once, after this
 // returns, so that the root app-of-apps' first sync already includes argobot.
 func clusterInstallArgobot(out io.Writer, o clusterArgobotOptions) error {
@@ -277,7 +277,7 @@ func clusterInstallArgobot(out io.Writer, o clusterArgobotOptions) error {
 	// target). No --namespace: argobot's manifests already place resources in
 	// the argobot and argocd namespaces, and run in them on every cluster.
 	//
-	// Because the OCI target carries the confighub.com/argo-apps-space
+	// Because the OCI target carries the confighub.com/apps-space
 	// annotation, this also auto-creates argobot's child Argo Application Unit
 	// in the apps Space and republishes it — argobot rides the same path as
 	// any deployment variant instead of hand-rolling its own Application.

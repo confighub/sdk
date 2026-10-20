@@ -688,27 +688,24 @@ func clusterAttach(out io.Writer, spec clusterAttachSpec, addRollback func(func(
 	}
 
 	fmt.Fprintf(out, "Creating OCI target %q (granting %q its deployment path)...\n", clusterTargetSlug, serviceAccountSlug)
-	// argo-apps-space lets API clients resolve the Space holding the cluster's
-	// Argo Application Units from the target; that Space is the apps Space. A
-	// Sveltos target carries sveltos-apps-space instead, from which `cub variant
-	// create --target` adds a ClusterProfile rather than an Argo Application,
-	// and a Flux target flux-apps-space. The argobot annotation tells `cub
-	// variant create` whether a deploy is picked up at once or waits for a poll.
+	// apps-space lets API clients resolve the apps Space, which holds the
+	// cluster's controller Units, from the target. The controller annotation
+	// says which kind of Unit `cub variant create --target` adds there: an Argo
+	// Application, a Sveltos ClusterProfile or a Flux Kustomization. The argobot
+	// annotation tells `cub variant create` whether a deploy is picked up at
+	// once or waits for a poll.
 	targetAnnotations := map[string]string{
 		clusterAnnotationController: spec.controller,
+		clusterAnnotationAppsSpace:  appsSlug,
 	}
 	if !spec.noArgobot {
 		targetAnnotations[clusterAnnotationArgobot] = "true"
 	}
 	switch spec.controller {
 	case clusterControllerSveltos:
-		targetAnnotations[clusterAnnotationSveltosAppsSpace] = appsSlug
 		targetAnnotations[clusterAnnotationSveltosPollInterval] = clusterSveltosPollInterval(!spec.noArgobot)
 	case clusterControllerFlux:
-		targetAnnotations[clusterAnnotationFluxAppsSpace] = appsSlug
 		targetAnnotations[clusterAnnotationFluxPollInterval] = clusterFluxPollInterval(!spec.noArgobot)
-	default:
-		targetAnnotations[clusterAnnotationArgoAppsSpace] = appsSlug
 	}
 	for k, v := range spec.targetAnnotations {
 		targetAnnotations[k] = v
