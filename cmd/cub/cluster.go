@@ -77,6 +77,18 @@ const (
 	// controller; clusterAnnotationController on the same target says which.
 	clusterAnnotationAppsSpace = "confighub.com/apps-space"
 
+	// clusterAnnotationPrune is "true" on the OCI target of a cluster brought up
+	// or attached with --prune: removing a deployment's Unit from the apps Space
+	// removes what it deployed, and `cub variant create --target` makes each
+	// deployment prune what it deployed. With Argo CD the root Application
+	// prunes, and a deployment's Application gets prune and the resources
+	// finalizer; with Flux the root and each deployment's Kustomization prune;
+	// with Sveltos a deployment's ClusterProfile withdraws what it deployed when
+	// it is deleted (Sveltos's root always deletes it, and a profile always
+	// deletes a resource that leaves its Release). The key is the same for every
+	// controller, like clusterAnnotationAppsSpace.
+	clusterAnnotationPrune = "confighub.com/cluster-prune"
+
 	// clusterAnnotationSveltosPollInterval records, on a Sveltos cluster's OCI
 	// target, Sveltos's own poll interval (remoteURL.interval) for the cluster's
 	// profiles, so `cub variant create --target` gives a deployment's profile the

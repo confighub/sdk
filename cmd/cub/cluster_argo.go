@@ -302,7 +302,15 @@ stringData:
 // new Application Units to the Space and publishing a new Release causes Argo
 // to create the corresponding Apps on its next sync. A Release bundle is flat —
 // one <unit-slug>.yaml per bundled Unit at the bundle root — so path is ".".
-func clusterArgoRootAppManifest(spaceSlug, ociRepoURL string) []byte {
+//
+// Without prune, an Application Unit removed from the Space leaves its
+// Application running in the cluster, so a bad or empty Release can never
+// delete one. With prune, the root deletes it.
+func clusterArgoRootAppManifest(spaceSlug, ociRepoURL string, prune bool) []byte {
+	pruneLine := ""
+	if prune {
+		pruneLine = "      prune: true\n"
+	}
 	return fmt.Appendf(nil, `apiVersion: argoproj.io/v1alpha1
 kind: Application
 metadata:
@@ -322,12 +330,12 @@ spec:
   syncPolicy:
     automated:
       selfHeal: true
-    syncOptions:
+%s    syncOptions:
       - ServerSideApply=true
       - ServerSideApply.ForceConflicts=true
       - RespectIgnoreDifferences=true
       - CreateNamespace=false
-`, spaceSlug, clusterArgoNamespace, ociRepoURL, clusterArgoNamespace)
+`, spaceSlug, clusterArgoNamespace, ociRepoURL, clusterArgoNamespace, pruneLine)
 }
 
 // clusterArgoDeleteApplication deletes one Argo CD Application, reporting
@@ -335,6 +343,29 @@ spec:
 // Argo deletes what the Application deployed; without it, finalizers are
 // stripped so the delete orphans those resources.
 func clusterArgoDeleteApplication(ctx context.Context, kubeconfigPath, name string, cascade bool, out io.Writer) (bool, error) {
+	exists, err := clusterArgoSetCascade(ctx, kubeconfigPath, name, cascade)
+	if err != nil || !exists {
+		return exists, err
+	}
+	deleteArgs := []string{"delete", "application", name, "-n", clusterArgoNamespace, "--ignore-not-found", "--cascade=orphan"}
+	verb := "orphaning its resources"
+	if cascade {
+		deleteArgs = []string{"delete", "application", name, "-n", clusterArgoNamespace, "--ignore-not-found", "--timeout=5m"}
+		verb = "and its resources"
+	}
+	fmt.Fprintf(out, "  deleting Application %q (%s)...\n", name, verb)
+	if _, err := clusterKubectlOutput(ctx, kubeconfigPath, deleteArgs...); err != nil {
+		return true, fmt.Errorf("delete Application %q: %w", name, err)
+	}
+	return true, nil
+}
+
+// clusterArgoSetCascade sets an Application's finalizers so that deleting it,
+// by kubectl or by a root Application pruning it, deletes what it deployed
+// (cascade) or leaves it running. It reports whether the Application exists.
+// The finalizers are among the fields argocd-cm tells Argo to ignore, so the
+// root's self-heal does not put the generated ones back.
+func clusterArgoSetCascade(ctx context.Context, kubeconfigPath, name string, cascade bool) (bool, error) {
 	existing, err := clusterKubectlOutput(ctx, kubeconfigPath,
 		"get", "application", name, "-n", clusterArgoNamespace, "--ignore-not-found", "-o", "name")
 	if err != nil {
@@ -344,22 +375,66 @@ func clusterArgoDeleteApplication(ctx context.Context, kubeconfigPath, name stri
 		return false, nil
 	}
 	finalizers := `{"metadata":{"finalizers":[]}}`
-	deleteArgs := []string{"delete", "application", name, "-n", clusterArgoNamespace, "--ignore-not-found", "--cascade=orphan"}
-	verb := "orphaning its resources"
 	if cascade {
 		finalizers = `{"metadata":{"finalizers":["resources-finalizer.argocd.argoproj.io"]}}`
-		deleteArgs = []string{"delete", "application", name, "-n", clusterArgoNamespace, "--ignore-not-found", "--timeout=5m"}
-		verb = "and its resources"
 	}
-	fmt.Fprintf(out, "  deleting Application %q (%s)...\n", name, verb)
 	if _, err := clusterKubectlOutput(ctx, kubeconfigPath,
 		"patch", "application", name, "-n", clusterArgoNamespace, "--type=merge", "-p", finalizers); err != nil {
 		return true, fmt.Errorf("set finalizers on Application %q: %w", name, err)
 	}
-	if _, err := clusterKubectlOutput(ctx, kubeconfigPath, deleteArgs...); err != nil {
-		return true, fmt.Errorf("delete Application %q: %w", name, err)
-	}
 	return true, nil
+}
+
+// clusterArgoWaitRootReleased waits until the root Application no longer wants
+// the child Application name: its tracked resources either drop it (the root
+// has prune and deleted it) or mark it requiresPruning (the root synced a
+// Release without it and, lacking prune, left it). Until then the root's
+// self-heal re-creates a child deleted from under it, so a child is deleted
+// only after this returns. A hard refresh is requested first so the root
+// re-reads its Release now rather than on its next poll.
+func clusterArgoWaitRootReleased(ctx context.Context, kubeconfigPath, rootName, name string, budget time.Duration) error {
+	if _, err := clusterKubectlOutput(ctx, kubeconfigPath,
+		"annotate", "application", rootName, "-n", clusterArgoNamespace, "argocd.argoproj.io/refresh=hard", "--overwrite"); err != nil {
+		return fmt.Errorf("refresh root Application %q: %w", rootName, err)
+	}
+	deadline := time.Now().Add(budget)
+	for {
+		raw, err := clusterKubectlOutput(ctx, kubeconfigPath,
+			"get", "application", rootName, "-n", clusterArgoNamespace, "-o", "json")
+		if err != nil {
+			return fmt.Errorf("read root Application %q: %w", rootName, err)
+		}
+		var root struct {
+			Status struct {
+				Resources []struct {
+					Kind            string `json:"kind"`
+					Name            string `json:"name"`
+					RequiresPruning bool   `json:"requiresPruning"`
+				} `json:"resources"`
+			} `json:"status"`
+		}
+		if err := json.Unmarshal(raw, &root); err != nil {
+			return fmt.Errorf("decode root Application %q: %w", rootName, err)
+		}
+		wanted := false
+		for _, r := range root.Status.Resources {
+			if r.Kind == "Application" && r.Name == name && !r.RequiresPruning {
+				wanted = true
+				break
+			}
+		}
+		if !wanted {
+			return nil
+		}
+		if time.Now().After(deadline) {
+			return fmt.Errorf("root Application %q still deploys Application %q after %s; it has not synced the Release without it", rootName, name, budget)
+		}
+		select {
+		case <-ctx.Done():
+			return ctx.Err()
+		case <-time.After(2 * time.Second):
+		}
+	}
 }
 
 // clusterArgoAdminPassword reads the argocd-initial-admin-secret from the

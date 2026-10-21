@@ -6,6 +6,7 @@ package main
 import (
 	"encoding/base64"
 	"encoding/json"
+	"reflect"
 	"strings"
 	"testing"
 
@@ -43,7 +44,7 @@ func fluxField(obj map[string]any, path ...string) any {
 
 func TestClusterFluxChildManifest(t *testing.T) {
 	const url = "oci://172.18.0.1:9092/space/orders"
-	docs := fluxDocs(t, clusterFluxChildManifest("orders", url, "10m0s", true))
+	docs := fluxDocs(t, clusterFluxChildManifest("orders", url, "10m0s", true, false))
 	repo, ks := docs["OCIRepository"], docs["Kustomization"]
 
 	// Flux takes the bare repository in url and the tag in ref.tag.
@@ -73,12 +74,13 @@ func TestClusterFluxChildManifest(t *testing.T) {
 			t.Errorf("%s annotations = %v; a child must be prunable", obj["kind"], got)
 		}
 	}
-	// A child waits on what it applied, so its Healthy condition means something.
+	// A child waits on what it applied, so its Healthy condition means something,
+	// and without --prune never deletes it.
 	for name, want := range map[string]any{
 		"sourceRef.kind": "OCIRepository",
 		"sourceRef.name": "orders",
 		"path":           ".",
-		"prune":          true,
+		"prune":          false,
 		"wait":           true,
 	} {
 		if got := fluxField(ks, append([]string{"spec"}, strings.Split(name, ".")...)...); got != want {
@@ -88,7 +90,7 @@ func TestClusterFluxChildManifest(t *testing.T) {
 }
 
 func TestClusterFluxRootManifest(t *testing.T) {
-	docs := fluxDocs(t, clusterFluxRootManifest("oci://172.18.0.1:9092/space/c-flux-apps", "1m0s", false))
+	docs := fluxDocs(t, clusterFluxRootManifest("oci://172.18.0.1:9092/space/c-flux-apps", "1m0s", false, false))
 	for _, obj := range docs {
 		if got := fluxField(obj, "metadata", "name"); got != clusterFluxRootName {
 			t.Errorf("%s name = %v, want %s", obj["kind"], got, clusterFluxRootName)
@@ -99,15 +101,34 @@ func TestClusterFluxRootManifest(t *testing.T) {
 		}
 	}
 	ks := docs["Kustomization"]
-	// The root prunes removed children, and does not wait on them.
-	if got := fluxField(ks, "spec", "prune"); got != true {
-		t.Errorf("root Kustomization prune = %v, want true", got)
+	// Without --prune the root leaves removed children running, and it never
+	// waits on them.
+	if got := fluxField(ks, "spec", "prune"); got != false {
+		t.Errorf("root Kustomization prune = %v, want false", got)
 	}
 	if got := fluxField(ks, "spec", "wait"); got != false {
 		t.Errorf("root Kustomization wait = %v, want false", got)
 	}
 	if got := fluxField(docs["OCIRepository"], "spec", "insecure"); got != false {
 		t.Errorf("root OCIRepository insecure = %v, want false", got)
+	}
+}
+
+// --prune turns prune on, and changes nothing else.
+func TestClusterFluxManifestPrune(t *testing.T) {
+	const url = "oci://172.18.0.1:9092/space/orders"
+	for name, build := range map[string]func(prune bool) []byte{
+		"child": func(prune bool) []byte { return clusterFluxChildManifest("orders", url, "10m0s", true, prune) },
+		"root":  func(prune bool) []byte { return clusterFluxRootManifest(url, "1m0s", false, prune) },
+	} {
+		without, with := fluxDocs(t, build(false)), fluxDocs(t, build(true))
+		if got := fluxField(with["Kustomization"], "spec", "prune"); got != true {
+			t.Errorf("%s Kustomization prune = %v with --prune, want true", name, got)
+		}
+		with["Kustomization"]["spec"].(map[string]any)["prune"] = false
+		if !reflect.DeepEqual(with, without) {
+			t.Errorf("%s manifest with --prune differs beyond prune:\n%v\n%v", name, with, without)
+		}
 	}
 }
 

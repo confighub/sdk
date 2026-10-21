@@ -38,11 +38,17 @@ import (
 // from the OCI endpoint. It is created as a Unit in the cluster's apps Space and
 // bound to the same OCI target, so it lands in the apps Space's Release bundle
 // the root profile deploys.
-func createVariantSveltosProfile(out io.Writer, target *goclientnew.Target, variantSpace *goclientnew.Space, targetID uuid.UUID) (bool, error) {
+//
+// The profile withdraws what it deployed when it is deleted when prune is set
+// (--prune) or the target carries confighub.com/cluster-prune, which `cub
+// cluster up --controller sveltos --prune` stamps; otherwise it has
+// LeavePolicies.
+func createVariantSveltosProfile(out io.Writer, target *goclientnew.Target, variantSpace *goclientnew.Space, targetID uuid.UUID, prune bool) (bool, error) {
 	appsSpaceSlug := clusterAppsSpaceSlug(target, clusterControllerSveltos)
 	if appsSpaceSlug == "" {
 		return false, nil
 	}
+	prune = prune || target.Annotations[clusterAnnotationPrune] == "true"
 
 	appsSpace, err := resolveSpace(appsSpaceSlug, "SpaceID")
 	if err != nil {
@@ -75,9 +81,13 @@ func createVariantSveltosProfile(out io.Writer, target *goclientnew.Target, vari
 	repoURL := strings.TrimRight(ociURLForCluster, "/") + "/space/" + variantSpace.Slug
 
 	if !jsonOutput {
-		fmt.Fprintf(out, "Creating Sveltos ClusterProfile Unit %q in apps space %q...\n", variantSpace.Slug, appsSpaceSlug)
+		pruneNote := ""
+		if prune {
+			pruneNote = " (prune)"
+		}
+		fmt.Fprintf(out, "Creating Sveltos ClusterProfile Unit %q in apps space %q%s...\n", variantSpace.Slug, appsSpaceSlug, pruneNote)
 	}
-	manifest := clusterSveltosChildProfileManifest(variantSpace.Slug, repoURL, clusterSveltosPollIntervalOf(target), plainHTTP)
+	manifest := clusterSveltosChildProfileManifest(variantSpace.Slug, repoURL, clusterSveltosPollIntervalOf(target), plainHTTP, prune)
 	unitID, err := clusterCreateK8sYAMLUnit(appsSpace.Space.SpaceID, targetID, variantSpace.Slug, variantSpace.Slug,
 		clusterUnitTargetUIAnnotations(target.Annotations, variantSpace.Slug), manifest)
 	if err != nil {
@@ -95,6 +105,46 @@ func createVariantSveltosProfile(out io.Writer, target *goclientnew.Target, vari
 			variantSpace.Slug, variantSpace.Slug)
 	}
 	return true, nil
+}
+
+// deleteVariantSveltosProfile is the inverse of createVariantSveltosProfile,
+// run by `cub variant delete` (see deleteVariantClusterApp) before it deletes
+// the variant Space: the Sveltos counterpart of deleteVariantArgoApp.
+//
+// Sveltos's root deletes a ClusterProfile as soon as it applies a Release
+// without the profile's Unit, and whether what the profile deployed goes with
+// it is up to the profile's stopMatchingBehavior. So that is set first, then
+// the Unit is removed and the Release republished, and then the profile is
+// deleted here rather than on the root's next poll. Unlike Argo CD's, the root
+// does not re-create a child deleted from under it.
+//
+// Without the cluster's kubeconfig the profile cannot be set, and the root
+// deletes it as it was created: so a delete that asks for the other outcome is
+// refused before anything changes.
+func deleteVariantSveltosProfile(out io.Writer, app *variantClusterApp, cascade bool) error {
+	clusterPrunes := app.target.Annotations[clusterAnnotationPrune] == "true"
+	if !app.inCluster && cascade && !clusterPrunes {
+		return fmt.Errorf("cluster %q does not prune, so without its kubeconfig (%s) the ClusterProfile %q would be deleted leaving what it deployed running; run this where the cluster was brought up, or pass --orphan",
+			app.clusterName, app.kubeconfigPath, app.name)
+	}
+	if !app.inCluster && !cascade && clusterPrunes {
+		return fmt.Errorf("cluster %q prunes ClusterProfiles, so without its kubeconfig (%s) the ClusterProfile %q cannot be kept from withdrawing what it deployed; run this where the cluster was brought up, or drop --orphan",
+			app.clusterName, app.kubeconfigPath, app.name)
+	}
+
+	if app.inCluster {
+		if _, err := clusterSveltosSetCascade(ctx, app.kubeconfigPath, app.name, cascade); err != nil {
+			return err
+		}
+	}
+	if err := app.removeUnit(out, "Sveltos ClusterProfile"); err != nil {
+		return err
+	}
+	if !app.inCluster {
+		fmt.Fprintf(out, "No kubeconfig for cluster %q at %s, so the root ClusterProfile deletes %q on its next poll.\n", app.clusterName, app.kubeconfigPath, app.name)
+		return nil
+	}
+	return clusterSveltosDeleteProfile(ctx, app.kubeconfigPath, app.name, cascade, out)
 }
 
 // publishVariantSveltosProfile releases a variant's ClusterProfile Unit, when it

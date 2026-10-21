@@ -32,13 +32,25 @@ import (
 // Release, auto-synced with self-heal. allowEmpty lets Argo sync the Application
 // before the variant's first Release is published (the OCI endpoint serves an
 // empty bundle until then) instead of erroring on a resource-less sync.
-func variantArgoAppManifest(appName, ociRepoURL string) []byte {
+//
+// Without prune, Argo never deletes what the Application deployed: a resource
+// that leaves the Release stays running, and deleting the Application orphans
+// its resources. With prune, the Application gets prune and Argo's resources
+// finalizer, so a resource that leaves the Release is deleted, and so is
+// everything the Application deployed when the Application itself is deleted.
+// Together with allowEmpty, that means an empty Release deletes the deployment.
+func variantArgoAppManifest(appName, ociRepoURL string, prune bool) []byte {
+	finalizers, pruneLine := "", ""
+	if prune {
+		finalizers = "  finalizers:\n    - resources-finalizer.argocd.argoproj.io\n"
+		pruneLine = "      prune: true\n"
+	}
 	return fmt.Appendf(nil, `apiVersion: argoproj.io/v1alpha1
 kind: Application
 metadata:
   name: %s
   namespace: %s
-spec:
+%sspec:
   project: default
   source:
     repoURL: %s
@@ -49,8 +61,8 @@ spec:
   syncPolicy:
     automated:
       selfHeal: true
-      allowEmpty: true
-`, appName, clusterArgoNamespace, ociRepoURL)
+%s      allowEmpty: true
+`, appName, clusterArgoNamespace, finalizers, ociRepoURL, pruneLine)
 }
 
 // createVariantArgoApp auto-creates the Argo CD Application Unit for a deployment
@@ -64,11 +76,16 @@ spec:
 // lands in the apps Space's Release bundle the root app-of-apps syncs. The apps
 // Space's Release is then republished so the root app picks up the new
 // Application on its next reconcile.
-func createVariantArgoApp(out io.Writer, target *goclientnew.Target, variantSpace *goclientnew.Space, targetID uuid.UUID) (bool, error) {
+//
+// The Application gets prune and the resources finalizer when prune is set
+// (--prune) or the target carries confighub.com/cluster-prune, which `cub cluster
+// up --prune` stamps so every deployment on that cluster gets them.
+func createVariantArgoApp(out io.Writer, target *goclientnew.Target, variantSpace *goclientnew.Space, targetID uuid.UUID, prune bool) (bool, error) {
 	appsSpaceSlug := clusterAppsSpaceSlug(target, clusterControllerArgo)
 	if appsSpaceSlug == "" {
 		return false, nil
 	}
+	prune = prune || target.Annotations[clusterAnnotationPrune] == "true"
 
 	appsSpace, err := resolveSpace(appsSpaceSlug, "SpaceID")
 	if err != nil {
@@ -101,9 +118,13 @@ func createVariantArgoApp(out io.Writer, target *goclientnew.Target, variantSpac
 	repoURL := strings.TrimRight(ociURLForArgo, "/") + "/space/" + variantSpace.Slug
 
 	if !jsonOutput {
-		fmt.Fprintf(out, "Creating Argo CD Application Unit %q in apps space %q...\n", variantSpace.Slug, appsSpaceSlug)
+		pruneNote := ""
+		if prune {
+			pruneNote = " (prune, resources finalizer)"
+		}
+		fmt.Fprintf(out, "Creating Argo CD Application Unit %q in apps space %q%s...\n", variantSpace.Slug, appsSpaceSlug, pruneNote)
 	}
-	manifest := variantArgoAppManifest(variantSpace.Slug, repoURL)
+	manifest := variantArgoAppManifest(variantSpace.Slug, repoURL, prune)
 	unitID, err := clusterCreateK8sYAMLUnit(appsSpace.Space.SpaceID, targetID, variantSpace.Slug, variantSpace.Slug,
 		clusterUnitTargetUIAnnotations(target.Annotations, variantSpace.Slug), manifest)
 	if err != nil {
@@ -129,4 +150,60 @@ func createVariantArgoApp(out io.Writer, target *goclientnew.Target, variantSpac
 		fmt.Fprintf(out, "Argo CD Application %q created; Argo syncs it on its next reconcile.\n", variantSpace.Slug)
 	}
 	return true, nil
+}
+
+// deleteVariantArgoApp is the inverse of createVariantArgoApp, run by `cub
+// variant delete` (see deleteVariantClusterApp) before it deletes the variant
+// Space.
+//
+// The order matters. The root app-of-apps self-heals, so an Application deleted
+// while the root's Release still holds its Unit is re-created within seconds.
+// So the Unit is removed from the apps Space and the Release republished first,
+// and the Application is deleted only once the root no longer wants it. Its
+// finalizers are set before the publish, because a root with prune deletes it
+// as soon as it syncs, and the finalizers then decide whether what it deployed
+// goes with it (cascade) or stays running. Setting them here, rather than
+// relying on the generated manifest, covers Applications created before
+// --prune existed.
+//
+// The Application is reached through the cluster's kubeconfig, which only the
+// machine that attached the cluster has. Without it the Unit is still removed
+// and the user is told what is left in the cluster.
+func deleteVariantArgoApp(out io.Writer, app *variantClusterApp, cascade bool) error {
+	rootPrunes := app.target.Annotations[clusterAnnotationPrune] == "true"
+	if !app.inCluster && !cascade && rootPrunes {
+		return fmt.Errorf("cluster %q prunes Applications, so without its kubeconfig (%s) the Application %q cannot be kept from deleting what it deployed; run this where the cluster was attached, or drop --orphan",
+			app.clusterName, app.kubeconfigPath, app.name)
+	}
+
+	if app.inCluster {
+		if _, err := clusterArgoSetCascade(ctx, app.kubeconfigPath, app.name, cascade); err != nil {
+			return err
+		}
+	}
+	if err := app.removeUnit(out, "Argo CD Application"); err != nil {
+		return err
+	}
+
+	if !app.inCluster {
+		fmt.Fprintf(out, "No kubeconfig for cluster %q at %s, so Argo CD Application %q is left to the cluster.\n", app.clusterName, app.kubeconfigPath, app.name)
+		if rootPrunes {
+			fmt.Fprintln(out, "Its root Application prunes it on its next sync, with what it deployed if it has Argo's resources finalizer.")
+		} else {
+			fmt.Fprintf(out, "Its root Application does not prune, so remove it, with what it deployed, where the cluster is reachable:\n"+
+				"  kubectl patch application %s -n %s --type merge -p '{\"metadata\":{\"finalizers\":[\"resources-finalizer.argocd.argoproj.io\"]}}'\n"+
+				"  kubectl delete application %s -n %s\n",
+				app.name, clusterArgoNamespace, app.name, clusterArgoNamespace)
+		}
+		return nil
+	}
+
+	fmt.Fprintf(out, "Waiting for root Application %q to release Application %q (timeout %s)...\n", app.appsSpaceSlug, app.name, variantClusterRootWait)
+	if err := clusterArgoWaitRootReleased(ctx, app.kubeconfigPath, app.appsSpaceSlug, app.name, variantClusterRootWait); err != nil {
+		return fmt.Errorf("%w; run the delete again once it has", err)
+	}
+	if _, err := clusterArgoDeleteApplication(ctx, app.kubeconfigPath, app.name, cascade, out); err != nil {
+		return err
+	}
+	return nil
 }

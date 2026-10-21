@@ -4,6 +4,7 @@
 package main
 
 import (
+	"bytes"
 	"context"
 	"fmt"
 	"io"
@@ -203,7 +204,16 @@ stringData:
 // controller is not ready yet, leave the rest of the Release applied.
 // pollInterval is Sveltos's own poll interval for it (see
 // clusterSveltosPollInterval).
-func clusterSveltosChildProfileManifest(profileName, ociRepoURL, pollInterval string, plainHTTP bool) []byte {
+//
+// Without prune, the profile has LeavePolicies, so deleting it, which the root
+// does as soon as the profile's Unit leaves the apps Space, leaves what it
+// deployed running. With prune, Sveltos's default withdraws it. Sveltos deletes
+// a resource that leaves the profile's Release either way.
+func clusterSveltosChildProfileManifest(profileName, ociRepoURL, pollInterval string, plainHTTP, prune bool) []byte {
+	stopMatching := "  stopMatchingBehavior: LeavePolicies\n"
+	if prune {
+		stopMatching = ""
+	}
 	return fmt.Appendf(nil, `apiVersion: config.projectsveltos.io/v1beta1
 kind: ClusterProfile
 metadata:
@@ -214,7 +224,7 @@ spec:
     kind: SveltosCluster
     namespace: mgmt
     name: mgmt
-  continueOnError: true
+%s  continueOnError: true
   policyRefs:
   - deploymentType: Remote
     remoteURL:
@@ -224,8 +234,53 @@ spec:
       secretRef:
         name: %s
         namespace: %s
-`, profileName, ociRepoURL, pollInterval, plainHTTP,
+`, profileName, stopMatching, ociRepoURL, pollInterval, plainHTTP,
 		clusterSveltosGatewaySecret, clusterSveltosNamespace)
+}
+
+// clusterSveltosSetCascade sets a deployment's ClusterProfile so that deleting
+// it, by kubectl or by the root, withdraws what it deployed (cascade) or leaves
+// it running. It reports whether the profile exists. The root re-applies a
+// child only when the apps Space's Release changes, and the Release a delete
+// publishes no longer holds it, so the root does not undo this.
+func clusterSveltosSetCascade(ctx context.Context, kubeconfigPath, name string, cascade bool) (bool, error) {
+	existing, err := clusterKubectlOutput(ctx, kubeconfigPath,
+		"get", "clusterprofile", name, "--ignore-not-found", "-o", "name")
+	if err != nil {
+		return false, fmt.Errorf("look up ClusterProfile %q: %w", name, err)
+	}
+	if len(bytes.TrimSpace(existing)) == 0 {
+		return false, nil
+	}
+	behavior := "LeavePolicies"
+	if cascade {
+		behavior = "WithdrawPolicies"
+	}
+	if _, err := clusterKubectlOutput(ctx, kubeconfigPath,
+		"patch", "clusterprofile", name, "--type=merge", "-p", `{"spec":{"stopMatchingBehavior":"`+behavior+`"}}`); err != nil {
+		return true, fmt.Errorf("set stopMatchingBehavior on ClusterProfile %q: %w", name, err)
+	}
+	return true, nil
+}
+
+// clusterSveltosDeleteProfile deletes a deployment's ClusterProfile after
+// setting its cascade (see clusterSveltosSetCascade). With cascade the delete
+// waits for Sveltos to withdraw what the profile deployed.
+func clusterSveltosDeleteProfile(ctx context.Context, kubeconfigPath, name string, cascade bool, out io.Writer) error {
+	exists, err := clusterSveltosSetCascade(ctx, kubeconfigPath, name, cascade)
+	if err != nil || !exists {
+		return err
+	}
+	verb := "leaving what it deployed"
+	if cascade {
+		verb = "and what it deployed"
+	}
+	fmt.Fprintf(out, "  deleting ClusterProfile %q (%s)...\n", name, verb)
+	if _, err := clusterKubectlOutput(ctx, kubeconfigPath,
+		"delete", "clusterprofile", name, "--ignore-not-found", "--timeout=5m"); err != nil {
+		return fmt.Errorf("delete ClusterProfile %q: %w", name, err)
+	}
+	return nil
 }
 
 // clusterSveltosRootProfileManifest returns the YAML for the root

@@ -4,12 +4,14 @@
 package main
 
 import (
+	"bytes"
 	"context"
 	"encoding/base64"
 	"encoding/json"
 	"fmt"
 	"io"
 	"net/url"
+	"time"
 
 	goclientnew "github.com/confighub/sdk/core/openapi/goclient-new"
 )
@@ -130,29 +132,36 @@ func clusterFluxApplyOCICreds(ctx context.Context, kubeconfigPath, ociURL, pullT
 // which is how argobot finds the OCIRepository to reconcile when that Space is
 // published. wait makes the Kustomization's Healthy condition cover the health
 // of what it applied, which is what argobot reports.
-func clusterFluxChildManifest(name, ociRepoURL, pollInterval string, insecure bool) []byte {
-	return clusterFluxManifest(name, ociRepoURL, pollInterval, insecure, false)
+//
+// Without prune, Flux never deletes what the Kustomization applied: a resource
+// that leaves the Release stays running, and so does everything when the
+// Kustomization itself is deleted. With prune, both are deleted, so an empty
+// Release deletes the deployment.
+func clusterFluxChildManifest(name, ociRepoURL, pollInterval string, insecure, prune bool) []byte {
+	return clusterFluxManifest(name, ociRepoURL, pollInterval, insecure, false, prune)
 }
 
 // clusterFluxRootManifest returns the YAML for the root OCIRepository and
 // Kustomization. They pull the apps Space's Release, which includes the root
 // itself, so adding a child Unit to the apps Space and publishing a new Release
-// makes Flux create that child, and removing one makes Flux prune it.
+// makes Flux create that child. Removing one makes Flux delete it only with
+// prune; without, the child keeps running, so a bad or empty Release can never
+// delete a deployment.
 //
 // The root objects are marked kustomize.toolkit.fluxcd.io/prune: disabled, so a
 // Release without them never makes Flux delete the root. The root does not wait
 // on what it applied: it would health-check the child Kustomizations, so one
 // failing child would fail the root and hold back its next apply until the
 // check timed out.
-func clusterFluxRootManifest(ociRepoURL, pollInterval string, insecure bool) []byte {
-	return clusterFluxManifest(clusterFluxRootName, ociRepoURL, pollInterval, insecure, true)
+func clusterFluxRootManifest(ociRepoURL, pollInterval string, insecure, prune bool) []byte {
+	return clusterFluxManifest(clusterFluxRootName, ociRepoURL, pollInterval, insecure, true, prune)
 }
 
 // clusterFluxManifest renders an OCIRepository pulling ociRepoURL's latest
 // Release, and the Kustomization applying it. Flux takes the tag from ref.tag,
 // so ociRepoURL carries none. The Kustomization's interval only corrects drift;
 // pollInterval is how often the OCIRepository looks for a new Release.
-func clusterFluxManifest(name, ociRepoURL, pollInterval string, insecure, root bool) []byte {
+func clusterFluxManifest(name, ociRepoURL, pollInterval string, insecure, root, prune bool) []byte {
 	annotations, wait := "", true
 	if root {
 		annotations = "\n  annotations:\n    kustomize.toolkit.fluxcd.io/prune: disabled"
@@ -185,10 +194,120 @@ spec:
     kind: OCIRepository
     name: %[1]s
   path: "."
-  prune: true
+  prune: %[10]t
   wait: %[9]t
 `, name, clusterFluxNamespace, annotations, pollInterval, ociRepoURL, insecure,
-		clusterFluxCredsSecret, clusterFluxTimeout, wait)
+		clusterFluxCredsSecret, clusterFluxTimeout, wait, prune)
+}
+
+// clusterFluxSetCascade sets a deployment's Kustomization so that deleting it,
+// by kubectl or by a root Kustomization pruning it, deletes what it applied
+// (cascade: prune on, not suspended) or leaves it running (suspended: Flux
+// skips garbage collection when a suspended Kustomization is deleted). It
+// reports whether the Kustomization exists. The root's apply resets prune to
+// what the Unit says while the root still applies the child, but never touches
+// suspend, which the manifest does not set.
+func clusterFluxSetCascade(ctx context.Context, kubeconfigPath, name string, cascade bool) (bool, error) {
+	existing, err := clusterKubectlOutput(ctx, kubeconfigPath,
+		"get", "kustomization", name, "-n", clusterFluxNamespace, "--ignore-not-found", "-o", "name")
+	if err != nil {
+		return false, fmt.Errorf("look up Kustomization %q: %w", name, err)
+	}
+	if len(bytes.TrimSpace(existing)) == 0 {
+		return false, nil
+	}
+	patch := `{"spec":{"suspend":true}}`
+	if cascade {
+		patch = `{"spec":{"prune":true,"suspend":false}}`
+	}
+	if _, err := clusterKubectlOutput(ctx, kubeconfigPath,
+		"patch", "kustomization", name, "-n", clusterFluxNamespace, "--type=merge", "-p", patch); err != nil {
+		return true, fmt.Errorf("set prune and suspend on Kustomization %q: %w", name, err)
+	}
+	return true, nil
+}
+
+// clusterFluxWaitRootReleased waits until the root Kustomization no longer
+// applies the deployment's Kustomization: its inventory, the objects it applied
+// from the current Release, drops it. A root with prune has deleted it by then;
+// one without has let go of it, so a delete is not undone by the root's next
+// apply. A reconciliation of the root's OCIRepository is requested first so the
+// root fetches the new Release now rather than on its next poll.
+func clusterFluxWaitRootReleased(ctx context.Context, kubeconfigPath, name string, budget time.Duration) error {
+	requestedAt := "reconcile.fluxcd.io/requestedAt=" + time.Now().UTC().Format(time.RFC3339Nano)
+	for _, kind := range []string{"ocirepository", "kustomization"} {
+		if _, err := clusterKubectlOutput(ctx, kubeconfigPath,
+			"annotate", kind, clusterFluxRootName, "-n", clusterFluxNamespace, requestedAt, "--overwrite"); err != nil {
+			return fmt.Errorf("request a reconciliation of the root %s: %w", kind, err)
+		}
+	}
+	// Flux identifies an inventory entry as <namespace>_<name>_<group>_<kind>.
+	childID := clusterFluxNamespace + "_" + name + "_kustomize.toolkit.fluxcd.io_Kustomization"
+	deadline := time.Now().Add(budget)
+	for {
+		raw, err := clusterKubectlOutput(ctx, kubeconfigPath,
+			"get", "kustomization", clusterFluxRootName, "-n", clusterFluxNamespace, "-o", "json")
+		if err != nil {
+			return fmt.Errorf("read the root Kustomization: %w", err)
+		}
+		var root struct {
+			Status struct {
+				Inventory struct {
+					Entries []struct {
+						ID string `json:"id"`
+					} `json:"entries"`
+				} `json:"inventory"`
+			} `json:"status"`
+		}
+		if err := json.Unmarshal(raw, &root); err != nil {
+			return fmt.Errorf("decode the root Kustomization: %w", err)
+		}
+		applied := false
+		for _, e := range root.Status.Inventory.Entries {
+			if e.ID == childID {
+				applied = true
+				break
+			}
+		}
+		if !applied {
+			return nil
+		}
+		if time.Now().After(deadline) {
+			return fmt.Errorf("root Kustomization %q still applies Kustomization %q after %s; it has not applied the Release without it", clusterFluxRootName, name, budget)
+		}
+		select {
+		case <-ctx.Done():
+			return ctx.Err()
+		case <-time.After(2 * time.Second):
+		}
+	}
+}
+
+// clusterFluxDeleteDeployment deletes a deployment's Kustomization and
+// OCIRepository, after setting the Kustomization's cascade (see
+// clusterFluxSetCascade). With cascade the delete waits for Flux to delete what
+// the Kustomization applied.
+func clusterFluxDeleteDeployment(ctx context.Context, kubeconfigPath, name string, cascade bool, out io.Writer) error {
+	exists, err := clusterFluxSetCascade(ctx, kubeconfigPath, name, cascade)
+	if err != nil {
+		return err
+	}
+	if exists {
+		verb := "orphaning what it applied"
+		if cascade {
+			verb = "and what it applied"
+		}
+		fmt.Fprintf(out, "  deleting Kustomization %q (%s)...\n", name, verb)
+		if _, err := clusterKubectlOutput(ctx, kubeconfigPath,
+			"delete", "kustomization", name, "-n", clusterFluxNamespace, "--ignore-not-found", "--timeout=5m"); err != nil {
+			return fmt.Errorf("delete Kustomization %q: %w", name, err)
+		}
+	}
+	if _, err := clusterKubectlOutput(ctx, kubeconfigPath,
+		"delete", "ocirepository", name, "-n", clusterFluxNamespace, "--ignore-not-found"); err != nil {
+		return fmt.Errorf("delete OCIRepository %q: %w", name, err)
+	}
+	return nil
 }
 
 // clusterFluxPollInterval returns the OCIRepositories' poll interval for a

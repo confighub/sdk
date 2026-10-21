@@ -33,6 +33,7 @@ var clusterAttachArgs struct {
 	noArgobot         bool
 	noPlaceholderGate bool
 	argobotOCI        string
+	prune             bool
 }
 
 var clusterAttachCmd = &cobra.Command{
@@ -83,7 +84,8 @@ What it sets up, in the cluster:
   repo-creds Secret   a long-lived token of the cluster's service account, so
                       Argo CD can pull from ConfigHub's OCI registry.
   root Application    bootstrapped once with kubectl; from then on Argo pulls
-                      everything else from ConfigHub.
+                      everything else from ConfigHub. It never deletes an
+                      Application unless --prune is given (below).
   argobot             unless --no-argobot: a bot that listens on a Channel and
                       force-syncs the matching Argo Application the moment a
                       deploy happens, instead of waiting for Argo's poll, and
@@ -107,6 +109,15 @@ The OCI target is gated: a "no-placeholders" Trigger in the cluster Space
 blocks publishing a Release that still contains an unfilled
 "confighubplaceholder" value, for every Space that releases to this cluster.
 Pass --no-placeholder-gate to skip the Trigger; the target is wired either way.
+
+By default nothing cub wires into Argo CD deletes anything: a deployment whose
+Application Unit is removed from the apps Space keeps running, so a bad or
+empty Release can never take workloads down. --prune opts the cluster into
+removal: the root Application prunes an Application whose Unit is gone, and
+"cub variant create --target" gives each deployment's Application prune and
+Argo's resources finalizer, so removing the Unit removes what the deployment
+deployed. --prune is recorded on the OCI target, so it covers deployments
+created later; it does not change Applications that already exist.
 
 A cluster is wired to one ConfigHub at a time: attach refuses a cluster whose
 Argo CD already holds ConfigHub registry credentials, and a remote cluster
@@ -154,6 +165,7 @@ func init() {
 	clusterAttachCmd.Flags().BoolVar(&clusterAttachArgs.noArgobot, "no-argobot", false, "skip installing argobot (the event-driven Argo CD sync bot)")
 	clusterAttachCmd.Flags().BoolVar(&clusterAttachArgs.noPlaceholderGate, "no-placeholder-gate", false, "skip the default vet-placeholders Trigger, allowing Releases with unfilled confighubplaceholder values to be published to this cluster")
 	clusterAttachCmd.Flags().StringVar(&clusterAttachArgs.argobotOCI, "argobot-oci", clusterArgobotOCIRef, "OCI reference of argobot's config bundle, or a local file or directory of its manifests")
+	clusterAttachCmd.Flags().BoolVar(&clusterAttachArgs.prune, "prune", false, "let Argo CD delete: the root Application prunes Applications whose Units leave the apps space, and deployments created later get prune and the resources finalizer")
 	clusterCmd.AddCommand(clusterAttachCmd)
 }
 
@@ -174,6 +186,7 @@ type clusterAttachOptions struct {
 	noArgobot         bool
 	noPlaceholderGate bool
 	argobotOCIRef     string
+	prune             bool
 }
 
 func clusterAttachCmdRun(cmd *cobra.Command, args []string) error {
@@ -197,6 +210,7 @@ func clusterAttachCmdRun(cmd *cobra.Command, args []string) error {
 		noArgobot:         clusterAttachArgs.noArgobot,
 		noPlaceholderGate: clusterAttachArgs.noPlaceholderGate,
 		argobotOCIRef:     clusterAttachArgs.argobotOCI,
+		prune:             clusterAttachArgs.prune,
 	})
 }
 
@@ -337,6 +351,7 @@ func clusterAttachRun(out io.Writer, opts clusterAttachOptions) error {
 		noArgobot:         opts.noArgobot,
 		noPlaceholderGate: opts.noPlaceholderGate,
 		argobotOCIRef:     opts.argobotOCIRef,
+		prune:             opts.prune,
 	}, func(f func()) { rollback = append(rollback, f) })
 	if err != nil {
 		return err
@@ -570,6 +585,10 @@ type clusterAttachSpec struct {
 	noArgobot         bool
 	noPlaceholderGate bool
 	argobotOCIRef     string
+	// prune gives the root Argo CD Application or Flux Kustomization prune and
+	// records it on the OCI target for the deployments `cub variant create`
+	// adds (controllers argo and flux).
+	prune bool
 }
 
 // clusterAttachResult is what clusterAttach leaves behind, for the summary.
@@ -701,6 +720,9 @@ func clusterAttach(out io.Writer, spec clusterAttachSpec, addRollback func(func(
 	if !spec.noArgobot {
 		targetAnnotations[clusterAnnotationArgobot] = "true"
 	}
+	if spec.prune {
+		targetAnnotations[clusterAnnotationPrune] = "true"
+	}
 	switch spec.controller {
 	case clusterControllerSveltos:
 		targetAnnotations[clusterAnnotationSveltosPollInterval] = clusterSveltosPollInterval(!spec.noArgobot)
@@ -788,13 +810,13 @@ func clusterAttach(out io.Writer, spec clusterAttachSpec, addRollback func(func(
 			return result, err
 		}
 		fmt.Fprintf(out, "Creating root OCIRepository and Kustomization Unit %q in apps space %q...\n", clusterRootUnitSlug, appsSlug)
-		rootManifest = clusterFluxRootManifest(rootRepoURL, clusterFluxPollInterval(!spec.noArgobot), ociInsecure)
+		rootManifest = clusterFluxRootManifest(rootRepoURL, clusterFluxPollInterval(!spec.noArgobot), ociInsecure, spec.prune)
 	default:
 		if err := clusterArgoApplyOCIRepoCreds(ctx, kubeconfigPath, ociURLForArgo, pullToken, ociInsecure, out); err != nil {
 			return result, err
 		}
 		fmt.Fprintf(out, "Creating root Application Unit %q in apps space %q...\n", clusterRootUnitSlug, appsSlug)
-		rootManifest = clusterArgoRootAppManifest(appsSlug, rootRepoURL)
+		rootManifest = clusterArgoRootAppManifest(appsSlug, rootRepoURL, spec.prune)
 		rootName = appsSlug
 	}
 	var rootAnnotations map[string]string

@@ -35,11 +35,16 @@ import (
 // cluster's apps Space when its target is a cub-cluster Flux target, and
 // releases it when the cluster has argobot (see publishVariantFluxApp). It
 // reports whether it did anything.
-func createVariantFluxApp(out io.Writer, target *goclientnew.Target, variantSpace *goclientnew.Space, targetID uuid.UUID) (bool, error) {
+//
+// The Kustomization prunes what it applied when prune is set (--prune) or the
+// target carries confighub.com/cluster-prune, which `cub cluster up --controller
+// flux --prune` stamps so every deployment on that cluster prunes.
+func createVariantFluxApp(out io.Writer, target *goclientnew.Target, variantSpace *goclientnew.Space, targetID uuid.UUID, prune bool) (bool, error) {
 	appsSpaceSlug := clusterAppsSpaceSlug(target, clusterControllerFlux)
 	if appsSpaceSlug == "" {
 		return false, nil
 	}
+	prune = prune || target.Annotations[clusterAnnotationPrune] == "true"
 
 	appsSpace, err := resolveSpace(appsSpaceSlug, "SpaceID")
 	if err != nil {
@@ -72,9 +77,13 @@ func createVariantFluxApp(out io.Writer, target *goclientnew.Target, variantSpac
 	repoURL := strings.TrimRight(ociURLForCluster, "/") + "/space/" + variantSpace.Slug
 
 	if !jsonOutput {
-		fmt.Fprintf(out, "Creating Flux OCIRepository and Kustomization Unit %q in apps space %q...\n", variantSpace.Slug, appsSpaceSlug)
+		pruneNote := ""
+		if prune {
+			pruneNote = " (prune)"
+		}
+		fmt.Fprintf(out, "Creating Flux OCIRepository and Kustomization Unit %q in apps space %q%s...\n", variantSpace.Slug, appsSpaceSlug, pruneNote)
 	}
-	manifest := clusterFluxChildManifest(variantSpace.Slug, repoURL, clusterFluxPollIntervalOf(target), insecure)
+	manifest := clusterFluxChildManifest(variantSpace.Slug, repoURL, clusterFluxPollIntervalOf(target), insecure, prune)
 	unitID, err := clusterCreateK8sYAMLUnit(appsSpace.Space.SpaceID, targetID, variantSpace.Slug, variantSpace.Slug, nil, manifest)
 	if err != nil {
 		return false, fmt.Errorf("create Flux unit: %w", err)
@@ -109,6 +118,57 @@ func createVariantFluxApp(out io.Writer, target *goclientnew.Target, variantSpac
 // when they are created: the cluster has argobot to skip Flux's backoff.
 func clusterFluxReleasesOnCreate(target *goclientnew.Target) bool {
 	return target.Annotations[clusterAnnotationArgobot] == "true"
+}
+
+// deleteVariantFluxApp is the inverse of createVariantFluxApp, run by `cub
+// variant delete` (see deleteVariantClusterApp) before it deletes the variant
+// Space: the Flux counterpart of deleteVariantArgoApp.
+//
+// The Unit is removed from the apps Space and the Release republished, so the
+// root Kustomization stops applying the deployment. A root with prune then
+// deletes the deployment's OCIRepository and Kustomization itself, and one
+// without leaves them, to be deleted here. Either way, whether what the
+// deployment applied goes too is up to its Kustomization: it is set to prune
+// (cascade) or suspended (--orphan) before the publish, because a pruning root
+// deletes it as soon as it applies the Release.
+//
+// Without the cluster's kubeconfig the Unit is still removed and the user is
+// told what is left in the cluster.
+func deleteVariantFluxApp(out io.Writer, app *variantClusterApp, cascade bool) error {
+	rootPrunes := app.target.Annotations[clusterAnnotationPrune] == "true"
+	if !app.inCluster && !cascade && rootPrunes {
+		return fmt.Errorf("cluster %q prunes Kustomizations, so without its kubeconfig (%s) the Kustomization %q cannot be kept from deleting what it applied; run this where the cluster was brought up, or drop --orphan",
+			app.clusterName, app.kubeconfigPath, app.name)
+	}
+
+	if app.inCluster {
+		if _, err := clusterFluxSetCascade(ctx, app.kubeconfigPath, app.name, cascade); err != nil {
+			return err
+		}
+	}
+	if err := app.removeUnit(out, "Flux OCIRepository and Kustomization"); err != nil {
+		return err
+	}
+
+	if !app.inCluster {
+		fmt.Fprintf(out, "No kubeconfig for cluster %q at %s, so Flux Kustomization %q is left to the cluster.\n", app.clusterName, app.kubeconfigPath, app.name)
+		if rootPrunes {
+			fmt.Fprintln(out, "Its root Kustomization prunes it on its next reconciliation, with what it applied if it prunes.")
+		} else {
+			fmt.Fprintf(out, "Its root Kustomization does not prune, so remove it, with what it applied, where the cluster is reachable:\n"+
+				"  kubectl patch kustomization %[1]s -n %[2]s --type merge -p '{\"spec\":{\"prune\":true,\"suspend\":false}}'\n"+
+				"  kubectl delete kustomization %[1]s -n %[2]s\n"+
+				"  kubectl delete ocirepository %[1]s -n %[2]s\n",
+				app.name, clusterFluxNamespace)
+		}
+		return nil
+	}
+
+	fmt.Fprintf(out, "Waiting for root Kustomization %q to release Kustomization %q (timeout %s)...\n", clusterFluxRootName, app.name, variantClusterRootWait)
+	if err := clusterFluxWaitRootReleased(ctx, app.kubeconfigPath, app.name, variantClusterRootWait); err != nil {
+		return fmt.Errorf("%w; run the delete again once it has", err)
+	}
+	return clusterFluxDeleteDeployment(ctx, app.kubeconfigPath, app.name, cascade, out)
 }
 
 // publishVariantFluxApp releases a variant's Flux Unit, when it has not been

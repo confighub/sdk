@@ -24,6 +24,7 @@ var clusterUpArgs struct {
 	noPlaceholderGate bool
 	argobotOCI        string
 	argoVersion       string
+	prune             bool
 }
 
 var clusterUpCmd = &cobra.Command{
@@ -75,6 +76,17 @@ the whole NodePort window is left for your apps, and
 Use --mount HOST[:CONTAINER] (repeatable) to bind-mount host directories
 into the cluster node.
 
+--prune lets the controller delete what a removed deployment deployed; see
+"cub cluster attach --help". With Flux it does the same with Kustomizations:
+by default neither the root Kustomization nor a deployment's prunes, and
+--prune turns prune on for the root and for every deployment "cub variant
+create --target" adds later. Sveltos cannot be kept from deleting: its root
+always deletes a deployment's ClusterProfile whose Unit leaves the apps space,
+and a profile always deletes a resource that leaves its Release. By default
+a deployment's ClusterProfile has stopMatchingBehavior LeavePolicies, so
+deleting it leaves what it deployed running; --prune drops that, so what it
+deployed is withdrawn.
+
 "cub cluster down" deletes the kind cluster again; the ConfigHub side is kept
 unless --delete-config is given.`,
 	RunE: clusterUpCmdRun,
@@ -91,6 +103,7 @@ func init() {
 	clusterUpCmd.Flags().BoolVar(&clusterUpArgs.noPlaceholderGate, "no-placeholder-gate", false, "skip the default vet-placeholders Trigger, allowing Releases with unfilled confighubplaceholder values to be published to this cluster")
 	clusterUpCmd.Flags().StringVar(&clusterUpArgs.argobotOCI, "argobot-oci", clusterArgobotOCIRef, "OCI reference of argobot's config bundle, or a local file or directory of its manifests (default with --controller sveltos: "+clusterArgobotSveltosOCIRef+", with --controller flux: "+clusterArgobotFluxOCIRef+")")
 	clusterUpCmd.Flags().StringVar(&clusterUpArgs.argoVersion, "argocd-version", clusterArgoDefaultVersion, "Argo CD release to install (v3.1 or later; oci:// sources need it)")
+	clusterUpCmd.Flags().BoolVar(&clusterUpArgs.prune, "prune", false, "let the controller delete what a removed deployment deployed: the root prunes deployments whose Units leave the apps space (Sveltos's always does), and deployments created later prune what they deployed")
 	clusterCmd.AddCommand(clusterUpCmd)
 }
 
@@ -104,6 +117,7 @@ type clusterUpOptions struct {
 	noPlaceholderGate bool
 	argobotOCIRef     string
 	argoVersion       string
+	prune             bool
 }
 
 func clusterUpCmdRun(cmd *cobra.Command, args []string) error {
@@ -141,6 +155,7 @@ func clusterUpCmdRun(cmd *cobra.Command, args []string) error {
 		noPlaceholderGate: clusterUpArgs.noPlaceholderGate,
 		argobotOCIRef:     argobotOCIRef,
 		argoVersion:       clusterUpArgs.argoVersion,
+		prune:             clusterUpArgs.prune,
 	})
 }
 
@@ -333,6 +348,7 @@ func clusterUpRun(out io.Writer, opts clusterUpOptions) error {
 		noArgobot:         opts.noArgobot,
 		noPlaceholderGate: opts.noPlaceholderGate,
 		argobotOCIRef:     opts.argobotOCIRef,
+		prune:             opts.prune,
 	}, func(f func()) { rollback = append(rollback, f) })
 	if err != nil {
 		return err

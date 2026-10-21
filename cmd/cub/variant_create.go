@@ -35,6 +35,7 @@ var variantCreateArgs struct {
 	unitDeleteGates  []string
 	unitDestroyGates []string
 	noArgoApp        bool
+	prune            bool
 	syncback         bool
 
 	includeOutgoingLinksWhere string
@@ -150,6 +151,18 @@ Flux backs off an OCIRepository whose Release does not exist yet. This is a no-o
 targets; use --no-argo-app to skip it. Publish the deployment's own release
 ("cub release publish <new-space>") to make its configuration go live.
 
+The Argo CD Application never deletes anything unless it has prune: a resource whose unit is
+emptied stays running, and deleting the Application leaves what it deployed running. --prune gives
+it prune and Argo's resources finalizer, so an emptied unit's resource is deleted by the next
+release, and so is everything the deployment deployed when its Application is deleted. A cluster
+from "cub cluster up --prune" gives every deployment both without the flag. An empty release
+then deletes the whole deployment, so publish with care. On a Flux cluster the same holds for the
+Kustomization: it prunes what it applied only with --prune, or on a cluster from "cub cluster up
+--controller flux --prune". On a Sveltos cluster the ClusterProfile withdraws what it deployed
+when it is deleted only with --prune, or on a cluster from "cub cluster up --controller sveltos
+--prune"; without, it has stopMatchingBehavior LeavePolicies. Sveltos always deletes a resource
+whose unit is emptied, with or without --prune.
+
 Examples:
 `+"```"+`
   # Clone a space into a "test" variant. With Component=website inherited and Variant overridden to
@@ -212,6 +225,8 @@ func init() {
 	variantCreateCmd.Flags().StringSliceVar(&variantCreateArgs.unitDeleteGates, "unit-delete-gate", []string{}, "delete gate key[=true] to set on every cloned unit (repeatable); e.g. --unit-delete-gate critical to protect a prod variant")
 	variantCreateCmd.Flags().StringSliceVar(&variantCreateArgs.unitDestroyGates, "unit-destroy-gate", []string{}, "destroy gate key[=true] to set on every cloned unit (repeatable); destroy gates are unit-only (spaces have no destroy gates)")
 	variantCreateCmd.Flags().BoolVar(&variantCreateArgs.noArgoApp, "no-argo-app", false, "skip auto-creating the Argo CD Application, Sveltos ClusterProfile, or Flux OCIRepository and Kustomization, when --target is a cub-cluster target")
+	variantCreateCmd.Flags().BoolVar(&variantCreateArgs.prune, "prune", false, "let the Argo CD Application, Flux Kustomization or Sveltos ClusterProfile created for a cub-cluster --target delete what it deployed: resources that leave the deployment's release (always, on Sveltos), and the whole deployment when the Application, Kustomization or ClusterProfile is deleted")
+	variantCreateCmd.MarkFlagsMutuallyExclusive("prune", "no-argo-app")
 	variantCreateCmd.Flags().BoolVar(&variantCreateArgs.syncback, "syncback", false, "also link each cloned unit back to its upstream unit, with a MergeUnits link in the upstream space, so changes made in the variant can be merged back into the upstream units (see the draft workflow in the long help)")
 	variantCreateCmd.Flags().StringVar(&variantCreateArgs.includeOutgoingLinksWhere, "include-outgoing-links-where", "", "where expression selecting which of the upstream units' links to units in other spaces to copy onto the clones; each copy keeps the original unit as its to-unit, so the variant reads from the same producers. Links within the cloned space are always copied and retargeted at the clones")
 	enableWaitFlag(variantCreateCmd)
@@ -232,6 +247,9 @@ func variantCreateCmdRun(cmd *cobra.Command, args []string) (retErr error) {
 	// Checked before anything is created, so a bad flag leaves nothing behind.
 	if err := checkSpaceLabelFlags(variantCreateArgs.spaceLabels, variantCreateReservedLabels); err != nil {
 		return err
+	}
+	if variantCreateArgs.prune && variantCreateArgs.target == "" {
+		return fmt.Errorf("--prune applies to the Argo CD Application, Flux Kustomization or Sveltos ClusterProfile created for --target; give --target")
 	}
 	ownerComponent, setOwner, err := checkVariantCreateOwner(upstreamSpace.Space, variantCreateArgs.owner)
 	if err != nil {
@@ -331,17 +349,23 @@ func variantCreateCmdRun(cmd *cobra.Command, args []string) (retErr error) {
 	// about the deployment" step into this command. A no-op for ordinary
 	// targets; skip explicitly with --no-argo-app.
 	if target != nil && !variantCreateArgs.noArgoApp {
-		if _, err := createVariantArgoApp(cmd.OutOrStdout(), target, newSpace, *targetID); err != nil {
+		createdArgoApp, err := createVariantArgoApp(cmd.OutOrStdout(), target, newSpace, *targetID, variantCreateArgs.prune)
+		if err != nil {
 			return err
 		}
 		// The Sveltos counterpart: a target from `cub cluster up --controller
 		// sveltos` carries confighub.com/cluster-controller sveltos instead.
-		if _, err := createVariantSveltosProfile(cmd.OutOrStdout(), target, newSpace, *targetID); err != nil {
+		createdSveltosProfile, err := createVariantSveltosProfile(cmd.OutOrStdout(), target, newSpace, *targetID, variantCreateArgs.prune)
+		if err != nil {
 			return err
 		}
 		// And the Flux one: confighub.com/cluster-controller flux.
-		if _, err := createVariantFluxApp(cmd.OutOrStdout(), target, newSpace, *targetID); err != nil {
+		createdFluxApp, err := createVariantFluxApp(cmd.OutOrStdout(), target, newSpace, *targetID, variantCreateArgs.prune)
+		if err != nil {
 			return err
+		}
+		if variantCreateArgs.prune && !createdArgoApp && !createdSveltosProfile && !createdFluxApp && !jsonOutput {
+			tprint("--prune had no effect: target %s is not a cub-cluster target", target.Slug)
 		}
 	}
 

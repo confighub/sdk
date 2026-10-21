@@ -96,7 +96,11 @@ runs:
 
 Nothing is ever deleted. A resource the bundle no longer contains empties its Unit
 instead, so the Unit keeps its identity, its links, and its history, and the next
-Release withdraws the object from the cluster. Emptying is what "--yes" confirms:
+Release withdraws the object from the cluster. On a cluster wired with "cub cluster up"
+or "cub cluster attach" with Argo CD or Flux, it is withdrawn only when the deployment's
+Argo CD Application or Flux Kustomization has prune: given by "cub cluster up --prune",
+"cub cluster attach --prune" or "cub variant create --prune". Without it, the object
+stays running. Sveltos always withdraws it. Emptying is what "--yes" confirms:
 without it, an upload whose plan empties Units asks first.
 
 Ownership is a label. Every Unit, Link, and Invocation an upload writes is labeled
