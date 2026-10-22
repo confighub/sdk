@@ -9,8 +9,10 @@ import (
 	"errors"
 	"fmt"
 	"log"
+	"maps"
 	"math/rand"
 	"net/http"
+	"reflect"
 	"sort"
 	"strings"
 	"sync"
@@ -24,10 +26,11 @@ import (
 	goclientnew "github.com/confighub/sdk/core/openapi/goclient-new"
 )
 
-// The listener's lifecycle: claim the Channel, verify it declares what the handlers handle,
-// poll under the lease, dispatch runs and events, report outcomes, and on shutdown drain,
-// report and release in that order. Its loop is the worker tier's long-poll loop, carried over
-// with its transient-failure policy; what it does on the wire is the generated client.
+// The listener's lifecycle: claim the Channel, write the commands it declares itself, verify
+// the Channel declares what the handlers handle, poll under the lease, dispatch runs and
+// events, report outcomes, and on shutdown drain, report and release in that order. Its loop
+// is the worker tier's long-poll loop, carried over with its transient-failure policy; what it
+// does on the wire is the generated client.
 
 const (
 	// pollTimeoutSeconds is how long each poll asks the server to hold. The server caps it at 60.
@@ -103,6 +106,7 @@ type Listener struct {
 	ref      Ref
 	opts     Options
 	handlers map[string]Handler
+	declares map[string]goclientnew.CommandSignature
 	onEvent  EventHandler
 	log      *log.Logger
 
@@ -151,6 +155,19 @@ func (l *Listener) Handle(command string, handler Handler) *Listener {
 	return l
 }
 
+// Declare has the listener write these commands onto the Channel when it starts, wherever the
+// Channel declares them differently or not at all, so that the bot's code is the declaration.
+// It is the convenience channels.md §4.6 allows: the write is an ordinary update of the
+// Channel, and needs Edit on it. Commands the Channel declares beyond these are left alone.
+// HandleFunctions declares the functions an executor serves this way.
+func (l *Listener) Declare(commands map[string]goclientnew.CommandSignature) *Listener {
+	if l.declares == nil {
+		l.declares = map[string]goclientnew.CommandSignature{}
+	}
+	maps.Copy(l.declares, commands)
+	return l
+}
+
 // OnEvent registers the handler for the events the Channel subscribes to.
 func (l *Listener) OnEvent(handler EventHandler) *Listener {
 	l.onEvent = handler
@@ -195,6 +212,10 @@ func (l *Listener) Run(ctx context.Context) error {
 		l.log.Printf("[INFO] channel %s: lease acquired token=%s ttl=%ds", l.channel.Slug, lease.ClaimToken, lease.TTLSeconds)
 
 		if !verified {
+			if err := l.declare(ctx); err != nil {
+				l.releaseOnExit(lease.ClaimToken)
+				return err
+			}
 			if err := l.verify(ctx); err != nil {
 				l.releaseOnExit(lease.ClaimToken)
 				return err
@@ -261,6 +282,66 @@ func (l *Listener) resolve(ctx context.Context) error {
 		return nil
 	}
 	return fmt.Errorf("resolve channel %s: %d channels have that slug; name the space as space/slug, or the channel by its ID", l.ref.Name, len(candidates))
+}
+
+// declare writes the commands given to Declare onto the Channel where it declares them
+// differently. It reads the Channel and writes it back whole, so that a signature is replaced
+// rather than merged into: a merge patch would keep a function the executor no longer serves.
+func (l *Listener) declare(ctx context.Context) error {
+	if len(l.declares) == 0 {
+		return nil
+	}
+	cctx, cancel := context.WithTimeout(ctx, shortRequestTimeout)
+	defer cancel()
+	resolved, err := cubapi.ResolveChannel(cctx, l.client, cubapi.ParseRef(l.channel.ChannelID.String()), cubapi.ResolveOpts{})
+	if err != nil {
+		return fmt.Errorf("read channel %s: %w", l.channel.Slug, err)
+	}
+	channel := *resolved.Channel
+	var changed []string
+	for name, signature := range l.declares {
+		current, ok := channel.Commands[name]
+		if ok && sameSignature(current, signature) {
+			continue
+		}
+		changed = append(changed, name)
+	}
+	if len(changed) == 0 {
+		return nil
+	}
+	sort.Strings(changed)
+	commands := make(map[string]goclientnew.CommandSignature, len(channel.Commands)+len(changed))
+	maps.Copy(commands, channel.Commands)
+	for _, name := range changed {
+		commands[name] = l.declares[name]
+	}
+	channel.Commands = commands
+	res, err := l.client.API.UpdateChannelWithResponse(cctx, channel.SpaceID, channel.ChannelID, &goclientnew.UpdateChannelParams{}, channel)
+	if err != nil {
+		return fmt.Errorf("channel %s: declare %s: %w", l.channel.Slug, strings.Join(changed, ", "), err)
+	}
+	if res.JSON200 == nil {
+		err := cubapi.InterpretErrorGeneric(err, res)
+		if res.StatusCode() == http.StatusForbidden {
+			return fmt.Errorf("channel %s does not declare %s as this listener serves it, and this identity cannot update the channel: "+
+				"give it Edit on the channel, or write the commands with cub channel update --commands: %w", l.channel.Slug, strings.Join(changed, ", "), err)
+		}
+		return fmt.Errorf("channel %s: declare %s: %w", l.channel.Slug, strings.Join(changed, ", "), err)
+	}
+	l.channel = res.JSON200
+	l.log.Printf("[INFO] channel %s: declared %s", l.channel.Slug, strings.Join(changed, ", "))
+	return nil
+}
+
+// sameSignature compares two signatures as JSON, which is how the server stores them.
+func sameSignature(a, b goclientnew.CommandSignature) bool {
+	var decodedA, decodedB any
+	encodedA, errA := json.Marshal(a)
+	encodedB, errB := json.Marshal(b)
+	if errA != nil || errB != nil || json.Unmarshal(encodedA, &decodedA) != nil || json.Unmarshal(encodedB, &decodedB) != nil {
+		return false
+	}
+	return reflect.DeepEqual(decodedA, decodedB)
 }
 
 // verify compares the Channel's commands to the handlers: a declared command with no

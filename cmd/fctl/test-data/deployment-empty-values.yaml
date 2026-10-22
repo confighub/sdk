@@ -1,0 +1,31 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: empty-values
+  namespace: example
+spec:
+  selector:
+    matchLabels:
+      app: empty-values
+  template:
+    metadata:
+      labels:
+        app: empty-values
+    spec:
+      terminationGracePeriodSeconds:
+      containers:
+        - name: app
+          image: nginx:latest
+          env:
+            - name: SET
+              value: "x"
+            - name: EMPTY
+              value:
+            - name: EXPLICIT
+              value: null
+          resources:
+          livenessProbe:
+            httpGet:
+              path: /healthz
+              port: 8080
+              httpHeaders:

@@ -18,11 +18,10 @@ import (
 func newKeyTestContextManager(t *testing.T) string {
 	t.Helper()
 	dir := t.TempDir()
-	configPath := filepath.Join(dir, "config.yaml")
 
-	cm, err := NewContextManagerWithPath(configPath)
+	cm, err := NewContextManagerWithDir(dir)
 	if err != nil {
-		t.Fatalf("NewContextManagerWithPath: %v", err)
+		t.Fatalf("NewContextManagerWithDir: %v", err)
 	}
 	saved := contextManager
 	contextManager = cm

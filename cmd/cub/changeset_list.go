@@ -62,6 +62,7 @@ var changesetCustomColumnDependencies = map[string][]string{}
 
 func init() {
 	addStandardListFlags(changesetListCmd)
+	enableWherePermissionFlag(changesetListCmd)
 	enableListPagingFlags(changesetListCmd)
 	enableViewFlag(changesetListCmd)
 	changesetCmd.AddCommand(changesetListCmd)
@@ -151,13 +152,14 @@ func apiListAllChangeSets(where cubapi.Where, selectParam string, filterParam st
 		return buildSelectList("ChangeSet", listColumnsFor("cub changeset list"), changesetListInclude, defaultChangeSetColumns, changesetAliases, changesetCustomColumnDependencies, changesetBaseSelectFields)
 	})
 	return cubapi.ListChangeSets(ctx, cubClient, where, cubapi.ListOpts{
-		Limit:         listLimit,
-		OrderBy:       listOrderBy,
-		Select:        cubapi.SelectFields(selectValue),
-		Include:       changesetListInclude,
-		Filter:        filterParam,
-		Contains:      contains,
-		IncludeHidden: includeHidden,
-		View:          listViewFor("cub changeset list"),
+		Limit:           listLimit,
+		OrderBy:         listOrderBy,
+		Select:          cubapi.SelectFields(selectValue),
+		Include:         changesetListInclude,
+		Filter:          filterParam,
+		Contains:        contains,
+		WherePermission: wherePermission,
+		IncludeHidden:   includeHidden,
+		View:            listViewFor("cub changeset list"),
 	})
 }

@@ -37,7 +37,8 @@ const (
 	// configuration-data filter's paths in the api package's query.go so that the same path works in
 	// both filters. The server translates one of these into a SQL/JSON path expression.
 	//
-	// Object keys may contain slashes (Kubernetes labels and annotations do) and escape a
+	// Object keys may contain slashes (Kubernetes labels and annotations do) and colons (a gate
+	// name gives a function's position in its Trigger as <function>:<position>), and escape a
 	// literal dot as `~1`; a bare integer addresses an array element; `*` matches every element;
 	// and `?key=value` selects the elements whose key has that value.
 	//
@@ -47,7 +48,7 @@ const (
 	// `[^.#]*`: quotes, backslashes and spaces are excluded, both because they could escape one
 	// of those two nesting levels and because allowing spaces makes the value ambiguous with the
 	// relational operator that follows it.
-	jsonPathKeyRegexpString      = "(?:[A-Za-z_$](?:[A-Za-z0-9/_$\\-]|(?:~1)){0,127})"
+	jsonPathKeyRegexpString      = "(?:[A-Za-z_$](?:[A-Za-z0-9/:_$\\-]|(?:~1)){0,127})"
 	jsonPathIndexRegexpString    = "(?:[0-9][0-9]{0,9})"
 	jsonPathAssocValRegexpString = "[^.#'\"\\\\ \t]{1,255}"
 	jsonPathAssocRegexpString    = "(?:\\?" + jsonPathKeyRegexpString + "=" + jsonPathAssocValRegexpString + ")"

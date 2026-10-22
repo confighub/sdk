@@ -17,7 +17,7 @@ func setupLoginTargetTest(t *testing.T) *ContextManager {
 	t.Setenv("HOME", home)
 	t.Setenv("CUB_CONFIG", "")
 
-	cm, err := NewContextManagerWithPath(filepath.Join(home, ".confighub", "config.yaml"))
+	cm, err := NewContextManagerWithDir(filepath.Join(home, ".confighub"))
 	if err != nil {
 		t.Fatal(err)
 	}

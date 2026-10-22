@@ -144,7 +144,8 @@ func deleteVariantSveltosProfile(out io.Writer, app *variantClusterApp, cascade 
 		fmt.Fprintf(out, "No kubeconfig for cluster %q at %s, so the root ClusterProfile deletes %q on its next poll.\n", app.clusterName, app.kubeconfigPath, app.name)
 		return nil
 	}
-	return clusterSveltosDeleteProfile(ctx, app.kubeconfigPath, app.name, cascade, out)
+	_, err := clusterSveltosDeleteProfile(ctx, app.kubeconfigPath, app.name, cascade, out)
+	return err
 }
 
 // publishVariantSveltosProfile releases a variant's ClusterProfile Unit, when it

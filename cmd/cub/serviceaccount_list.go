@@ -47,6 +47,7 @@ func init() {
 	enableWhereFlag(serviceAccountListCmd)
 	enableFilterFlag(serviceAccountListCmd)
 	enableContainsFlag(serviceAccountListCmd)
+	enableWherePermissionFlag(serviceAccountListCmd)
 	enableListPagingFlags(serviceAccountListCmd)
 	addStandardListDisplayFlags(serviceAccountListCmd)
 	enableViewFlag(serviceAccountListCmd)
@@ -62,13 +63,14 @@ func serviceAccountListCmdRun(_ *cobra.Command, _ []string) error {
 		return buildSelectList("ServiceAccount", listColumnsFor("cub serviceaccount list"), "", defaultServiceAccountColumns, serviceAccountAliases, serviceAccountCustomColumnDependencies, serviceAccountBaseSelectFields)
 	})
 	serviceAccounts, err := cubapi.ListServiceAccounts(ctx, cubClient, cubapi.NewWhere(where), cubapi.ListOpts{
-		Limit:         listLimit,
-		OrderBy:       listOrderBy,
-		Select:        cubapi.SelectFields(selectValue),
-		Filter:        filterID,
-		Contains:      contains,
-		IncludeHidden: includeHidden,
-		View:          listViewFor("cub serviceaccount list"),
+		Limit:           listLimit,
+		OrderBy:         listOrderBy,
+		Select:          cubapi.SelectFields(selectValue),
+		Filter:          filterID,
+		Contains:        contains,
+		WherePermission: wherePermission,
+		IncludeHidden:   includeHidden,
+		View:            listViewFor("cub serviceaccount list"),
 	})
 	if err != nil {
 		return err

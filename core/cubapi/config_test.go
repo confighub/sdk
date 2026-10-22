@@ -11,6 +11,7 @@ import (
 	"testing"
 )
 
+// writeConfig writes a config directory and returns it.
 func writeConfig(t *testing.T, yaml string, tokens map[string]TokenData) string {
 	t.Helper()
 	dir := t.TempDir()
@@ -28,7 +29,7 @@ func writeConfig(t *testing.T, yaml string, tokens map[string]TokenData) string 
 			t.Fatalf("write token %s: %v", name, err)
 		}
 	}
-	return configPath
+	return dir
 }
 
 const twoContextConfig = `apiVersion: v1
@@ -112,8 +113,7 @@ func TestUseOverride(t *testing.T) {
 }
 
 func TestLoadConfigMissingFileIsEmptyStore(t *testing.T) {
-	path := filepath.Join(t.TempDir(), "absent", ConfigFileName)
-	store, err := LoadConfig(path)
+	store, err := LoadConfig(filepath.Join(t.TempDir(), "absent"))
 	if err != nil {
 		t.Fatalf("LoadConfig(missing) = %v, want nil", err)
 	}
@@ -140,17 +140,15 @@ func TestLoadConfigRejectsBadInput(t *testing.T) {
 	}
 }
 
-func TestDefaultConfigPath(t *testing.T) {
-	// CUB_CONFIG names the config directory; the file within it is ours to name.
+func TestDefaultConfigDir(t *testing.T) {
 	t.Setenv("CUB_CONFIG", "/custom/store")
-	want := filepath.Join("/custom/store", ConfigFileName)
-	if got, err := DefaultConfigPath(); err != nil || got != want {
-		t.Fatalf("DefaultConfigPath() = %q, %v; want %q", got, err, want)
+	if got, err := DefaultConfigDir(); err != nil || got != "/custom/store" {
+		t.Fatalf("DefaultConfigDir() = %q, %v; want /custom/store", got, err)
 	}
 	// A path that does not exist yet is fine -- the store creates it.
 	t.Setenv("CUB_CONFIG", filepath.Join(t.TempDir(), "not-created-yet"))
-	if _, err := DefaultConfigPath(); err != nil {
-		t.Fatalf("DefaultConfigPath() on a not-yet-created directory = %v", err)
+	if _, err := DefaultConfigDir(); err != nil {
+		t.Fatalf("DefaultConfigDir() on a not-yet-created directory = %v", err)
 	}
 
 	// Pointing it at config.yaml itself used to work, so say what is wrong
@@ -160,16 +158,26 @@ func TestDefaultConfigPath(t *testing.T) {
 		t.Fatal(err)
 	}
 	t.Setenv("CUB_CONFIG", file)
-	if _, err := DefaultConfigPath(); err == nil {
-		t.Fatal("DefaultConfigPath() accepted a file, want an error naming the directory")
+	if _, err := DefaultConfigDir(); err == nil {
+		t.Fatal("DefaultConfigDir() accepted a file, want an error naming the directory")
 	} else if !strings.Contains(err.Error(), "must name the config directory") {
-		t.Fatalf("DefaultConfigPath() error = %v, want it to name the directory", err)
+		t.Fatalf("DefaultConfigDir() error = %v, want it to name the directory", err)
 	}
 
 	t.Setenv("CUB_CONFIG", "")
 	t.Setenv("HOME", "/home/tester")
-	want = filepath.Join("/home/tester", ConfigHubDir, ConfigFileName)
-	if got, err := DefaultConfigPath(); err != nil || got != want {
-		t.Fatalf("DefaultConfigPath() = %q, %v; want %q", got, err, want)
+	want := filepath.Join("/home/tester", ConfigHubDir)
+	if got, err := DefaultConfigDir(); err != nil || got != want {
+		t.Fatalf("DefaultConfigDir() = %q, %v; want %q", got, err, want)
+	}
+}
+
+// LoadConfig used to take the config file; passing one now is named as the mistake.
+func TestLoadConfigRejectsConfigFile(t *testing.T) {
+	file := filepath.Join(writeConfig(t, twoContextConfig, nil), ConfigFileName)
+	if _, err := LoadConfig(file); err == nil {
+		t.Fatal("LoadConfig(config.yaml) = nil, want an error naming the directory")
+	} else if !strings.Contains(err.Error(), "is a file; did you mean") {
+		t.Fatalf("LoadConfig(config.yaml) error = %v, want it to name the directory", err)
 	}
 }

@@ -8207,6 +8207,22 @@ func NewListAllAttestationsRequest(server string, params *ListAllAttestationsPar
 
 		}
 
+		if params.WherePermission != nil {
+
+			if queryFrag, err := runtime.StyleParamWithLocation("form", true, "where_permission", runtime.ParamLocationQuery, *params.WherePermission); err != nil {
+				return nil, err
+			} else if parsed, err := url.ParseQuery(queryFrag); err != nil {
+				return nil, err
+			} else {
+				for k, v := range parsed {
+					for _, v2 := range v {
+						queryValues.Add(k, v2)
+					}
+				}
+			}
+
+		}
+
 		if params.IncludeHidden != nil {
 
 			if queryFrag, err := runtime.StyleParamWithLocation("form", true, "include_hidden", runtime.ParamLocationQuery, *params.IncludeHidden); err != nil {
@@ -8548,6 +8564,22 @@ func NewListAllAttributesRequest(server string, params *ListAllAttributesParams)
 		if params.Select != nil {
 
 			if queryFrag, err := runtime.StyleParamWithLocation("form", true, "select", runtime.ParamLocationQuery, *params.Select); err != nil {
+				return nil, err
+			} else if parsed, err := url.ParseQuery(queryFrag); err != nil {
+				return nil, err
+			} else {
+				for k, v := range parsed {
+					for _, v2 := range v {
+						queryValues.Add(k, v2)
+					}
+				}
+			}
+
+		}
+
+		if params.WherePermission != nil {
+
+			if queryFrag, err := runtime.StyleParamWithLocation("form", true, "where_permission", runtime.ParamLocationQuery, *params.WherePermission); err != nil {
 				return nil, err
 			} else if parsed, err := url.ParseQuery(queryFrag); err != nil {
 				return nil, err
@@ -9565,6 +9597,22 @@ func NewListAllBridgeWorkersRequest(server string, params *ListAllBridgeWorkersP
 
 		}
 
+		if params.WherePermission != nil {
+
+			if queryFrag, err := runtime.StyleParamWithLocation("form", true, "where_permission", runtime.ParamLocationQuery, *params.WherePermission); err != nil {
+				return nil, err
+			} else if parsed, err := url.ParseQuery(queryFrag); err != nil {
+				return nil, err
+			} else {
+				for k, v := range parsed {
+					for _, v2 := range v {
+						queryValues.Add(k, v2)
+					}
+				}
+			}
+
+		}
+
 		if params.IncludeHidden != nil {
 
 			if queryFrag, err := runtime.StyleParamWithLocation("form", true, "include_hidden", runtime.ParamLocationQuery, *params.IncludeHidden); err != nil {
@@ -9910,6 +9958,22 @@ func NewListQueuedOperationsRequest(server string, bridgeWorkerId openapi_types.
 		if params.Contains != nil {
 
 			if queryFrag, err := runtime.StyleParamWithLocation("form", true, "contains", runtime.ParamLocationQuery, *params.Contains); err != nil {
+				return nil, err
+			} else if parsed, err := url.ParseQuery(queryFrag); err != nil {
+				return nil, err
+			} else {
+				for k, v := range parsed {
+					for _, v2 := range v {
+						queryValues.Add(k, v2)
+					}
+				}
+			}
+
+		}
+
+		if params.WherePermission != nil {
+
+			if queryFrag, err := runtime.StyleParamWithLocation("form", true, "where_permission", runtime.ParamLocationQuery, *params.WherePermission); err != nil {
 				return nil, err
 			} else if parsed, err := url.ParseQuery(queryFrag); err != nil {
 				return nil, err
@@ -10320,6 +10384,22 @@ func NewListAllChangeOrdersRequest(server string, params *ListAllChangeOrdersPar
 		if params.Select != nil {
 
 			if queryFrag, err := runtime.StyleParamWithLocation("form", true, "select", runtime.ParamLocationQuery, *params.Select); err != nil {
+				return nil, err
+			} else if parsed, err := url.ParseQuery(queryFrag); err != nil {
+				return nil, err
+			} else {
+				for k, v := range parsed {
+					for _, v2 := range v {
+						queryValues.Add(k, v2)
+					}
+				}
+			}
+
+		}
+
+		if params.WherePermission != nil {
+
+			if queryFrag, err := runtime.StyleParamWithLocation("form", true, "where_permission", runtime.ParamLocationQuery, *params.WherePermission); err != nil {
 				return nil, err
 			} else if parsed, err := url.ParseQuery(queryFrag); err != nil {
 				return nil, err
@@ -11134,6 +11214,22 @@ func NewListAllChangeSetsRequest(server string, params *ListAllChangeSetsParams)
 		if params.Select != nil {
 
 			if queryFrag, err := runtime.StyleParamWithLocation("form", true, "select", runtime.ParamLocationQuery, *params.Select); err != nil {
+				return nil, err
+			} else if parsed, err := url.ParseQuery(queryFrag); err != nil {
+				return nil, err
+			} else {
+				for k, v := range parsed {
+					for _, v2 := range v {
+						queryValues.Add(k, v2)
+					}
+				}
+			}
+
+		}
+
+		if params.WherePermission != nil {
+
+			if queryFrag, err := runtime.StyleParamWithLocation("form", true, "where_permission", runtime.ParamLocationQuery, *params.WherePermission); err != nil {
 				return nil, err
 			} else if parsed, err := url.ParseQuery(queryFrag); err != nil {
 				return nil, err
@@ -12074,6 +12170,22 @@ func NewListAllChangeWorkflowsRequest(server string, params *ListAllChangeWorkfl
 		if params.Select != nil {
 
 			if queryFrag, err := runtime.StyleParamWithLocation("form", true, "select", runtime.ParamLocationQuery, *params.Select); err != nil {
+				return nil, err
+			} else if parsed, err := url.ParseQuery(queryFrag); err != nil {
+				return nil, err
+			} else {
+				for k, v := range parsed {
+					for _, v2 := range v {
+						queryValues.Add(k, v2)
+					}
+				}
+			}
+
+		}
+
+		if params.WherePermission != nil {
+
+			if queryFrag, err := runtime.StyleParamWithLocation("form", true, "where_permission", runtime.ParamLocationQuery, *params.WherePermission); err != nil {
 				return nil, err
 			} else if parsed, err := url.ParseQuery(queryFrag); err != nil {
 				return nil, err
@@ -13139,6 +13251,22 @@ func NewListAllChannelsRequest(server string, params *ListAllChannelsParams) (*h
 
 		}
 
+		if params.WherePermission != nil {
+
+			if queryFrag, err := runtime.StyleParamWithLocation("form", true, "where_permission", runtime.ParamLocationQuery, *params.WherePermission); err != nil {
+				return nil, err
+			} else if parsed, err := url.ParseQuery(queryFrag); err != nil {
+				return nil, err
+			} else {
+				for k, v := range parsed {
+					for _, v2 := range v {
+						queryValues.Add(k, v2)
+					}
+				}
+			}
+
+		}
+
 		if params.IncludeHidden != nil {
 
 			if queryFrag, err := runtime.StyleParamWithLocation("form", true, "include_hidden", runtime.ParamLocationQuery, *params.IncludeHidden); err != nil {
@@ -14079,6 +14207,22 @@ func NewListAllCommandRunsRequest(server string, params *ListAllCommandRunsParam
 
 		}
 
+		if params.WherePermission != nil {
+
+			if queryFrag, err := runtime.StyleParamWithLocation("form", true, "where_permission", runtime.ParamLocationQuery, *params.WherePermission); err != nil {
+				return nil, err
+			} else if parsed, err := url.ParseQuery(queryFrag); err != nil {
+				return nil, err
+			} else {
+				for k, v := range parsed {
+					for _, v2 := range v {
+						queryValues.Add(k, v2)
+					}
+				}
+			}
+
+		}
+
 		if params.Limit != nil {
 
 			if queryFrag, err := runtime.StyleParamWithLocation("form", true, "limit", runtime.ParamLocationQuery, *params.Limit); err != nil {
@@ -14227,6 +14371,22 @@ func NewListComponentsRequest(server string, params *ListComponentsParams) (*htt
 		if params.Select != nil {
 
 			if queryFrag, err := runtime.StyleParamWithLocation("form", true, "select", runtime.ParamLocationQuery, *params.Select); err != nil {
+				return nil, err
+			} else if parsed, err := url.ParseQuery(queryFrag); err != nil {
+				return nil, err
+			} else {
+				for k, v := range parsed {
+					for _, v2 := range v {
+						queryValues.Add(k, v2)
+					}
+				}
+			}
+
+		}
+
+		if params.WherePermission != nil {
+
+			if queryFrag, err := runtime.StyleParamWithLocation("form", true, "where_permission", runtime.ParamLocationQuery, *params.WherePermission); err != nil {
 				return nil, err
 			} else if parsed, err := url.ParseQuery(queryFrag); err != nil {
 				return nil, err
@@ -15194,6 +15354,22 @@ func NewListAllFiltersRequest(server string, params *ListAllFiltersParams) (*htt
 		if params.Select != nil {
 
 			if queryFrag, err := runtime.StyleParamWithLocation("form", true, "select", runtime.ParamLocationQuery, *params.Select); err != nil {
+				return nil, err
+			} else if parsed, err := url.ParseQuery(queryFrag); err != nil {
+				return nil, err
+			} else {
+				for k, v := range parsed {
+					for _, v2 := range v {
+						queryValues.Add(k, v2)
+					}
+				}
+			}
+
+		}
+
+		if params.WherePermission != nil {
+
+			if queryFrag, err := runtime.StyleParamWithLocation("form", true, "where_permission", runtime.ParamLocationQuery, *params.WherePermission); err != nil {
 				return nil, err
 			} else if parsed, err := url.ParseQuery(queryFrag); err != nil {
 				return nil, err
@@ -16529,6 +16705,22 @@ func NewListGroupsRequest(server string, params *ListGroupsParams) (*http.Reques
 
 		}
 
+		if params.WherePermission != nil {
+
+			if queryFrag, err := runtime.StyleParamWithLocation("form", true, "where_permission", runtime.ParamLocationQuery, *params.WherePermission); err != nil {
+				return nil, err
+			} else if parsed, err := url.ParseQuery(queryFrag); err != nil {
+				return nil, err
+			} else {
+				for k, v := range parsed {
+					for _, v2 := range v {
+						queryValues.Add(k, v2)
+					}
+				}
+			}
+
+		}
+
 		if params.Select != nil {
 
 			if queryFrag, err := runtime.StyleParamWithLocation("form", true, "select", runtime.ParamLocationQuery, *params.Select); err != nil {
@@ -17051,6 +17243,22 @@ func NewListAllInvocationsRequest(server string, params *ListAllInvocationsParam
 		if params.Select != nil {
 
 			if queryFrag, err := runtime.StyleParamWithLocation("form", true, "select", runtime.ParamLocationQuery, *params.Select); err != nil {
+				return nil, err
+			} else if parsed, err := url.ParseQuery(queryFrag); err != nil {
+				return nil, err
+			} else {
+				for k, v := range parsed {
+					for _, v2 := range v {
+						queryValues.Add(k, v2)
+					}
+				}
+			}
+
+		}
+
+		if params.WherePermission != nil {
+
+			if queryFrag, err := runtime.StyleParamWithLocation("form", true, "where_permission", runtime.ParamLocationQuery, *params.WherePermission); err != nil {
 				return nil, err
 			} else if parsed, err := url.ParseQuery(queryFrag); err != nil {
 				return nil, err
@@ -18116,6 +18324,22 @@ func NewSearchListLinksRequest(server string, params *SearchListLinksParams) (*h
 
 		}
 
+		if params.WherePermission != nil {
+
+			if queryFrag, err := runtime.StyleParamWithLocation("form", true, "where_permission", runtime.ParamLocationQuery, *params.WherePermission); err != nil {
+				return nil, err
+			} else if parsed, err := url.ParseQuery(queryFrag); err != nil {
+				return nil, err
+			} else {
+				for k, v := range parsed {
+					for _, v2 := range v {
+						queryValues.Add(k, v2)
+					}
+				}
+			}
+
+		}
+
 		if params.IncludeHidden != nil {
 
 			if queryFrag, err := runtime.StyleParamWithLocation("form", true, "include_hidden", runtime.ParamLocationQuery, *params.IncludeHidden); err != nil {
@@ -18974,6 +19198,22 @@ func NewListOrganizationsRequest(server string, params *ListOrganizationsParams)
 
 		}
 
+		if params.WherePermission != nil {
+
+			if queryFrag, err := runtime.StyleParamWithLocation("form", true, "where_permission", runtime.ParamLocationQuery, *params.WherePermission); err != nil {
+				return nil, err
+			} else if parsed, err := url.ParseQuery(queryFrag); err != nil {
+				return nil, err
+			} else {
+				for k, v := range parsed {
+					for _, v2 := range v {
+						queryValues.Add(k, v2)
+					}
+				}
+			}
+
+		}
+
 		if params.IncludeHidden != nil {
 
 			if queryFrag, err := runtime.StyleParamWithLocation("form", true, "include_hidden", runtime.ParamLocationQuery, *params.IncludeHidden); err != nil {
@@ -19331,6 +19571,22 @@ func NewListOrganizationMembersRequest(server string, organizationId openapi_typ
 
 		}
 
+		if params.WherePermission != nil {
+
+			if queryFrag, err := runtime.StyleParamWithLocation("form", true, "where_permission", runtime.ParamLocationQuery, *params.WherePermission); err != nil {
+				return nil, err
+			} else if parsed, err := url.ParseQuery(queryFrag); err != nil {
+				return nil, err
+			} else {
+				for k, v := range parsed {
+					for _, v2 := range v {
+						queryValues.Add(k, v2)
+					}
+				}
+			}
+
+		}
+
 		if params.View != nil {
 
 			if queryFrag, err := runtime.StyleParamWithLocation("form", true, "view", runtime.ParamLocationQuery, *params.View); err != nil {
@@ -19667,6 +19923,22 @@ func NewListAllReleasesRequest(server string, params *ListAllReleasesParams) (*h
 
 		}
 
+		if params.WherePermission != nil {
+
+			if queryFrag, err := runtime.StyleParamWithLocation("form", true, "where_permission", runtime.ParamLocationQuery, *params.WherePermission); err != nil {
+				return nil, err
+			} else if parsed, err := url.ParseQuery(queryFrag); err != nil {
+				return nil, err
+			} else {
+				for k, v := range parsed {
+					for _, v2 := range v {
+						queryValues.Add(k, v2)
+					}
+				}
+			}
+
+		}
+
 		if params.IncludeHidden != nil {
 
 			if queryFrag, err := runtime.StyleParamWithLocation("form", true, "include_hidden", runtime.ParamLocationQuery, *params.IncludeHidden); err != nil {
@@ -19863,6 +20135,22 @@ func NewListAllResourcesRequest(server string, params *ListAllResourcesParams) (
 		if params.Select != nil {
 
 			if queryFrag, err := runtime.StyleParamWithLocation("form", true, "select", runtime.ParamLocationQuery, *params.Select); err != nil {
+				return nil, err
+			} else if parsed, err := url.ParseQuery(queryFrag); err != nil {
+				return nil, err
+			} else {
+				for k, v := range parsed {
+					for _, v2 := range v {
+						queryValues.Add(k, v2)
+					}
+				}
+			}
+
+		}
+
+		if params.WherePermission != nil {
+
+			if queryFrag, err := runtime.StyleParamWithLocation("form", true, "where_permission", runtime.ParamLocationQuery, *params.WherePermission); err != nil {
 				return nil, err
 			} else if parsed, err := url.ParseQuery(queryFrag); err != nil {
 				return nil, err
@@ -20246,6 +20534,22 @@ func NewListAllReviewCommentsRequest(server string, params *ListAllReviewComment
 
 		}
 
+		if params.WherePermission != nil {
+
+			if queryFrag, err := runtime.StyleParamWithLocation("form", true, "where_permission", runtime.ParamLocationQuery, *params.WherePermission); err != nil {
+				return nil, err
+			} else if parsed, err := url.ParseQuery(queryFrag); err != nil {
+				return nil, err
+			} else {
+				for k, v := range parsed {
+					for _, v2 := range v {
+						queryValues.Add(k, v2)
+					}
+				}
+			}
+
+		}
+
 		if params.IncludeHidden != nil {
 
 			if queryFrag, err := runtime.StyleParamWithLocation("form", true, "include_hidden", runtime.ParamLocationQuery, *params.IncludeHidden); err != nil {
@@ -20613,6 +20917,22 @@ func NewListAllRevisionsRequest(server string, params *ListAllRevisionsParams) (
 
 		}
 
+		if params.WherePermission != nil {
+
+			if queryFrag, err := runtime.StyleParamWithLocation("form", true, "where_permission", runtime.ParamLocationQuery, *params.WherePermission); err != nil {
+				return nil, err
+			} else if parsed, err := url.ParseQuery(queryFrag); err != nil {
+				return nil, err
+			} else {
+				for k, v := range parsed {
+					for _, v2 := range v {
+						queryValues.Add(k, v2)
+					}
+				}
+			}
+
+		}
+
 		if params.IncludeHidden != nil {
 
 			if queryFrag, err := runtime.StyleParamWithLocation("form", true, "include_hidden", runtime.ParamLocationQuery, *params.IncludeHidden); err != nil {
@@ -20838,6 +21158,22 @@ func NewSearchRevisionDataRequest(server string, params *SearchRevisionDataParam
 
 		}
 
+		if params.WherePermission != nil {
+
+			if queryFrag, err := runtime.StyleParamWithLocation("form", true, "where_permission", runtime.ParamLocationQuery, *params.WherePermission); err != nil {
+				return nil, err
+			} else if parsed, err := url.ParseQuery(queryFrag); err != nil {
+				return nil, err
+			} else {
+				for k, v := range parsed {
+					for _, v2 := range v {
+						queryValues.Add(k, v2)
+					}
+				}
+			}
+
+		}
+
 		if params.IncludeHidden != nil {
 
 			if queryFrag, err := runtime.StyleParamWithLocation("form", true, "include_hidden", runtime.ParamLocationQuery, *params.IncludeHidden); err != nil {
@@ -21047,6 +21383,22 @@ func NewSearchRevisionMutationSourcesRequest(server string, params *SearchRevisi
 
 		}
 
+		if params.WherePermission != nil {
+
+			if queryFrag, err := runtime.StyleParamWithLocation("form", true, "where_permission", runtime.ParamLocationQuery, *params.WherePermission); err != nil {
+				return nil, err
+			} else if parsed, err := url.ParseQuery(queryFrag); err != nil {
+				return nil, err
+			} else {
+				for k, v := range parsed {
+					for _, v2 := range v {
+						queryValues.Add(k, v2)
+					}
+				}
+			}
+
+		}
+
 		if params.IncludeHidden != nil {
 
 			if queryFrag, err := runtime.StyleParamWithLocation("form", true, "include_hidden", runtime.ParamLocationQuery, *params.IncludeHidden); err != nil {
@@ -21243,6 +21595,22 @@ func NewListServiceAccountsRequest(server string, params *ListServiceAccountsPar
 		if params.Select != nil {
 
 			if queryFrag, err := runtime.StyleParamWithLocation("form", true, "select", runtime.ParamLocationQuery, *params.Select); err != nil {
+				return nil, err
+			} else if parsed, err := url.ParseQuery(queryFrag); err != nil {
+				return nil, err
+			} else {
+				for k, v := range parsed {
+					for _, v2 := range v {
+						queryValues.Add(k, v2)
+					}
+				}
+			}
+
+		}
+
+		if params.WherePermission != nil {
+
+			if queryFrag, err := runtime.StyleParamWithLocation("form", true, "where_permission", runtime.ParamLocationQuery, *params.WherePermission); err != nil {
 				return nil, err
 			} else if parsed, err := url.ParseQuery(queryFrag); err != nil {
 				return nil, err
@@ -22059,6 +22427,22 @@ func NewListSpacesRequest(server string, params *ListSpacesParams) (*http.Reques
 
 		}
 
+		if params.WherePermission != nil {
+
+			if queryFrag, err := runtime.StyleParamWithLocation("form", true, "where_permission", runtime.ParamLocationQuery, *params.WherePermission); err != nil {
+				return nil, err
+			} else if parsed, err := url.ParseQuery(queryFrag); err != nil {
+				return nil, err
+			} else {
+				for k, v := range parsed {
+					for _, v2 := range v {
+						queryValues.Add(k, v2)
+					}
+				}
+			}
+
+		}
+
 		if params.IncludeHidden != nil {
 
 			if queryFrag, err := runtime.StyleParamWithLocation("form", true, "include_hidden", runtime.ParamLocationQuery, *params.IncludeHidden); err != nil {
@@ -22731,6 +23115,22 @@ func NewListExtendedAttestationsRequest(server string, spaceId openapi_types.UUI
 
 		}
 
+		if params.WherePermission != nil {
+
+			if queryFrag, err := runtime.StyleParamWithLocation("form", true, "where_permission", runtime.ParamLocationQuery, *params.WherePermission); err != nil {
+				return nil, err
+			} else if parsed, err := url.ParseQuery(queryFrag); err != nil {
+				return nil, err
+			} else {
+				for k, v := range parsed {
+					for _, v2 := range v {
+						queryValues.Add(k, v2)
+					}
+				}
+			}
+
+		}
+
 		if params.IncludeHidden != nil {
 
 			if queryFrag, err := runtime.StyleParamWithLocation("form", true, "include_hidden", runtime.ParamLocationQuery, *params.IncludeHidden); err != nil {
@@ -23066,6 +23466,22 @@ func NewListAttributesRequest(server string, spaceId openapi_types.UUID, params 
 		if params.Select != nil {
 
 			if queryFrag, err := runtime.StyleParamWithLocation("form", true, "select", runtime.ParamLocationQuery, *params.Select); err != nil {
+				return nil, err
+			} else if parsed, err := url.ParseQuery(queryFrag); err != nil {
+				return nil, err
+			} else {
+				for k, v := range parsed {
+					for _, v2 := range v {
+						queryValues.Add(k, v2)
+					}
+				}
+			}
+
+		}
+
+		if params.WherePermission != nil {
+
+			if queryFrag, err := runtime.StyleParamWithLocation("form", true, "where_permission", runtime.ParamLocationQuery, *params.WherePermission); err != nil {
 				return nil, err
 			} else if parsed, err := url.ParseQuery(queryFrag); err != nil {
 				return nil, err
@@ -23756,6 +24172,22 @@ func NewListBridgeWorkersRequest(server string, spaceId openapi_types.UUID, para
 		if params.Select != nil {
 
 			if queryFrag, err := runtime.StyleParamWithLocation("form", true, "select", runtime.ParamLocationQuery, *params.Select); err != nil {
+				return nil, err
+			} else if parsed, err := url.ParseQuery(queryFrag); err != nil {
+				return nil, err
+			} else {
+				for k, v := range parsed {
+					for _, v2 := range v {
+						queryValues.Add(k, v2)
+					}
+				}
+			}
+
+		}
+
+		if params.WherePermission != nil {
+
+			if queryFrag, err := runtime.StyleParamWithLocation("form", true, "where_permission", runtime.ParamLocationQuery, *params.WherePermission); err != nil {
 				return nil, err
 			} else if parsed, err := url.ParseQuery(queryFrag); err != nil {
 				return nil, err
@@ -24478,6 +24910,22 @@ func NewListChangeOrdersRequest(server string, spaceId openapi_types.UUID, param
 
 		}
 
+		if params.WherePermission != nil {
+
+			if queryFrag, err := runtime.StyleParamWithLocation("form", true, "where_permission", runtime.ParamLocationQuery, *params.WherePermission); err != nil {
+				return nil, err
+			} else if parsed, err := url.ParseQuery(queryFrag); err != nil {
+				return nil, err
+			} else {
+				for k, v := range parsed {
+					for _, v2 := range v {
+						queryValues.Add(k, v2)
+					}
+				}
+			}
+
+		}
+
 		if params.IncludeHidden != nil {
 
 			if queryFrag, err := runtime.StyleParamWithLocation("form", true, "include_hidden", runtime.ParamLocationQuery, *params.IncludeHidden); err != nil {
@@ -25089,6 +25537,22 @@ func NewListChangeSetsRequest(server string, spaceId openapi_types.UUID, params 
 
 		}
 
+		if params.WherePermission != nil {
+
+			if queryFrag, err := runtime.StyleParamWithLocation("form", true, "where_permission", runtime.ParamLocationQuery, *params.WherePermission); err != nil {
+				return nil, err
+			} else if parsed, err := url.ParseQuery(queryFrag); err != nil {
+				return nil, err
+			} else {
+				for k, v := range parsed {
+					for _, v2 := range v {
+						queryValues.Add(k, v2)
+					}
+				}
+			}
+
+		}
+
 		if params.IncludeHidden != nil {
 
 			if queryFrag, err := runtime.StyleParamWithLocation("form", true, "include_hidden", runtime.ParamLocationQuery, *params.IncludeHidden); err != nil {
@@ -25655,6 +26119,22 @@ func NewListChangeWorkflowsRequest(server string, spaceId openapi_types.UUID, pa
 		if params.Select != nil {
 
 			if queryFrag, err := runtime.StyleParamWithLocation("form", true, "select", runtime.ParamLocationQuery, *params.Select); err != nil {
+				return nil, err
+			} else if parsed, err := url.ParseQuery(queryFrag); err != nil {
+				return nil, err
+			} else {
+				for k, v := range parsed {
+					for _, v2 := range v {
+						queryValues.Add(k, v2)
+					}
+				}
+			}
+
+		}
+
+		if params.WherePermission != nil {
+
+			if queryFrag, err := runtime.StyleParamWithLocation("form", true, "where_permission", runtime.ParamLocationQuery, *params.WherePermission); err != nil {
 				return nil, err
 			} else if parsed, err := url.ParseQuery(queryFrag); err != nil {
 				return nil, err
@@ -26345,6 +26825,22 @@ func NewListChannelsRequest(server string, spaceId openapi_types.UUID, params *L
 		if params.Select != nil {
 
 			if queryFrag, err := runtime.StyleParamWithLocation("form", true, "select", runtime.ParamLocationQuery, *params.Select); err != nil {
+				return nil, err
+			} else if parsed, err := url.ParseQuery(queryFrag); err != nil {
+				return nil, err
+			} else {
+				for k, v := range parsed {
+					for _, v2 := range v {
+						queryValues.Add(k, v2)
+					}
+				}
+			}
+
+		}
+
+		if params.WherePermission != nil {
+
+			if queryFrag, err := runtime.StyleParamWithLocation("form", true, "where_permission", runtime.ParamLocationQuery, *params.WherePermission); err != nil {
 				return nil, err
 			} else if parsed, err := url.ParseQuery(queryFrag); err != nil {
 				return nil, err
@@ -27319,6 +27815,22 @@ func NewListCommandRunsRequest(server string, spaceId openapi_types.UUID, params
 
 		}
 
+		if params.WherePermission != nil {
+
+			if queryFrag, err := runtime.StyleParamWithLocation("form", true, "where_permission", runtime.ParamLocationQuery, *params.WherePermission); err != nil {
+				return nil, err
+			} else if parsed, err := url.ParseQuery(queryFrag); err != nil {
+				return nil, err
+			} else {
+				for k, v := range parsed {
+					for _, v2 := range v {
+						queryValues.Add(k, v2)
+					}
+				}
+			}
+
+		}
+
 		if params.Limit != nil {
 
 			if queryFrag, err := runtime.StyleParamWithLocation("form", true, "limit", runtime.ParamLocationQuery, *params.Limit); err != nil {
@@ -27766,6 +28278,22 @@ func NewListFiltersRequest(server string, spaceId openapi_types.UUID, params *Li
 		if params.Select != nil {
 
 			if queryFrag, err := runtime.StyleParamWithLocation("form", true, "select", runtime.ParamLocationQuery, *params.Select); err != nil {
+				return nil, err
+			} else if parsed, err := url.ParseQuery(queryFrag); err != nil {
+				return nil, err
+			} else {
+				for k, v := range parsed {
+					for _, v2 := range v {
+						queryValues.Add(k, v2)
+					}
+				}
+			}
+
+		}
+
+		if params.WherePermission != nil {
+
+			if queryFrag, err := runtime.StyleParamWithLocation("form", true, "where_permission", runtime.ParamLocationQuery, *params.WherePermission); err != nil {
 				return nil, err
 			} else if parsed, err := url.ParseQuery(queryFrag); err != nil {
 				return nil, err
@@ -28978,6 +29506,22 @@ func NewListInvocationsRequest(server string, spaceId openapi_types.UUID, params
 
 		}
 
+		if params.WherePermission != nil {
+
+			if queryFrag, err := runtime.StyleParamWithLocation("form", true, "where_permission", runtime.ParamLocationQuery, *params.WherePermission); err != nil {
+				return nil, err
+			} else if parsed, err := url.ParseQuery(queryFrag); err != nil {
+				return nil, err
+			} else {
+				for k, v := range parsed {
+					for _, v2 := range v {
+						queryValues.Add(k, v2)
+					}
+				}
+			}
+
+		}
+
 		if params.IncludeHidden != nil {
 
 			if queryFrag, err := runtime.StyleParamWithLocation("form", true, "include_hidden", runtime.ParamLocationQuery, *params.IncludeHidden); err != nil {
@@ -29655,6 +30199,22 @@ func NewListLinksRequest(server string, spaceId openapi_types.UUID, params *List
 		if params.Select != nil {
 
 			if queryFrag, err := runtime.StyleParamWithLocation("form", true, "select", runtime.ParamLocationQuery, *params.Select); err != nil {
+				return nil, err
+			} else if parsed, err := url.ParseQuery(queryFrag); err != nil {
+				return nil, err
+			} else {
+				for k, v := range parsed {
+					for _, v2 := range v {
+						queryValues.Add(k, v2)
+					}
+				}
+			}
+
+		}
+
+		if params.WherePermission != nil {
+
+			if queryFrag, err := runtime.StyleParamWithLocation("form", true, "where_permission", runtime.ParamLocationQuery, *params.WherePermission); err != nil {
 				return nil, err
 			} else if parsed, err := url.ParseQuery(queryFrag); err != nil {
 				return nil, err
@@ -30374,6 +30934,22 @@ func NewListExtendedReleasesRequest(server string, spaceId openapi_types.UUID, p
 
 		}
 
+		if params.WherePermission != nil {
+
+			if queryFrag, err := runtime.StyleParamWithLocation("form", true, "where_permission", runtime.ParamLocationQuery, *params.WherePermission); err != nil {
+				return nil, err
+			} else if parsed, err := url.ParseQuery(queryFrag); err != nil {
+				return nil, err
+			} else {
+				for k, v := range parsed {
+					for _, v2 := range v {
+						queryValues.Add(k, v2)
+					}
+				}
+			}
+
+		}
+
 		if params.IncludeHidden != nil {
 
 			if queryFrag, err := runtime.StyleParamWithLocation("form", true, "include_hidden", runtime.ParamLocationQuery, *params.IncludeHidden); err != nil {
@@ -30997,6 +31573,22 @@ func NewListTagsRequest(server string, spaceId openapi_types.UUID, params *ListT
 
 		}
 
+		if params.WherePermission != nil {
+
+			if queryFrag, err := runtime.StyleParamWithLocation("form", true, "where_permission", runtime.ParamLocationQuery, *params.WherePermission); err != nil {
+				return nil, err
+			} else if parsed, err := url.ParseQuery(queryFrag); err != nil {
+				return nil, err
+			} else {
+				for k, v := range parsed {
+					for _, v2 := range v {
+						queryValues.Add(k, v2)
+					}
+				}
+			}
+
+		}
+
 		if params.IncludeHidden != nil {
 
 			if queryFrag, err := runtime.StyleParamWithLocation("form", true, "include_hidden", runtime.ParamLocationQuery, *params.IncludeHidden); err != nil {
@@ -31563,6 +32155,22 @@ func NewListTargetsRequest(server string, spaceId openapi_types.UUID, params *Li
 		if params.Select != nil {
 
 			if queryFrag, err := runtime.StyleParamWithLocation("form", true, "select", runtime.ParamLocationQuery, *params.Select); err != nil {
+				return nil, err
+			} else if parsed, err := url.ParseQuery(queryFrag); err != nil {
+				return nil, err
+			} else {
+				for k, v := range parsed {
+					for _, v2 := range v {
+						queryValues.Add(k, v2)
+					}
+				}
+			}
+
+		}
+
+		if params.WherePermission != nil {
+
+			if queryFrag, err := runtime.StyleParamWithLocation("form", true, "where_permission", runtime.ParamLocationQuery, *params.WherePermission); err != nil {
 				return nil, err
 			} else if parsed, err := url.ParseQuery(queryFrag); err != nil {
 				return nil, err
@@ -32320,6 +32928,22 @@ func NewListTriggersRequest(server string, spaceId openapi_types.UUID, params *L
 
 		}
 
+		if params.WherePermission != nil {
+
+			if queryFrag, err := runtime.StyleParamWithLocation("form", true, "where_permission", runtime.ParamLocationQuery, *params.WherePermission); err != nil {
+				return nil, err
+			} else if parsed, err := url.ParseQuery(queryFrag); err != nil {
+				return nil, err
+			} else {
+				for k, v := range parsed {
+					for _, v2 := range v {
+						queryValues.Add(k, v2)
+					}
+				}
+			}
+
+		}
+
 		if params.IncludeHidden != nil {
 
 			if queryFrag, err := runtime.StyleParamWithLocation("form", true, "include_hidden", runtime.ParamLocationQuery, *params.IncludeHidden); err != nil {
@@ -32997,6 +33621,22 @@ func NewListUnitsRequest(server string, spaceId openapi_types.UUID, params *List
 		if params.Select != nil {
 
 			if queryFrag, err := runtime.StyleParamWithLocation("form", true, "select", runtime.ParamLocationQuery, *params.Select); err != nil {
+				return nil, err
+			} else if parsed, err := url.ParseQuery(queryFrag); err != nil {
+				return nil, err
+			} else {
+				for k, v := range parsed {
+					for _, v2 := range v {
+						queryValues.Add(k, v2)
+					}
+				}
+			}
+
+		}
+
+		if params.WherePermission != nil {
+
+			if queryFrag, err := runtime.StyleParamWithLocation("form", true, "where_permission", runtime.ParamLocationQuery, *params.WherePermission); err != nil {
 				return nil, err
 			} else if parsed, err := url.ParseQuery(queryFrag); err != nil {
 				return nil, err
@@ -35040,6 +35680,22 @@ func NewListExtendedMutationsRequest(server string, spaceId openapi_types.UUID, 
 
 		}
 
+		if params.WherePermission != nil {
+
+			if queryFrag, err := runtime.StyleParamWithLocation("form", true, "where_permission", runtime.ParamLocationQuery, *params.WherePermission); err != nil {
+				return nil, err
+			} else if parsed, err := url.ParseQuery(queryFrag); err != nil {
+				return nil, err
+			} else {
+				for k, v := range parsed {
+					for _, v2 := range v {
+						queryValues.Add(k, v2)
+					}
+				}
+			}
+
+		}
+
 		if params.IncludeHidden != nil {
 
 			if queryFrag, err := runtime.StyleParamWithLocation("form", true, "include_hidden", runtime.ParamLocationQuery, *params.IncludeHidden); err != nil {
@@ -35428,6 +36084,22 @@ func NewListExtendedResourcesRequest(server string, spaceId openapi_types.UUID, 
 
 		}
 
+		if params.WherePermission != nil {
+
+			if queryFrag, err := runtime.StyleParamWithLocation("form", true, "where_permission", runtime.ParamLocationQuery, *params.WherePermission); err != nil {
+				return nil, err
+			} else if parsed, err := url.ParseQuery(queryFrag); err != nil {
+				return nil, err
+			} else {
+				for k, v := range parsed {
+					for _, v2 := range v {
+						queryValues.Add(k, v2)
+					}
+				}
+			}
+
+		}
+
 		if params.IncludeHidden != nil {
 
 			if queryFrag, err := runtime.StyleParamWithLocation("form", true, "include_hidden", runtime.ParamLocationQuery, *params.IncludeHidden); err != nil {
@@ -35756,6 +36428,22 @@ func NewListReviewCommentsRequest(server string, spaceId openapi_types.UUID, uni
 		if params.Select != nil {
 
 			if queryFrag, err := runtime.StyleParamWithLocation("form", true, "select", runtime.ParamLocationQuery, *params.Select); err != nil {
+				return nil, err
+			} else if parsed, err := url.ParseQuery(queryFrag); err != nil {
+				return nil, err
+			} else {
+				for k, v := range parsed {
+					for _, v2 := range v {
+						queryValues.Add(k, v2)
+					}
+				}
+			}
+
+		}
+
+		if params.WherePermission != nil {
+
+			if queryFrag, err := runtime.StyleParamWithLocation("form", true, "where_permission", runtime.ParamLocationQuery, *params.WherePermission); err != nil {
 				return nil, err
 			} else if parsed, err := url.ParseQuery(queryFrag); err != nil {
 				return nil, err
@@ -36352,6 +37040,22 @@ func NewListExtendedRevisionsRequest(server string, spaceId openapi_types.UUID, 
 
 		}
 
+		if params.WherePermission != nil {
+
+			if queryFrag, err := runtime.StyleParamWithLocation("form", true, "where_permission", runtime.ParamLocationQuery, *params.WherePermission); err != nil {
+				return nil, err
+			} else if parsed, err := url.ParseQuery(queryFrag); err != nil {
+				return nil, err
+			} else {
+				for k, v := range parsed {
+					for _, v2 := range v {
+						queryValues.Add(k, v2)
+					}
+				}
+			}
+
+		}
+
 		if params.IncludeHidden != nil {
 
 			if queryFrag, err := runtime.StyleParamWithLocation("form", true, "include_hidden", runtime.ParamLocationQuery, *params.IncludeHidden); err != nil {
@@ -36725,6 +37429,22 @@ func NewListUnitActionsRequest(server string, spaceId openapi_types.UUID, unitId
 
 		}
 
+		if params.WherePermission != nil {
+
+			if queryFrag, err := runtime.StyleParamWithLocation("form", true, "where_permission", runtime.ParamLocationQuery, *params.WherePermission); err != nil {
+				return nil, err
+			} else if parsed, err := url.ParseQuery(queryFrag); err != nil {
+				return nil, err
+			} else {
+				for k, v := range parsed {
+					for _, v2 := range v {
+						queryValues.Add(k, v2)
+					}
+				}
+			}
+
+		}
+
 		if params.Limit != nil {
 
 			if queryFrag, err := runtime.StyleParamWithLocation("form", true, "limit", runtime.ParamLocationQuery, *params.Limit); err != nil {
@@ -36903,6 +37623,22 @@ func NewListUnitEventsRequest(server string, spaceId openapi_types.UUID, unitId 
 		if params.Contains != nil {
 
 			if queryFrag, err := runtime.StyleParamWithLocation("form", true, "contains", runtime.ParamLocationQuery, *params.Contains); err != nil {
+				return nil, err
+			} else if parsed, err := url.ParseQuery(queryFrag); err != nil {
+				return nil, err
+			} else {
+				for k, v := range parsed {
+					for _, v2 := range v {
+						queryValues.Add(k, v2)
+					}
+				}
+			}
+
+		}
+
+		if params.WherePermission != nil {
+
+			if queryFrag, err := runtime.StyleParamWithLocation("form", true, "where_permission", runtime.ParamLocationQuery, *params.WherePermission); err != nil {
 				return nil, err
 			} else if parsed, err := url.ParseQuery(queryFrag); err != nil {
 				return nil, err
@@ -37151,6 +37887,22 @@ func NewListViewsRequest(server string, spaceId openapi_types.UUID, params *List
 		if params.Select != nil {
 
 			if queryFrag, err := runtime.StyleParamWithLocation("form", true, "select", runtime.ParamLocationQuery, *params.Select); err != nil {
+				return nil, err
+			} else if parsed, err := url.ParseQuery(queryFrag); err != nil {
+				return nil, err
+			} else {
+				for k, v := range parsed {
+					for _, v2 := range v {
+						queryValues.Add(k, v2)
+					}
+				}
+			}
+
+		}
+
+		if params.WherePermission != nil {
+
+			if queryFrag, err := runtime.StyleParamWithLocation("form", true, "where_permission", runtime.ParamLocationQuery, *params.WherePermission); err != nil {
 				return nil, err
 			} else if parsed, err := url.ParseQuery(queryFrag); err != nil {
 				return nil, err
@@ -37995,6 +38747,22 @@ func NewListAllTagsRequest(server string, params *ListAllTagsParams) (*http.Requ
 		if params.Select != nil {
 
 			if queryFrag, err := runtime.StyleParamWithLocation("form", true, "select", runtime.ParamLocationQuery, *params.Select); err != nil {
+				return nil, err
+			} else if parsed, err := url.ParseQuery(queryFrag); err != nil {
+				return nil, err
+			} else {
+				for k, v := range parsed {
+					for _, v2 := range v {
+						queryValues.Add(k, v2)
+					}
+				}
+			}
+
+		}
+
+		if params.WherePermission != nil {
+
+			if queryFrag, err := runtime.StyleParamWithLocation("form", true, "where_permission", runtime.ParamLocationQuery, *params.WherePermission); err != nil {
 				return nil, err
 			} else if parsed, err := url.ParseQuery(queryFrag); err != nil {
 				return nil, err
@@ -38951,6 +39719,22 @@ func NewListAllTargetsRequest(server string, params *ListAllTargetsParams) (*htt
 		if params.Select != nil {
 
 			if queryFrag, err := runtime.StyleParamWithLocation("form", true, "select", runtime.ParamLocationQuery, *params.Select); err != nil {
+				return nil, err
+			} else if parsed, err := url.ParseQuery(queryFrag); err != nil {
+				return nil, err
+			} else {
+				for k, v := range parsed {
+					for _, v2 := range v {
+						queryValues.Add(k, v2)
+					}
+				}
+			}
+
+		}
+
+		if params.WherePermission != nil {
+
+			if queryFrag, err := runtime.StyleParamWithLocation("form", true, "where_permission", runtime.ParamLocationQuery, *params.WherePermission); err != nil {
 				return nil, err
 			} else if parsed, err := url.ParseQuery(queryFrag); err != nil {
 				return nil, err
@@ -40032,6 +40816,22 @@ func NewListAllTriggersRequest(server string, params *ListAllTriggersParams) (*h
 
 		}
 
+		if params.WherePermission != nil {
+
+			if queryFrag, err := runtime.StyleParamWithLocation("form", true, "where_permission", runtime.ParamLocationQuery, *params.WherePermission); err != nil {
+				return nil, err
+			} else if parsed, err := url.ParseQuery(queryFrag); err != nil {
+				return nil, err
+			} else {
+				for k, v := range parsed {
+					for _, v2 := range v {
+						queryValues.Add(k, v2)
+					}
+				}
+			}
+
+		}
+
 		if params.IncludeHidden != nil {
 
 			if queryFrag, err := runtime.StyleParamWithLocation("form", true, "include_hidden", runtime.ParamLocationQuery, *params.IncludeHidden); err != nil {
@@ -41071,6 +41871,22 @@ func NewListAllUnitsRequest(server string, params *ListAllUnitsParams) (*http.Re
 		if params.Select != nil {
 
 			if queryFrag, err := runtime.StyleParamWithLocation("form", true, "select", runtime.ParamLocationQuery, *params.Select); err != nil {
+				return nil, err
+			} else if parsed, err := url.ParseQuery(queryFrag); err != nil {
+				return nil, err
+			} else {
+				for k, v := range parsed {
+					for _, v2 := range v {
+						queryValues.Add(k, v2)
+					}
+				}
+			}
+
+		}
+
+		if params.WherePermission != nil {
+
+			if queryFrag, err := runtime.StyleParamWithLocation("form", true, "where_permission", runtime.ParamLocationQuery, *params.WherePermission); err != nil {
 				return nil, err
 			} else if parsed, err := url.ParseQuery(queryFrag); err != nil {
 				return nil, err
@@ -42550,6 +43366,22 @@ func NewListAllUnitActionsRequest(server string, params *ListAllUnitActionsParam
 
 		}
 
+		if params.WherePermission != nil {
+
+			if queryFrag, err := runtime.StyleParamWithLocation("form", true, "where_permission", runtime.ParamLocationQuery, *params.WherePermission); err != nil {
+				return nil, err
+			} else if parsed, err := url.ParseQuery(queryFrag); err != nil {
+				return nil, err
+			} else {
+				for k, v := range parsed {
+					for _, v2 := range v {
+						queryValues.Add(k, v2)
+					}
+				}
+			}
+
+		}
+
 		if params.Limit != nil {
 
 			if queryFrag, err := runtime.StyleParamWithLocation("form", true, "limit", runtime.ParamLocationQuery, *params.Limit); err != nil {
@@ -42698,6 +43530,22 @@ func NewSearchUnitDataRequest(server string, params *SearchUnitDataParams) (*htt
 		if params.Select != nil {
 
 			if queryFrag, err := runtime.StyleParamWithLocation("form", true, "select", runtime.ParamLocationQuery, *params.Select); err != nil {
+				return nil, err
+			} else if parsed, err := url.ParseQuery(queryFrag); err != nil {
+				return nil, err
+			} else {
+				for k, v := range parsed {
+					for _, v2 := range v {
+						queryValues.Add(k, v2)
+					}
+				}
+			}
+
+		}
+
+		if params.WherePermission != nil {
+
+			if queryFrag, err := runtime.StyleParamWithLocation("form", true, "where_permission", runtime.ParamLocationQuery, *params.WherePermission); err != nil {
 				return nil, err
 			} else if parsed, err := url.ParseQuery(queryFrag); err != nil {
 				return nil, err
@@ -42955,6 +43803,22 @@ func NewSearchUnitDiffRequest(server string, params *SearchUnitDiffParams) (*htt
 		if params.Contains != nil {
 
 			if queryFrag, err := runtime.StyleParamWithLocation("form", true, "contains", runtime.ParamLocationQuery, *params.Contains); err != nil {
+				return nil, err
+			} else if parsed, err := url.ParseQuery(queryFrag); err != nil {
+				return nil, err
+			} else {
+				for k, v := range parsed {
+					for _, v2 := range v {
+						queryValues.Add(k, v2)
+					}
+				}
+			}
+
+		}
+
+		if params.WherePermission != nil {
+
+			if queryFrag, err := runtime.StyleParamWithLocation("form", true, "where_permission", runtime.ParamLocationQuery, *params.WherePermission); err != nil {
 				return nil, err
 			} else if parsed, err := url.ParseQuery(queryFrag); err != nil {
 				return nil, err
@@ -43289,6 +44153,22 @@ func NewListAllUnitEventsRequest(server string, params *ListAllUnitEventsParams)
 
 		}
 
+		if params.WherePermission != nil {
+
+			if queryFrag, err := runtime.StyleParamWithLocation("form", true, "where_permission", runtime.ParamLocationQuery, *params.WherePermission); err != nil {
+				return nil, err
+			} else if parsed, err := url.ParseQuery(queryFrag); err != nil {
+				return nil, err
+			} else {
+				for k, v := range parsed {
+					for _, v2 := range v {
+						queryValues.Add(k, v2)
+					}
+				}
+			}
+
+		}
+
 		if params.IncludeHidden != nil {
 
 			if queryFrag, err := runtime.StyleParamWithLocation("form", true, "include_hidden", runtime.ParamLocationQuery, *params.IncludeHidden); err != nil {
@@ -43485,6 +44365,22 @@ func NewSearchUnitMutationSourcesRequest(server string, params *SearchUnitMutati
 		if params.Select != nil {
 
 			if queryFrag, err := runtime.StyleParamWithLocation("form", true, "select", runtime.ParamLocationQuery, *params.Select); err != nil {
+				return nil, err
+			} else if parsed, err := url.ParseQuery(queryFrag); err != nil {
+				return nil, err
+			} else {
+				for k, v := range parsed {
+					for _, v2 := range v {
+						queryValues.Add(k, v2)
+					}
+				}
+			}
+
+		}
+
+		if params.WherePermission != nil {
+
+			if queryFrag, err := runtime.StyleParamWithLocation("form", true, "where_permission", runtime.ParamLocationQuery, *params.WherePermission); err != nil {
 				return nil, err
 			} else if parsed, err := url.ParseQuery(queryFrag); err != nil {
 				return nil, err
@@ -43820,6 +44716,22 @@ func NewListUsersRequest(server string, params *ListUsersParams) (*http.Request,
 		if params.Contains != nil {
 
 			if queryFrag, err := runtime.StyleParamWithLocation("form", true, "contains", runtime.ParamLocationQuery, *params.Contains); err != nil {
+				return nil, err
+			} else if parsed, err := url.ParseQuery(queryFrag); err != nil {
+				return nil, err
+			} else {
+				for k, v := range parsed {
+					for _, v2 := range v {
+						queryValues.Add(k, v2)
+					}
+				}
+			}
+
+		}
+
+		if params.WherePermission != nil {
+
+			if queryFrag, err := runtime.StyleParamWithLocation("form", true, "where_permission", runtime.ParamLocationQuery, *params.WherePermission); err != nil {
 				return nil, err
 			} else if parsed, err := url.ParseQuery(queryFrag); err != nil {
 				return nil, err
@@ -44390,6 +45302,22 @@ func NewListAllViewsRequest(server string, params *ListAllViewsParams) (*http.Re
 		if params.Select != nil {
 
 			if queryFrag, err := runtime.StyleParamWithLocation("form", true, "select", runtime.ParamLocationQuery, *params.Select); err != nil {
+				return nil, err
+			} else if parsed, err := url.ParseQuery(queryFrag); err != nil {
+				return nil, err
+			} else {
+				for k, v := range parsed {
+					for _, v2 := range v {
+						queryValues.Add(k, v2)
+					}
+				}
+			}
+
+		}
+
+		if params.WherePermission != nil {
+
+			if queryFrag, err := runtime.StyleParamWithLocation("form", true, "where_permission", runtime.ParamLocationQuery, *params.WherePermission); err != nil {
 				return nil, err
 			} else if parsed, err := url.ParseQuery(queryFrag); err != nil {
 				return nil, err

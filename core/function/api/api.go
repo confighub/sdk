@@ -189,12 +189,14 @@ type FunctionInvocationOptions struct {
 	// the FunctionContext, where a function can read them directly or an argument's
 	// template/CEL expression can reference them. Off by default: the conflicts are
 	// unbounded in a way the rest of the context is not, and no ordinary invocation needs
-	// them.
-	IncludeConflicts bool `json:",omitempty" description:"Put the Unit's outstanding merge conflicts in the FunctionContext, for functions that reason about them"`
+	// them. A request that runs Triggers gets them without asking, as a Trigger does when it
+	// runs on a mutation, so that a Trigger gives the same answer however it is run.
+	IncludeConflicts bool `json:",omitempty" description:"Put the Unit's outstanding merge conflicts in the FunctionContext, for functions that reason about them. A request that runs Triggers gets them regardless"`
 
 	// IncludeLinkFindings asks the server to put what the Unit's Links' resolves could not do
-	// into the FunctionContext, as IncludeConflicts does for merge conflicts.
-	IncludeLinkFindings bool `json:",omitempty" description:"Put what the resolves of the Unit's Links could not do in the FunctionContext, for functions that reason about it"`
+	// into the FunctionContext, as IncludeConflicts does for merge conflicts, and likewise is
+	// implied for a request that runs Triggers.
+	IncludeLinkFindings bool `json:",omitempty" description:"Put what the resolves of the Unit's Links could not do in the FunctionContext, for functions that reason about it. A request that runs Triggers gets them regardless"`
 }
 
 // FunctionOptions contains options that affect how functions operate on resources that need to be

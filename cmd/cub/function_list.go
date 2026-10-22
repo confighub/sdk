@@ -134,7 +134,7 @@ func listFunctions(workerSlug, whereClause string) (string, functionsByToolchain
 // (e.g. by tests) is honored.
 func functionSpecFilePath() string {
 	if contextManager != nil {
-		return filepath.Join(filepath.Dir(contextManager.ConfigPath()), "functions.json")
+		return filepath.Join(contextManager.ConfigDir(), "functions.json")
 	}
 	// Before the context manager exists. CUB_CONFIG is the config directory.
 	if v := os.Getenv("CUB_CONFIG"); v != "" {

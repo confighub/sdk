@@ -58,6 +58,7 @@ var unitActionCustomColumnDependencies = map[string][]string{}
 
 func init() {
 	addStandardListFlags(unitActionListCmd)
+	enableWherePermissionFlag(unitActionListCmd)
 	enableListPagingFlags(unitActionListCmd)
 	unitActionCmd.AddCommand(unitActionListCmd)
 }
@@ -229,6 +230,9 @@ func apiSearchListUnitActions(whereFilter string, filterParam string) ([]*goclie
 	if contains != "" {
 		newParams.Contains = &contains
 	}
+	if wherePermission != "" {
+		newParams.WherePermission = enumPtr[goclientnew.ListAllUnitActionsParamsWherePermission](wherePermission)
+	}
 	actionsRes, err := cubClientNew.ListAllUnitActionsWithResponse(ctx, newParams)
 	if cubapi.IsAPIError(err, actionsRes) {
 		return nil, cubapi.InterpretErrorGeneric(err, actionsRes)
@@ -256,6 +260,9 @@ func apiListUnitActions(spaceID uuid.UUID, unitID uuid.UUID, whereFilter string,
 	}
 	if contains != "" {
 		newParams.Contains = &contains
+	}
+	if wherePermission != "" {
+		newParams.WherePermission = enumPtr[goclientnew.ListUnitActionsParamsWherePermission](wherePermission)
 	}
 	// TODO: Add select parameter support when backend endpoint supports it
 	// Auto-select fields based on default display if no custom output format is specified

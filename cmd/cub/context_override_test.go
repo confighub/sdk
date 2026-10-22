@@ -20,7 +20,7 @@ func setupContextOverrideTest(t *testing.T) *ContextManager {
 	t.Setenv("CUB_CONFIG", "")
 	t.Setenv("CUB_CONTEXT", "")
 
-	cm, err := NewContextManagerWithPath(filepath.Join(home, ".confighub", "config.yaml"))
+	cm, err := NewContextManagerWithDir(filepath.Join(home, ".confighub"))
 	if err != nil {
 		t.Fatal(err)
 	}

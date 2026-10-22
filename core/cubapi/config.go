@@ -138,8 +138,8 @@ func normalizeServerURL(raw string) string {
 	return parsed.String()
 }
 
-// Store loads and resolves ConfigHub CLI configuration from a config file plus a
-// sibling token directory. Use [Load] to construct one. Methods are safe for
+// Store loads and resolves ConfigHub CLI configuration from a config directory:
+// config.yaml and its token and key directories. Use [LoadConfig] to construct one. Methods are safe for
 // concurrent use.
 //
 // Unlike `cub`'s ContextManager, a Store is read-only and never panics: a
@@ -155,16 +155,14 @@ type Store struct {
 	override   string // in-memory active-context override; not persisted
 }
 
-// DefaultConfigPath returns the config file path to use when none is given:
-// config.yaml inside $CUB_CONFIG if set, otherwise $HOME/.confighub/config.yaml.
+// DefaultConfigDir returns the config directory to use when none is given:
+// $CUB_CONFIG if set, otherwise $HOME/.confighub.
 //
 // CUB_CONFIG names the config *directory*, not the file. That is what the
 // published documentation says, what cub exports to plugins
 // (`CUB_CONFIG=<dir>` in cmd/cub/plugin_exec.go), and what plugins already
-// assume -- cub-che's installer builds "$CUB_CONFIG/plugins" from it. Returning
-// the value verbatim treated it as the file, which put the sibling "tokens" and
-// "keys" directories one level too high and split the store in two.
-func DefaultConfigPath() (string, error) {
+// assume -- cub-che's installer builds "$CUB_CONFIG/plugins" from it.
+func DefaultConfigDir() (string, error) {
 	if p := os.Getenv("CUB_CONFIG"); p != "" {
 		// A path that exists and is not a directory is the one mistake worth
 		// naming: it means CUB_CONFIG was set to config.yaml itself, which used
@@ -177,78 +175,83 @@ func DefaultConfigPath() (string, error) {
 				"CUB_CONFIG must name the config directory, but %s is a file; did you mean %s?",
 				p, filepath.Dir(p))
 		}
-		return filepath.Join(p, ConfigFileName), nil
+		return p, nil
 	}
 	home := os.Getenv("HOME")
 	if home == "" {
-		return "", errors.New("HOME environment variable not set; pass an explicit config path")
+		return "", errors.New("HOME environment variable not set; pass an explicit config directory")
 	}
-	return filepath.Join(home, ConfigHubDir, ConfigFileName), nil
+	return filepath.Join(home, ConfigHubDir), nil
 }
 
-// LoadConfig reads the config at path and returns a Store. If path is empty,
-// [DefaultConfigPath] is used. The token directory is the sibling "tokens"
-// directory next to the config file.
+// LoadConfig reads the config in dir and returns a Store. dir is the config
+// directory, as CUB_CONFIG names it: it holds config.yaml and the "tokens" and
+// "keys" directories. If dir is empty, [DefaultConfigDir] is used.
 //
 // A missing config file is not an error: the returned Store has no contexts.
 // This lets callers fall back to other credential sources (e.g. plugin
 // environment variables) without special-casing a first run.
-func LoadConfig(path string) (*Store, error) {
-	abs, err := resolveConfigPath(path)
+func LoadConfig(dir string) (*Store, error) {
+	abs, err := resolveConfigDir(dir)
 	if err != nil {
 		return nil, err
 	}
 	s := newStore(abs)
 
-	data, err := os.ReadFile(abs)
+	data, err := os.ReadFile(s.configPath)
 	if err != nil {
 		if os.IsNotExist(err) {
 			return s, nil // empty but usable
 		}
-		return nil, fmt.Errorf("read config %s: %w", abs, err)
+		return nil, fmt.Errorf("read config %s: %w", s.configPath, err)
 	}
 
 	var cfg Config
 	if err := yaml.Unmarshal(data, &cfg); err != nil {
-		return nil, fmt.Errorf("parse config %s: %w", abs, err)
+		return nil, fmt.Errorf("parse config %s: %w", s.configPath, err)
 	}
 	if err := validateConfig(&cfg); err != nil {
-		return nil, fmt.Errorf("invalid config %s: %w", abs, err)
+		return nil, fmt.Errorf("invalid config %s: %w", s.configPath, err)
 	}
 	s.config = &cfg
 	return s, nil
 }
 
-// resolveConfigPath turns a (possibly empty or ~-prefixed) config path into an
-// absolute path, defaulting to [DefaultConfigPath] when empty.
-func resolveConfigPath(path string) (string, error) {
-	if path == "" {
+// resolveConfigDir turns a (possibly empty or ~-prefixed) config directory into
+// an absolute path, defaulting to [DefaultConfigDir] when empty.
+func resolveConfigDir(dir string) (string, error) {
+	if dir == "" {
 		var err error
-		if path, err = DefaultConfigPath(); err != nil {
+		if dir, err = DefaultConfigDir(); err != nil {
 			return "", err
 		}
 	}
-	if strings.HasPrefix(path, "~") {
+	if strings.HasPrefix(dir, "~") {
 		home := os.Getenv("HOME")
 		if home == "" {
-			return "", errors.New("HOME environment variable not set; cannot expand ~ in config path")
+			return "", errors.New("HOME environment variable not set; cannot expand ~ in config directory")
 		}
-		path = filepath.Join(home, path[1:])
+		dir = filepath.Join(home, dir[1:])
 	}
-	abs, err := filepath.Abs(path)
+	abs, err := filepath.Abs(dir)
 	if err != nil {
-		return "", fmt.Errorf("resolve config path: %w", err)
+		return "", fmt.Errorf("resolve config directory: %w", err)
+	}
+	// The argument used to be the config file; a caller still passing one
+	// gets told so rather than a store rooted inside a file.
+	if info, err := os.Stat(abs); err == nil && !info.IsDir() {
+		return "", fmt.Errorf("config directory %s is a file; did you mean %s?", abs, filepath.Dir(abs))
 	}
 	return abs, nil
 }
 
-// newStore builds an empty Store for the given absolute config path, with the
-// token and key directories as the sibling "tokens" and "keys" directories.
-func newStore(absPath string) *Store {
+// newStore builds an empty Store for the given absolute config directory, with
+// config.yaml and the "tokens" and "keys" directories inside it.
+func newStore(absDir string) *Store {
 	return &Store{
-		configPath: absPath,
-		tokenDir:   filepath.Join(filepath.Dir(absPath), "tokens"),
-		keyDir:     filepath.Join(filepath.Dir(absPath), "keys"),
+		configPath: filepath.Join(absDir, ConfigFileName),
+		tokenDir:   filepath.Join(absDir, "tokens"),
+		keyDir:     filepath.Join(absDir, "keys"),
 		config:     &Config{APIVersion: ConfigAPIVersion, Kind: ConfigKind},
 	}
 }
@@ -281,6 +284,9 @@ func validateConfig(cfg *Config) error {
 
 // ConfigPath returns the absolute path of the loaded config file.
 func (s *Store) ConfigPath() string { return s.configPath }
+
+// ConfigDir returns the absolute path of the config directory.
+func (s *Store) ConfigDir() string { return filepath.Dir(s.configPath) }
 
 // Contexts returns all configured contexts.
 func (s *Store) Contexts() []*Context {

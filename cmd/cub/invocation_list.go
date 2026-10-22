@@ -72,6 +72,7 @@ var invocationCustomColumnDependencies = map[string][]string{}
 
 func init() {
 	addStandardListFlags(invocationListCmd)
+	enableWherePermissionFlag(invocationListCmd)
 	enableListPagingFlags(invocationListCmd)
 	enableViewFlag(invocationListCmd)
 	invocationCmd.AddCommand(invocationListCmd)
@@ -146,13 +147,14 @@ func apiListAllInvocations(where cubapi.Where, selectParam string, filterParam s
 		return buildSelectList("Invocation", listColumnsFor("cub invocation list"), invocationListInclude, defaultInvocationColumns, invocationAliases, invocationCustomColumnDependencies, invocationBaseSelectFields)
 	})
 	return cubapi.ListInvocations(ctx, cubClient, where, cubapi.ListOpts{
-		Limit:         listLimit,
-		OrderBy:       listOrderBy,
-		Select:        cubapi.SelectFields(selectValue),
-		Include:       invocationListInclude,
-		Filter:        filterParam,
-		Contains:      contains,
-		IncludeHidden: includeHidden,
-		View:          listViewFor("cub invocation list"),
+		Limit:           listLimit,
+		OrderBy:         listOrderBy,
+		Select:          cubapi.SelectFields(selectValue),
+		Include:         invocationListInclude,
+		Filter:          filterParam,
+		Contains:        contains,
+		WherePermission: wherePermission,
+		IncludeHidden:   includeHidden,
+		View:            listViewFor("cub invocation list"),
 	})
 }

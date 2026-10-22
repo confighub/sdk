@@ -21,7 +21,7 @@ import (
 
 func testStore(t *testing.T) *cubapi.Store {
 	t.Helper()
-	s, err := cubapi.LoadConfig(filepath.Join(t.TempDir(), "config.yaml"))
+	s, err := cubapi.LoadConfig(t.TempDir())
 	require.NoError(t, err)
 	return s
 }

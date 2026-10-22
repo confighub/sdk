@@ -67,6 +67,7 @@ var viewCustomColumnDependencies = map[string][]string{}
 
 func init() {
 	addStandardListFlags(viewListCmd)
+	enableWherePermissionFlag(viewListCmd)
 	enableListPagingFlags(viewListCmd)
 	enableViewFlag(viewListCmd)
 	viewCmd.AddCommand(viewListCmd)
@@ -168,13 +169,14 @@ func apiListAllViews(where cubapi.Where, selectParam string, filterParam string)
 		return buildSelectList("View", listColumnsFor("cub view list"), viewListInclude, defaultViewColumns, viewAliases, viewCustomColumnDependencies, viewBaseSelectFields)
 	})
 	return cubapi.ListViews(ctx, cubClient, where, cubapi.ListOpts{
-		Limit:         listLimit,
-		OrderBy:       listOrderBy,
-		Select:        cubapi.SelectFields(selectValue),
-		Include:       viewListInclude,
-		Filter:        filterParam,
-		Contains:      contains,
-		IncludeHidden: includeHidden,
-		View:          listViewFor("cub view list"),
+		Limit:           listLimit,
+		OrderBy:         listOrderBy,
+		Select:          cubapi.SelectFields(selectValue),
+		Include:         viewListInclude,
+		Filter:          filterParam,
+		Contains:        contains,
+		WherePermission: wherePermission,
+		IncludeHidden:   includeHidden,
+		View:            listViewFor("cub view list"),
 	})
 }

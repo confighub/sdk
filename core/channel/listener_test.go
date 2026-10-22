@@ -7,8 +7,10 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"maps"
 	"net/http"
 	"net/http/httptest"
+	"sort"
 	"strings"
 	"sync"
 	"testing"
@@ -21,6 +23,7 @@ import (
 	"github.com/confighub/sdk/core/cubapi"
 	funcapi "github.com/confighub/sdk/core/function/api"
 	goclientnew "github.com/confighub/sdk/core/openapi/goclient-new"
+	"github.com/confighub/sdk/core/workerapi"
 )
 
 // fakeChannel is the server side of one Channel, enough of it for the listener's loop: the
@@ -41,6 +44,8 @@ type fakeChannel struct {
 	released []uuid.UUID
 	auths    int
 	served   chan struct{}
+	updates  []goclientnew.Channel // the Channel as each update wrote it
+	readOnly bool                  // answer updates 403, as for an identity with only Claim
 }
 
 func newFakeChannel(t *testing.T, declared ...string) (*fakeChannel, *httptest.Server) {
@@ -54,7 +59,28 @@ func newFakeChannel(t *testing.T, declared ...string) (*fakeChannel, *httptest.S
 	prefix := fmt.Sprintf("/api/space/%s/channel/%s", f.space, f.id)
 	mux.HandleFunc("/api/channel", func(w http.ResponseWriter, r *http.Request) {
 		// The resolver lists by where clause; one channel answers every lookup.
-		writeJSON(w, []goclientnew.ExtendedChannel{{Channel: &f.channel}})
+		f.mu.Lock()
+		channel := f.channel
+		f.mu.Unlock()
+		writeJSON(w, []goclientnew.ExtendedChannel{{Channel: &channel}})
+	})
+	mux.HandleFunc("PUT "+prefix, func(w http.ResponseWriter, r *http.Request) {
+		var channel goclientnew.Channel
+		if err := json.NewDecoder(r.Body).Decode(&channel); err != nil {
+			http.Error(w, err.Error(), http.StatusBadRequest)
+			return
+		}
+		f.mu.Lock()
+		defer f.mu.Unlock()
+		if f.readOnly {
+			w.Header().Set("Content-Type", "application/json")
+			w.WriteHeader(http.StatusForbidden)
+			_, _ = w.Write([]byte(`{"message":"permission denied"}`))
+			return
+		}
+		f.channel = channel
+		f.updates = append(f.updates, channel)
+		writeJSON(w, channel)
 	})
 	mux.HandleFunc("POST "+prefix+"/lease", func(w http.ResponseWriter, r *http.Request) {
 		f.mu.Lock()
@@ -376,9 +402,12 @@ func TestListenerReacquiresADeadLease(t *testing.T) {
 
 func TestClientRenewsTheSessionOnce(t *testing.T) {
 	// Every request under the first session is refused; the renewal is one authentication for
-	// all of them.
+	// all of them. The refusals are held until every caller's request has arrived: with few CPUs,
+	// a caller could otherwise start after the renewal and go out with the new session.
+	const callers = 8
 	var mu sync.Mutex
 	auths, refused := 0, 0
+	allRefused := make(chan struct{})
 	mux := http.NewServeMux()
 	mux.HandleFunc("/auth/worker", func(w http.ResponseWriter, r *http.Request) {
 		mu.Lock()
@@ -391,7 +420,15 @@ func TestClientRenewsTheSessionOnce(t *testing.T) {
 		if strings.HasSuffix(r.Header.Get("Authorization"), "session-1") {
 			mu.Lock()
 			refused++
+			if refused == callers {
+				close(allRefused)
+			}
 			mu.Unlock()
+			select {
+			case <-allRefused:
+			case <-time.After(10 * time.Second):
+				t.Error("not every caller sent a request under the first session")
+			}
 			w.WriteHeader(http.StatusUnauthorized)
 			return
 		}
@@ -411,7 +448,7 @@ func TestClientRenewsTheSessionOnce(t *testing.T) {
 	require.NoError(t, err)
 
 	var wg sync.WaitGroup
-	for i := 0; i < 8; i++ {
+	for range callers {
 		wg.Add(1)
 		go func() {
 			defer wg.Done()
@@ -423,7 +460,7 @@ func TestClientRenewsTheSessionOnce(t *testing.T) {
 	mu.Lock()
 	defer mu.Unlock()
 	assert.Equal(t, 2, auths, "one authentication to start, one renewal for every request the first session refused")
-	assert.Equal(t, 8, refused)
+	assert.Equal(t, callers, refused)
 }
 
 // fakeInvoker is an executor that records the request and answers with the configuration it
@@ -472,4 +509,141 @@ func TestListenerServesFunctions(t *testing.T) {
 	assert.Equal(t, "replicas: 1\n# done\n", fake.results[batch.CommandRun.CommandRunID].Result["ConfigData"])
 	assert.Equal(t, string(StatusRejected), fake.results[empty.CommandRun.CommandRunID].Status)
 	assert.Contains(t, fake.results[empty.CommandRun.CommandRunID].ErrorMessage, "carries no request")
+}
+
+// fakeExecutor is a fakeInvoker that says what it serves, as the SDK's executors do.
+type fakeExecutor struct {
+	fakeInvoker
+	functions map[workerapi.ToolchainType]map[string]funcapi.FunctionSignature
+}
+
+func (f *fakeExecutor) RegisteredFunctions() map[workerapi.ToolchainType]map[string]funcapi.FunctionSignature {
+	return f.functions
+}
+
+func newFakeExecutor(names ...string) *fakeExecutor {
+	byName := map[string]funcapi.FunctionSignature{}
+	for _, name := range names {
+		byName[name] = funcapi.FunctionSignature{FunctionName: name, Description: "does " + name}
+	}
+	return &fakeExecutor{functions: map[workerapi.ToolchainType]map[string]funcapi.FunctionSignature{workerapi.ToolchainKubernetesYAML: byName}}
+}
+
+// servedFunctions reads the function names a declaration lists for Kubernetes/YAML.
+func servedFunctions(t *testing.T, signature goclientnew.CommandSignature) []string {
+	t.Helper()
+	encoded, err := json.Marshal(signature.Attributes[FunctionAttribute])
+	require.NoError(t, err)
+	var attribute struct {
+		Toolchains map[string]map[string]any `json:"toolchains"`
+	}
+	require.NoError(t, json.Unmarshal(encoded, &attribute))
+	var names []string
+	for name := range attribute.Toolchains[string(workerapi.ToolchainKubernetesYAML)] {
+		names = append(names, name)
+	}
+	sort.Strings(names)
+	return names
+}
+
+// runUntilServed runs the listener until it has answered one run, then stops it.
+func runUntilServed(t *testing.T, fake *fakeChannel, listener *Listener) {
+	t.Helper()
+	fake.enqueue(runMessage(FunctionInvokeCommand, map[string]any{FunctionRequestParam: funcapi.FunctionInvocationRequest{ConfigData: "a: 1\n"}}))
+	ctx, cancel := context.WithCancel(context.Background())
+	done := make(chan error, 1)
+	go func() { done <- listener.Run(ctx) }()
+	fake.waitResults(1)
+	cancel()
+	require.ErrorIs(t, <-done, context.Canceled)
+}
+
+// An executor's functions are declared on the Channel when the listener starts, as a function
+// worker's were registered when it connected: the bot has nothing to declare out of band.
+func TestListenerDeclaresTheFunctionsItServes(t *testing.T) {
+	fake, server := newFakeChannel(t)
+	executor := newFakeExecutor("set-replicas", "set-image")
+	listener := NewListener(newTestClient(t, server), cubapi.ParseRef("bot"), Options{Concurrency: 1, Logger: testLogger(t)}).HandleFunctions(executor)
+	runUntilServed(t, fake, listener)
+
+	fake.mu.Lock()
+	defer fake.mu.Unlock()
+	require.Len(t, fake.updates, 1)
+	declared, ok := fake.channel.Commands[FunctionInvokeCommand]
+	require.True(t, ok, "the reserved command is declared")
+	assert.Equal(t, []string{"set-image", "set-replicas"}, servedFunctions(t, declared))
+}
+
+// A Channel that already declares what the listener serves is not written, so a restart is not
+// a revision.
+func TestListenerLeavesACurrentDeclarationAlone(t *testing.T) {
+	fake, server := newFakeChannel(t)
+	executor := newFakeExecutor("set-replicas")
+	fake.channel.Commands = FunctionCommands(executor.RegisteredFunctions())
+	listener := NewListener(newTestClient(t, server), cubapi.ParseRef("bot"), Options{Concurrency: 1, Logger: testLogger(t)}).HandleFunctions(executor)
+	runUntilServed(t, fake, listener)
+
+	fake.mu.Lock()
+	defer fake.mu.Unlock()
+	assert.Empty(t, fake.updates)
+}
+
+// A stale declaration is replaced, not merged into, so a function the executor dropped is no
+// longer offered; the Channel's other commands are kept.
+func TestListenerReplacesAStaleDeclaration(t *testing.T) {
+	fake, server := newFakeChannel(t, "test.other")
+	maps.Copy(fake.channel.Commands, FunctionCommands(newFakeExecutor("set-replicas", "retired").RegisteredFunctions()))
+	listener := NewListener(newTestClient(t, server), cubapi.ParseRef("bot"), Options{Concurrency: 1, Logger: testLogger(t)}).
+		HandleFunctions(newFakeExecutor("set-replicas", "set-image")).
+		Handle("test.other", func(ctx context.Context, run *Run) (json.RawMessage, error) { return nil, nil })
+	runUntilServed(t, fake, listener)
+
+	fake.mu.Lock()
+	defer fake.mu.Unlock()
+	require.Len(t, fake.updates, 1)
+	assert.Equal(t, []string{"set-image", "set-replicas"}, servedFunctions(t, fake.channel.Commands[FunctionInvokeCommand]))
+	assert.Contains(t, fake.channel.Commands, "test.other")
+}
+
+// An identity that may claim the Channel but not edit it cannot declare; the listener says what
+// to do and gives the lease back.
+func TestListenerExplainsADeclarationItMayNotWrite(t *testing.T) {
+	fake, server := newFakeChannel(t)
+	fake.readOnly = true
+	listener := NewListener(newTestClient(t, server), cubapi.ParseRef("bot"), Options{Logger: testLogger(t)}).HandleFunctions(newFakeExecutor("set-replicas"))
+	err := listener.Run(context.Background())
+	require.Error(t, err)
+	assert.Contains(t, err.Error(), "Edit on the channel")
+	fake.mu.Lock()
+	defer fake.mu.Unlock()
+	assert.Len(t, fake.released, 1, "the lease taken for the declaration is given back")
+}
+
+// Commands printed by the Connector and written out of band are the declaration the listener
+// would write, so an identity with only Claim serves them without writing to the Channel.
+func TestPrintedCommandsAreACurrentDeclaration(t *testing.T) {
+	executor := newFakeExecutor("set-replicas", "set-image")
+	connector, err := NewConnector(ConnectorOptions{FunctionExecutor: executor})
+	require.NoError(t, err)
+	var printed strings.Builder
+	require.NoError(t, connector.PrintCommands(&printed))
+
+	fake, server := newFakeChannel(t)
+	fake.readOnly = true
+	require.NoError(t, json.Unmarshal([]byte(printed.String()), &fake.channel.Commands))
+	listener := NewListener(newTestClient(t, server), cubapi.ParseRef("bot"), Options{Concurrency: 1, Logger: testLogger(t)}).HandleFunctions(executor)
+	runUntilServed(t, fake, listener)
+
+	fake.mu.Lock()
+	defer fake.mu.Unlock()
+	assert.Empty(t, fake.updates)
+}
+
+// A function's resource types come out of the executor in map order, cut short at the wildcard;
+// the declaration lists them in one form however they came.
+func TestFunctionCommandsCanonicalizesResourceTypes(t *testing.T) {
+	assert.Equal(t, []funcapi.ResourceType{"apps/v1/Deployment", "v1/Service"},
+		canonicalResourceTypes([]funcapi.ResourceType{"v1/Service", "apps/v1/Deployment"}))
+	assert.Equal(t, []funcapi.ResourceType{funcapi.ResourceTypeAny},
+		canonicalResourceTypes([]funcapi.ResourceType{"v1/Service", funcapi.ResourceTypeAny}))
 }

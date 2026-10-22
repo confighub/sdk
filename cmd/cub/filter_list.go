@@ -79,6 +79,7 @@ var (
 
 func init() {
 	addStandardListFlags(filterListCmd)
+	enableWherePermissionFlag(filterListCmd)
 	enableListPagingFlags(filterListCmd)
 
 	// Add entity-type and entity-id flags for filtering
@@ -183,13 +184,14 @@ func apiListAllFilters(where cubapi.Where, selectParam string) ([]*goclientnew.E
 	}
 
 	return cubapi.ListFilters(ctx, cubClient, where, cubapi.ListOpts{
-		Limit:         listLimit,
-		OrderBy:       listOrderBy,
-		Select:        cubapi.SelectFields(selectValue),
-		Include:       filterListInclude,
-		Contains:      contains,
-		IncludeHidden: includeHidden,
-		View:          listViewFor("cub filter list"),
+		Limit:           listLimit,
+		OrderBy:         listOrderBy,
+		Select:          cubapi.SelectFields(selectValue),
+		Include:         filterListInclude,
+		Contains:        contains,
+		WherePermission: wherePermission,
+		IncludeHidden:   includeHidden,
+		View:            listViewFor("cub filter list"),
 	}, with...)
 }
 

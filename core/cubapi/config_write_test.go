@@ -32,7 +32,7 @@ func TestLoadOrInitCreatesDefault(t *testing.T) {
 	}
 
 	// The config was persisted and reloads with the same context.
-	reloaded, err := LoadConfig(store.ConfigPath())
+	reloaded, err := LoadConfig(store.ConfigDir())
 	if err != nil {
 		t.Fatalf("LoadConfig: %v", err)
 	}
@@ -42,8 +42,8 @@ func TestLoadOrInitCreatesDefault(t *testing.T) {
 }
 
 func TestLoadOrInitLoadsExisting(t *testing.T) {
-	path := writeConfig(t, twoContextConfig, nil)
-	store, err := LoadOrInit(path, "should-not-be-created")
+	dir := writeConfig(t, twoContextConfig, nil)
+	store, err := LoadOrInit(dir, "should-not-be-created")
 	if err != nil {
 		t.Fatalf("LoadOrInit: %v", err)
 	}
@@ -57,7 +57,7 @@ func TestLoadOrInitLoadsExisting(t *testing.T) {
 
 func TestCreateContextValidationAndDefaults(t *testing.T) {
 	t.Setenv("HOME", t.TempDir())
-	store := newStore(filepath.Join(t.TempDir(), "config.yaml"))
+	store := newStore(t.TempDir())
 
 	if _, err := store.CreateContext("", "", "", ""); err == nil {
 		t.Fatal("CreateContext(empty name) = nil, want error")
@@ -95,7 +95,7 @@ func TestCreateContextValidationAndDefaults(t *testing.T) {
 
 func TestSetAndDeleteContext(t *testing.T) {
 	t.Setenv("HOME", t.TempDir())
-	store := newStore(filepath.Join(t.TempDir(), "config.yaml"))
+	store := newStore(t.TempDir())
 	_, _ = store.CreateContext("a", "", "", "")
 	_, _ = store.CreateContext("b", "", "", "")
 
@@ -121,7 +121,7 @@ func TestSetAndDeleteContext(t *testing.T) {
 
 func TestRenameContextMovesToken(t *testing.T) {
 	t.Setenv("HOME", t.TempDir())
-	store := newStore(filepath.Join(os.Getenv("HOME"), ".confighub", "config.yaml"))
+	store := newStore(filepath.Join(os.Getenv("HOME"), ".confighub"))
 	ctx, err := store.CreateContext("old", "", "", "")
 	if err != nil {
 		t.Fatalf("CreateContext: %v", err)
@@ -151,7 +151,7 @@ func TestRenameContextMovesToken(t *testing.T) {
 
 func TestSaveLoadDeleteTokenData(t *testing.T) {
 	t.Setenv("HOME", t.TempDir())
-	store := newStore(filepath.Join(os.Getenv("HOME"), ".confighub", "config.yaml"))
+	store := newStore(filepath.Join(os.Getenv("HOME"), ".confighub"))
 	ctx, _ := store.CreateContext("a", "", "", "")
 
 	if err := store.SaveTokenData(ctx, &TokenData{AccessToken: "x", RefreshToken: "y"}); err != nil {
@@ -178,7 +178,7 @@ func TestSaveLoadDeleteTokenData(t *testing.T) {
 
 func TestFindContextByCoordinate(t *testing.T) {
 	t.Setenv("HOME", t.TempDir())
-	store := newStore(filepath.Join(t.TempDir(), "config.yaml"))
+	store := newStore(t.TempDir())
 	_, _ = store.CreateContext("a", "http://a", "org-a", "")
 	_, _ = store.CreateContext("b", "http://b", "org-b", "")
 
@@ -196,15 +196,15 @@ func TestFindContextByCoordinate(t *testing.T) {
 
 func TestSaveConfigRoundtrip(t *testing.T) {
 	t.Setenv("HOME", t.TempDir())
-	path := filepath.Join(os.Getenv("HOME"), ".confighub", "config.yaml")
-	store := newStore(path)
+	dir := filepath.Join(os.Getenv("HOME"), ".confighub")
+	store := newStore(dir)
 	_, _ = store.CreateContext("a", "http://a", "org-a", "sp-a")
 	_, _ = store.CreateContext("b", "", "", "")
 	if err := store.SaveConfig(); err != nil {
 		t.Fatalf("SaveConfig: %v", err)
 	}
 
-	reloaded, err := LoadConfig(path)
+	reloaded, err := LoadConfig(dir)
 	if err != nil {
 		t.Fatalf("LoadConfig: %v", err)
 	}

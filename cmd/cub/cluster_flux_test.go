@@ -196,3 +196,25 @@ func TestClusterAppsSuffix(t *testing.T) {
 		}
 	}
 }
+
+func TestClusterFluxCredsHostReadsTheSecretAttachWrites(t *testing.T) {
+	raw, err := clusterFluxCredsManifest("http://172.17.0.1:9093", "tok")
+	if err != nil {
+		t.Fatal(err)
+	}
+	var secret struct {
+		StringData map[string]string `json:"stringData"`
+	}
+	if err := json.Unmarshal(raw, &secret); err != nil {
+		t.Fatal(err)
+	}
+	// The API server returns the Secret's data base64-encoded.
+	encoded := base64.StdEncoding.EncodeToString([]byte(secret.StringData[".dockerconfigjson"]))
+	got, err := clusterFluxCredsHost([]byte(encoded))
+	if err != nil || got != "172.17.0.1:9093" {
+		t.Errorf("got %q, %v; want the registry host", got, err)
+	}
+	if _, err := clusterFluxCredsHost([]byte("not base64!")); err == nil {
+		t.Error("undecodable Secret: got no error")
+	}
+}

@@ -21,11 +21,11 @@ import (
 	coreplugin "github.com/confighub/sdk/core/plugin"
 )
 
-// setTestContextManager installs a real ContextManager at configPath with a
+// setTestContextManager installs a real ContextManager in configDir with a
 // current "test-ctx" context, for plugin tests that exercise pluginDir/pluginEnv.
-func setTestContextManager(t *testing.T, configPath, server, space, token string) {
+func setTestContextManager(t *testing.T, configDir, server, space, token string) {
 	t.Helper()
-	cm, err := NewContextManagerWithPath(configPath)
+	cm, err := NewContextManagerWithDir(configDir)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -56,7 +56,7 @@ func setupPluginTest(t *testing.T) string {
 
 	// Set up a minimal but valid context manager so pluginDir() and pluginEnv()
 	// work (the latter is used when running install/upgrade hooks).
-	setTestContextManager(t, filepath.Join(tmpDir, "config.yaml"), "https://example.com", "", "")
+	setTestContextManager(t, tmpDir, "https://example.com", "", "")
 
 	// Reset the plugin cache for each test.
 	pluginCache = nil
@@ -273,7 +273,7 @@ func TestFindPluginNotFound(t *testing.T) {
 
 func TestPluginEnv(t *testing.T) {
 	tmpDir := t.TempDir()
-	setTestContextManager(t, filepath.Join(tmpDir, "config.yaml"), "https://example.com", "prod", "test-token-123")
+	setTestContextManager(t, tmpDir, "https://example.com", "prod", "test-token-123")
 
 	env := pluginEnv()
 

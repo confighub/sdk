@@ -146,6 +146,20 @@ func clusterOriginFrom(rec *clusterRecord, match *clusterSpace) string {
 	}
 }
 
+// clusterControllerFrom says which controller a cluster runs: the Space says,
+// then the record, and with neither it is Argo CD, the only controller there
+// was before controllers were recorded.
+func clusterControllerFrom(rec *clusterRecord, match *clusterSpace) string {
+	switch {
+	case match != nil && match.Controller != "":
+		return match.Controller
+	case rec != nil && rec.Controller != "":
+		return rec.Controller
+	default:
+		return clusterControllerArgo
+	}
+}
+
 // clusterRemoveLocalFiles removes the cluster's kubeconfig, env file and
 // record; each absence is fine, each other failure a warning.
 func clusterRemoveLocalFiles(out io.Writer, name string) {

@@ -57,21 +57,21 @@ func init() {
 
 // NewContextManager creates a context manager at the default config location.
 func NewContextManager() (*ContextManager, error) {
-	return NewContextManagerWithPath("")
+	return NewContextManagerWithDir("")
 }
 
-// NewContextManagerWithPath creates a context manager for the given config path
-// (empty means the default ~/.confighub/config.yaml). On first run — when no
+// NewContextManagerWithDir creates a context manager for the given config
+// directory (empty means $CUB_CONFIG, or ~/.confighub). On first run — when no
 // config file exists yet — it creates a default context.
-func NewContextManagerWithPath(configPath string) (*ContextManager, error) {
-	store, err := cubapi.LoadConfig(configPath)
+func NewContextManagerWithDir(configDir string) (*ContextManager, error) {
+	store, err := cubapi.LoadConfig(configDir)
 	if err != nil {
 		return nil, err
 	}
 	cm := &ContextManager{store: store}
 
 	// Ensure the config and token directories exist.
-	configDir := filepath.Dir(store.ConfigPath())
+	configDir = store.ConfigDir()
 	if err := os.MkdirAll(configDir, 0o755); err != nil {
 		return nil, fmt.Errorf("failed to create config directory: %w", err)
 	}
@@ -106,8 +106,8 @@ func NewContextManagerWithPath(configPath string) (*ContextManager, error) {
 // SaveConfig persists the configuration to disk.
 func (cm *ContextManager) SaveConfig() error { return cm.store.SaveConfig() }
 
-// ConfigPath returns the absolute path of the config file.
-func (cm *ContextManager) ConfigPath() string { return cm.store.ConfigPath() }
+// ConfigDir returns the absolute path of the config directory.
+func (cm *ContextManager) ConfigDir() string { return cm.store.ConfigDir() }
 
 // GetContext retrieves a context by name.
 func (cm *ContextManager) GetContext(name string) (*Context, error) {

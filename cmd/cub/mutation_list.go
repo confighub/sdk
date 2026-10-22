@@ -75,6 +75,7 @@ var mutationCustomColumnDependencies = map[string][]string{}
 
 func init() {
 	addStandardListFlags(mutationListCmd)
+	enableWherePermissionFlag(mutationListCmd)
 	enableListPagingFlags(mutationListCmd)
 	enableOptionalSpace(mutationListCmd)
 	enableViewFlag(mutationListCmd)
@@ -204,6 +205,9 @@ func apiListMutations(spaceID string, unitID string, whereFilter string, selectP
 	}
 	if contains != "" {
 		newParams.Contains = &contains
+	}
+	if wherePermission != "" {
+		newParams.WherePermission = enumPtr[goclientnew.ListExtendedMutationsParamsWherePermission](wherePermission)
 	}
 	if view := listViewFor("cub mutation list"); view != "" {
 		newParams.View = &view

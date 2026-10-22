@@ -50,6 +50,7 @@ var userCustomColumnDependencies = map[string][]string{}
 
 func init() {
 	addStandardListFlags(userListCmd)
+	enableWherePermissionFlag(userListCmd)
 	enableListPagingFlags(userListCmd)
 	enableViewFlag(userListCmd)
 	userCmd.AddCommand(userListCmd)
@@ -65,13 +66,14 @@ func userListCmdRun(cmd *cobra.Command, args []string) error {
 		return buildSelectList("User", listColumnsFor("cub user list"), "", defaultUserColumns, userAliases, userCustomColumnDependencies, userBaseSelectFields)
 	})
 	users, err := cubapi.ListUsers(ctx, cubClient, cubapi.NewWhere(where), cubapi.ListOpts{
-		Limit:         listLimit,
-		OrderBy:       listOrderBy,
-		Select:        cubapi.SelectFields(selectValue),
-		Filter:        filterID,
-		Contains:      contains,
-		IncludeHidden: includeHidden,
-		View:          listViewFor("cub user list"),
+		Limit:           listLimit,
+		OrderBy:         listOrderBy,
+		Select:          cubapi.SelectFields(selectValue),
+		Filter:          filterID,
+		Contains:        contains,
+		WherePermission: wherePermission,
+		IncludeHidden:   includeHidden,
+		View:            listViewFor("cub user list"),
 	})
 	if err != nil {
 		return err

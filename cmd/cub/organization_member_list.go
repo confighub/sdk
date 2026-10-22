@@ -47,6 +47,7 @@ var organizationMemberCustomColumnDependencies = map[string][]string{}
 
 func init() {
 	addStandardListFlags(organizationMemberListCmd)
+	enableWherePermissionFlag(organizationMemberListCmd)
 	enableViewFlag(organizationMemberListCmd)
 	organizationMemberCmd.AddCommand(organizationMemberListCmd)
 }
@@ -60,9 +61,10 @@ func organizationMemberListCmdRun(cmd *cobra.Command, args []string) error {
 	// The endpoint returns every field, so there is no select to build.
 	organizationMembers, err := cubapi.ListOrganizationMembers(ctx, cubClient, goclientnew.UUID(uuid.MustParse(selectedOrganizationID)),
 		cubapi.NewWhere(where), cubapi.ListOpts{
-			Filter:   filterID,
-			Contains: contains,
-			View:     listViewFor("cub organization-member list"),
+			Filter:          filterID,
+			Contains:        contains,
+			WherePermission: wherePermission,
+			View:            listViewFor("cub organization-member list"),
 		})
 	if err != nil {
 		return err

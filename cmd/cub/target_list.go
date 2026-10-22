@@ -89,6 +89,7 @@ var targetListArgs struct {
 
 func init() {
 	addStandardListFlags(targetListCmd)
+	enableWherePermissionFlag(targetListCmd)
 	targetListArgs.targetLabels = addStandardLabelFilterFlags(targetListCmd, "Target", standardTargetLabels)
 	enableListPagingFlags(targetListCmd)
 	enableViewFlag(targetListCmd)
@@ -157,13 +158,14 @@ func apiListAllTargets(where cubapi.Where, selectParam string, filterParam strin
 		return buildSelectList("Target", listColumnsFor("cub target list"), targetListInclude, defaultTargetColumns, targetAliases, targetCustomColumnDependencies, targetBaseSelectFields)
 	})
 	return cubapi.ListTargets(ctx, cubClient, where, cubapi.ListOpts{
-		Limit:         listLimit,
-		OrderBy:       listOrderBy,
-		Select:        cubapi.SelectFields(selectValue),
-		Include:       targetListInclude,
-		Filter:        filterParam,
-		Contains:      contains,
-		IncludeHidden: includeHidden,
-		View:          listViewFor("cub target list"),
+		Limit:           listLimit,
+		OrderBy:         listOrderBy,
+		Select:          cubapi.SelectFields(selectValue),
+		Include:         targetListInclude,
+		Filter:          filterParam,
+		Contains:        contains,
+		WherePermission: wherePermission,
+		IncludeHidden:   includeHidden,
+		View:            listViewFor("cub target list"),
 	})
 }

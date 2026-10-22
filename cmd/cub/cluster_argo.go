@@ -54,7 +54,7 @@ type clusterArgoOptions struct {
 	// version is the release tag to install when Argo CD is absent.
 	version string
 	// installIfAbsent installs Argo CD when the namespace has no argocd-server;
-	// false turns its absence into an error (--no-argocd).
+	// false turns its absence into an error (--no-install).
 	installIfAbsent bool
 	// nodePort, when positive, exposes argocd-server on that NodePort over plain
 	// HTTP (server.insecure=true). `cub cluster up` sets it to the host port it
@@ -95,7 +95,7 @@ func clusterArgoEnsure(ctx context.Context, kubeconfigPath string, opts clusterA
 		return clusterArgoResult{installed: false, adminPassword: password}, nil
 	}
 	if !opts.installIfAbsent {
-		return clusterArgoResult{}, fmt.Errorf("Argo CD not found in namespace %q (no argocd-server Deployment) and --no-argocd was given", clusterArgoNamespace)
+		return clusterArgoResult{}, fmt.Errorf("Argo CD not found in namespace %q (no argocd-server Deployment) and --no-install was given", clusterArgoNamespace)
 	}
 	password, err := clusterArgoInstall(ctx, kubeconfigPath, opts, out)
 	if err != nil {

@@ -176,6 +176,10 @@ type ListOpts struct {
 	// HiddenReasons (comma-separated), or for any reason with "*". A where
 	// clause naming entities by Slug or ID returns them hidden or not.
 	IncludeHidden string
+	// WherePermission returns only the entities on which the caller has this
+	// permission, such as Edit or Use, as well as View: those an action that
+	// needs it would not be refused on.
+	WherePermission string
 	// Limit is the most entities to return; 0 returns every one. The list helpers
 	// read pages of at most [MaxListPageSize] until they have Limit entities or
 	// the server has no more.
@@ -234,6 +238,15 @@ func ptrIf(s string) *string {
 	return &s
 }
 
+// enumIf is ptrIf for a parameter whose generated type is an enum of strings.
+func enumIf[T ~string](s string) *T {
+	if s == "" {
+		return nil
+	}
+	v := T(s)
+	return &v
+}
+
 // SelectFields normalizes a select value for use in [ListOpts.Select]: the "*"
 // wildcard (meaning "all fields") becomes "", which the API treats the same way
 // and which the list helpers omit from the request. Callers translating a CLI
@@ -255,14 +268,15 @@ func ListUnits(ctx context.Context, c *Client, where Where, opts ListOpts, with 
 		return nil, err
 	}
 	params := &goclientnew.ListAllUnitsParams{
-		Where:         ptrIf(where.String()),
-		Select:        ptrIf(opts.Select),
-		Include:       ptrIf(opts.Include),
-		Filter:        ptrIf(opts.Filter),
-		Contains:      ptrIf(opts.Contains),
-		IncludeHidden: ptrIf(opts.IncludeHidden),
-		OrderBy:       ptrIf(opts.OrderBy),
-		View:          ptrIf(opts.View),
+		Where:           ptrIf(where.String()),
+		Select:          ptrIf(opts.Select),
+		WherePermission: enumIf[goclientnew.ListAllUnitsParamsWherePermission](opts.WherePermission),
+		Include:         ptrIf(opts.Include),
+		Filter:          ptrIf(opts.Filter),
+		Contains:        ptrIf(opts.Contains),
+		IncludeHidden:   ptrIf(opts.IncludeHidden),
+		OrderBy:         ptrIf(opts.OrderBy),
+		View:            ptrIf(opts.View),
 	}
 	for _, fn := range with {
 		fn(params)
@@ -286,14 +300,15 @@ func ListSpaces(ctx context.Context, c *Client, where Where, opts ListOpts, with
 		return nil, err
 	}
 	params := &goclientnew.ListSpacesParams{
-		Where:         ptrIf(where.String()),
-		Select:        ptrIf(opts.Select),
-		Include:       ptrIf(opts.Include),
-		Filter:        ptrIf(opts.Filter),
-		Contains:      ptrIf(opts.Contains),
-		IncludeHidden: ptrIf(opts.IncludeHidden),
-		OrderBy:       ptrIf(opts.OrderBy),
-		View:          ptrIf(opts.View),
+		Where:           ptrIf(where.String()),
+		Select:          ptrIf(opts.Select),
+		WherePermission: enumIf[goclientnew.ListSpacesParamsWherePermission](opts.WherePermission),
+		Include:         ptrIf(opts.Include),
+		Filter:          ptrIf(opts.Filter),
+		Contains:        ptrIf(opts.Contains),
+		IncludeHidden:   ptrIf(opts.IncludeHidden),
+		OrderBy:         ptrIf(opts.OrderBy),
+		View:            ptrIf(opts.View),
 	}
 	for _, fn := range with {
 		fn(params)
@@ -314,14 +329,15 @@ func ListComponents(ctx context.Context, c *Client, where Where, opts ListOpts) 
 		return nil, err
 	}
 	params := &goclientnew.ListComponentsParams{
-		Where:         ptrIf(where.String()),
-		Select:        ptrIf(opts.Select),
-		Include:       ptrIf(opts.Include),
-		Filter:        ptrIf(opts.Filter),
-		Contains:      ptrIf(opts.Contains),
-		IncludeHidden: ptrIf(opts.IncludeHidden),
-		OrderBy:       ptrIf(opts.OrderBy),
-		View:          ptrIf(opts.View),
+		Where:           ptrIf(where.String()),
+		Select:          ptrIf(opts.Select),
+		WherePermission: enumIf[goclientnew.ListComponentsParamsWherePermission](opts.WherePermission),
+		Include:         ptrIf(opts.Include),
+		Filter:          ptrIf(opts.Filter),
+		Contains:        ptrIf(opts.Contains),
+		IncludeHidden:   ptrIf(opts.IncludeHidden),
+		OrderBy:         ptrIf(opts.OrderBy),
+		View:            ptrIf(opts.View),
 	}
 	return ReadPages(opts, func(limit *int, token *string) (*http.Response, *[]goclientnew.ExtendedComponent, error) {
 		params.Limit, params.Continue = limit, token
@@ -339,14 +355,15 @@ func ListServiceAccounts(ctx context.Context, c *Client, where Where, opts ListO
 		return nil, err
 	}
 	params := &goclientnew.ListServiceAccountsParams{
-		Where:         ptrIf(where.String()),
-		Select:        ptrIf(opts.Select),
-		Include:       ptrIf(opts.Include),
-		Filter:        ptrIf(opts.Filter),
-		Contains:      ptrIf(opts.Contains),
-		IncludeHidden: ptrIf(opts.IncludeHidden),
-		OrderBy:       ptrIf(opts.OrderBy),
-		View:          ptrIf(opts.View),
+		Where:           ptrIf(where.String()),
+		Select:          ptrIf(opts.Select),
+		WherePermission: enumIf[goclientnew.ListServiceAccountsParamsWherePermission](opts.WherePermission),
+		Include:         ptrIf(opts.Include),
+		Filter:          ptrIf(opts.Filter),
+		Contains:        ptrIf(opts.Contains),
+		IncludeHidden:   ptrIf(opts.IncludeHidden),
+		OrderBy:         ptrIf(opts.OrderBy),
+		View:            ptrIf(opts.View),
 	}
 	return ReadPages(opts, func(limit *int, token *string) (*http.Response, *[]goclientnew.ExtendedServiceAccount, error) {
 		params.Limit, params.Continue = limit, token
@@ -366,13 +383,14 @@ func ListOrganizations(ctx context.Context, c *Client, where Where, opts ListOpt
 		return nil, err
 	}
 	params := &goclientnew.ListOrganizationsParams{
-		Where:         ptrIf(where.String()),
-		Select:        ptrIf(opts.Select),
-		Include:       ptrIf(opts.Include),
-		Filter:        ptrIf(opts.Filter),
-		Contains:      ptrIf(opts.Contains),
-		IncludeHidden: ptrIf(opts.IncludeHidden),
-		View:          ptrIf(opts.View),
+		Where:           ptrIf(where.String()),
+		Select:          ptrIf(opts.Select),
+		WherePermission: enumIf[goclientnew.ListOrganizationsParamsWherePermission](opts.WherePermission),
+		Include:         ptrIf(opts.Include),
+		Filter:          ptrIf(opts.Filter),
+		Contains:        ptrIf(opts.Contains),
+		IncludeHidden:   ptrIf(opts.IncludeHidden),
+		View:            ptrIf(opts.View),
 	}
 	res, err := c.API.ListOrganizationsWithResponse(ctx, params)
 	if IsAPIError(err, res) {
@@ -393,10 +411,11 @@ func ListOrganizationMembers(ctx context.Context, c *Client, organizationID gocl
 		return nil, err
 	}
 	params := &goclientnew.ListOrganizationMembersParams{
-		Where:    ptrIf(where.String()),
-		Filter:   ptrIf(opts.Filter),
-		Contains: ptrIf(opts.Contains),
-		View:     ptrIf(opts.View),
+		Where:           ptrIf(where.String()),
+		Filter:          ptrIf(opts.Filter),
+		Contains:        ptrIf(opts.Contains),
+		WherePermission: enumIf[goclientnew.ListOrganizationMembersParamsWherePermission](opts.WherePermission),
+		View:            ptrIf(opts.View),
 	}
 	res, err := c.API.ListOrganizationMembersWithResponse(ctx, organizationID, params)
 	if IsAPIError(err, res) {
@@ -414,13 +433,14 @@ func ListUsers(ctx context.Context, c *Client, where Where, opts ListOpts) ([]*g
 		return nil, err
 	}
 	params := &goclientnew.ListUsersParams{
-		Where:         ptrIf(where.String()),
-		Select:        ptrIf(opts.Select),
-		Filter:        ptrIf(opts.Filter),
-		Contains:      ptrIf(opts.Contains),
-		IncludeHidden: ptrIf(opts.IncludeHidden),
-		OrderBy:       ptrIf(opts.OrderBy),
-		View:          ptrIf(opts.View),
+		Where:           ptrIf(where.String()),
+		Select:          ptrIf(opts.Select),
+		WherePermission: enumIf[goclientnew.ListUsersParamsWherePermission](opts.WherePermission),
+		Filter:          ptrIf(opts.Filter),
+		Contains:        ptrIf(opts.Contains),
+		IncludeHidden:   ptrIf(opts.IncludeHidden),
+		OrderBy:         ptrIf(opts.OrderBy),
+		View:            ptrIf(opts.View),
 	}
 	return ReadPages(opts, func(limit *int, token *string) (*http.Response, *[]goclientnew.ExtendedUser, error) {
 		params.Limit, params.Continue = limit, token
@@ -439,13 +459,14 @@ func ListGroups(ctx context.Context, c *Client, where Where, opts ListOpts) ([]*
 		return nil, err
 	}
 	params := &goclientnew.ListGroupsParams{
-		Where:         ptrIf(where.String()),
-		Select:        ptrIf(opts.Select),
-		Filter:        ptrIf(opts.Filter),
-		Contains:      ptrIf(opts.Contains),
-		IncludeHidden: ptrIf(opts.IncludeHidden),
-		OrderBy:       ptrIf(opts.OrderBy),
-		View:          ptrIf(opts.View),
+		Where:           ptrIf(where.String()),
+		Select:          ptrIf(opts.Select),
+		WherePermission: enumIf[goclientnew.ListGroupsParamsWherePermission](opts.WherePermission),
+		Filter:          ptrIf(opts.Filter),
+		Contains:        ptrIf(opts.Contains),
+		IncludeHidden:   ptrIf(opts.IncludeHidden),
+		OrderBy:         ptrIf(opts.OrderBy),
+		View:            ptrIf(opts.View),
 	}
 	return ReadPages(opts, func(limit *int, token *string) (*http.Response, *[]goclientnew.ExtendedGroup, error) {
 		params.Limit, params.Continue = limit, token
@@ -463,14 +484,15 @@ func ListTargets(ctx context.Context, c *Client, where Where, opts ListOpts) ([]
 		return nil, err
 	}
 	params := &goclientnew.ListAllTargetsParams{
-		Where:         ptrIf(where.String()),
-		Select:        ptrIf(opts.Select),
-		Include:       ptrIf(opts.Include),
-		Filter:        ptrIf(opts.Filter),
-		Contains:      ptrIf(opts.Contains),
-		IncludeHidden: ptrIf(opts.IncludeHidden),
-		OrderBy:       ptrIf(opts.OrderBy),
-		View:          ptrIf(opts.View),
+		Where:           ptrIf(where.String()),
+		Select:          ptrIf(opts.Select),
+		WherePermission: enumIf[goclientnew.ListAllTargetsParamsWherePermission](opts.WherePermission),
+		Include:         ptrIf(opts.Include),
+		Filter:          ptrIf(opts.Filter),
+		Contains:        ptrIf(opts.Contains),
+		IncludeHidden:   ptrIf(opts.IncludeHidden),
+		OrderBy:         ptrIf(opts.OrderBy),
+		View:            ptrIf(opts.View),
 	}
 	return ReadPages(opts, func(limit *int, token *string) (*http.Response, *[]goclientnew.ExtendedTarget, error) {
 		params.Limit, params.Continue = limit, token
@@ -488,14 +510,15 @@ func ListTriggers(ctx context.Context, c *Client, where Where, opts ListOpts) ([
 		return nil, err
 	}
 	params := &goclientnew.ListAllTriggersParams{
-		Where:         ptrIf(where.String()),
-		Select:        ptrIf(opts.Select),
-		Include:       ptrIf(opts.Include),
-		Filter:        ptrIf(opts.Filter),
-		Contains:      ptrIf(opts.Contains),
-		IncludeHidden: ptrIf(opts.IncludeHidden),
-		OrderBy:       ptrIf(opts.OrderBy),
-		View:          ptrIf(opts.View),
+		Where:           ptrIf(where.String()),
+		Select:          ptrIf(opts.Select),
+		WherePermission: enumIf[goclientnew.ListAllTriggersParamsWherePermission](opts.WherePermission),
+		Include:         ptrIf(opts.Include),
+		Filter:          ptrIf(opts.Filter),
+		Contains:        ptrIf(opts.Contains),
+		IncludeHidden:   ptrIf(opts.IncludeHidden),
+		OrderBy:         ptrIf(opts.OrderBy),
+		View:            ptrIf(opts.View),
 	}
 	return ReadPages(opts, func(limit *int, token *string) (*http.Response, *[]goclientnew.ExtendedTrigger, error) {
 		params.Limit, params.Continue = limit, token
@@ -515,14 +538,15 @@ func ListFilters(ctx context.Context, c *Client, where Where, opts ListOpts, wit
 		return nil, err
 	}
 	params := &goclientnew.ListAllFiltersParams{
-		Where:         ptrIf(where.String()),
-		Select:        ptrIf(opts.Select),
-		Include:       ptrIf(opts.Include),
-		Filter:        ptrIf(opts.Filter),
-		Contains:      ptrIf(opts.Contains),
-		IncludeHidden: ptrIf(opts.IncludeHidden),
-		OrderBy:       ptrIf(opts.OrderBy),
-		View:          ptrIf(opts.View),
+		Where:           ptrIf(where.String()),
+		Select:          ptrIf(opts.Select),
+		WherePermission: enumIf[goclientnew.ListAllFiltersParamsWherePermission](opts.WherePermission),
+		Include:         ptrIf(opts.Include),
+		Filter:          ptrIf(opts.Filter),
+		Contains:        ptrIf(opts.Contains),
+		IncludeHidden:   ptrIf(opts.IncludeHidden),
+		OrderBy:         ptrIf(opts.OrderBy),
+		View:            ptrIf(opts.View),
 	}
 	for _, fn := range with {
 		fn(params)
@@ -544,14 +568,15 @@ func ListInvocations(ctx context.Context, c *Client, where Where, opts ListOpts)
 		return nil, err
 	}
 	params := &goclientnew.ListAllInvocationsParams{
-		Where:         ptrIf(where.String()),
-		Select:        ptrIf(opts.Select),
-		Include:       ptrIf(opts.Include),
-		Filter:        ptrIf(opts.Filter),
-		Contains:      ptrIf(opts.Contains),
-		IncludeHidden: ptrIf(opts.IncludeHidden),
-		OrderBy:       ptrIf(opts.OrderBy),
-		View:          ptrIf(opts.View),
+		Where:           ptrIf(where.String()),
+		Select:          ptrIf(opts.Select),
+		WherePermission: enumIf[goclientnew.ListAllInvocationsParamsWherePermission](opts.WherePermission),
+		Include:         ptrIf(opts.Include),
+		Filter:          ptrIf(opts.Filter),
+		Contains:        ptrIf(opts.Contains),
+		IncludeHidden:   ptrIf(opts.IncludeHidden),
+		OrderBy:         ptrIf(opts.OrderBy),
+		View:            ptrIf(opts.View),
 	}
 	return ReadPages(opts, func(limit *int, token *string) (*http.Response, *[]goclientnew.ExtendedInvocation, error) {
 		params.Limit, params.Continue = limit, token
@@ -569,14 +594,15 @@ func ListChangeSets(ctx context.Context, c *Client, where Where, opts ListOpts) 
 		return nil, err
 	}
 	params := &goclientnew.ListAllChangeSetsParams{
-		Where:         ptrIf(where.String()),
-		Select:        ptrIf(opts.Select),
-		Include:       ptrIf(opts.Include),
-		Filter:        ptrIf(opts.Filter),
-		Contains:      ptrIf(opts.Contains),
-		IncludeHidden: ptrIf(opts.IncludeHidden),
-		OrderBy:       ptrIf(opts.OrderBy),
-		View:          ptrIf(opts.View),
+		Where:           ptrIf(where.String()),
+		Select:          ptrIf(opts.Select),
+		WherePermission: enumIf[goclientnew.ListAllChangeSetsParamsWherePermission](opts.WherePermission),
+		Include:         ptrIf(opts.Include),
+		Filter:          ptrIf(opts.Filter),
+		Contains:        ptrIf(opts.Contains),
+		IncludeHidden:   ptrIf(opts.IncludeHidden),
+		OrderBy:         ptrIf(opts.OrderBy),
+		View:            ptrIf(opts.View),
 	}
 	return ReadPages(opts, func(limit *int, token *string) (*http.Response, *[]goclientnew.ExtendedChangeSet, error) {
 		params.Limit, params.Continue = limit, token
@@ -594,14 +620,15 @@ func ListChangeOrders(ctx context.Context, c *Client, where Where, opts ListOpts
 		return nil, err
 	}
 	params := &goclientnew.ListAllChangeOrdersParams{
-		Where:         ptrIf(where.String()),
-		Select:        ptrIf(opts.Select),
-		Include:       ptrIf(opts.Include),
-		Filter:        ptrIf(opts.Filter),
-		Contains:      ptrIf(opts.Contains),
-		IncludeHidden: ptrIf(opts.IncludeHidden),
-		OrderBy:       ptrIf(opts.OrderBy),
-		View:          ptrIf(opts.View),
+		Where:           ptrIf(where.String()),
+		Select:          ptrIf(opts.Select),
+		WherePermission: enumIf[goclientnew.ListAllChangeOrdersParamsWherePermission](opts.WherePermission),
+		Include:         ptrIf(opts.Include),
+		Filter:          ptrIf(opts.Filter),
+		Contains:        ptrIf(opts.Contains),
+		IncludeHidden:   ptrIf(opts.IncludeHidden),
+		OrderBy:         ptrIf(opts.OrderBy),
+		View:            ptrIf(opts.View),
 	}
 	return ReadPages(opts, func(limit *int, token *string) (*http.Response, *[]goclientnew.ExtendedChangeOrder, error) {
 		params.Limit, params.Continue = limit, token
@@ -619,14 +646,15 @@ func ListChangeWorkflows(ctx context.Context, c *Client, where Where, opts ListO
 		return nil, err
 	}
 	params := &goclientnew.ListAllChangeWorkflowsParams{
-		Where:         ptrIf(where.String()),
-		Select:        ptrIf(opts.Select),
-		Include:       ptrIf(opts.Include),
-		Filter:        ptrIf(opts.Filter),
-		Contains:      ptrIf(opts.Contains),
-		IncludeHidden: ptrIf(opts.IncludeHidden),
-		OrderBy:       ptrIf(opts.OrderBy),
-		View:          ptrIf(opts.View),
+		Where:           ptrIf(where.String()),
+		Select:          ptrIf(opts.Select),
+		WherePermission: enumIf[goclientnew.ListAllChangeWorkflowsParamsWherePermission](opts.WherePermission),
+		Include:         ptrIf(opts.Include),
+		Filter:          ptrIf(opts.Filter),
+		Contains:        ptrIf(opts.Contains),
+		IncludeHidden:   ptrIf(opts.IncludeHidden),
+		OrderBy:         ptrIf(opts.OrderBy),
+		View:            ptrIf(opts.View),
 	}
 	return ReadPages(opts, func(limit *int, token *string) (*http.Response, *[]goclientnew.ExtendedChangeWorkflow, error) {
 		params.Limit, params.Continue = limit, token
@@ -644,14 +672,15 @@ func ListTags(ctx context.Context, c *Client, where Where, opts ListOpts) ([]*go
 		return nil, err
 	}
 	params := &goclientnew.ListAllTagsParams{
-		Where:         ptrIf(where.String()),
-		Select:        ptrIf(opts.Select),
-		Include:       ptrIf(opts.Include),
-		Filter:        ptrIf(opts.Filter),
-		Contains:      ptrIf(opts.Contains),
-		IncludeHidden: ptrIf(opts.IncludeHidden),
-		OrderBy:       ptrIf(opts.OrderBy),
-		View:          ptrIf(opts.View),
+		Where:           ptrIf(where.String()),
+		Select:          ptrIf(opts.Select),
+		WherePermission: enumIf[goclientnew.ListAllTagsParamsWherePermission](opts.WherePermission),
+		Include:         ptrIf(opts.Include),
+		Filter:          ptrIf(opts.Filter),
+		Contains:        ptrIf(opts.Contains),
+		IncludeHidden:   ptrIf(opts.IncludeHidden),
+		OrderBy:         ptrIf(opts.OrderBy),
+		View:            ptrIf(opts.View),
 	}
 	return ReadPages(opts, func(limit *int, token *string) (*http.Response, *[]goclientnew.ExtendedTag, error) {
 		params.Limit, params.Continue = limit, token
@@ -669,14 +698,15 @@ func ListAttestations(ctx context.Context, c *Client, where Where, opts ListOpts
 		return nil, err
 	}
 	params := &goclientnew.ListAllAttestationsParams{
-		Where:         ptrIf(where.String()),
-		Select:        ptrIf(opts.Select),
-		Include:       ptrIf(opts.Include),
-		Filter:        ptrIf(opts.Filter),
-		Contains:      ptrIf(opts.Contains),
-		IncludeHidden: ptrIf(opts.IncludeHidden),
-		OrderBy:       ptrIf(opts.OrderBy),
-		View:          ptrIf(opts.View),
+		Where:           ptrIf(where.String()),
+		Select:          ptrIf(opts.Select),
+		WherePermission: enumIf[goclientnew.ListAllAttestationsParamsWherePermission](opts.WherePermission),
+		Include:         ptrIf(opts.Include),
+		Filter:          ptrIf(opts.Filter),
+		Contains:        ptrIf(opts.Contains),
+		IncludeHidden:   ptrIf(opts.IncludeHidden),
+		OrderBy:         ptrIf(opts.OrderBy),
+		View:            ptrIf(opts.View),
 	}
 	return ReadPages(opts, func(limit *int, token *string) (*http.Response, *[]goclientnew.ExtendedAttestation, error) {
 		params.Limit, params.Continue = limit, token
@@ -694,14 +724,15 @@ func ListViews(ctx context.Context, c *Client, where Where, opts ListOpts) ([]*g
 		return nil, err
 	}
 	params := &goclientnew.ListAllViewsParams{
-		Where:         ptrIf(where.String()),
-		Select:        ptrIf(opts.Select),
-		Include:       ptrIf(opts.Include),
-		Filter:        ptrIf(opts.Filter),
-		Contains:      ptrIf(opts.Contains),
-		IncludeHidden: ptrIf(opts.IncludeHidden),
-		OrderBy:       ptrIf(opts.OrderBy),
-		View:          ptrIf(opts.View),
+		Where:           ptrIf(where.String()),
+		Select:          ptrIf(opts.Select),
+		WherePermission: enumIf[goclientnew.ListAllViewsParamsWherePermission](opts.WherePermission),
+		Include:         ptrIf(opts.Include),
+		Filter:          ptrIf(opts.Filter),
+		Contains:        ptrIf(opts.Contains),
+		IncludeHidden:   ptrIf(opts.IncludeHidden),
+		OrderBy:         ptrIf(opts.OrderBy),
+		View:            ptrIf(opts.View),
 	}
 	return ReadPages(opts, func(limit *int, token *string) (*http.Response, *[]goclientnew.ExtendedView, error) {
 		params.Limit, params.Continue = limit, token
@@ -724,14 +755,15 @@ func ListResources(ctx context.Context, c *Client, where Where, opts ListOpts, w
 		return nil, err
 	}
 	params := &goclientnew.ListAllResourcesParams{
-		Where:         ptrIf(where.String()),
-		Select:        ptrIf(opts.Select),
-		Include:       ptrIf(opts.Include),
-		Filter:        ptrIf(opts.Filter),
-		Contains:      ptrIf(opts.Contains),
-		IncludeHidden: ptrIf(opts.IncludeHidden),
-		OrderBy:       ptrIf(opts.OrderBy),
-		View:          ptrIf(opts.View),
+		Where:           ptrIf(where.String()),
+		Select:          ptrIf(opts.Select),
+		WherePermission: enumIf[goclientnew.ListAllResourcesParamsWherePermission](opts.WherePermission),
+		Include:         ptrIf(opts.Include),
+		Filter:          ptrIf(opts.Filter),
+		Contains:        ptrIf(opts.Contains),
+		IncludeHidden:   ptrIf(opts.IncludeHidden),
+		OrderBy:         ptrIf(opts.OrderBy),
+		View:            ptrIf(opts.View),
 	}
 	for _, fn := range with {
 		fn(params)
@@ -752,14 +784,15 @@ func ListAttributes(ctx context.Context, c *Client, where Where, opts ListOpts) 
 		return nil, err
 	}
 	params := &goclientnew.ListAllAttributesParams{
-		Where:         ptrIf(where.String()),
-		Select:        ptrIf(opts.Select),
-		Include:       ptrIf(opts.Include),
-		Filter:        ptrIf(opts.Filter),
-		Contains:      ptrIf(opts.Contains),
-		IncludeHidden: ptrIf(opts.IncludeHidden),
-		OrderBy:       ptrIf(opts.OrderBy),
-		View:          ptrIf(opts.View),
+		Where:           ptrIf(where.String()),
+		Select:          ptrIf(opts.Select),
+		WherePermission: enumIf[goclientnew.ListAllAttributesParamsWherePermission](opts.WherePermission),
+		Include:         ptrIf(opts.Include),
+		Filter:          ptrIf(opts.Filter),
+		Contains:        ptrIf(opts.Contains),
+		IncludeHidden:   ptrIf(opts.IncludeHidden),
+		OrderBy:         ptrIf(opts.OrderBy),
+		View:            ptrIf(opts.View),
 	}
 	return ReadPages(opts, func(limit *int, token *string) (*http.Response, *[]goclientnew.ExtendedAttribute, error) {
 		params.Limit, params.Continue = limit, token
@@ -778,14 +811,15 @@ func ListLinks(ctx context.Context, c *Client, where Where, opts ListOpts) ([]*g
 		return nil, err
 	}
 	params := &goclientnew.SearchListLinksParams{
-		Where:         ptrIf(where.String()),
-		Select:        ptrIf(opts.Select),
-		Include:       ptrIf(opts.Include),
-		Filter:        ptrIf(opts.Filter),
-		Contains:      ptrIf(opts.Contains),
-		IncludeHidden: ptrIf(opts.IncludeHidden),
-		OrderBy:       ptrIf(opts.OrderBy),
-		View:          ptrIf(opts.View),
+		Where:           ptrIf(where.String()),
+		Select:          ptrIf(opts.Select),
+		WherePermission: enumIf[goclientnew.SearchListLinksParamsWherePermission](opts.WherePermission),
+		Include:         ptrIf(opts.Include),
+		Filter:          ptrIf(opts.Filter),
+		Contains:        ptrIf(opts.Contains),
+		IncludeHidden:   ptrIf(opts.IncludeHidden),
+		OrderBy:         ptrIf(opts.OrderBy),
+		View:            ptrIf(opts.View),
 	}
 	return ReadPages(opts, func(limit *int, token *string) (*http.Response, *[]goclientnew.ExtendedLink, error) {
 		params.Limit, params.Continue = limit, token
@@ -803,14 +837,15 @@ func ListChannels(ctx context.Context, c *Client, where Where, opts ListOpts, wi
 		return nil, err
 	}
 	params := &goclientnew.ListAllChannelsParams{
-		Where:         ptrIf(where.String()),
-		Select:        ptrIf(opts.Select),
-		Include:       ptrIf(opts.Include),
-		Filter:        ptrIf(opts.Filter),
-		Contains:      ptrIf(opts.Contains),
-		IncludeHidden: ptrIf(opts.IncludeHidden),
-		OrderBy:       ptrIf(opts.OrderBy),
-		View:          ptrIf(opts.View),
+		Where:           ptrIf(where.String()),
+		Select:          ptrIf(opts.Select),
+		WherePermission: enumIf[goclientnew.ListAllChannelsParamsWherePermission](opts.WherePermission),
+		Include:         ptrIf(opts.Include),
+		Filter:          ptrIf(opts.Filter),
+		Contains:        ptrIf(opts.Contains),
+		IncludeHidden:   ptrIf(opts.IncludeHidden),
+		OrderBy:         ptrIf(opts.OrderBy),
+		View:            ptrIf(opts.View),
 	}
 	for _, fn := range with {
 		fn(params)
@@ -831,9 +866,10 @@ func ListCommandRuns(ctx context.Context, c *Client, where Where, opts ListOpts,
 		return nil, err
 	}
 	params := &goclientnew.ListAllCommandRunsParams{
-		Where:   ptrIf(where.String()),
-		Select:  ptrIf(opts.Select),
-		OrderBy: ptrIf(opts.OrderBy),
+		Where:           ptrIf(where.String()),
+		Select:          ptrIf(opts.Select),
+		WherePermission: enumIf[goclientnew.ListAllCommandRunsParamsWherePermission](opts.WherePermission),
+		OrderBy:         ptrIf(opts.OrderBy),
 	}
 	for _, fn := range with {
 		fn(params)
@@ -883,14 +919,15 @@ func ListBridgeWorkers(ctx context.Context, c *Client, where Where, opts ListOpt
 		return nil, err
 	}
 	params := &goclientnew.ListAllBridgeWorkersParams{
-		Where:         ptrIf(where.String()),
-		Select:        ptrIf(opts.Select),
-		Include:       ptrIf(opts.Include),
-		Filter:        ptrIf(opts.Filter),
-		Contains:      ptrIf(opts.Contains),
-		IncludeHidden: ptrIf(opts.IncludeHidden),
-		OrderBy:       ptrIf(opts.OrderBy),
-		View:          ptrIf(opts.View),
+		Where:           ptrIf(where.String()),
+		Select:          ptrIf(opts.Select),
+		WherePermission: enumIf[goclientnew.ListAllBridgeWorkersParamsWherePermission](opts.WherePermission),
+		Include:         ptrIf(opts.Include),
+		Filter:          ptrIf(opts.Filter),
+		Contains:        ptrIf(opts.Contains),
+		IncludeHidden:   ptrIf(opts.IncludeHidden),
+		OrderBy:         ptrIf(opts.OrderBy),
+		View:            ptrIf(opts.View),
 	}
 	for _, fn := range with {
 		fn(params)

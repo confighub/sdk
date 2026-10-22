@@ -84,6 +84,7 @@ var linkCustomColumnDependencies = map[string][]string{}
 
 func init() {
 	addStandardListFlags(linkListCmd)
+	enableWherePermissionFlag(linkListCmd)
 	enableListPagingFlags(linkListCmd)
 	enableViewFlag(linkListCmd)
 	linkCmd.AddCommand(linkListCmd)
@@ -194,13 +195,14 @@ func apiListAllLinks(where cubapi.Where, selectParam string, filterParam string)
 		return buildSelectList("Link", listColumnsFor("cub link list"), linkListInclude, defaultLinkColumns, linkAliases, linkCustomColumnDependencies, linkBaseSelectFields)
 	})
 	return cubapi.ListLinks(ctx, cubClient, where, cubapi.ListOpts{
-		Limit:         listLimit,
-		OrderBy:       listOrderBy,
-		Select:        cubapi.SelectFields(selectValue),
-		Include:       linkListInclude,
-		Filter:        filterParam,
-		Contains:      contains,
-		IncludeHidden: includeHidden,
-		View:          listViewFor("cub link list"),
+		Limit:           listLimit,
+		OrderBy:         listOrderBy,
+		Select:          cubapi.SelectFields(selectValue),
+		Include:         linkListInclude,
+		Filter:          filterParam,
+		Contains:        contains,
+		WherePermission: wherePermission,
+		IncludeHidden:   includeHidden,
+		View:            listViewFor("cub link list"),
 	})
 }

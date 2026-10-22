@@ -100,6 +100,7 @@ ${FCTL} do test-data/deployment.yaml MyApp vet-schemas > ${DIR}/vet-schemas.txt
 ${FCTL} do test-data/deployment.yaml MyApp vet-format > ${DIR}/vet-format-clean.txt
 ${FCTL} do test-data/deployment-lint-problems.yaml MyApp vet-format > ${DIR}/vet-format-problems.txt
 ${FCTL} do test-data/deployment-lint-anchors.yaml MyApp vet-format > ${DIR}/vet-format-anchors.txt
+${FCTL} do test-data/deployment-empty-values.yaml MyApp set-explicit-nulls > ${DIR}/set-explicit-nulls.txt
 
 ${FCTL} do test-data/deployment.yaml "MyDeployment" set-replicas 5 > ${DIR}/set-replicas.txt
 ${FCTL} do test-data/deployment.yaml "MyDeployment" get-replicas > ${DIR}/get-replicas.txt

@@ -11,8 +11,9 @@ import (
 // ValidationResult specifies whether a single validation function or sequence of validation
 // functions passed for the given configuration Unit.
 type ValidationResult struct {
-	Passed           bool               `description:"True if valid, false otherwise"`
-	Index            int                `description:"Index of the function invocation corresponding to the result. Useful in the case that multiple function invocations in the same executor call return ValidationResultList output."`
+	// Passed and Index are required so that generated clients do not drop false and 0.
+	Passed           bool               `required:"true" description:"True if valid, false otherwise"`
+	Index            int                `required:"true" description:"Index of the function invocation corresponding to the result. Useful in the case that multiple function invocations in the same executor call return ValidationResultList output."`
 	FunctionName     string             `json:",omitempty" description:"Name of the function invocation corresponding to the result"`
 	MaxScore         Score              `json:",omitempty" description:"Maximum score of all findings"`
 	Details          []string           `json:",omitempty" description:"Deprecated. Use Issues or FailedAttributes instead. Optional list of failure details when not associated with specific attributes/paths."`

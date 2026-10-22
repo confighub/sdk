@@ -14,12 +14,12 @@ import (
 // file", and one treated as an alias when it was meant as a relative path reads
 // somebody else's key.
 func TestKeyPathResolution(t *testing.T) {
-	configPath := writeConfig(t, twoContextConfig, nil)
-	store, err := LoadConfig(configPath)
+	dir := writeConfig(t, twoContextConfig, nil)
+	store, err := LoadConfig(dir)
 	if err != nil {
 		t.Fatalf("LoadConfig: %v", err)
 	}
-	keyDir := filepath.Join(filepath.Dir(configPath), "keys")
+	keyDir := filepath.Join(dir, "keys")
 
 	if got := store.KeyDir(); got != keyDir {
 		t.Fatalf("KeyDir = %q, want %q", got, keyDir)
@@ -49,8 +49,8 @@ func TestKeyPathResolution(t *testing.T) {
 // A "~" value expands against $HOME rather than being taken literally, matching
 // TokenPath. A literal "~" directory is not what anyone typing it means.
 func TestKeyPathExpandsHome(t *testing.T) {
-	configPath := writeConfig(t, twoContextConfig, nil)
-	store, err := LoadConfig(configPath)
+	dir := writeConfig(t, twoContextConfig, nil)
+	store, err := LoadConfig(dir)
 	if err != nil {
 		t.Fatalf("LoadConfig: %v", err)
 	}
@@ -66,8 +66,8 @@ func TestKeyPathExpandsHome(t *testing.T) {
 // directories because they have different lifetimes: a token is disposable and
 // re-mintable, a private key is not.
 func TestKeyDirIsSiblingOfTokenDir(t *testing.T) {
-	configPath := writeConfig(t, twoContextConfig, nil)
-	store, err := LoadConfig(configPath)
+	dir := writeConfig(t, twoContextConfig, nil)
+	store, err := LoadConfig(dir)
 	if err != nil {
 		t.Fatalf("LoadConfig: %v", err)
 	}
@@ -75,7 +75,7 @@ func TestKeyDirIsSiblingOfTokenDir(t *testing.T) {
 	if store.KeyDir() == store.TokenPath("x.json") {
 		t.Fatal("key directory collides with the token directory")
 	}
-	if filepath.Dir(store.KeyDir()) != filepath.Dir(configPath) {
-		t.Errorf("key dir %q is not beside the config file %q", store.KeyDir(), configPath)
+	if filepath.Dir(store.KeyDir()) != dir {
+		t.Errorf("key dir %q is not in the config directory %q", store.KeyDir(), dir)
 	}
 }

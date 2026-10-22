@@ -208,20 +208,16 @@ func registerMetadataFunctions(fh handler.FunctionRegistry, rp *k8skit.K8sResour
 	}
 }
 
-// unionResourceTypes returns a deduplicated list of resource types appearing in any of the given path maps.
-func unionResourceTypes(maps ...map[api.ResourceType][]string) []api.ResourceType {
-	seen := map[api.ResourceType]struct{}{}
-	result := []api.ResourceType{}
-	for _, m := range maps {
-		for rt := range m {
-			if _, ok := seen[rt]; ok {
-				continue
-			}
-			seen[rt] = struct{}{}
-			result = append(result, rt)
+// unionResourceTypes returns the resource types appearing in any of the given path maps, as
+// yamlkit.ResourceTypesForPathMap lists them.
+func unionResourceTypes(pathMaps ...map[api.ResourceType][]string) []api.ResourceType {
+	union := map[api.ResourceType][]string{}
+	for _, pathMap := range pathMaps {
+		for rt := range pathMap {
+			union[rt] = nil
 		}
 	}
-	return result
+	return yamlkit.ResourceTypesForPathMap(union)
 }
 
 const AttributeNameNamespaceNameReference = api.AttributeName("namespace-name-reference")

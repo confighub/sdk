@@ -1864,7 +1864,7 @@ paths:
           An example conjunction is:
           `CreatedAt >= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.
 
-          Supported attributes for filtering on Unit: Annotations, ApplyGates, ApplyWarnings, ChangeSetID, Conflicts, CreatedAt, DataHash, DeleteGates, DestroyGates, DisplayName, FromLinkID, HeadRevisionID, HeadRevisionNum, HeadUnitActionNum, HeadUnitEventNum, HiddenReason, Labels, LastChangeDescription, LastReleasedRevisionNum, LinkFindings, NeededPaths, OrganizationID, Permissions, ProvidedPaths, ProviderType, Slug, SpaceID, TargetID, ToolchainType, UnitID, UpdatedAt, UpstreamRevisionNum, UpstreamSpaceID, UpstreamUnitID, ValidationErrors, ValidationTriggerIDs, ValidationWarnings, ValueTriggerIDs, Values.
+          Supported attributes for filtering on Unit: Annotations, ApplyGates, ApplyWarnings, ChangeSetID, Conflicts, CreatedAt, DataHash, DeleteGates, DestroyGates, DisplayName, FromLinkID, HeadRevisionID, HeadRevisionNum, HeadUnitActionNum, HeadUnitEventNum, HiddenReason, Labels, LastChangeDescription, LastReleasedRevisionNum, LinkFindings, NeededPaths, OrganizationID, Permissions, ProvidedPaths, ProviderType, Slug, SpaceID, TargetID, ToolchainType, UnitID, UpdatedAt, UpstreamRevisionNum, UpstreamSpaceID, UpstreamUnitID, ValidationErrors, ValidationResults, ValidationTriggerIDs, ValidationWarnings, ValueTriggerIDs, Values.
 
           The Units to create entities from, with from_backing_units.
 
@@ -2264,6 +2264,22 @@ paths:
         name: select
         required: false
         schema:
+          type: string
+      - description: |-
+          Only return Attestation entities on which the caller has this permission, as well as View, which every entity listed needs.
+
+          A list made to choose an entity to act on can name the permission the action needs, such as Edit to change it or Use to refer to it from another entity, so that it leaves out the entities the action would be refused on.
+
+          Supported values: Manage, Edit, Use, View.
+        in: query
+        name: where_permission
+        required: false
+        schema:
+          enum:
+          - Manage
+          - Edit
+          - Use
+          - View
           type: string
       - description: |-
           Hidden Attestation entities, those with a HiddenReason, are left out of the results, or of what a bulk operation acts on, unless this names their HiddenReason.
@@ -2722,6 +2738,22 @@ paths:
         name: select
         required: false
         schema:
+          type: string
+      - description: |-
+          Only return Attribute entities on which the caller has this permission, as well as View, which every entity listed needs.
+
+          A list made to choose an entity to act on can name the permission the action needs, such as Edit to change it or Use to refer to it from another entity, so that it leaves out the entities the action would be refused on.
+
+          Supported values: Manage, Edit, Use, View.
+        in: query
+        name: where_permission
+        required: false
+        schema:
+          enum:
+          - Manage
+          - Edit
+          - Use
+          - View
           type: string
       - description: |-
           Hidden Attribute entities, those with a HiddenReason, are left out of the results, or of what a bulk operation acts on, unless this names their HiddenReason.
@@ -3429,7 +3461,7 @@ paths:
           An example conjunction is:
           `CreatedAt >= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.
 
-          Supported attributes for filtering on Unit: Annotations, ApplyGates, ApplyWarnings, ChangeSetID, Conflicts, CreatedAt, DataHash, DeleteGates, DestroyGates, DisplayName, FromLinkID, HeadRevisionID, HeadRevisionNum, HeadUnitActionNum, HeadUnitEventNum, HiddenReason, Labels, LastChangeDescription, LastReleasedRevisionNum, LinkFindings, NeededPaths, OrganizationID, Permissions, ProvidedPaths, ProviderType, Slug, SpaceID, TargetID, ToolchainType, UnitID, UpdatedAt, UpstreamRevisionNum, UpstreamSpaceID, UpstreamUnitID, ValidationErrors, ValidationTriggerIDs, ValidationWarnings, ValueTriggerIDs, Values.
+          Supported attributes for filtering on Unit: Annotations, ApplyGates, ApplyWarnings, ChangeSetID, Conflicts, CreatedAt, DataHash, DeleteGates, DestroyGates, DisplayName, FromLinkID, HeadRevisionID, HeadRevisionNum, HeadUnitActionNum, HeadUnitEventNum, HiddenReason, Labels, LastChangeDescription, LastReleasedRevisionNum, LinkFindings, NeededPaths, OrganizationID, Permissions, ProvidedPaths, ProviderType, Slug, SpaceID, TargetID, ToolchainType, UnitID, UpdatedAt, UpstreamRevisionNum, UpstreamSpaceID, UpstreamUnitID, ValidationErrors, ValidationResults, ValidationTriggerIDs, ValidationWarnings, ValueTriggerIDs, Values.
 
           The Units to create entities from, with from_backing_units.
 
@@ -4159,6 +4191,30 @@ paths:
         schema:
           type: string
       - description: |-
+          Only return BridgeWorker entities on which the caller has this permission, as well as View, which every entity listed needs.
+
+          A list made to choose an entity to act on can name the permission the action needs, such as Edit to change it or Use to refer to it from another entity, so that it leaves out the entities the action would be refused on.
+
+          Supported values: Manage, Edit, Use, View, ManageChildren, EditChildren, UseChildren, ViewChildren, CreateChildren, ApproveChildren, TargetEditChildren, TargetViewChildren.
+        in: query
+        name: where_permission
+        required: false
+        schema:
+          enum:
+          - Manage
+          - Edit
+          - Use
+          - View
+          - ManageChildren
+          - EditChildren
+          - UseChildren
+          - ViewChildren
+          - CreateChildren
+          - ApproveChildren
+          - TargetEditChildren
+          - TargetViewChildren
+          type: string
+      - description: |-
           Hidden BridgeWorker entities, those with a HiddenReason, are left out of the results, or of what a bulk operation acts on, unless this names their HiddenReason.
 
           It is a comma-separated list of HiddenReasons, or `*` for all of them.
@@ -4664,6 +4720,22 @@ paths:
         name: contains
         required: false
         schema:
+          type: string
+      - description: |-
+          Only return QueuedOperation entities on which the caller has this permission, as well as View, which every entity listed needs.
+
+          A list made to choose an entity to act on can name the permission the action needs, such as Edit to change it or Use to refer to it from another entity, so that it leaves out the entities the action would be refused on.
+
+          Supported values: Manage, Edit, Use, View.
+        in: query
+        name: where_permission
+        required: false
+        schema:
+          enum:
+          - Manage
+          - Edit
+          - Use
+          - View
           type: string
       - description: Maximum number of QueuedOperation entities to return. If not
           specified, all matching entities are returned. Values greater than 1000
@@ -5235,6 +5307,22 @@ paths:
         name: select
         required: false
         schema:
+          type: string
+      - description: |-
+          Only return ChangeOrder entities on which the caller has this permission, as well as View, which every entity listed needs.
+
+          A list made to choose an entity to act on can name the permission the action needs, such as Edit to change it or Use to refer to it from another entity, so that it leaves out the entities the action would be refused on.
+
+          Supported values: Manage, Edit, Use, View.
+        in: query
+        name: where_permission
+        required: false
+        schema:
+          enum:
+          - Manage
+          - Edit
+          - Use
+          - View
           type: string
       - description: |-
           Hidden ChangeOrder entities, those with a HiddenReason, are left out of the results, or of what a bulk operation acts on, unless this names their HiddenReason.
@@ -6490,6 +6578,22 @@ paths:
         name: select
         required: false
         schema:
+          type: string
+      - description: |-
+          Only return ChangeSet entities on which the caller has this permission, as well as View, which every entity listed needs.
+
+          A list made to choose an entity to act on can name the permission the action needs, such as Edit to change it or Use to refer to it from another entity, so that it leaves out the entities the action would be refused on.
+
+          Supported values: Manage, Edit, Use, View.
+        in: query
+        name: where_permission
+        required: false
+        schema:
+          enum:
+          - Manage
+          - Edit
+          - Use
+          - View
           type: string
       - description: |-
           Hidden ChangeSet entities, those with a HiddenReason, are left out of the results, or of what a bulk operation acts on, unless this names their HiddenReason.
@@ -7820,6 +7924,22 @@ paths:
         schema:
           type: string
       - description: |-
+          Only return ChangeWorkflow entities on which the caller has this permission, as well as View, which every entity listed needs.
+
+          A list made to choose an entity to act on can name the permission the action needs, such as Edit to change it or Use to refer to it from another entity, so that it leaves out the entities the action would be refused on.
+
+          Supported values: Manage, Edit, Use, View.
+        in: query
+        name: where_permission
+        required: false
+        schema:
+          enum:
+          - Manage
+          - Edit
+          - Use
+          - View
+          type: string
+      - description: |-
           Hidden ChangeWorkflow entities, those with a HiddenReason, are left out of the results, or of what a bulk operation acts on, unless this names their HiddenReason.
 
           It is a comma-separated list of HiddenReasons, or `*` for all of them.
@@ -8556,7 +8676,7 @@ paths:
           An example conjunction is:
           `CreatedAt >= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.
 
-          Supported attributes for filtering on Unit: Annotations, ApplyGates, ApplyWarnings, ChangeSetID, Conflicts, CreatedAt, DataHash, DeleteGates, DestroyGates, DisplayName, FromLinkID, HeadRevisionID, HeadRevisionNum, HeadUnitActionNum, HeadUnitEventNum, HiddenReason, Labels, LastChangeDescription, LastReleasedRevisionNum, LinkFindings, NeededPaths, OrganizationID, Permissions, ProvidedPaths, ProviderType, Slug, SpaceID, TargetID, ToolchainType, UnitID, UpdatedAt, UpstreamRevisionNum, UpstreamSpaceID, UpstreamUnitID, ValidationErrors, ValidationTriggerIDs, ValidationWarnings, ValueTriggerIDs, Values.
+          Supported attributes for filtering on Unit: Annotations, ApplyGates, ApplyWarnings, ChangeSetID, Conflicts, CreatedAt, DataHash, DeleteGates, DestroyGates, DisplayName, FromLinkID, HeadRevisionID, HeadRevisionNum, HeadUnitActionNum, HeadUnitEventNum, HiddenReason, Labels, LastChangeDescription, LastReleasedRevisionNum, LinkFindings, NeededPaths, OrganizationID, Permissions, ProvidedPaths, ProviderType, Slug, SpaceID, TargetID, ToolchainType, UnitID, UpdatedAt, UpstreamRevisionNum, UpstreamSpaceID, UpstreamUnitID, ValidationErrors, ValidationResults, ValidationTriggerIDs, ValidationWarnings, ValueTriggerIDs, Values.
 
           The Units to create entities from, with from_backing_units.
 
@@ -9294,6 +9414,23 @@ paths:
         schema:
           type: string
       - description: |-
+          Only return Channel entities on which the caller has this permission, as well as View, which every entity listed needs.
+
+          A list made to choose an entity to act on can name the permission the action needs, such as Edit to change it or Use to refer to it from another entity, so that it leaves out the entities the action would be refused on.
+
+          Supported values: Manage, Edit, Use, View, Claim.
+        in: query
+        name: where_permission
+        required: false
+        schema:
+          enum:
+          - Manage
+          - Edit
+          - Use
+          - View
+          - Claim
+          type: string
+      - description: |-
           Hidden Channel entities, those with a HiddenReason, are left out of the results, or of what a bulk operation acts on, unless this names their HiddenReason.
 
           It is a comma-separated list of HiddenReasons, or `*` for all of them.
@@ -10011,7 +10148,7 @@ paths:
           An example conjunction is:
           `CreatedAt >= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.
 
-          Supported attributes for filtering on Unit: Annotations, ApplyGates, ApplyWarnings, ChangeSetID, Conflicts, CreatedAt, DataHash, DeleteGates, DestroyGates, DisplayName, FromLinkID, HeadRevisionID, HeadRevisionNum, HeadUnitActionNum, HeadUnitEventNum, HiddenReason, Labels, LastChangeDescription, LastReleasedRevisionNum, LinkFindings, NeededPaths, OrganizationID, Permissions, ProvidedPaths, ProviderType, Slug, SpaceID, TargetID, ToolchainType, UnitID, UpdatedAt, UpstreamRevisionNum, UpstreamSpaceID, UpstreamUnitID, ValidationErrors, ValidationTriggerIDs, ValidationWarnings, ValueTriggerIDs, Values.
+          Supported attributes for filtering on Unit: Annotations, ApplyGates, ApplyWarnings, ChangeSetID, Conflicts, CreatedAt, DataHash, DeleteGates, DestroyGates, DisplayName, FromLinkID, HeadRevisionID, HeadRevisionNum, HeadUnitActionNum, HeadUnitEventNum, HiddenReason, Labels, LastChangeDescription, LastReleasedRevisionNum, LinkFindings, NeededPaths, OrganizationID, Permissions, ProvidedPaths, ProviderType, Slug, SpaceID, TargetID, ToolchainType, UnitID, UpdatedAt, UpstreamRevisionNum, UpstreamSpaceID, UpstreamUnitID, ValidationErrors, ValidationResults, ValidationTriggerIDs, ValidationWarnings, ValueTriggerIDs, Values.
 
           The Units to create entities from, with from_backing_units.
 
@@ -10569,6 +10706,22 @@ paths:
         required: false
         schema:
           type: string
+      - description: |-
+          Only return CommandRun entities on which the caller has this permission, as well as View, which every entity listed needs.
+
+          A list made to choose an entity to act on can name the permission the action needs, such as Edit to change it or Use to refer to it from another entity, so that it leaves out the entities the action would be refused on.
+
+          Supported values: Manage, Edit, Use, View.
+        in: query
+        name: where_permission
+        required: false
+        schema:
+          enum:
+          - Manage
+          - Edit
+          - Use
+          - View
+          type: string
       - description: Maximum number of CommandRun entities to return. If not specified,
           all matching entities are returned. Values greater than 1000 are rejected
           with 400. When there may be more entities, the response has a ConfigHub-Continue
@@ -10779,6 +10932,22 @@ paths:
         name: select
         required: false
         schema:
+          type: string
+      - description: |-
+          Only return Component entities on which the caller has this permission, as well as View, which every entity listed needs.
+
+          A list made to choose an entity to act on can name the permission the action needs, such as Edit to change it or Use to refer to it from another entity, so that it leaves out the entities the action would be refused on.
+
+          Supported values: Manage, Edit, Use, View.
+        in: query
+        name: where_permission
+        required: false
+        schema:
+          enum:
+          - Manage
+          - Edit
+          - Use
+          - View
           type: string
       - description: |-
           Hidden Component entities, those with a HiddenReason, are left out of the results, or of what a bulk operation acts on, unless this names their HiddenReason.
@@ -12049,6 +12218,22 @@ paths:
         schema:
           type: string
       - description: |-
+          Only return Filter entities on which the caller has this permission, as well as View, which every entity listed needs.
+
+          A list made to choose an entity to act on can name the permission the action needs, such as Edit to change it or Use to refer to it from another entity, so that it leaves out the entities the action would be refused on.
+
+          Supported values: Manage, Edit, Use, View.
+        in: query
+        name: where_permission
+        required: false
+        schema:
+          enum:
+          - Manage
+          - Edit
+          - Use
+          - View
+          type: string
+      - description: |-
           Hidden Filter entities, those with a HiddenReason, are left out of the results, or of what a bulk operation acts on, unless this names their HiddenReason.
 
           It is a comma-separated list of HiddenReasons, or `*` for all of them.
@@ -12787,7 +12972,7 @@ paths:
           An example conjunction is:
           `CreatedAt >= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.
 
-          Supported attributes for filtering on Unit: Annotations, ApplyGates, ApplyWarnings, ChangeSetID, Conflicts, CreatedAt, DataHash, DeleteGates, DestroyGates, DisplayName, FromLinkID, HeadRevisionID, HeadRevisionNum, HeadUnitActionNum, HeadUnitEventNum, HiddenReason, Labels, LastChangeDescription, LastReleasedRevisionNum, LinkFindings, NeededPaths, OrganizationID, Permissions, ProvidedPaths, ProviderType, Slug, SpaceID, TargetID, ToolchainType, UnitID, UpdatedAt, UpstreamRevisionNum, UpstreamSpaceID, UpstreamUnitID, ValidationErrors, ValidationTriggerIDs, ValidationWarnings, ValueTriggerIDs, Values.
+          Supported attributes for filtering on Unit: Annotations, ApplyGates, ApplyWarnings, ChangeSetID, Conflicts, CreatedAt, DataHash, DeleteGates, DestroyGates, DisplayName, FromLinkID, HeadRevisionID, HeadRevisionNum, HeadUnitActionNum, HeadUnitEventNum, HiddenReason, Labels, LastChangeDescription, LastReleasedRevisionNum, LinkFindings, NeededPaths, OrganizationID, Permissions, ProvidedPaths, ProviderType, Slug, SpaceID, TargetID, ToolchainType, UnitID, UpdatedAt, UpstreamRevisionNum, UpstreamSpaceID, UpstreamUnitID, ValidationErrors, ValidationResults, ValidationTriggerIDs, ValidationWarnings, ValueTriggerIDs, Values.
 
           The Units to create entities from, with from_backing_units.
 
@@ -13409,7 +13594,7 @@ paths:
           An example conjunction is:
           `CreatedAt >= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.
 
-          Supported attributes for filtering on Unit: Annotations, ApplyGates, ApplyWarnings, ChangeSetID, Conflicts, CreatedAt, DataHash, DeleteGates, DestroyGates, DisplayName, FromLinkID, HeadRevisionID, HeadRevisionNum, HeadUnitActionNum, HeadUnitEventNum, HiddenReason, Labels, LastChangeDescription, LastReleasedRevisionNum, LinkFindings, NeededPaths, OrganizationID, Permissions, ProvidedPaths, ProviderType, Slug, SpaceID, TargetID, ToolchainType, UnitID, UpdatedAt, UpstreamRevisionNum, UpstreamSpaceID, UpstreamUnitID, ValidationErrors, ValidationTriggerIDs, ValidationWarnings, ValueTriggerIDs, Values.
+          Supported attributes for filtering on Unit: Annotations, ApplyGates, ApplyWarnings, ChangeSetID, Conflicts, CreatedAt, DataHash, DeleteGates, DestroyGates, DisplayName, FromLinkID, HeadRevisionID, HeadRevisionNum, HeadUnitActionNum, HeadUnitEventNum, HiddenReason, Labels, LastChangeDescription, LastReleasedRevisionNum, LinkFindings, NeededPaths, OrganizationID, Permissions, ProvidedPaths, ProviderType, Slug, SpaceID, TargetID, ToolchainType, UnitID, UpdatedAt, UpstreamRevisionNum, UpstreamSpaceID, UpstreamUnitID, ValidationErrors, ValidationResults, ValidationTriggerIDs, ValidationWarnings, ValueTriggerIDs, Values.
 
           Finding all units created by cloning can be done using the expression `UpstreamRevisionNum > 0`. Clones of a specific unit can be found by additionally filtering based on `UpstreamUnitID`. Units never released can be found using `LastReleasedRevisionNum = 0`. Units with unreleased changes can be found with `HeadRevisionNum > LastReleasedRevisionNum AND TargetID IS NOT NULL`.
 
@@ -13718,6 +13903,22 @@ paths:
         name: contains
         required: false
         schema:
+          type: string
+      - description: |-
+          Only return Group entities on which the caller has this permission, as well as View, which every entity listed needs.
+
+          A list made to choose an entity to act on can name the permission the action needs, such as Edit to change it or Use to refer to it from another entity, so that it leaves out the entities the action would be refused on.
+
+          Supported values: Manage, Edit, Use, View.
+        in: query
+        name: where_permission
+        required: false
+        schema:
+          enum:
+          - Manage
+          - Edit
+          - Use
+          - View
           type: string
       - description: |-
           Select clause for specifying which fields to include in the response for Group.
@@ -14438,6 +14639,22 @@ paths:
         name: select
         required: false
         schema:
+          type: string
+      - description: |-
+          Only return Invocation entities on which the caller has this permission, as well as View, which every entity listed needs.
+
+          A list made to choose an entity to act on can name the permission the action needs, such as Edit to change it or Use to refer to it from another entity, so that it leaves out the entities the action would be refused on.
+
+          Supported values: Manage, Edit, Use, View.
+        in: query
+        name: where_permission
+        required: false
+        schema:
+          enum:
+          - Manage
+          - Edit
+          - Use
+          - View
           type: string
       - description: |-
           Hidden Invocation entities, those with a HiddenReason, are left out of the results, or of what a bulk operation acts on, unless this names their HiddenReason.
@@ -15168,7 +15385,7 @@ paths:
           An example conjunction is:
           `CreatedAt >= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.
 
-          Supported attributes for filtering on Unit: Annotations, ApplyGates, ApplyWarnings, ChangeSetID, Conflicts, CreatedAt, DataHash, DeleteGates, DestroyGates, DisplayName, FromLinkID, HeadRevisionID, HeadRevisionNum, HeadUnitActionNum, HeadUnitEventNum, HiddenReason, Labels, LastChangeDescription, LastReleasedRevisionNum, LinkFindings, NeededPaths, OrganizationID, Permissions, ProvidedPaths, ProviderType, Slug, SpaceID, TargetID, ToolchainType, UnitID, UpdatedAt, UpstreamRevisionNum, UpstreamSpaceID, UpstreamUnitID, ValidationErrors, ValidationTriggerIDs, ValidationWarnings, ValueTriggerIDs, Values.
+          Supported attributes for filtering on Unit: Annotations, ApplyGates, ApplyWarnings, ChangeSetID, Conflicts, CreatedAt, DataHash, DeleteGates, DestroyGates, DisplayName, FromLinkID, HeadRevisionID, HeadRevisionNum, HeadUnitActionNum, HeadUnitEventNum, HiddenReason, Labels, LastChangeDescription, LastReleasedRevisionNum, LinkFindings, NeededPaths, OrganizationID, Permissions, ProvidedPaths, ProviderType, Slug, SpaceID, TargetID, ToolchainType, UnitID, UpdatedAt, UpstreamRevisionNum, UpstreamSpaceID, UpstreamUnitID, ValidationErrors, ValidationResults, ValidationTriggerIDs, ValidationWarnings, ValueTriggerIDs, Values.
 
           The Units to create entities from, with from_backing_units.
 
@@ -15894,6 +16111,22 @@ paths:
         name: select
         required: false
         schema:
+          type: string
+      - description: |-
+          Only return Link entities on which the caller has this permission, as well as View, which every entity listed needs.
+
+          A list made to choose an entity to act on can name the permission the action needs, such as Edit to change it or Use to refer to it from another entity, so that it leaves out the entities the action would be refused on.
+
+          Supported values: Manage, Edit, Use, View.
+        in: query
+        name: where_permission
+        required: false
+        schema:
+          enum:
+          - Manage
+          - Edit
+          - Use
+          - View
           type: string
       - description: |-
           Hidden Link entities, those with a HiddenReason, are left out of the results, or of what a bulk operation acts on, unless this names their HiddenReason.
@@ -16673,7 +16906,7 @@ paths:
           An example conjunction is:
           `CreatedAt >= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.
 
-          Supported attributes for filtering on Unit: Annotations, ApplyGates, ApplyWarnings, ChangeSetID, Conflicts, CreatedAt, DataHash, DeleteGates, DestroyGates, DisplayName, FromLinkID, HeadRevisionID, HeadRevisionNum, HeadUnitActionNum, HeadUnitEventNum, HiddenReason, Labels, LastChangeDescription, LastReleasedRevisionNum, LinkFindings, NeededPaths, OrganizationID, Permissions, ProvidedPaths, ProviderType, Slug, SpaceID, TargetID, ToolchainType, UnitID, UpdatedAt, UpstreamRevisionNum, UpstreamSpaceID, UpstreamUnitID, ValidationErrors, ValidationTriggerIDs, ValidationWarnings, ValueTriggerIDs, Values.
+          Supported attributes for filtering on Unit: Annotations, ApplyGates, ApplyWarnings, ChangeSetID, Conflicts, CreatedAt, DataHash, DeleteGates, DestroyGates, DisplayName, FromLinkID, HeadRevisionID, HeadRevisionNum, HeadUnitActionNum, HeadUnitEventNum, HiddenReason, Labels, LastChangeDescription, LastReleasedRevisionNum, LinkFindings, NeededPaths, OrganizationID, Permissions, ProvidedPaths, ProviderType, Slug, SpaceID, TargetID, ToolchainType, UnitID, UpdatedAt, UpstreamRevisionNum, UpstreamSpaceID, UpstreamUnitID, ValidationErrors, ValidationResults, ValidationTriggerIDs, ValidationWarnings, ValueTriggerIDs, Values.
 
           The Units to create entities from, with from_backing_units.
 
@@ -17414,6 +17647,22 @@ paths:
         schema:
           type: string
       - description: |-
+          Only return Organization entities on which the caller has this permission, as well as View, which every entity listed needs.
+
+          A list made to choose an entity to act on can name the permission the action needs, such as Edit to change it or Use to refer to it from another entity, so that it leaves out the entities the action would be refused on.
+
+          Supported values: Manage, Edit, Use, View.
+        in: query
+        name: where_permission
+        required: false
+        schema:
+          enum:
+          - Manage
+          - Edit
+          - Use
+          - View
+          type: string
+      - description: |-
           Hidden Organization entities, those with a HiddenReason, are left out of the results, or of what a bulk operation acts on, unless this names their HiddenReason.
 
           It is a comma-separated list of HiddenReasons, or `*` for all of them.
@@ -17880,6 +18129,22 @@ paths:
         name: contains
         required: false
         schema:
+          type: string
+      - description: |-
+          Only return OrganizationMember entities on which the caller has this permission, as well as View, which every entity listed needs.
+
+          A list made to choose an entity to act on can name the permission the action needs, such as Edit to change it or Use to refer to it from another entity, so that it leaves out the entities the action would be refused on.
+
+          Supported values: Manage, Edit, Use, View.
+        in: query
+        name: where_permission
+        required: false
+        schema:
+          enum:
+          - Manage
+          - Edit
+          - Use
+          - View
           type: string
       - description: |-
           UUID of a View whose columns to compute for each OrganizationMember, returned as ViewColumns.
@@ -18374,6 +18639,22 @@ paths:
         schema:
           type: string
       - description: |-
+          Only return Release entities on which the caller has this permission, as well as View, which every entity listed needs.
+
+          A list made to choose an entity to act on can name the permission the action needs, such as Edit to change it or Use to refer to it from another entity, so that it leaves out the entities the action would be refused on.
+
+          Supported values: Manage, Edit, Use, View.
+        in: query
+        name: where_permission
+        required: false
+        schema:
+          enum:
+          - Manage
+          - Edit
+          - Use
+          - View
+          type: string
+      - description: |-
           Hidden Release entities, those with a HiddenReason, are left out of the results, or of what a bulk operation acts on, unless this names their HiddenReason.
 
           It is a comma-separated list of HiddenReasons, or `*` for all of them.
@@ -18627,6 +18908,22 @@ paths:
         name: select
         required: false
         schema:
+          type: string
+      - description: |-
+          Only return Resource entities on which the caller has this permission, as well as View, which every entity listed needs.
+
+          A list made to choose an entity to act on can name the permission the action needs, such as Edit to change it or Use to refer to it from another entity, so that it leaves out the entities the action would be refused on.
+
+          Supported values: Manage, Edit, Use, View.
+        in: query
+        name: where_permission
+        required: false
+        schema:
+          enum:
+          - Manage
+          - Edit
+          - Use
+          - View
           type: string
       - description: |-
           Hidden Resource entities, those with a HiddenReason, are left out of the results, or of what a bulk operation acts on, unless this names their HiddenReason.
@@ -19095,6 +19392,22 @@ paths:
         schema:
           type: string
       - description: |-
+          Only return ReviewComment entities on which the caller has this permission, as well as View, which every entity listed needs.
+
+          A list made to choose an entity to act on can name the permission the action needs, such as Edit to change it or Use to refer to it from another entity, so that it leaves out the entities the action would be refused on.
+
+          Supported values: Manage, Edit, Use, View.
+        in: query
+        name: where_permission
+        required: false
+        schema:
+          enum:
+          - Manage
+          - Edit
+          - Use
+          - View
+          type: string
+      - description: |-
           Hidden ReviewComment entities, those with a HiddenReason, are left out of the results, or of what a bulk operation acts on, unless this names their HiddenReason.
 
           It is a comma-separated list of HiddenReasons, or `*` for all of them.
@@ -19531,7 +19844,7 @@ paths:
           An example conjunction is:
           `CreatedAt >= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.
 
-          Supported attributes for filtering on Revision: ApplyGates, ApplyWarnings, Attestations, ChangeOrders, ChangeSetID, Conflicts, CreatedAt, DataHash, Description, HiddenReason, LinkFindings, NeededPaths, OrganizationID, ProvidedPaths, Releases, RevisionID, RevisionNum, Source, SpaceID, Tags, UnitID, UpdatedAt, UserAgent, UserID, ValidationErrors, ValidationPassed, ValidationTriggerIDs, ValidationWarnings, ValueTriggerIDs, Values.
+          Supported attributes for filtering on Revision: ApplyGates, ApplyWarnings, Attestations, ChangeOrders, ChangeSetID, Conflicts, CreatedAt, DataHash, Description, HiddenReason, LinkFindings, NeededPaths, OrganizationID, ProvidedPaths, Releases, RevisionID, RevisionNum, Source, SpaceID, Tags, UnitID, UpdatedAt, UserAgent, UserID, ValidationErrors, ValidationPassed, ValidationResults, ValidationTriggerIDs, ValidationWarnings, ValueTriggerIDs, Values.
 
           To list tagged Revisions use `Tags ? '<tag-id>'`.
 
@@ -19606,6 +19919,22 @@ paths:
         name: select
         required: false
         schema:
+          type: string
+      - description: |-
+          Only return Revision entities on which the caller has this permission, as well as View, which every entity listed needs.
+
+          A list made to choose an entity to act on can name the permission the action needs, such as Edit to change it or Use to refer to it from another entity, so that it leaves out the entities the action would be refused on.
+
+          Supported values: Manage, Edit, Use, View.
+        in: query
+        name: where_permission
+        required: false
+        schema:
+          enum:
+          - Manage
+          - Edit
+          - Use
+          - View
           type: string
       - description: |-
           Hidden Revision entities, those with a HiddenReason, are left out of the results, or of what a bulk operation acts on, unless this names their HiddenReason.
@@ -19798,7 +20127,7 @@ paths:
           An example conjunction is:
           `CreatedAt >= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.
 
-          Supported attributes for filtering on Revision: ApplyGates, ApplyWarnings, Attestations, ChangeOrders, ChangeSetID, Conflicts, CreatedAt, DataHash, Description, HiddenReason, LinkFindings, NeededPaths, OrganizationID, ProvidedPaths, Releases, RevisionID, RevisionNum, Source, SpaceID, Tags, UnitID, UpdatedAt, UserAgent, UserID, ValidationErrors, ValidationPassed, ValidationTriggerIDs, ValidationWarnings, ValueTriggerIDs, Values.
+          Supported attributes for filtering on Revision: ApplyGates, ApplyWarnings, Attestations, ChangeOrders, ChangeSetID, Conflicts, CreatedAt, DataHash, Description, HiddenReason, LinkFindings, NeededPaths, OrganizationID, ProvidedPaths, Releases, RevisionID, RevisionNum, Source, SpaceID, Tags, UnitID, UpdatedAt, UserAgent, UserID, ValidationErrors, ValidationPassed, ValidationResults, ValidationTriggerIDs, ValidationWarnings, ValueTriggerIDs, Values.
 
           To list tagged Revisions use `Tags ? '<tag-id>'`.
 
@@ -19873,6 +20202,22 @@ paths:
         name: select
         required: false
         schema:
+          type: string
+      - description: |-
+          Only return Revision entities on which the caller has this permission, as well as View, which every entity listed needs.
+
+          A list made to choose an entity to act on can name the permission the action needs, such as Edit to change it or Use to refer to it from another entity, so that it leaves out the entities the action would be refused on.
+
+          Supported values: Manage, Edit, Use, View.
+        in: query
+        name: where_permission
+        required: false
+        schema:
+          enum:
+          - Manage
+          - Edit
+          - Use
+          - View
           type: string
       - description: |-
           Hidden Revision entities, those with a HiddenReason, are left out of the results, or of what a bulk operation acts on, unless this names their HiddenReason.
@@ -20051,7 +20396,7 @@ paths:
           An example conjunction is:
           `CreatedAt >= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.
 
-          Supported attributes for filtering on Revision: ApplyGates, ApplyWarnings, Attestations, ChangeOrders, ChangeSetID, Conflicts, CreatedAt, DataHash, Description, HiddenReason, LinkFindings, NeededPaths, OrganizationID, ProvidedPaths, Releases, RevisionID, RevisionNum, Source, SpaceID, Tags, UnitID, UpdatedAt, UserAgent, UserID, ValidationErrors, ValidationPassed, ValidationTriggerIDs, ValidationWarnings, ValueTriggerIDs, Values.
+          Supported attributes for filtering on Revision: ApplyGates, ApplyWarnings, Attestations, ChangeOrders, ChangeSetID, Conflicts, CreatedAt, DataHash, Description, HiddenReason, LinkFindings, NeededPaths, OrganizationID, ProvidedPaths, Releases, RevisionID, RevisionNum, Source, SpaceID, Tags, UnitID, UpdatedAt, UserAgent, UserID, ValidationErrors, ValidationPassed, ValidationResults, ValidationTriggerIDs, ValidationWarnings, ValueTriggerIDs, Values.
 
           To list tagged Revisions use `Tags ? '<tag-id>'`.
 
@@ -20126,6 +20471,22 @@ paths:
         name: select
         required: false
         schema:
+          type: string
+      - description: |-
+          Only return Revision entities on which the caller has this permission, as well as View, which every entity listed needs.
+
+          A list made to choose an entity to act on can name the permission the action needs, such as Edit to change it or Use to refer to it from another entity, so that it leaves out the entities the action would be refused on.
+
+          Supported values: Manage, Edit, Use, View.
+        in: query
+        name: where_permission
+        required: false
+        schema:
+          enum:
+          - Manage
+          - Edit
+          - Use
+          - View
           type: string
       - description: |-
           Hidden Revision entities, those with a HiddenReason, are left out of the results, or of what a bulk operation acts on, unless this names their HiddenReason.
@@ -20375,6 +20736,23 @@ paths:
         name: select
         required: false
         schema:
+          type: string
+      - description: |-
+          Only return ServiceAccount entities on which the caller has this permission, as well as View, which every entity listed needs.
+
+          A list made to choose an entity to act on can name the permission the action needs, such as Edit to change it or Use to refer to it from another entity, so that it leaves out the entities the action would be refused on.
+
+          Supported values: Manage, Edit, Use, View, Impersonate.
+        in: query
+        name: where_permission
+        required: false
+        schema:
+          enum:
+          - Manage
+          - Edit
+          - Use
+          - View
+          - Impersonate
           type: string
       - description: |-
           Hidden ServiceAccount entities, those with a HiddenReason, are left out of the results, or of what a bulk operation acts on, unless this names their HiddenReason.
@@ -21523,6 +21901,30 @@ paths:
         schema:
           type: string
       - description: |-
+          Only return Space entities on which the caller has this permission, as well as View, which every entity listed needs.
+
+          A list made to choose an entity to act on can name the permission the action needs, such as Edit to change it or Use to refer to it from another entity, so that it leaves out the entities the action would be refused on.
+
+          Supported values: Manage, Edit, Use, View, ManageChildren, EditChildren, UseChildren, ViewChildren, CreateChildren, ApproveChildren, TargetEditChildren, TargetViewChildren.
+        in: query
+        name: where_permission
+        required: false
+        schema:
+          enum:
+          - Manage
+          - Edit
+          - Use
+          - View
+          - ManageChildren
+          - EditChildren
+          - UseChildren
+          - ViewChildren
+          - CreateChildren
+          - ApproveChildren
+          - TargetEditChildren
+          - TargetViewChildren
+          type: string
+      - description: |-
           Hidden Space entities, those with a HiddenReason, are left out of the results, or of what a bulk operation acts on, unless this names their HiddenReason.
 
           It is a comma-separated list of HiddenReasons, or `*` for all of them.
@@ -22313,6 +22715,22 @@ paths:
         schema:
           type: string
       - description: |-
+          Only return Attestation entities on which the caller has this permission, as well as View, which every entity listed needs.
+
+          A list made to choose an entity to act on can name the permission the action needs, such as Edit to change it or Use to refer to it from another entity, so that it leaves out the entities the action would be refused on.
+
+          Supported values: Manage, Edit, Use, View.
+        in: query
+        name: where_permission
+        required: false
+        schema:
+          enum:
+          - Manage
+          - Edit
+          - Use
+          - View
+          type: string
+      - description: |-
           Hidden Attestation entities, those with a HiddenReason, are left out of the results, or of what a bulk operation acts on, unless this names their HiddenReason.
 
           It is a comma-separated list of HiddenReasons, or `*` for all of them.
@@ -22728,6 +23146,22 @@ paths:
         name: select
         required: false
         schema:
+          type: string
+      - description: |-
+          Only return Attribute entities on which the caller has this permission, as well as View, which every entity listed needs.
+
+          A list made to choose an entity to act on can name the permission the action needs, such as Edit to change it or Use to refer to it from another entity, so that it leaves out the entities the action would be refused on.
+
+          Supported values: Manage, Edit, Use, View.
+        in: query
+        name: where_permission
+        required: false
+        schema:
+          enum:
+          - Manage
+          - Edit
+          - Use
+          - View
           type: string
       - description: |-
           Hidden Attribute entities, those with a HiddenReason, are left out of the results, or of what a bulk operation acts on, unless this names their HiddenReason.
@@ -23659,6 +24093,30 @@ paths:
         name: select
         required: false
         schema:
+          type: string
+      - description: |-
+          Only return BridgeWorker entities on which the caller has this permission, as well as View, which every entity listed needs.
+
+          A list made to choose an entity to act on can name the permission the action needs, such as Edit to change it or Use to refer to it from another entity, so that it leaves out the entities the action would be refused on.
+
+          Supported values: Manage, Edit, Use, View, ManageChildren, EditChildren, UseChildren, ViewChildren, CreateChildren, ApproveChildren, TargetEditChildren, TargetViewChildren.
+        in: query
+        name: where_permission
+        required: false
+        schema:
+          enum:
+          - Manage
+          - Edit
+          - Use
+          - View
+          - ManageChildren
+          - EditChildren
+          - UseChildren
+          - ViewChildren
+          - CreateChildren
+          - ApproveChildren
+          - TargetEditChildren
+          - TargetViewChildren
           type: string
       - description: |-
           Hidden BridgeWorker entities, those with a HiddenReason, are left out of the results, or of what a bulk operation acts on, unless this names their HiddenReason.
@@ -24601,6 +25059,22 @@ paths:
         schema:
           type: string
       - description: |-
+          Only return ChangeOrder entities on which the caller has this permission, as well as View, which every entity listed needs.
+
+          A list made to choose an entity to act on can name the permission the action needs, such as Edit to change it or Use to refer to it from another entity, so that it leaves out the entities the action would be refused on.
+
+          Supported values: Manage, Edit, Use, View.
+        in: query
+        name: where_permission
+        required: false
+        schema:
+          enum:
+          - Manage
+          - Edit
+          - Use
+          - View
+          type: string
+      - description: |-
           Hidden ChangeOrder entities, those with a HiddenReason, are left out of the results, or of what a bulk operation acts on, unless this names their HiddenReason.
 
           It is a comma-separated list of HiddenReasons, or `*` for all of them.
@@ -25426,6 +25900,22 @@ paths:
         schema:
           type: string
       - description: |-
+          Only return ChangeSet entities on which the caller has this permission, as well as View, which every entity listed needs.
+
+          A list made to choose an entity to act on can name the permission the action needs, such as Edit to change it or Use to refer to it from another entity, so that it leaves out the entities the action would be refused on.
+
+          Supported values: Manage, Edit, Use, View.
+        in: query
+        name: where_permission
+        required: false
+        schema:
+          enum:
+          - Manage
+          - Edit
+          - Use
+          - View
+          type: string
+      - description: |-
           Hidden ChangeSet entities, those with a HiddenReason, are left out of the results, or of what a bulk operation acts on, unless this names their HiddenReason.
 
           It is a comma-separated list of HiddenReasons, or `*` for all of them.
@@ -26175,6 +26665,22 @@ paths:
         name: select
         required: false
         schema:
+          type: string
+      - description: |-
+          Only return ChangeWorkflow entities on which the caller has this permission, as well as View, which every entity listed needs.
+
+          A list made to choose an entity to act on can name the permission the action needs, such as Edit to change it or Use to refer to it from another entity, so that it leaves out the entities the action would be refused on.
+
+          Supported values: Manage, Edit, Use, View.
+        in: query
+        name: where_permission
+        required: false
+        schema:
+          enum:
+          - Manage
+          - Edit
+          - Use
+          - View
           type: string
       - description: |-
           Hidden ChangeWorkflow entities, those with a HiddenReason, are left out of the results, or of what a bulk operation acts on, unless this names their HiddenReason.
@@ -27107,6 +27613,23 @@ paths:
         name: select
         required: false
         schema:
+          type: string
+      - description: |-
+          Only return Channel entities on which the caller has this permission, as well as View, which every entity listed needs.
+
+          A list made to choose an entity to act on can name the permission the action needs, such as Edit to change it or Use to refer to it from another entity, so that it leaves out the entities the action would be refused on.
+
+          Supported values: Manage, Edit, Use, View, Claim.
+        in: query
+        name: where_permission
+        required: false
+        schema:
+          enum:
+          - Manage
+          - Edit
+          - Use
+          - View
+          - Claim
           type: string
       - description: |-
           Hidden Channel entities, those with a HiddenReason, are left out of the results, or of what a bulk operation acts on, unless this names their HiddenReason.
@@ -28434,6 +28957,22 @@ paths:
         required: false
         schema:
           type: string
+      - description: |-
+          Only return CommandRun entities on which the caller has this permission, as well as View, which every entity listed needs.
+
+          A list made to choose an entity to act on can name the permission the action needs, such as Edit to change it or Use to refer to it from another entity, so that it leaves out the entities the action would be refused on.
+
+          Supported values: Manage, Edit, Use, View.
+        in: query
+        name: where_permission
+        required: false
+        schema:
+          enum:
+          - Manage
+          - Edit
+          - Use
+          - View
+          type: string
       - description: Maximum number of CommandRun entities to return. If not specified,
           all matching entities are returned. Values greater than 1000 are rejected
           with 400. When there may be more entities, the response has a ConfigHub-Continue
@@ -29049,6 +29588,22 @@ paths:
         name: select
         required: false
         schema:
+          type: string
+      - description: |-
+          Only return Filter entities on which the caller has this permission, as well as View, which every entity listed needs.
+
+          A list made to choose an entity to act on can name the permission the action needs, such as Edit to change it or Use to refer to it from another entity, so that it leaves out the entities the action would be refused on.
+
+          Supported values: Manage, Edit, Use, View.
+        in: query
+        name: where_permission
+        required: false
+        schema:
+          enum:
+          - Manage
+          - Edit
+          - Use
+          - View
           type: string
       - description: |-
           Hidden Filter entities, those with a HiddenReason, are left out of the results, or of what a bulk operation acts on, unless this names their HiddenReason.
@@ -30115,7 +30670,7 @@ paths:
           An example conjunction is:
           `CreatedAt >= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.
 
-          Supported attributes for filtering on Unit: Annotations, ApplyGates, ApplyWarnings, ChangeSetID, Conflicts, CreatedAt, DataHash, DeleteGates, DestroyGates, DisplayName, FromLinkID, HeadRevisionID, HeadRevisionNum, HeadUnitActionNum, HeadUnitEventNum, HiddenReason, Labels, LastChangeDescription, LastReleasedRevisionNum, LinkFindings, NeededPaths, OrganizationID, Permissions, ProvidedPaths, ProviderType, Slug, SpaceID, TargetID, ToolchainType, UnitID, UpdatedAt, UpstreamRevisionNum, UpstreamSpaceID, UpstreamUnitID, ValidationErrors, ValidationTriggerIDs, ValidationWarnings, ValueTriggerIDs, Values.
+          Supported attributes for filtering on Unit: Annotations, ApplyGates, ApplyWarnings, ChangeSetID, Conflicts, CreatedAt, DataHash, DeleteGates, DestroyGates, DisplayName, FromLinkID, HeadRevisionID, HeadRevisionNum, HeadUnitActionNum, HeadUnitEventNum, HiddenReason, Labels, LastChangeDescription, LastReleasedRevisionNum, LinkFindings, NeededPaths, OrganizationID, Permissions, ProvidedPaths, ProviderType, Slug, SpaceID, TargetID, ToolchainType, UnitID, UpdatedAt, UpstreamRevisionNum, UpstreamSpaceID, UpstreamUnitID, ValidationErrors, ValidationResults, ValidationTriggerIDs, ValidationWarnings, ValueTriggerIDs, Values.
 
           Finding all units created by cloning can be done using the expression `UpstreamRevisionNum > 0`. Clones of a specific unit can be found by additionally filtering based on `UpstreamUnitID`. Units never released can be found using `LastReleasedRevisionNum = 0`. Units with unreleased changes can be found with `HeadRevisionNum > LastReleasedRevisionNum AND TargetID IS NOT NULL`.
 
@@ -30461,6 +31016,22 @@ paths:
         name: select
         required: false
         schema:
+          type: string
+      - description: |-
+          Only return Invocation entities on which the caller has this permission, as well as View, which every entity listed needs.
+
+          A list made to choose an entity to act on can name the permission the action needs, such as Edit to change it or Use to refer to it from another entity, so that it leaves out the entities the action would be refused on.
+
+          Supported values: Manage, Edit, Use, View.
+        in: query
+        name: where_permission
+        required: false
+        schema:
+          enum:
+          - Manage
+          - Edit
+          - Use
+          - View
           type: string
       - description: |-
           Hidden Invocation entities, those with a HiddenReason, are left out of the results, or of what a bulk operation acts on, unless this names their HiddenReason.
@@ -31377,6 +31948,22 @@ paths:
         name: select
         required: false
         schema:
+          type: string
+      - description: |-
+          Only return Link entities on which the caller has this permission, as well as View, which every entity listed needs.
+
+          A list made to choose an entity to act on can name the permission the action needs, such as Edit to change it or Use to refer to it from another entity, so that it leaves out the entities the action would be refused on.
+
+          Supported values: Manage, Edit, Use, View.
+        in: query
+        name: where_permission
+        required: false
+        schema:
+          enum:
+          - Manage
+          - Edit
+          - Use
+          - View
           type: string
       - description: |-
           Hidden Link entities, those with a HiddenReason, are left out of the results, or of what a bulk operation acts on, unless this names their HiddenReason.
@@ -32401,6 +32988,22 @@ paths:
         schema:
           type: string
       - description: |-
+          Only return Release entities on which the caller has this permission, as well as View, which every entity listed needs.
+
+          A list made to choose an entity to act on can name the permission the action needs, such as Edit to change it or Use to refer to it from another entity, so that it leaves out the entities the action would be refused on.
+
+          Supported values: Manage, Edit, Use, View.
+        in: query
+        name: where_permission
+        required: false
+        schema:
+          enum:
+          - Manage
+          - Edit
+          - Use
+          - View
+          type: string
+      - description: |-
           Hidden Release entities, those with a HiddenReason, are left out of the results, or of what a bulk operation acts on, unless this names their HiddenReason.
 
           It is a comma-separated list of HiddenReasons, or `*` for all of them.
@@ -33297,6 +33900,22 @@ paths:
         schema:
           type: string
       - description: |-
+          Only return Tag entities on which the caller has this permission, as well as View, which every entity listed needs.
+
+          A list made to choose an entity to act on can name the permission the action needs, such as Edit to change it or Use to refer to it from another entity, so that it leaves out the entities the action would be refused on.
+
+          Supported values: Manage, Edit, Use, View.
+        in: query
+        name: where_permission
+        required: false
+        schema:
+          enum:
+          - Manage
+          - Edit
+          - Use
+          - View
+          type: string
+      - description: |-
           Hidden Tag entities, those with a HiddenReason, are left out of the results, or of what a bulk operation acts on, unless this names their HiddenReason.
 
           It is a comma-separated list of HiddenReasons, or `*` for all of them.
@@ -34033,6 +34652,30 @@ paths:
         name: select
         required: false
         schema:
+          type: string
+      - description: |-
+          Only return Target entities on which the caller has this permission, as well as View, which every entity listed needs.
+
+          A list made to choose an entity to act on can name the permission the action needs, such as Edit to change it or Use to refer to it from another entity, so that it leaves out the entities the action would be refused on.
+
+          Supported values: Manage, Edit, Use, View, ManageChildren, EditChildren, UseChildren, ViewChildren, CreateChildren, ApproveChildren, TargetEditChildren, TargetViewChildren.
+        in: query
+        name: where_permission
+        required: false
+        schema:
+          enum:
+          - Manage
+          - Edit
+          - Use
+          - View
+          - ManageChildren
+          - EditChildren
+          - UseChildren
+          - ViewChildren
+          - CreateChildren
+          - ApproveChildren
+          - TargetEditChildren
+          - TargetViewChildren
           type: string
       - description: |-
           Hidden Target entities, those with a HiddenReason, are left out of the results, or of what a bulk operation acts on, unless this names their HiddenReason.
@@ -34981,6 +35624,22 @@ paths:
         schema:
           type: string
       - description: |-
+          Only return Trigger entities on which the caller has this permission, as well as View, which every entity listed needs.
+
+          A list made to choose an entity to act on can name the permission the action needs, such as Edit to change it or Use to refer to it from another entity, so that it leaves out the entities the action would be refused on.
+
+          Supported values: Manage, Edit, Use, View.
+        in: query
+        name: where_permission
+        required: false
+        schema:
+          enum:
+          - Manage
+          - Edit
+          - Use
+          - View
+          type: string
+      - description: |-
           Hidden Trigger entities, those with a HiddenReason, are left out of the results, or of what a bulk operation acts on, unless this names their HiddenReason.
 
           It is a comma-separated list of HiddenReasons, or `*` for all of them.
@@ -35919,7 +36578,7 @@ paths:
           An example conjunction is:
           `CreatedAt >= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.
 
-          Supported attributes for filtering on Unit: Annotations, ApplyGates, ApplyWarnings, ChangeSetID, Conflicts, CreatedAt, DataHash, DeleteGates, DestroyGates, DisplayName, FromLinkID, HeadRevisionID, HeadRevisionNum, HeadUnitActionNum, HeadUnitEventNum, HiddenReason, Labels, LastChangeDescription, LastReleasedRevisionNum, LinkFindings, NeededPaths, OrganizationID, Permissions, ProvidedPaths, ProviderType, Slug, SpaceID, TargetID, ToolchainType, UnitID, UpdatedAt, UpstreamRevisionNum, UpstreamSpaceID, UpstreamUnitID, ValidationErrors, ValidationTriggerIDs, ValidationWarnings, ValueTriggerIDs, Values.
+          Supported attributes for filtering on Unit: Annotations, ApplyGates, ApplyWarnings, ChangeSetID, Conflicts, CreatedAt, DataHash, DeleteGates, DestroyGates, DisplayName, FromLinkID, HeadRevisionID, HeadRevisionNum, HeadUnitActionNum, HeadUnitEventNum, HiddenReason, Labels, LastChangeDescription, LastReleasedRevisionNum, LinkFindings, NeededPaths, OrganizationID, Permissions, ProvidedPaths, ProviderType, Slug, SpaceID, TargetID, ToolchainType, UnitID, UpdatedAt, UpstreamRevisionNum, UpstreamSpaceID, UpstreamUnitID, ValidationErrors, ValidationResults, ValidationTriggerIDs, ValidationWarnings, ValueTriggerIDs, Values.
 
           Finding all units created by cloning can be done using the expression `UpstreamRevisionNum > 0`. Clones of a specific unit can be found by additionally filtering based on `UpstreamUnitID`. Units never released can be found using `LastReleasedRevisionNum = 0`. Units with unreleased changes can be found with `HeadRevisionNum > LastReleasedRevisionNum AND TargetID IS NOT NULL`.
 
@@ -35994,6 +36653,25 @@ paths:
         name: select
         required: false
         schema:
+          type: string
+      - description: |-
+          Only return Unit entities on which the caller has this permission, as well as View, which every entity listed needs.
+
+          A list made to choose an entity to act on can name the permission the action needs, such as Edit to change it or Use to refer to it from another entity, so that it leaves out the entities the action would be refused on.
+
+          Supported values: Manage, Edit, Use, View, Approve, TargetEdit, TargetView.
+        in: query
+        name: where_permission
+        required: false
+        schema:
+          enum:
+          - Manage
+          - Edit
+          - Use
+          - View
+          - Approve
+          - TargetEdit
+          - TargetView
           type: string
       - description: |-
           Hidden Unit entities, those with a HiddenReason, are left out of the results, or of what a bulk operation acts on, unless this names their HiddenReason.
@@ -38119,6 +38797,22 @@ paths:
         schema:
           type: string
       - description: |-
+          Only return Mutation entities on which the caller has this permission, as well as View, which every entity listed needs.
+
+          A list made to choose an entity to act on can name the permission the action needs, such as Edit to change it or Use to refer to it from another entity, so that it leaves out the entities the action would be refused on.
+
+          Supported values: Manage, Edit, Use, View.
+        in: query
+        name: where_permission
+        required: false
+        schema:
+          enum:
+          - Manage
+          - Edit
+          - Use
+          - View
+          type: string
+      - description: |-
           Hidden Mutation entities, those with a HiddenReason, are left out of the results, or of what a bulk operation acts on, unless this names their HiddenReason.
 
           It is a comma-separated list of HiddenReasons, or `*` for all of them.
@@ -38618,6 +39312,22 @@ paths:
         schema:
           type: string
       - description: |-
+          Only return Resource entities on which the caller has this permission, as well as View, which every entity listed needs.
+
+          A list made to choose an entity to act on can name the permission the action needs, such as Edit to change it or Use to refer to it from another entity, so that it leaves out the entities the action would be refused on.
+
+          Supported values: Manage, Edit, Use, View.
+        in: query
+        name: where_permission
+        required: false
+        schema:
+          enum:
+          - Manage
+          - Edit
+          - Use
+          - View
+          type: string
+      - description: |-
           Hidden Resource entities, those with a HiddenReason, are left out of the results, or of what a bulk operation acts on, unless this names their HiddenReason.
 
           It is a comma-separated list of HiddenReasons, or `*` for all of them.
@@ -38992,6 +39702,22 @@ paths:
         name: select
         required: false
         schema:
+          type: string
+      - description: |-
+          Only return ReviewComment entities on which the caller has this permission, as well as View, which every entity listed needs.
+
+          A list made to choose an entity to act on can name the permission the action needs, such as Edit to change it or Use to refer to it from another entity, so that it leaves out the entities the action would be refused on.
+
+          Supported values: Manage, Edit, Use, View.
+        in: query
+        name: where_permission
+        required: false
+        schema:
+          enum:
+          - Manage
+          - Edit
+          - Use
+          - View
           type: string
       - description: |-
           Hidden ReviewComment entities, those with a HiddenReason, are left out of the results, or of what a bulk operation acts on, unless this names their HiddenReason.
@@ -39674,7 +40400,7 @@ paths:
           An example conjunction is:
           `CreatedAt >= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.
 
-          Supported attributes for filtering on Revision: ApplyGates, ApplyWarnings, Attestations, ChangeOrders, ChangeSetID, Conflicts, CreatedAt, DataHash, Description, HiddenReason, LinkFindings, NeededPaths, OrganizationID, ProvidedPaths, Releases, RevisionID, RevisionNum, Source, SpaceID, Tags, UnitID, UpdatedAt, UserAgent, UserID, ValidationErrors, ValidationPassed, ValidationTriggerIDs, ValidationWarnings, ValueTriggerIDs, Values.
+          Supported attributes for filtering on Revision: ApplyGates, ApplyWarnings, Attestations, ChangeOrders, ChangeSetID, Conflicts, CreatedAt, DataHash, Description, HiddenReason, LinkFindings, NeededPaths, OrganizationID, ProvidedPaths, Releases, RevisionID, RevisionNum, Source, SpaceID, Tags, UnitID, UpdatedAt, UserAgent, UserID, ValidationErrors, ValidationPassed, ValidationResults, ValidationTriggerIDs, ValidationWarnings, ValueTriggerIDs, Values.
 
           To list a tagged Revision use `Tags ? '<tag-id>'`.
 
@@ -39749,6 +40475,22 @@ paths:
         name: select
         required: false
         schema:
+          type: string
+      - description: |-
+          Only return Revision entities on which the caller has this permission, as well as View, which every entity listed needs.
+
+          A list made to choose an entity to act on can name the permission the action needs, such as Edit to change it or Use to refer to it from another entity, so that it leaves out the entities the action would be refused on.
+
+          Supported values: Manage, Edit, Use, View.
+        in: query
+        name: where_permission
+        required: false
+        schema:
+          enum:
+          - Manage
+          - Edit
+          - Use
+          - View
           type: string
       - description: |-
           Hidden Revision entities, those with a HiddenReason, are left out of the results, or of what a bulk operation acts on, unless this names their HiddenReason.
@@ -40228,6 +40970,22 @@ paths:
         required: false
         schema:
           type: string
+      - description: |-
+          Only return QueuedOperation entities on which the caller has this permission, as well as View, which every entity listed needs.
+
+          A list made to choose an entity to act on can name the permission the action needs, such as Edit to change it or Use to refer to it from another entity, so that it leaves out the entities the action would be refused on.
+
+          Supported values: Manage, Edit, Use, View.
+        in: query
+        name: where_permission
+        required: false
+        schema:
+          enum:
+          - Manage
+          - Edit
+          - Use
+          - View
+          type: string
       - description: Maximum number of QueuedOperation entities to return. If not
           specified, all matching entities are returned. Values greater than 1000
           are rejected with 400. When there may be more entities, the response has
@@ -40501,6 +41259,22 @@ paths:
         name: contains
         required: false
         schema:
+          type: string
+      - description: |-
+          Only return UnitEvent entities on which the caller has this permission, as well as View, which every entity listed needs.
+
+          A list made to choose an entity to act on can name the permission the action needs, such as Edit to change it or Use to refer to it from another entity, so that it leaves out the entities the action would be refused on.
+
+          Supported values: Manage, Edit, Use, View.
+        in: query
+        name: where_permission
+        required: false
+        schema:
+          enum:
+          - Manage
+          - Edit
+          - Use
+          - View
           type: string
       - description: |-
           Hidden UnitEvent entities, those with a HiddenReason, are left out of the results, or of what a bulk operation acts on, unless this names their HiddenReason.
@@ -40823,6 +41597,22 @@ paths:
         name: select
         required: false
         schema:
+          type: string
+      - description: |-
+          Only return View entities on which the caller has this permission, as well as View, which every entity listed needs.
+
+          A list made to choose an entity to act on can name the permission the action needs, such as Edit to change it or Use to refer to it from another entity, so that it leaves out the entities the action would be refused on.
+
+          Supported values: Manage, Edit, Use, View.
+        in: query
+        name: where_permission
+        required: false
+        schema:
+          enum:
+          - Manage
+          - Edit
+          - Use
+          - View
           type: string
       - description: |-
           Hidden View entities, those with a HiddenReason, are left out of the results, or of what a bulk operation acts on, unless this names their HiddenReason.
@@ -41953,6 +42743,22 @@ paths:
         name: select
         required: false
         schema:
+          type: string
+      - description: |-
+          Only return Tag entities on which the caller has this permission, as well as View, which every entity listed needs.
+
+          A list made to choose an entity to act on can name the permission the action needs, such as Edit to change it or Use to refer to it from another entity, so that it leaves out the entities the action would be refused on.
+
+          Supported values: Manage, Edit, Use, View.
+        in: query
+        name: where_permission
+        required: false
+        schema:
+          enum:
+          - Manage
+          - Edit
+          - Use
+          - View
           type: string
       - description: |-
           Hidden Tag entities, those with a HiddenReason, are left out of the results, or of what a bulk operation acts on, unless this names their HiddenReason.
@@ -43257,6 +44063,30 @@ paths:
         schema:
           type: string
       - description: |-
+          Only return Target entities on which the caller has this permission, as well as View, which every entity listed needs.
+
+          A list made to choose an entity to act on can name the permission the action needs, such as Edit to change it or Use to refer to it from another entity, so that it leaves out the entities the action would be refused on.
+
+          Supported values: Manage, Edit, Use, View, ManageChildren, EditChildren, UseChildren, ViewChildren, CreateChildren, ApproveChildren, TargetEditChildren, TargetViewChildren.
+        in: query
+        name: where_permission
+        required: false
+        schema:
+          enum:
+          - Manage
+          - Edit
+          - Use
+          - View
+          - ManageChildren
+          - EditChildren
+          - UseChildren
+          - ViewChildren
+          - CreateChildren
+          - ApproveChildren
+          - TargetEditChildren
+          - TargetViewChildren
+          type: string
+      - description: |-
           Hidden Target entities, those with a HiddenReason, are left out of the results, or of what a bulk operation acts on, unless this names their HiddenReason.
 
           It is a comma-separated list of HiddenReasons, or `*` for all of them.
@@ -43980,7 +44810,7 @@ paths:
           An example conjunction is:
           `CreatedAt >= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.
 
-          Supported attributes for filtering on Unit: Annotations, ApplyGates, ApplyWarnings, ChangeSetID, Conflicts, CreatedAt, DataHash, DeleteGates, DestroyGates, DisplayName, FromLinkID, HeadRevisionID, HeadRevisionNum, HeadUnitActionNum, HeadUnitEventNum, HiddenReason, Labels, LastChangeDescription, LastReleasedRevisionNum, LinkFindings, NeededPaths, OrganizationID, Permissions, ProvidedPaths, ProviderType, Slug, SpaceID, TargetID, ToolchainType, UnitID, UpdatedAt, UpstreamRevisionNum, UpstreamSpaceID, UpstreamUnitID, ValidationErrors, ValidationTriggerIDs, ValidationWarnings, ValueTriggerIDs, Values.
+          Supported attributes for filtering on Unit: Annotations, ApplyGates, ApplyWarnings, ChangeSetID, Conflicts, CreatedAt, DataHash, DeleteGates, DestroyGates, DisplayName, FromLinkID, HeadRevisionID, HeadRevisionNum, HeadUnitActionNum, HeadUnitEventNum, HiddenReason, Labels, LastChangeDescription, LastReleasedRevisionNum, LinkFindings, NeededPaths, OrganizationID, Permissions, ProvidedPaths, ProviderType, Slug, SpaceID, TargetID, ToolchainType, UnitID, UpdatedAt, UpstreamRevisionNum, UpstreamSpaceID, UpstreamUnitID, ValidationErrors, ValidationResults, ValidationTriggerIDs, ValidationWarnings, ValueTriggerIDs, Values.
 
           The Units to create entities from, with from_backing_units.
 
@@ -44702,6 +45532,22 @@ paths:
         name: select
         required: false
         schema:
+          type: string
+      - description: |-
+          Only return Trigger entities on which the caller has this permission, as well as View, which every entity listed needs.
+
+          A list made to choose an entity to act on can name the permission the action needs, such as Edit to change it or Use to refer to it from another entity, so that it leaves out the entities the action would be refused on.
+
+          Supported values: Manage, Edit, Use, View.
+        in: query
+        name: where_permission
+        required: false
+        schema:
+          enum:
+          - Manage
+          - Edit
+          - Use
+          - View
           type: string
       - description: |-
           Hidden Trigger entities, those with a HiddenReason, are left out of the results, or of what a bulk operation acts on, unless this names their HiddenReason.
@@ -45495,7 +46341,7 @@ paths:
           An example conjunction is:
           `CreatedAt >= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.
 
-          Supported attributes for filtering on Unit: Annotations, ApplyGates, ApplyWarnings, ChangeSetID, Conflicts, CreatedAt, DataHash, DeleteGates, DestroyGates, DisplayName, FromLinkID, HeadRevisionID, HeadRevisionNum, HeadUnitActionNum, HeadUnitEventNum, HiddenReason, Labels, LastChangeDescription, LastReleasedRevisionNum, LinkFindings, NeededPaths, OrganizationID, Permissions, ProvidedPaths, ProviderType, Slug, SpaceID, TargetID, ToolchainType, UnitID, UpdatedAt, UpstreamRevisionNum, UpstreamSpaceID, UpstreamUnitID, ValidationErrors, ValidationTriggerIDs, ValidationWarnings, ValueTriggerIDs, Values.
+          Supported attributes for filtering on Unit: Annotations, ApplyGates, ApplyWarnings, ChangeSetID, Conflicts, CreatedAt, DataHash, DeleteGates, DestroyGates, DisplayName, FromLinkID, HeadRevisionID, HeadRevisionNum, HeadUnitActionNum, HeadUnitEventNum, HiddenReason, Labels, LastChangeDescription, LastReleasedRevisionNum, LinkFindings, NeededPaths, OrganizationID, Permissions, ProvidedPaths, ProviderType, Slug, SpaceID, TargetID, ToolchainType, UnitID, UpdatedAt, UpstreamRevisionNum, UpstreamSpaceID, UpstreamUnitID, ValidationErrors, ValidationResults, ValidationTriggerIDs, ValidationWarnings, ValueTriggerIDs, Values.
 
           The Units to create entities from, with from_backing_units.
 
@@ -45995,7 +46841,7 @@ paths:
           An example conjunction is:
           `CreatedAt >= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.
 
-          Supported attributes for filtering on Unit: Annotations, ApplyGates, ApplyWarnings, ChangeSetID, Conflicts, CreatedAt, DataHash, DeleteGates, DestroyGates, DisplayName, FromLinkID, HeadRevisionID, HeadRevisionNum, HeadUnitActionNum, HeadUnitEventNum, HiddenReason, Labels, LastChangeDescription, LastReleasedRevisionNum, LinkFindings, NeededPaths, OrganizationID, Permissions, ProvidedPaths, ProviderType, Slug, SpaceID, TargetID, ToolchainType, UnitID, UpdatedAt, UpstreamRevisionNum, UpstreamSpaceID, UpstreamUnitID, ValidationErrors, ValidationTriggerIDs, ValidationWarnings, ValueTriggerIDs, Values.
+          Supported attributes for filtering on Unit: Annotations, ApplyGates, ApplyWarnings, ChangeSetID, Conflicts, CreatedAt, DataHash, DeleteGates, DestroyGates, DisplayName, FromLinkID, HeadRevisionID, HeadRevisionNum, HeadUnitActionNum, HeadUnitEventNum, HiddenReason, Labels, LastChangeDescription, LastReleasedRevisionNum, LinkFindings, NeededPaths, OrganizationID, Permissions, ProvidedPaths, ProviderType, Slug, SpaceID, TargetID, ToolchainType, UnitID, UpdatedAt, UpstreamRevisionNum, UpstreamSpaceID, UpstreamUnitID, ValidationErrors, ValidationResults, ValidationTriggerIDs, ValidationWarnings, ValueTriggerIDs, Values.
 
           Finding all units created by cloning can be done using the expression `UpstreamRevisionNum > 0`. Clones of a specific unit can be found by additionally filtering based on `UpstreamUnitID`. Units never released can be found using `LastReleasedRevisionNum = 0`. Units with unreleased changes can be found with `HeadRevisionNum > LastReleasedRevisionNum AND TargetID IS NOT NULL`.
 
@@ -46224,7 +47070,7 @@ paths:
           An example conjunction is:
           `CreatedAt >= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.
 
-          Supported attributes for filtering on Unit: Annotations, ApplyGates, ApplyWarnings, ChangeSetID, Conflicts, CreatedAt, DataHash, DeleteGates, DestroyGates, DisplayName, FromLinkID, HeadRevisionID, HeadRevisionNum, HeadUnitActionNum, HeadUnitEventNum, HiddenReason, Labels, LastChangeDescription, LastReleasedRevisionNum, LinkFindings, NeededPaths, OrganizationID, Permissions, ProvidedPaths, ProviderType, Slug, SpaceID, TargetID, ToolchainType, UnitID, UpdatedAt, UpstreamRevisionNum, UpstreamSpaceID, UpstreamUnitID, ValidationErrors, ValidationTriggerIDs, ValidationWarnings, ValueTriggerIDs, Values.
+          Supported attributes for filtering on Unit: Annotations, ApplyGates, ApplyWarnings, ChangeSetID, Conflicts, CreatedAt, DataHash, DeleteGates, DestroyGates, DisplayName, FromLinkID, HeadRevisionID, HeadRevisionNum, HeadUnitActionNum, HeadUnitEventNum, HiddenReason, Labels, LastChangeDescription, LastReleasedRevisionNum, LinkFindings, NeededPaths, OrganizationID, Permissions, ProvidedPaths, ProviderType, Slug, SpaceID, TargetID, ToolchainType, UnitID, UpdatedAt, UpstreamRevisionNum, UpstreamSpaceID, UpstreamUnitID, ValidationErrors, ValidationResults, ValidationTriggerIDs, ValidationWarnings, ValueTriggerIDs, Values.
 
           Finding all units created by cloning can be done using the expression `UpstreamRevisionNum > 0`. Clones of a specific unit can be found by additionally filtering based on `UpstreamUnitID`. Units never released can be found using `LastReleasedRevisionNum = 0`. Units with unreleased changes can be found with `HeadRevisionNum > LastReleasedRevisionNum AND TargetID IS NOT NULL`.
 
@@ -46299,6 +47145,25 @@ paths:
         name: select
         required: false
         schema:
+          type: string
+      - description: |-
+          Only return Unit entities on which the caller has this permission, as well as View, which every entity listed needs.
+
+          A list made to choose an entity to act on can name the permission the action needs, such as Edit to change it or Use to refer to it from another entity, so that it leaves out the entities the action would be refused on.
+
+          Supported values: Manage, Edit, Use, View, Approve, TargetEdit, TargetView.
+        in: query
+        name: where_permission
+        required: false
+        schema:
+          enum:
+          - Manage
+          - Edit
+          - Use
+          - View
+          - Approve
+          - TargetEdit
+          - TargetView
           type: string
       - description: |-
           Hidden Unit entities, those with a HiddenReason, are left out of the results, or of what a bulk operation acts on, unless this names their HiddenReason.
@@ -46536,7 +47401,7 @@ paths:
           An example conjunction is:
           `CreatedAt >= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.
 
-          Supported attributes for filtering on Unit: Annotations, ApplyGates, ApplyWarnings, ChangeSetID, Conflicts, CreatedAt, DataHash, DeleteGates, DestroyGates, DisplayName, FromLinkID, HeadRevisionID, HeadRevisionNum, HeadUnitActionNum, HeadUnitEventNum, HiddenReason, Labels, LastChangeDescription, LastReleasedRevisionNum, LinkFindings, NeededPaths, OrganizationID, Permissions, ProvidedPaths, ProviderType, Slug, SpaceID, TargetID, ToolchainType, UnitID, UpdatedAt, UpstreamRevisionNum, UpstreamSpaceID, UpstreamUnitID, ValidationErrors, ValidationTriggerIDs, ValidationWarnings, ValueTriggerIDs, Values.
+          Supported attributes for filtering on Unit: Annotations, ApplyGates, ApplyWarnings, ChangeSetID, Conflicts, CreatedAt, DataHash, DeleteGates, DestroyGates, DisplayName, FromLinkID, HeadRevisionID, HeadRevisionNum, HeadUnitActionNum, HeadUnitEventNum, HiddenReason, Labels, LastChangeDescription, LastReleasedRevisionNum, LinkFindings, NeededPaths, OrganizationID, Permissions, ProvidedPaths, ProviderType, Slug, SpaceID, TargetID, ToolchainType, UnitID, UpdatedAt, UpstreamRevisionNum, UpstreamSpaceID, UpstreamUnitID, ValidationErrors, ValidationResults, ValidationTriggerIDs, ValidationWarnings, ValueTriggerIDs, Values.
 
           Finding all units created by cloning can be done using the expression `UpstreamRevisionNum > 0`. Clones of a specific unit can be found by additionally filtering based on `UpstreamUnitID`. Units never released can be found using `LastReleasedRevisionNum = 0`. Units with unreleased changes can be found with `HeadRevisionNum > LastReleasedRevisionNum AND TargetID IS NOT NULL`.
 
@@ -47168,7 +48033,7 @@ paths:
           An example conjunction is:
           `CreatedAt >= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.
 
-          Supported attributes for filtering on Unit: Annotations, ApplyGates, ApplyWarnings, ChangeSetID, Conflicts, CreatedAt, DataHash, DeleteGates, DestroyGates, DisplayName, FromLinkID, HeadRevisionID, HeadRevisionNum, HeadUnitActionNum, HeadUnitEventNum, HiddenReason, Labels, LastChangeDescription, LastReleasedRevisionNum, LinkFindings, NeededPaths, OrganizationID, Permissions, ProvidedPaths, ProviderType, Slug, SpaceID, TargetID, ToolchainType, UnitID, UpdatedAt, UpstreamRevisionNum, UpstreamSpaceID, UpstreamUnitID, ValidationErrors, ValidationTriggerIDs, ValidationWarnings, ValueTriggerIDs, Values.
+          Supported attributes for filtering on Unit: Annotations, ApplyGates, ApplyWarnings, ChangeSetID, Conflicts, CreatedAt, DataHash, DeleteGates, DestroyGates, DisplayName, FromLinkID, HeadRevisionID, HeadRevisionNum, HeadUnitActionNum, HeadUnitEventNum, HiddenReason, Labels, LastChangeDescription, LastReleasedRevisionNum, LinkFindings, NeededPaths, OrganizationID, Permissions, ProvidedPaths, ProviderType, Slug, SpaceID, TargetID, ToolchainType, UnitID, UpdatedAt, UpstreamRevisionNum, UpstreamSpaceID, UpstreamUnitID, ValidationErrors, ValidationResults, ValidationTriggerIDs, ValidationWarnings, ValueTriggerIDs, Values.
 
           Finding all units created by cloning can be done using the expression `UpstreamRevisionNum > 0`. Clones of a specific unit can be found by additionally filtering based on `UpstreamUnitID`. Units never released can be found using `LastReleasedRevisionNum = 0`. Units with unreleased changes can be found with `HeadRevisionNum > LastReleasedRevisionNum AND TargetID IS NOT NULL`.
 
@@ -47664,7 +48529,7 @@ paths:
           An example conjunction is:
           `CreatedAt >= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.
 
-          Supported attributes for filtering on Unit: Annotations, ApplyGates, ApplyWarnings, ChangeSetID, Conflicts, CreatedAt, DataHash, DeleteGates, DestroyGates, DisplayName, FromLinkID, HeadRevisionID, HeadRevisionNum, HeadUnitActionNum, HeadUnitEventNum, HiddenReason, Labels, LastChangeDescription, LastReleasedRevisionNum, LinkFindings, NeededPaths, OrganizationID, Permissions, ProvidedPaths, ProviderType, Slug, SpaceID, TargetID, ToolchainType, UnitID, UpdatedAt, UpstreamRevisionNum, UpstreamSpaceID, UpstreamUnitID, ValidationErrors, ValidationTriggerIDs, ValidationWarnings, ValueTriggerIDs, Values.
+          Supported attributes for filtering on Unit: Annotations, ApplyGates, ApplyWarnings, ChangeSetID, Conflicts, CreatedAt, DataHash, DeleteGates, DestroyGates, DisplayName, FromLinkID, HeadRevisionID, HeadRevisionNum, HeadUnitActionNum, HeadUnitEventNum, HiddenReason, Labels, LastChangeDescription, LastReleasedRevisionNum, LinkFindings, NeededPaths, OrganizationID, Permissions, ProvidedPaths, ProviderType, Slug, SpaceID, TargetID, ToolchainType, UnitID, UpdatedAt, UpstreamRevisionNum, UpstreamSpaceID, UpstreamUnitID, ValidationErrors, ValidationResults, ValidationTriggerIDs, ValidationWarnings, ValueTriggerIDs, Values.
 
           Finding all units created by cloning can be done using the expression `UpstreamRevisionNum > 0`. Clones of a specific unit can be found by additionally filtering based on `UpstreamUnitID`. Units never released can be found using `LastReleasedRevisionNum = 0`. Units with unreleased changes can be found with `HeadRevisionNum > LastReleasedRevisionNum AND TargetID IS NOT NULL`.
 
@@ -47850,7 +48715,7 @@ paths:
           An example conjunction is:
           `CreatedAt >= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.
 
-          Supported attributes for filtering on Unit: Annotations, ApplyGates, ApplyWarnings, ChangeSetID, Conflicts, CreatedAt, DataHash, DeleteGates, DestroyGates, DisplayName, FromLinkID, HeadRevisionID, HeadRevisionNum, HeadUnitActionNum, HeadUnitEventNum, HiddenReason, Labels, LastChangeDescription, LastReleasedRevisionNum, LinkFindings, NeededPaths, OrganizationID, Permissions, ProvidedPaths, ProviderType, Slug, SpaceID, TargetID, ToolchainType, UnitID, UpdatedAt, UpstreamRevisionNum, UpstreamSpaceID, UpstreamUnitID, ValidationErrors, ValidationTriggerIDs, ValidationWarnings, ValueTriggerIDs, Values.
+          Supported attributes for filtering on Unit: Annotations, ApplyGates, ApplyWarnings, ChangeSetID, Conflicts, CreatedAt, DataHash, DeleteGates, DestroyGates, DisplayName, FromLinkID, HeadRevisionID, HeadRevisionNum, HeadUnitActionNum, HeadUnitEventNum, HiddenReason, Labels, LastChangeDescription, LastReleasedRevisionNum, LinkFindings, NeededPaths, OrganizationID, Permissions, ProvidedPaths, ProviderType, Slug, SpaceID, TargetID, ToolchainType, UnitID, UpdatedAt, UpstreamRevisionNum, UpstreamSpaceID, UpstreamUnitID, ValidationErrors, ValidationResults, ValidationTriggerIDs, ValidationWarnings, ValueTriggerIDs, Values.
 
           Finding all units created by cloning can be done using the expression `UpstreamRevisionNum > 0`. Clones of a specific unit can be found by additionally filtering based on `UpstreamUnitID`. Units never released can be found using `LastReleasedRevisionNum = 0`. Units with unreleased changes can be found with `HeadRevisionNum > LastReleasedRevisionNum AND TargetID IS NOT NULL`.
 
@@ -48040,7 +48905,7 @@ paths:
           An example conjunction is:
           `CreatedAt >= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.
 
-          Supported attributes for filtering on Unit: Annotations, ApplyGates, ApplyWarnings, ChangeSetID, Conflicts, CreatedAt, DataHash, DeleteGates, DestroyGates, DisplayName, FromLinkID, HeadRevisionID, HeadRevisionNum, HeadUnitActionNum, HeadUnitEventNum, HiddenReason, Labels, LastChangeDescription, LastReleasedRevisionNum, LinkFindings, NeededPaths, OrganizationID, Permissions, ProvidedPaths, ProviderType, Slug, SpaceID, TargetID, ToolchainType, UnitID, UpdatedAt, UpstreamRevisionNum, UpstreamSpaceID, UpstreamUnitID, ValidationErrors, ValidationTriggerIDs, ValidationWarnings, ValueTriggerIDs, Values.
+          Supported attributes for filtering on Unit: Annotations, ApplyGates, ApplyWarnings, ChangeSetID, Conflicts, CreatedAt, DataHash, DeleteGates, DestroyGates, DisplayName, FromLinkID, HeadRevisionID, HeadRevisionNum, HeadUnitActionNum, HeadUnitEventNum, HiddenReason, Labels, LastChangeDescription, LastReleasedRevisionNum, LinkFindings, NeededPaths, OrganizationID, Permissions, ProvidedPaths, ProviderType, Slug, SpaceID, TargetID, ToolchainType, UnitID, UpdatedAt, UpstreamRevisionNum, UpstreamSpaceID, UpstreamUnitID, ValidationErrors, ValidationResults, ValidationTriggerIDs, ValidationWarnings, ValueTriggerIDs, Values.
 
           Finding all units created by cloning can be done using the expression `UpstreamRevisionNum > 0`. Clones of a specific unit can be found by additionally filtering based on `UpstreamUnitID`. Units never released can be found using `LastReleasedRevisionNum = 0`. Units with unreleased changes can be found with `HeadRevisionNum > LastReleasedRevisionNum AND TargetID IS NOT NULL`.
 
@@ -48278,6 +49143,22 @@ paths:
         required: false
         schema:
           type: string
+      - description: |-
+          Only return QueuedOperation entities on which the caller has this permission, as well as View, which every entity listed needs.
+
+          A list made to choose an entity to act on can name the permission the action needs, such as Edit to change it or Use to refer to it from another entity, so that it leaves out the entities the action would be refused on.
+
+          Supported values: Manage, Edit, Use, View.
+        in: query
+        name: where_permission
+        required: false
+        schema:
+          enum:
+          - Manage
+          - Edit
+          - Use
+          - View
+          type: string
       - description: Maximum number of QueuedOperation entities to return. If not
           specified, all matching entities are returned. Values greater than 1000
           are rejected with 400. When there may be more entities, the response has
@@ -48421,7 +49302,7 @@ paths:
           An example conjunction is:
           `CreatedAt >= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.
 
-          Supported attributes for filtering on Unit: Annotations, ApplyGates, ApplyWarnings, ChangeSetID, Conflicts, CreatedAt, DataHash, DeleteGates, DestroyGates, DisplayName, FromLinkID, HeadRevisionID, HeadRevisionNum, HeadUnitActionNum, HeadUnitEventNum, HiddenReason, Labels, LastChangeDescription, LastReleasedRevisionNum, LinkFindings, NeededPaths, OrganizationID, Permissions, ProvidedPaths, ProviderType, Slug, SpaceID, TargetID, ToolchainType, UnitID, UpdatedAt, UpstreamRevisionNum, UpstreamSpaceID, UpstreamUnitID, ValidationErrors, ValidationTriggerIDs, ValidationWarnings, ValueTriggerIDs, Values.
+          Supported attributes for filtering on Unit: Annotations, ApplyGates, ApplyWarnings, ChangeSetID, Conflicts, CreatedAt, DataHash, DeleteGates, DestroyGates, DisplayName, FromLinkID, HeadRevisionID, HeadRevisionNum, HeadUnitActionNum, HeadUnitEventNum, HiddenReason, Labels, LastChangeDescription, LastReleasedRevisionNum, LinkFindings, NeededPaths, OrganizationID, Permissions, ProvidedPaths, ProviderType, Slug, SpaceID, TargetID, ToolchainType, UnitID, UpdatedAt, UpstreamRevisionNum, UpstreamSpaceID, UpstreamUnitID, ValidationErrors, ValidationResults, ValidationTriggerIDs, ValidationWarnings, ValueTriggerIDs, Values.
 
           Finding all units created by cloning can be done using the expression `UpstreamRevisionNum > 0`. Clones of a specific unit can be found by additionally filtering based on `UpstreamUnitID`. Units never released can be found using `LastReleasedRevisionNum = 0`. Units with unreleased changes can be found with `HeadRevisionNum > LastReleasedRevisionNum AND TargetID IS NOT NULL`.
 
@@ -48496,6 +49377,25 @@ paths:
         name: select
         required: false
         schema:
+          type: string
+      - description: |-
+          Only return Unit entities on which the caller has this permission, as well as View, which every entity listed needs.
+
+          A list made to choose an entity to act on can name the permission the action needs, such as Edit to change it or Use to refer to it from another entity, so that it leaves out the entities the action would be refused on.
+
+          Supported values: Manage, Edit, Use, View, Approve, TargetEdit, TargetView.
+        in: query
+        name: where_permission
+        required: false
+        schema:
+          enum:
+          - Manage
+          - Edit
+          - Use
+          - View
+          - Approve
+          - TargetEdit
+          - TargetView
           type: string
       - description: |-
           Hidden Unit entities, those with a HiddenReason, are left out of the results, or of what a bulk operation acts on, unless this names their HiddenReason.
@@ -48735,7 +49635,7 @@ paths:
           An example conjunction is:
           `CreatedAt >= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.
 
-          Supported attributes for filtering on Unit: Annotations, ApplyGates, ApplyWarnings, ChangeSetID, Conflicts, CreatedAt, DataHash, DeleteGates, DestroyGates, DisplayName, FromLinkID, HeadRevisionID, HeadRevisionNum, HeadUnitActionNum, HeadUnitEventNum, HiddenReason, Labels, LastChangeDescription, LastReleasedRevisionNum, LinkFindings, NeededPaths, OrganizationID, Permissions, ProvidedPaths, ProviderType, Slug, SpaceID, TargetID, ToolchainType, UnitID, UpdatedAt, UpstreamRevisionNum, UpstreamSpaceID, UpstreamUnitID, ValidationErrors, ValidationTriggerIDs, ValidationWarnings, ValueTriggerIDs, Values.
+          Supported attributes for filtering on Unit: Annotations, ApplyGates, ApplyWarnings, ChangeSetID, Conflicts, CreatedAt, DataHash, DeleteGates, DestroyGates, DisplayName, FromLinkID, HeadRevisionID, HeadRevisionNum, HeadUnitActionNum, HeadUnitEventNum, HiddenReason, Labels, LastChangeDescription, LastReleasedRevisionNum, LinkFindings, NeededPaths, OrganizationID, Permissions, ProvidedPaths, ProviderType, Slug, SpaceID, TargetID, ToolchainType, UnitID, UpdatedAt, UpstreamRevisionNum, UpstreamSpaceID, UpstreamUnitID, ValidationErrors, ValidationResults, ValidationTriggerIDs, ValidationWarnings, ValueTriggerIDs, Values.
 
           Finding all units created by cloning can be done using the expression `UpstreamRevisionNum > 0`. Clones of a specific unit can be found by additionally filtering based on `UpstreamUnitID`. Units never released can be found using `LastReleasedRevisionNum = 0`. Units with unreleased changes can be found with `HeadRevisionNum > LastReleasedRevisionNum AND TargetID IS NOT NULL`.
 
@@ -48782,6 +49682,25 @@ paths:
         name: contains
         required: false
         schema:
+          type: string
+      - description: |-
+          Only return Unit entities on which the caller has this permission, as well as View, which every entity listed needs.
+
+          A list made to choose an entity to act on can name the permission the action needs, such as Edit to change it or Use to refer to it from another entity, so that it leaves out the entities the action would be refused on.
+
+          Supported values: Manage, Edit, Use, View, Approve, TargetEdit, TargetView.
+        in: query
+        name: where_permission
+        required: false
+        schema:
+          enum:
+          - Manage
+          - Edit
+          - Use
+          - View
+          - Approve
+          - TargetEdit
+          - TargetView
           type: string
       - description: |-
           Hidden Unit entities, those with a HiddenReason, are left out of the results, or of what a bulk operation acts on, unless this names their HiddenReason.
@@ -49097,6 +50016,22 @@ paths:
         schema:
           type: string
       - description: |-
+          Only return UnitEvent entities on which the caller has this permission, as well as View, which every entity listed needs.
+
+          A list made to choose an entity to act on can name the permission the action needs, such as Edit to change it or Use to refer to it from another entity, so that it leaves out the entities the action would be refused on.
+
+          Supported values: Manage, Edit, Use, View.
+        in: query
+        name: where_permission
+        required: false
+        schema:
+          enum:
+          - Manage
+          - Edit
+          - Use
+          - View
+          type: string
+      - description: |-
           Hidden UnitEvent entities, those with a HiddenReason, are left out of the results, or of what a bulk operation acts on, unless this names their HiddenReason.
 
           It is a comma-separated list of HiddenReasons, or `*` for all of them.
@@ -49276,7 +50211,7 @@ paths:
           An example conjunction is:
           `CreatedAt >= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.
 
-          Supported attributes for filtering on Unit: Annotations, ApplyGates, ApplyWarnings, ChangeSetID, Conflicts, CreatedAt, DataHash, DeleteGates, DestroyGates, DisplayName, FromLinkID, HeadRevisionID, HeadRevisionNum, HeadUnitActionNum, HeadUnitEventNum, HiddenReason, Labels, LastChangeDescription, LastReleasedRevisionNum, LinkFindings, NeededPaths, OrganizationID, Permissions, ProvidedPaths, ProviderType, Slug, SpaceID, TargetID, ToolchainType, UnitID, UpdatedAt, UpstreamRevisionNum, UpstreamSpaceID, UpstreamUnitID, ValidationErrors, ValidationTriggerIDs, ValidationWarnings, ValueTriggerIDs, Values.
+          Supported attributes for filtering on Unit: Annotations, ApplyGates, ApplyWarnings, ChangeSetID, Conflicts, CreatedAt, DataHash, DeleteGates, DestroyGates, DisplayName, FromLinkID, HeadRevisionID, HeadRevisionNum, HeadUnitActionNum, HeadUnitEventNum, HiddenReason, Labels, LastChangeDescription, LastReleasedRevisionNum, LinkFindings, NeededPaths, OrganizationID, Permissions, ProvidedPaths, ProviderType, Slug, SpaceID, TargetID, ToolchainType, UnitID, UpdatedAt, UpstreamRevisionNum, UpstreamSpaceID, UpstreamUnitID, ValidationErrors, ValidationResults, ValidationTriggerIDs, ValidationWarnings, ValueTriggerIDs, Values.
 
           Finding all units created by cloning can be done using the expression `UpstreamRevisionNum > 0`. Clones of a specific unit can be found by additionally filtering based on `UpstreamUnitID`. Units never released can be found using `LastReleasedRevisionNum = 0`. Units with unreleased changes can be found with `HeadRevisionNum > LastReleasedRevisionNum AND TargetID IS NOT NULL`.
 
@@ -49351,6 +50286,25 @@ paths:
         name: select
         required: false
         schema:
+          type: string
+      - description: |-
+          Only return Unit entities on which the caller has this permission, as well as View, which every entity listed needs.
+
+          A list made to choose an entity to act on can name the permission the action needs, such as Edit to change it or Use to refer to it from another entity, so that it leaves out the entities the action would be refused on.
+
+          Supported values: Manage, Edit, Use, View, Approve, TargetEdit, TargetView.
+        in: query
+        name: where_permission
+        required: false
+        schema:
+          enum:
+          - Manage
+          - Edit
+          - Use
+          - View
+          - Approve
+          - TargetEdit
+          - TargetView
           type: string
       - description: |-
           Hidden Unit entities, those with a HiddenReason, are left out of the results, or of what a bulk operation acts on, unless this names their HiddenReason.
@@ -49732,6 +50686,22 @@ paths:
         name: contains
         required: false
         schema:
+          type: string
+      - description: |-
+          Only return User entities on which the caller has this permission, as well as View, which every entity listed needs.
+
+          A list made to choose an entity to act on can name the permission the action needs, such as Edit to change it or Use to refer to it from another entity, so that it leaves out the entities the action would be refused on.
+
+          Supported values: Manage, Edit, Use, View.
+        in: query
+        name: where_permission
+        required: false
+        schema:
+          enum:
+          - Manage
+          - Edit
+          - Use
+          - View
           type: string
       - description: |-
           Select clause for specifying which fields to include in the response for User.
@@ -50500,6 +51470,22 @@ paths:
         schema:
           type: string
       - description: |-
+          Only return View entities on which the caller has this permission, as well as View, which every entity listed needs.
+
+          A list made to choose an entity to act on can name the permission the action needs, such as Edit to change it or Use to refer to it from another entity, so that it leaves out the entities the action would be refused on.
+
+          Supported values: Manage, Edit, Use, View.
+        in: query
+        name: where_permission
+        required: false
+        schema:
+          enum:
+          - Manage
+          - Edit
+          - Use
+          - View
+          type: string
+      - description: |-
           Hidden View entities, those with a HiddenReason, are left out of the results, or of what a bulk operation acts on, unless this names their HiddenReason.
 
           It is a comma-separated list of HiddenReasons, or `*` for all of them.
@@ -51227,7 +52213,7 @@ paths:
           An example conjunction is:
           `CreatedAt >= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.
 
-          Supported attributes for filtering on Unit: Annotations, ApplyGates, ApplyWarnings, ChangeSetID, Conflicts, CreatedAt, DataHash, DeleteGates, DestroyGates, DisplayName, FromLinkID, HeadRevisionID, HeadRevisionNum, HeadUnitActionNum, HeadUnitEventNum, HiddenReason, Labels, LastChangeDescription, LastReleasedRevisionNum, LinkFindings, NeededPaths, OrganizationID, Permissions, ProvidedPaths, ProviderType, Slug, SpaceID, TargetID, ToolchainType, UnitID, UpdatedAt, UpstreamRevisionNum, UpstreamSpaceID, UpstreamUnitID, ValidationErrors, ValidationTriggerIDs, ValidationWarnings, ValueTriggerIDs, Values.
+          Supported attributes for filtering on Unit: Annotations, ApplyGates, ApplyWarnings, ChangeSetID, Conflicts, CreatedAt, DataHash, DeleteGates, DestroyGates, DisplayName, FromLinkID, HeadRevisionID, HeadRevisionNum, HeadUnitActionNum, HeadUnitEventNum, HiddenReason, Labels, LastChangeDescription, LastReleasedRevisionNum, LinkFindings, NeededPaths, OrganizationID, Permissions, ProvidedPaths, ProviderType, Slug, SpaceID, TargetID, ToolchainType, UnitID, UpdatedAt, UpstreamRevisionNum, UpstreamSpaceID, UpstreamUnitID, ValidationErrors, ValidationResults, ValidationTriggerIDs, ValidationWarnings, ValueTriggerIDs, Values.
 
           The Units to create entities from, with from_backing_units.
 
@@ -56915,12 +57901,14 @@ components:
           $ref: '#/components/schemas/FunctionInvocationList'
         IncludeConflicts:
           description: Put the Unit's outstanding merge conflicts in the FunctionContext,
-            for functions that reason about them
+            for functions that reason about them. A request that runs Triggers gets
+            them regardless
           type: boolean
           x-go-type-skip-optional-pointer: true
         IncludeLinkFindings:
           description: Put what the resolves of the Unit's Links could not do in the
-            FunctionContext, for functions that reason about it
+            FunctionContext, for functions that reason about it. A request that runs
+            Triggers gets them regardless
           type: boolean
           x-go-type-skip-optional-pointer: true
         Invocations:
@@ -60895,6 +61883,8 @@ components:
           description: A map from gate/warning name to the validation results that
             caused it, for the configuration data at this Revision.
           type: object
+          x-confighub-where:
+            dataType: JSON
           x-go-type-skip-optional-pointer: true
         ValidationTriggerIDs:
           additionalProperties:
@@ -62737,6 +63727,8 @@ components:
             that caused the gate or warning.
           readOnly: true
           type: object
+          x-confighub-where:
+            dataType: JSON
           x-go-type-skip-optional-pointer: true
         ValidationTriggerIDs:
           additionalProperties:
@@ -64128,50 +65120,69 @@ components:
           x-omitzero: true
       type: object
     UserToken:
+      description: The record of a long-lived token issued to a ServiceAccount. The
+        token itself is shown once, when it is issued, and is not stored; this record
+        is what lets it be listed, traced to whoever issued it, and revoked on its
+        own.
       properties:
         CreatedAt:
+          description: When the token was issued. (readonly)
           example: 2006-01-02T15:04:05Z07:00
           format: date-time
           type: string
           x-go-type-skip-optional-pointer: true
           x-omitzero: true
         CreatedByUserID:
+          description: The User who issued the token. A token is never issued by the
+            identity it authenticates as. (readonly)
           example: 248df4b7-aa70-47b8-a036-33ac447e668d
           format: uuid
           type: string
           x-go-type-skip-optional-pointer: true
           x-omitzero: true
         Description:
+          description: Which system holds the token, so it can be retired without
+            guessing what breaks.
           type: string
           x-go-type-skip-optional-pointer: true
         ExpiresAt:
+          description: When the token stops working. Zero when it does not expire.
           example: 2006-01-02T15:04:05Z07:00
           format: date-time
           type: string
           x-go-type-skip-optional-pointer: true
           x-omitzero: true
         Jti:
+          description: The token's jti claim, which names the token in a revocation.
+            (readonly)
           type: string
           x-go-type-skip-optional-pointer: true
         LastUsedAt:
+          description: When the token was last exchanged at the registry, stamped
+            at most once per cache period per server. Zero when it has not been used.
+            (readonly)
           example: 2006-01-02T15:04:05Z07:00
           format: date-time
           type: string
           x-go-type-skip-optional-pointer: true
           x-omitzero: true
         RevokedAt:
+          description: When the token was revoked. Zero when it is live. (readonly)
           example: 2006-01-02T15:04:05Z07:00
           format: date-time
           type: string
           x-go-type-skip-optional-pointer: true
           x-omitzero: true
         UserID:
+          description: 'The User the token authenticates as: the ServiceAccount''s
+            User. (readonly)'
           example: 248df4b7-aa70-47b8-a036-33ac447e668d
           format: uuid
           type: string
           x-go-type-skip-optional-pointer: true
           x-omitzero: true
         UserTokenID:
+          description: Unique identifier for the record. (readonly)
           example: 248df4b7-aa70-47b8-a036-33ac447e668d
           format: uuid
           type: string
@@ -64217,6 +65228,9 @@ components:
           description: True if valid, false otherwise
           type: boolean
           x-go-type-skip-optional-pointer: true
+      required:
+      - Passed
+      - Index
       type: object
     ValidationResultList:
       items:

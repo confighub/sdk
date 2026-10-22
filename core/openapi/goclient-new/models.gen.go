@@ -147,10 +147,179 @@ const (
 	UnitActionStatusProgressing  UnitActionStatus = "Progressing"
 )
 
+// Defines values for ListAllAttestationsParamsWherePermission.
+const (
+	ListAllAttestationsParamsWherePermissionEdit   ListAllAttestationsParamsWherePermission = "Edit"
+	ListAllAttestationsParamsWherePermissionManage ListAllAttestationsParamsWherePermission = "Manage"
+	ListAllAttestationsParamsWherePermissionUse    ListAllAttestationsParamsWherePermission = "Use"
+	ListAllAttestationsParamsWherePermissionView   ListAllAttestationsParamsWherePermission = "View"
+)
+
+// Defines values for ListAllAttributesParamsWherePermission.
+const (
+	ListAllAttributesParamsWherePermissionEdit   ListAllAttributesParamsWherePermission = "Edit"
+	ListAllAttributesParamsWherePermissionManage ListAllAttributesParamsWherePermission = "Manage"
+	ListAllAttributesParamsWherePermissionUse    ListAllAttributesParamsWherePermission = "Use"
+	ListAllAttributesParamsWherePermissionView   ListAllAttributesParamsWherePermission = "View"
+)
+
+// Defines values for ListAllBridgeWorkersParamsWherePermission.
+const (
+	ListAllBridgeWorkersParamsWherePermissionApproveChildren    ListAllBridgeWorkersParamsWherePermission = "ApproveChildren"
+	ListAllBridgeWorkersParamsWherePermissionCreateChildren     ListAllBridgeWorkersParamsWherePermission = "CreateChildren"
+	ListAllBridgeWorkersParamsWherePermissionEdit               ListAllBridgeWorkersParamsWherePermission = "Edit"
+	ListAllBridgeWorkersParamsWherePermissionEditChildren       ListAllBridgeWorkersParamsWherePermission = "EditChildren"
+	ListAllBridgeWorkersParamsWherePermissionManage             ListAllBridgeWorkersParamsWherePermission = "Manage"
+	ListAllBridgeWorkersParamsWherePermissionManageChildren     ListAllBridgeWorkersParamsWherePermission = "ManageChildren"
+	ListAllBridgeWorkersParamsWherePermissionTargetEditChildren ListAllBridgeWorkersParamsWherePermission = "TargetEditChildren"
+	ListAllBridgeWorkersParamsWherePermissionTargetViewChildren ListAllBridgeWorkersParamsWherePermission = "TargetViewChildren"
+	ListAllBridgeWorkersParamsWherePermissionUse                ListAllBridgeWorkersParamsWherePermission = "Use"
+	ListAllBridgeWorkersParamsWherePermissionUseChildren        ListAllBridgeWorkersParamsWherePermission = "UseChildren"
+	ListAllBridgeWorkersParamsWherePermissionView               ListAllBridgeWorkersParamsWherePermission = "View"
+	ListAllBridgeWorkersParamsWherePermissionViewChildren       ListAllBridgeWorkersParamsWherePermission = "ViewChildren"
+)
+
+// Defines values for ListQueuedOperationsParamsWherePermission.
+const (
+	ListQueuedOperationsParamsWherePermissionEdit   ListQueuedOperationsParamsWherePermission = "Edit"
+	ListQueuedOperationsParamsWherePermissionManage ListQueuedOperationsParamsWherePermission = "Manage"
+	ListQueuedOperationsParamsWherePermissionUse    ListQueuedOperationsParamsWherePermission = "Use"
+	ListQueuedOperationsParamsWherePermissionView   ListQueuedOperationsParamsWherePermission = "View"
+)
+
+// Defines values for ListAllChangeOrdersParamsWherePermission.
+const (
+	ListAllChangeOrdersParamsWherePermissionEdit   ListAllChangeOrdersParamsWherePermission = "Edit"
+	ListAllChangeOrdersParamsWherePermissionManage ListAllChangeOrdersParamsWherePermission = "Manage"
+	ListAllChangeOrdersParamsWherePermissionUse    ListAllChangeOrdersParamsWherePermission = "Use"
+	ListAllChangeOrdersParamsWherePermissionView   ListAllChangeOrdersParamsWherePermission = "View"
+)
+
+// Defines values for ListAllChangeSetsParamsWherePermission.
+const (
+	ListAllChangeSetsParamsWherePermissionEdit   ListAllChangeSetsParamsWherePermission = "Edit"
+	ListAllChangeSetsParamsWherePermissionManage ListAllChangeSetsParamsWherePermission = "Manage"
+	ListAllChangeSetsParamsWherePermissionUse    ListAllChangeSetsParamsWherePermission = "Use"
+	ListAllChangeSetsParamsWherePermissionView   ListAllChangeSetsParamsWherePermission = "View"
+)
+
+// Defines values for ListAllChangeWorkflowsParamsWherePermission.
+const (
+	ListAllChangeWorkflowsParamsWherePermissionEdit   ListAllChangeWorkflowsParamsWherePermission = "Edit"
+	ListAllChangeWorkflowsParamsWherePermissionManage ListAllChangeWorkflowsParamsWherePermission = "Manage"
+	ListAllChangeWorkflowsParamsWherePermissionUse    ListAllChangeWorkflowsParamsWherePermission = "Use"
+	ListAllChangeWorkflowsParamsWherePermissionView   ListAllChangeWorkflowsParamsWherePermission = "View"
+)
+
+// Defines values for ListAllChannelsParamsWherePermission.
+const (
+	ListAllChannelsParamsWherePermissionClaim  ListAllChannelsParamsWherePermission = "Claim"
+	ListAllChannelsParamsWherePermissionEdit   ListAllChannelsParamsWherePermission = "Edit"
+	ListAllChannelsParamsWherePermissionManage ListAllChannelsParamsWherePermission = "Manage"
+	ListAllChannelsParamsWherePermissionUse    ListAllChannelsParamsWherePermission = "Use"
+	ListAllChannelsParamsWherePermissionView   ListAllChannelsParamsWherePermission = "View"
+)
+
+// Defines values for ListAllCommandRunsParamsWherePermission.
+const (
+	ListAllCommandRunsParamsWherePermissionEdit   ListAllCommandRunsParamsWherePermission = "Edit"
+	ListAllCommandRunsParamsWherePermissionManage ListAllCommandRunsParamsWherePermission = "Manage"
+	ListAllCommandRunsParamsWherePermissionUse    ListAllCommandRunsParamsWherePermission = "Use"
+	ListAllCommandRunsParamsWherePermissionView   ListAllCommandRunsParamsWherePermission = "View"
+)
+
+// Defines values for ListComponentsParamsWherePermission.
+const (
+	ListComponentsParamsWherePermissionEdit   ListComponentsParamsWherePermission = "Edit"
+	ListComponentsParamsWherePermissionManage ListComponentsParamsWherePermission = "Manage"
+	ListComponentsParamsWherePermissionUse    ListComponentsParamsWherePermission = "Use"
+	ListComponentsParamsWherePermissionView   ListComponentsParamsWherePermission = "View"
+)
+
+// Defines values for ListAllFiltersParamsWherePermission.
+const (
+	ListAllFiltersParamsWherePermissionEdit   ListAllFiltersParamsWherePermission = "Edit"
+	ListAllFiltersParamsWherePermissionManage ListAllFiltersParamsWherePermission = "Manage"
+	ListAllFiltersParamsWherePermissionUse    ListAllFiltersParamsWherePermission = "Use"
+	ListAllFiltersParamsWherePermissionView   ListAllFiltersParamsWherePermission = "View"
+)
+
+// Defines values for ListGroupsParamsWherePermission.
+const (
+	ListGroupsParamsWherePermissionEdit   ListGroupsParamsWherePermission = "Edit"
+	ListGroupsParamsWherePermissionManage ListGroupsParamsWherePermission = "Manage"
+	ListGroupsParamsWherePermissionUse    ListGroupsParamsWherePermission = "Use"
+	ListGroupsParamsWherePermissionView   ListGroupsParamsWherePermission = "View"
+)
+
+// Defines values for ListAllInvocationsParamsWherePermission.
+const (
+	ListAllInvocationsParamsWherePermissionEdit   ListAllInvocationsParamsWherePermission = "Edit"
+	ListAllInvocationsParamsWherePermissionManage ListAllInvocationsParamsWherePermission = "Manage"
+	ListAllInvocationsParamsWherePermissionUse    ListAllInvocationsParamsWherePermission = "Use"
+	ListAllInvocationsParamsWherePermissionView   ListAllInvocationsParamsWherePermission = "View"
+)
+
+// Defines values for SearchListLinksParamsWherePermission.
+const (
+	SearchListLinksParamsWherePermissionEdit   SearchListLinksParamsWherePermission = "Edit"
+	SearchListLinksParamsWherePermissionManage SearchListLinksParamsWherePermission = "Manage"
+	SearchListLinksParamsWherePermissionUse    SearchListLinksParamsWherePermission = "Use"
+	SearchListLinksParamsWherePermissionView   SearchListLinksParamsWherePermission = "View"
+)
+
+// Defines values for ListOrganizationsParamsWherePermission.
+const (
+	ListOrganizationsParamsWherePermissionEdit   ListOrganizationsParamsWherePermission = "Edit"
+	ListOrganizationsParamsWherePermissionManage ListOrganizationsParamsWherePermission = "Manage"
+	ListOrganizationsParamsWherePermissionUse    ListOrganizationsParamsWherePermission = "Use"
+	ListOrganizationsParamsWherePermissionView   ListOrganizationsParamsWherePermission = "View"
+)
+
+// Defines values for ListOrganizationMembersParamsWherePermission.
+const (
+	ListOrganizationMembersParamsWherePermissionEdit   ListOrganizationMembersParamsWherePermission = "Edit"
+	ListOrganizationMembersParamsWherePermissionManage ListOrganizationMembersParamsWherePermission = "Manage"
+	ListOrganizationMembersParamsWherePermissionUse    ListOrganizationMembersParamsWherePermission = "Use"
+	ListOrganizationMembersParamsWherePermissionView   ListOrganizationMembersParamsWherePermission = "View"
+)
+
+// Defines values for ListAllReleasesParamsWherePermission.
+const (
+	ListAllReleasesParamsWherePermissionEdit   ListAllReleasesParamsWherePermission = "Edit"
+	ListAllReleasesParamsWherePermissionManage ListAllReleasesParamsWherePermission = "Manage"
+	ListAllReleasesParamsWherePermissionUse    ListAllReleasesParamsWherePermission = "Use"
+	ListAllReleasesParamsWherePermissionView   ListAllReleasesParamsWherePermission = "View"
+)
+
 // Defines values for ListAllReleasesParamsDistinctOn.
 const (
 	ListAllReleasesParamsDistinctOnOff   ListAllReleasesParamsDistinctOn = "Off"
 	ListAllReleasesParamsDistinctOnSpace ListAllReleasesParamsDistinctOn = "Space"
+)
+
+// Defines values for ListAllResourcesParamsWherePermission.
+const (
+	ListAllResourcesParamsWherePermissionEdit   ListAllResourcesParamsWherePermission = "Edit"
+	ListAllResourcesParamsWherePermissionManage ListAllResourcesParamsWherePermission = "Manage"
+	ListAllResourcesParamsWherePermissionUse    ListAllResourcesParamsWherePermission = "Use"
+	ListAllResourcesParamsWherePermissionView   ListAllResourcesParamsWherePermission = "View"
+)
+
+// Defines values for ListAllReviewCommentsParamsWherePermission.
+const (
+	ListAllReviewCommentsParamsWherePermissionEdit   ListAllReviewCommentsParamsWherePermission = "Edit"
+	ListAllReviewCommentsParamsWherePermissionManage ListAllReviewCommentsParamsWherePermission = "Manage"
+	ListAllReviewCommentsParamsWherePermissionUse    ListAllReviewCommentsParamsWherePermission = "Use"
+	ListAllReviewCommentsParamsWherePermissionView   ListAllReviewCommentsParamsWherePermission = "View"
+)
+
+// Defines values for ListAllRevisionsParamsWherePermission.
+const (
+	ListAllRevisionsParamsWherePermissionEdit   ListAllRevisionsParamsWherePermission = "Edit"
+	ListAllRevisionsParamsWherePermissionManage ListAllRevisionsParamsWherePermission = "Manage"
+	ListAllRevisionsParamsWherePermissionUse    ListAllRevisionsParamsWherePermission = "Use"
+	ListAllRevisionsParamsWherePermissionView   ListAllRevisionsParamsWherePermission = "View"
 )
 
 // Defines values for ListAllRevisionsParamsDistinctOn.
@@ -159,10 +328,26 @@ const (
 	ListAllRevisionsParamsDistinctOnUnit ListAllRevisionsParamsDistinctOn = "Unit"
 )
 
+// Defines values for SearchRevisionDataParamsWherePermission.
+const (
+	SearchRevisionDataParamsWherePermissionEdit   SearchRevisionDataParamsWherePermission = "Edit"
+	SearchRevisionDataParamsWherePermissionManage SearchRevisionDataParamsWherePermission = "Manage"
+	SearchRevisionDataParamsWherePermissionUse    SearchRevisionDataParamsWherePermission = "Use"
+	SearchRevisionDataParamsWherePermissionView   SearchRevisionDataParamsWherePermission = "View"
+)
+
 // Defines values for SearchRevisionDataParamsDistinctOn.
 const (
 	SearchRevisionDataParamsDistinctOnOff  SearchRevisionDataParamsDistinctOn = "Off"
 	SearchRevisionDataParamsDistinctOnUnit SearchRevisionDataParamsDistinctOn = "Unit"
+)
+
+// Defines values for SearchRevisionMutationSourcesParamsWherePermission.
+const (
+	SearchRevisionMutationSourcesParamsWherePermissionEdit   SearchRevisionMutationSourcesParamsWherePermission = "Edit"
+	SearchRevisionMutationSourcesParamsWherePermissionManage SearchRevisionMutationSourcesParamsWherePermission = "Manage"
+	SearchRevisionMutationSourcesParamsWherePermissionUse    SearchRevisionMutationSourcesParamsWherePermission = "Use"
+	SearchRevisionMutationSourcesParamsWherePermissionView   SearchRevisionMutationSourcesParamsWherePermission = "View"
 )
 
 // Defines values for SearchRevisionMutationSourcesParamsDistinctOn.
@@ -171,10 +356,347 @@ const (
 	SearchRevisionMutationSourcesParamsDistinctOnUnit SearchRevisionMutationSourcesParamsDistinctOn = "Unit"
 )
 
+// Defines values for ListServiceAccountsParamsWherePermission.
+const (
+	ListServiceAccountsParamsWherePermissionEdit        ListServiceAccountsParamsWherePermission = "Edit"
+	ListServiceAccountsParamsWherePermissionImpersonate ListServiceAccountsParamsWherePermission = "Impersonate"
+	ListServiceAccountsParamsWherePermissionManage      ListServiceAccountsParamsWherePermission = "Manage"
+	ListServiceAccountsParamsWherePermissionUse         ListServiceAccountsParamsWherePermission = "Use"
+	ListServiceAccountsParamsWherePermissionView        ListServiceAccountsParamsWherePermission = "View"
+)
+
+// Defines values for ListSpacesParamsWherePermission.
+const (
+	ListSpacesParamsWherePermissionApproveChildren    ListSpacesParamsWherePermission = "ApproveChildren"
+	ListSpacesParamsWherePermissionCreateChildren     ListSpacesParamsWherePermission = "CreateChildren"
+	ListSpacesParamsWherePermissionEdit               ListSpacesParamsWherePermission = "Edit"
+	ListSpacesParamsWherePermissionEditChildren       ListSpacesParamsWherePermission = "EditChildren"
+	ListSpacesParamsWherePermissionManage             ListSpacesParamsWherePermission = "Manage"
+	ListSpacesParamsWherePermissionManageChildren     ListSpacesParamsWherePermission = "ManageChildren"
+	ListSpacesParamsWherePermissionTargetEditChildren ListSpacesParamsWherePermission = "TargetEditChildren"
+	ListSpacesParamsWherePermissionTargetViewChildren ListSpacesParamsWherePermission = "TargetViewChildren"
+	ListSpacesParamsWherePermissionUse                ListSpacesParamsWherePermission = "Use"
+	ListSpacesParamsWherePermissionUseChildren        ListSpacesParamsWherePermission = "UseChildren"
+	ListSpacesParamsWherePermissionView               ListSpacesParamsWherePermission = "View"
+	ListSpacesParamsWherePermissionViewChildren       ListSpacesParamsWherePermission = "ViewChildren"
+)
+
+// Defines values for ListExtendedAttestationsParamsWherePermission.
+const (
+	ListExtendedAttestationsParamsWherePermissionEdit   ListExtendedAttestationsParamsWherePermission = "Edit"
+	ListExtendedAttestationsParamsWherePermissionManage ListExtendedAttestationsParamsWherePermission = "Manage"
+	ListExtendedAttestationsParamsWherePermissionUse    ListExtendedAttestationsParamsWherePermission = "Use"
+	ListExtendedAttestationsParamsWherePermissionView   ListExtendedAttestationsParamsWherePermission = "View"
+)
+
+// Defines values for ListAttributesParamsWherePermission.
+const (
+	ListAttributesParamsWherePermissionEdit   ListAttributesParamsWherePermission = "Edit"
+	ListAttributesParamsWherePermissionManage ListAttributesParamsWherePermission = "Manage"
+	ListAttributesParamsWherePermissionUse    ListAttributesParamsWherePermission = "Use"
+	ListAttributesParamsWherePermissionView   ListAttributesParamsWherePermission = "View"
+)
+
+// Defines values for ListBridgeWorkersParamsWherePermission.
+const (
+	ListBridgeWorkersParamsWherePermissionApproveChildren    ListBridgeWorkersParamsWherePermission = "ApproveChildren"
+	ListBridgeWorkersParamsWherePermissionCreateChildren     ListBridgeWorkersParamsWherePermission = "CreateChildren"
+	ListBridgeWorkersParamsWherePermissionEdit               ListBridgeWorkersParamsWherePermission = "Edit"
+	ListBridgeWorkersParamsWherePermissionEditChildren       ListBridgeWorkersParamsWherePermission = "EditChildren"
+	ListBridgeWorkersParamsWherePermissionManage             ListBridgeWorkersParamsWherePermission = "Manage"
+	ListBridgeWorkersParamsWherePermissionManageChildren     ListBridgeWorkersParamsWherePermission = "ManageChildren"
+	ListBridgeWorkersParamsWherePermissionTargetEditChildren ListBridgeWorkersParamsWherePermission = "TargetEditChildren"
+	ListBridgeWorkersParamsWherePermissionTargetViewChildren ListBridgeWorkersParamsWherePermission = "TargetViewChildren"
+	ListBridgeWorkersParamsWherePermissionUse                ListBridgeWorkersParamsWherePermission = "Use"
+	ListBridgeWorkersParamsWherePermissionUseChildren        ListBridgeWorkersParamsWherePermission = "UseChildren"
+	ListBridgeWorkersParamsWherePermissionView               ListBridgeWorkersParamsWherePermission = "View"
+	ListBridgeWorkersParamsWherePermissionViewChildren       ListBridgeWorkersParamsWherePermission = "ViewChildren"
+)
+
+// Defines values for ListChangeOrdersParamsWherePermission.
+const (
+	ListChangeOrdersParamsWherePermissionEdit   ListChangeOrdersParamsWherePermission = "Edit"
+	ListChangeOrdersParamsWherePermissionManage ListChangeOrdersParamsWherePermission = "Manage"
+	ListChangeOrdersParamsWherePermissionUse    ListChangeOrdersParamsWherePermission = "Use"
+	ListChangeOrdersParamsWherePermissionView   ListChangeOrdersParamsWherePermission = "View"
+)
+
+// Defines values for ListChangeSetsParamsWherePermission.
+const (
+	ListChangeSetsParamsWherePermissionEdit   ListChangeSetsParamsWherePermission = "Edit"
+	ListChangeSetsParamsWherePermissionManage ListChangeSetsParamsWherePermission = "Manage"
+	ListChangeSetsParamsWherePermissionUse    ListChangeSetsParamsWherePermission = "Use"
+	ListChangeSetsParamsWherePermissionView   ListChangeSetsParamsWherePermission = "View"
+)
+
+// Defines values for ListChangeWorkflowsParamsWherePermission.
+const (
+	ListChangeWorkflowsParamsWherePermissionEdit   ListChangeWorkflowsParamsWherePermission = "Edit"
+	ListChangeWorkflowsParamsWherePermissionManage ListChangeWorkflowsParamsWherePermission = "Manage"
+	ListChangeWorkflowsParamsWherePermissionUse    ListChangeWorkflowsParamsWherePermission = "Use"
+	ListChangeWorkflowsParamsWherePermissionView   ListChangeWorkflowsParamsWherePermission = "View"
+)
+
+// Defines values for ListChannelsParamsWherePermission.
+const (
+	ListChannelsParamsWherePermissionClaim  ListChannelsParamsWherePermission = "Claim"
+	ListChannelsParamsWherePermissionEdit   ListChannelsParamsWherePermission = "Edit"
+	ListChannelsParamsWherePermissionManage ListChannelsParamsWherePermission = "Manage"
+	ListChannelsParamsWherePermissionUse    ListChannelsParamsWherePermission = "Use"
+	ListChannelsParamsWherePermissionView   ListChannelsParamsWherePermission = "View"
+)
+
+// Defines values for ListCommandRunsParamsWherePermission.
+const (
+	ListCommandRunsParamsWherePermissionEdit   ListCommandRunsParamsWherePermission = "Edit"
+	ListCommandRunsParamsWherePermissionManage ListCommandRunsParamsWherePermission = "Manage"
+	ListCommandRunsParamsWherePermissionUse    ListCommandRunsParamsWherePermission = "Use"
+	ListCommandRunsParamsWherePermissionView   ListCommandRunsParamsWherePermission = "View"
+)
+
+// Defines values for ListFiltersParamsWherePermission.
+const (
+	ListFiltersParamsWherePermissionEdit   ListFiltersParamsWherePermission = "Edit"
+	ListFiltersParamsWherePermissionManage ListFiltersParamsWherePermission = "Manage"
+	ListFiltersParamsWherePermissionUse    ListFiltersParamsWherePermission = "Use"
+	ListFiltersParamsWherePermissionView   ListFiltersParamsWherePermission = "View"
+)
+
+// Defines values for ListInvocationsParamsWherePermission.
+const (
+	ListInvocationsParamsWherePermissionEdit   ListInvocationsParamsWherePermission = "Edit"
+	ListInvocationsParamsWherePermissionManage ListInvocationsParamsWherePermission = "Manage"
+	ListInvocationsParamsWherePermissionUse    ListInvocationsParamsWherePermission = "Use"
+	ListInvocationsParamsWherePermissionView   ListInvocationsParamsWherePermission = "View"
+)
+
+// Defines values for ListLinksParamsWherePermission.
+const (
+	ListLinksParamsWherePermissionEdit   ListLinksParamsWherePermission = "Edit"
+	ListLinksParamsWherePermissionManage ListLinksParamsWherePermission = "Manage"
+	ListLinksParamsWherePermissionUse    ListLinksParamsWherePermission = "Use"
+	ListLinksParamsWherePermissionView   ListLinksParamsWherePermission = "View"
+)
+
+// Defines values for ListExtendedReleasesParamsWherePermission.
+const (
+	ListExtendedReleasesParamsWherePermissionEdit   ListExtendedReleasesParamsWherePermission = "Edit"
+	ListExtendedReleasesParamsWherePermissionManage ListExtendedReleasesParamsWherePermission = "Manage"
+	ListExtendedReleasesParamsWherePermissionUse    ListExtendedReleasesParamsWherePermission = "Use"
+	ListExtendedReleasesParamsWherePermissionView   ListExtendedReleasesParamsWherePermission = "View"
+)
+
+// Defines values for ListTagsParamsWherePermission.
+const (
+	ListTagsParamsWherePermissionEdit   ListTagsParamsWherePermission = "Edit"
+	ListTagsParamsWherePermissionManage ListTagsParamsWherePermission = "Manage"
+	ListTagsParamsWherePermissionUse    ListTagsParamsWherePermission = "Use"
+	ListTagsParamsWherePermissionView   ListTagsParamsWherePermission = "View"
+)
+
+// Defines values for ListTargetsParamsWherePermission.
+const (
+	ListTargetsParamsWherePermissionApproveChildren    ListTargetsParamsWherePermission = "ApproveChildren"
+	ListTargetsParamsWherePermissionCreateChildren     ListTargetsParamsWherePermission = "CreateChildren"
+	ListTargetsParamsWherePermissionEdit               ListTargetsParamsWherePermission = "Edit"
+	ListTargetsParamsWherePermissionEditChildren       ListTargetsParamsWherePermission = "EditChildren"
+	ListTargetsParamsWherePermissionManage             ListTargetsParamsWherePermission = "Manage"
+	ListTargetsParamsWherePermissionManageChildren     ListTargetsParamsWherePermission = "ManageChildren"
+	ListTargetsParamsWherePermissionTargetEditChildren ListTargetsParamsWherePermission = "TargetEditChildren"
+	ListTargetsParamsWherePermissionTargetViewChildren ListTargetsParamsWherePermission = "TargetViewChildren"
+	ListTargetsParamsWherePermissionUse                ListTargetsParamsWherePermission = "Use"
+	ListTargetsParamsWherePermissionUseChildren        ListTargetsParamsWherePermission = "UseChildren"
+	ListTargetsParamsWherePermissionView               ListTargetsParamsWherePermission = "View"
+	ListTargetsParamsWherePermissionViewChildren       ListTargetsParamsWherePermission = "ViewChildren"
+)
+
+// Defines values for ListTriggersParamsWherePermission.
+const (
+	ListTriggersParamsWherePermissionEdit   ListTriggersParamsWherePermission = "Edit"
+	ListTriggersParamsWherePermissionManage ListTriggersParamsWherePermission = "Manage"
+	ListTriggersParamsWherePermissionUse    ListTriggersParamsWherePermission = "Use"
+	ListTriggersParamsWherePermissionView   ListTriggersParamsWherePermission = "View"
+)
+
+// Defines values for ListUnitsParamsWherePermission.
+const (
+	ListUnitsParamsWherePermissionApprove    ListUnitsParamsWherePermission = "Approve"
+	ListUnitsParamsWherePermissionEdit       ListUnitsParamsWherePermission = "Edit"
+	ListUnitsParamsWherePermissionManage     ListUnitsParamsWherePermission = "Manage"
+	ListUnitsParamsWherePermissionTargetEdit ListUnitsParamsWherePermission = "TargetEdit"
+	ListUnitsParamsWherePermissionTargetView ListUnitsParamsWherePermission = "TargetView"
+	ListUnitsParamsWherePermissionUse        ListUnitsParamsWherePermission = "Use"
+	ListUnitsParamsWherePermissionView       ListUnitsParamsWherePermission = "View"
+)
+
+// Defines values for ListExtendedMutationsParamsWherePermission.
+const (
+	ListExtendedMutationsParamsWherePermissionEdit   ListExtendedMutationsParamsWherePermission = "Edit"
+	ListExtendedMutationsParamsWherePermissionManage ListExtendedMutationsParamsWherePermission = "Manage"
+	ListExtendedMutationsParamsWherePermissionUse    ListExtendedMutationsParamsWherePermission = "Use"
+	ListExtendedMutationsParamsWherePermissionView   ListExtendedMutationsParamsWherePermission = "View"
+)
+
+// Defines values for ListExtendedResourcesParamsWherePermission.
+const (
+	ListExtendedResourcesParamsWherePermissionEdit   ListExtendedResourcesParamsWherePermission = "Edit"
+	ListExtendedResourcesParamsWherePermissionManage ListExtendedResourcesParamsWherePermission = "Manage"
+	ListExtendedResourcesParamsWherePermissionUse    ListExtendedResourcesParamsWherePermission = "Use"
+	ListExtendedResourcesParamsWherePermissionView   ListExtendedResourcesParamsWherePermission = "View"
+)
+
+// Defines values for ListReviewCommentsParamsWherePermission.
+const (
+	ListReviewCommentsParamsWherePermissionEdit   ListReviewCommentsParamsWherePermission = "Edit"
+	ListReviewCommentsParamsWherePermissionManage ListReviewCommentsParamsWherePermission = "Manage"
+	ListReviewCommentsParamsWherePermissionUse    ListReviewCommentsParamsWherePermission = "Use"
+	ListReviewCommentsParamsWherePermissionView   ListReviewCommentsParamsWherePermission = "View"
+)
+
+// Defines values for ListExtendedRevisionsParamsWherePermission.
+const (
+	ListExtendedRevisionsParamsWherePermissionEdit   ListExtendedRevisionsParamsWherePermission = "Edit"
+	ListExtendedRevisionsParamsWherePermissionManage ListExtendedRevisionsParamsWherePermission = "Manage"
+	ListExtendedRevisionsParamsWherePermissionUse    ListExtendedRevisionsParamsWherePermission = "Use"
+	ListExtendedRevisionsParamsWherePermissionView   ListExtendedRevisionsParamsWherePermission = "View"
+)
+
+// Defines values for ListUnitActionsParamsWherePermission.
+const (
+	ListUnitActionsParamsWherePermissionEdit   ListUnitActionsParamsWherePermission = "Edit"
+	ListUnitActionsParamsWherePermissionManage ListUnitActionsParamsWherePermission = "Manage"
+	ListUnitActionsParamsWherePermissionUse    ListUnitActionsParamsWherePermission = "Use"
+	ListUnitActionsParamsWherePermissionView   ListUnitActionsParamsWherePermission = "View"
+)
+
+// Defines values for ListUnitEventsParamsWherePermission.
+const (
+	ListUnitEventsParamsWherePermissionEdit   ListUnitEventsParamsWherePermission = "Edit"
+	ListUnitEventsParamsWherePermissionManage ListUnitEventsParamsWherePermission = "Manage"
+	ListUnitEventsParamsWherePermissionUse    ListUnitEventsParamsWherePermission = "Use"
+	ListUnitEventsParamsWherePermissionView   ListUnitEventsParamsWherePermission = "View"
+)
+
+// Defines values for ListViewsParamsWherePermission.
+const (
+	ListViewsParamsWherePermissionEdit   ListViewsParamsWherePermission = "Edit"
+	ListViewsParamsWherePermissionManage ListViewsParamsWherePermission = "Manage"
+	ListViewsParamsWherePermissionUse    ListViewsParamsWherePermission = "Use"
+	ListViewsParamsWherePermissionView   ListViewsParamsWherePermission = "View"
+)
+
+// Defines values for ListAllTagsParamsWherePermission.
+const (
+	ListAllTagsParamsWherePermissionEdit   ListAllTagsParamsWherePermission = "Edit"
+	ListAllTagsParamsWherePermissionManage ListAllTagsParamsWherePermission = "Manage"
+	ListAllTagsParamsWherePermissionUse    ListAllTagsParamsWherePermission = "Use"
+	ListAllTagsParamsWherePermissionView   ListAllTagsParamsWherePermission = "View"
+)
+
+// Defines values for ListAllTargetsParamsWherePermission.
+const (
+	ListAllTargetsParamsWherePermissionApproveChildren    ListAllTargetsParamsWherePermission = "ApproveChildren"
+	ListAllTargetsParamsWherePermissionCreateChildren     ListAllTargetsParamsWherePermission = "CreateChildren"
+	ListAllTargetsParamsWherePermissionEdit               ListAllTargetsParamsWherePermission = "Edit"
+	ListAllTargetsParamsWherePermissionEditChildren       ListAllTargetsParamsWherePermission = "EditChildren"
+	ListAllTargetsParamsWherePermissionManage             ListAllTargetsParamsWherePermission = "Manage"
+	ListAllTargetsParamsWherePermissionManageChildren     ListAllTargetsParamsWherePermission = "ManageChildren"
+	ListAllTargetsParamsWherePermissionTargetEditChildren ListAllTargetsParamsWherePermission = "TargetEditChildren"
+	ListAllTargetsParamsWherePermissionTargetViewChildren ListAllTargetsParamsWherePermission = "TargetViewChildren"
+	ListAllTargetsParamsWherePermissionUse                ListAllTargetsParamsWherePermission = "Use"
+	ListAllTargetsParamsWherePermissionUseChildren        ListAllTargetsParamsWherePermission = "UseChildren"
+	ListAllTargetsParamsWherePermissionView               ListAllTargetsParamsWherePermission = "View"
+	ListAllTargetsParamsWherePermissionViewChildren       ListAllTargetsParamsWherePermission = "ViewChildren"
+)
+
+// Defines values for ListAllTriggersParamsWherePermission.
+const (
+	ListAllTriggersParamsWherePermissionEdit   ListAllTriggersParamsWherePermission = "Edit"
+	ListAllTriggersParamsWherePermissionManage ListAllTriggersParamsWherePermission = "Manage"
+	ListAllTriggersParamsWherePermissionUse    ListAllTriggersParamsWherePermission = "Use"
+	ListAllTriggersParamsWherePermissionView   ListAllTriggersParamsWherePermission = "View"
+)
+
+// Defines values for ListAllUnitsParamsWherePermission.
+const (
+	ListAllUnitsParamsWherePermissionApprove    ListAllUnitsParamsWherePermission = "Approve"
+	ListAllUnitsParamsWherePermissionEdit       ListAllUnitsParamsWherePermission = "Edit"
+	ListAllUnitsParamsWherePermissionManage     ListAllUnitsParamsWherePermission = "Manage"
+	ListAllUnitsParamsWherePermissionTargetEdit ListAllUnitsParamsWherePermission = "TargetEdit"
+	ListAllUnitsParamsWherePermissionTargetView ListAllUnitsParamsWherePermission = "TargetView"
+	ListAllUnitsParamsWherePermissionUse        ListAllUnitsParamsWherePermission = "Use"
+	ListAllUnitsParamsWherePermissionView       ListAllUnitsParamsWherePermission = "View"
+)
+
+// Defines values for ListAllUnitActionsParamsWherePermission.
+const (
+	ListAllUnitActionsParamsWherePermissionEdit   ListAllUnitActionsParamsWherePermission = "Edit"
+	ListAllUnitActionsParamsWherePermissionManage ListAllUnitActionsParamsWherePermission = "Manage"
+	ListAllUnitActionsParamsWherePermissionUse    ListAllUnitActionsParamsWherePermission = "Use"
+	ListAllUnitActionsParamsWherePermissionView   ListAllUnitActionsParamsWherePermission = "View"
+)
+
+// Defines values for SearchUnitDataParamsWherePermission.
+const (
+	SearchUnitDataParamsWherePermissionApprove    SearchUnitDataParamsWherePermission = "Approve"
+	SearchUnitDataParamsWherePermissionEdit       SearchUnitDataParamsWherePermission = "Edit"
+	SearchUnitDataParamsWherePermissionManage     SearchUnitDataParamsWherePermission = "Manage"
+	SearchUnitDataParamsWherePermissionTargetEdit SearchUnitDataParamsWherePermission = "TargetEdit"
+	SearchUnitDataParamsWherePermissionTargetView SearchUnitDataParamsWherePermission = "TargetView"
+	SearchUnitDataParamsWherePermissionUse        SearchUnitDataParamsWherePermission = "Use"
+	SearchUnitDataParamsWherePermissionView       SearchUnitDataParamsWherePermission = "View"
+)
+
+// Defines values for SearchUnitDiffParamsWherePermission.
+const (
+	SearchUnitDiffParamsWherePermissionApprove    SearchUnitDiffParamsWherePermission = "Approve"
+	SearchUnitDiffParamsWherePermissionEdit       SearchUnitDiffParamsWherePermission = "Edit"
+	SearchUnitDiffParamsWherePermissionManage     SearchUnitDiffParamsWherePermission = "Manage"
+	SearchUnitDiffParamsWherePermissionTargetEdit SearchUnitDiffParamsWherePermission = "TargetEdit"
+	SearchUnitDiffParamsWherePermissionTargetView SearchUnitDiffParamsWherePermission = "TargetView"
+	SearchUnitDiffParamsWherePermissionUse        SearchUnitDiffParamsWherePermission = "Use"
+	SearchUnitDiffParamsWherePermissionView       SearchUnitDiffParamsWherePermission = "View"
+)
+
+// Defines values for ListAllUnitEventsParamsWherePermission.
+const (
+	ListAllUnitEventsParamsWherePermissionEdit   ListAllUnitEventsParamsWherePermission = "Edit"
+	ListAllUnitEventsParamsWherePermissionManage ListAllUnitEventsParamsWherePermission = "Manage"
+	ListAllUnitEventsParamsWherePermissionUse    ListAllUnitEventsParamsWherePermission = "Use"
+	ListAllUnitEventsParamsWherePermissionView   ListAllUnitEventsParamsWherePermission = "View"
+)
+
 // Defines values for ListAllUnitEventsParamsDistinctOn.
 const (
 	ListAllUnitEventsParamsDistinctOnOff  ListAllUnitEventsParamsDistinctOn = "Off"
 	ListAllUnitEventsParamsDistinctOnUnit ListAllUnitEventsParamsDistinctOn = "Unit"
+)
+
+// Defines values for SearchUnitMutationSourcesParamsWherePermission.
+const (
+	SearchUnitMutationSourcesParamsWherePermissionApprove    SearchUnitMutationSourcesParamsWherePermission = "Approve"
+	SearchUnitMutationSourcesParamsWherePermissionEdit       SearchUnitMutationSourcesParamsWherePermission = "Edit"
+	SearchUnitMutationSourcesParamsWherePermissionManage     SearchUnitMutationSourcesParamsWherePermission = "Manage"
+	SearchUnitMutationSourcesParamsWherePermissionTargetEdit SearchUnitMutationSourcesParamsWherePermission = "TargetEdit"
+	SearchUnitMutationSourcesParamsWherePermissionTargetView SearchUnitMutationSourcesParamsWherePermission = "TargetView"
+	SearchUnitMutationSourcesParamsWherePermissionUse        SearchUnitMutationSourcesParamsWherePermission = "Use"
+	SearchUnitMutationSourcesParamsWherePermissionView       SearchUnitMutationSourcesParamsWherePermission = "View"
+)
+
+// Defines values for ListUsersParamsWherePermission.
+const (
+	ListUsersParamsWherePermissionEdit   ListUsersParamsWherePermission = "Edit"
+	ListUsersParamsWherePermissionManage ListUsersParamsWherePermission = "Manage"
+	ListUsersParamsWherePermissionUse    ListUsersParamsWherePermission = "Use"
+	ListUsersParamsWherePermissionView   ListUsersParamsWherePermission = "View"
+)
+
+// Defines values for ListAllViewsParamsWherePermission.
+const (
+	ListAllViewsParamsWherePermissionEdit   ListAllViewsParamsWherePermission = "Edit"
+	ListAllViewsParamsWherePermissionManage ListAllViewsParamsWherePermission = "Manage"
+	ListAllViewsParamsWherePermissionUse    ListAllViewsParamsWherePermission = "Use"
+	ListAllViewsParamsWherePermissionView   ListAllViewsParamsWherePermission = "View"
 )
 
 // ActionResult defines model for ActionResult.
@@ -2714,10 +3236,10 @@ type FunctionInvocationsRequest struct {
 	ChannelID           *openapi_types.UUID     `json:"ChannelID,omitempty" yaml:"ChannelID,omitempty"`
 	FunctionInvocations *FunctionInvocationList `json:"FunctionInvocations" yaml:"FunctionInvocations"`
 
-	// IncludeConflicts Put the Unit's outstanding merge conflicts in the FunctionContext, for functions that reason about them
+	// IncludeConflicts Put the Unit's outstanding merge conflicts in the FunctionContext, for functions that reason about them. A request that runs Triggers gets them regardless
 	IncludeConflicts bool `json:"IncludeConflicts,omitempty" yaml:"IncludeConflicts,omitempty"`
 
-	// IncludeLinkFindings Put what the resolves of the Unit's Links could not do in the FunctionContext, for functions that reason about it
+	// IncludeLinkFindings Put what the resolves of the Unit's Links could not do in the FunctionContext, for functions that reason about it. A request that runs Triggers gets them regardless
 	IncludeLinkFindings bool `json:"IncludeLinkFindings,omitempty" yaml:"IncludeLinkFindings,omitempty"`
 
 	// Invocations Invocations is a list of Invocation IDs to execute. The invocations must be within the same Organization. Invocations will be executed after the FunctionInvocations list. Functions are grouped by executor (built-in vs bridge worker) and executed in phases: general mutating functions first, then final mutating functions (like ensure-context), then validating functions. Functions that don't match the unit's toolchain type are ignored.
@@ -3035,7 +3557,9 @@ type Issue struct {
 
 // IssuedUserToken defines model for IssuedUserToken.
 type IssuedUserToken struct {
-	Token     string     `json:"Token,omitempty" yaml:"Token,omitempty"`
+	Token string `json:"Token,omitempty" yaml:"Token,omitempty"`
+
+	// UserToken The record of a long-lived token issued to a ServiceAccount. The token itself is shown once, when it is issued, and is not stored; this record is what lets it be listed, traced to whoever issued it, and revoked on its own.
 	UserToken *UserToken `json:"UserToken,omitempty" yaml:"UserToken,omitempty"`
 }
 
@@ -5842,17 +6366,34 @@ type UserKey struct {
 	UserKeyID   openapi_types.UUID `json:"UserKeyID,omitempty,omitzero" yaml:"UserKeyID,omitempty"`
 }
 
-// UserToken defines model for UserToken.
+// UserToken The record of a long-lived token issued to a ServiceAccount. The token itself is shown once, when it is issued, and is not stored; this record is what lets it be listed, traced to whoever issued it, and revoked on its own.
 type UserToken struct {
-	CreatedAt       time.Time          `json:"CreatedAt,omitempty,omitzero" yaml:"CreatedAt,omitempty"`
+	// CreatedAt When the token was issued. (readonly)
+	CreatedAt time.Time `json:"CreatedAt,omitempty,omitzero" yaml:"CreatedAt,omitempty"`
+
+	// CreatedByUserID The User who issued the token. A token is never issued by the identity it authenticates as. (readonly)
 	CreatedByUserID openapi_types.UUID `json:"CreatedByUserID,omitempty,omitzero" yaml:"CreatedByUserID,omitempty"`
-	Description     string             `json:"Description,omitempty" yaml:"Description,omitempty"`
-	ExpiresAt       time.Time          `json:"ExpiresAt,omitempty,omitzero" yaml:"ExpiresAt,omitempty"`
-	Jti             string             `json:"Jti,omitempty" yaml:"Jti,omitempty"`
-	LastUsedAt      time.Time          `json:"LastUsedAt,omitempty,omitzero" yaml:"LastUsedAt,omitempty"`
-	RevokedAt       time.Time          `json:"RevokedAt,omitempty,omitzero" yaml:"RevokedAt,omitempty"`
-	UserID          openapi_types.UUID `json:"UserID,omitempty,omitzero" yaml:"UserID,omitempty"`
-	UserTokenID     openapi_types.UUID `json:"UserTokenID,omitempty,omitzero" yaml:"UserTokenID,omitempty"`
+
+	// Description Which system holds the token, so it can be retired without guessing what breaks.
+	Description string `json:"Description,omitempty" yaml:"Description,omitempty"`
+
+	// ExpiresAt When the token stops working. Zero when it does not expire.
+	ExpiresAt time.Time `json:"ExpiresAt,omitempty,omitzero" yaml:"ExpiresAt,omitempty"`
+
+	// Jti The token's jti claim, which names the token in a revocation. (readonly)
+	Jti string `json:"Jti,omitempty" yaml:"Jti,omitempty"`
+
+	// LastUsedAt When the token was last exchanged at the registry, stamped at most once per cache period per server. Zero when it has not been used. (readonly)
+	LastUsedAt time.Time `json:"LastUsedAt,omitempty,omitzero" yaml:"LastUsedAt,omitempty"`
+
+	// RevokedAt When the token was revoked. Zero when it is live. (readonly)
+	RevokedAt time.Time `json:"RevokedAt,omitempty,omitzero" yaml:"RevokedAt,omitempty"`
+
+	// UserID The User the token authenticates as: the ServiceAccount's User. (readonly)
+	UserID openapi_types.UUID `json:"UserID,omitempty,omitzero" yaml:"UserID,omitempty"`
+
+	// UserTokenID Unique identifier for the record. (readonly)
+	UserTokenID openapi_types.UUID `json:"UserTokenID,omitempty,omitzero" yaml:"UserTokenID,omitempty"`
 }
 
 // ValidationResult defines model for ValidationResult.
@@ -5867,7 +6408,7 @@ type ValidationResult struct {
 	FunctionName string `json:"FunctionName,omitempty" yaml:"FunctionName,omitempty"`
 
 	// Index Index of the function invocation corresponding to the result. Useful in the case that multiple function invocations in the same executor call return ValidationResultList output.
-	Index int `json:"Index,omitempty" yaml:"Index,omitempty"`
+	Index int `json:"Index" yaml:"Index"`
 
 	// Issues Issues found with the configuration unit that are not associated with specific attributes/paths. Use FailedAttributes where possible.
 	Issues []Issue `json:"Issues,omitempty" yaml:"Issues,omitempty"`
@@ -5876,7 +6417,7 @@ type ValidationResult struct {
 	MaxScore string `json:"MaxScore,omitempty" yaml:"MaxScore,omitempty"`
 
 	// Passed True if valid, false otherwise
-	Passed bool `json:"Passed,omitempty" yaml:"Passed,omitempty"`
+	Passed bool `json:"Passed" yaml:"Passed"`
 }
 
 // ValidationResultList defines model for ValidationResultList.
@@ -6875,7 +7416,7 @@ type BulkCreateSpacesParams struct {
 	// An example conjunction is:
 	// `CreatedAt >= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.
 	//
-	// Supported attributes for filtering on Unit: Annotations, ApplyGates, ApplyWarnings, ChangeSetID, Conflicts, CreatedAt, DataHash, DeleteGates, DestroyGates, DisplayName, FromLinkID, HeadRevisionID, HeadRevisionNum, HeadUnitActionNum, HeadUnitEventNum, HiddenReason, Labels, LastChangeDescription, LastReleasedRevisionNum, LinkFindings, NeededPaths, OrganizationID, Permissions, ProvidedPaths, ProviderType, Slug, SpaceID, TargetID, ToolchainType, UnitID, UpdatedAt, UpstreamRevisionNum, UpstreamSpaceID, UpstreamUnitID, ValidationErrors, ValidationTriggerIDs, ValidationWarnings, ValueTriggerIDs, Values.
+	// Supported attributes for filtering on Unit: Annotations, ApplyGates, ApplyWarnings, ChangeSetID, Conflicts, CreatedAt, DataHash, DeleteGates, DestroyGates, DisplayName, FromLinkID, HeadRevisionID, HeadRevisionNum, HeadUnitActionNum, HeadUnitEventNum, HiddenReason, Labels, LastChangeDescription, LastReleasedRevisionNum, LinkFindings, NeededPaths, OrganizationID, Permissions, ProvidedPaths, ProviderType, Slug, SpaceID, TargetID, ToolchainType, UnitID, UpdatedAt, UpstreamRevisionNum, UpstreamSpaceID, UpstreamUnitID, ValidationErrors, ValidationResults, ValidationTriggerIDs, ValidationWarnings, ValueTriggerIDs, Values.
 	//
 	// The Units to create entities from, with from_backing_units.
 	//
@@ -6988,6 +7529,13 @@ type ListAllAttestationsParams struct {
 	// The whole string must be query-encoded.
 	Select *string `form:"select,omitempty" json:"select,omitempty" yaml:"select,omitempty"`
 
+	// WherePermission Only return Attestation entities on which the caller has this permission, as well as View, which every entity listed needs.
+	//
+	// A list made to choose an entity to act on can name the permission the action needs, such as Edit to change it or Use to refer to it from another entity, so that it leaves out the entities the action would be refused on.
+	//
+	// Supported values: Manage, Edit, Use, View.
+	WherePermission *ListAllAttestationsParamsWherePermission `form:"where_permission,omitempty" json:"where_permission,omitempty" yaml:"where_permission,omitempty"`
+
 	// IncludeHidden Hidden Attestation entities, those with a HiddenReason, are left out of the results, or of what a bulk operation acts on, unless this names their HiddenReason.
 	//
 	// It is a comma-separated list of HiddenReasons, or `*` for all of them.
@@ -7029,6 +7577,9 @@ type ListAllAttestationsParams struct {
 	// Keep reading until a response has no such header: a page can hold fewer entities than the limit, or none, and still be followed by more.
 	Continue *string `form:"continue,omitempty" json:"continue,omitempty" yaml:"continue,omitempty"`
 }
+
+// ListAllAttestationsParamsWherePermission defines parameters for ListAllAttestations.
+type ListAllAttestationsParamsWherePermission string
 
 // BulkDeleteAttributesParams defines parameters for BulkDeleteAttributes.
 type BulkDeleteAttributesParams struct {
@@ -7219,6 +7770,13 @@ type ListAllAttributesParams struct {
 	// The whole string must be query-encoded.
 	Select *string `form:"select,omitempty" json:"select,omitempty" yaml:"select,omitempty"`
 
+	// WherePermission Only return Attribute entities on which the caller has this permission, as well as View, which every entity listed needs.
+	//
+	// A list made to choose an entity to act on can name the permission the action needs, such as Edit to change it or Use to refer to it from another entity, so that it leaves out the entities the action would be refused on.
+	//
+	// Supported values: Manage, Edit, Use, View.
+	WherePermission *ListAllAttributesParamsWherePermission `form:"where_permission,omitempty" json:"where_permission,omitempty" yaml:"where_permission,omitempty"`
+
 	// IncludeHidden Hidden Attribute entities, those with a HiddenReason, are left out of the results, or of what a bulk operation acts on, unless this names their HiddenReason.
 	//
 	// It is a comma-separated list of HiddenReasons, or `*` for all of them.
@@ -7260,6 +7818,9 @@ type ListAllAttributesParams struct {
 	// Keep reading until a response has no such header: a page can hold fewer entities than the limit, or none, and still be followed by more.
 	Continue *string `form:"continue,omitempty" json:"continue,omitempty" yaml:"continue,omitempty"`
 }
+
+// ListAllAttributesParamsWherePermission defines parameters for ListAllAttributes.
+type ListAllAttributesParamsWherePermission string
 
 // BulkPatchAttributesApplicationMergePatchPlusJSONBody defines parameters for BulkPatchAttributes.
 type BulkPatchAttributesApplicationMergePatchPlusJSONBody struct {
@@ -7618,7 +8179,7 @@ type BulkCreateAttributesParams struct {
 	// An example conjunction is:
 	// `CreatedAt >= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.
 	//
-	// Supported attributes for filtering on Unit: Annotations, ApplyGates, ApplyWarnings, ChangeSetID, Conflicts, CreatedAt, DataHash, DeleteGates, DestroyGates, DisplayName, FromLinkID, HeadRevisionID, HeadRevisionNum, HeadUnitActionNum, HeadUnitEventNum, HiddenReason, Labels, LastChangeDescription, LastReleasedRevisionNum, LinkFindings, NeededPaths, OrganizationID, Permissions, ProvidedPaths, ProviderType, Slug, SpaceID, TargetID, ToolchainType, UnitID, UpdatedAt, UpstreamRevisionNum, UpstreamSpaceID, UpstreamUnitID, ValidationErrors, ValidationTriggerIDs, ValidationWarnings, ValueTriggerIDs, Values.
+	// Supported attributes for filtering on Unit: Annotations, ApplyGates, ApplyWarnings, ChangeSetID, Conflicts, CreatedAt, DataHash, DeleteGates, DestroyGates, DisplayName, FromLinkID, HeadRevisionID, HeadRevisionNum, HeadUnitActionNum, HeadUnitEventNum, HiddenReason, Labels, LastChangeDescription, LastReleasedRevisionNum, LinkFindings, NeededPaths, OrganizationID, Permissions, ProvidedPaths, ProviderType, Slug, SpaceID, TargetID, ToolchainType, UnitID, UpdatedAt, UpstreamRevisionNum, UpstreamSpaceID, UpstreamUnitID, ValidationErrors, ValidationResults, ValidationTriggerIDs, ValidationWarnings, ValueTriggerIDs, Values.
 	//
 	// The Units to create entities from, with from_backing_units.
 	//
@@ -7917,6 +8478,13 @@ type ListAllBridgeWorkersParams struct {
 	// The whole string must be query-encoded.
 	Select *string `form:"select,omitempty" json:"select,omitempty" yaml:"select,omitempty"`
 
+	// WherePermission Only return BridgeWorker entities on which the caller has this permission, as well as View, which every entity listed needs.
+	//
+	// A list made to choose an entity to act on can name the permission the action needs, such as Edit to change it or Use to refer to it from another entity, so that it leaves out the entities the action would be refused on.
+	//
+	// Supported values: Manage, Edit, Use, View, ManageChildren, EditChildren, UseChildren, ViewChildren, CreateChildren, ApproveChildren, TargetEditChildren, TargetViewChildren.
+	WherePermission *ListAllBridgeWorkersParamsWherePermission `form:"where_permission,omitempty" json:"where_permission,omitempty" yaml:"where_permission,omitempty"`
+
 	// IncludeHidden Hidden BridgeWorker entities, those with a HiddenReason, are left out of the results, or of what a bulk operation acts on, unless this names their HiddenReason.
 	//
 	// It is a comma-separated list of HiddenReasons, or `*` for all of them.
@@ -7961,6 +8529,9 @@ type ListAllBridgeWorkersParams struct {
 	// Summary Include summary information in the response
 	Summary *bool `form:"summary,omitempty" json:"summary,omitempty" yaml:"summary,omitempty"`
 }
+
+// ListAllBridgeWorkersParamsWherePermission defines parameters for ListAllBridgeWorkers.
+type ListAllBridgeWorkersParamsWherePermission string
 
 // BulkPatchBridgeWorkersApplicationMergePatchPlusJSONBody defines parameters for BulkPatchBridgeWorkers.
 type BulkPatchBridgeWorkersApplicationMergePatchPlusJSONBody struct {
@@ -8159,6 +8730,13 @@ type ListQueuedOperationsParams struct {
 	// The whole string must be query-encoded.
 	Contains *string `form:"contains,omitempty" json:"contains,omitempty" yaml:"contains,omitempty"`
 
+	// WherePermission Only return QueuedOperation entities on which the caller has this permission, as well as View, which every entity listed needs.
+	//
+	// A list made to choose an entity to act on can name the permission the action needs, such as Edit to change it or Use to refer to it from another entity, so that it leaves out the entities the action would be refused on.
+	//
+	// Supported values: Manage, Edit, Use, View.
+	WherePermission *ListQueuedOperationsParamsWherePermission `form:"where_permission,omitempty" json:"where_permission,omitempty" yaml:"where_permission,omitempty"`
+
 	// Limit Maximum number of QueuedOperation entities to return. If not specified, all matching entities are returned. Values greater than 1000 are rejected with 400. When there may be more entities, the response has a ConfigHub-Continue header to pass as the continue parameter of the next request.
 	Limit *int `form:"limit,omitempty" json:"limit,omitempty" yaml:"limit,omitempty"`
 
@@ -8182,6 +8760,9 @@ type ListQueuedOperationsParams struct {
 	// Keep reading until a response has no such header: a page can hold fewer entities than the limit, or none, and still be followed by more.
 	Continue *string `form:"continue,omitempty" json:"continue,omitempty" yaml:"continue,omitempty"`
 }
+
+// ListQueuedOperationsParamsWherePermission defines parameters for ListQueuedOperations.
+type ListQueuedOperationsParamsWherePermission string
 
 // BulkDeleteChangeOrdersParams defines parameters for BulkDeleteChangeOrders.
 type BulkDeleteChangeOrdersParams struct {
@@ -8372,6 +8953,13 @@ type ListAllChangeOrdersParams struct {
 	// The whole string must be query-encoded.
 	Select *string `form:"select,omitempty" json:"select,omitempty" yaml:"select,omitempty"`
 
+	// WherePermission Only return ChangeOrder entities on which the caller has this permission, as well as View, which every entity listed needs.
+	//
+	// A list made to choose an entity to act on can name the permission the action needs, such as Edit to change it or Use to refer to it from another entity, so that it leaves out the entities the action would be refused on.
+	//
+	// Supported values: Manage, Edit, Use, View.
+	WherePermission *ListAllChangeOrdersParamsWherePermission `form:"where_permission,omitempty" json:"where_permission,omitempty" yaml:"where_permission,omitempty"`
+
 	// IncludeHidden Hidden ChangeOrder entities, those with a HiddenReason, are left out of the results, or of what a bulk operation acts on, unless this names their HiddenReason.
 	//
 	// It is a comma-separated list of HiddenReasons, or `*` for all of them.
@@ -8413,6 +9001,9 @@ type ListAllChangeOrdersParams struct {
 	// Keep reading until a response has no such header: a page can hold fewer entities than the limit, or none, and still be followed by more.
 	Continue *string `form:"continue,omitempty" json:"continue,omitempty" yaml:"continue,omitempty"`
 }
+
+// ListAllChangeOrdersParamsWherePermission defines parameters for ListAllChangeOrders.
+type ListAllChangeOrdersParamsWherePermission string
 
 // BulkPatchChangeOrdersApplicationMergePatchPlusJSONBody defines parameters for BulkPatchChangeOrders.
 type BulkPatchChangeOrdersApplicationMergePatchPlusJSONBody struct {
@@ -8952,6 +9543,13 @@ type ListAllChangeSetsParams struct {
 	// The whole string must be query-encoded.
 	Select *string `form:"select,omitempty" json:"select,omitempty" yaml:"select,omitempty"`
 
+	// WherePermission Only return ChangeSet entities on which the caller has this permission, as well as View, which every entity listed needs.
+	//
+	// A list made to choose an entity to act on can name the permission the action needs, such as Edit to change it or Use to refer to it from another entity, so that it leaves out the entities the action would be refused on.
+	//
+	// Supported values: Manage, Edit, Use, View.
+	WherePermission *ListAllChangeSetsParamsWherePermission `form:"where_permission,omitempty" json:"where_permission,omitempty" yaml:"where_permission,omitempty"`
+
 	// IncludeHidden Hidden ChangeSet entities, those with a HiddenReason, are left out of the results, or of what a bulk operation acts on, unless this names their HiddenReason.
 	//
 	// It is a comma-separated list of HiddenReasons, or `*` for all of them.
@@ -8993,6 +9591,9 @@ type ListAllChangeSetsParams struct {
 	// Keep reading until a response has no such header: a page can hold fewer entities than the limit, or none, and still be followed by more.
 	Continue *string `form:"continue,omitempty" json:"continue,omitempty" yaml:"continue,omitempty"`
 }
+
+// ListAllChangeSetsParamsWherePermission defines parameters for ListAllChangeSets.
+type ListAllChangeSetsParamsWherePermission string
 
 // BulkPatchChangeSetsApplicationMergePatchPlusJSONBody defines parameters for BulkPatchChangeSets.
 type BulkPatchChangeSetsApplicationMergePatchPlusJSONBody struct {
@@ -9596,6 +10197,13 @@ type ListAllChangeWorkflowsParams struct {
 	// The whole string must be query-encoded.
 	Select *string `form:"select,omitempty" json:"select,omitempty" yaml:"select,omitempty"`
 
+	// WherePermission Only return ChangeWorkflow entities on which the caller has this permission, as well as View, which every entity listed needs.
+	//
+	// A list made to choose an entity to act on can name the permission the action needs, such as Edit to change it or Use to refer to it from another entity, so that it leaves out the entities the action would be refused on.
+	//
+	// Supported values: Manage, Edit, Use, View.
+	WherePermission *ListAllChangeWorkflowsParamsWherePermission `form:"where_permission,omitempty" json:"where_permission,omitempty" yaml:"where_permission,omitempty"`
+
 	// IncludeHidden Hidden ChangeWorkflow entities, those with a HiddenReason, are left out of the results, or of what a bulk operation acts on, unless this names their HiddenReason.
 	//
 	// It is a comma-separated list of HiddenReasons, or `*` for all of them.
@@ -9637,6 +10245,9 @@ type ListAllChangeWorkflowsParams struct {
 	// Keep reading until a response has no such header: a page can hold fewer entities than the limit, or none, and still be followed by more.
 	Continue *string `form:"continue,omitempty" json:"continue,omitempty" yaml:"continue,omitempty"`
 }
+
+// ListAllChangeWorkflowsParamsWherePermission defines parameters for ListAllChangeWorkflows.
+type ListAllChangeWorkflowsParamsWherePermission string
 
 // BulkPatchChangeWorkflowsApplicationMergePatchPlusJSONBody defines parameters for BulkPatchChangeWorkflows.
 type BulkPatchChangeWorkflowsApplicationMergePatchPlusJSONBody struct {
@@ -10018,7 +10629,7 @@ type BulkCreateChangeWorkflowsParams struct {
 	// An example conjunction is:
 	// `CreatedAt >= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.
 	//
-	// Supported attributes for filtering on Unit: Annotations, ApplyGates, ApplyWarnings, ChangeSetID, Conflicts, CreatedAt, DataHash, DeleteGates, DestroyGates, DisplayName, FromLinkID, HeadRevisionID, HeadRevisionNum, HeadUnitActionNum, HeadUnitEventNum, HiddenReason, Labels, LastChangeDescription, LastReleasedRevisionNum, LinkFindings, NeededPaths, OrganizationID, Permissions, ProvidedPaths, ProviderType, Slug, SpaceID, TargetID, ToolchainType, UnitID, UpdatedAt, UpstreamRevisionNum, UpstreamSpaceID, UpstreamUnitID, ValidationErrors, ValidationTriggerIDs, ValidationWarnings, ValueTriggerIDs, Values.
+	// Supported attributes for filtering on Unit: Annotations, ApplyGates, ApplyWarnings, ChangeSetID, Conflicts, CreatedAt, DataHash, DeleteGates, DestroyGates, DisplayName, FromLinkID, HeadRevisionID, HeadRevisionNum, HeadUnitActionNum, HeadUnitEventNum, HiddenReason, Labels, LastChangeDescription, LastReleasedRevisionNum, LinkFindings, NeededPaths, OrganizationID, Permissions, ProvidedPaths, ProviderType, Slug, SpaceID, TargetID, ToolchainType, UnitID, UpdatedAt, UpstreamRevisionNum, UpstreamSpaceID, UpstreamUnitID, ValidationErrors, ValidationResults, ValidationTriggerIDs, ValidationWarnings, ValueTriggerIDs, Values.
 	//
 	// The Units to create entities from, with from_backing_units.
 	//
@@ -10317,6 +10928,13 @@ type ListAllChannelsParams struct {
 	// The whole string must be query-encoded.
 	Select *string `form:"select,omitempty" json:"select,omitempty" yaml:"select,omitempty"`
 
+	// WherePermission Only return Channel entities on which the caller has this permission, as well as View, which every entity listed needs.
+	//
+	// A list made to choose an entity to act on can name the permission the action needs, such as Edit to change it or Use to refer to it from another entity, so that it leaves out the entities the action would be refused on.
+	//
+	// Supported values: Manage, Edit, Use, View, Claim.
+	WherePermission *ListAllChannelsParamsWherePermission `form:"where_permission,omitempty" json:"where_permission,omitempty" yaml:"where_permission,omitempty"`
+
 	// IncludeHidden Hidden Channel entities, those with a HiddenReason, are left out of the results, or of what a bulk operation acts on, unless this names their HiddenReason.
 	//
 	// It is a comma-separated list of HiddenReasons, or `*` for all of them.
@@ -10358,6 +10976,9 @@ type ListAllChannelsParams struct {
 	// Keep reading until a response has no such header: a page can hold fewer entities than the limit, or none, and still be followed by more.
 	Continue *string `form:"continue,omitempty" json:"continue,omitempty" yaml:"continue,omitempty"`
 }
+
+// ListAllChannelsParamsWherePermission defines parameters for ListAllChannels.
+type ListAllChannelsParamsWherePermission string
 
 // BulkPatchChannelsApplicationMergePatchPlusJSONBody defines parameters for BulkPatchChannels.
 type BulkPatchChannelsApplicationMergePatchPlusJSONBody struct {
@@ -10721,7 +11342,7 @@ type BulkCreateChannelsParams struct {
 	// An example conjunction is:
 	// `CreatedAt >= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.
 	//
-	// Supported attributes for filtering on Unit: Annotations, ApplyGates, ApplyWarnings, ChangeSetID, Conflicts, CreatedAt, DataHash, DeleteGates, DestroyGates, DisplayName, FromLinkID, HeadRevisionID, HeadRevisionNum, HeadUnitActionNum, HeadUnitEventNum, HiddenReason, Labels, LastChangeDescription, LastReleasedRevisionNum, LinkFindings, NeededPaths, OrganizationID, Permissions, ProvidedPaths, ProviderType, Slug, SpaceID, TargetID, ToolchainType, UnitID, UpdatedAt, UpstreamRevisionNum, UpstreamSpaceID, UpstreamUnitID, ValidationErrors, ValidationTriggerIDs, ValidationWarnings, ValueTriggerIDs, Values.
+	// Supported attributes for filtering on Unit: Annotations, ApplyGates, ApplyWarnings, ChangeSetID, Conflicts, CreatedAt, DataHash, DeleteGates, DestroyGates, DisplayName, FromLinkID, HeadRevisionID, HeadRevisionNum, HeadUnitActionNum, HeadUnitEventNum, HiddenReason, Labels, LastChangeDescription, LastReleasedRevisionNum, LinkFindings, NeededPaths, OrganizationID, Permissions, ProvidedPaths, ProviderType, Slug, SpaceID, TargetID, ToolchainType, UnitID, UpdatedAt, UpstreamRevisionNum, UpstreamSpaceID, UpstreamUnitID, ValidationErrors, ValidationResults, ValidationTriggerIDs, ValidationWarnings, ValueTriggerIDs, Values.
 	//
 	// The Units to create entities from, with from_backing_units.
 	//
@@ -10927,6 +11548,13 @@ type ListAllCommandRunsParams struct {
 	// The whole string must be query-encoded.
 	Select *string `form:"select,omitempty" json:"select,omitempty" yaml:"select,omitempty"`
 
+	// WherePermission Only return CommandRun entities on which the caller has this permission, as well as View, which every entity listed needs.
+	//
+	// A list made to choose an entity to act on can name the permission the action needs, such as Edit to change it or Use to refer to it from another entity, so that it leaves out the entities the action would be refused on.
+	//
+	// Supported values: Manage, Edit, Use, View.
+	WherePermission *ListAllCommandRunsParamsWherePermission `form:"where_permission,omitempty" json:"where_permission,omitempty" yaml:"where_permission,omitempty"`
+
 	// Limit Maximum number of CommandRun entities to return. If not specified, all matching entities are returned. Values greater than 1000 are rejected with 400. When there may be more entities, the response has a ConfigHub-Continue header to pass as the continue parameter of the next request.
 	Limit *int `form:"limit,omitempty" json:"limit,omitempty" yaml:"limit,omitempty"`
 
@@ -10950,6 +11578,9 @@ type ListAllCommandRunsParams struct {
 	// Keep reading until a response has no such header: a page can hold fewer entities than the limit, or none, and still be followed by more.
 	Continue *string `form:"continue,omitempty" json:"continue,omitempty" yaml:"continue,omitempty"`
 }
+
+// ListAllCommandRunsParamsWherePermission defines parameters for ListAllCommandRuns.
+type ListAllCommandRunsParamsWherePermission string
 
 // ListComponentsParams defines parameters for ListComponents.
 type ListComponentsParams struct {
@@ -11041,6 +11672,13 @@ type ListComponentsParams struct {
 	// The whole string must be query-encoded.
 	Select *string `form:"select,omitempty" json:"select,omitempty" yaml:"select,omitempty"`
 
+	// WherePermission Only return Component entities on which the caller has this permission, as well as View, which every entity listed needs.
+	//
+	// A list made to choose an entity to act on can name the permission the action needs, such as Edit to change it or Use to refer to it from another entity, so that it leaves out the entities the action would be refused on.
+	//
+	// Supported values: Manage, Edit, Use, View.
+	WherePermission *ListComponentsParamsWherePermission `form:"where_permission,omitempty" json:"where_permission,omitempty" yaml:"where_permission,omitempty"`
+
 	// IncludeHidden Hidden Component entities, those with a HiddenReason, are left out of the results, or of what a bulk operation acts on, unless this names their HiddenReason.
 	//
 	// It is a comma-separated list of HiddenReasons, or `*` for all of them.
@@ -11082,6 +11720,9 @@ type ListComponentsParams struct {
 	// Keep reading until a response has no such header: a page can hold fewer entities than the limit, or none, and still be followed by more.
 	Continue *string `form:"continue,omitempty" json:"continue,omitempty" yaml:"continue,omitempty"`
 }
+
+// ListComponentsParamsWherePermission defines parameters for ListComponents.
+type ListComponentsParamsWherePermission string
 
 // CreateComponentParams defines parameters for CreateComponent.
 type CreateComponentParams struct {
@@ -11377,6 +12018,13 @@ type ListAllFiltersParams struct {
 	// The whole string must be query-encoded.
 	Select *string `form:"select,omitempty" json:"select,omitempty" yaml:"select,omitempty"`
 
+	// WherePermission Only return Filter entities on which the caller has this permission, as well as View, which every entity listed needs.
+	//
+	// A list made to choose an entity to act on can name the permission the action needs, such as Edit to change it or Use to refer to it from another entity, so that it leaves out the entities the action would be refused on.
+	//
+	// Supported values: Manage, Edit, Use, View.
+	WherePermission *ListAllFiltersParamsWherePermission `form:"where_permission,omitempty" json:"where_permission,omitempty" yaml:"where_permission,omitempty"`
+
 	// IncludeHidden Hidden Filter entities, those with a HiddenReason, are left out of the results, or of what a bulk operation acts on, unless this names their HiddenReason.
 	//
 	// It is a comma-separated list of HiddenReasons, or `*` for all of them.
@@ -11424,6 +12072,9 @@ type ListAllFiltersParams struct {
 	// Id Entity ID to filter for. Must be specified together with 'entity' parameter.
 	Id *string `form:"id,omitempty" json:"id,omitempty" yaml:"id,omitempty"`
 }
+
+// ListAllFiltersParamsWherePermission defines parameters for ListAllFilters.
+type ListAllFiltersParamsWherePermission string
 
 // BulkPatchFiltersApplicationMergePatchPlusJSONBody defines parameters for BulkPatchFilters.
 type BulkPatchFiltersApplicationMergePatchPlusJSONBody struct {
@@ -11793,7 +12444,7 @@ type BulkCreateFiltersParams struct {
 	// An example conjunction is:
 	// `CreatedAt >= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.
 	//
-	// Supported attributes for filtering on Unit: Annotations, ApplyGates, ApplyWarnings, ChangeSetID, Conflicts, CreatedAt, DataHash, DeleteGates, DestroyGates, DisplayName, FromLinkID, HeadRevisionID, HeadRevisionNum, HeadUnitActionNum, HeadUnitEventNum, HiddenReason, Labels, LastChangeDescription, LastReleasedRevisionNum, LinkFindings, NeededPaths, OrganizationID, Permissions, ProvidedPaths, ProviderType, Slug, SpaceID, TargetID, ToolchainType, UnitID, UpdatedAt, UpstreamRevisionNum, UpstreamSpaceID, UpstreamUnitID, ValidationErrors, ValidationTriggerIDs, ValidationWarnings, ValueTriggerIDs, Values.
+	// Supported attributes for filtering on Unit: Annotations, ApplyGates, ApplyWarnings, ChangeSetID, Conflicts, CreatedAt, DataHash, DeleteGates, DestroyGates, DisplayName, FromLinkID, HeadRevisionID, HeadRevisionNum, HeadUnitActionNum, HeadUnitEventNum, HiddenReason, Labels, LastChangeDescription, LastReleasedRevisionNum, LinkFindings, NeededPaths, OrganizationID, Permissions, ProvidedPaths, ProviderType, Slug, SpaceID, TargetID, ToolchainType, UnitID, UpdatedAt, UpstreamRevisionNum, UpstreamSpaceID, UpstreamUnitID, ValidationErrors, ValidationResults, ValidationTriggerIDs, ValidationWarnings, ValueTriggerIDs, Values.
 	//
 	// The Units to create entities from, with from_backing_units.
 	//
@@ -12011,7 +12662,7 @@ type InvokeFunctionsOnOrgParams struct {
 	// An example conjunction is:
 	// `CreatedAt >= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.
 	//
-	// Supported attributes for filtering on Unit: Annotations, ApplyGates, ApplyWarnings, ChangeSetID, Conflicts, CreatedAt, DataHash, DeleteGates, DestroyGates, DisplayName, FromLinkID, HeadRevisionID, HeadRevisionNum, HeadUnitActionNum, HeadUnitEventNum, HiddenReason, Labels, LastChangeDescription, LastReleasedRevisionNum, LinkFindings, NeededPaths, OrganizationID, Permissions, ProvidedPaths, ProviderType, Slug, SpaceID, TargetID, ToolchainType, UnitID, UpdatedAt, UpstreamRevisionNum, UpstreamSpaceID, UpstreamUnitID, ValidationErrors, ValidationTriggerIDs, ValidationWarnings, ValueTriggerIDs, Values.
+	// Supported attributes for filtering on Unit: Annotations, ApplyGates, ApplyWarnings, ChangeSetID, Conflicts, CreatedAt, DataHash, DeleteGates, DestroyGates, DisplayName, FromLinkID, HeadRevisionID, HeadRevisionNum, HeadUnitActionNum, HeadUnitEventNum, HiddenReason, Labels, LastChangeDescription, LastReleasedRevisionNum, LinkFindings, NeededPaths, OrganizationID, Permissions, ProvidedPaths, ProviderType, Slug, SpaceID, TargetID, ToolchainType, UnitID, UpdatedAt, UpstreamRevisionNum, UpstreamSpaceID, UpstreamUnitID, ValidationErrors, ValidationResults, ValidationTriggerIDs, ValidationWarnings, ValueTriggerIDs, Values.
 	//
 	// Finding all units created by cloning can be done using the expression `UpstreamRevisionNum > 0`. Clones of a specific unit can be found by additionally filtering based on `UpstreamUnitID`. Units never released can be found using `LastReleasedRevisionNum = 0`. Units with unreleased changes can be found with `HeadRevisionNum > LastReleasedRevisionNum AND TargetID IS NOT NULL`.
 	//
@@ -12138,6 +12789,13 @@ type ListGroupsParams struct {
 	// The whole string must be query-encoded.
 	Contains *string `form:"contains,omitempty" json:"contains,omitempty" yaml:"contains,omitempty"`
 
+	// WherePermission Only return Group entities on which the caller has this permission, as well as View, which every entity listed needs.
+	//
+	// A list made to choose an entity to act on can name the permission the action needs, such as Edit to change it or Use to refer to it from another entity, so that it leaves out the entities the action would be refused on.
+	//
+	// Supported values: Manage, Edit, Use, View.
+	WherePermission *ListGroupsParamsWherePermission `form:"where_permission,omitempty" json:"where_permission,omitempty" yaml:"where_permission,omitempty"`
+
 	// Select Select clause for specifying which fields to include in the response for Group.
 	// The attribute names are case-sensitive, PascalCase, and
 	// expected in a comma-separated list format as in the JSON encoding.
@@ -12189,6 +12847,9 @@ type ListGroupsParams struct {
 	// Keep reading until a response has no such header: a page can hold fewer entities than the limit, or none, and still be followed by more.
 	Continue *string `form:"continue,omitempty" json:"continue,omitempty" yaml:"continue,omitempty"`
 }
+
+// ListGroupsParamsWherePermission defines parameters for ListGroups.
+type ListGroupsParamsWherePermission string
 
 // GetGroupParams defines parameters for GetGroup.
 type GetGroupParams struct {
@@ -12396,6 +13057,13 @@ type ListAllInvocationsParams struct {
 	// The whole string must be query-encoded.
 	Select *string `form:"select,omitempty" json:"select,omitempty" yaml:"select,omitempty"`
 
+	// WherePermission Only return Invocation entities on which the caller has this permission, as well as View, which every entity listed needs.
+	//
+	// A list made to choose an entity to act on can name the permission the action needs, such as Edit to change it or Use to refer to it from another entity, so that it leaves out the entities the action would be refused on.
+	//
+	// Supported values: Manage, Edit, Use, View.
+	WherePermission *ListAllInvocationsParamsWherePermission `form:"where_permission,omitempty" json:"where_permission,omitempty" yaml:"where_permission,omitempty"`
+
 	// IncludeHidden Hidden Invocation entities, those with a HiddenReason, are left out of the results, or of what a bulk operation acts on, unless this names their HiddenReason.
 	//
 	// It is a comma-separated list of HiddenReasons, or `*` for all of them.
@@ -12437,6 +13105,9 @@ type ListAllInvocationsParams struct {
 	// Keep reading until a response has no such header: a page can hold fewer entities than the limit, or none, and still be followed by more.
 	Continue *string `form:"continue,omitempty" json:"continue,omitempty" yaml:"continue,omitempty"`
 }
+
+// ListAllInvocationsParamsWherePermission defines parameters for ListAllInvocations.
+type ListAllInvocationsParamsWherePermission string
 
 // BulkPatchInvocationsApplicationMergePatchPlusJSONBody defines parameters for BulkPatchInvocations.
 type BulkPatchInvocationsApplicationMergePatchPlusJSONBody struct {
@@ -12806,7 +13477,7 @@ type BulkCreateInvocationsParams struct {
 	// An example conjunction is:
 	// `CreatedAt >= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.
 	//
-	// Supported attributes for filtering on Unit: Annotations, ApplyGates, ApplyWarnings, ChangeSetID, Conflicts, CreatedAt, DataHash, DeleteGates, DestroyGates, DisplayName, FromLinkID, HeadRevisionID, HeadRevisionNum, HeadUnitActionNum, HeadUnitEventNum, HiddenReason, Labels, LastChangeDescription, LastReleasedRevisionNum, LinkFindings, NeededPaths, OrganizationID, Permissions, ProvidedPaths, ProviderType, Slug, SpaceID, TargetID, ToolchainType, UnitID, UpdatedAt, UpstreamRevisionNum, UpstreamSpaceID, UpstreamUnitID, ValidationErrors, ValidationTriggerIDs, ValidationWarnings, ValueTriggerIDs, Values.
+	// Supported attributes for filtering on Unit: Annotations, ApplyGates, ApplyWarnings, ChangeSetID, Conflicts, CreatedAt, DataHash, DeleteGates, DestroyGates, DisplayName, FromLinkID, HeadRevisionID, HeadRevisionNum, HeadUnitActionNum, HeadUnitEventNum, HiddenReason, Labels, LastChangeDescription, LastReleasedRevisionNum, LinkFindings, NeededPaths, OrganizationID, Permissions, ProvidedPaths, ProviderType, Slug, SpaceID, TargetID, ToolchainType, UnitID, UpdatedAt, UpstreamRevisionNum, UpstreamSpaceID, UpstreamUnitID, ValidationErrors, ValidationResults, ValidationTriggerIDs, ValidationWarnings, ValueTriggerIDs, Values.
 	//
 	// The Units to create entities from, with from_backing_units.
 	//
@@ -13105,6 +13776,13 @@ type SearchListLinksParams struct {
 	// The whole string must be query-encoded.
 	Select *string `form:"select,omitempty" json:"select,omitempty" yaml:"select,omitempty"`
 
+	// WherePermission Only return Link entities on which the caller has this permission, as well as View, which every entity listed needs.
+	//
+	// A list made to choose an entity to act on can name the permission the action needs, such as Edit to change it or Use to refer to it from another entity, so that it leaves out the entities the action would be refused on.
+	//
+	// Supported values: Manage, Edit, Use, View.
+	WherePermission *SearchListLinksParamsWherePermission `form:"where_permission,omitempty" json:"where_permission,omitempty" yaml:"where_permission,omitempty"`
+
 	// IncludeHidden Hidden Link entities, those with a HiddenReason, are left out of the results, or of what a bulk operation acts on, unless this names their HiddenReason.
 	//
 	// It is a comma-separated list of HiddenReasons, or `*` for all of them.
@@ -13146,6 +13824,9 @@ type SearchListLinksParams struct {
 	// Keep reading until a response has no such header: a page can hold fewer entities than the limit, or none, and still be followed by more.
 	Continue *string `form:"continue,omitempty" json:"continue,omitempty" yaml:"continue,omitempty"`
 }
+
+// SearchListLinksParamsWherePermission defines parameters for SearchListLinks.
+type SearchListLinksParamsWherePermission string
 
 // BulkPatchLinksApplicationMergePatchPlusJSONBody defines parameters for BulkPatchLinks.
 type BulkPatchLinksApplicationMergePatchPlusJSONBody struct {
@@ -13542,7 +14223,7 @@ type BulkCreateLinksParams struct {
 	// An example conjunction is:
 	// `CreatedAt >= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.
 	//
-	// Supported attributes for filtering on Unit: Annotations, ApplyGates, ApplyWarnings, ChangeSetID, Conflicts, CreatedAt, DataHash, DeleteGates, DestroyGates, DisplayName, FromLinkID, HeadRevisionID, HeadRevisionNum, HeadUnitActionNum, HeadUnitEventNum, HiddenReason, Labels, LastChangeDescription, LastReleasedRevisionNum, LinkFindings, NeededPaths, OrganizationID, Permissions, ProvidedPaths, ProviderType, Slug, SpaceID, TargetID, ToolchainType, UnitID, UpdatedAt, UpstreamRevisionNum, UpstreamSpaceID, UpstreamUnitID, ValidationErrors, ValidationTriggerIDs, ValidationWarnings, ValueTriggerIDs, Values.
+	// Supported attributes for filtering on Unit: Annotations, ApplyGates, ApplyWarnings, ChangeSetID, Conflicts, CreatedAt, DataHash, DeleteGates, DestroyGates, DisplayName, FromLinkID, HeadRevisionID, HeadRevisionNum, HeadUnitActionNum, HeadUnitEventNum, HiddenReason, Labels, LastChangeDescription, LastReleasedRevisionNum, LinkFindings, NeededPaths, OrganizationID, Permissions, ProvidedPaths, ProviderType, Slug, SpaceID, TargetID, ToolchainType, UnitID, UpdatedAt, UpstreamRevisionNum, UpstreamSpaceID, UpstreamUnitID, ValidationErrors, ValidationResults, ValidationTriggerIDs, ValidationWarnings, ValueTriggerIDs, Values.
 	//
 	// The Units to create entities from, with from_backing_units.
 	//
@@ -13649,6 +14330,13 @@ type ListOrganizationsParams struct {
 	// The whole string must be query-encoded.
 	Select *string `form:"select,omitempty" json:"select,omitempty" yaml:"select,omitempty"`
 
+	// WherePermission Only return Organization entities on which the caller has this permission, as well as View, which every entity listed needs.
+	//
+	// A list made to choose an entity to act on can name the permission the action needs, such as Edit to change it or Use to refer to it from another entity, so that it leaves out the entities the action would be refused on.
+	//
+	// Supported values: Manage, Edit, Use, View.
+	WherePermission *ListOrganizationsParamsWherePermission `form:"where_permission,omitempty" json:"where_permission,omitempty" yaml:"where_permission,omitempty"`
+
 	// IncludeHidden Hidden Organization entities, those with a HiddenReason, are left out of the results, or of what a bulk operation acts on, unless this names their HiddenReason.
 	//
 	// It is a comma-separated list of HiddenReasons, or `*` for all of them.
@@ -13667,6 +14355,9 @@ type ListOrganizationsParams struct {
 	// The related entities and fields the View's columns read are included and selected automatically, so neither include nor select has to name them.
 	View *string `form:"view,omitempty" json:"view,omitempty" yaml:"view,omitempty"`
 }
+
+// ListOrganizationsParamsWherePermission defines parameters for ListOrganizations.
+type ListOrganizationsParamsWherePermission string
 
 // CreateOrganizationParams defines parameters for CreateOrganization.
 type CreateOrganizationParams struct {
@@ -13773,6 +14464,13 @@ type ListOrganizationMembersParams struct {
 	// The whole string must be query-encoded.
 	Contains *string `form:"contains,omitempty" json:"contains,omitempty" yaml:"contains,omitempty"`
 
+	// WherePermission Only return OrganizationMember entities on which the caller has this permission, as well as View, which every entity listed needs.
+	//
+	// A list made to choose an entity to act on can name the permission the action needs, such as Edit to change it or Use to refer to it from another entity, so that it leaves out the entities the action would be refused on.
+	//
+	// Supported values: Manage, Edit, Use, View.
+	WherePermission *ListOrganizationMembersParamsWherePermission `form:"where_permission,omitempty" json:"where_permission,omitempty" yaml:"where_permission,omitempty"`
+
 	// View UUID of a View whose columns to compute for each OrganizationMember, returned as ViewColumns.
 	//
 	// The View must be in the same Organization as the user credentials, and be a View of OrganizationMember: its Of, or the From of its Filter, must be OrganizationMember.
@@ -13782,6 +14480,9 @@ type ListOrganizationMembersParams struct {
 	// The related entities and fields the View's columns read are included and selected automatically, so neither include nor select has to name them.
 	View *string `form:"view,omitempty" json:"view,omitempty" yaml:"view,omitempty"`
 }
+
+// ListOrganizationMembersParamsWherePermission defines parameters for ListOrganizationMembers.
+type ListOrganizationMembersParamsWherePermission string
 
 // PromoteParams defines parameters for Promote.
 type PromoteParams struct {
@@ -13884,6 +14585,13 @@ type ListAllReleasesParams struct {
 	// The whole string must be query-encoded.
 	Select *string `form:"select,omitempty" json:"select,omitempty" yaml:"select,omitempty"`
 
+	// WherePermission Only return Release entities on which the caller has this permission, as well as View, which every entity listed needs.
+	//
+	// A list made to choose an entity to act on can name the permission the action needs, such as Edit to change it or Use to refer to it from another entity, so that it leaves out the entities the action would be refused on.
+	//
+	// Supported values: Manage, Edit, Use, View.
+	WherePermission *ListAllReleasesParamsWherePermission `form:"where_permission,omitempty" json:"where_permission,omitempty" yaml:"where_permission,omitempty"`
+
 	// IncludeHidden Hidden Release entities, those with a HiddenReason, are left out of the results, or of what a bulk operation acts on, unless this names their HiddenReason.
 	//
 	// It is a comma-separated list of HiddenReasons, or `*` for all of them.
@@ -13934,6 +14642,9 @@ type ListAllReleasesParams struct {
 	// Off disables the DISTINCT ON and returns every matching row, so it requires an explicit 'limit' and is rejected with 400 without one.
 	DistinctOn *ListAllReleasesParamsDistinctOn `form:"distinct_on,omitempty" json:"distinct_on,omitempty" yaml:"distinct_on,omitempty"`
 }
+
+// ListAllReleasesParamsWherePermission defines parameters for ListAllReleases.
+type ListAllReleasesParamsWherePermission string
 
 // ListAllReleasesParamsDistinctOn defines parameters for ListAllReleases.
 type ListAllReleasesParamsDistinctOn string
@@ -14030,6 +14741,13 @@ type ListAllResourcesParams struct {
 	// The whole string must be query-encoded.
 	Select *string `form:"select,omitempty" json:"select,omitempty" yaml:"select,omitempty"`
 
+	// WherePermission Only return Resource entities on which the caller has this permission, as well as View, which every entity listed needs.
+	//
+	// A list made to choose an entity to act on can name the permission the action needs, such as Edit to change it or Use to refer to it from another entity, so that it leaves out the entities the action would be refused on.
+	//
+	// Supported values: Manage, Edit, Use, View.
+	WherePermission *ListAllResourcesParamsWherePermission `form:"where_permission,omitempty" json:"where_permission,omitempty" yaml:"where_permission,omitempty"`
+
 	// IncludeHidden Hidden Resource entities, those with a HiddenReason, are left out of the results, or of what a bulk operation acts on, unless this names their HiddenReason.
 	//
 	// It is a comma-separated list of HiddenReasons, or `*` for all of them.
@@ -14077,6 +14795,9 @@ type ListAllResourcesParams struct {
 	// RawData Return each resource's configuration in its original toolchain-native form, as RawData on the response envelope. Off by default: the bodies are bulk, and a table view needs only the queryable Data projection.
 	RawData *bool `form:"raw_data,omitempty" json:"raw_data,omitempty" yaml:"raw_data,omitempty"`
 }
+
+// ListAllResourcesParamsWherePermission defines parameters for ListAllResources.
+type ListAllResourcesParamsWherePermission string
 
 // BulkDeleteReviewCommentsParams defines parameters for BulkDeleteReviewComments.
 type BulkDeleteReviewCommentsParams struct {
@@ -14264,6 +14985,13 @@ type ListAllReviewCommentsParams struct {
 	// The whole string must be query-encoded.
 	Select *string `form:"select,omitempty" json:"select,omitempty" yaml:"select,omitempty"`
 
+	// WherePermission Only return ReviewComment entities on which the caller has this permission, as well as View, which every entity listed needs.
+	//
+	// A list made to choose an entity to act on can name the permission the action needs, such as Edit to change it or Use to refer to it from another entity, so that it leaves out the entities the action would be refused on.
+	//
+	// Supported values: Manage, Edit, Use, View.
+	WherePermission *ListAllReviewCommentsParamsWherePermission `form:"where_permission,omitempty" json:"where_permission,omitempty" yaml:"where_permission,omitempty"`
+
 	// IncludeHidden Hidden ReviewComment entities, those with a HiddenReason, are left out of the results, or of what a bulk operation acts on, unless this names their HiddenReason.
 	//
 	// It is a comma-separated list of HiddenReasons, or `*` for all of them.
@@ -14305,6 +15033,9 @@ type ListAllReviewCommentsParams struct {
 	// Keep reading until a response has no such header: a page can hold fewer entities than the limit, or none, and still be followed by more.
 	Continue *string `form:"continue,omitempty" json:"continue,omitempty" yaml:"continue,omitempty"`
 }
+
+// ListAllReviewCommentsParamsWherePermission defines parameters for ListAllReviewComments.
+type ListAllReviewCommentsParamsWherePermission string
 
 // BulkPatchReviewCommentsApplicationMergePatchPlusJSONBody defines parameters for BulkPatchReviewComments.
 type BulkPatchReviewCommentsApplicationMergePatchPlusJSONBody struct {
@@ -14462,7 +15193,7 @@ type ListAllRevisionsParams struct {
 	// An example conjunction is:
 	// `CreatedAt >= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.
 	//
-	// Supported attributes for filtering on Revision: ApplyGates, ApplyWarnings, Attestations, ChangeOrders, ChangeSetID, Conflicts, CreatedAt, DataHash, Description, HiddenReason, LinkFindings, NeededPaths, OrganizationID, ProvidedPaths, Releases, RevisionID, RevisionNum, Source, SpaceID, Tags, UnitID, UpdatedAt, UserAgent, UserID, ValidationErrors, ValidationPassed, ValidationTriggerIDs, ValidationWarnings, ValueTriggerIDs, Values.
+	// Supported attributes for filtering on Revision: ApplyGates, ApplyWarnings, Attestations, ChangeOrders, ChangeSetID, Conflicts, CreatedAt, DataHash, Description, HiddenReason, LinkFindings, NeededPaths, OrganizationID, ProvidedPaths, Releases, RevisionID, RevisionNum, Source, SpaceID, Tags, UnitID, UpdatedAt, UserAgent, UserID, ValidationErrors, ValidationPassed, ValidationResults, ValidationTriggerIDs, ValidationWarnings, ValueTriggerIDs, Values.
 	//
 	// To list tagged Revisions use `Tags ? '<tag-id>'`.
 	//
@@ -14517,6 +15248,13 @@ type ListAllRevisionsParams struct {
 	// Example: 'DisplayName,CreatedAt,Labels' will return only those fields plus the required ID and Slug fields.
 	// The whole string must be query-encoded.
 	Select *string `form:"select,omitempty" json:"select,omitempty" yaml:"select,omitempty"`
+
+	// WherePermission Only return Revision entities on which the caller has this permission, as well as View, which every entity listed needs.
+	//
+	// A list made to choose an entity to act on can name the permission the action needs, such as Edit to change it or Use to refer to it from another entity, so that it leaves out the entities the action would be refused on.
+	//
+	// Supported values: Manage, Edit, Use, View.
+	WherePermission *ListAllRevisionsParamsWherePermission `form:"where_permission,omitempty" json:"where_permission,omitempty" yaml:"where_permission,omitempty"`
 
 	// IncludeHidden Hidden Revision entities, those with a HiddenReason, are left out of the results, or of what a bulk operation acts on, unless this names their HiddenReason.
 	//
@@ -14572,6 +15310,9 @@ type ListAllRevisionsParams struct {
 	DistinctOn *ListAllRevisionsParamsDistinctOn `form:"distinct_on,omitempty" json:"distinct_on,omitempty" yaml:"distinct_on,omitempty"`
 }
 
+// ListAllRevisionsParamsWherePermission defines parameters for ListAllRevisions.
+type ListAllRevisionsParamsWherePermission string
+
 // ListAllRevisionsParamsDistinctOn defines parameters for ListAllRevisions.
 type ListAllRevisionsParamsDistinctOn string
 
@@ -14611,7 +15352,7 @@ type SearchRevisionDataParams struct {
 	// An example conjunction is:
 	// `CreatedAt >= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.
 	//
-	// Supported attributes for filtering on Revision: ApplyGates, ApplyWarnings, Attestations, ChangeOrders, ChangeSetID, Conflicts, CreatedAt, DataHash, Description, HiddenReason, LinkFindings, NeededPaths, OrganizationID, ProvidedPaths, Releases, RevisionID, RevisionNum, Source, SpaceID, Tags, UnitID, UpdatedAt, UserAgent, UserID, ValidationErrors, ValidationPassed, ValidationTriggerIDs, ValidationWarnings, ValueTriggerIDs, Values.
+	// Supported attributes for filtering on Revision: ApplyGates, ApplyWarnings, Attestations, ChangeOrders, ChangeSetID, Conflicts, CreatedAt, DataHash, Description, HiddenReason, LinkFindings, NeededPaths, OrganizationID, ProvidedPaths, Releases, RevisionID, RevisionNum, Source, SpaceID, Tags, UnitID, UpdatedAt, UserAgent, UserID, ValidationErrors, ValidationPassed, ValidationResults, ValidationTriggerIDs, ValidationWarnings, ValueTriggerIDs, Values.
 	//
 	// To list tagged Revisions use `Tags ? '<tag-id>'`.
 	//
@@ -14666,6 +15407,13 @@ type SearchRevisionDataParams struct {
 	// Example: 'DisplayName,CreatedAt,Labels' will return only those fields plus the required ID and Slug fields.
 	// The whole string must be query-encoded.
 	Select *string `form:"select,omitempty" json:"select,omitempty" yaml:"select,omitempty"`
+
+	// WherePermission Only return Revision entities on which the caller has this permission, as well as View, which every entity listed needs.
+	//
+	// A list made to choose an entity to act on can name the permission the action needs, such as Edit to change it or Use to refer to it from another entity, so that it leaves out the entities the action would be refused on.
+	//
+	// Supported values: Manage, Edit, Use, View.
+	WherePermission *SearchRevisionDataParamsWherePermission `form:"where_permission,omitempty" json:"where_permission,omitempty" yaml:"where_permission,omitempty"`
 
 	// IncludeHidden Hidden Revision entities, those with a HiddenReason, are left out of the results, or of what a bulk operation acts on, unless this names their HiddenReason.
 	//
@@ -14712,6 +15460,9 @@ type SearchRevisionDataParams struct {
 	DistinctOn *SearchRevisionDataParamsDistinctOn `form:"distinct_on,omitempty" json:"distinct_on,omitempty" yaml:"distinct_on,omitempty"`
 }
 
+// SearchRevisionDataParamsWherePermission defines parameters for SearchRevisionData.
+type SearchRevisionDataParamsWherePermission string
+
 // SearchRevisionDataParamsDistinctOn defines parameters for SearchRevisionData.
 type SearchRevisionDataParamsDistinctOn string
 
@@ -14751,7 +15502,7 @@ type SearchRevisionMutationSourcesParams struct {
 	// An example conjunction is:
 	// `CreatedAt >= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.
 	//
-	// Supported attributes for filtering on Revision: ApplyGates, ApplyWarnings, Attestations, ChangeOrders, ChangeSetID, Conflicts, CreatedAt, DataHash, Description, HiddenReason, LinkFindings, NeededPaths, OrganizationID, ProvidedPaths, Releases, RevisionID, RevisionNum, Source, SpaceID, Tags, UnitID, UpdatedAt, UserAgent, UserID, ValidationErrors, ValidationPassed, ValidationTriggerIDs, ValidationWarnings, ValueTriggerIDs, Values.
+	// Supported attributes for filtering on Revision: ApplyGates, ApplyWarnings, Attestations, ChangeOrders, ChangeSetID, Conflicts, CreatedAt, DataHash, Description, HiddenReason, LinkFindings, NeededPaths, OrganizationID, ProvidedPaths, Releases, RevisionID, RevisionNum, Source, SpaceID, Tags, UnitID, UpdatedAt, UserAgent, UserID, ValidationErrors, ValidationPassed, ValidationResults, ValidationTriggerIDs, ValidationWarnings, ValueTriggerIDs, Values.
 	//
 	// To list tagged Revisions use `Tags ? '<tag-id>'`.
 	//
@@ -14807,6 +15558,13 @@ type SearchRevisionMutationSourcesParams struct {
 	// The whole string must be query-encoded.
 	Select *string `form:"select,omitempty" json:"select,omitempty" yaml:"select,omitempty"`
 
+	// WherePermission Only return Revision entities on which the caller has this permission, as well as View, which every entity listed needs.
+	//
+	// A list made to choose an entity to act on can name the permission the action needs, such as Edit to change it or Use to refer to it from another entity, so that it leaves out the entities the action would be refused on.
+	//
+	// Supported values: Manage, Edit, Use, View.
+	WherePermission *SearchRevisionMutationSourcesParamsWherePermission `form:"where_permission,omitempty" json:"where_permission,omitempty" yaml:"where_permission,omitempty"`
+
 	// IncludeHidden Hidden Revision entities, those with a HiddenReason, are left out of the results, or of what a bulk operation acts on, unless this names their HiddenReason.
 	//
 	// It is a comma-separated list of HiddenReasons, or `*` for all of them.
@@ -14851,6 +15609,9 @@ type SearchRevisionMutationSourcesParams struct {
 	// Off disables the DISTINCT ON and returns every matching row, so it requires an explicit 'limit' and is rejected with 400 without one.
 	DistinctOn *SearchRevisionMutationSourcesParamsDistinctOn `form:"distinct_on,omitempty" json:"distinct_on,omitempty" yaml:"distinct_on,omitempty"`
 }
+
+// SearchRevisionMutationSourcesParamsWherePermission defines parameters for SearchRevisionMutationSources.
+type SearchRevisionMutationSourcesParamsWherePermission string
 
 // SearchRevisionMutationSourcesParamsDistinctOn defines parameters for SearchRevisionMutationSources.
 type SearchRevisionMutationSourcesParamsDistinctOn string
@@ -14945,6 +15706,13 @@ type ListServiceAccountsParams struct {
 	// The whole string must be query-encoded.
 	Select *string `form:"select,omitempty" json:"select,omitempty" yaml:"select,omitempty"`
 
+	// WherePermission Only return ServiceAccount entities on which the caller has this permission, as well as View, which every entity listed needs.
+	//
+	// A list made to choose an entity to act on can name the permission the action needs, such as Edit to change it or Use to refer to it from another entity, so that it leaves out the entities the action would be refused on.
+	//
+	// Supported values: Manage, Edit, Use, View, Impersonate.
+	WherePermission *ListServiceAccountsParamsWherePermission `form:"where_permission,omitempty" json:"where_permission,omitempty" yaml:"where_permission,omitempty"`
+
 	// IncludeHidden Hidden ServiceAccount entities, those with a HiddenReason, are left out of the results, or of what a bulk operation acts on, unless this names their HiddenReason.
 	//
 	// It is a comma-separated list of HiddenReasons, or `*` for all of them.
@@ -14986,6 +15754,9 @@ type ListServiceAccountsParams struct {
 	// Keep reading until a response has no such header: a page can hold fewer entities than the limit, or none, and still be followed by more.
 	Continue *string `form:"continue,omitempty" json:"continue,omitempty" yaml:"continue,omitempty"`
 }
+
+// ListServiceAccountsParamsWherePermission defines parameters for ListServiceAccounts.
+type ListServiceAccountsParamsWherePermission string
 
 // CreateServiceAccountParams defines parameters for CreateServiceAccount.
 type CreateServiceAccountParams struct {
@@ -15158,6 +15929,13 @@ type ListSpacesParams struct {
 	// The whole string must be query-encoded.
 	Select *string `form:"select,omitempty" json:"select,omitempty" yaml:"select,omitempty"`
 
+	// WherePermission Only return Space entities on which the caller has this permission, as well as View, which every entity listed needs.
+	//
+	// A list made to choose an entity to act on can name the permission the action needs, such as Edit to change it or Use to refer to it from another entity, so that it leaves out the entities the action would be refused on.
+	//
+	// Supported values: Manage, Edit, Use, View, ManageChildren, EditChildren, UseChildren, ViewChildren, CreateChildren, ApproveChildren, TargetEditChildren, TargetViewChildren.
+	WherePermission *ListSpacesParamsWherePermission `form:"where_permission,omitempty" json:"where_permission,omitempty" yaml:"where_permission,omitempty"`
+
 	// IncludeHidden Hidden Space entities, those with a HiddenReason, are left out of the results, or of what a bulk operation acts on, unless this names their HiddenReason.
 	//
 	// It is a comma-separated list of HiddenReasons, or `*` for all of them.
@@ -15202,6 +15980,9 @@ type ListSpacesParams struct {
 	// Summary Return summarized entity data
 	Summary *bool `form:"summary,omitempty" json:"summary,omitempty" yaml:"summary,omitempty"`
 }
+
+// ListSpacesParamsWherePermission defines parameters for ListSpaces.
+type ListSpacesParamsWherePermission string
 
 // CreateSpaceParams defines parameters for CreateSpace.
 type CreateSpaceParams struct {
@@ -15394,6 +16175,13 @@ type ListExtendedAttestationsParams struct {
 	// The whole string must be query-encoded.
 	Select *string `form:"select,omitempty" json:"select,omitempty" yaml:"select,omitempty"`
 
+	// WherePermission Only return Attestation entities on which the caller has this permission, as well as View, which every entity listed needs.
+	//
+	// A list made to choose an entity to act on can name the permission the action needs, such as Edit to change it or Use to refer to it from another entity, so that it leaves out the entities the action would be refused on.
+	//
+	// Supported values: Manage, Edit, Use, View.
+	WherePermission *ListExtendedAttestationsParamsWherePermission `form:"where_permission,omitempty" json:"where_permission,omitempty" yaml:"where_permission,omitempty"`
+
 	// IncludeHidden Hidden Attestation entities, those with a HiddenReason, are left out of the results, or of what a bulk operation acts on, unless this names their HiddenReason.
 	//
 	// It is a comma-separated list of HiddenReasons, or `*` for all of them.
@@ -15435,6 +16223,9 @@ type ListExtendedAttestationsParams struct {
 	// Keep reading until a response has no such header: a page can hold fewer entities than the limit, or none, and still be followed by more.
 	Continue *string `form:"continue,omitempty" json:"continue,omitempty" yaml:"continue,omitempty"`
 }
+
+// ListExtendedAttestationsParamsWherePermission defines parameters for ListExtendedAttestations.
+type ListExtendedAttestationsParamsWherePermission string
 
 // CreateAttestationParams defines parameters for CreateAttestation.
 type CreateAttestationParams struct {
@@ -15554,6 +16345,13 @@ type ListAttributesParams struct {
 	// The whole string must be query-encoded.
 	Select *string `form:"select,omitempty" json:"select,omitempty" yaml:"select,omitempty"`
 
+	// WherePermission Only return Attribute entities on which the caller has this permission, as well as View, which every entity listed needs.
+	//
+	// A list made to choose an entity to act on can name the permission the action needs, such as Edit to change it or Use to refer to it from another entity, so that it leaves out the entities the action would be refused on.
+	//
+	// Supported values: Manage, Edit, Use, View.
+	WherePermission *ListAttributesParamsWherePermission `form:"where_permission,omitempty" json:"where_permission,omitempty" yaml:"where_permission,omitempty"`
+
 	// IncludeHidden Hidden Attribute entities, those with a HiddenReason, are left out of the results, or of what a bulk operation acts on, unless this names their HiddenReason.
 	//
 	// It is a comma-separated list of HiddenReasons, or `*` for all of them.
@@ -15595,6 +16393,9 @@ type ListAttributesParams struct {
 	// Keep reading until a response has no such header: a page can hold fewer entities than the limit, or none, and still be followed by more.
 	Continue *string `form:"continue,omitempty" json:"continue,omitempty" yaml:"continue,omitempty"`
 }
+
+// ListAttributesParamsWherePermission defines parameters for ListAttributes.
+type ListAttributesParamsWherePermission string
 
 // CreateAttributeParams defines parameters for CreateAttribute.
 type CreateAttributeParams struct {
@@ -15768,6 +16569,13 @@ type ListBridgeWorkersParams struct {
 	// The whole string must be query-encoded.
 	Select *string `form:"select,omitempty" json:"select,omitempty" yaml:"select,omitempty"`
 
+	// WherePermission Only return BridgeWorker entities on which the caller has this permission, as well as View, which every entity listed needs.
+	//
+	// A list made to choose an entity to act on can name the permission the action needs, such as Edit to change it or Use to refer to it from another entity, so that it leaves out the entities the action would be refused on.
+	//
+	// Supported values: Manage, Edit, Use, View, ManageChildren, EditChildren, UseChildren, ViewChildren, CreateChildren, ApproveChildren, TargetEditChildren, TargetViewChildren.
+	WherePermission *ListBridgeWorkersParamsWherePermission `form:"where_permission,omitempty" json:"where_permission,omitempty" yaml:"where_permission,omitempty"`
+
 	// IncludeHidden Hidden BridgeWorker entities, those with a HiddenReason, are left out of the results, or of what a bulk operation acts on, unless this names their HiddenReason.
 	//
 	// It is a comma-separated list of HiddenReasons, or `*` for all of them.
@@ -15809,6 +16617,9 @@ type ListBridgeWorkersParams struct {
 	// Keep reading until a response has no such header: a page can hold fewer entities than the limit, or none, and still be followed by more.
 	Continue *string `form:"continue,omitempty" json:"continue,omitempty" yaml:"continue,omitempty"`
 }
+
+// ListBridgeWorkersParamsWherePermission defines parameters for ListBridgeWorkers.
+type ListBridgeWorkersParamsWherePermission string
 
 // CreateBridgeWorkerParams defines parameters for CreateBridgeWorker.
 type CreateBridgeWorkerParams struct {
@@ -15976,6 +16787,13 @@ type ListChangeOrdersParams struct {
 	// The whole string must be query-encoded.
 	Select *string `form:"select,omitempty" json:"select,omitempty" yaml:"select,omitempty"`
 
+	// WherePermission Only return ChangeOrder entities on which the caller has this permission, as well as View, which every entity listed needs.
+	//
+	// A list made to choose an entity to act on can name the permission the action needs, such as Edit to change it or Use to refer to it from another entity, so that it leaves out the entities the action would be refused on.
+	//
+	// Supported values: Manage, Edit, Use, View.
+	WherePermission *ListChangeOrdersParamsWherePermission `form:"where_permission,omitempty" json:"where_permission,omitempty" yaml:"where_permission,omitempty"`
+
 	// IncludeHidden Hidden ChangeOrder entities, those with a HiddenReason, are left out of the results, or of what a bulk operation acts on, unless this names their HiddenReason.
 	//
 	// It is a comma-separated list of HiddenReasons, or `*` for all of them.
@@ -16017,6 +16835,9 @@ type ListChangeOrdersParams struct {
 	// Keep reading until a response has no such header: a page can hold fewer entities than the limit, or none, and still be followed by more.
 	Continue *string `form:"continue,omitempty" json:"continue,omitempty" yaml:"continue,omitempty"`
 }
+
+// ListChangeOrdersParamsWherePermission defines parameters for ListChangeOrders.
+type ListChangeOrdersParamsWherePermission string
 
 // CreateChangeOrderParams defines parameters for CreateChangeOrder.
 type CreateChangeOrderParams struct {
@@ -16204,6 +17025,13 @@ type ListChangeSetsParams struct {
 	// The whole string must be query-encoded.
 	Select *string `form:"select,omitempty" json:"select,omitempty" yaml:"select,omitempty"`
 
+	// WherePermission Only return ChangeSet entities on which the caller has this permission, as well as View, which every entity listed needs.
+	//
+	// A list made to choose an entity to act on can name the permission the action needs, such as Edit to change it or Use to refer to it from another entity, so that it leaves out the entities the action would be refused on.
+	//
+	// Supported values: Manage, Edit, Use, View.
+	WherePermission *ListChangeSetsParamsWherePermission `form:"where_permission,omitempty" json:"where_permission,omitempty" yaml:"where_permission,omitempty"`
+
 	// IncludeHidden Hidden ChangeSet entities, those with a HiddenReason, are left out of the results, or of what a bulk operation acts on, unless this names their HiddenReason.
 	//
 	// It is a comma-separated list of HiddenReasons, or `*` for all of them.
@@ -16245,6 +17073,9 @@ type ListChangeSetsParams struct {
 	// Keep reading until a response has no such header: a page can hold fewer entities than the limit, or none, and still be followed by more.
 	Continue *string `form:"continue,omitempty" json:"continue,omitempty" yaml:"continue,omitempty"`
 }
+
+// ListChangeSetsParamsWherePermission defines parameters for ListChangeSets.
+type ListChangeSetsParamsWherePermission string
 
 // CreateChangeSetParams defines parameters for CreateChangeSet.
 type CreateChangeSetParams struct {
@@ -16413,6 +17244,13 @@ type ListChangeWorkflowsParams struct {
 	// The whole string must be query-encoded.
 	Select *string `form:"select,omitempty" json:"select,omitempty" yaml:"select,omitempty"`
 
+	// WherePermission Only return ChangeWorkflow entities on which the caller has this permission, as well as View, which every entity listed needs.
+	//
+	// A list made to choose an entity to act on can name the permission the action needs, such as Edit to change it or Use to refer to it from another entity, so that it leaves out the entities the action would be refused on.
+	//
+	// Supported values: Manage, Edit, Use, View.
+	WherePermission *ListChangeWorkflowsParamsWherePermission `form:"where_permission,omitempty" json:"where_permission,omitempty" yaml:"where_permission,omitempty"`
+
 	// IncludeHidden Hidden ChangeWorkflow entities, those with a HiddenReason, are left out of the results, or of what a bulk operation acts on, unless this names their HiddenReason.
 	//
 	// It is a comma-separated list of HiddenReasons, or `*` for all of them.
@@ -16454,6 +17292,9 @@ type ListChangeWorkflowsParams struct {
 	// Keep reading until a response has no such header: a page can hold fewer entities than the limit, or none, and still be followed by more.
 	Continue *string `form:"continue,omitempty" json:"continue,omitempty" yaml:"continue,omitempty"`
 }
+
+// ListChangeWorkflowsParamsWherePermission defines parameters for ListChangeWorkflows.
+type ListChangeWorkflowsParamsWherePermission string
 
 // CreateChangeWorkflowParams defines parameters for CreateChangeWorkflow.
 type CreateChangeWorkflowParams struct {
@@ -16634,6 +17475,13 @@ type ListChannelsParams struct {
 	// The whole string must be query-encoded.
 	Select *string `form:"select,omitempty" json:"select,omitempty" yaml:"select,omitempty"`
 
+	// WherePermission Only return Channel entities on which the caller has this permission, as well as View, which every entity listed needs.
+	//
+	// A list made to choose an entity to act on can name the permission the action needs, such as Edit to change it or Use to refer to it from another entity, so that it leaves out the entities the action would be refused on.
+	//
+	// Supported values: Manage, Edit, Use, View, Claim.
+	WherePermission *ListChannelsParamsWherePermission `form:"where_permission,omitempty" json:"where_permission,omitempty" yaml:"where_permission,omitempty"`
+
 	// IncludeHidden Hidden Channel entities, those with a HiddenReason, are left out of the results, or of what a bulk operation acts on, unless this names their HiddenReason.
 	//
 	// It is a comma-separated list of HiddenReasons, or `*` for all of them.
@@ -16675,6 +17523,9 @@ type ListChannelsParams struct {
 	// Keep reading until a response has no such header: a page can hold fewer entities than the limit, or none, and still be followed by more.
 	Continue *string `form:"continue,omitempty" json:"continue,omitempty" yaml:"continue,omitempty"`
 }
+
+// ListChannelsParamsWherePermission defines parameters for ListChannels.
+type ListChannelsParamsWherePermission string
 
 // CreateChannelParams defines parameters for CreateChannel.
 type CreateChannelParams struct {
@@ -16858,6 +17709,13 @@ type ListCommandRunsParams struct {
 	// The whole string must be query-encoded.
 	Select *string `form:"select,omitempty" json:"select,omitempty" yaml:"select,omitempty"`
 
+	// WherePermission Only return CommandRun entities on which the caller has this permission, as well as View, which every entity listed needs.
+	//
+	// A list made to choose an entity to act on can name the permission the action needs, such as Edit to change it or Use to refer to it from another entity, so that it leaves out the entities the action would be refused on.
+	//
+	// Supported values: Manage, Edit, Use, View.
+	WherePermission *ListCommandRunsParamsWherePermission `form:"where_permission,omitempty" json:"where_permission,omitempty" yaml:"where_permission,omitempty"`
+
 	// Limit Maximum number of CommandRun entities to return. If not specified, all matching entities are returned. Values greater than 1000 are rejected with 400. When there may be more entities, the response has a ConfigHub-Continue header to pass as the continue parameter of the next request.
 	Limit *int `form:"limit,omitempty" json:"limit,omitempty" yaml:"limit,omitempty"`
 
@@ -16881,6 +17739,9 @@ type ListCommandRunsParams struct {
 	// Keep reading until a response has no such header: a page can hold fewer entities than the limit, or none, and still be followed by more.
 	Continue *string `form:"continue,omitempty" json:"continue,omitempty" yaml:"continue,omitempty"`
 }
+
+// ListCommandRunsParamsWherePermission defines parameters for ListCommandRuns.
+type ListCommandRunsParamsWherePermission string
 
 // CreateCommandRunParams defines parameters for CreateCommandRun.
 type CreateCommandRunParams struct {
@@ -17000,6 +17861,13 @@ type ListFiltersParams struct {
 	// The whole string must be query-encoded.
 	Select *string `form:"select,omitempty" json:"select,omitempty" yaml:"select,omitempty"`
 
+	// WherePermission Only return Filter entities on which the caller has this permission, as well as View, which every entity listed needs.
+	//
+	// A list made to choose an entity to act on can name the permission the action needs, such as Edit to change it or Use to refer to it from another entity, so that it leaves out the entities the action would be refused on.
+	//
+	// Supported values: Manage, Edit, Use, View.
+	WherePermission *ListFiltersParamsWherePermission `form:"where_permission,omitempty" json:"where_permission,omitempty" yaml:"where_permission,omitempty"`
+
 	// IncludeHidden Hidden Filter entities, those with a HiddenReason, are left out of the results, or of what a bulk operation acts on, unless this names their HiddenReason.
 	//
 	// It is a comma-separated list of HiddenReasons, or `*` for all of them.
@@ -17047,6 +17915,9 @@ type ListFiltersParams struct {
 	// Id Entity ID to filter for. Must be specified together with 'entity' parameter.
 	Id *string `form:"id,omitempty" json:"id,omitempty" yaml:"id,omitempty"`
 }
+
+// ListFiltersParamsWherePermission defines parameters for ListFilters.
+type ListFiltersParamsWherePermission string
 
 // CreateFilterParams defines parameters for CreateFilter.
 type CreateFilterParams struct {
@@ -17245,7 +18116,7 @@ type InvokeFunctionsParams struct {
 	// An example conjunction is:
 	// `CreatedAt >= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.
 	//
-	// Supported attributes for filtering on Unit: Annotations, ApplyGates, ApplyWarnings, ChangeSetID, Conflicts, CreatedAt, DataHash, DeleteGates, DestroyGates, DisplayName, FromLinkID, HeadRevisionID, HeadRevisionNum, HeadUnitActionNum, HeadUnitEventNum, HiddenReason, Labels, LastChangeDescription, LastReleasedRevisionNum, LinkFindings, NeededPaths, OrganizationID, Permissions, ProvidedPaths, ProviderType, Slug, SpaceID, TargetID, ToolchainType, UnitID, UpdatedAt, UpstreamRevisionNum, UpstreamSpaceID, UpstreamUnitID, ValidationErrors, ValidationTriggerIDs, ValidationWarnings, ValueTriggerIDs, Values.
+	// Supported attributes for filtering on Unit: Annotations, ApplyGates, ApplyWarnings, ChangeSetID, Conflicts, CreatedAt, DataHash, DeleteGates, DestroyGates, DisplayName, FromLinkID, HeadRevisionID, HeadRevisionNum, HeadUnitActionNum, HeadUnitEventNum, HiddenReason, Labels, LastChangeDescription, LastReleasedRevisionNum, LinkFindings, NeededPaths, OrganizationID, Permissions, ProvidedPaths, ProviderType, Slug, SpaceID, TargetID, ToolchainType, UnitID, UpdatedAt, UpstreamRevisionNum, UpstreamSpaceID, UpstreamUnitID, ValidationErrors, ValidationResults, ValidationTriggerIDs, ValidationWarnings, ValueTriggerIDs, Values.
 	//
 	// Finding all units created by cloning can be done using the expression `UpstreamRevisionNum > 0`. Clones of a specific unit can be found by additionally filtering based on `UpstreamUnitID`. Units never released can be found using `LastReleasedRevisionNum = 0`. Units with unreleased changes can be found with `HeadRevisionNum > LastReleasedRevisionNum AND TargetID IS NOT NULL`.
 	//
@@ -17393,6 +18264,13 @@ type ListInvocationsParams struct {
 	// The whole string must be query-encoded.
 	Select *string `form:"select,omitempty" json:"select,omitempty" yaml:"select,omitempty"`
 
+	// WherePermission Only return Invocation entities on which the caller has this permission, as well as View, which every entity listed needs.
+	//
+	// A list made to choose an entity to act on can name the permission the action needs, such as Edit to change it or Use to refer to it from another entity, so that it leaves out the entities the action would be refused on.
+	//
+	// Supported values: Manage, Edit, Use, View.
+	WherePermission *ListInvocationsParamsWherePermission `form:"where_permission,omitempty" json:"where_permission,omitempty" yaml:"where_permission,omitempty"`
+
 	// IncludeHidden Hidden Invocation entities, those with a HiddenReason, are left out of the results, or of what a bulk operation acts on, unless this names their HiddenReason.
 	//
 	// It is a comma-separated list of HiddenReasons, or `*` for all of them.
@@ -17434,6 +18312,9 @@ type ListInvocationsParams struct {
 	// Keep reading until a response has no such header: a page can hold fewer entities than the limit, or none, and still be followed by more.
 	Continue *string `form:"continue,omitempty" json:"continue,omitempty" yaml:"continue,omitempty"`
 }
+
+// ListInvocationsParamsWherePermission defines parameters for ListInvocations.
+type ListInvocationsParamsWherePermission string
 
 // CreateInvocationParams defines parameters for CreateInvocation.
 type CreateInvocationParams struct {
@@ -17606,6 +18487,13 @@ type ListLinksParams struct {
 	// The whole string must be query-encoded.
 	Select *string `form:"select,omitempty" json:"select,omitempty" yaml:"select,omitempty"`
 
+	// WherePermission Only return Link entities on which the caller has this permission, as well as View, which every entity listed needs.
+	//
+	// A list made to choose an entity to act on can name the permission the action needs, such as Edit to change it or Use to refer to it from another entity, so that it leaves out the entities the action would be refused on.
+	//
+	// Supported values: Manage, Edit, Use, View.
+	WherePermission *ListLinksParamsWherePermission `form:"where_permission,omitempty" json:"where_permission,omitempty" yaml:"where_permission,omitempty"`
+
 	// IncludeHidden Hidden Link entities, those with a HiddenReason, are left out of the results, or of what a bulk operation acts on, unless this names their HiddenReason.
 	//
 	// It is a comma-separated list of HiddenReasons, or `*` for all of them.
@@ -17647,6 +18535,9 @@ type ListLinksParams struct {
 	// Keep reading until a response has no such header: a page can hold fewer entities than the limit, or none, and still be followed by more.
 	Continue *string `form:"continue,omitempty" json:"continue,omitempty" yaml:"continue,omitempty"`
 }
+
+// ListLinksParamsWherePermission defines parameters for ListLinks.
+type ListLinksParamsWherePermission string
 
 // CreateLinkParams defines parameters for CreateLink.
 type CreateLinkParams struct {
@@ -17840,6 +18731,13 @@ type ListExtendedReleasesParams struct {
 	// The whole string must be query-encoded.
 	Select *string `form:"select,omitempty" json:"select,omitempty" yaml:"select,omitempty"`
 
+	// WherePermission Only return Release entities on which the caller has this permission, as well as View, which every entity listed needs.
+	//
+	// A list made to choose an entity to act on can name the permission the action needs, such as Edit to change it or Use to refer to it from another entity, so that it leaves out the entities the action would be refused on.
+	//
+	// Supported values: Manage, Edit, Use, View.
+	WherePermission *ListExtendedReleasesParamsWherePermission `form:"where_permission,omitempty" json:"where_permission,omitempty" yaml:"where_permission,omitempty"`
+
 	// IncludeHidden Hidden Release entities, those with a HiddenReason, are left out of the results, or of what a bulk operation acts on, unless this names their HiddenReason.
 	//
 	// It is a comma-separated list of HiddenReasons, or `*` for all of them.
@@ -17881,6 +18779,9 @@ type ListExtendedReleasesParams struct {
 	// Keep reading until a response has no such header: a page can hold fewer entities than the limit, or none, and still be followed by more.
 	Continue *string `form:"continue,omitempty" json:"continue,omitempty" yaml:"continue,omitempty"`
 }
+
+// ListExtendedReleasesParamsWherePermission defines parameters for ListExtendedReleases.
+type ListExtendedReleasesParamsWherePermission string
 
 // DeleteReleaseParams defines parameters for DeleteRelease.
 type DeleteReleaseParams struct {
@@ -18032,6 +18933,13 @@ type ListTagsParams struct {
 	// The whole string must be query-encoded.
 	Select *string `form:"select,omitempty" json:"select,omitempty" yaml:"select,omitempty"`
 
+	// WherePermission Only return Tag entities on which the caller has this permission, as well as View, which every entity listed needs.
+	//
+	// A list made to choose an entity to act on can name the permission the action needs, such as Edit to change it or Use to refer to it from another entity, so that it leaves out the entities the action would be refused on.
+	//
+	// Supported values: Manage, Edit, Use, View.
+	WherePermission *ListTagsParamsWherePermission `form:"where_permission,omitempty" json:"where_permission,omitempty" yaml:"where_permission,omitempty"`
+
 	// IncludeHidden Hidden Tag entities, those with a HiddenReason, are left out of the results, or of what a bulk operation acts on, unless this names their HiddenReason.
 	//
 	// It is a comma-separated list of HiddenReasons, or `*` for all of them.
@@ -18073,6 +18981,9 @@ type ListTagsParams struct {
 	// Keep reading until a response has no such header: a page can hold fewer entities than the limit, or none, and still be followed by more.
 	Continue *string `form:"continue,omitempty" json:"continue,omitempty" yaml:"continue,omitempty"`
 }
+
+// ListTagsParamsWherePermission defines parameters for ListTags.
+type ListTagsParamsWherePermission string
 
 // CreateTagParams defines parameters for CreateTag.
 type CreateTagParams struct {
@@ -18238,6 +19149,13 @@ type ListTargetsParams struct {
 	// The whole string must be query-encoded.
 	Select *string `form:"select,omitempty" json:"select,omitempty" yaml:"select,omitempty"`
 
+	// WherePermission Only return Target entities on which the caller has this permission, as well as View, which every entity listed needs.
+	//
+	// A list made to choose an entity to act on can name the permission the action needs, such as Edit to change it or Use to refer to it from another entity, so that it leaves out the entities the action would be refused on.
+	//
+	// Supported values: Manage, Edit, Use, View, ManageChildren, EditChildren, UseChildren, ViewChildren, CreateChildren, ApproveChildren, TargetEditChildren, TargetViewChildren.
+	WherePermission *ListTargetsParamsWherePermission `form:"where_permission,omitempty" json:"where_permission,omitempty" yaml:"where_permission,omitempty"`
+
 	// IncludeHidden Hidden Target entities, those with a HiddenReason, are left out of the results, or of what a bulk operation acts on, unless this names their HiddenReason.
 	//
 	// It is a comma-separated list of HiddenReasons, or `*` for all of them.
@@ -18279,6 +19197,9 @@ type ListTargetsParams struct {
 	// Keep reading until a response has no such header: a page can hold fewer entities than the limit, or none, and still be followed by more.
 	Continue *string `form:"continue,omitempty" json:"continue,omitempty" yaml:"continue,omitempty"`
 }
+
+// ListTargetsParamsWherePermission defines parameters for ListTargets.
+type ListTargetsParamsWherePermission string
 
 // CreateTargetParams defines parameters for CreateTarget.
 type CreateTargetParams struct {
@@ -18464,6 +19385,13 @@ type ListTriggersParams struct {
 	// The whole string must be query-encoded.
 	Select *string `form:"select,omitempty" json:"select,omitempty" yaml:"select,omitempty"`
 
+	// WherePermission Only return Trigger entities on which the caller has this permission, as well as View, which every entity listed needs.
+	//
+	// A list made to choose an entity to act on can name the permission the action needs, such as Edit to change it or Use to refer to it from another entity, so that it leaves out the entities the action would be refused on.
+	//
+	// Supported values: Manage, Edit, Use, View.
+	WherePermission *ListTriggersParamsWherePermission `form:"where_permission,omitempty" json:"where_permission,omitempty" yaml:"where_permission,omitempty"`
+
 	// IncludeHidden Hidden Trigger entities, those with a HiddenReason, are left out of the results, or of what a bulk operation acts on, unless this names their HiddenReason.
 	//
 	// It is a comma-separated list of HiddenReasons, or `*` for all of them.
@@ -18505,6 +19433,9 @@ type ListTriggersParams struct {
 	// Keep reading until a response has no such header: a page can hold fewer entities than the limit, or none, and still be followed by more.
 	Continue *string `form:"continue,omitempty" json:"continue,omitempty" yaml:"continue,omitempty"`
 }
+
+// ListTriggersParamsWherePermission defines parameters for ListTriggers.
+type ListTriggersParamsWherePermission string
 
 // CreateTriggerParams defines parameters for CreateTrigger.
 type CreateTriggerParams struct {
@@ -18644,7 +19575,7 @@ type ListUnitsParams struct {
 	// An example conjunction is:
 	// `CreatedAt >= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.
 	//
-	// Supported attributes for filtering on Unit: Annotations, ApplyGates, ApplyWarnings, ChangeSetID, Conflicts, CreatedAt, DataHash, DeleteGates, DestroyGates, DisplayName, FromLinkID, HeadRevisionID, HeadRevisionNum, HeadUnitActionNum, HeadUnitEventNum, HiddenReason, Labels, LastChangeDescription, LastReleasedRevisionNum, LinkFindings, NeededPaths, OrganizationID, Permissions, ProvidedPaths, ProviderType, Slug, SpaceID, TargetID, ToolchainType, UnitID, UpdatedAt, UpstreamRevisionNum, UpstreamSpaceID, UpstreamUnitID, ValidationErrors, ValidationTriggerIDs, ValidationWarnings, ValueTriggerIDs, Values.
+	// Supported attributes for filtering on Unit: Annotations, ApplyGates, ApplyWarnings, ChangeSetID, Conflicts, CreatedAt, DataHash, DeleteGates, DestroyGates, DisplayName, FromLinkID, HeadRevisionID, HeadRevisionNum, HeadUnitActionNum, HeadUnitEventNum, HiddenReason, Labels, LastChangeDescription, LastReleasedRevisionNum, LinkFindings, NeededPaths, OrganizationID, Permissions, ProvidedPaths, ProviderType, Slug, SpaceID, TargetID, ToolchainType, UnitID, UpdatedAt, UpstreamRevisionNum, UpstreamSpaceID, UpstreamUnitID, ValidationErrors, ValidationResults, ValidationTriggerIDs, ValidationWarnings, ValueTriggerIDs, Values.
 	//
 	// Finding all units created by cloning can be done using the expression `UpstreamRevisionNum > 0`. Clones of a specific unit can be found by additionally filtering based on `UpstreamUnitID`. Units never released can be found using `LastReleasedRevisionNum = 0`. Units with unreleased changes can be found with `HeadRevisionNum > LastReleasedRevisionNum AND TargetID IS NOT NULL`.
 	//
@@ -18699,6 +19630,13 @@ type ListUnitsParams struct {
 	// Example: 'DisplayName,CreatedAt,Labels' will return only those fields plus the required ID and Slug fields.
 	// The whole string must be query-encoded.
 	Select *string `form:"select,omitempty" json:"select,omitempty" yaml:"select,omitempty"`
+
+	// WherePermission Only return Unit entities on which the caller has this permission, as well as View, which every entity listed needs.
+	//
+	// A list made to choose an entity to act on can name the permission the action needs, such as Edit to change it or Use to refer to it from another entity, so that it leaves out the entities the action would be refused on.
+	//
+	// Supported values: Manage, Edit, Use, View, Approve, TargetEdit, TargetView.
+	WherePermission *ListUnitsParamsWherePermission `form:"where_permission,omitempty" json:"where_permission,omitempty" yaml:"where_permission,omitempty"`
 
 	// IncludeHidden Hidden Unit entities, those with a HiddenReason, are left out of the results, or of what a bulk operation acts on, unless this names their HiddenReason.
 	//
@@ -18759,6 +19697,9 @@ type ListUnitsParams struct {
 	// TriggersPassed When true, return units that pass trigger validation; when false (default), return units that fail. Only applies when where_trigger or trigger_filter is specified.
 	TriggersPassed *bool `form:"triggers_passed,omitempty" json:"triggers_passed,omitempty" yaml:"triggers_passed,omitempty"`
 }
+
+// ListUnitsParamsWherePermission defines parameters for ListUnits.
+type ListUnitsParamsWherePermission string
 
 // CreateUnitParams defines parameters for CreateUnit.
 type CreateUnitParams struct {
@@ -19261,6 +20202,13 @@ type ListExtendedMutationsParams struct {
 	// The whole string must be query-encoded.
 	Select *string `form:"select,omitempty" json:"select,omitempty" yaml:"select,omitempty"`
 
+	// WherePermission Only return Mutation entities on which the caller has this permission, as well as View, which every entity listed needs.
+	//
+	// A list made to choose an entity to act on can name the permission the action needs, such as Edit to change it or Use to refer to it from another entity, so that it leaves out the entities the action would be refused on.
+	//
+	// Supported values: Manage, Edit, Use, View.
+	WherePermission *ListExtendedMutationsParamsWherePermission `form:"where_permission,omitempty" json:"where_permission,omitempty" yaml:"where_permission,omitempty"`
+
 	// IncludeHidden Hidden Mutation entities, those with a HiddenReason, are left out of the results, or of what a bulk operation acts on, unless this names their HiddenReason.
 	//
 	// It is a comma-separated list of HiddenReasons, or `*` for all of them.
@@ -19302,6 +20250,9 @@ type ListExtendedMutationsParams struct {
 	// Keep reading until a response has no such header: a page can hold fewer entities than the limit, or none, and still be followed by more.
 	Continue *string `form:"continue,omitempty" json:"continue,omitempty" yaml:"continue,omitempty"`
 }
+
+// ListExtendedMutationsParamsWherePermission defines parameters for ListExtendedMutations.
+type ListExtendedMutationsParamsWherePermission string
 
 // GetExtendedMutationParams defines parameters for GetExtendedMutation.
 type GetExtendedMutationParams struct {
@@ -19417,6 +20368,13 @@ type ListExtendedResourcesParams struct {
 	// The whole string must be query-encoded.
 	Select *string `form:"select,omitempty" json:"select,omitempty" yaml:"select,omitempty"`
 
+	// WherePermission Only return Resource entities on which the caller has this permission, as well as View, which every entity listed needs.
+	//
+	// A list made to choose an entity to act on can name the permission the action needs, such as Edit to change it or Use to refer to it from another entity, so that it leaves out the entities the action would be refused on.
+	//
+	// Supported values: Manage, Edit, Use, View.
+	WherePermission *ListExtendedResourcesParamsWherePermission `form:"where_permission,omitempty" json:"where_permission,omitempty" yaml:"where_permission,omitempty"`
+
 	// IncludeHidden Hidden Resource entities, those with a HiddenReason, are left out of the results, or of what a bulk operation acts on, unless this names their HiddenReason.
 	//
 	// It is a comma-separated list of HiddenReasons, or `*` for all of them.
@@ -19464,6 +20422,9 @@ type ListExtendedResourcesParams struct {
 	// RawData Return each resource's configuration in its original toolchain-native form, as RawData on the response envelope. Off by default: the bodies are bulk, and a table view needs only the queryable Data projection.
 	RawData *bool `form:"raw_data,omitempty" json:"raw_data,omitempty" yaml:"raw_data,omitempty"`
 }
+
+// ListExtendedResourcesParamsWherePermission defines parameters for ListExtendedResources.
+type ListExtendedResourcesParamsWherePermission string
 
 // GetExtendedResourceParams defines parameters for GetExtendedResource.
 type GetExtendedResourceParams struct {
@@ -19580,6 +20541,13 @@ type ListReviewCommentsParams struct {
 	// The whole string must be query-encoded.
 	Select *string `form:"select,omitempty" json:"select,omitempty" yaml:"select,omitempty"`
 
+	// WherePermission Only return ReviewComment entities on which the caller has this permission, as well as View, which every entity listed needs.
+	//
+	// A list made to choose an entity to act on can name the permission the action needs, such as Edit to change it or Use to refer to it from another entity, so that it leaves out the entities the action would be refused on.
+	//
+	// Supported values: Manage, Edit, Use, View.
+	WherePermission *ListReviewCommentsParamsWherePermission `form:"where_permission,omitempty" json:"where_permission,omitempty" yaml:"where_permission,omitempty"`
+
 	// IncludeHidden Hidden ReviewComment entities, those with a HiddenReason, are left out of the results, or of what a bulk operation acts on, unless this names their HiddenReason.
 	//
 	// It is a comma-separated list of HiddenReasons, or `*` for all of them.
@@ -19621,6 +20589,9 @@ type ListReviewCommentsParams struct {
 	// Keep reading until a response has no such header: a page can hold fewer entities than the limit, or none, and still be followed by more.
 	Continue *string `form:"continue,omitempty" json:"continue,omitempty" yaml:"continue,omitempty"`
 }
+
+// ListReviewCommentsParamsWherePermission defines parameters for ListReviewComments.
+type ListReviewCommentsParamsWherePermission string
 
 // CreateReviewCommentParams defines parameters for CreateReviewComment.
 type CreateReviewCommentParams struct {
@@ -19719,7 +20690,7 @@ type ListExtendedRevisionsParams struct {
 	// An example conjunction is:
 	// `CreatedAt >= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.
 	//
-	// Supported attributes for filtering on Revision: ApplyGates, ApplyWarnings, Attestations, ChangeOrders, ChangeSetID, Conflicts, CreatedAt, DataHash, Description, HiddenReason, LinkFindings, NeededPaths, OrganizationID, ProvidedPaths, Releases, RevisionID, RevisionNum, Source, SpaceID, Tags, UnitID, UpdatedAt, UserAgent, UserID, ValidationErrors, ValidationPassed, ValidationTriggerIDs, ValidationWarnings, ValueTriggerIDs, Values.
+	// Supported attributes for filtering on Revision: ApplyGates, ApplyWarnings, Attestations, ChangeOrders, ChangeSetID, Conflicts, CreatedAt, DataHash, Description, HiddenReason, LinkFindings, NeededPaths, OrganizationID, ProvidedPaths, Releases, RevisionID, RevisionNum, Source, SpaceID, Tags, UnitID, UpdatedAt, UserAgent, UserID, ValidationErrors, ValidationPassed, ValidationResults, ValidationTriggerIDs, ValidationWarnings, ValueTriggerIDs, Values.
 	//
 	// To list a tagged Revision use `Tags ? '<tag-id>'`.
 	//
@@ -19775,6 +20746,13 @@ type ListExtendedRevisionsParams struct {
 	// The whole string must be query-encoded.
 	Select *string `form:"select,omitempty" json:"select,omitempty" yaml:"select,omitempty"`
 
+	// WherePermission Only return Revision entities on which the caller has this permission, as well as View, which every entity listed needs.
+	//
+	// A list made to choose an entity to act on can name the permission the action needs, such as Edit to change it or Use to refer to it from another entity, so that it leaves out the entities the action would be refused on.
+	//
+	// Supported values: Manage, Edit, Use, View.
+	WherePermission *ListExtendedRevisionsParamsWherePermission `form:"where_permission,omitempty" json:"where_permission,omitempty" yaml:"where_permission,omitempty"`
+
 	// IncludeHidden Hidden Revision entities, those with a HiddenReason, are left out of the results, or of what a bulk operation acts on, unless this names their HiddenReason.
 	//
 	// It is a comma-separated list of HiddenReasons, or `*` for all of them.
@@ -19819,6 +20797,9 @@ type ListExtendedRevisionsParams struct {
 	// Offset Deprecated: use continue. Number of Revision entities to skip before returning results. Cannot be combined with continue.
 	Offset *int `form:"offset,omitempty" json:"offset,omitempty" yaml:"offset,omitempty"`
 }
+
+// ListExtendedRevisionsParamsWherePermission defines parameters for ListExtendedRevisions.
+type ListExtendedRevisionsParamsWherePermission string
 
 // GetExtendedRevisionParams defines parameters for GetExtendedRevision.
 type GetExtendedRevisionParams struct {
@@ -19913,6 +20894,13 @@ type ListUnitActionsParams struct {
 	// The whole string must be query-encoded.
 	Contains *string `form:"contains,omitempty" json:"contains,omitempty" yaml:"contains,omitempty"`
 
+	// WherePermission Only return QueuedOperation entities on which the caller has this permission, as well as View, which every entity listed needs.
+	//
+	// A list made to choose an entity to act on can name the permission the action needs, such as Edit to change it or Use to refer to it from another entity, so that it leaves out the entities the action would be refused on.
+	//
+	// Supported values: Manage, Edit, Use, View.
+	WherePermission *ListUnitActionsParamsWherePermission `form:"where_permission,omitempty" json:"where_permission,omitempty" yaml:"where_permission,omitempty"`
+
 	// Limit Maximum number of QueuedOperation entities to return. If not specified, all matching entities are returned. Values greater than 1000 are rejected with 400. When there may be more entities, the response has a ConfigHub-Continue header to pass as the continue parameter of the next request.
 	Limit *int `form:"limit,omitempty" json:"limit,omitempty" yaml:"limit,omitempty"`
 
@@ -19936,6 +20924,9 @@ type ListUnitActionsParams struct {
 	// Keep reading until a response has no such header: a page can hold fewer entities than the limit, or none, and still be followed by more.
 	Continue *string `form:"continue,omitempty" json:"continue,omitempty" yaml:"continue,omitempty"`
 }
+
+// ListUnitActionsParamsWherePermission defines parameters for ListUnitActions.
+type ListUnitActionsParamsWherePermission string
 
 // ListUnitEventsParams defines parameters for ListUnitEvents.
 type ListUnitEventsParams struct {
@@ -20008,6 +20999,13 @@ type ListUnitEventsParams struct {
 	// The whole string must be query-encoded.
 	Contains *string `form:"contains,omitempty" json:"contains,omitempty" yaml:"contains,omitempty"`
 
+	// WherePermission Only return UnitEvent entities on which the caller has this permission, as well as View, which every entity listed needs.
+	//
+	// A list made to choose an entity to act on can name the permission the action needs, such as Edit to change it or Use to refer to it from another entity, so that it leaves out the entities the action would be refused on.
+	//
+	// Supported values: Manage, Edit, Use, View.
+	WherePermission *ListUnitEventsParamsWherePermission `form:"where_permission,omitempty" json:"where_permission,omitempty" yaml:"where_permission,omitempty"`
+
 	// IncludeHidden Hidden UnitEvent entities, those with a HiddenReason, are left out of the results, or of what a bulk operation acts on, unless this names their HiddenReason.
 	//
 	// It is a comma-separated list of HiddenReasons, or `*` for all of them.
@@ -20043,6 +21041,9 @@ type ListUnitEventsParams struct {
 	// Keep reading until a response has no such header: a page can hold fewer entities than the limit, or none, and still be followed by more.
 	Continue *string `form:"continue,omitempty" json:"continue,omitempty" yaml:"continue,omitempty"`
 }
+
+// ListUnitEventsParamsWherePermission defines parameters for ListUnitEvents.
+type ListUnitEventsParamsWherePermission string
 
 // ListViewsParams defines parameters for ListViews.
 type ListViewsParams struct {
@@ -20134,6 +21135,13 @@ type ListViewsParams struct {
 	// The whole string must be query-encoded.
 	Select *string `form:"select,omitempty" json:"select,omitempty" yaml:"select,omitempty"`
 
+	// WherePermission Only return View entities on which the caller has this permission, as well as View, which every entity listed needs.
+	//
+	// A list made to choose an entity to act on can name the permission the action needs, such as Edit to change it or Use to refer to it from another entity, so that it leaves out the entities the action would be refused on.
+	//
+	// Supported values: Manage, Edit, Use, View.
+	WherePermission *ListViewsParamsWherePermission `form:"where_permission,omitempty" json:"where_permission,omitempty" yaml:"where_permission,omitempty"`
+
 	// IncludeHidden Hidden View entities, those with a HiddenReason, are left out of the results, or of what a bulk operation acts on, unless this names their HiddenReason.
 	//
 	// It is a comma-separated list of HiddenReasons, or `*` for all of them.
@@ -20175,6 +21183,9 @@ type ListViewsParams struct {
 	// Keep reading until a response has no such header: a page can hold fewer entities than the limit, or none, and still be followed by more.
 	Continue *string `form:"continue,omitempty" json:"continue,omitempty" yaml:"continue,omitempty"`
 }
+
+// ListViewsParamsWherePermission defines parameters for ListViews.
+type ListViewsParamsWherePermission string
 
 // CreateViewParams defines parameters for CreateView.
 type CreateViewParams struct {
@@ -20448,6 +21459,13 @@ type ListAllTagsParams struct {
 	// The whole string must be query-encoded.
 	Select *string `form:"select,omitempty" json:"select,omitempty" yaml:"select,omitempty"`
 
+	// WherePermission Only return Tag entities on which the caller has this permission, as well as View, which every entity listed needs.
+	//
+	// A list made to choose an entity to act on can name the permission the action needs, such as Edit to change it or Use to refer to it from another entity, so that it leaves out the entities the action would be refused on.
+	//
+	// Supported values: Manage, Edit, Use, View.
+	WherePermission *ListAllTagsParamsWherePermission `form:"where_permission,omitempty" json:"where_permission,omitempty" yaml:"where_permission,omitempty"`
+
 	// IncludeHidden Hidden Tag entities, those with a HiddenReason, are left out of the results, or of what a bulk operation acts on, unless this names their HiddenReason.
 	//
 	// It is a comma-separated list of HiddenReasons, or `*` for all of them.
@@ -20489,6 +21507,9 @@ type ListAllTagsParams struct {
 	// Keep reading until a response has no such header: a page can hold fewer entities than the limit, or none, and still be followed by more.
 	Continue *string `form:"continue,omitempty" json:"continue,omitempty" yaml:"continue,omitempty"`
 }
+
+// ListAllTagsParamsWherePermission defines parameters for ListAllTags.
+type ListAllTagsParamsWherePermission string
 
 // BulkPatchTagsApplicationMergePatchPlusJSONBody defines parameters for BulkPatchTags.
 type BulkPatchTagsApplicationMergePatchPlusJSONBody struct {
@@ -21089,6 +22110,13 @@ type ListAllTargetsParams struct {
 	// The whole string must be query-encoded.
 	Select *string `form:"select,omitempty" json:"select,omitempty" yaml:"select,omitempty"`
 
+	// WherePermission Only return Target entities on which the caller has this permission, as well as View, which every entity listed needs.
+	//
+	// A list made to choose an entity to act on can name the permission the action needs, such as Edit to change it or Use to refer to it from another entity, so that it leaves out the entities the action would be refused on.
+	//
+	// Supported values: Manage, Edit, Use, View, ManageChildren, EditChildren, UseChildren, ViewChildren, CreateChildren, ApproveChildren, TargetEditChildren, TargetViewChildren.
+	WherePermission *ListAllTargetsParamsWherePermission `form:"where_permission,omitempty" json:"where_permission,omitempty" yaml:"where_permission,omitempty"`
+
 	// IncludeHidden Hidden Target entities, those with a HiddenReason, are left out of the results, or of what a bulk operation acts on, unless this names their HiddenReason.
 	//
 	// It is a comma-separated list of HiddenReasons, or `*` for all of them.
@@ -21130,6 +22158,9 @@ type ListAllTargetsParams struct {
 	// Keep reading until a response has no such header: a page can hold fewer entities than the limit, or none, and still be followed by more.
 	Continue *string `form:"continue,omitempty" json:"continue,omitempty" yaml:"continue,omitempty"`
 }
+
+// ListAllTargetsParamsWherePermission defines parameters for ListAllTargets.
+type ListAllTargetsParamsWherePermission string
 
 // BulkPatchTargetsApplicationMergePatchPlusJSONBody defines parameters for BulkPatchTargets.
 type BulkPatchTargetsApplicationMergePatchPlusJSONBody struct {
@@ -21496,7 +22527,7 @@ type BulkCreateTargetsParams struct {
 	// An example conjunction is:
 	// `CreatedAt >= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.
 	//
-	// Supported attributes for filtering on Unit: Annotations, ApplyGates, ApplyWarnings, ChangeSetID, Conflicts, CreatedAt, DataHash, DeleteGates, DestroyGates, DisplayName, FromLinkID, HeadRevisionID, HeadRevisionNum, HeadUnitActionNum, HeadUnitEventNum, HiddenReason, Labels, LastChangeDescription, LastReleasedRevisionNum, LinkFindings, NeededPaths, OrganizationID, Permissions, ProvidedPaths, ProviderType, Slug, SpaceID, TargetID, ToolchainType, UnitID, UpdatedAt, UpstreamRevisionNum, UpstreamSpaceID, UpstreamUnitID, ValidationErrors, ValidationTriggerIDs, ValidationWarnings, ValueTriggerIDs, Values.
+	// Supported attributes for filtering on Unit: Annotations, ApplyGates, ApplyWarnings, ChangeSetID, Conflicts, CreatedAt, DataHash, DeleteGates, DestroyGates, DisplayName, FromLinkID, HeadRevisionID, HeadRevisionNum, HeadUnitActionNum, HeadUnitEventNum, HiddenReason, Labels, LastChangeDescription, LastReleasedRevisionNum, LinkFindings, NeededPaths, OrganizationID, Permissions, ProvidedPaths, ProviderType, Slug, SpaceID, TargetID, ToolchainType, UnitID, UpdatedAt, UpstreamRevisionNum, UpstreamSpaceID, UpstreamUnitID, ValidationErrors, ValidationResults, ValidationTriggerIDs, ValidationWarnings, ValueTriggerIDs, Values.
 	//
 	// The Units to create entities from, with from_backing_units.
 	//
@@ -21799,6 +22830,13 @@ type ListAllTriggersParams struct {
 	// The whole string must be query-encoded.
 	Select *string `form:"select,omitempty" json:"select,omitempty" yaml:"select,omitempty"`
 
+	// WherePermission Only return Trigger entities on which the caller has this permission, as well as View, which every entity listed needs.
+	//
+	// A list made to choose an entity to act on can name the permission the action needs, such as Edit to change it or Use to refer to it from another entity, so that it leaves out the entities the action would be refused on.
+	//
+	// Supported values: Manage, Edit, Use, View.
+	WherePermission *ListAllTriggersParamsWherePermission `form:"where_permission,omitempty" json:"where_permission,omitempty" yaml:"where_permission,omitempty"`
+
 	// IncludeHidden Hidden Trigger entities, those with a HiddenReason, are left out of the results, or of what a bulk operation acts on, unless this names their HiddenReason.
 	//
 	// It is a comma-separated list of HiddenReasons, or `*` for all of them.
@@ -21840,6 +22878,9 @@ type ListAllTriggersParams struct {
 	// Keep reading until a response has no such header: a page can hold fewer entities than the limit, or none, and still be followed by more.
 	Continue *string `form:"continue,omitempty" json:"continue,omitempty" yaml:"continue,omitempty"`
 }
+
+// ListAllTriggersParamsWherePermission defines parameters for ListAllTriggers.
+type ListAllTriggersParamsWherePermission string
 
 // BulkPatchTriggersApplicationMergePatchPlusJSONBody defines parameters for BulkPatchTriggers.
 type BulkPatchTriggersApplicationMergePatchPlusJSONBody struct {
@@ -22251,7 +23292,7 @@ type BulkCreateTriggersParams struct {
 	// An example conjunction is:
 	// `CreatedAt >= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.
 	//
-	// Supported attributes for filtering on Unit: Annotations, ApplyGates, ApplyWarnings, ChangeSetID, Conflicts, CreatedAt, DataHash, DeleteGates, DestroyGates, DisplayName, FromLinkID, HeadRevisionID, HeadRevisionNum, HeadUnitActionNum, HeadUnitEventNum, HiddenReason, Labels, LastChangeDescription, LastReleasedRevisionNum, LinkFindings, NeededPaths, OrganizationID, Permissions, ProvidedPaths, ProviderType, Slug, SpaceID, TargetID, ToolchainType, UnitID, UpdatedAt, UpstreamRevisionNum, UpstreamSpaceID, UpstreamUnitID, ValidationErrors, ValidationTriggerIDs, ValidationWarnings, ValueTriggerIDs, Values.
+	// Supported attributes for filtering on Unit: Annotations, ApplyGates, ApplyWarnings, ChangeSetID, Conflicts, CreatedAt, DataHash, DeleteGates, DestroyGates, DisplayName, FromLinkID, HeadRevisionID, HeadRevisionNum, HeadUnitActionNum, HeadUnitEventNum, HiddenReason, Labels, LastChangeDescription, LastReleasedRevisionNum, LinkFindings, NeededPaths, OrganizationID, Permissions, ProvidedPaths, ProviderType, Slug, SpaceID, TargetID, ToolchainType, UnitID, UpdatedAt, UpstreamRevisionNum, UpstreamSpaceID, UpstreamUnitID, ValidationErrors, ValidationResults, ValidationTriggerIDs, ValidationWarnings, ValueTriggerIDs, Values.
 	//
 	// The Units to create entities from, with from_backing_units.
 	//
@@ -22397,7 +23438,7 @@ type BulkDeleteUnitsParams struct {
 	// An example conjunction is:
 	// `CreatedAt >= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.
 	//
-	// Supported attributes for filtering on Unit: Annotations, ApplyGates, ApplyWarnings, ChangeSetID, Conflicts, CreatedAt, DataHash, DeleteGates, DestroyGates, DisplayName, FromLinkID, HeadRevisionID, HeadRevisionNum, HeadUnitActionNum, HeadUnitEventNum, HiddenReason, Labels, LastChangeDescription, LastReleasedRevisionNum, LinkFindings, NeededPaths, OrganizationID, Permissions, ProvidedPaths, ProviderType, Slug, SpaceID, TargetID, ToolchainType, UnitID, UpdatedAt, UpstreamRevisionNum, UpstreamSpaceID, UpstreamUnitID, ValidationErrors, ValidationTriggerIDs, ValidationWarnings, ValueTriggerIDs, Values.
+	// Supported attributes for filtering on Unit: Annotations, ApplyGates, ApplyWarnings, ChangeSetID, Conflicts, CreatedAt, DataHash, DeleteGates, DestroyGates, DisplayName, FromLinkID, HeadRevisionID, HeadRevisionNum, HeadUnitActionNum, HeadUnitEventNum, HiddenReason, Labels, LastChangeDescription, LastReleasedRevisionNum, LinkFindings, NeededPaths, OrganizationID, Permissions, ProvidedPaths, ProviderType, Slug, SpaceID, TargetID, ToolchainType, UnitID, UpdatedAt, UpstreamRevisionNum, UpstreamSpaceID, UpstreamUnitID, ValidationErrors, ValidationResults, ValidationTriggerIDs, ValidationWarnings, ValueTriggerIDs, Values.
 	//
 	// Finding all units created by cloning can be done using the expression `UpstreamRevisionNum > 0`. Clones of a specific unit can be found by additionally filtering based on `UpstreamUnitID`. Units never released can be found using `LastReleasedRevisionNum = 0`. Units with unreleased changes can be found with `HeadRevisionNum > LastReleasedRevisionNum AND TargetID IS NOT NULL`.
 	//
@@ -22498,7 +23539,7 @@ type ListAllUnitsParams struct {
 	// An example conjunction is:
 	// `CreatedAt >= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.
 	//
-	// Supported attributes for filtering on Unit: Annotations, ApplyGates, ApplyWarnings, ChangeSetID, Conflicts, CreatedAt, DataHash, DeleteGates, DestroyGates, DisplayName, FromLinkID, HeadRevisionID, HeadRevisionNum, HeadUnitActionNum, HeadUnitEventNum, HiddenReason, Labels, LastChangeDescription, LastReleasedRevisionNum, LinkFindings, NeededPaths, OrganizationID, Permissions, ProvidedPaths, ProviderType, Slug, SpaceID, TargetID, ToolchainType, UnitID, UpdatedAt, UpstreamRevisionNum, UpstreamSpaceID, UpstreamUnitID, ValidationErrors, ValidationTriggerIDs, ValidationWarnings, ValueTriggerIDs, Values.
+	// Supported attributes for filtering on Unit: Annotations, ApplyGates, ApplyWarnings, ChangeSetID, Conflicts, CreatedAt, DataHash, DeleteGates, DestroyGates, DisplayName, FromLinkID, HeadRevisionID, HeadRevisionNum, HeadUnitActionNum, HeadUnitEventNum, HiddenReason, Labels, LastChangeDescription, LastReleasedRevisionNum, LinkFindings, NeededPaths, OrganizationID, Permissions, ProvidedPaths, ProviderType, Slug, SpaceID, TargetID, ToolchainType, UnitID, UpdatedAt, UpstreamRevisionNum, UpstreamSpaceID, UpstreamUnitID, ValidationErrors, ValidationResults, ValidationTriggerIDs, ValidationWarnings, ValueTriggerIDs, Values.
 	//
 	// Finding all units created by cloning can be done using the expression `UpstreamRevisionNum > 0`. Clones of a specific unit can be found by additionally filtering based on `UpstreamUnitID`. Units never released can be found using `LastReleasedRevisionNum = 0`. Units with unreleased changes can be found with `HeadRevisionNum > LastReleasedRevisionNum AND TargetID IS NOT NULL`.
 	//
@@ -22553,6 +23594,13 @@ type ListAllUnitsParams struct {
 	// Example: 'DisplayName,CreatedAt,Labels' will return only those fields plus the required ID and Slug fields.
 	// The whole string must be query-encoded.
 	Select *string `form:"select,omitempty" json:"select,omitempty" yaml:"select,omitempty"`
+
+	// WherePermission Only return Unit entities on which the caller has this permission, as well as View, which every entity listed needs.
+	//
+	// A list made to choose an entity to act on can name the permission the action needs, such as Edit to change it or Use to refer to it from another entity, so that it leaves out the entities the action would be refused on.
+	//
+	// Supported values: Manage, Edit, Use, View, Approve, TargetEdit, TargetView.
+	WherePermission *ListAllUnitsParamsWherePermission `form:"where_permission,omitempty" json:"where_permission,omitempty" yaml:"where_permission,omitempty"`
 
 	// IncludeHidden Hidden Unit entities, those with a HiddenReason, are left out of the results, or of what a bulk operation acts on, unless this names their HiddenReason.
 	//
@@ -22613,6 +23661,9 @@ type ListAllUnitsParams struct {
 	// TriggersPassed When true, return units that pass trigger validation; when false (default), return units that fail. Only applies when where_trigger or trigger_filter is specified.
 	TriggersPassed *bool `form:"triggers_passed,omitempty" json:"triggers_passed,omitempty" yaml:"triggers_passed,omitempty"`
 }
+
+// ListAllUnitsParamsWherePermission defines parameters for ListAllUnits.
+type ListAllUnitsParamsWherePermission string
 
 // BulkPatchUnitsApplicationMergePatchPlusJSONBody defines parameters for BulkPatchUnits.
 type BulkPatchUnitsApplicationMergePatchPlusJSONBody struct {
@@ -22691,7 +23742,7 @@ type BulkPatchUnitsParams struct {
 	// An example conjunction is:
 	// `CreatedAt >= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.
 	//
-	// Supported attributes for filtering on Unit: Annotations, ApplyGates, ApplyWarnings, ChangeSetID, Conflicts, CreatedAt, DataHash, DeleteGates, DestroyGates, DisplayName, FromLinkID, HeadRevisionID, HeadRevisionNum, HeadUnitActionNum, HeadUnitEventNum, HiddenReason, Labels, LastChangeDescription, LastReleasedRevisionNum, LinkFindings, NeededPaths, OrganizationID, Permissions, ProvidedPaths, ProviderType, Slug, SpaceID, TargetID, ToolchainType, UnitID, UpdatedAt, UpstreamRevisionNum, UpstreamSpaceID, UpstreamUnitID, ValidationErrors, ValidationTriggerIDs, ValidationWarnings, ValueTriggerIDs, Values.
+	// Supported attributes for filtering on Unit: Annotations, ApplyGates, ApplyWarnings, ChangeSetID, Conflicts, CreatedAt, DataHash, DeleteGates, DestroyGates, DisplayName, FromLinkID, HeadRevisionID, HeadRevisionNum, HeadUnitActionNum, HeadUnitEventNum, HiddenReason, Labels, LastChangeDescription, LastReleasedRevisionNum, LinkFindings, NeededPaths, OrganizationID, Permissions, ProvidedPaths, ProviderType, Slug, SpaceID, TargetID, ToolchainType, UnitID, UpdatedAt, UpstreamRevisionNum, UpstreamSpaceID, UpstreamUnitID, ValidationErrors, ValidationResults, ValidationTriggerIDs, ValidationWarnings, ValueTriggerIDs, Values.
 	//
 	// Finding all units created by cloning can be done using the expression `UpstreamRevisionNum > 0`. Clones of a specific unit can be found by additionally filtering based on `UpstreamUnitID`. Units never released can be found using `LastReleasedRevisionNum = 0`. Units with unreleased changes can be found with `HeadRevisionNum > LastReleasedRevisionNum AND TargetID IS NOT NULL`.
 	//
@@ -22948,7 +23999,7 @@ type BulkCreateUnitsParams struct {
 	// An example conjunction is:
 	// `CreatedAt >= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.
 	//
-	// Supported attributes for filtering on Unit: Annotations, ApplyGates, ApplyWarnings, ChangeSetID, Conflicts, CreatedAt, DataHash, DeleteGates, DestroyGates, DisplayName, FromLinkID, HeadRevisionID, HeadRevisionNum, HeadUnitActionNum, HeadUnitEventNum, HiddenReason, Labels, LastChangeDescription, LastReleasedRevisionNum, LinkFindings, NeededPaths, OrganizationID, Permissions, ProvidedPaths, ProviderType, Slug, SpaceID, TargetID, ToolchainType, UnitID, UpdatedAt, UpstreamRevisionNum, UpstreamSpaceID, UpstreamUnitID, ValidationErrors, ValidationTriggerIDs, ValidationWarnings, ValueTriggerIDs, Values.
+	// Supported attributes for filtering on Unit: Annotations, ApplyGates, ApplyWarnings, ChangeSetID, Conflicts, CreatedAt, DataHash, DeleteGates, DestroyGates, DisplayName, FromLinkID, HeadRevisionID, HeadRevisionNum, HeadUnitActionNum, HeadUnitEventNum, HiddenReason, Labels, LastChangeDescription, LastReleasedRevisionNum, LinkFindings, NeededPaths, OrganizationID, Permissions, ProvidedPaths, ProviderType, Slug, SpaceID, TargetID, ToolchainType, UnitID, UpdatedAt, UpstreamRevisionNum, UpstreamSpaceID, UpstreamUnitID, ValidationErrors, ValidationResults, ValidationTriggerIDs, ValidationWarnings, ValueTriggerIDs, Values.
 	//
 	// Finding all units created by cloning can be done using the expression `UpstreamRevisionNum > 0`. Clones of a specific unit can be found by additionally filtering based on `UpstreamUnitID`. Units never released can be found using `LastReleasedRevisionNum = 0`. Units with unreleased changes can be found with `HeadRevisionNum > LastReleasedRevisionNum AND TargetID IS NOT NULL`.
 	//
@@ -23166,7 +24217,7 @@ type BulkCancelUnitsParams struct {
 	// An example conjunction is:
 	// `CreatedAt >= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.
 	//
-	// Supported attributes for filtering on Unit: Annotations, ApplyGates, ApplyWarnings, ChangeSetID, Conflicts, CreatedAt, DataHash, DeleteGates, DestroyGates, DisplayName, FromLinkID, HeadRevisionID, HeadRevisionNum, HeadUnitActionNum, HeadUnitEventNum, HiddenReason, Labels, LastChangeDescription, LastReleasedRevisionNum, LinkFindings, NeededPaths, OrganizationID, Permissions, ProvidedPaths, ProviderType, Slug, SpaceID, TargetID, ToolchainType, UnitID, UpdatedAt, UpstreamRevisionNum, UpstreamSpaceID, UpstreamUnitID, ValidationErrors, ValidationTriggerIDs, ValidationWarnings, ValueTriggerIDs, Values.
+	// Supported attributes for filtering on Unit: Annotations, ApplyGates, ApplyWarnings, ChangeSetID, Conflicts, CreatedAt, DataHash, DeleteGates, DestroyGates, DisplayName, FromLinkID, HeadRevisionID, HeadRevisionNum, HeadUnitActionNum, HeadUnitEventNum, HiddenReason, Labels, LastChangeDescription, LastReleasedRevisionNum, LinkFindings, NeededPaths, OrganizationID, Permissions, ProvidedPaths, ProviderType, Slug, SpaceID, TargetID, ToolchainType, UnitID, UpdatedAt, UpstreamRevisionNum, UpstreamSpaceID, UpstreamUnitID, ValidationErrors, ValidationResults, ValidationTriggerIDs, ValidationWarnings, ValueTriggerIDs, Values.
 	//
 	// Finding all units created by cloning can be done using the expression `UpstreamRevisionNum > 0`. Clones of a specific unit can be found by additionally filtering based on `UpstreamUnitID`. Units never released can be found using `LastReleasedRevisionNum = 0`. Units with unreleased changes can be found with `HeadRevisionNum > LastReleasedRevisionNum AND TargetID IS NOT NULL`.
 	//
@@ -23258,7 +24309,7 @@ type BulkMoveUnitsParams struct {
 	// An example conjunction is:
 	// `CreatedAt >= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.
 	//
-	// Supported attributes for filtering on Unit: Annotations, ApplyGates, ApplyWarnings, ChangeSetID, Conflicts, CreatedAt, DataHash, DeleteGates, DestroyGates, DisplayName, FromLinkID, HeadRevisionID, HeadRevisionNum, HeadUnitActionNum, HeadUnitEventNum, HiddenReason, Labels, LastChangeDescription, LastReleasedRevisionNum, LinkFindings, NeededPaths, OrganizationID, Permissions, ProvidedPaths, ProviderType, Slug, SpaceID, TargetID, ToolchainType, UnitID, UpdatedAt, UpstreamRevisionNum, UpstreamSpaceID, UpstreamUnitID, ValidationErrors, ValidationTriggerIDs, ValidationWarnings, ValueTriggerIDs, Values.
+	// Supported attributes for filtering on Unit: Annotations, ApplyGates, ApplyWarnings, ChangeSetID, Conflicts, CreatedAt, DataHash, DeleteGates, DestroyGates, DisplayName, FromLinkID, HeadRevisionID, HeadRevisionNum, HeadUnitActionNum, HeadUnitEventNum, HiddenReason, Labels, LastChangeDescription, LastReleasedRevisionNum, LinkFindings, NeededPaths, OrganizationID, Permissions, ProvidedPaths, ProviderType, Slug, SpaceID, TargetID, ToolchainType, UnitID, UpdatedAt, UpstreamRevisionNum, UpstreamSpaceID, UpstreamUnitID, ValidationErrors, ValidationResults, ValidationTriggerIDs, ValidationWarnings, ValueTriggerIDs, Values.
 	//
 	// Finding all units created by cloning can be done using the expression `UpstreamRevisionNum > 0`. Clones of a specific unit can be found by additionally filtering based on `UpstreamUnitID`. Units never released can be found using `LastReleasedRevisionNum = 0`. Units with unreleased changes can be found with `HeadRevisionNum > LastReleasedRevisionNum AND TargetID IS NOT NULL`.
 	//
@@ -23353,7 +24404,7 @@ type BulkTagUnitsParams struct {
 	// An example conjunction is:
 	// `CreatedAt >= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.
 	//
-	// Supported attributes for filtering on Unit: Annotations, ApplyGates, ApplyWarnings, ChangeSetID, Conflicts, CreatedAt, DataHash, DeleteGates, DestroyGates, DisplayName, FromLinkID, HeadRevisionID, HeadRevisionNum, HeadUnitActionNum, HeadUnitEventNum, HiddenReason, Labels, LastChangeDescription, LastReleasedRevisionNum, LinkFindings, NeededPaths, OrganizationID, Permissions, ProvidedPaths, ProviderType, Slug, SpaceID, TargetID, ToolchainType, UnitID, UpdatedAt, UpstreamRevisionNum, UpstreamSpaceID, UpstreamUnitID, ValidationErrors, ValidationTriggerIDs, ValidationWarnings, ValueTriggerIDs, Values.
+	// Supported attributes for filtering on Unit: Annotations, ApplyGates, ApplyWarnings, ChangeSetID, Conflicts, CreatedAt, DataHash, DeleteGates, DestroyGates, DisplayName, FromLinkID, HeadRevisionID, HeadRevisionNum, HeadUnitActionNum, HeadUnitEventNum, HiddenReason, Labels, LastChangeDescription, LastReleasedRevisionNum, LinkFindings, NeededPaths, OrganizationID, Permissions, ProvidedPaths, ProviderType, Slug, SpaceID, TargetID, ToolchainType, UnitID, UpdatedAt, UpstreamRevisionNum, UpstreamSpaceID, UpstreamUnitID, ValidationErrors, ValidationResults, ValidationTriggerIDs, ValidationWarnings, ValueTriggerIDs, Values.
 	//
 	// Finding all units created by cloning can be done using the expression `UpstreamRevisionNum > 0`. Clones of a specific unit can be found by additionally filtering based on `UpstreamUnitID`. Units never released can be found using `LastReleasedRevisionNum = 0`. Units with unreleased changes can be found with `HeadRevisionNum > LastReleasedRevisionNum AND TargetID IS NOT NULL`.
 	//
@@ -23480,6 +24531,13 @@ type ListAllUnitActionsParams struct {
 	// The whole string must be query-encoded.
 	Contains *string `form:"contains,omitempty" json:"contains,omitempty" yaml:"contains,omitempty"`
 
+	// WherePermission Only return QueuedOperation entities on which the caller has this permission, as well as View, which every entity listed needs.
+	//
+	// A list made to choose an entity to act on can name the permission the action needs, such as Edit to change it or Use to refer to it from another entity, so that it leaves out the entities the action would be refused on.
+	//
+	// Supported values: Manage, Edit, Use, View.
+	WherePermission *ListAllUnitActionsParamsWherePermission `form:"where_permission,omitempty" json:"where_permission,omitempty" yaml:"where_permission,omitempty"`
+
 	// Limit Maximum number of QueuedOperation entities to return. If not specified, all matching entities are returned. Values greater than 1000 are rejected with 400. When there may be more entities, the response has a ConfigHub-Continue header to pass as the continue parameter of the next request.
 	Limit *int `form:"limit,omitempty" json:"limit,omitempty" yaml:"limit,omitempty"`
 
@@ -23503,6 +24561,9 @@ type ListAllUnitActionsParams struct {
 	// Keep reading until a response has no such header: a page can hold fewer entities than the limit, or none, and still be followed by more.
 	Continue *string `form:"continue,omitempty" json:"continue,omitempty" yaml:"continue,omitempty"`
 }
+
+// ListAllUnitActionsParamsWherePermission defines parameters for ListAllUnitActions.
+type ListAllUnitActionsParamsWherePermission string
 
 // SearchUnitDataParams defines parameters for SearchUnitData.
 type SearchUnitDataParams struct {
@@ -23540,7 +24601,7 @@ type SearchUnitDataParams struct {
 	// An example conjunction is:
 	// `CreatedAt >= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.
 	//
-	// Supported attributes for filtering on Unit: Annotations, ApplyGates, ApplyWarnings, ChangeSetID, Conflicts, CreatedAt, DataHash, DeleteGates, DestroyGates, DisplayName, FromLinkID, HeadRevisionID, HeadRevisionNum, HeadUnitActionNum, HeadUnitEventNum, HiddenReason, Labels, LastChangeDescription, LastReleasedRevisionNum, LinkFindings, NeededPaths, OrganizationID, Permissions, ProvidedPaths, ProviderType, Slug, SpaceID, TargetID, ToolchainType, UnitID, UpdatedAt, UpstreamRevisionNum, UpstreamSpaceID, UpstreamUnitID, ValidationErrors, ValidationTriggerIDs, ValidationWarnings, ValueTriggerIDs, Values.
+	// Supported attributes for filtering on Unit: Annotations, ApplyGates, ApplyWarnings, ChangeSetID, Conflicts, CreatedAt, DataHash, DeleteGates, DestroyGates, DisplayName, FromLinkID, HeadRevisionID, HeadRevisionNum, HeadUnitActionNum, HeadUnitEventNum, HiddenReason, Labels, LastChangeDescription, LastReleasedRevisionNum, LinkFindings, NeededPaths, OrganizationID, Permissions, ProvidedPaths, ProviderType, Slug, SpaceID, TargetID, ToolchainType, UnitID, UpdatedAt, UpstreamRevisionNum, UpstreamSpaceID, UpstreamUnitID, ValidationErrors, ValidationResults, ValidationTriggerIDs, ValidationWarnings, ValueTriggerIDs, Values.
 	//
 	// Finding all units created by cloning can be done using the expression `UpstreamRevisionNum > 0`. Clones of a specific unit can be found by additionally filtering based on `UpstreamUnitID`. Units never released can be found using `LastReleasedRevisionNum = 0`. Units with unreleased changes can be found with `HeadRevisionNum > LastReleasedRevisionNum AND TargetID IS NOT NULL`.
 	//
@@ -23596,6 +24657,13 @@ type SearchUnitDataParams struct {
 	// The whole string must be query-encoded.
 	Select *string `form:"select,omitempty" json:"select,omitempty" yaml:"select,omitempty"`
 
+	// WherePermission Only return Unit entities on which the caller has this permission, as well as View, which every entity listed needs.
+	//
+	// A list made to choose an entity to act on can name the permission the action needs, such as Edit to change it or Use to refer to it from another entity, so that it leaves out the entities the action would be refused on.
+	//
+	// Supported values: Manage, Edit, Use, View, Approve, TargetEdit, TargetView.
+	WherePermission *SearchUnitDataParamsWherePermission `form:"where_permission,omitempty" json:"where_permission,omitempty" yaml:"where_permission,omitempty"`
+
 	// IncludeHidden Hidden Unit entities, those with a HiddenReason, are left out of the results, or of what a bulk operation acts on, unless this names their HiddenReason.
 	//
 	// It is a comma-separated list of HiddenReasons, or `*` for all of them.
@@ -23650,6 +24718,9 @@ type SearchUnitDataParams struct {
 	TriggersPassed *bool `form:"triggers_passed,omitempty" json:"triggers_passed,omitempty" yaml:"triggers_passed,omitempty"`
 }
 
+// SearchUnitDataParamsWherePermission defines parameters for SearchUnitData.
+type SearchUnitDataParamsWherePermission string
+
 // SearchUnitDiffParams defines parameters for SearchUnitDiff.
 type SearchUnitDiffParams struct {
 	// Where The specified string is an expression for the purpose of filtering
@@ -23686,7 +24757,7 @@ type SearchUnitDiffParams struct {
 	// An example conjunction is:
 	// `CreatedAt >= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.
 	//
-	// Supported attributes for filtering on Unit: Annotations, ApplyGates, ApplyWarnings, ChangeSetID, Conflicts, CreatedAt, DataHash, DeleteGates, DestroyGates, DisplayName, FromLinkID, HeadRevisionID, HeadRevisionNum, HeadUnitActionNum, HeadUnitEventNum, HiddenReason, Labels, LastChangeDescription, LastReleasedRevisionNum, LinkFindings, NeededPaths, OrganizationID, Permissions, ProvidedPaths, ProviderType, Slug, SpaceID, TargetID, ToolchainType, UnitID, UpdatedAt, UpstreamRevisionNum, UpstreamSpaceID, UpstreamUnitID, ValidationErrors, ValidationTriggerIDs, ValidationWarnings, ValueTriggerIDs, Values.
+	// Supported attributes for filtering on Unit: Annotations, ApplyGates, ApplyWarnings, ChangeSetID, Conflicts, CreatedAt, DataHash, DeleteGates, DestroyGates, DisplayName, FromLinkID, HeadRevisionID, HeadRevisionNum, HeadUnitActionNum, HeadUnitEventNum, HiddenReason, Labels, LastChangeDescription, LastReleasedRevisionNum, LinkFindings, NeededPaths, OrganizationID, Permissions, ProvidedPaths, ProviderType, Slug, SpaceID, TargetID, ToolchainType, UnitID, UpdatedAt, UpstreamRevisionNum, UpstreamSpaceID, UpstreamUnitID, ValidationErrors, ValidationResults, ValidationTriggerIDs, ValidationWarnings, ValueTriggerIDs, Values.
 	//
 	// Finding all units created by cloning can be done using the expression `UpstreamRevisionNum > 0`. Clones of a specific unit can be found by additionally filtering based on `UpstreamUnitID`. Units never released can be found using `LastReleasedRevisionNum = 0`. Units with unreleased changes can be found with `HeadRevisionNum > LastReleasedRevisionNum AND TargetID IS NOT NULL`.
 	//
@@ -23722,6 +24793,13 @@ type SearchUnitDiffParams struct {
 	//
 	// The whole string must be query-encoded.
 	Contains *string `form:"contains,omitempty" json:"contains,omitempty" yaml:"contains,omitempty"`
+
+	// WherePermission Only return Unit entities on which the caller has this permission, as well as View, which every entity listed needs.
+	//
+	// A list made to choose an entity to act on can name the permission the action needs, such as Edit to change it or Use to refer to it from another entity, so that it leaves out the entities the action would be refused on.
+	//
+	// Supported values: Manage, Edit, Use, View, Approve, TargetEdit, TargetView.
+	WherePermission *SearchUnitDiffParamsWherePermission `form:"where_permission,omitempty" json:"where_permission,omitempty" yaml:"where_permission,omitempty"`
 
 	// IncludeHidden Hidden Unit entities, those with a HiddenReason, are left out of the results, or of what a bulk operation acts on, unless this names their HiddenReason.
 	//
@@ -23790,6 +24868,9 @@ type SearchUnitDiffParams struct {
 	// WhereResource Limit the diff to the resources this where expression selects on either side.
 	WhereResource *string `form:"where_resource,omitempty" json:"where_resource,omitempty" yaml:"where_resource,omitempty"`
 }
+
+// SearchUnitDiffParamsWherePermission defines parameters for SearchUnitDiff.
+type SearchUnitDiffParamsWherePermission string
 
 // ListAllUnitEventsParams defines parameters for ListAllUnitEvents.
 type ListAllUnitEventsParams struct {
@@ -23862,6 +24943,13 @@ type ListAllUnitEventsParams struct {
 	// The whole string must be query-encoded.
 	Contains *string `form:"contains,omitempty" json:"contains,omitempty" yaml:"contains,omitempty"`
 
+	// WherePermission Only return UnitEvent entities on which the caller has this permission, as well as View, which every entity listed needs.
+	//
+	// A list made to choose an entity to act on can name the permission the action needs, such as Edit to change it or Use to refer to it from another entity, so that it leaves out the entities the action would be refused on.
+	//
+	// Supported values: Manage, Edit, Use, View.
+	WherePermission *ListAllUnitEventsParamsWherePermission `form:"where_permission,omitempty" json:"where_permission,omitempty" yaml:"where_permission,omitempty"`
+
 	// IncludeHidden Hidden UnitEvent entities, those with a HiddenReason, are left out of the results, or of what a bulk operation acts on, unless this names their HiddenReason.
 	//
 	// It is a comma-separated list of HiddenReasons, or `*` for all of them.
@@ -23907,6 +24995,9 @@ type ListAllUnitEventsParams struct {
 	DistinctOn *ListAllUnitEventsParamsDistinctOn `form:"distinct_on,omitempty" json:"distinct_on,omitempty" yaml:"distinct_on,omitempty"`
 }
 
+// ListAllUnitEventsParamsWherePermission defines parameters for ListAllUnitEvents.
+type ListAllUnitEventsParamsWherePermission string
+
 // ListAllUnitEventsParamsDistinctOn defines parameters for ListAllUnitEvents.
 type ListAllUnitEventsParamsDistinctOn string
 
@@ -23946,7 +25037,7 @@ type SearchUnitMutationSourcesParams struct {
 	// An example conjunction is:
 	// `CreatedAt >= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.
 	//
-	// Supported attributes for filtering on Unit: Annotations, ApplyGates, ApplyWarnings, ChangeSetID, Conflicts, CreatedAt, DataHash, DeleteGates, DestroyGates, DisplayName, FromLinkID, HeadRevisionID, HeadRevisionNum, HeadUnitActionNum, HeadUnitEventNum, HiddenReason, Labels, LastChangeDescription, LastReleasedRevisionNum, LinkFindings, NeededPaths, OrganizationID, Permissions, ProvidedPaths, ProviderType, Slug, SpaceID, TargetID, ToolchainType, UnitID, UpdatedAt, UpstreamRevisionNum, UpstreamSpaceID, UpstreamUnitID, ValidationErrors, ValidationTriggerIDs, ValidationWarnings, ValueTriggerIDs, Values.
+	// Supported attributes for filtering on Unit: Annotations, ApplyGates, ApplyWarnings, ChangeSetID, Conflicts, CreatedAt, DataHash, DeleteGates, DestroyGates, DisplayName, FromLinkID, HeadRevisionID, HeadRevisionNum, HeadUnitActionNum, HeadUnitEventNum, HiddenReason, Labels, LastChangeDescription, LastReleasedRevisionNum, LinkFindings, NeededPaths, OrganizationID, Permissions, ProvidedPaths, ProviderType, Slug, SpaceID, TargetID, ToolchainType, UnitID, UpdatedAt, UpstreamRevisionNum, UpstreamSpaceID, UpstreamUnitID, ValidationErrors, ValidationResults, ValidationTriggerIDs, ValidationWarnings, ValueTriggerIDs, Values.
 	//
 	// Finding all units created by cloning can be done using the expression `UpstreamRevisionNum > 0`. Clones of a specific unit can be found by additionally filtering based on `UpstreamUnitID`. Units never released can be found using `LastReleasedRevisionNum = 0`. Units with unreleased changes can be found with `HeadRevisionNum > LastReleasedRevisionNum AND TargetID IS NOT NULL`.
 	//
@@ -24002,6 +25093,13 @@ type SearchUnitMutationSourcesParams struct {
 	// The whole string must be query-encoded.
 	Select *string `form:"select,omitempty" json:"select,omitempty" yaml:"select,omitempty"`
 
+	// WherePermission Only return Unit entities on which the caller has this permission, as well as View, which every entity listed needs.
+	//
+	// A list made to choose an entity to act on can name the permission the action needs, such as Edit to change it or Use to refer to it from another entity, so that it leaves out the entities the action would be refused on.
+	//
+	// Supported values: Manage, Edit, Use, View, Approve, TargetEdit, TargetView.
+	WherePermission *SearchUnitMutationSourcesParamsWherePermission `form:"where_permission,omitempty" json:"where_permission,omitempty" yaml:"where_permission,omitempty"`
+
 	// IncludeHidden Hidden Unit entities, those with a HiddenReason, are left out of the results, or of what a bulk operation acts on, unless this names their HiddenReason.
 	//
 	// It is a comma-separated list of HiddenReasons, or `*` for all of them.
@@ -24055,6 +25153,9 @@ type SearchUnitMutationSourcesParams struct {
 	// TriggersPassed When true, return units that pass trigger validation; when false (default), return units that fail. Only applies when where_trigger or trigger_filter is specified.
 	TriggersPassed *bool `form:"triggers_passed,omitempty" json:"triggers_passed,omitempty" yaml:"triggers_passed,omitempty"`
 }
+
+// SearchUnitMutationSourcesParamsWherePermission defines parameters for SearchUnitMutationSources.
+type SearchUnitMutationSourcesParamsWherePermission string
 
 // UploadParams defines parameters for Upload.
 type UploadParams struct {
@@ -24138,6 +25239,13 @@ type ListUsersParams struct {
 	// The whole string must be query-encoded.
 	Contains *string `form:"contains,omitempty" json:"contains,omitempty" yaml:"contains,omitempty"`
 
+	// WherePermission Only return User entities on which the caller has this permission, as well as View, which every entity listed needs.
+	//
+	// A list made to choose an entity to act on can name the permission the action needs, such as Edit to change it or Use to refer to it from another entity, so that it leaves out the entities the action would be refused on.
+	//
+	// Supported values: Manage, Edit, Use, View.
+	WherePermission *ListUsersParamsWherePermission `form:"where_permission,omitempty" json:"where_permission,omitempty" yaml:"where_permission,omitempty"`
+
 	// Select Select clause for specifying which fields to include in the response for User.
 	// The attribute names are case-sensitive, PascalCase, and
 	// expected in a comma-separated list format as in the JSON encoding.
@@ -24189,6 +25297,9 @@ type ListUsersParams struct {
 	// Keep reading until a response has no such header: a page can hold fewer entities than the limit, or none, and still be followed by more.
 	Continue *string `form:"continue,omitempty" json:"continue,omitempty" yaml:"continue,omitempty"`
 }
+
+// ListUsersParamsWherePermission defines parameters for ListUsers.
+type ListUsersParamsWherePermission string
 
 // GetUserParams defines parameters for GetUser.
 type GetUserParams struct {
@@ -24398,6 +25509,13 @@ type ListAllViewsParams struct {
 	// The whole string must be query-encoded.
 	Select *string `form:"select,omitempty" json:"select,omitempty" yaml:"select,omitempty"`
 
+	// WherePermission Only return View entities on which the caller has this permission, as well as View, which every entity listed needs.
+	//
+	// A list made to choose an entity to act on can name the permission the action needs, such as Edit to change it or Use to refer to it from another entity, so that it leaves out the entities the action would be refused on.
+	//
+	// Supported values: Manage, Edit, Use, View.
+	WherePermission *ListAllViewsParamsWherePermission `form:"where_permission,omitempty" json:"where_permission,omitempty" yaml:"where_permission,omitempty"`
+
 	// IncludeHidden Hidden View entities, those with a HiddenReason, are left out of the results, or of what a bulk operation acts on, unless this names their HiddenReason.
 	//
 	// It is a comma-separated list of HiddenReasons, or `*` for all of them.
@@ -24439,6 +25557,9 @@ type ListAllViewsParams struct {
 	// Keep reading until a response has no such header: a page can hold fewer entities than the limit, or none, and still be followed by more.
 	Continue *string `form:"continue,omitempty" json:"continue,omitempty" yaml:"continue,omitempty"`
 }
+
+// ListAllViewsParamsWherePermission defines parameters for ListAllViews.
+type ListAllViewsParamsWherePermission string
 
 // BulkPatchViewsApplicationMergePatchPlusJSONBody defines parameters for BulkPatchViews.
 type BulkPatchViewsApplicationMergePatchPlusJSONBody struct {
@@ -24808,7 +25929,7 @@ type BulkCreateViewsParams struct {
 	// An example conjunction is:
 	// `CreatedAt >= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.
 	//
-	// Supported attributes for filtering on Unit: Annotations, ApplyGates, ApplyWarnings, ChangeSetID, Conflicts, CreatedAt, DataHash, DeleteGates, DestroyGates, DisplayName, FromLinkID, HeadRevisionID, HeadRevisionNum, HeadUnitActionNum, HeadUnitEventNum, HiddenReason, Labels, LastChangeDescription, LastReleasedRevisionNum, LinkFindings, NeededPaths, OrganizationID, Permissions, ProvidedPaths, ProviderType, Slug, SpaceID, TargetID, ToolchainType, UnitID, UpdatedAt, UpstreamRevisionNum, UpstreamSpaceID, UpstreamUnitID, ValidationErrors, ValidationTriggerIDs, ValidationWarnings, ValueTriggerIDs, Values.
+	// Supported attributes for filtering on Unit: Annotations, ApplyGates, ApplyWarnings, ChangeSetID, Conflicts, CreatedAt, DataHash, DeleteGates, DestroyGates, DisplayName, FromLinkID, HeadRevisionID, HeadRevisionNum, HeadUnitActionNum, HeadUnitEventNum, HiddenReason, Labels, LastChangeDescription, LastReleasedRevisionNum, LinkFindings, NeededPaths, OrganizationID, Permissions, ProvidedPaths, ProviderType, Slug, SpaceID, TargetID, ToolchainType, UnitID, UpdatedAt, UpstreamRevisionNum, UpstreamSpaceID, UpstreamUnitID, ValidationErrors, ValidationResults, ValidationTriggerIDs, ValidationWarnings, ValueTriggerIDs, Values.
 	//
 	// The Units to create entities from, with from_backing_units.
 	//

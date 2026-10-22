@@ -104,7 +104,7 @@ func lintWalk(node *yaml.Node, path string, config LintConfig, findings *[]LintF
 			seen[keyName] = true
 
 			// Empty values: implicit null from "key:" with no value
-			if config.NoEmptyValues && valNode.Tag == "!!null" && valNode.Value == "" {
+			if config.NoEmptyValues && isEmptyValue(valNode) {
 				*findings = append(*findings, LintFinding{
 					Rule:    "no-empty-values",
 					Message: fmt.Sprintf("empty value for key %q; use an explicit value or \"null\"", keyName),
@@ -142,6 +142,39 @@ func lintWalk(node *yaml.Node, path string, config LintConfig, findings *[]LintF
 			})
 		}
 	}
+}
+
+// isEmptyValue reports whether a mapping value is an implicit null, written as "key:" with
+// nothing after it.
+func isEmptyValue(node *yaml.Node) bool {
+	return node.Kind == yaml.ScalarNode && node.Tag == "!!null" && node.Value == ""
+}
+
+// SetExplicitNulls writes "null" for every mapping value that is an implicit null, the values
+// the no-empty-values rule reports, and returns how many it changed. Every YAML parser already
+// reads such a value as null, so the data means the same thing afterwards.
+func SetExplicitNulls(node *yaml.Node) int {
+	if node == nil {
+		return 0
+	}
+	changed := 0
+	switch node.Kind {
+	case yaml.DocumentNode, yaml.SequenceNode:
+		for _, child := range node.Content {
+			changed += SetExplicitNulls(child)
+		}
+	case yaml.MappingNode:
+		for i := 0; i+1 < len(node.Content); i += 2 {
+			valNode := node.Content[i+1]
+			if isEmptyValue(valNode) {
+				valNode.Value = "null"
+				changed++
+				continue
+			}
+			changed += SetExplicitNulls(valNode)
+		}
+	}
+	return changed
 }
 
 // lintCheckAnchor reports if a node has an anchor defined.

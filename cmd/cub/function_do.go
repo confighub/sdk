@@ -179,8 +179,8 @@ var functionIncludeLinkFindings bool
 // invocation request takes them: newFunctionInvocationsRequest reads them for all of them, and a
 // validating function such as vet-no-link-findings is most often run by function vet.
 func addIncludeContextFlags(flags *pflag.FlagSet) {
-	flags.BoolVar(&functionIncludeConflicts, "include-conflicts", false, "pass each unit's outstanding merge conflicts to the functions, for functions that reason about them (e.g. vet-no-merge-conflicts)")
-	flags.BoolVar(&functionIncludeLinkFindings, "include-link-findings", false, "pass what the resolves of each unit's links could not do to the functions, for functions that reason about it (e.g. vet-no-link-findings)")
+	flags.BoolVar(&functionIncludeConflicts, "include-conflicts", false, "pass each unit's outstanding merge conflicts to the functions, for functions that reason about them (e.g. vet-no-merge-conflicts); triggers run with --trigger always get them")
+	flags.BoolVar(&functionIncludeLinkFindings, "include-link-findings", false, "pass what the resolves of each unit's links could not do to the functions, for functions that reason about it (e.g. vet-no-link-findings); triggers run with --trigger always get them")
 }
 
 var revisionIdentifier string

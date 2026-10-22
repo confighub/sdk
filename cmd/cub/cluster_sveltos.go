@@ -72,10 +72,68 @@ const (
 	clusterSveltosPollIntervalWithArgobot = "10m0s"
 )
 
+// clusterSveltosOptions says how clusterSveltosEnsure should get Sveltos into a
+// cluster: the counterpart of clusterArgoOptions.
+type clusterSveltosOptions struct {
+	// installIfAbsent installs Sveltos when the namespace has no
+	// addon-controller; false turns its absence into an error (--no-install).
+	installIfAbsent bool
+	// nodePort, when positive, exposes the dashboard on that NodePort. `cub
+	// cluster up` sets it to the host port it mapped into the kind node; an
+	// attached cluster leaves it 0.
+	nodePort int
+}
+
+// clusterSveltosEnsure makes sure Sveltos is in the cluster: installs it if
+// absent (per opts), and reports whether it did. A pre-existing Sveltos is
+// left as found.
+func clusterSveltosEnsure(ctx context.Context, kubeconfigPath string, opts clusterSveltosOptions, out io.Writer) (bool, error) {
+	present, err := clusterSveltosPresent(ctx, kubeconfigPath)
+	if err != nil {
+		return false, err
+	}
+	if present {
+		fmt.Fprintf(out, "Sveltos already present in namespace %q; leaving it in place.\n", clusterSveltosNamespace)
+		return false, nil
+	}
+	if !opts.installIfAbsent {
+		return false, fmt.Errorf("Sveltos not found in namespace %q (no addon-controller Deployment) and --no-install was given", clusterSveltosNamespace)
+	}
+	if err := clusterSveltosInstall(ctx, kubeconfigPath, opts.nodePort, out); err != nil {
+		return false, err
+	}
+	return true, nil
+}
+
+// clusterSveltosPresent reports whether an addon-controller Deployment exists
+// in the Sveltos namespace. A missing namespace or Deployment is "absent"; any
+// other kubectl failure is an error, as for clusterArgoPresent.
+func clusterSveltosPresent(ctx context.Context, kubeconfigPath string) (bool, error) {
+	out, err := clusterKubectlOutput(ctx, kubeconfigPath,
+		"get", "deployment", "addon-controller", "-n", clusterSveltosNamespace, "--ignore-not-found", "-o", "name")
+	if err != nil {
+		return false, fmt.Errorf("check for an existing Sveltos: %w", err)
+	}
+	return len(bytes.TrimSpace(out)) > 0, nil
+}
+
+// clusterSveltosHasOCICreds reports whether an earlier attachment left the
+// registry credentials Secret in the cluster: the Sveltos counterpart of
+// clusterArgoExistingOCICredsURL. The Secret records no registry URL, so only
+// its presence is known.
+func clusterSveltosHasOCICreds(ctx context.Context, kubeconfigPath string) (bool, error) {
+	out, err := clusterKubectlOutput(ctx, kubeconfigPath,
+		"get", "secret", clusterSveltosGatewaySecret, "-n", clusterSveltosNamespace, "--ignore-not-found", "-o", "name")
+	if err != nil {
+		return false, fmt.Errorf("check for an existing %s Secret: %w", clusterSveltosGatewaySecret, err)
+	}
+	return len(bytes.TrimSpace(out)) > 0, nil
+}
+
 // clusterSveltosInstall applies the ServiceMonitor CRD, the Sveltos manifest
 // and the dashboard manifest, creates the dashboard's admin ServiceAccount,
-// waits for every Sveltos Deployment to be Available, and exposes the dashboard
-// on the given NodePort.
+// waits for every Sveltos Deployment to be Available, and, when nodePort is
+// positive, exposes the dashboard on that NodePort.
 func clusterSveltosInstall(ctx context.Context, kubeconfigPath string, nodePort int, out io.Writer) error {
 	fmt.Fprintln(out, "Applying the ServiceMonitor CRD the Sveltos manifest needs...")
 	if err := clusterKubectl(ctx, kubeconfigPath, nil, out,
@@ -119,14 +177,16 @@ subjects:
 		return err
 	}
 
-	fmt.Fprintf(out, "Patching dashboard Service to NodePort %d...\n", nodePort)
-	svcPatch := fmt.Sprintf(
-		`{"spec":{"type":"NodePort","ports":[{"port":80,"targetPort":5173,"protocol":"TCP","nodePort":%d}]}}`,
-		nodePort)
-	if err := clusterKubectl(ctx, kubeconfigPath, nil, out,
-		"patch", "service", "dashboard", "-n", clusterSveltosNamespace,
-		"--type", "merge", "-p", svcPatch); err != nil {
-		return err
+	if nodePort > 0 {
+		fmt.Fprintf(out, "Patching dashboard Service to NodePort %d...\n", nodePort)
+		svcPatch := fmt.Sprintf(
+			`{"spec":{"type":"NodePort","ports":[{"port":80,"targetPort":5173,"protocol":"TCP","nodePort":%d}]}}`,
+			nodePort)
+		if err := clusterKubectl(ctx, kubeconfigPath, nil, out,
+			"patch", "service", "dashboard", "-n", clusterSveltosNamespace,
+			"--type", "merge", "-p", svcPatch); err != nil {
+			return err
+		}
 	}
 
 	fmt.Fprintln(out, "Waiting for the Sveltos Deployments to be Available (timeout 5m)...")
@@ -265,11 +325,12 @@ func clusterSveltosSetCascade(ctx context.Context, kubeconfigPath, name string, 
 
 // clusterSveltosDeleteProfile deletes a deployment's ClusterProfile after
 // setting its cascade (see clusterSveltosSetCascade). With cascade the delete
-// waits for Sveltos to withdraw what the profile deployed.
-func clusterSveltosDeleteProfile(ctx context.Context, kubeconfigPath, name string, cascade bool, out io.Writer) error {
+// waits for Sveltos to withdraw what the profile deployed. It reports whether
+// the profile existed.
+func clusterSveltosDeleteProfile(ctx context.Context, kubeconfigPath, name string, cascade bool, out io.Writer) (bool, error) {
 	exists, err := clusterSveltosSetCascade(ctx, kubeconfigPath, name, cascade)
 	if err != nil || !exists {
-		return err
+		return exists, err
 	}
 	verb := "leaving what it deployed"
 	if cascade {
@@ -278,9 +339,9 @@ func clusterSveltosDeleteProfile(ctx context.Context, kubeconfigPath, name strin
 	fmt.Fprintf(out, "  deleting ClusterProfile %q (%s)...\n", name, verb)
 	if _, err := clusterKubectlOutput(ctx, kubeconfigPath,
 		"delete", "clusterprofile", name, "--ignore-not-found", "--timeout=5m"); err != nil {
-		return fmt.Errorf("delete ClusterProfile %q: %w", name, err)
+		return true, fmt.Errorf("delete ClusterProfile %q: %w", name, err)
 	}
-	return nil
+	return true, nil
 }
 
 // clusterSveltosRootProfileManifest returns the YAML for the root

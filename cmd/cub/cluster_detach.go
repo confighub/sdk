@@ -24,19 +24,22 @@ var clusterDetachCmd = &cobra.Command{
 	Use:   "detach <name>",
 	Args:  cobra.MaximumNArgs(1),
 	Short: "Remove a cluster's ConfigHub wiring and leave it running",
-	Long: `The inverse of "cub cluster attach". The cluster is left running and Argo CD
-left installed; what goes is the wiring:
+	Long: `The inverse of "cub cluster attach". The cluster is left running and its
+controller — Argo CD, Sveltos or Flux — left installed; what goes is the
+wiring:
 
-  - every Argo Application that came from the apps Space — the root app-of-apps
-    and the child Applications — is deleted WITHOUT cascading, so the workloads
-    they deployed stay;
+  - everything that came from the apps Space — the root and the children: Argo
+    Applications, Sveltos ClusterProfiles, or Flux OCIRepositories and
+    Kustomizations — is deleted WITHOUT cascading, so the workloads they
+    deployed stay (Applications lose their finalizers, ClusterProfiles are set
+    to LeavePolicies, Kustomizations are suspended first);
   - argobot, cub's own bot, is deleted with its resources;
   - the registry credentials Secret is deleted;
   - the local kubeconfig, env file and record are removed.
 
 By default the ConfigHub side is left in place — the cluster Space with its OCI
-target and argobot's Channel, the apps Space holding the Argo Application
-Units, any deployment Spaces bound to the target, and the cluster's service
+target and argobot's Channel, the apps Space holding the controller's Units,
+any deployment Spaces bound to the target, and the cluster's service
 account. That config outlives the attachment and can be re-attached to a
 cluster later, so detaching does not throw it away.
 
@@ -81,7 +84,7 @@ func clusterDetachRun(out io.Writer, name string, force, deleteConfig bool) erro
 		return fmt.Errorf("cluster %q was created by 'cub cluster up'; 'cub cluster down %s' detaches and deletes it", name, name)
 	}
 
-	if err := clusterDetach(ctx, out, name, clusterKubeconfigPath(name), match); err != nil {
+	if err := clusterDetach(ctx, out, name, clusterKubeconfigPath(name), match, clusterControllerFrom(rec, match)); err != nil {
 		return err
 	}
 	clusterRemoveLocalFiles(out, name)
@@ -89,86 +92,166 @@ func clusterDetachRun(out io.Writer, name string, force, deleteConfig bool) erro
 }
 
 // clusterDetach removes the ConfigHub wiring from an attached cluster and
-// nothing else: the cluster keeps running, Argo CD stays installed (it may
-// predate the attachment), and the workloads Argo deployed stay deployed.
+// nothing else: the cluster keeps running, the controller stays installed (it
+// may predate the attachment), and the workloads it deployed stay deployed.
 //
-// The Applications that came from the apps Space are deleted with their
-// finalizers stripped, so Argo orphans their resources instead of deleting
-// them. The root Application carries resources-finalizer, and a plain delete
-// of it would CASCADE through every child Application and everything they
-// deployed — stripping it first is the single most consequential step here.
-// argobot is the exception: it is cub's own bot, its identity is the cluster's
-// service account, and a bot left behind without a working identity is noise,
-// so its Application is deleted WITH cascade.
+// What came from the apps Space is deleted so the controller orphans what it
+// deployed instead of deleting it. With Argo CD, the Applications' finalizers
+// are stripped: the root Application carries resources-finalizer, and a plain
+// delete of it would CASCADE through every child Application and everything
+// they deployed — stripping it first is the single most consequential step
+// here. With Sveltos, each ClusterProfile is set to LeavePolicies; with Flux,
+// each Kustomization is suspended, which also keeps a pruning root from
+// deleting the children. argobot is the exception: it is cub's own bot, its
+// identity is the cluster's service account, and a bot left behind without a
+// working identity is noise, so it is deleted WITH cascade.
 //
 // Without the kubeconfig, or with an unreachable cluster, the in-cluster
 // cleanup is skipped with a note rather than failed: the ConfigHub side can
 // still be handled, and the user is told what remains.
-func clusterDetach(ctx context.Context, out io.Writer, name, kubeconfigPath string, match *clusterSpace) error {
+func clusterDetach(ctx context.Context, out io.Writer, name, kubeconfigPath string, match *clusterSpace, controller string) error {
 	fmt.Fprintf(out, "Detaching cluster %q (the cluster itself is left running)...\n", name)
 	if _, err := os.Stat(kubeconfigPath); err != nil {
 		fmt.Fprintf(out, "  no kubeconfig at %s; skipping in-cluster cleanup\n", kubeconfigPath)
 		return nil
 	}
-	ns, err := clusterKubectlOutput(ctx, kubeconfigPath, "get", "namespace", clusterArgoNamespace, "--ignore-not-found", "-o", "name")
+	controllerNamespace := clusterControllerNamespace(controller)
+	ns, err := clusterKubectlOutput(ctx, kubeconfigPath, "get", "namespace", controllerNamespace, "--ignore-not-found", "-o", "name")
 	if err != nil {
 		fmt.Fprintf(out, "  cannot reach the cluster; skipping in-cluster cleanup: %v\n", err)
 		return nil
 	}
 	if len(bytes.TrimSpace(ns)) == 0 {
-		fmt.Fprintf(out, "  no %q namespace in the cluster; nothing to detach\n", clusterArgoNamespace)
+		fmt.Fprintf(out, "  no %q namespace in the cluster; nothing to detach\n", controllerNamespace)
 		return nil
 	}
 
-	// The Applications to remove: whatever the apps Space manifests, which is
-	// the root app-of-apps plus every child. With no Space to ask (--force), the
-	// root is still known by convention.
-	appsSlug := name + clusterArgoAppsSuffix
+	// The children to remove: whatever the apps Space manifests besides the
+	// root. With no Space to ask (--force), only the root is known, by
+	// convention.
+	appsSlug := name + clusterAppsSuffix(controller)
 	if match != nil {
-		appsSlug = match.SpaceSlug + clusterArgoAppsSuffix
+		appsSlug = match.SpaceSlug + clusterAppsSuffix(controller)
 	}
-	apps := []string{appsSlug}
+	var children []string
 	if match != nil {
 		if appsSpace, err := resolveSpace(appsSlug, "SpaceID"); err == nil {
 			slugs, err := clusterListUnitSlugs(appsSpace.Space.SpaceID)
 			if err != nil {
-				fmt.Fprintf(out, "  warning: could not list the apps space's Units, removing only the root Application: %v\n", err)
+				fmt.Fprintf(out, "  warning: could not list the apps space's Units, removing only the root: %v\n", err)
 			}
 			for _, s := range slugs {
-				if !slices.Contains(apps, s) {
-					apps = append(apps, s)
+				if s != clusterRootUnitSlug && !slices.Contains(children, s) {
+					children = append(children, s)
 				}
 			}
 		}
 	}
 
-	argobotApp := clusterBotSpaceOf(match)
+	argobotName := clusterBotSpaceOf(match)
 	if match == nil {
-		argobotApp = clusterArgobotComponent + "-" + name
+		argobotName = clusterArgobotComponent + "-" + name
 	}
-	argobotRemoved := false
-	for _, app := range apps {
-		cascade := app == argobotApp
-		removed, err := clusterArgoDeleteApplication(ctx, kubeconfigPath, app, cascade, out)
-		if err != nil {
-			return err
-		}
-		if removed && cascade {
-			argobotRemoved = true
-		}
+	var argobotRemoved bool
+	var credsSecret, left string
+	switch controller {
+	case clusterControllerSveltos:
+		argobotRemoved, err = clusterDetachSveltos(ctx, out, kubeconfigPath, children, argobotName)
+		credsSecret = clusterSveltosGatewaySecret
+		left = "Sveltos left installed in %q; workloads deployed by the removed ClusterProfiles left running\n"
+	case clusterControllerFlux:
+		argobotRemoved, err = clusterDetachFlux(ctx, out, kubeconfigPath, children, argobotName)
+		credsSecret = clusterFluxCredsSecret
+		left = "Flux left installed in %q; workloads applied by the removed Kustomizations left running\n"
+	default:
+		argobotRemoved, err = clusterDetachArgo(ctx, out, kubeconfigPath, appsSlug, children, argobotName)
+		credsSecret = clusterArgoOCICredsSecret
+		left = "Argo CD left installed in %q; workloads deployed by the removed Applications left running\n"
+	}
+	if err != nil {
+		return err
 	}
 	if argobotRemoved {
-		// argobot's Namespace holds the key Secret cub applied out of band;
-		// Argo does not track either, so they go here.
+		// argobot's Namespace holds the key Secret cub applied out of band; the
+		// controller does not track either, so they go here.
 		if err := clusterKubectl(ctx, kubeconfigPath, nil, out,
 			"delete", "namespace", clusterArgobotNamespace, "--ignore-not-found", "--wait=false"); err != nil {
 			fmt.Fprintf(out, "  warning: %v\n", err)
 		}
 	}
 	if err := clusterKubectl(ctx, kubeconfigPath, nil, out,
-		"delete", "secret", clusterArgoOCICredsSecret, "-n", clusterArgoNamespace, "--ignore-not-found"); err != nil {
+		"delete", "secret", credsSecret, "-n", controllerNamespace, "--ignore-not-found"); err != nil {
 		fmt.Fprintf(out, "  warning: %v\n", err)
 	}
-	fmt.Fprintf(out, "  Argo CD left installed in %q; workloads deployed by the removed Applications left running\n", clusterArgoNamespace)
+	fmt.Fprintf(out, "  "+left, controllerNamespace)
 	return nil
+}
+
+// clusterDetachArgo deletes the root Application, named for the apps Space,
+// then every child, orphaning what they deployed, except argobot's, which goes
+// with its resources. It reports whether argobot's Application was removed.
+func clusterDetachArgo(ctx context.Context, out io.Writer, kubeconfigPath, root string, children []string, argobotName string) (bool, error) {
+	argobotRemoved := false
+	for _, app := range append([]string{root}, children...) {
+		cascade := app == argobotName
+		removed, err := clusterArgoDeleteApplication(ctx, kubeconfigPath, app, cascade, out)
+		if err != nil {
+			return argobotRemoved, err
+		}
+		if removed && cascade {
+			argobotRemoved = true
+		}
+	}
+	return argobotRemoved, nil
+}
+
+// clusterDetachSveltos deletes the root ClusterProfile, whose LeavePolicies
+// leaves the child profiles in place, then every child with LeavePolicies set,
+// so what they deployed stays, except argobot's, which is withdrawn. It
+// reports whether argobot's profile was removed.
+func clusterDetachSveltos(ctx context.Context, out io.Writer, kubeconfigPath string, children []string, argobotName string) (bool, error) {
+	argobotRemoved := false
+	for _, profile := range append([]string{clusterSveltosRootProfile}, children...) {
+		cascade := profile == argobotName
+		removed, err := clusterSveltosDeleteProfile(ctx, kubeconfigPath, profile, cascade, out)
+		if err != nil {
+			return argobotRemoved, err
+		}
+		if removed && cascade {
+			argobotRemoved = true
+		}
+	}
+	return argobotRemoved, nil
+}
+
+// clusterDetachFlux deletes the root Kustomization and OCIRepository, suspended
+// first so Flux neither prunes the children nor re-applies them, then every
+// child, suspended so what it applied stays, except argobot's, which is deleted
+// with what it applied. It reports whether argobot's Kustomization was
+// removed.
+func clusterDetachFlux(ctx context.Context, out io.Writer, kubeconfigPath string, children []string, argobotName string) (bool, error) {
+	argobotRemoved := false
+	for _, kustomization := range append([]string{clusterFluxRootName}, children...) {
+		cascade := kustomization == argobotName
+		removed, err := clusterFluxDeleteDeployment(ctx, kubeconfigPath, kustomization, cascade, out)
+		if err != nil {
+			return argobotRemoved, err
+		}
+		if removed && cascade {
+			argobotRemoved = true
+		}
+	}
+	return argobotRemoved, nil
+}
+
+// clusterControllerNamespace returns the namespace controller runs in, and
+// keeps its registry credentials in.
+func clusterControllerNamespace(controller string) string {
+	switch controller {
+	case clusterControllerSveltos:
+		return clusterSveltosNamespace
+	case clusterControllerFlux:
+		return clusterFluxNamespace
+	}
+	return clusterArgoNamespace
 }

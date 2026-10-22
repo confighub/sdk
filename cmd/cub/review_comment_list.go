@@ -58,6 +58,7 @@ const maxReviewCommentListText = 60
 
 func init() {
 	addStandardListFlags(reviewCommentListCmd)
+	enableWherePermissionFlag(reviewCommentListCmd)
 	enableListPagingFlags(reviewCommentListCmd)
 	enableOptionalSpace(reviewCommentListCmd)
 	enableViewFlag(reviewCommentListCmd)
@@ -122,6 +123,9 @@ func apiListReviewComments(spaceID, unitID uuid.UUID, whereFilter string, select
 	}
 	if contains != "" {
 		params.Contains = &contains
+	}
+	if wherePermission != "" {
+		params.WherePermission = enumPtr[goclientnew.ListReviewCommentsParamsWherePermission](wherePermission)
 	}
 	if view := listViewFor("cub review-comment list"); view != "" {
 		params.View = &view

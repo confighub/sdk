@@ -84,6 +84,75 @@ func clusterFluxInstall(ctx context.Context, kubeconfigPath string, out io.Write
 	return nil
 }
 
+// clusterFluxEnsure makes sure Flux is in the cluster: installs it if absent
+// and installIfAbsent, and reports whether it did. A pre-existing Flux is left
+// as found.
+func clusterFluxEnsure(ctx context.Context, kubeconfigPath string, installIfAbsent bool, out io.Writer) (bool, error) {
+	present, err := clusterFluxPresent(ctx, kubeconfigPath)
+	if err != nil {
+		return false, err
+	}
+	if present {
+		fmt.Fprintf(out, "Flux already present in namespace %q; leaving it in place.\n", clusterFluxNamespace)
+		return false, nil
+	}
+	if !installIfAbsent {
+		return false, fmt.Errorf("Flux not found in namespace %q (no kustomize-controller Deployment) and --no-install was given", clusterFluxNamespace)
+	}
+	if err := clusterFluxInstall(ctx, kubeconfigPath, out); err != nil {
+		return false, err
+	}
+	return true, nil
+}
+
+// clusterFluxPresent reports whether a kustomize-controller Deployment exists
+// in the Flux namespace. A missing namespace or Deployment is "absent"; any
+// other kubectl failure is an error, as for clusterArgoPresent.
+func clusterFluxPresent(ctx context.Context, kubeconfigPath string) (bool, error) {
+	out, err := clusterKubectlOutput(ctx, kubeconfigPath,
+		"get", "deployment", "kustomize-controller", "-n", clusterFluxNamespace, "--ignore-not-found", "-o", "name")
+	if err != nil {
+		return false, fmt.Errorf("check for an existing Flux: %w", err)
+	}
+	return len(bytes.TrimSpace(out)) > 0, nil
+}
+
+// clusterFluxExistingOCICredsHost returns the registry host of the credentials
+// Secret an earlier attachment left in the cluster, or "" when there is none:
+// the Flux counterpart of clusterArgoExistingOCICredsURL.
+func clusterFluxExistingOCICredsHost(ctx context.Context, kubeconfigPath string) (string, error) {
+	raw, err := clusterKubectlOutput(ctx, kubeconfigPath,
+		"get", "secret", clusterFluxCredsSecret, "-n", clusterFluxNamespace, "--ignore-not-found",
+		"-o", `jsonpath={.data.\.dockerconfigjson}`)
+	if err != nil {
+		return "", fmt.Errorf("check for an existing %s Secret: %w", clusterFluxCredsSecret, err)
+	}
+	if len(bytes.TrimSpace(raw)) == 0 {
+		return "", nil
+	}
+	return clusterFluxCredsHost(bytes.TrimSpace(raw))
+}
+
+// clusterFluxCredsHost returns the registry host a base64-encoded
+// .dockerconfigjson holds credentials for.
+func clusterFluxCredsHost(encoded []byte) (string, error) {
+	decoded, err := base64.StdEncoding.DecodeString(string(encoded))
+	if err != nil {
+		return "", fmt.Errorf("decode the %s Secret: %w", clusterFluxCredsSecret, err)
+	}
+	var cfg struct {
+		Auths map[string]json.RawMessage `json:"auths"`
+	}
+	if err := json.Unmarshal(decoded, &cfg); err != nil {
+		return "", fmt.Errorf("decode the %s Secret: %w", clusterFluxCredsSecret, err)
+	}
+	for host := range cfg.Auths {
+		return host, nil
+	}
+	// A Secret by that name with no registry in it still marks an attachment.
+	return clusterFluxCredsSecret, nil
+}
+
 // clusterFluxCredsManifest returns the dockerconfigjson Secret every
 // OCIRepository's secretRef names: a long-lived token of the cluster's service
 // account as the password for the registry at ociURL, under the username
@@ -286,11 +355,11 @@ func clusterFluxWaitRootReleased(ctx context.Context, kubeconfigPath, name strin
 // clusterFluxDeleteDeployment deletes a deployment's Kustomization and
 // OCIRepository, after setting the Kustomization's cascade (see
 // clusterFluxSetCascade). With cascade the delete waits for Flux to delete what
-// the Kustomization applied.
-func clusterFluxDeleteDeployment(ctx context.Context, kubeconfigPath, name string, cascade bool, out io.Writer) error {
+// the Kustomization applied. It reports whether the Kustomization existed.
+func clusterFluxDeleteDeployment(ctx context.Context, kubeconfigPath, name string, cascade bool, out io.Writer) (bool, error) {
 	exists, err := clusterFluxSetCascade(ctx, kubeconfigPath, name, cascade)
 	if err != nil {
-		return err
+		return false, err
 	}
 	if exists {
 		verb := "orphaning what it applied"
@@ -300,14 +369,14 @@ func clusterFluxDeleteDeployment(ctx context.Context, kubeconfigPath, name strin
 		fmt.Fprintf(out, "  deleting Kustomization %q (%s)...\n", name, verb)
 		if _, err := clusterKubectlOutput(ctx, kubeconfigPath,
 			"delete", "kustomization", name, "-n", clusterFluxNamespace, "--ignore-not-found", "--timeout=5m"); err != nil {
-			return fmt.Errorf("delete Kustomization %q: %w", name, err)
+			return true, fmt.Errorf("delete Kustomization %q: %w", name, err)
 		}
 	}
 	if _, err := clusterKubectlOutput(ctx, kubeconfigPath,
 		"delete", "ocirepository", name, "-n", clusterFluxNamespace, "--ignore-not-found"); err != nil {
-		return fmt.Errorf("delete OCIRepository %q: %w", name, err)
+		return exists, fmt.Errorf("delete OCIRepository %q: %w", name, err)
 	}
-	return nil
+	return exists, nil
 }
 
 // clusterFluxPollInterval returns the OCIRepositories' poll interval for a

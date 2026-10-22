@@ -223,23 +223,23 @@ func (s *Store) DeleteTokenData(ctx *Context) error {
 	return nil
 }
 
-// LoadOrInit loads the config at path, or — when no config file exists yet —
+// LoadOrInit loads the config in dir, or — when no config file exists yet —
 // creates a fresh one with a single default context named defaultContextName
 // (server and space defaulted), makes it current, and persists it. It is the
-// first-run initialization a CLI runs on startup. If path is empty,
-// [DefaultConfigPath] is used.
-func LoadOrInit(path, defaultContextName string) (*Store, error) {
-	abs, err := resolveConfigPath(path)
+// first-run initialization a CLI runs on startup. dir is the config directory,
+// as for [LoadConfig]; if it is empty, [DefaultConfigDir] is used.
+func LoadOrInit(dir, defaultContextName string) (*Store, error) {
+	abs, err := resolveConfigDir(dir)
 	if err != nil {
 		return nil, err
 	}
-	if _, statErr := os.Stat(abs); statErr == nil {
+	store := newStore(abs)
+	if _, statErr := os.Stat(store.configPath); statErr == nil {
 		return LoadConfig(abs)
 	} else if !os.IsNotExist(statErr) {
-		return nil, fmt.Errorf("stat config %s: %w", abs, statErr)
+		return nil, fmt.Errorf("stat config %s: %w", store.configPath, statErr)
 	}
 
-	store := newStore(abs)
 	if _, err := store.CreateContext(defaultContextName, "", "", ""); err != nil {
 		return nil, err
 	}

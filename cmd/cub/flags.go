@@ -23,6 +23,7 @@ var filter = ""
 // Shared by `run` and the function subcommands.
 var whereResource string
 var contains = ""
+var wherePermission = ""
 var includeHidden = ""
 var verbose = false
 var quiet = false
@@ -323,6 +324,11 @@ func enableContainsFlag(cmd *cobra.Command) {
 	cmd.Flags().StringVar(&contains, "contains", "", "Free text search for entities containing the specified text. Searches across string fields (like Slug, DisplayName) and map fields (like Labels, Annotations). Case-insensitive matching. Can be combined with --where using AND logic. Example: \"backend\" to find entities with backend in any searchable field")
 }
 
+// enableWherePermissionFlag is for a list whose API takes where_permission.
+func enableWherePermissionFlag(cmd *cobra.Command) {
+	cmd.Flags().StringVar(&wherePermission, "where-permission", "", "Only list the entities on which you have this permission, as well as View, which every entity listed needs: those an action that needs it would not be refused on. One of Manage, Edit, Use or View, or another the entity type's Permissions grant, such as CreateChildren on a space, Approve on a unit, or Impersonate on a service account. Example: \"Edit\" to list the entities you can change")
+}
+
 // enableIncludeHiddenFlag goes with --where: whatever selects entities, to list or to act on,
 // leaves out hidden ones unless asked for them.
 func enableIncludeHiddenFlag(cmd *cobra.Command) {
@@ -336,6 +342,12 @@ func includeHiddenParam() *string {
 		return nil
 	}
 	return &includeHidden
+}
+
+// enumPtr is a pointer to s as the value of a parameter whose generated type is an enum of strings.
+func enumPtr[T ~string](s string) *T {
+	v := T(s)
+	return &v
 }
 
 // enableWaitFlagWithDefault allows setting a custom default for the wait flag

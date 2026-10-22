@@ -63,6 +63,7 @@ var changeWorkflowCustomColumnDependencies = map[string][]string{}
 
 func init() {
 	addStandardListFlags(changeworkflowListCmd)
+	enableWherePermissionFlag(changeworkflowListCmd)
 	enableListPagingFlags(changeworkflowListCmd)
 	enableViewFlag(changeworkflowListCmd)
 	changeworkflowCmd.AddCommand(changeworkflowListCmd)
@@ -153,13 +154,14 @@ func apiListAllChangeWorkflows(where cubapi.Where, selectParam string, filterPar
 			changeWorkflowAliases, changeWorkflowCustomColumnDependencies, changeWorkflowBaseSelectFields)
 	})
 	return cubapi.ListChangeWorkflows(ctx, cubClient, where, cubapi.ListOpts{
-		Limit:         listLimit,
-		OrderBy:       listOrderBy,
-		Select:        cubapi.SelectFields(selectValue),
-		Include:       changeWorkflowListInclude,
-		Filter:        filterParam,
-		Contains:      contains,
-		IncludeHidden: includeHidden,
-		View:          listViewFor("cub changeworkflow list"),
+		Limit:           listLimit,
+		OrderBy:         listOrderBy,
+		Select:          cubapi.SelectFields(selectValue),
+		Include:         changeWorkflowListInclude,
+		Filter:          filterParam,
+		Contains:        contains,
+		WherePermission: wherePermission,
+		IncludeHidden:   includeHidden,
+		View:            listViewFor("cub changeworkflow list"),
 	})
 }

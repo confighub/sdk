@@ -97,6 +97,14 @@ func clusterOpenRun(out io.Writer, name string, printPassword bool) error {
 		return err
 	} else if env["ARGOCD_SERVER"] == "" && env["SVELTOS_DASHBOARD"] == "" {
 		if rec != nil && rec.Origin == clusterOriginAttach {
+			switch clusterControllerFrom(rec, nil) {
+			case clusterControllerSveltos:
+				return fmt.Errorf("cluster %q was attached, and attach does not expose the Sveltos dashboard on a host port; reach it with\n  kubectl --kubeconfig %s port-forward svc/dashboard -n %s 8080:80\nopen http://localhost:8080, and log in with a token from\n  kubectl --kubeconfig %s create token %s --duration=%s",
+					name, clusterKubeconfigPath(name), clusterSveltosNamespace,
+					clusterKubeconfigPath(name), clusterSveltosDashboardAccount, clusterSveltosDashboardTokenDuration)
+			case clusterControllerFlux:
+				return clusterOpenFlux(out, name)
+			}
 			return fmt.Errorf("cluster %q was attached, and attach does not expose Argo CD on a host port; reach the UI with\n  kubectl --kubeconfig %s port-forward svc/argocd-server -n %s 8080:80\nand open http://localhost:8080",
 				name, clusterKubeconfigPath(name), clusterArgoNamespace)
 		}

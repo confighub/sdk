@@ -64,6 +64,7 @@ var tagCustomColumnDependencies = map[string][]string{}
 
 func init() {
 	addStandardListFlags(tagListCmd)
+	enableWherePermissionFlag(tagListCmd)
 	enableListPagingFlags(tagListCmd)
 	enableViewFlag(tagListCmd)
 	tagCmd.AddCommand(tagListCmd)
@@ -143,13 +144,14 @@ func apiListAllTags(where cubapi.Where, selectParam string, filterParam string) 
 		return buildSelectList("Tag", listColumnsFor("cub tag list"), tagListInclude, defaultTagColumns, tagAliases, tagCustomColumnDependencies, tagBaseSelectFields)
 	})
 	return cubapi.ListTags(ctx, cubClient, where, cubapi.ListOpts{
-		Limit:         listLimit,
-		OrderBy:       listOrderBy,
-		Select:        cubapi.SelectFields(selectValue),
-		Include:       tagListInclude,
-		Filter:        filterParam,
-		Contains:      contains,
-		IncludeHidden: includeHidden,
-		View:          listViewFor("cub tag list"),
+		Limit:           listLimit,
+		OrderBy:         listOrderBy,
+		Select:          cubapi.SelectFields(selectValue),
+		Include:         tagListInclude,
+		Filter:          filterParam,
+		Contains:        contains,
+		WherePermission: wherePermission,
+		IncludeHidden:   includeHidden,
+		View:            listViewFor("cub tag list"),
 	})
 }

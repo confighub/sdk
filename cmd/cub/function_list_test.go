@@ -16,7 +16,7 @@ func TestFunctionSpecFilePath(t *testing.T) {
 
 	t.Run("context manager wins", func(t *testing.T) {
 		dir := t.TempDir()
-		cm, err := NewContextManagerWithPath(filepath.Join(dir, "config.yaml"))
+		cm, err := NewContextManagerWithDir(dir)
 		if err != nil {
 			t.Fatal(err)
 		}

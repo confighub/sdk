@@ -192,11 +192,9 @@ func globalPreRun(cmd *cobra.Command, args []string) error {
 
 func main() {
 	var err error
-	// An empty path means "work it out", which cubapi.DefaultConfigPath does by
-	// joining config.yaml onto CUB_CONFIG. Deciding it here as well only made
-	// the two disagree: this stat'd the value and treated a path that did not
-	// exist yet as the file, while cubapi took it verbatim as the file always.
-	contextManager, err = NewContextManagerWithPath("")
+	// An empty directory means "work it out", which cubapi.DefaultConfigDir does
+	// from CUB_CONFIG. Deciding it here as well only made the two disagree.
+	contextManager, err = NewContextManagerWithDir("")
 	if err != nil {
 		failOnError(err)
 	}

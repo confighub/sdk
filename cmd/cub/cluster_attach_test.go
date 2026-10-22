@@ -259,7 +259,9 @@ func TestClusterAttachFlagCombinations(t *testing.T) {
 		{"aws-profile with kind", clusterAttachOptions{name: "x", controller: clusterControllerArgo, provider: clusterProviderKind, awsProfile: "p"}, "--provider eks only"},
 		{"cluster with kubeconfig provider", clusterAttachOptions{name: "x", controller: clusterControllerArgo, provider: clusterProviderKubeconfig, cluster: "c"}, "--cluster applies to"},
 		{"unknown provider", clusterAttachOptions{name: "x", controller: clusterControllerArgo, provider: "gke"}, "--provider \"gke\""},
-		{"sveltos", clusterAttachOptions{name: "x", controller: clusterControllerSveltos, provider: clusterProviderKubeconfig}, "not supported by attach yet"},
+		{"unknown controller", clusterAttachOptions{name: "x", controller: "fleet", provider: clusterProviderKubeconfig}, "--controller \"fleet\""},
+		{"sveltos with eks flags", clusterAttachOptions{name: "x", controller: clusterControllerSveltos, provider: clusterProviderKubeconfig, awsRegion: "r"}, "--provider eks only"},
+		{"flux with eks flags", clusterAttachOptions{name: "x", controller: clusterControllerFlux, provider: clusterProviderKind, kubeContext: "c"}, "--provider kubeconfig only"},
 		{"no name", clusterAttachOptions{controller: clusterControllerArgo}, "a cluster name is required"},
 	}
 	for _, tc := range cases {
@@ -267,6 +269,51 @@ func TestClusterAttachFlagCombinations(t *testing.T) {
 			err := clusterAttachRun(io.Discard, tc.opts)
 			if err == nil || !strings.Contains(err.Error(), tc.want) {
 				t.Errorf("got %v, want an error containing %q", err, tc.want)
+			}
+		})
+	}
+}
+
+func TestClusterArgobotOCIRefFor(t *testing.T) {
+	cases := []struct {
+		controller string
+		flag       string
+		changed    bool
+		want       string
+	}{
+		{clusterControllerArgo, clusterArgobotOCIRef, false, clusterArgobotOCIRef},
+		{clusterControllerSveltos, clusterArgobotOCIRef, false, clusterArgobotSveltosOCIRef},
+		{clusterControllerFlux, clusterArgobotOCIRef, false, clusterArgobotFluxOCIRef},
+		{clusterControllerSveltos, "./argobot", true, "./argobot"},
+		{clusterControllerFlux, "./argobot", true, "./argobot"},
+	}
+	for _, tc := range cases {
+		got, err := clusterArgobotOCIRefFor(tc.controller, tc.flag, tc.changed)
+		if err != nil || got != tc.want {
+			t.Errorf("%s (changed=%v): got %q, %v; want %q", tc.controller, tc.changed, got, err, tc.want)
+		}
+	}
+	if _, err := clusterArgobotOCIRefFor("fleet", "", false); err == nil || !strings.Contains(err.Error(), "--controller \"fleet\"") {
+		t.Errorf("unknown controller: got %v", err)
+	}
+}
+
+func TestClusterControllerFrom(t *testing.T) {
+	cases := []struct {
+		name  string
+		rec   *clusterRecord
+		match *clusterSpace
+		want  string
+	}{
+		{"neither: Argo CD, from before controllers were recorded", nil, nil, clusterControllerArgo},
+		{"record only", &clusterRecord{Controller: clusterControllerFlux}, nil, clusterControllerFlux},
+		{"space wins over record", &clusterRecord{Controller: clusterControllerFlux}, &clusterSpace{Controller: clusterControllerSveltos}, clusterControllerSveltos},
+		{"space without one falls back to record", &clusterRecord{Controller: clusterControllerFlux}, &clusterSpace{}, clusterControllerFlux},
+	}
+	for _, tc := range cases {
+		t.Run(tc.name, func(t *testing.T) {
+			if got := clusterControllerFrom(tc.rec, tc.match); got != tc.want {
+				t.Errorf("got %q, want %q", got, tc.want)
 			}
 		})
 	}

@@ -168,3 +168,25 @@ func TestClientHandsOnWarnings(t *testing.T) {
 		t.Fatalf("warnings = %q, want %q", warnings, want)
 	}
 }
+
+// CUB_CONFIG names the config directory, so a tool without plugin credentials finds the
+// active context, and its token, inside it.
+func TestResolveClientReadsConfigDirectoryFromCUBCONFIG(t *testing.T) {
+	dir := writeConfig(t, twoContextConfig, map[string]TokenData{
+		"prod.json":  {AccessToken: "prod-token"},
+		"local.json": {AccessToken: "local-token"},
+	})
+	t.Setenv("CUB_SERVER", "")
+	t.Setenv("CUB_TOKEN", "")
+	t.Setenv("CUB_SPACE", "")
+	t.Setenv("CUB_CONFIG", dir)
+	t.Setenv("CUB_CONTEXT", "local")
+
+	client, err := ResolveClient(context.Background(), ClientOptions{})
+	if err != nil {
+		t.Fatalf("ResolveClient: %v", err)
+	}
+	if got := client.Server; got != "http://localhost:9090" {
+		t.Fatalf("server = %q, want the local context's", got)
+	}
+}

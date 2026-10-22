@@ -49,6 +49,7 @@ var organizationCustomColumnDependencies = map[string][]string{}
 
 func init() {
 	addStandardListFlags(organizationListCmd)
+	enableWherePermissionFlag(organizationListCmd)
 	enableViewFlag(organizationListCmd)
 	organizationCmd.AddCommand(organizationListCmd)
 }
@@ -63,11 +64,12 @@ func organizationListCmdRun(cmd *cobra.Command, args []string) error {
 		return buildSelectList("Organization", listColumnsFor("cub organization list"), "", defaultOrganizationColumns, organizationAliases, organizationCustomColumnDependencies, organizationBaseSelectFields)
 	})
 	organizations, err := cubapi.ListOrganizations(ctx, cubClient, cubapi.NewWhere(where), cubapi.ListOpts{
-		Select:        cubapi.SelectFields(selectValue),
-		Filter:        filterID,
-		Contains:      contains,
-		IncludeHidden: includeHidden,
-		View:          listViewFor("cub organization list"),
+		Select:          cubapi.SelectFields(selectValue),
+		Filter:          filterID,
+		Contains:        contains,
+		WherePermission: wherePermission,
+		IncludeHidden:   includeHidden,
+		View:            listViewFor("cub organization list"),
 	})
 	if err != nil {
 		return err

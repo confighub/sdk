@@ -5,6 +5,8 @@ package yamlkit
 
 import (
 	"log/slog"
+	"maps"
+	"slices"
 
 	"github.com/confighub/sdk/core/function/api"
 	"github.com/confighub/sdk/core/third_party/gaby"
@@ -332,29 +334,21 @@ func GetPathRegistryForAttributeNameByProperty(
 
 // ResourceTypesForAttribute returns a list of resource types associated with the specified attribute.
 func ResourceTypesForAttribute(attributeName api.AttributeName, resourceProvider ResourceProvider) []api.ResourceType {
-	resourceTypeToPaths := GetPathRegistryForAttributeName(resourceProvider, attributeName)
-	resourceTypes := make([]api.ResourceType, 0, len(resourceTypeToPaths))
-	for resourceType := range resourceTypeToPaths {
-		resourceTypes = append(resourceTypes, resourceType)
-		// Just report all resource types if a wildcard is present
-		if resourceType == api.ResourceTypeAny {
-			break
-		}
-	}
-	return resourceTypes
+	return resourceTypesOf(GetPathRegistryForAttributeName(resourceProvider, attributeName))
 }
 
 // ResourceTypesForPathMap returns a list of resource types from a path map.
+// The list is the wildcard alone when the map has it, since it covers every type, and otherwise
+// the types in order, so a function's signature is the same in every process.
 func ResourceTypesForPathMap(pathMap map[api.ResourceType][]string) []api.ResourceType {
-	resourceTypes := make([]api.ResourceType, 0, len(pathMap))
-	for resourceType := range pathMap {
-		resourceTypes = append(resourceTypes, resourceType)
-		// Just report all resource types if a wildcard is present
-		if resourceType == api.ResourceTypeAny {
-			break
-		}
+	return resourceTypesOf(pathMap)
+}
+
+func resourceTypesOf[V any](byType map[api.ResourceType]V) []api.ResourceType {
+	if _, ok := byType[api.ResourceTypeAny]; ok {
+		return []api.ResourceType{api.ResourceTypeAny}
 	}
-	return resourceTypes
+	return slices.Sorted(maps.Keys(byType))
 }
 
 // GetVisitorMapForPath is used to get visitor info for a resolved path.

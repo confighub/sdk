@@ -45,6 +45,7 @@ var channelCustomColumnDependencies = map[string][]string{}
 
 func init() {
 	addStandardListFlags(channelListCmd)
+	enableWherePermissionFlag(channelListCmd)
 	enableListPagingFlags(channelListCmd)
 	enableViewFlag(channelListCmd)
 	channelCmd.AddCommand(channelListCmd)
@@ -72,14 +73,15 @@ func apiListChannels(spaceID string, whereFilter string, selectParam string, fil
 		return buildSelectList("Channel", listColumnsFor("cub channel list"), channelListInclude, defaultChannelColumns, channelAliases, channelCustomColumnDependencies, channelBaseSelectFields)
 	})
 	return cubapi.ListChannels(ctx, cubClient, whereClause, cubapi.ListOpts{
-		Limit:         listLimit,
-		OrderBy:       listOrderBy,
-		Select:        cubapi.SelectFields(selectValue),
-		Include:       channelListInclude,
-		Filter:        filterParam,
-		Contains:      contains,
-		IncludeHidden: includeHidden,
-		View:          listViewFor("cub channel list"),
+		Limit:           listLimit,
+		OrderBy:         listOrderBy,
+		Select:          cubapi.SelectFields(selectValue),
+		Include:         channelListInclude,
+		Filter:          filterParam,
+		Contains:        contains,
+		WherePermission: wherePermission,
+		IncludeHidden:   includeHidden,
+		View:            listViewFor("cub channel list"),
 	})
 }
 

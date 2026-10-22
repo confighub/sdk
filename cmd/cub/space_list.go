@@ -154,6 +154,7 @@ var spaceListArgs struct {
 
 func init() {
 	addStandardListFlags(spaceListCmd)
+	enableWherePermissionFlag(spaceListCmd)
 	spaceListCmd.Flags().StringVar(&spaceListArgs.component, "component", "", "only list Spaces that are Variants of the Component with this slug; ANDed with --where")
 	spaceListArgs.spaceLabels = addStandardLabelFilterFlags(spaceListCmd, "Space", standardSpaceLabels)
 	enableListPagingFlags(spaceListCmd)
@@ -290,13 +291,14 @@ func apiListExtendedSpaces(whereFilter string, selectParam string, filterParam s
 		include = "ComponentID"
 	}
 	return cubapi.ListSpaces(ctx, cubClient, cubapi.NewWhere(whereFilter), cubapi.ListOpts{
-		Limit:         listLimit,
-		OrderBy:       listOrderBy,
-		Select:        cubapi.SelectFields(selectValue),
-		Include:       include,
-		Filter:        filterParam,
-		Contains:      contains,
-		IncludeHidden: includeHidden,
-		View:          listViewFor("cub space list"),
+		Limit:           listLimit,
+		OrderBy:         listOrderBy,
+		Select:          cubapi.SelectFields(selectValue),
+		Include:         include,
+		Filter:          filterParam,
+		Contains:        contains,
+		WherePermission: wherePermission,
+		IncludeHidden:   includeHidden,
+		View:            listViewFor("cub space list"),
 	}, with...)
 }

@@ -50,6 +50,7 @@ var groupCustomColumnDependencies = map[string][]string{}
 
 func init() {
 	addStandardListFlags(groupListCmd)
+	enableWherePermissionFlag(groupListCmd)
 	enableListPagingFlags(groupListCmd)
 	enableViewFlag(groupListCmd)
 	groupCmd.AddCommand(groupListCmd)
@@ -65,13 +66,14 @@ func groupListCmdRun(cmd *cobra.Command, args []string) error {
 		return buildSelectList("Group", listColumnsFor("cub group list"), "", defaultGroupColumns, groupAliases, groupCustomColumnDependencies, groupBaseSelectFields)
 	})
 	groups, err := cubapi.ListGroups(ctx, cubClient, cubapi.NewWhere(where), cubapi.ListOpts{
-		Limit:         listLimit,
-		OrderBy:       listOrderBy,
-		Select:        cubapi.SelectFields(selectValue),
-		Filter:        filterID,
-		Contains:      contains,
-		IncludeHidden: includeHidden,
-		View:          listViewFor("cub group list"),
+		Limit:           listLimit,
+		OrderBy:         listOrderBy,
+		Select:          cubapi.SelectFields(selectValue),
+		Filter:          filterID,
+		Contains:        contains,
+		WherePermission: wherePermission,
+		IncludeHidden:   includeHidden,
+		View:            listViewFor("cub group list"),
 	})
 	if err != nil {
 		return err

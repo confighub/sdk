@@ -55,6 +55,7 @@ var unitEventCustomColumnDependencies = map[string][]string{}
 
 func init() {
 	addStandardListFlags(unitEventListCmd)
+	enableWherePermissionFlag(unitEventListCmd)
 	enableListPagingFlags(unitEventListCmd)
 	unitEventCmd.AddCommand(unitEventListCmd)
 }
@@ -185,6 +186,9 @@ func apiSearchListUnitEvents(whereFilter string, filterParam string) ([]*goclien
 	if contains != "" {
 		newParams.Contains = &contains
 	}
+	if wherePermission != "" {
+		newParams.WherePermission = enumPtr[goclientnew.ListAllUnitEventsParamsWherePermission](wherePermission)
+	}
 	if includeHidden != "" {
 		newParams.IncludeHidden = &includeHidden
 	}
@@ -215,6 +219,9 @@ func apiListUnitEvents(spaceID uuid.UUID, unitID uuid.UUID, whereFilter string, 
 	}
 	if contains != "" {
 		newParams.Contains = &contains
+	}
+	if wherePermission != "" {
+		newParams.WherePermission = enumPtr[goclientnew.ListUnitEventsParamsWherePermission](wherePermission)
 	}
 	if includeHidden != "" {
 		newParams.IncludeHidden = &includeHidden

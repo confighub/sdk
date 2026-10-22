@@ -270,3 +270,47 @@ octal: 0755
 		t.Errorf("expected 1 octal finding, got %d", rules["no-octal-values"])
 	}
 }
+
+func TestSetExplicitNulls(t *testing.T) {
+	input := `empty:
+explicit_null: null
+tilde: ~
+explicit_empty: ""
+nested:
+  inner:
+  list:
+    - name: a
+      value:
+    - name: b
+      value: x
+`
+	node := parseLintNode(t, input)
+	if changed := SetExplicitNulls(node); changed != 3 {
+		t.Fatalf("expected 3 values changed, got %d", changed)
+	}
+	if findings := LintNode(node, LintConfig{NoEmptyValues: true}); len(findings) != 0 {
+		t.Fatalf("expected 0 findings after SetExplicitNulls, got %d: %+v", len(findings), findings)
+	}
+	out, err := yaml.Marshal(node)
+	if err != nil {
+		t.Fatalf("failed to marshal: %v", err)
+	}
+	expected := `empty: null
+explicit_null: null
+tilde: ~
+explicit_empty: ""
+nested:
+  inner: null
+  list:
+  - name: a
+    value: null
+  - name: b
+    value: x
+`
+	if string(out) != expected {
+		t.Fatalf("unexpected output:\n%s\nexpected:\n%s", out, expected)
+	}
+	if changed := SetExplicitNulls(node); changed != 0 {
+		t.Fatalf("expected a second pass to change nothing, got %d", changed)
+	}
+}

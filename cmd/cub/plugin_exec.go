@@ -9,7 +9,6 @@ import (
 	"fmt"
 	"os"
 	"os/exec"
-	"path/filepath"
 	"syscall"
 	"time"
 
@@ -45,7 +44,7 @@ func pluginEnv() []string {
 	env := os.Environ()
 
 	env = append(env, "CUB_PLUGIN=1")
-	env = append(env, fmt.Sprintf("CUB_CONFIG=%s", filepath.Dir(contextManager.ConfigPath())))
+	env = append(env, fmt.Sprintf("CUB_CONFIG=%s", contextManager.ConfigDir()))
 
 	activeCtx := contextManager.ActiveContext()
 	env = append(env, fmt.Sprintf("CUB_CONTEXT=%s", activeCtx.Name))

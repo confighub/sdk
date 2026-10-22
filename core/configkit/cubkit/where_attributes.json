@@ -1529,6 +1529,9 @@
       "ValidationPassed": {
         "dataType": "map[string]bool"
       },
+      "ValidationResults": {
+        "dataType": "JSON"
+      },
       "ValidationTriggerIDs": {
         "dataType": "map[string]uuid"
       },
@@ -2027,6 +2030,9 @@
       },
       "ValidationErrors": {
         "dataType": "map[string]bool"
+      },
+      "ValidationResults": {
+        "dataType": "JSON"
       },
       "ValidationTriggerIDs": {
         "dataType": "map[string]uuid"

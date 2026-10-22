@@ -82,6 +82,7 @@ var changeorderCustomColumnDependencies = map[string][]string{
 
 func init() {
 	addStandardListFlags(changeorderListCmd)
+	enableWherePermissionFlag(changeorderListCmd)
 	enableListPagingFlags(changeorderListCmd)
 	enableViewFlag(changeorderListCmd)
 	changeorderCmd.AddCommand(changeorderListCmd)
@@ -182,13 +183,14 @@ func apiListAllChangeOrders(where cubapi.Where, selectParam string, filterParam 
 		return buildSelectList("ChangeOrder", listColumnsFor("cub changeorder list"), changeorderListInclude, defaultChangeOrderColumns, changeorderAliases, changeorderCustomColumnDependencies, changeorderBaseSelectFields)
 	})
 	return cubapi.ListChangeOrders(ctx, cubClient, where, cubapi.ListOpts{
-		Limit:         listLimit,
-		OrderBy:       listOrderBy,
-		Select:        cubapi.SelectFields(selectValue),
-		Include:       changeorderListInclude,
-		Filter:        filterParam,
-		Contains:      contains,
-		IncludeHidden: includeHidden,
-		View:          listViewFor("cub changeorder list"),
+		Limit:           listLimit,
+		OrderBy:         listOrderBy,
+		Select:          cubapi.SelectFields(selectValue),
+		Include:         changeorderListInclude,
+		Filter:          filterParam,
+		Contains:        contains,
+		WherePermission: wherePermission,
+		IncludeHidden:   includeHidden,
+		View:            listViewFor("cub changeorder list"),
 	})
 }

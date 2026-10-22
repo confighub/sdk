@@ -82,6 +82,7 @@ var releaseDistinctOn string
 
 func init() {
 	addStandardListFlags(releaseListCmd)
+	enableWherePermissionFlag(releaseListCmd)
 	enableListPagingFlags(releaseListCmd)
 	releaseListCmd.Flags().StringVar(&releaseDistinctOn, "distinct-on", "",
 		`without --space, what to return at most one release per: Space, the default, or Off for every release that matches, which needs --where or --filter`)
@@ -285,6 +286,9 @@ func apiListReleases(spaceID string, whereFilter string, selectParam string, fil
 	if contains != "" {
 		newParams.Contains = &contains
 	}
+	if wherePermission != "" {
+		newParams.WherePermission = enumPtr[goclientnew.ListExtendedReleasesParamsWherePermission](wherePermission)
+	}
 	if view := listViewFor("cub release list"); view != "" {
 		newParams.View = &view
 	}
@@ -324,6 +328,9 @@ func apiSearchListReleases(whereFilter string, selectParam string, filterParam s
 	}
 	if contains != "" {
 		newParams.Contains = &contains
+	}
+	if wherePermission != "" {
+		newParams.WherePermission = enumPtr[goclientnew.ListAllReleasesParamsWherePermission](wherePermission)
 	}
 	if view := listViewFor("cub release list"); view != "" {
 		newParams.View = &view

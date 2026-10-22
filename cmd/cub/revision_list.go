@@ -94,6 +94,7 @@ var (
 
 func init() {
 	addStandardListFlags(revisionListCmd)
+	enableWherePermissionFlag(revisionListCmd)
 	enableListPagingFlags(revisionListCmd)
 	revisionListCmd.Flags().StringVar(&revisionTagSlug, "tag", "", "filter revisions by tag slug or UUID")
 	revisionListCmd.Flags().StringVar(&revisionChangeOrderSlug, "change-order", "", "filter revisions by change order slug, space/slug, or UUID: the revisions the change landed on, in whichever space they are in")
@@ -454,6 +455,9 @@ func apiListRevisions(spaceID string, unitID string, whereFilter string, selectP
 	if contains != "" {
 		newParams.Contains = &contains
 	}
+	if wherePermission != "" {
+		newParams.WherePermission = enumPtr[goclientnew.ListExtendedRevisionsParamsWherePermission](wherePermission)
+	}
 	if view := listViewFor("cub revision list"); view != "" {
 		newParams.View = &view
 	}
@@ -505,6 +509,9 @@ func apiSearchListRevisions(whereFilter string, selectParam string, filterParam 
 	}
 	if contains != "" {
 		newParams.Contains = &contains
+	}
+	if wherePermission != "" {
+		newParams.WherePermission = enumPtr[goclientnew.ListAllRevisionsParamsWherePermission](wherePermission)
 	}
 	if view := listViewFor("cub revision list"); view != "" {
 		newParams.View = &view

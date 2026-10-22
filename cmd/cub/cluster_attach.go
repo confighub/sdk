@@ -29,6 +29,7 @@ var clusterAttachArgs struct {
 	grantAccess       bool
 	controller        string
 	argoVersion       string
+	noInstall         bool
 	noArgoCD          bool
 	noArgobot         bool
 	noPlaceholderGate bool
@@ -39,7 +40,7 @@ var clusterAttachArgs struct {
 var clusterAttachCmd = &cobra.Command{
 	Use:   "attach <name>",
 	Args:  cobra.MaximumNArgs(1),
-	Short: "Wire a cluster you already have into ConfigHub via Argo CD",
+	Short: "Wire a cluster you already have into ConfigHub, via Argo CD, Sveltos or Flux",
 	Long: `Attaches a cluster you already have — any cluster your kubeconfig can reach
 with cluster-admin — into ConfigHub. It is everything "cub cluster up" does
 after creating its kind cluster, and "cub cluster up" is built on it.
@@ -77,7 +78,7 @@ What it sets up, in the cluster:
 
   Argo CD             installed from the upstream manifest if the argocd
                       namespace has no argocd-server; an existing Argo CD is
-                      left as found (--no-argocd fails instead of installing).
+                      left as found (--no-install fails instead of installing).
                       Either way argocd-cm gets the ignoreDifferences block the
                       self-referencing root Application needs, unless it
                       already carries one.
@@ -129,6 +130,31 @@ Argo CD is not exposed outside the cluster by attach. Reach its UI with
 kubeconfig attach wrote; the initial admin password is in
 argocd-initial-admin-secret.
 
+With --controller sveltos, Sveltos takes Argo CD's place: it is installed
+from the upstream manifest, with its dashboard, if the projectsveltos
+namespace has no addon-controller, and an existing Sveltos is left as found
+(--no-install fails instead of installing). The apps Space is
+<name>-sveltos-apps, its root Unit a ClusterProfile that pulls the apps
+Space's own Release, and argobot comes from "argobot-sveltos-base". The
+dashboard is not exposed outside the cluster; reach it with "kubectl
+port-forward svc/dashboard -n projectsveltos 8080:80", and log in with a
+token from the platform-admin ServiceAccount. See "cub cluster up --help" for
+how the profiles, polling and --prune work.
+
+With --controller flux, Flux takes Argo CD's place: it is installed from the
+upstream manifest if the flux-system namespace has no kustomize-controller,
+and an existing Flux is left as found (--no-install fails instead of
+installing). The apps Space is <name>-flux-apps, its root Unit an
+OCIRepository and Kustomization, both named confighub-root, that pull and
+apply the apps Space's own Release, and argobot comes from
+"argobot-flux-base". Flux has no UI; "kubectl -n flux-system get
+ocirepository,kustomization" shows its state. See "cub cluster up --help" for
+how the Kustomizations, polling and --prune work.
+
+A Sveltos or Flux cluster is refused, like an Argo CD one, when it already
+holds the registry credentials of an attachment: the confighub-gateway Secret
+in projectsveltos, or the confighub-oci Secret in flux-system.
+
 Examples:
   # Attach whatever your current kube context points at
   cub cluster attach staging
@@ -137,7 +163,10 @@ Examples:
   cub cluster attach prod-eu --kubeconfig ~/.kube/eu.yaml --kube-context prod-eu
 
   # Attach a cluster that already runs Argo CD, without argobot
-  cub cluster attach shared --no-argocd --no-argobot
+  cub cluster attach shared --no-install --no-argobot
+
+  # Attach a cluster through Flux, using the Flux it already runs
+  cub cluster attach staging --controller flux --no-install
 
   # Attach an EKS cluster of the same name, granting yourself cluster-admin first
   cub cluster attach inference-demo --provider eks \
@@ -151,7 +180,7 @@ Examples:
 func init() {
 	clusterAttachCmd.Flags().StringVar(&clusterAttachArgs.name, "name", "", "cluster name (the argument; kept as a flag for older scripts)")
 	_ = clusterAttachCmd.Flags().MarkHidden("name")
-	clusterAttachCmd.Flags().StringVar(&clusterAttachArgs.spaceSlug, "space", "", "ConfigHub space slug for the cluster's target and argobot channel (the \"target prefix\"); the apps space is this slug + \"-argo-apps\" (defaults to <name>)")
+	clusterAttachCmd.Flags().StringVar(&clusterAttachArgs.spaceSlug, "space", "", "ConfigHub space slug for the cluster's target and argobot channel (the \"target prefix\"); the apps space is this slug + \"-argo-apps\", + \"-sveltos-apps\" with --controller sveltos, or + \"-flux-apps\" with --controller flux (defaults to <name>)")
 	clusterAttachCmd.Flags().StringVar(&clusterAttachArgs.provider, "provider", clusterProviderKubeconfig, "where the cluster's credentials come from: kubeconfig, eks or kind")
 	clusterAttachCmd.Flags().StringVar(&clusterAttachArgs.cluster, "cluster", "", "the cluster's name at the provider (--provider eks or kind; defaults to the cluster name)")
 	clusterAttachCmd.Flags().StringVar(&clusterAttachArgs.kubeconfig, "kubeconfig", "", "--provider kubeconfig: the kubeconfig to read the cluster from (defaults to $KUBECONFIG or ~/.kube/config)")
@@ -159,13 +188,15 @@ func init() {
 	clusterAttachCmd.Flags().StringVar(&clusterAttachArgs.awsRegion, "aws-region", "", "--provider eks: the cluster's AWS region (defaults to the AWS CLI's: AWS_REGION or the profile's)")
 	clusterAttachCmd.Flags().StringVar(&clusterAttachArgs.awsProfile, "aws-profile", "", "--provider eks: the AWS CLI profile (defaults to AWS_PROFILE)")
 	clusterAttachCmd.Flags().BoolVar(&clusterAttachArgs.grantAccess, "grant-access", false, "--provider eks: if your AWS identity has no access entry on the cluster, add one with cluster-admin")
-	clusterAttachCmd.Flags().StringVar(&clusterAttachArgs.controller, "controller", clusterControllerArgo, "controller to wire to ConfigHub: argo (Argo CD); sveltos and flux are not supported by attach yet")
+	clusterAttachCmd.Flags().StringVar(&clusterAttachArgs.controller, "controller", clusterControllerArgo, "controller to wire to ConfigHub: argo (Argo CD), sveltos (Sveltos) or flux (Flux)")
 	clusterAttachCmd.Flags().StringVar(&clusterAttachArgs.argoVersion, "argocd-version", clusterArgoDefaultVersion, "Argo CD release to install when absent (v3.1 or later; oci:// sources need it)")
-	clusterAttachCmd.Flags().BoolVar(&clusterAttachArgs.noArgoCD, "no-argocd", false, "never install Argo CD; fail if the cluster has none")
-	clusterAttachCmd.Flags().BoolVar(&clusterAttachArgs.noArgobot, "no-argobot", false, "skip installing argobot (the event-driven Argo CD sync bot)")
+	clusterAttachCmd.Flags().BoolVar(&clusterAttachArgs.noInstall, "no-install", false, "never install the controller; fail if the cluster has none")
+	clusterAttachCmd.Flags().BoolVar(&clusterAttachArgs.noArgoCD, "no-argocd", false, "--controller argo: the same as --no-install")
+	_ = clusterAttachCmd.Flags().MarkHidden("no-argocd")
+	clusterAttachCmd.Flags().BoolVar(&clusterAttachArgs.noArgobot, "no-argobot", false, "skip installing argobot (the event-driven Argo CD sync, Sveltos redeploy, or Flux reconciliation, bot)")
 	clusterAttachCmd.Flags().BoolVar(&clusterAttachArgs.noPlaceholderGate, "no-placeholder-gate", false, "skip the default vet-placeholders Trigger, allowing Releases with unfilled confighubplaceholder values to be published to this cluster")
-	clusterAttachCmd.Flags().StringVar(&clusterAttachArgs.argobotOCI, "argobot-oci", clusterArgobotOCIRef, "OCI reference of argobot's config bundle, or a local file or directory of its manifests")
-	clusterAttachCmd.Flags().BoolVar(&clusterAttachArgs.prune, "prune", false, "let Argo CD delete: the root Application prunes Applications whose Units leave the apps space, and deployments created later get prune and the resources finalizer")
+	clusterAttachCmd.Flags().StringVar(&clusterAttachArgs.argobotOCI, "argobot-oci", clusterArgobotOCIRef, "OCI reference of argobot's config bundle, or a local file or directory of its manifests (default with --controller sveltos: "+clusterArgobotSveltosOCIRef+", with --controller flux: "+clusterArgobotFluxOCIRef+")")
+	clusterAttachCmd.Flags().BoolVar(&clusterAttachArgs.prune, "prune", false, "let the controller delete what a removed deployment deployed: the root prunes deployments whose Units leave the apps space (Sveltos's always does), and deployments created later prune what they deployed")
 	clusterCmd.AddCommand(clusterAttachCmd)
 }
 
@@ -182,7 +213,7 @@ type clusterAttachOptions struct {
 	grantAccess       bool
 	controller        string
 	argoVersion       string
-	noArgoCD          bool
+	noInstall         bool
 	noArgobot         bool
 	noPlaceholderGate bool
 	argobotOCIRef     string
@@ -193,6 +224,14 @@ func clusterAttachCmdRun(cmd *cobra.Command, args []string) error {
 	name, err := clusterNameArg(args, clusterAttachArgs.name, "attach", true)
 	if err != nil {
 		return err
+	}
+	argobotOCIRef, err := clusterArgobotOCIRefFor(clusterAttachArgs.controller, clusterAttachArgs.argobotOCI, cmd.Flags().Changed("argobot-oci"))
+	if err != nil {
+		return err
+	}
+	// --no-argocd is --no-install from when Argo CD was the only controller.
+	if clusterAttachArgs.noArgoCD && clusterAttachArgs.controller != clusterControllerArgo {
+		return fmt.Errorf("--no-argocd applies to --controller %s; use --no-install", clusterControllerArgo)
 	}
 	return clusterAttachRun(cmd.OutOrStdout(), clusterAttachOptions{
 		name:              name,
@@ -206,10 +245,10 @@ func clusterAttachCmdRun(cmd *cobra.Command, args []string) error {
 		grantAccess:       clusterAttachArgs.grantAccess,
 		controller:        clusterAttachArgs.controller,
 		argoVersion:       clusterAttachArgs.argoVersion,
-		noArgoCD:          clusterAttachArgs.noArgoCD,
+		noInstall:         clusterAttachArgs.noInstall || clusterAttachArgs.noArgoCD,
 		noArgobot:         clusterAttachArgs.noArgobot,
 		noPlaceholderGate: clusterAttachArgs.noPlaceholderGate,
-		argobotOCIRef:     clusterAttachArgs.argobotOCI,
+		argobotOCIRef:     argobotOCIRef,
 		prune:             clusterAttachArgs.prune,
 	})
 }
@@ -219,15 +258,10 @@ func clusterAttachRun(out io.Writer, opts clusterAttachOptions) error {
 		return fmt.Errorf("a cluster name is required: cub cluster attach <name>")
 	}
 	switch opts.controller {
-	case clusterControllerArgo:
-	case clusterControllerSveltos, clusterControllerFlux:
-		// Neither install has an "already present" path yet, and Sveltos's
-		// exposes its dashboard on a NodePort; both are what `cub cluster up`
-		// relies on. Detaching a Flux cluster also needs its Kustomizations
-		// suspended before they go, or Flux prunes what they deployed.
-		return fmt.Errorf("--controller %s is not supported by attach yet; 'cub cluster up --controller %s' creates a kind cluster running it", opts.controller, opts.controller)
+	case clusterControllerArgo, clusterControllerSveltos, clusterControllerFlux:
 	default:
-		return fmt.Errorf("--controller %q: must be %s", opts.controller, clusterControllerArgo)
+		return fmt.Errorf("--controller %q: must be %s, %s or %s", opts.controller,
+			clusterControllerArgo, clusterControllerSveltos, clusterControllerFlux)
 	}
 	if _, err := exec.LookPath("kubectl"); err != nil {
 		return fmt.Errorf("kubectl not found on PATH")
@@ -239,7 +273,7 @@ func clusterAttachRun(out io.Writer, opts clusterAttachOptions) error {
 	if opts.spaceSlug == "" {
 		opts.spaceSlug = opts.name
 	}
-	appsSlug := opts.spaceSlug + clusterArgoAppsSuffix
+	appsSlug := opts.spaceSlug + clusterAppsSuffix(opts.controller)
 	kubeconfigPath := clusterKubeconfigPath(opts.name)
 	envFilePath := clusterEnvFilePath(opts.name)
 
@@ -308,7 +342,7 @@ func clusterAttachRun(out io.Writer, opts clusterAttachOptions) error {
 		}
 	}()
 
-	// Installing Argo CD and applying the root Application need cluster-admin.
+	// Installing the controller and applying the root need cluster-admin.
 	// Fail here rather than halfway through a 20k-line manifest.
 	fmt.Fprintln(out, "Checking cluster access (needs cluster-admin)...")
 	if err := clusterRequireClusterAdmin(ctx, kubeconfigPath); err != nil {
@@ -321,13 +355,10 @@ func clusterAttachRun(out io.Writer, opts clusterAttachOptions) error {
 			return err
 		}
 	}
-	// One ConfigHub per cluster. The repo-creds Secret is the in-cluster mark of
-	// an attachment, whichever server it was to.
-	if existing, err := clusterArgoExistingOCICredsURL(ctx, kubeconfigPath); err != nil {
+	// One ConfigHub per cluster. The registry credentials Secret is the
+	// in-cluster mark of an attachment, whichever server it was to.
+	if err := clusterAttachRequireUnwired(ctx, kubeconfigPath, opts.controller); err != nil {
 		return err
-	} else if existing != "" {
-		return fmt.Errorf("the cluster is already wired to a ConfigHub: Argo CD holds registry credentials for %s (Secret %s/%s). Detach it first with 'cub cluster down' on the machine that attached it, or delete that Secret by hand",
-			existing, clusterArgoNamespace, clusterArgoOCICredsSecret)
 	}
 
 	spaceAnnotations := map[string]string{clusterAnnotationProvider: opts.provider}
@@ -346,12 +377,16 @@ func clusterAttachRun(out io.Writer, opts clusterAttachOptions) error {
 		spaceAnnotations: spaceAnnotations,
 		argo: clusterArgoOptions{
 			version:         opts.argoVersion,
-			installIfAbsent: !opts.noArgoCD,
+			installIfAbsent: !opts.noInstall,
 		},
-		noArgobot:         opts.noArgobot,
-		noPlaceholderGate: opts.noPlaceholderGate,
-		argobotOCIRef:     opts.argobotOCIRef,
-		prune:             opts.prune,
+		sveltos: clusterSveltosOptions{
+			installIfAbsent: !opts.noInstall,
+		},
+		fluxInstallIfAbsent: !opts.noInstall,
+		noArgobot:           opts.noArgobot,
+		noPlaceholderGate:   opts.noPlaceholderGate,
+		argobotOCIRef:       opts.argobotOCIRef,
+		prune:               opts.prune,
 	}, func(f func()) { rollback = append(rollback, f) })
 	if err != nil {
 		return err
@@ -367,6 +402,15 @@ func clusterAttachRun(out io.Writer, opts clusterAttachOptions) error {
 	commit = true
 	clusterPrintSummaryHead(out, "Attached", result, kubeconfigPath, envFilePath)
 	switch {
+	case opts.controller == clusterControllerSveltos && result.controllerInstalled:
+		fmt.Fprintf(out, "\nSveltos: installed. Its dashboard is not exposed outside the cluster; reach it with\n  kubectl --kubeconfig %s port-forward svc/dashboard -n %s 8080:80\nand log in with a token from\n  kubectl --kubeconfig %s create token %s --duration=24h\n",
+			kubeconfigPath, clusterSveltosNamespace, kubeconfigPath, clusterSveltosDashboardAccount)
+	case opts.controller == clusterControllerSveltos:
+		fmt.Fprintf(out, "\nSveltos: already installed, left as found\n")
+	case opts.controller == clusterControllerFlux && result.controllerInstalled:
+		fmt.Fprintf(out, "\nFlux: installed. It has no UI; see its state with\n  KUBECONFIG=%s %s\n", kubeconfigPath, clusterFluxStatusCommand())
+	case opts.controller == clusterControllerFlux:
+		fmt.Fprintf(out, "\nFlux: already installed, left as found\n")
 	case result.argo.installed:
 		fmt.Fprintf(out, "\nArgo CD: installed (admin / %s). It is not exposed outside the cluster; reach the UI with\n  kubectl --kubeconfig %s port-forward svc/argocd-server -n argocd 8080:80\n",
 			result.argo.adminPassword, kubeconfigPath)
@@ -376,6 +420,37 @@ func clusterAttachRun(out io.Writer, opts clusterAttachOptions) error {
 		fmt.Fprintf(out, "\nArgo CD: already installed, left as found\n")
 	}
 	clusterPrintSummaryTail(out, result, envFilePath)
+	return nil
+}
+
+// clusterAttachRequireUnwired fails when an earlier attachment's registry
+// credentials Secret is in the cluster: whichever ConfigHub it was to, the
+// cluster is already wired to one.
+func clusterAttachRequireUnwired(ctx context.Context, kubeconfigPath, controller string) error {
+	const detachHint = "Detach it first with 'cub cluster detach' on the machine that attached it, or delete that Secret by hand"
+	switch controller {
+	case clusterControllerSveltos:
+		if wired, err := clusterSveltosHasOCICreds(ctx, kubeconfigPath); err != nil {
+			return err
+		} else if wired {
+			return fmt.Errorf("the cluster is already wired to a ConfigHub: Sveltos holds registry credentials (Secret %s/%s). %s",
+				clusterSveltosNamespace, clusterSveltosGatewaySecret, detachHint)
+		}
+	case clusterControllerFlux:
+		if existing, err := clusterFluxExistingOCICredsHost(ctx, kubeconfigPath); err != nil {
+			return err
+		} else if existing != "" {
+			return fmt.Errorf("the cluster is already wired to a ConfigHub: Flux holds registry credentials for %s (Secret %s/%s). %s",
+				existing, clusterFluxNamespace, clusterFluxCredsSecret, detachHint)
+		}
+	default:
+		if existing, err := clusterArgoExistingOCICredsURL(ctx, kubeconfigPath); err != nil {
+			return err
+		} else if existing != "" {
+			return fmt.Errorf("the cluster is already wired to a ConfigHub: Argo CD holds registry credentials for %s (Secret %s/%s). %s",
+				existing, clusterArgoNamespace, clusterArgoOCICredsSecret, detachHint)
+		}
+	}
 	return nil
 }
 
@@ -570,7 +645,7 @@ type clusterAttachSpec struct {
 	spaceSlug      string
 	kubeconfigPath string
 	origin         string // clusterOriginKind or clusterOriginAttach
-	controller     string // clusterControllerArgo or clusterControllerSveltos
+	controller     string // clusterControllerArgo, clusterControllerSveltos or clusterControllerFlux
 
 	// spaceAnnotations and targetAnnotations are added to the cluster Space and
 	// the OCI target on top of the ones every attachment writes.
@@ -579,8 +654,11 @@ type clusterAttachSpec struct {
 
 	// argo says how to get Argo CD into the cluster (controller argo).
 	argo clusterArgoOptions
-	// sveltosNodePort is the Sveltos dashboard's NodePort (controller sveltos).
-	sveltosNodePort int
+	// sveltos says how to get Sveltos into the cluster (controller sveltos).
+	sveltos clusterSveltosOptions
+	// fluxInstallIfAbsent installs Flux when the cluster has none; false turns
+	// its absence into an error (controller flux, --no-install).
+	fluxInstallIfAbsent bool
 
 	noArgobot         bool
 	noPlaceholderGate bool
@@ -597,6 +675,10 @@ type clusterAttachResult struct {
 	appsSlug           string
 	serviceAccountSlug string
 	argo               clusterArgoResult
+	// controllerInstalled is true when this attachment installed Sveltos or
+	// Flux, false when it was already present and left alone. For Argo CD see
+	// argo.installed.
+	controllerInstalled bool
 }
 
 // clusterAttach wires a cluster into ConfigHub: the controller in the cluster,
@@ -614,15 +696,20 @@ func clusterAttach(out io.Writer, spec clusterAttachSpec, addRollback func(func(
 	kubeconfigPath := spec.kubeconfigPath
 
 	var argo clusterArgoResult
+	var controllerInstalled bool
 	switch spec.controller {
 	case clusterControllerSveltos:
-		fmt.Fprintln(out, "Installing Sveltos...")
-		if err := clusterSveltosInstall(ctx, kubeconfigPath, spec.sveltosNodePort, out); err != nil {
+		fmt.Fprintln(out, "Ensuring Sveltos...")
+		var err error
+		controllerInstalled, err = clusterSveltosEnsure(ctx, kubeconfigPath, spec.sveltos, out)
+		if err != nil {
 			return result, err
 		}
 	case clusterControllerFlux:
-		fmt.Fprintln(out, "Installing Flux...")
-		if err := clusterFluxInstall(ctx, kubeconfigPath, out); err != nil {
+		fmt.Fprintln(out, "Ensuring Flux...")
+		var err error
+		controllerInstalled, err = clusterFluxEnsure(ctx, kubeconfigPath, spec.fluxInstallIfAbsent, out)
+		if err != nil {
 			return result, err
 		}
 	default:
@@ -868,7 +955,7 @@ func clusterAttach(out io.Writer, spec clusterAttachSpec, addRollback func(func(
 		return result, err
 	}
 
-	return clusterAttachResult{spec: spec, appsSlug: appsSlug, serviceAccountSlug: serviceAccountSlug, argo: argo}, nil
+	return clusterAttachResult{spec: spec, appsSlug: appsSlug, serviceAccountSlug: serviceAccountSlug, argo: argo, controllerInstalled: controllerInstalled}, nil
 }
 
 // clusterPrintSummaryHead prints the "Done" block every attachment ends with:

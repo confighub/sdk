@@ -168,7 +168,8 @@ func deleteVariantFluxApp(out io.Writer, app *variantClusterApp, cascade bool) e
 	if err := clusterFluxWaitRootReleased(ctx, app.kubeconfigPath, app.name, variantClusterRootWait); err != nil {
 		return fmt.Errorf("%w; run the delete again once it has", err)
 	}
-	return clusterFluxDeleteDeployment(ctx, app.kubeconfigPath, app.name, cascade, out)
+	_, err := clusterFluxDeleteDeployment(ctx, app.kubeconfigPath, app.name, cascade, out)
+	return err
 }
 
 // publishVariantFluxApp releases a variant's Flux Unit, when it has not been

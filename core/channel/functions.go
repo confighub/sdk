@@ -7,6 +7,7 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"slices"
 
 	funcapi "github.com/confighub/sdk/core/function/api"
 	goclientnew "github.com/confighub/sdk/core/openapi/goclient-new"
@@ -39,13 +40,26 @@ type FunctionInvoker interface {
 	Invoke(ctx context.Context, request *funcapi.FunctionInvocationRequest) (*funcapi.FunctionInvocationResponse, error)
 }
 
+// FunctionExecutor is a FunctionInvoker that says which functions it serves, as the SDK's
+// function executors do. HandleFunctions declares those functions on the Channel.
+type FunctionExecutor interface {
+	FunctionInvoker
+	RegisteredFunctions() map[workerapi.ToolchainType]map[string]funcapi.FunctionSignature
+}
+
 // FunctionCommands is the declaration a Channel needs to serve the given functions: the one
 // reserved command, with the served signatures by toolchain and name under FunctionAttribute.
-// Pipe it into cub channel create or update --commands.
+// HandleFunctions declares it for an executor; it is exported for declaring out of band, with
+// cub channel create or update --commands.
 func FunctionCommands(functions map[workerapi.ToolchainType]map[string]funcapi.FunctionSignature) map[string]goclientnew.CommandSignature {
 	served := map[string]map[string]funcapi.FunctionSignature{}
 	for toolchain, byName := range functions {
-		served[string(toolchain)] = byName
+		ordered := make(map[string]funcapi.FunctionSignature, len(byName))
+		for name, signature := range byName {
+			signature.AffectedResourceTypes = canonicalResourceTypes(signature.AffectedResourceTypes)
+			ordered[name] = signature
+		}
+		served[string(toolchain)] = ordered
 	}
 	return map[string]goclientnew.CommandSignature{
 		FunctionInvokeCommand: {
@@ -62,8 +76,13 @@ func FunctionCommands(functions map[workerapi.ToolchainType]map[string]funcapi.F
 // HandleFunctions serves functions on the listener: every run of FunctionInvokeCommand is
 // decoded into the invocation request, executed by the invoker, and answered with the
 // function response. A request the run does not carry is Rejected; an executor error is
-// Failed, with its message.
+// Failed, with its message. An invoker that is a FunctionExecutor also has its functions
+// declared on the Channel when the listener starts (Declare), as a function worker's were
+// registered when it connected.
 func (l *Listener) HandleFunctions(invoker FunctionInvoker) *Listener {
+	if executor, ok := invoker.(FunctionExecutor); ok {
+		l.Declare(FunctionCommands(executor.RegisteredFunctions()))
+	}
 	return l.Handle(FunctionInvokeCommand, func(ctx context.Context, run *Run) (json.RawMessage, error) {
 		var request funcapi.FunctionInvocationRequest
 		found, err := run.Param(FunctionRequestParam, &request)
@@ -79,4 +98,15 @@ func (l *Listener) HandleFunctions(invoker FunctionInvoker) *Listener {
 		}
 		return json.Marshal(response)
 	})
+}
+
+// canonicalResourceTypes puts a function's resource types in one form, so the declaration is the
+// same in every process and a restarted bot finds it current. The executors build the list from
+// map iteration: its order varies, and when the wildcard is among the types the list stops at
+// it, so which types precede it varies too. The wildcard means every type, so it stands alone.
+func canonicalResourceTypes(types []funcapi.ResourceType) []funcapi.ResourceType {
+	if slices.Contains(types, funcapi.ResourceTypeAny) {
+		return []funcapi.ResourceType{funcapi.ResourceTypeAny}
+	}
+	return slices.Sorted(slices.Values(types))
 }

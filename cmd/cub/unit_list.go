@@ -193,6 +193,7 @@ var unitCustomColumnDependencies = map[string][]string{
 
 func init() {
 	addStandardListFlags(unitListCmd)
+	enableWherePermissionFlag(unitListCmd)
 	enableListPagingFlags(unitListCmd)
 	unitListCmd.Flags().StringVar(&resourceType, "resource-type", "", "resource-type filter")
 	unitListCmd.Flags().StringVar(&whereData, "where-data", "", "where data filter")
@@ -289,14 +290,15 @@ func apiListAllUnits(where cubapi.Where, resourceType string, whereData string, 
 		return buildSelectList("Unit", effectiveColumns(), selectInclude, defaultUnitColumns, unitAliases, unitCustomColumnDependencies, unitBaseSelectFields)
 	})
 	return cubapi.ListUnits(ctx, cubClient, where, cubapi.ListOpts{
-		Limit:         listLimit,
-		OrderBy:       listOrderBy,
-		Select:        cubapi.SelectFields(selectValue),
-		Include:       unitListInclude,
-		Filter:        filterParam,
-		Contains:      contains,
-		IncludeHidden: includeHidden,
-		View:          viewParam,
+		Limit:           listLimit,
+		OrderBy:         listOrderBy,
+		Select:          cubapi.SelectFields(selectValue),
+		Include:         unitListInclude,
+		Filter:          filterParam,
+		Contains:        contains,
+		WherePermission: wherePermission,
+		IncludeHidden:   includeHidden,
+		View:            viewParam,
 	}, func(p *goclientnew.ListAllUnitsParams) {
 		if resourceType != "" {
 			p.ResourceType = &resourceType
