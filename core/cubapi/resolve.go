@@ -253,6 +253,7 @@ const (
 	linkGetInclude           = "SpaceID,ToSpaceID,FromUnitID,ToUnitID"
 	bridgeWorkerGetInclude   = "SpaceID"
 	channelGetInclude        = "SpaceID"
+	commandRunGetInclude     = "SpaceID,ChannelID"
 )
 
 // ResolveSpace looks up one space by slug or UUID. A space is not itself
@@ -672,14 +673,19 @@ func ResolveLink(ctx context.Context, c *Client, ref Ref, opts ResolveOpts) (*go
 
 // ResolveCommandRun finds a command run by UUID, in whichever space it is in. Runs have no
 // slug, so a reference that is not a UUID finds nothing.
-func ResolveCommandRun(ctx context.Context, c *Client, ref Ref, opts ResolveOpts) (*goclientnew.CommandRun, error) {
-	return resolver[goclientnew.CommandRun]{
-		entity: "command run", idField: "CommandRunID",
-		list: func(ctx context.Context, c *Client, w Where, o ListOpts) ([]*goclientnew.CommandRun, error) {
+func ResolveCommandRun(ctx context.Context, c *Client, ref Ref, opts ResolveOpts) (*goclientnew.ExtendedCommandRun, error) {
+	return resolver[goclientnew.ExtendedCommandRun]{
+		entity: "command run", idField: "CommandRunID", include: commandRunGetInclude,
+		list: func(ctx context.Context, c *Client, w Where, o ListOpts) ([]*goclientnew.ExtendedCommandRun, error) {
 			return ListCommandRuns(ctx, c, w, o)
 		},
-		slugOf: func(run *goclientnew.CommandRun) string { return "" },
-		idOf:   func(run *goclientnew.CommandRun) goclientnew.UUID { return run.CommandRunID },
+		slugOf: func(e *goclientnew.ExtendedCommandRun) string { return "" },
+		idOf: func(e *goclientnew.ExtendedCommandRun) goclientnew.UUID {
+			if e.CommandRun == nil {
+				return goclientnew.UUID{}
+			}
+			return e.CommandRun.CommandRunID
+		},
 	}.resolve(ctx, c, ref, opts)
 }
 
@@ -725,4 +731,28 @@ func ResolveBridgeWorker(ctx context.Context, c *Client, ref Ref, opts ResolveOp
 			return e.BridgeWorker.BridgeWorkerID
 		},
 	}.resolve(ctx, c, ref, opts)
+}
+
+// ResolveOAuthClient looks up one OAuth client by client id or by name, as `cub oauthclient
+// get` does: the get endpoint takes a client id, so a name is found by listing. A client that
+// is not there is a not-found error, which [IsNotFoundError] recognises.
+func ResolveOAuthClient(ctx context.Context, c *Client, nameOrClientID string) (*goclientnew.OAuthClient, error) {
+	res, err := c.API.GetOAuthClientWithResponse(ctx, nameOrClientID)
+	if !IsAPIError(err, res) {
+		return res.JSON200, nil
+	}
+	if err != nil {
+		return nil, err
+	}
+	list, err := c.API.ListOAuthClientsWithResponse(ctx)
+	if IsAPIError(err, list) {
+		return nil, InterpretErrorGeneric(err, list)
+	}
+	for i := range *list.JSON200 {
+		client := &(*list.JSON200)[i]
+		if client.Name == nameOrClientID || client.ClientID == nameOrClientID {
+			return client, nil
+		}
+	}
+	return nil, fmt.Errorf("OAuth client %q not found", nameOrClientID)
 }

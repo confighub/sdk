@@ -69,11 +69,11 @@ Examples:
 }
 
 // Default columns to display when no custom columns are specified
-var defaultTriggerColumns = []string{"Trigger.Slug", "Space.Slug", "BridgeWorker.Slug", "Trigger.Event", "Trigger.Validating", "Trigger.Disabled", "Trigger.Warn", "Trigger.ToolchainType", "Trigger.FunctionName", "Trigger.Arguments", "Invocation.Slug"}
+var defaultTriggerColumns = []string{"Trigger.Slug", "Space.Slug", "BridgeWorker.Slug", "Channel.Slug", "Trigger.Event", "Trigger.Validating", "Trigger.Disabled", "Trigger.Warn", "Trigger.ToolchainType", "Trigger.FunctionName", "Trigger.Arguments", "Invocation.Slug"}
 
 // triggerListInclude is the Include parameter for trigger list queries (the
 // related entities expanded into each ExtendedTrigger).
-const triggerListInclude = "SpaceID,BridgeWorkerID,InvocationID"
+const triggerListInclude = "SpaceID,BridgeWorkerID,ChannelID,InvocationID"
 
 // triggerBaseSelectFields are the fields always returned by trigger list queries,
 // regardless of the requested columns.
@@ -125,13 +125,17 @@ func displayTriggerList(triggers []*goclientnew.ExtendedTrigger) {
 	}
 	table := tableView()
 	if !noheader {
-		table.SetHeader([]string{"Name", "Space", "Worker", "Event", "Validating", "Disabled", "Warn", "Toolchain-Type", "Function-Name", "Num-Args", "Invocation"})
+		table.SetHeader([]string{"Name", "Space", "Worker", "Channel", "Event", "Validating", "Disabled", "Warn", "Toolchain-Type", "Function-Name", "Num-Args", "Invocation"})
 	}
 	for _, t := range triggers {
 		trigger := t.Trigger
 		workerSlug := ""
 		if t.BridgeWorker != nil {
 			workerSlug = t.BridgeWorker.Slug
+		}
+		channelSlug := ""
+		if t.Channel != nil {
+			channelSlug = t.Channel.Slug
 		}
 		spaceSlug := t.Trigger.SpaceID.String()
 		if t.Space != nil {
@@ -147,6 +151,7 @@ func displayTriggerList(triggers []*goclientnew.ExtendedTrigger) {
 			trigger.Slug,
 			spaceSlug,
 			workerSlug,
+			channelSlug,
 			trigger.Event,
 			strconv.FormatBool(trigger.Validating),
 			strconv.FormatBool(trigger.Disabled),

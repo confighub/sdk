@@ -95,6 +95,8 @@ func init() {
 	triggerUpdateCmd.Flags().BoolVar(&protectTrigger, "protect", false, "record the paths this trigger's function writes as protected local overrides, so a later merge from upstream does not overwrite them; for a trigger that decides a value the unit then owns, such as a PostClone trigger customizing a variant")
 	triggerUpdateCmd.Flags().BoolVar(&unprotectTrigger, "unprotect", false, "return this trigger to the default: it claims nothing it writes")
 	triggerUpdateCmd.Flags().StringVar(&workerSlug, "worker", "", "worker to execute the trigger function")
+	triggerUpdateCmd.Flags().StringVar(&functionChannel, "channel", "", "channel whose client executes the trigger function")
+	triggerUpdateCmd.MarkFlagsMutuallyExclusive("worker", "channel")
 	triggerUpdateCmd.Flags().BoolVar(&triggerPatch, "patch", false, "use patch API for individual or bulk operations")
 	enableWhereFlag(triggerUpdateCmd)
 	enableFilterFlag(triggerUpdateCmd)
@@ -104,7 +106,7 @@ func init() {
 	triggerUpdateCmd.Flags().StringVar(&triggerWhereUnit, "where-unit-field", "", "filter expression to restrict which Units this trigger applies to (its WhereUnit). It takes what --where does on unit list, attributes of what a unit refers to included, as in \"Space.Labels.Environment = 'prod'\"")
 	triggerUpdateCmd.Flags().StringVar(&triggerUnitFilter, "unit-filter", "", "filter entity (slug or UUID) to restrict which Units this trigger applies to")
 	triggerUpdateCmd.Flags().StringVar(&triggerWhereResource, "where-resource", "", "metadata path expression to restrict which resources the trigger operates on")
-	triggerUpdateCmd.Flags().StringVar(&triggerFailOpenAfter, "fail-open-after", "", "duration after which disconnected worker triggers fail open (e.g., 6h, 30m)")
+	triggerUpdateCmd.Flags().StringVar(&triggerFailOpenAfter, "fail-open-after", "", "duration after which disconnected worker triggers fail open (e.g., 6h, 30m); triggers on a channel fail closed")
 	triggerUpdateCmd.Flags().StringVar(&triggerOtherDataSource, "other-data-source", "", "source of additional data to pass to the function (e.g., LastReleasedRevisionNum); defaults to the sources the function expects")
 	addBackingUnitFlags(triggerUpdateCmd, "Trigger", false, false)
 	addFromBackingUnitsFlags(triggerUpdateCmd, "Trigger", false)
@@ -349,6 +351,15 @@ func triggerUpdateCmdRun(cmd *cobra.Command, args []string) error {
 		}
 		workerID := goclientnew.UUID(workerUUID)
 		currentTrigger.Trigger.BridgeWorkerID = &workerID
+		currentTrigger.Trigger.ChannelID = nil
+	}
+	if functionChannel != "" {
+		channelID, err := resolveChannelID(functionChannel)
+		if err != nil {
+			return err
+		}
+		currentTrigger.Trigger.ChannelID = &channelID
+		currentTrigger.Trigger.BridgeWorkerID = nil
 	}
 
 	// TODO: update with overriden string type TriggerEvent
@@ -444,6 +455,14 @@ func triggerPatchEnhancer() (PatchEnhancer, error) {
 		}
 		workerID = &id
 	}
+	var channelID *uuid.UUID
+	if functionChannel != "" {
+		id, err := resolveChannelID(functionChannel)
+		if err != nil {
+			return nil, err
+		}
+		channelID = &id
+	}
 	var invocationID *uuid.UUID
 	if invocationSlug != "" {
 		id, err := resolveInvocationID(invocationSlug)
@@ -495,11 +514,19 @@ func triggerPatchEnhancer() (PatchEnhancer, error) {
 		} else if unprotectTrigger {
 			patchMap["Protect"] = false
 		}
+		// One executor at a time: naming one clears the other.
 		if workerID != nil {
 			patchMap["BridgeWorkerID"] = workerID.String()
+			patchMap["ChannelID"] = nil
+		}
+		if channelID != nil {
+			patchMap["ChannelID"] = channelID.String()
+			patchMap["BridgeWorkerID"] = nil
 		}
 		if invocationID != nil {
 			patchMap["InvocationID"] = invocationID.String()
+			// The invocation names where its functions run.
+			patchMap["ChannelID"] = nil
 			// An invocation takes the place of the function and its arguments.
 			patchMap["FunctionName"] = ""
 			patchMap["Arguments"] = nil

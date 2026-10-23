@@ -101,6 +101,11 @@ func displayExtendedTriggerDetails(extendedTrigger *goclientnew.ExtendedTrigger)
 	} else if trigger.BridgeWorkerID != nil && *trigger.BridgeWorkerID != uuid.Nil {
 		view.Append([]string{"Worker ID", trigger.BridgeWorkerID.String()})
 	}
+	if extendedTrigger.Channel != nil {
+		view.Append([]string{"Channel", extendedTrigger.Channel.Slug})
+	} else if trigger.ChannelID != nil && *trigger.ChannelID != uuid.Nil {
+		view.Append([]string{"Channel ID", trigger.ChannelID.String()})
+	}
 
 	view.Append([]string{"Event", trigger.Event})
 	view.Append([]string{"Validating", strconv.FormatBool(trigger.Validating)})
@@ -172,6 +177,9 @@ func displayTriggerDetails(trigger *goclientnew.Trigger) {
 
 	if trigger.BridgeWorkerID != nil && *trigger.BridgeWorkerID != uuid.Nil {
 		view.Append([]string{"Worker ID", trigger.BridgeWorkerID.String()})
+	}
+	if trigger.ChannelID != nil && *trigger.ChannelID != uuid.Nil {
+		view.Append([]string{"Channel ID", trigger.ChannelID.String()})
 	}
 
 	view.Append([]string{"Event", trigger.Event})

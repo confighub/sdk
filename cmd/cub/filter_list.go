@@ -202,7 +202,7 @@ func validateEntityParameters() error {
 	}
 
 	if entityType != "" {
-		supportedTypes := []string{"Space", "Component", "ServiceAccount", "Filter", "View", "Invocation", "Trigger", "Tag", "ChangeSet", "ChangeOrder", "ChangeWorkflow", "Target", "BridgeWorker", "Unit", "Link", "Attribute", "Channel"}
+		supportedTypes := []string{"Space", "Component", "ServiceAccount", "Filter", "View", "Invocation", "Trigger", "Tag", "ChangeSet", "ChangeOrder", "ChangeWorkflow", "Target", "BridgeWorker", "Unit", "Link", "Attribute", "Channel", "CommandRun"}
 		found := false
 		for _, supported := range supportedTypes {
 			if entityType == supported {
@@ -348,6 +348,14 @@ func parseEntityIdentifierForFilter(
 			return "", "", fmt.Errorf("failed to resolve Channel %s: %w", identifier, err)
 		}
 		return entityType, channelUUID.String(), nil
+
+	case "CommandRun":
+		// A run has no slug: it is named by its ID.
+		runUUID, err := uuid.Parse(identifier)
+		if err != nil {
+			return "", "", fmt.Errorf("a command run is named by its ID: %w", err)
+		}
+		return entityType, runUUID.String(), nil
 
 	default:
 		return "", "", fmt.Errorf("unsupported entity type: %s", entityType)

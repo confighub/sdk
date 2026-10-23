@@ -51,11 +51,11 @@ Examples:
 }
 
 // Default columns to display when no custom columns are specified
-var defaultInvocationColumns = []string{"Invocation.Slug", "Space.Slug", "BridgeWorker.Slug", "Invocation.ToolchainType", "Invocation.FunctionInvocations"}
+var defaultInvocationColumns = []string{"Invocation.Slug", "Space.Slug", "BridgeWorker.Slug", "Channel.Slug", "Invocation.ToolchainType", "Invocation.FunctionInvocations"}
 
 // invocationListInclude is the Include parameter for invocation list queries (the
 // related entities expanded into each ExtendedInvocation).
-const invocationListInclude = "SpaceID,BridgeWorkerID"
+const invocationListInclude = "SpaceID,BridgeWorkerID,ChannelID"
 
 // invocationBaseSelectFields are the fields always returned by invocation list
 // queries, regardless of the requested columns.
@@ -107,13 +107,17 @@ func displayInvocationList(invocations []*goclientnew.ExtendedInvocation) {
 	}
 	table := tableView()
 	if !noheader {
-		table.SetHeader([]string{"Name", "Space", "Worker", "Toolchain-Type", "Functions"})
+		table.SetHeader([]string{"Name", "Space", "Worker", "Channel", "Toolchain-Type", "Functions"})
 	}
 	for _, i := range invocations {
 		invocation := i.Invocation
 		workerSlug := ""
 		if i.BridgeWorker != nil {
 			workerSlug = i.BridgeWorker.Slug
+		}
+		channelSlug := ""
+		if i.Channel != nil {
+			channelSlug = i.Channel.Slug
 		}
 		spaceSlug := i.Invocation.SpaceID.String()
 		if i.Space != nil {
@@ -125,6 +129,7 @@ func displayInvocationList(invocations []*goclientnew.ExtendedInvocation) {
 			invocation.Slug,
 			spaceSlug,
 			workerSlug,
+			channelSlug,
 			invocation.ToolchainType,
 			functionInvocationsSummary(invocation.FunctionInvocations),
 		})

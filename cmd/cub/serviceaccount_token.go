@@ -78,11 +78,11 @@ Examples:
 		if err != nil {
 			return err
 		}
-		body := goclientnew.CreateServiceAccountTokenJSONRequestBody{Description: serviceAccountTokenDescription}
+		body := goclientnew.CreateServiceAccountUserTokenJSONRequestBody{Description: serviceAccountTokenDescription}
 		if serviceAccountTokenExpiresIn > 0 {
 			body.ExpiresAt = time.Now().Add(serviceAccountTokenExpiresIn)
 		}
-		issuedRes, err := cubClientNew.CreateServiceAccountTokenWithResponse(ctx, serviceAccount.ServiceAccount.ServiceAccountID.String(), &goclientnew.CreateServiceAccountTokenParams{DryRun: dryRunParam()}, body)
+		issuedRes, err := cubClientNew.CreateServiceAccountUserTokenWithResponse(ctx, serviceAccount.ServiceAccount.ServiceAccountID.String(), &goclientnew.CreateServiceAccountUserTokenParams{DryRun: dryRunParam()}, body)
 		if cubapi.IsAPIError(err, issuedRes) {
 			return cubapi.InterpretErrorGeneric(err, issuedRes)
 		}
@@ -109,7 +109,7 @@ Examples:
   cub serviceaccount token list argo-prod
 
   # Just the ids, for scripting
-  cub serviceaccount token list argo-prod -o jq='.[].Jti'
+  cub serviceaccount token list argo-prod -o jq='.[].UserToken.Jti'
 `+"```"+`
 `, ""),
 	Args: cobra.ExactArgs(1),
@@ -118,13 +118,10 @@ Examples:
 		if err != nil {
 			return err
 		}
-		tokensRes, err := cubClientNew.ListServiceAccountTokensWithResponse(ctx, serviceAccount.ServiceAccount.ServiceAccountID.String())
-		if cubapi.IsAPIError(err, tokensRes) {
-			return cubapi.InterpretErrorGeneric(err, tokensRes)
-		}
-		tokens := make([]*goclientnew.UserToken, 0, len(*tokensRes.JSON200))
-		for i := range *tokensRes.JSON200 {
-			tokens = append(tokens, &(*tokensRes.JSON200)[i])
+		tokens, err := cubapi.ListServiceAccountUserTokens(ctx, cubClient, serviceAccount.ServiceAccount.ServiceAccountID.String(),
+			cubapi.NewWhere(where), credentialListOpts())
+		if err != nil {
+			return err
 		}
 		displayListResults(tokens, getJtiForToken, displayTokenList)
 		return nil
@@ -155,8 +152,13 @@ Examples:
 		if err != nil {
 			return err
 		}
+		serviceAccountID := serviceAccount.ServiceAccount.ServiceAccountID.String()
 		jti := args[1]
-		revokeRes, err := cubClientNew.RevokeServiceAccountTokenWithResponse(ctx, serviceAccount.ServiceAccount.ServiceAccountID.String(), jti)
+		token, err := resolveServiceAccountToken(serviceAccountID, jti)
+		if err != nil {
+			return err
+		}
+		revokeRes, err := cubClientNew.RevokeServiceAccountUserTokenWithResponse(ctx, serviceAccountID, token.UserTokenID.String())
 		if cubapi.IsAPIError(err, revokeRes) {
 			return cubapi.InterpretErrorGeneric(err, revokeRes)
 		}
@@ -168,6 +170,89 @@ Examples:
 	},
 }
 
+var serviceAccountTokenGetCmd = &cobra.Command{
+	Use:   "get <service account> <jti>",
+	Short: "Show one of a service account's long-lived tokens",
+	Long: getCommandHelp(`Show the record of one long-lived token, by its id.
+
+The token itself is not shown; ConfigHub does not have it.
+
+Examples:
+`+"```"+`
+  cub serviceaccount token get argo-prod 6f1c2a9e-3b7d-4e0a-9c11-2d5f8b7a4c3e
+`+"```"+`
+`, ""),
+	Args: cobra.ExactArgs(2),
+	RunE: func(_ *cobra.Command, args []string) error {
+		serviceAccount, err := resolveServiceAccount(args[0], "ServiceAccountID,Slug")
+		if err != nil {
+			return err
+		}
+		serviceAccountID := serviceAccount.ServiceAccount.ServiceAccountID.String()
+		token, err := resolveServiceAccountToken(serviceAccountID, args[1])
+		if err != nil {
+			return err
+		}
+		tokenRes, err := cubClientNew.GetServiceAccountUserTokenWithResponse(ctx, serviceAccountID, token.UserTokenID.String(), &goclientnew.GetServiceAccountUserTokenParams{})
+		if cubapi.IsAPIError(err, tokenRes) {
+			return cubapi.InterpretErrorGeneric(err, tokenRes)
+		}
+		displayGetResults(tokenRes.JSON200, func(extended *goclientnew.ExtendedUserToken) {
+			displayTokenDetails(extended.UserToken)
+		})
+		return nil
+	},
+}
+
+var serviceAccountTokenDeleteCmd = &cobra.Command{
+	Use:   "delete <service account> <jti>",
+	Short: "Delete a service account's long-lived token",
+	Long: getCommandHelp(`Delete the record of one long-lived token, by its id, to tidy the list.
+
+A token that is still live stops working within a minute on every server, as a
+revoked one does, and is refused afterwards as unknown. Revoke it instead to
+keep the record that it was issued.
+
+Examples:
+`+"```"+`
+  cub serviceaccount token delete argo-prod 6f1c2a9e-3b7d-4e0a-9c11-2d5f8b7a4c3e
+`+"```"+`
+`, ""),
+	Args: cobra.ExactArgs(2),
+	RunE: func(_ *cobra.Command, args []string) error {
+		serviceAccount, err := resolveServiceAccount(args[0], "ServiceAccountID,Slug")
+		if err != nil {
+			return err
+		}
+		serviceAccountID := serviceAccount.ServiceAccount.ServiceAccountID.String()
+		jti := args[1]
+		token, err := resolveServiceAccountToken(serviceAccountID, jti)
+		if err != nil {
+			return err
+		}
+		deleteRes, err := cubClientNew.DeleteServiceAccountUserTokenWithResponse(ctx, serviceAccountID, token.UserTokenID.String())
+		if cubapi.IsAPIError(err, deleteRes) {
+			return cubapi.InterpretErrorGeneric(err, deleteRes)
+		}
+		displayDeleteResults("token", jti, jti, deleteRes.JSON200)
+		return nil
+	},
+}
+
+// resolveServiceAccountToken finds the service account's token with the jti, which is how a token
+// is named on the command line and in its own claims; the API addresses it by its ID.
+func resolveServiceAccountToken(serviceAccountID, jti string) (*goclientnew.UserToken, error) {
+	tokens, err := cubapi.ListServiceAccountUserTokens(ctx, cubClient, serviceAccountID,
+		cubapi.Where{}.Eq("Jti", jti), cubapi.ListOpts{Select: "UserTokenID,Jti"})
+	if err != nil {
+		return nil, err
+	}
+	if len(tokens) == 0 || tokens[0].UserToken == nil {
+		return nil, fmt.Errorf("the service account has no token %s", jti)
+	}
+	return tokens[0].UserToken, nil
+}
+
 func init() {
 	serviceAccountTokenCreateCmd.Flags().StringVar(&serviceAccountTokenDescription, "description", "",
 		"note recording which system holds the token")
@@ -177,15 +262,32 @@ func init() {
 	enableDryRunFlag(serviceAccountTokenCreateCmd)
 	serviceAccountTokenCmd.AddCommand(serviceAccountTokenCreateCmd)
 
-	addStandardListFlags(serviceAccountTokenListCmd)
+	// The endpoint takes no filter or view.
+	enableWhereFlag(serviceAccountTokenListCmd)
+	enableContainsFlag(serviceAccountTokenListCmd)
+	enableSelectFlag(serviceAccountTokenListCmd)
+	addStandardListDisplayFlags(serviceAccountTokenListCmd)
+	enableListPagingFlags(serviceAccountTokenListCmd)
 	serviceAccountTokenCmd.AddCommand(serviceAccountTokenListCmd)
 
 	addStandardDisplayFlags(serviceAccountTokenRevokeCmd)
 	serviceAccountTokenCmd.AddCommand(serviceAccountTokenRevokeCmd)
+
+	addStandardDisplayFlags(serviceAccountTokenGetCmd)
+	serviceAccountTokenCmd.AddCommand(serviceAccountTokenGetCmd)
+
+	addStandardDisplayFlags(serviceAccountTokenDeleteCmd)
+	serviceAccountTokenCmd.AddCommand(serviceAccountTokenDeleteCmd)
 }
 
-func getJtiForToken(token *goclientnew.UserToken) string {
-	return token.Jti
+// tokenAliases name a listed token's columns as a User's are named.
+var tokenAliases = map[string]string{
+	"Name": "UserToken.DisplayName",
+	"ID":   "UserToken.UserTokenID",
+}
+
+func getJtiForToken(token *goclientnew.ExtendedUserToken) string {
+	return token.UserToken.Jti
 }
 
 func displayIssuedToken(issued *goclientnew.IssuedUserToken) {
@@ -210,15 +312,16 @@ func displayTokenDetails(token *goclientnew.UserToken) {
 	view.Render()
 }
 
-func displayTokenList(tokens []*goclientnew.UserToken) {
-	if displayRequestedColumns(tokens, nil, nil) {
+func displayTokenList(tokens []*goclientnew.ExtendedUserToken) {
+	if displayRequestedColumns(tokens, tokenAliases, nil) {
 		return
 	}
 	table := tableView()
 	if !noheader {
 		table.SetHeader([]string{"Jti", "Description", "Created", "Expires", "Last-Used", "Status"})
 	}
-	for _, token := range tokens {
+	for _, extended := range tokens {
+		token := extended.UserToken
 		table.Append([]string{
 			token.Jti,
 			token.Description,

@@ -8,6 +8,7 @@ import (
 	"fmt"
 	"strings"
 
+	"github.com/confighub/sdk/core/cubapi"
 	goclientnew "github.com/confighub/sdk/core/openapi/goclient-new"
 	"github.com/google/uuid"
 	"github.com/spf13/cobra"
@@ -146,7 +147,7 @@ backs it off. The new space's first "cub release publish" republishes the apps s
 the cluster's root ClusterProfile applies it. For a cluster from "cub cluster up --controller flux"
 (whose target's confighub.com/cluster-controller is flux), it adds a unit holding a Flux OCIRepository and
 Kustomization. With argobot on the cluster, the apps space is republished at once, as for Argo CD;
-with --no-argobot, the new space's first "cub release publish" republishes it, as for Sveltos, since
+with --no-k8sbot, the new space's first "cub release publish" republishes it, as for Sveltos, since
 Flux backs off an OCIRepository whose Release does not exist yet. This is a no-op for ordinary
 targets; use --no-argo-app to skip it. Publish the deployment's own release
 ("cub release publish <new-space>") to make its configuration go live.
@@ -264,29 +265,11 @@ func variantCreateCmdRun(cmd *cobra.Command, args []string) (retErr error) {
 		changesetID = &id
 	}
 
-	// Step 1: clone the upstream space. It selects the upstream's Triggers, and Permissions are
-	// copied (we pass an empty patch so nothing is overridden).
-	newSpace, err := cloneVariantSpace(variantName, upstreamSpace.Space)
-	if err != nil {
-		return err
-	}
-	if !jsonOutput {
-		tprint("Created variant space %s (ID: %s)", newSpace.Slug, newSpace.SpaceID)
-	}
-	// From here on a failure leaves a variant space behind without the owner --owner names, so
-	// the error says so and gives the command that sets it.
-	ownerPending := setOwner
-	defer func() {
-		if retErr != nil && ownerPending {
-			retErr = componentOwnerSkipped(retErr, ownerComponent.Slug, variantCreateArgs.owner)
-		}
-	}()
-
-	// Step 2: resolve the target (if specified) and set it as the new space's ReleaseTargetID:
-	// releases are published per space ("cub release publish <space>"), and publish requires it.
-	// --release-target sets the same field and leaves the units to the server, which gives a
-	// space's release Target to the units released through one.
-	// Resolved after the space exists so that <new-space-slug>/<target-slug> can be used.
+	// The target names each clone's Target and the space's release target: releases are
+	// published per space ("cub release publish <space>"), and publish requires one.
+	// --release-target sets only the space's, and leaves the units to the server, which gives a
+	// space's release Target to the units released through one. Resolved, like the patches,
+	// before anything is created, so a bad flag leaves nothing behind.
 	var targetID *uuid.UUID
 	var target *goclientnew.Target
 	if variantCreateArgs.target != "" {
@@ -296,7 +279,7 @@ func variantCreateCmdRun(cmd *cobra.Command, args []string) (retErr error) {
 		}
 		targetID = &target.TargetID
 	}
-	releaseTargetID := targetID
+	var releaseTargetID *uuid.UUID
 	if variantCreateArgs.releaseTarget != "" {
 		id, err := resolveTargetID(variantCreateArgs.releaseTarget)
 		if err != nil {
@@ -304,41 +287,61 @@ func variantCreateCmdRun(cmd *cobra.Command, args []string) (retErr error) {
 		}
 		releaseTargetID = &id
 	}
-	if releaseTargetID != nil {
-		if err := patchVariantSpaceTarget(newSpace.SpaceID, *releaseTargetID); err != nil {
-			return err
-		}
+	spacePatch, err := variantSpacePatch()
+	if err != nil {
+		return err
 	}
-
-	// Step 3: clone the upstream units into the new space, optionally retargeting them.
-	responses, statusCode, err := cloneVariantUnits(upstreamSpaceID, newSpace.SpaceID, targetID, changesetID)
+	unitPatch, err := variantUnitPatch()
 	if err != nil {
 		return err
 	}
 
-	// Step 4: if requested, set the namespace on the cloned Kubernetes/YAML units.
-	// The base is typically uploaded with the confighubplaceholder namespace;
-	// set-namespace renames the v1/Namespace resource and stamps metadata.namespace
-	// on every namespaced resource, so each variant lands in its own namespace.
-	// When the upstream space records its namespace, only that namespace moves, so a
-	// component's resources in other namespaces, such as kube-system, stay put.
-	if variantCreateArgs.namespace != "" {
-		setNamespace := []string{"function", "do", "--quiet", "--space", newSpace.Slug}
-		// The clones joined the changeset, and a change to a unit in an open changeset has to
-		// name it. By ID: the child resolves a bare slug against the new space, not this one.
-		if changesetID != nil {
-			setNamespace = append(setNamespace, "--changeset", changesetID.String())
+	// Steps 1-4: clone the upstream space, which selects the upstream's Triggers and copies its
+	// Permissions; set its release target; clone the units into it; and with --namespace run
+	// set-namespace over them. The base is typically uploaded with the confighubplaceholder
+	// namespace; set-namespace renames the v1/Namespace resource and stamps metadata.namespace
+	// on every namespaced resource, so each variant lands in its own namespace. When the
+	// upstream space records its namespace, only that namespace moves, so a component's
+	// resources in other namespaces, such as kube-system, stay put.
+	//
+	// From the moment the space exists, a failure leaves it behind without the owner --owner
+	// names, so the error says so and gives the command that sets it.
+	ownerPending := false
+	defer func() {
+		if retErr != nil && ownerPending {
+			retErr = componentOwnerSkipped(retErr, ownerComponent.Slug, variantCreateArgs.owner)
 		}
-		setNamespace = append(setNamespace, "--", "set-namespace", variantCreateArgs.namespace)
-		if upstreamNamespace := upstreamSpace.Space.Labels[labelNamespace]; upstreamNamespace != "" {
-			setNamespace = append(setNamespace, "--old-namespace="+upstreamNamespace)
-		}
-		if err := runCub(setNamespace...); err != nil {
-			return err
-		}
+	}()
+	result, err := cubapi.CreateVariant(ctx, cubClient, cubapi.VariantSpec{
+		Upstream:                  upstreamSpaceID,
+		Name:                      variantName,
+		VariantLabels:             variantSpaceLabels(),
+		SpacePattern:              variantCreateArgs.spacePattern,
+		SpacePatch:                spacePatch,
+		UnitPatch:                 unitPatch,
+		Target:                    targetID,
+		ReleaseTarget:             releaseTargetID,
+		Namespace:                 variantCreateArgs.namespace,
+		ChangeSetID:               changesetID,
+		ChangeDescription:         variantCreateArgs.changeDesc,
+		Syncback:                  variantCreateArgs.syncback,
+		IncludeOutgoingLinksWhere: variantCreateArgs.includeOutgoingLinksWhere,
+		IncludeHidden:             includeHidden,
+		AllowExists:               allowExists,
+		DryRun:                    dryRun,
+	})
+	if result != nil && result.Space != nil {
+		ownerPending = setOwner
 		if !jsonOutput {
-			tprint("Set namespace %q on the cloned units in %s", variantCreateArgs.namespace, newSpace.Slug)
+			tprint("Created variant space %s (ID: %s)", result.Space.Slug, result.Space.SpaceID)
 		}
+	}
+	if err != nil {
+		return err
+	}
+	newSpace := result.Space
+	if variantCreateArgs.namespace != "" && !jsonOutput {
+		tprint("Set namespace %q on the cloned units in %s", variantCreateArgs.namespace, newSpace.Slug)
 	}
 
 	// Step 5: if the target is a cub-cluster Argo target (carries the
@@ -382,7 +385,7 @@ func variantCreateCmdRun(cmd *cobra.Command, args []string) (retErr error) {
 		}
 	}
 
-	return handleBulkCreateOrUpdateResponse(responses, statusCode, "create", "")
+	return handleBulkCreateOrUpdateResponse(&result.Units, result.UnitsStatus, "create", "")
 }
 
 // checkVariantCreateOwner checks --owner against the Component the upstream space is in, before
@@ -442,66 +445,32 @@ func checkSpaceLabelFlags(spaceLabels []string, reserved map[string]string) erro
 	return nil
 }
 
-// componentVariantPattern is the default slug pattern for a variant space,
-// matching the convention used by "cub variant upload" and "cub helm install".
-const componentVariantPattern = "template:{{.Component.Slug}}-{{.Labels.Variant}}"
-
-// cloneVariantSpace clones the upstream space, setting the new space's Variant label to variantName
-// (plus any extra --variant-labels) and applying the --space-pattern, defaulted to
-// <component>-<variant> when the cloned space has a Component.
-func cloneVariantSpace(variantName string, upstreamSpace *goclientnew.Space) (*goclientnew.Space, error) {
-	upstreamSpaceID := upstreamSpace.SpaceID
-	// The Variant label is always set from the variant name. --stage, --environment, --region,
-	// and --layer set those well-known labels, and --namespace sets the Namespace label,
-	// which promote reads to place the units it clones later. Any --variant-labels are applied
-	// last so they win. --space-label goes on the space patch below instead, and may name none of
-	// these.
-	variantLabels := []string{"Variant=" + variantName}
+// variantSpaceLabels are the labels --stage, --environment, --region, --layer and
+// --variant-labels give the new space, in that order so --variant-labels win. The Variant and
+// Namespace labels come from the variant name and --namespace, set by cubapi.CreateVariant.
+func variantSpaceLabels() []string {
+	var labels []string
 	if variantCreateArgs.stage != "" {
-		variantLabels = append(variantLabels, "Stage="+variantCreateArgs.stage)
+		labels = append(labels, "Stage="+variantCreateArgs.stage)
 	}
 	if variantCreateArgs.environment != "" {
-		variantLabels = append(variantLabels, "Environment="+variantCreateArgs.environment)
+		labels = append(labels, "Environment="+variantCreateArgs.environment)
 	}
 	if variantCreateArgs.region != "" {
-		variantLabels = append(variantLabels, "Region="+variantCreateArgs.region)
+		labels = append(labels, "Region="+variantCreateArgs.region)
 	}
 	if variantCreateArgs.layer != "" {
-		variantLabels = append(variantLabels, "Layer="+variantCreateArgs.layer)
+		labels = append(labels, "Layer="+variantCreateArgs.layer)
 	}
-	if variantCreateArgs.namespace != "" {
-		variantLabels = append(variantLabels, labelNamespace+"="+variantCreateArgs.namespace)
-	}
-	variantLabels = append(variantLabels, variantCreateArgs.variantLabels...)
-	variantLabelsStr := strings.Join(variantLabels, ",")
+	return append(labels, variantCreateArgs.variantLabels...)
+}
 
-	whereClause := fmt.Sprintf("SpaceID = '%s'", upstreamSpaceID.String())
-	include := "OrganizationID"
-	params := &goclientnew.BulkCreateSpacesParams{
-		Where:         &whereClause,
-		Include:       &include,
-		VariantLabels: &variantLabelsStr,
-	}
-	params.IncludeHidden = includeHiddenParam()
-	spacePattern := variantCreateArgs.spacePattern
-	if spacePattern == "" && upstreamSpace.ComponentID != nil {
-		spacePattern = componentVariantPattern
-	}
-	if spacePattern != "" {
-		params.NamePattern = &spacePattern
-	}
-	if allowExists {
-		allowExistsStr := "true"
-		params.AllowExists = &allowExistsStr
-	}
-
-	// Build the space patch. An empty patch ("null") copies the upstream
-	// fields other than its delete gates, which a clone never inherits;
-	// --space-label / --space-annotation add a merge patch (via the shared
-	// EnhancePatchData) so the given keys are layered onto the copied
-	// labels/annotations (RFC 7386 merge — upstream keys survive), and
-	// --space-delete-gate sets the clone's delete gates. TargetID is reserved
-	// as a space annotation; --target sets it post-clone.
+// variantSpacePatch is the merge patch --space-label, --space-annotation and --permission layer
+// onto the cloned space; the upstream's keys survive (RFC 7386). --space-delete-gate sets the
+// clone's delete gates, since a clone never inherits the upstream's. The
+// TargetID and UpstreamSpaceID annotations are reserved: --target sets the one, and
+// cubapi.CreateVariant stamps the other.
+func variantSpacePatch() (json.RawMessage, error) {
 	for _, a := range variantCreateArgs.spaceAnnotations {
 		switch strings.SplitN(a, "=", 2)[0] {
 		case "TargetID":
@@ -510,112 +479,29 @@ func cloneVariantSpace(variantName string, upstreamSpace *goclientnew.Space) (*g
 			return nil, fmt.Errorf("--space-annotation %s is reserved", AnnotationUpstreamSpaceID)
 		}
 	}
-	// Stamp the upstream space's ID so "cub variant promote" can find the
-	// upstream space to promote from.
-	annotations := append([]string{}, variantCreateArgs.spaceAnnotations...)
-	annotations = append(annotations, AnnotationUpstreamSpaceID+"="+upstreamSpaceID.String())
-	patchJSON, err := EnhancePatchData([]byte("null"),
-		annotations, variantCreateArgs.spaceLabels, variantCreateArgs.spaceDeleteGates, variantCreateArgs.permissions, nil)
-	if err != nil {
-		return nil, err
-	}
-	responses, _, err := bulkCreateSpaces(params, patchJSON)
-	if err != nil {
-		return nil, err
-	}
-
-	var newSpace *goclientnew.Space
-	for i := range responses {
-		r := &responses[i]
-		if r.Error != nil {
-			return nil, fmt.Errorf("failed to clone space: %s", r.Error.Message)
-		}
-		if r.Space != nil {
-			newSpace = r.Space
-		}
-	}
-	if newSpace == nil {
-		return nil, fmt.Errorf("space clone returned no space")
-	}
-	return newSpace, nil
+	return EnhancePatchData([]byte("null"),
+		variantCreateArgs.spaceAnnotations, variantCreateArgs.spaceLabels, variantCreateArgs.spaceDeleteGates, variantCreateArgs.permissions, nil)
 }
 
-// patchVariantSpaceTarget sets the new space's ReleaseTargetID to the resolved target,
-// which "cub release publish" requires.
-func patchVariantSpaceTarget(spaceID uuid.UUID, targetID uuid.UUID) error {
-	patchMap := map[string]interface{}{"ReleaseTargetID": targetID.String()}
-	patchData, err := json.Marshal(patchMap)
-	if err != nil {
-		return err
-	}
-	if _, err := patchSpace(spaceID, patchData); err != nil {
-		return fmt.Errorf("failed to set target on variant space: %w", err)
-	}
-	return nil
-}
-
-// cloneVariantUnits clones all units from the upstream space into the new space, optionally
-// setting their TargetID to the resolved target and putting them in a changeset.
-func cloneVariantUnits(upstreamSpaceID, newSpaceID uuid.UUID, targetID, changesetID *uuid.UUID) (*[]goclientnew.UnitCreateOrUpdateResponse, int, error) {
-	whereClause := fmt.Sprintf("SpaceID = '%s'", upstreamSpaceID.String())
-	whereSpace := fmt.Sprintf("SpaceID = '%s'", newSpaceID.String())
-	include := "UnitEventID,TargetID,UpstreamUnitID,SpaceID"
-	params := &goclientnew.BulkCreateUnitsParams{
-		Where:      &whereClause,
-		WhereSpace: &whereSpace,
-		Include:    &include,
-	}
-	params.IncludeHidden = includeHiddenParam()
-	if allowExists {
-		allowExistsStr := "true"
-		params.AllowExists = &allowExistsStr
-	}
-	if variantCreateArgs.syncback {
-		params.Syncback = &variantCreateArgs.syncback
-	}
-	if variantCreateArgs.includeOutgoingLinksWhere != "" {
-		params.IncludeOutgoingLinksWhere = &variantCreateArgs.includeOutgoingLinksWhere
-	}
-
-	// Build the unit merge patch via the shared EnhancePatchData, which
-	// layers --unit-label and --unit-annotation onto each clone's copied
-	// fields and sets --unit-delete-gate as its delete gates (a clone never
-	// inherits the source Unit's gates). The retarget (TargetID), --unit-destroy-gate,
-	// --change-desc and --changeset are unit-specific fields EnhancePatchData
-	// doesn't model, so they go through the enhancer callback. The enhancer is
-	// nil when none applies, so a flagless clone keeps the prior "null" no-op
-	// patch.
+// variantUnitPatch is the merge patch --unit-label and --unit-annotation layer onto every cloned
+// unit. --unit-delete-gate and --unit-destroy-gate set its gates, since a clone never inherits
+// the upstream unit's. The target, change description and changeset are cubapi.CreateVariant's
+// to add.
+func variantUnitPatch() (json.RawMessage, error) {
 	destroyGates := map[string]bool{}
 	if err := setGatesFromSlice(variantCreateArgs.unitDestroyGates, &destroyGates); err != nil {
-		return nil, 0, fmt.Errorf("invalid --unit-destroy-gate: %w", err)
+		return nil, fmt.Errorf("invalid --unit-destroy-gate: %w", err)
 	}
-	changeDesc := variantCreateArgs.changeDesc
 	var enhancer PatchEnhancer
-	if targetID != nil || len(destroyGates) > 0 || changeDesc != "" || changesetID != nil {
+	if len(destroyGates) > 0 {
 		enhancer = func(m map[string]interface{}) {
-			if targetID != nil {
-				m["TargetID"] = targetID.String()
+			dg := make(map[string]interface{}, len(destroyGates))
+			for k, v := range destroyGates {
+				dg[k] = v
 			}
-			if len(destroyGates) > 0 {
-				dg := make(map[string]interface{}, len(destroyGates))
-				for k, v := range destroyGates {
-					dg[k] = v
-				}
-				m["DestroyGates"] = dg
-			}
-			if changeDesc != "" {
-				m["LastChangeDescription"] = changeDesc
-			}
-			if changesetID != nil {
-				m["ChangeSetID"] = *changesetID
-			}
+			m["DestroyGates"] = dg
 		}
 	}
-	patchJSON, err := EnhancePatchData([]byte("null"),
+	return EnhancePatchData([]byte("null"),
 		variantCreateArgs.unitAnnotations, variantCreateArgs.unitLabels, variantCreateArgs.unitDeleteGates, nil, enhancer)
-	if err != nil {
-		return nil, 0, err
-	}
-
-	return bulkCreateUnits(params, patchJSON)
 }

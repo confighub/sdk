@@ -22,8 +22,7 @@ var clusterUpArgs struct {
 	noPorts           bool
 	noArgobot         bool
 	noPlaceholderGate bool
-	argobotOCI        string
-	argoVersion       string
+	controllerVersion string
 	prune             bool
 }
 
@@ -56,7 +55,7 @@ argobot is installed in its Sveltos mode, from its own base Space
 ("argobot-sveltos-base"): on each deploy it redeploys the matching profile, and
 it reports live status from Sveltos health reports. Sveltos also polls each
 Release itself, as a fallback: every 10 minutes with argobot, every minute
-with --no-argobot, where polling is all there is. The Sveltos dashboard is
+with --no-k8sbot, where polling is all there is. The Sveltos dashboard is
 reachable at http://localhost:<dashboard-port>, and logs in with a token from
 the platform-admin ServiceAccount.
 
@@ -69,7 +68,7 @@ create --target" adds one per deployment. argobot is installed in its Flux mode,
 from its own base Space ("argobot-flux-base"): on each deploy it requests a
 reconciliation of the matching OCIRepository, and it reports live status from
 the Kustomizations. The OCIRepositories also poll for a new Release themselves:
-every 10 minutes with argobot, every minute with --no-argobot. Flux has no UI;
+every 10 minutes with argobot, every minute with --no-k8sbot. Flux has no UI;
 the whole NodePort window is left for your apps, and
 "kubectl -n flux-system get ocirepository,kustomization" shows Flux's state.
 
@@ -99,10 +98,9 @@ func init() {
 	clusterUpCmd.Flags().StringVar(&clusterUpArgs.controller, "controller", clusterControllerArgo, "controller to install and wire to ConfigHub: argo (Argo CD), sveltos (Sveltos) or flux (Flux)")
 	clusterUpCmd.Flags().StringArrayVar(&clusterUpArgs.mounts, "mount", nil, "host:container bind mount (repeatable; container path defaults to /mnt/<basename>)")
 	clusterUpCmd.Flags().BoolVar(&clusterUpArgs.noPorts, "no-ports", false, "only reserve the controller UI's NodePort (none for Flux); skip the user-app NodePort window")
-	clusterUpCmd.Flags().BoolVar(&clusterUpArgs.noArgobot, "no-argobot", false, "skip installing argobot (the event-driven Argo CD sync, Sveltos redeploy, or Flux reconciliation, bot)")
+	clusterUpCmd.Flags().BoolVar(&clusterUpArgs.noArgobot, "no-k8sbot", false, "skip installing argobot (the event-driven Argo CD sync, Sveltos redeploy, or Flux reconciliation, bot)")
 	clusterUpCmd.Flags().BoolVar(&clusterUpArgs.noPlaceholderGate, "no-placeholder-gate", false, "skip the default vet-placeholders Trigger, allowing Releases with unfilled confighubplaceholder values to be published to this cluster")
-	clusterUpCmd.Flags().StringVar(&clusterUpArgs.argobotOCI, "argobot-oci", clusterArgobotOCIRef, "OCI reference of argobot's config bundle, or a local file or directory of its manifests (default with --controller sveltos: "+clusterArgobotSveltosOCIRef+", with --controller flux: "+clusterArgobotFluxOCIRef+")")
-	clusterUpCmd.Flags().StringVar(&clusterUpArgs.argoVersion, "argocd-version", clusterArgoDefaultVersion, "Argo CD release to install (v3.1 or later; oci:// sources need it)")
+	clusterUpCmd.Flags().StringVar(&clusterUpArgs.controllerVersion, "controller-version", "", "controller release to install (default: argo "+clusterArgoDefaultVersion+", sveltos "+clusterSveltosVersion+", flux "+clusterFluxVersion+"; Argo CD must be v3.1 or later, which oci:// sources need)")
 	clusterUpCmd.Flags().BoolVar(&clusterUpArgs.prune, "prune", false, "let the controller delete what a removed deployment deployed: the root prunes deployments whose Units leave the apps space (Sveltos's always does), and deployments created later prune what they deployed")
 	clusterCmd.AddCommand(clusterUpCmd)
 }
@@ -115,8 +113,7 @@ type clusterUpOptions struct {
 	noPorts           bool
 	noArgobot         bool
 	noPlaceholderGate bool
-	argobotOCIRef     string
-	argoVersion       string
+	controllerVersion string
 	prune             bool
 }
 
@@ -129,10 +126,6 @@ func clusterUpCmdRun(cmd *cobra.Command, args []string) error {
 	if err != nil {
 		return err
 	}
-	argobotOCIRef, err := clusterArgobotOCIRefFor(clusterUpArgs.controller, clusterUpArgs.argobotOCI, cmd.Flags().Changed("argobot-oci"))
-	if err != nil {
-		return err
-	}
 	return clusterUpRun(cmd.OutOrStdout(), clusterUpOptions{
 		name:              name,
 		spaceSlug:         clusterUpArgs.spaceSlug,
@@ -141,8 +134,7 @@ func clusterUpCmdRun(cmd *cobra.Command, args []string) error {
 		noPorts:           clusterUpArgs.noPorts,
 		noArgobot:         clusterUpArgs.noArgobot,
 		noPlaceholderGate: clusterUpArgs.noPlaceholderGate,
-		argobotOCIRef:     argobotOCIRef,
-		argoVersion:       clusterUpArgs.argoVersion,
+		controllerVersion: clusterUpArgs.controllerVersion,
 		prune:             clusterUpArgs.prune,
 	})
 }
@@ -186,6 +178,12 @@ func clusterParseMounts(args []string) ([]clusterMount, error) {
 }
 
 func clusterUpRun(out io.Writer, opts clusterUpOptions) error {
+	switch opts.controller {
+	case clusterControllerArgo, clusterControllerSveltos, clusterControllerFlux:
+	default:
+		return fmt.Errorf("--controller %q: must be %s, %s or %s", opts.controller,
+			clusterControllerArgo, clusterControllerSveltos, clusterControllerFlux)
+	}
 	if err := clusterKindAvailable(); err != nil {
 		return err
 	}
@@ -327,8 +325,8 @@ func clusterUpRun(out io.Writer, opts clusterUpOptions) error {
 		controller:        opts.controller,
 		spaceAnnotations:  spaceAnnotations,
 		targetAnnotations: targetAnnotations,
+		controllerVersion: opts.controllerVersion,
 		argo: clusterArgoOptions{
-			version:         opts.argoVersion,
 			installIfAbsent: true,
 			nodePort:        uiPort,
 		},
@@ -339,7 +337,6 @@ func clusterUpRun(out io.Writer, opts clusterUpOptions) error {
 		fluxInstallIfAbsent: true,
 		noArgobot:           opts.noArgobot,
 		noPlaceholderGate:   opts.noPlaceholderGate,
-		argobotOCIRef:       opts.argobotOCIRef,
 		prune:               opts.prune,
 	}, func(f func()) { rollback = append(rollback, f) })
 	if err != nil {
@@ -389,29 +386,6 @@ func clusterUpRun(out io.Writer, opts clusterUpOptions) error {
 	}
 	clusterPrintSummaryTail(out, result, envFilePath)
 	return nil
-}
-
-// clusterArgobotOCIRefFor validates controller and returns the argobot bundle
-// to install for it: flagValue when --argobot-oci was given, otherwise the
-// controller's own bundle, since argobot's Sveltos and Flux deployments are
-// bundles of their own.
-func clusterArgobotOCIRefFor(controller, flagValue string, changed bool) (string, error) {
-	switch controller {
-	case clusterControllerArgo:
-		return flagValue, nil
-	case clusterControllerSveltos:
-		if !changed {
-			return clusterArgobotSveltosOCIRef, nil
-		}
-		return flagValue, nil
-	case clusterControllerFlux:
-		if !changed {
-			return clusterArgobotFluxOCIRef, nil
-		}
-		return flagValue, nil
-	}
-	return "", fmt.Errorf("--controller %q: must be %s, %s or %s", controller,
-		clusterControllerArgo, clusterControllerSveltos, clusterControllerFlux)
 }
 
 // clusterBuildSveltosEnvFile renders the shell-source env file for a cluster

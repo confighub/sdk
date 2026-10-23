@@ -142,6 +142,9 @@ resourceTypes:
     - optional: true
       path: BridgeWorker
       target: BridgeWorker
+    - optional: true
+      path: Channel
+      target: Channel
   listTypes:
   - path: FunctionInvocations
     type: atomic
@@ -291,6 +294,9 @@ resourceTypes:
     - optional: true
       path: BridgeWorker
       target: BridgeWorker
+    - optional: true
+      path: Channel
+      target: Channel
     - optional: true
       path: UnitFilter
       target: Filter

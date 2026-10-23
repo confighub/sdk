@@ -4,13 +4,14 @@
 package main
 
 import (
+	"github.com/confighub/sdk/core/cubapi"
 	"github.com/spf13/cobra"
 )
 
 // AnnotationUpstreamSpaceID is the Space annotation "cub variant create" stamps
 // on a new variant space, recording the UUID of the upstream space it was cloned
 // from. "cub variant promote" reads it to find the space to promote from.
-const AnnotationUpstreamSpaceID = "UpstreamSpaceID"
+const AnnotationUpstreamSpaceID = cubapi.AnnotationUpstreamSpaceID
 
 // variantCmd is inherently multi-space: it reads from an upstream space and
 // writes to a freshly created downstream space. It therefore does NOT use the

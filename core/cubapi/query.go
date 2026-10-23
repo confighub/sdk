@@ -861,20 +861,25 @@ func ListChannels(ctx context.Context, c *Client, where Where, opts ListOpts, wi
 }
 
 // ListCommandRuns lists command runs across the organization, narrowed by where.
-func ListCommandRuns(ctx context.Context, c *Client, where Where, opts ListOpts, with ...func(*goclientnew.ListAllCommandRunsParams)) ([]*goclientnew.CommandRun, error) {
+func ListCommandRuns(ctx context.Context, c *Client, where Where, opts ListOpts, with ...func(*goclientnew.ListAllCommandRunsParams)) ([]*goclientnew.ExtendedCommandRun, error) {
 	if err := where.Err(); err != nil {
 		return nil, err
 	}
 	params := &goclientnew.ListAllCommandRunsParams{
 		Where:           ptrIf(where.String()),
 		Select:          ptrIf(opts.Select),
+		Include:         ptrIf(opts.Include),
+		Filter:          ptrIf(opts.Filter),
+		Contains:        ptrIf(opts.Contains),
+		IncludeHidden:   ptrIf(opts.IncludeHidden),
 		WherePermission: enumIf[goclientnew.ListAllCommandRunsParamsWherePermission](opts.WherePermission),
 		OrderBy:         ptrIf(opts.OrderBy),
+		View:            ptrIf(opts.View),
 	}
 	for _, fn := range with {
 		fn(params)
 	}
-	return ReadPages(opts, func(limit *int, token *string) (*http.Response, *[]goclientnew.CommandRun, error) {
+	return ReadPages(opts, func(limit *int, token *string) (*http.Response, *[]goclientnew.ExtendedCommandRun, error) {
 		params.Limit, params.Continue = limit, token
 		res, err := c.API.ListAllCommandRunsWithResponse(ctx, params)
 		if IsAPIError(err, res) {
@@ -1026,4 +1031,50 @@ func derefPtrs[T any](items *[]T) []*T {
 		out = append(out, &(*items)[i])
 	}
 	return out
+}
+
+// ListServiceAccountUserKeys returns the service account's keys matching where. The endpoint
+// takes no filter, view or include.
+func ListServiceAccountUserKeys(ctx context.Context, c *Client, serviceAccountID string, where Where, opts ListOpts) ([]*goclientnew.ExtendedUserKey, error) {
+	if err := where.Err(); err != nil {
+		return nil, err
+	}
+	params := &goclientnew.ListServiceAccountUserKeysParams{
+		Where:         ptrIf(where.String()),
+		Select:        ptrIf(opts.Select),
+		Contains:      ptrIf(opts.Contains),
+		IncludeHidden: ptrIf(opts.IncludeHidden),
+		OrderBy:       ptrIf(opts.OrderBy),
+	}
+	return ReadPages(opts, func(limit *int, token *string) (*http.Response, *[]goclientnew.ExtendedUserKey, error) {
+		params.Limit, params.Continue = limit, token
+		res, err := c.API.ListServiceAccountUserKeysWithResponse(ctx, serviceAccountID, params)
+		if IsAPIError(err, res) {
+			return nil, nil, InterpretErrorGeneric(err, res)
+		}
+		return res.HTTPResponse, res.JSON200, nil
+	})
+}
+
+// ListServiceAccountUserTokens returns the service account's tokens matching where. The endpoint
+// takes no filter, view or include.
+func ListServiceAccountUserTokens(ctx context.Context, c *Client, serviceAccountID string, where Where, opts ListOpts) ([]*goclientnew.ExtendedUserToken, error) {
+	if err := where.Err(); err != nil {
+		return nil, err
+	}
+	params := &goclientnew.ListServiceAccountUserTokensParams{
+		Where:         ptrIf(where.String()),
+		Select:        ptrIf(opts.Select),
+		Contains:      ptrIf(opts.Contains),
+		IncludeHidden: ptrIf(opts.IncludeHidden),
+		OrderBy:       ptrIf(opts.OrderBy),
+	}
+	return ReadPages(opts, func(limit *int, token *string) (*http.Response, *[]goclientnew.ExtendedUserToken, error) {
+		params.Limit, params.Continue = limit, token
+		res, err := c.API.ListServiceAccountUserTokensWithResponse(ctx, serviceAccountID, params)
+		if IsAPIError(err, res) {
+			return nil, nil, InterpretErrorGeneric(err, res)
+		}
+		return res.HTTPResponse, res.JSON200, nil
+	})
 }

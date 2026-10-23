@@ -51,8 +51,6 @@ const clusterArgoIgnoreDifferencesKey = "resource.customizations.ignoreDifferenc
 // clusterArgoOptions says how clusterArgoEnsure should get Argo CD into a
 // cluster.
 type clusterArgoOptions struct {
-	// version is the release tag to install when Argo CD is absent.
-	version string
 	// installIfAbsent installs Argo CD when the namespace has no argocd-server;
 	// false turns its absence into an error (--no-install).
 	installIfAbsent bool
@@ -79,8 +77,9 @@ type clusterArgoResult struct {
 // applies the argocd-cm ignoreDifferences block that keeps the root app from
 // reporting perpetually OutOfSync. A pre-existing Argo CD is otherwise left as
 // found; in particular an existing ignoreDifferences entry for Applications is
-// someone's deliberate configuration and is not overwritten.
-func clusterArgoEnsure(ctx context.Context, kubeconfigPath string, opts clusterArgoOptions, out io.Writer) (clusterArgoResult, error) {
+// someone's deliberate configuration and is not overwritten. version is the
+// release to install; "" installs clusterArgoDefaultVersion.
+func clusterArgoEnsure(ctx context.Context, kubeconfigPath, version string, opts clusterArgoOptions, out io.Writer) (clusterArgoResult, error) {
 	present, err := clusterArgoPresent(ctx, kubeconfigPath)
 	if err != nil {
 		return clusterArgoResult{}, err
@@ -97,7 +96,7 @@ func clusterArgoEnsure(ctx context.Context, kubeconfigPath string, opts clusterA
 	if !opts.installIfAbsent {
 		return clusterArgoResult{}, fmt.Errorf("Argo CD not found in namespace %q (no argocd-server Deployment) and --no-install was given", clusterArgoNamespace)
 	}
-	password, err := clusterArgoInstall(ctx, kubeconfigPath, opts, out)
+	password, err := clusterArgoInstall(ctx, kubeconfigPath, version, opts, out)
 	if err != nil {
 		return clusterArgoResult{}, err
 	}
@@ -122,8 +121,7 @@ func clusterArgoPresent(ctx context.Context, kubeconfigPath string) (bool, error
 // root Application, optionally switches argocd-server to insecure HTTP on a
 // NodePort, waits for the parts of Argo that serve to be ready, and returns the
 // auto-generated admin password.
-func clusterArgoInstall(ctx context.Context, kubeconfigPath string, opts clusterArgoOptions, out io.Writer) (string, error) {
-	version := opts.version
+func clusterArgoInstall(ctx context.Context, kubeconfigPath, version string, opts clusterArgoOptions, out io.Writer) (string, error) {
 	if version == "" {
 		version = clusterArgoDefaultVersion
 	}

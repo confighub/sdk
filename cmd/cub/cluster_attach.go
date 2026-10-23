@@ -28,12 +28,11 @@ var clusterAttachArgs struct {
 	awsProfile        string
 	grantAccess       bool
 	controller        string
-	argoVersion       string
+	controllerVersion string
 	noInstall         bool
 	noArgoCD          bool
 	noArgobot         bool
 	noPlaceholderGate bool
-	argobotOCI        string
 	prune             bool
 }
 
@@ -87,7 +86,7 @@ What it sets up, in the cluster:
   root Application    bootstrapped once with kubectl; from then on Argo pulls
                       everything else from ConfigHub. It never deletes an
                       Application unless --prune is given (below).
-  argobot             unless --no-argobot: a bot that listens on a Channel and
+  argobot             unless --no-k8sbot: a bot that listens on a Channel and
                       force-syncs the matching Argo Application the moment a
                       deploy happens, instead of waiting for Argo's poll, and
                       reports each Release's live status back.
@@ -163,7 +162,7 @@ Examples:
   cub cluster attach prod-eu --kubeconfig ~/.kube/eu.yaml --kube-context prod-eu
 
   # Attach a cluster that already runs Argo CD, without argobot
-  cub cluster attach shared --no-install --no-argobot
+  cub cluster attach shared --no-install --no-k8sbot
 
   # Attach a cluster through Flux, using the Flux it already runs
   cub cluster attach staging --controller flux --no-install
@@ -189,13 +188,12 @@ func init() {
 	clusterAttachCmd.Flags().StringVar(&clusterAttachArgs.awsProfile, "aws-profile", "", "--provider eks: the AWS CLI profile (defaults to AWS_PROFILE)")
 	clusterAttachCmd.Flags().BoolVar(&clusterAttachArgs.grantAccess, "grant-access", false, "--provider eks: if your AWS identity has no access entry on the cluster, add one with cluster-admin")
 	clusterAttachCmd.Flags().StringVar(&clusterAttachArgs.controller, "controller", clusterControllerArgo, "controller to wire to ConfigHub: argo (Argo CD), sveltos (Sveltos) or flux (Flux)")
-	clusterAttachCmd.Flags().StringVar(&clusterAttachArgs.argoVersion, "argocd-version", clusterArgoDefaultVersion, "Argo CD release to install when absent (v3.1 or later; oci:// sources need it)")
+	clusterAttachCmd.Flags().StringVar(&clusterAttachArgs.controllerVersion, "controller-version", "", "controller release to install when absent (default: argo "+clusterArgoDefaultVersion+", sveltos "+clusterSveltosVersion+", flux "+clusterFluxVersion+"; Argo CD must be v3.1 or later, which oci:// sources need)")
 	clusterAttachCmd.Flags().BoolVar(&clusterAttachArgs.noInstall, "no-install", false, "never install the controller; fail if the cluster has none")
 	clusterAttachCmd.Flags().BoolVar(&clusterAttachArgs.noArgoCD, "no-argocd", false, "--controller argo: the same as --no-install")
 	_ = clusterAttachCmd.Flags().MarkHidden("no-argocd")
-	clusterAttachCmd.Flags().BoolVar(&clusterAttachArgs.noArgobot, "no-argobot", false, "skip installing argobot (the event-driven Argo CD sync, Sveltos redeploy, or Flux reconciliation, bot)")
+	clusterAttachCmd.Flags().BoolVar(&clusterAttachArgs.noArgobot, "no-k8sbot", false, "skip installing argobot (the event-driven Argo CD sync, Sveltos redeploy, or Flux reconciliation, bot)")
 	clusterAttachCmd.Flags().BoolVar(&clusterAttachArgs.noPlaceholderGate, "no-placeholder-gate", false, "skip the default vet-placeholders Trigger, allowing Releases with unfilled confighubplaceholder values to be published to this cluster")
-	clusterAttachCmd.Flags().StringVar(&clusterAttachArgs.argobotOCI, "argobot-oci", clusterArgobotOCIRef, "OCI reference of argobot's config bundle, or a local file or directory of its manifests (default with --controller sveltos: "+clusterArgobotSveltosOCIRef+", with --controller flux: "+clusterArgobotFluxOCIRef+")")
 	clusterAttachCmd.Flags().BoolVar(&clusterAttachArgs.prune, "prune", false, "let the controller delete what a removed deployment deployed: the root prunes deployments whose Units leave the apps space (Sveltos's always does), and deployments created later prune what they deployed")
 	clusterCmd.AddCommand(clusterAttachCmd)
 }
@@ -212,20 +210,15 @@ type clusterAttachOptions struct {
 	awsProfile        string
 	grantAccess       bool
 	controller        string
-	argoVersion       string
+	controllerVersion string
 	noInstall         bool
 	noArgobot         bool
 	noPlaceholderGate bool
-	argobotOCIRef     string
 	prune             bool
 }
 
 func clusterAttachCmdRun(cmd *cobra.Command, args []string) error {
 	name, err := clusterNameArg(args, clusterAttachArgs.name, "attach", true)
-	if err != nil {
-		return err
-	}
-	argobotOCIRef, err := clusterArgobotOCIRefFor(clusterAttachArgs.controller, clusterAttachArgs.argobotOCI, cmd.Flags().Changed("argobot-oci"))
 	if err != nil {
 		return err
 	}
@@ -244,11 +237,10 @@ func clusterAttachCmdRun(cmd *cobra.Command, args []string) error {
 		awsProfile:        clusterAttachArgs.awsProfile,
 		grantAccess:       clusterAttachArgs.grantAccess,
 		controller:        clusterAttachArgs.controller,
-		argoVersion:       clusterAttachArgs.argoVersion,
+		controllerVersion: clusterAttachArgs.controllerVersion,
 		noInstall:         clusterAttachArgs.noInstall || clusterAttachArgs.noArgoCD,
 		noArgobot:         clusterAttachArgs.noArgobot,
 		noPlaceholderGate: clusterAttachArgs.noPlaceholderGate,
-		argobotOCIRef:     argobotOCIRef,
 		prune:             clusterAttachArgs.prune,
 	})
 }
@@ -369,14 +361,14 @@ func clusterAttachRun(out io.Writer, opts clusterAttachOptions) error {
 		spaceAnnotations[clusterAnnotationEKSRegion] = opts.awsRegion
 	}
 	result, err := clusterAttach(out, clusterAttachSpec{
-		name:             opts.name,
-		spaceSlug:        opts.spaceSlug,
-		kubeconfigPath:   kubeconfigPath,
-		origin:           clusterOriginAttach,
-		controller:       opts.controller,
-		spaceAnnotations: spaceAnnotations,
+		name:              opts.name,
+		spaceSlug:         opts.spaceSlug,
+		kubeconfigPath:    kubeconfigPath,
+		origin:            clusterOriginAttach,
+		controller:        opts.controller,
+		spaceAnnotations:  spaceAnnotations,
+		controllerVersion: opts.controllerVersion,
 		argo: clusterArgoOptions{
-			version:         opts.argoVersion,
 			installIfAbsent: !opts.noInstall,
 		},
 		sveltos: clusterSveltosOptions{
@@ -385,7 +377,6 @@ func clusterAttachRun(out io.Writer, opts clusterAttachOptions) error {
 		fluxInstallIfAbsent: !opts.noInstall,
 		noArgobot:           opts.noArgobot,
 		noPlaceholderGate:   opts.noPlaceholderGate,
-		argobotOCIRef:       opts.argobotOCIRef,
 		prune:               opts.prune,
 	}, func(f func()) { rollback = append(rollback, f) })
 	if err != nil {
@@ -652,6 +643,10 @@ type clusterAttachSpec struct {
 	spaceAnnotations  map[string]string
 	targetAnnotations map[string]string
 
+	// controllerVersion is the controller release to install when the cluster
+	// has none (--controller-version); "" installs the controller's pinned
+	// default.
+	controllerVersion string
 	// argo says how to get Argo CD into the cluster (controller argo).
 	argo clusterArgoOptions
 	// sveltos says how to get Sveltos into the cluster (controller sveltos).
@@ -662,7 +657,6 @@ type clusterAttachSpec struct {
 
 	noArgobot         bool
 	noPlaceholderGate bool
-	argobotOCIRef     string
 	// prune gives the root Argo CD Application or Flux Kustomization prune and
 	// records it on the OCI target for the deployments `cub variant create`
 	// adds (controllers argo and flux).
@@ -701,21 +695,21 @@ func clusterAttach(out io.Writer, spec clusterAttachSpec, addRollback func(func(
 	case clusterControllerSveltos:
 		fmt.Fprintln(out, "Ensuring Sveltos...")
 		var err error
-		controllerInstalled, err = clusterSveltosEnsure(ctx, kubeconfigPath, spec.sveltos, out)
+		controllerInstalled, err = clusterSveltosEnsure(ctx, kubeconfigPath, spec.controllerVersion, spec.sveltos, out)
 		if err != nil {
 			return result, err
 		}
 	case clusterControllerFlux:
 		fmt.Fprintln(out, "Ensuring Flux...")
 		var err error
-		controllerInstalled, err = clusterFluxEnsure(ctx, kubeconfigPath, spec.fluxInstallIfAbsent, out)
+		controllerInstalled, err = clusterFluxEnsure(ctx, kubeconfigPath, spec.controllerVersion, spec.fluxInstallIfAbsent, out)
 		if err != nil {
 			return result, err
 		}
 	default:
 		fmt.Fprintln(out, "Ensuring Argo CD...")
 		var err error
-		argo, err = clusterArgoEnsure(ctx, kubeconfigPath, spec.argo, out)
+		argo, err = clusterArgoEnsure(ctx, kubeconfigPath, spec.controllerVersion, spec.argo, out)
 		if err != nil {
 			return result, err
 		}
@@ -919,7 +913,7 @@ func clusterAttach(out io.Writer, spec clusterAttachSpec, addRollback func(func(
 		return result, err
 	}
 
-	// Install argobot (unless --no-argobot) BEFORE the final apps-Space publish
+	// Install argobot (unless --no-k8sbot) BEFORE the final apps-Space publish
 	// and root bootstrap, so its child Application Unit is already in the first
 	// bundle the root pulls — the root app-of-apps then creates it on its
 	// initial sync rather than only on a later reconcile. The step creates that

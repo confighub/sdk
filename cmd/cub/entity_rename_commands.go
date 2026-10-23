@@ -162,6 +162,26 @@ func init() {
 		},
 	})
 	addEntityRenameCommand(entityRename{
+		parent:   serviceAccountCmd,
+		entity:   "serviceaccount",
+		orgLevel: true,
+		about: "Its user is renamed with it. A credential keeps working, since it names the service\n" +
+			"account's user, not its name, but a script that names the service account by its old\n" +
+			"name no longer finds it.",
+		resolve: func(ref string) (*renamedEntity, error) {
+			d, err := resolveServiceAccount(ref, "ServiceAccountID,Slug,DisplayName")
+			if err != nil {
+				return nil, err
+			}
+			return &renamedEntity{id: d.ServiceAccount.ServiceAccountID, slug: d.ServiceAccount.Slug, displayName: d.ServiceAccount.DisplayName}, nil
+		},
+		patch: func(e *renamedEntity, patch []byte) (any, error) {
+			res, err := cubClientNew.PatchServiceAccountWithBodyWithResponse(ctx, e.id,
+				&goclientnew.PatchServiceAccountParams{DryRun: dryRunParam()}, mergePatchContentType, bytes.NewReader(patch))
+			return patchedEntity(res, err, func(r *goclientnew.PatchServiceAccountResponse) *goclientnew.ServiceAccount { return r.JSON200 })
+		},
+	})
+	addEntityRenameCommand(entityRename{
 		parent: channelCmd,
 		entity: "channel",
 		about:  "A bot or caller that names the channel by its old name no longer finds it.",

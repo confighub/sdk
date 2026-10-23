@@ -122,6 +122,8 @@ func init() {
 	addInvocationFunctionFlag(invocationCreateCmd)
 	enableCreatePermissionFlag(invocationCreateCmd)
 	invocationCreateCmd.Flags().StringVar(&workerSlug, "worker", "", "worker to execute the invocation function")
+	invocationCreateCmd.Flags().StringVar(&functionChannel, "channel", "", "channel whose client executes the invocation's functions")
+	invocationCreateCmd.MarkFlagsMutuallyExclusive("worker", "channel")
 	invocationCreateCmd.Flags().StringArrayVar(&invocationDeclaredParameterFlags, "parameter", nil, "declare a parameter as name[:datatype[:required]] (datatype defaults to string, required defaults to true; can be repeated). Reference declared parameters from templated argument values via {{ .Params.<name> }}.")
 	enableWhereFlag(invocationCreateCmd)
 	enableFilterFlag(invocationCreateCmd)
@@ -264,6 +266,13 @@ func runSingleInvocationCreate(args []string) error {
 		}
 		workerID := goclientnew.UUID(workerUUID)
 		newBody.BridgeWorkerID = &workerID
+	}
+	if functionChannel != "" {
+		channelID, err := resolveChannelID(functionChannel)
+		if err != nil {
+			return err
+		}
+		newBody.ChannelID = &channelID
 	}
 
 	newBody.ToolchainType = args[1]

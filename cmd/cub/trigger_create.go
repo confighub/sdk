@@ -39,6 +39,11 @@ one with either selects the triggers those match (cub space update --where-trigg
 which units a trigger runs on with --unit-filter or --where-unit-field. Instead of a single
 function, a trigger can run a stored invocation (--invocation).
 
+A trigger's function runs on the space's builtin executor, or on the client of a channel that
+serves it (--channel). A trigger on a channel fails closed: while no client holds the channel's
+lease, or the client does not answer, the unit keeps its awaiting/triggers gate and is retried
+with back-off until the trigger has run.
+
 A validating trigger whose function fails records a ValidationError on the unit, which blocks
 publishing a Release of it, promoting past a stage that requires Validated, and closing a
 ChangeSet whose workflow requires it, until the configuration or the trigger is fixed. With --warn, a
@@ -145,6 +150,8 @@ func init() {
 	addTriggerGuardFlag(triggerCreateCmd)
 	triggerCreateCmd.Flags().BoolVar(&protectTrigger, "protect", false, "record the paths this trigger's function writes as protected local overrides, so a later merge from upstream does not overwrite them; for a trigger that decides a value the unit then owns, such as a PostClone trigger customizing a variant")
 	triggerCreateCmd.Flags().StringVar(&workerSlug, "worker", "", "worker to execute the trigger function")
+	triggerCreateCmd.Flags().StringVar(&functionChannel, "channel", "", "channel whose client executes the trigger function; a trigger that runs an invocation runs it where the invocation says")
+	triggerCreateCmd.MarkFlagsMutuallyExclusive("worker", "channel")
 	enableWhereFlag(triggerCreateCmd)
 	enableFilterFlag(triggerCreateCmd)
 
@@ -161,7 +168,7 @@ func init() {
 	triggerCreateCmd.Flags().StringVar(&triggerWhereUnit, "where-unit-field", "", "filter expression to restrict which Units this trigger applies to (its WhereUnit). It takes what --where does on unit list, attributes of what a unit refers to included, as in \"Space.Labels.Environment = 'prod'\"")
 	triggerCreateCmd.Flags().StringVar(&triggerUnitFilter, "unit-filter", "", "filter entity (slug or UUID) to restrict which Units this trigger applies to")
 	triggerCreateCmd.Flags().StringVar(&triggerWhereResource, "where-resource", "", "metadata path expression to restrict which resources the trigger operates on")
-	triggerCreateCmd.Flags().StringVar(&triggerFailOpenAfter, "fail-open-after", "", "duration after which disconnected worker triggers fail open (e.g., 6h, 30m)")
+	triggerCreateCmd.Flags().StringVar(&triggerFailOpenAfter, "fail-open-after", "", "duration after which disconnected worker triggers fail open (e.g., 6h, 30m); triggers on a channel fail closed")
 	triggerCreateCmd.Flags().StringVar(&triggerOtherDataSource, "other-data-source", "", "source of additional data to pass to the function (e.g., LastReleasedRevisionNum); defaults to the sources the function expects")
 
 	addBackingUnitFlags(triggerCreateCmd, "Trigger", false, true)
@@ -310,6 +317,13 @@ func runSingleTriggerCreate(args []string) error {
 		}
 		workerID := goclientnew.UUID(workerUUID)
 		newBody.BridgeWorkerID = &workerID
+	}
+	if functionChannel != "" {
+		channelID, err := resolveChannelID(functionChannel)
+		if err != nil {
+			return err
+		}
+		newBody.ChannelID = &channelID
 	}
 
 	if triggerDescription != "" {

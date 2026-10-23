@@ -143,7 +143,7 @@ func clusterSpaceByNameInOrg(name string) (*clusterSpace, error) {
 // clusterRequireFreshConfigHub refuses to start when any of the Spaces an
 // attachment creates already exists, so a leftover from an earlier run is
 // surfaced before anything slow or irreversible happens rather than mid-run.
-// argobotSlug is skipped when empty (--no-argobot): its variant Space is created
+// argobotSlug is skipped when empty (--no-k8sbot): its variant Space is created
 // fail-fast, without --allow-exists, during the install. The cluster's service
 // account is org-scoped, so a leftover one is not caught by the Space checks
 // and is checked here too.
@@ -159,7 +159,7 @@ func clusterRequireFreshConfigHub(name, spaceSlug, appsSlug, argobotSlug string)
 		if exists, err := clusterSpaceExists(argobotSlug); err != nil {
 			return err
 		} else if exists {
-			return fmt.Errorf("ConfigHub space %q already exists (leftover argobot install; delete it with 'cub space delete --recursive %s' or pass --no-argobot)", argobotSlug, argobotSlug)
+			return fmt.Errorf("ConfigHub space %q already exists (leftover argobot install; delete it with 'cub space delete --recursive %s' or pass --no-k8sbot)", argobotSlug, argobotSlug)
 		}
 	}
 	saSlug := clusterServiceAccountSlug(name)
@@ -311,8 +311,8 @@ func clusterCreateServiceAccountKey(serviceAccountID, userID uuid.UUID, descript
 // username "token". It is shown once; ConfigHub keeps a record it can revoke
 // (`cub serviceaccount token list|revoke`) and not the token itself.
 func clusterCreateServiceAccountToken(serviceAccountID uuid.UUID, description string) (string, error) {
-	body := goclientnew.CreateServiceAccountTokenJSONRequestBody{Description: description}
-	res, err := cubClientNew.CreateServiceAccountTokenWithResponse(ctx, serviceAccountID.String(), &goclientnew.CreateServiceAccountTokenParams{}, body)
+	body := goclientnew.CreateServiceAccountUserTokenJSONRequestBody{Description: description}
+	res, err := cubClientNew.CreateServiceAccountUserTokenWithResponse(ctx, serviceAccountID.String(), &goclientnew.CreateServiceAccountUserTokenParams{}, body)
 	if cubapi.IsAPIError(err, res) {
 		return "", cubapi.InterpretErrorGeneric(err, res)
 	}

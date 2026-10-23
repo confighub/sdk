@@ -72,6 +72,8 @@ func init() {
 	addInvocationFunctionFlag(invocationUpdateCmd)
 	enableUpdatePermissionFlag(invocationUpdateCmd)
 	invocationUpdateCmd.Flags().StringVar(&workerSlug, "worker", "", "worker to execute the invocation function")
+	invocationUpdateCmd.Flags().StringVar(&functionChannel, "channel", "", "channel whose client executes the invocation's functions")
+	invocationUpdateCmd.MarkFlagsMutuallyExclusive("worker", "channel")
 	invocationUpdateCmd.Flags().StringArrayVar(&invocationDeclaredParameterFlags, "parameter", nil, "replace the declared parameters with the ones given, each as name[:datatype[:required]] (datatype defaults to string, required defaults to true; can be repeated). Reference declared parameters from templated argument values via {{ .Params.<name> }}.")
 	invocationUpdateCmd.Flags().BoolVar(&invocationPatch, "patch", false, "use patch API for individual or bulk operations")
 	enableWhereFlag(invocationUpdateCmd)
@@ -150,6 +152,14 @@ func runBulkInvocationUpdate() error {
 		}
 		workerUUID = &workerID
 	}
+	var channelUUID *uuid.UUID
+	if functionChannel != "" {
+		channelID, err := resolveChannelID(functionChannel)
+		if err != nil {
+			return err
+		}
+		channelUUID = &channelID
+	}
 
 	declaredParams, err := parseDeclaredParameterFlags(invocationDeclaredParameterFlags)
 	if err != nil {
@@ -158,9 +168,14 @@ func runBulkInvocationUpdate() error {
 
 	// Create enhancer function for invocation-specific fields
 	enhancer := func(patchMap map[string]interface{}) {
-		// Add worker if specified
+		// One executor at a time: naming one clears the other.
 		if workerUUID != nil {
 			patchMap["BridgeWorkerID"] = workerUUID.String()
+			patchMap["ChannelID"] = nil
+		}
+		if channelUUID != nil {
+			patchMap["ChannelID"] = channelUUID.String()
+			patchMap["BridgeWorkerID"] = nil
 		}
 		if len(declaredParams) > 0 {
 			patchMap["Parameters"] = declaredParams
@@ -207,7 +222,7 @@ func runBulkInvocationUpdate() error {
 // them alone.
 func invocationUpdateMinArgs() int {
 	if flagPopulateModelFromStdin || flagFilename != "" || len(invocationFunctionLines) > 0 ||
-		len(invocationDeclaredParameterFlags) > 0 || workerSlug != "" || hasMetadataFlags() ||
+		len(invocationDeclaredParameterFlags) > 0 || workerSlug != "" || functionChannel != "" || hasMetadataFlags() ||
 		len(label) > 0 || len(deleteGate) > 0 || len(permissionFlag) > 0 {
 		return 2
 	}
@@ -252,6 +267,14 @@ func invocationUpdateCmdRun(cmd *cobra.Command, args []string) error {
 			workerUUIDConverted := goclientnew.UUID(workerUUID)
 			workerID = &workerUUIDConverted
 		}
+		var channelID *uuid.UUID
+		if functionChannel != "" {
+			id, err := resolveChannelID(functionChannel)
+			if err != nil {
+				return err
+			}
+			channelID = &id
+		}
 
 		declaredParams, err := parseDeclaredParameterFlags(invocationDeclaredParameterFlags)
 		if err != nil {
@@ -263,6 +286,11 @@ func invocationUpdateCmdRun(cmd *cobra.Command, args []string) error {
 			// Add invocation-specific fields
 			if workerID != nil {
 				patchData["BridgeWorkerID"] = *workerID
+				patchData["ChannelID"] = nil
+			}
+			if channelID != nil {
+				patchData["ChannelID"] = channelID.String()
+				patchData["BridgeWorkerID"] = nil
 			}
 			if len(declaredParams) > 0 {
 				patchData["Parameters"] = declaredParams
@@ -338,6 +366,15 @@ func invocationUpdateCmdRun(cmd *cobra.Command, args []string) error {
 		}
 		workerID := goclientnew.UUID(workerUUID)
 		currentInvocation.BridgeWorkerID = &workerID
+		currentInvocation.ChannelID = nil
+	}
+	if functionChannel != "" {
+		channelID, err := resolveChannelID(functionChannel)
+		if err != nil {
+			return err
+		}
+		currentInvocation.ChannelID = &channelID
+		currentInvocation.BridgeWorkerID = nil
 	}
 
 	currentInvocation.ToolchainType = args[1]

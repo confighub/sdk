@@ -8,6 +8,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"io"
+	"time"
 
 	"github.com/confighub/sdk/core/cubapi"
 	goclientnew "github.com/confighub/sdk/core/openapi/goclient-new"
@@ -18,8 +19,8 @@ import (
 // is a ConfigHub bot that listens on a Channel and force-syncs the
 // corresponding Argo CD Application the moment a deploy happens, closing Argo's
 // reconcile-interval gap. It is delivered like
-// any other component: a shared base installed from its published OCI config
-// bundle and a per-cluster downstream variant. The child Argo Application that
+// any other component: a shared base installed from the manifests `argobot
+// install` prints, and a per-cluster downstream variant. The child Argo Application that
 // makes argobot live is created by `cub variant create --target` itself — the
 // cluster's OCI target carries the confighub.com/apps-space annotation, so
 // creating the argobot variant against it auto-creates the Application Unit in
@@ -32,7 +33,8 @@ import (
 // once from clusterAttach.
 
 // argobot install constants. argobot is installed as a ConfigHub component from
-// its published OCI config bundle, then given a per-cluster downstream variant.
+// the manifests `argobot install` prints, then given a per-cluster downstream
+// variant.
 const (
 	// clusterArgobotComponent is the well-known "Component" label value and the
 	// base Space is <component>-base.
@@ -42,25 +44,27 @@ const (
 	// clusterArgobotBaseSpace is the shared base Space slug (one per hub, reused
 	// across clusters).
 	clusterArgobotBaseSpace = "argobot-base"
-	// clusterArgobotOCIRef is the default OCI reference of argobot's config
-	// bundle (its Kubernetes manifests), overridable with --argobot-oci.
-	clusterArgobotOCIRef = "oci://ghcr.io/confighub/configs/argobot"
-	// The Sveltos counterparts. argobot's Sveltos deployment
-	// (manifests/sveltos/argobot.yaml in its repository) needs different RBAC
-	// and its own HealthCheck, so it is a base of its own, beside the Argo CD one.
+	// The Sveltos counterparts. argobot's Sveltos deployment needs different
+	// RBAC and its own HealthCheck, so it is a base of its own, beside the Argo
+	// CD one.
 	clusterArgobotSveltosBaseVariant = "sveltos-base"
 	clusterArgobotSveltosBaseSpace   = "argobot-sveltos-base"
-	clusterArgobotSveltosOCIRef      = "oci://ghcr.io/confighub/configs/argobot-sveltos"
-	// The Flux counterparts, for argobot's Flux deployment
-	// (manifests/flux/argobot.yaml in its repository), which needs RBAC of its
-	// own.
+	// The Flux counterparts, for argobot's Flux deployment, which needs RBAC of
+	// its own.
 	clusterArgobotFluxBaseVariant = "flux-base"
 	clusterArgobotFluxBaseSpace   = "argobot-flux-base"
-	clusterArgobotFluxOCIRef      = "oci://ghcr.io/confighub/configs/argobot-flux"
+	// clusterArgobotImage is the argobot image whose `install` subcommand prints
+	// argobot's manifests for a controller. It runs in the cluster as a one-off
+	// Pod, so nothing of argobot's has to be on this machine.
+	clusterArgobotImage = "ghcr.io/confighub/argobot:latest"
+	// clusterArgobotInstallPod is that one-off Pod. It runs in the default
+	// namespace, which every cluster has before argobot's own exists.
+	clusterArgobotInstallPod          = "argobot-install"
+	clusterArgobotInstallPodNamespace = "default"
 	// clusterArgobotNamespace is the namespace argobot's manifests deploy into.
 	clusterArgobotNamespace = "argobot"
-	// clusterArgobotUnitSlug is the Unit holding argobot's Deployment. The bundle
-	// becomes one Unit per resource and a workload keeps its bare name, so the
+	// clusterArgobotUnitSlug is the Unit holding argobot's Deployment. The
+	// manifests become one Unit per resource and a workload keeps its bare name, so the
 	// Deployment named argobot lands in a Unit named argobot, while its
 	// ServiceAccount, RBAC and Namespace take slugs of their own.
 	clusterArgobotUnitSlug = "argobot"
@@ -95,7 +99,7 @@ type clusterArgobotDeps struct {
 
 // clusterInstallArgobotStep is the single argobot seam into clusterAttach (and
 // so into both `cub cluster up` and `cub cluster attach`). It is a no-op when
-// --no-argobot is set; otherwise it registers the argobot variant Space for
+// --no-k8sbot is set; otherwise it registers the argobot variant Space for
 // rollback (via registerRollback), derives argobot's in-cluster ConfigHub URL,
 // and runs the install. The child Argo Application Unit lands in the apps
 // Space as a side effect of `cub variant create --target` (auto-created from
@@ -148,7 +152,6 @@ func clusterInstallArgobotStep(out io.Writer, opts clusterAttachSpec, dep cluste
 		serviceAccountUserID: dep.serviceAccountUserID,
 		privateKey:           dep.privateKey,
 		apiURLForContainer:   apiURLForContainer,
-		ociRef:               opts.argobotOCIRef,
 		kubeconfigPath:       dep.kubeconfigPath,
 	})
 }
@@ -216,6 +219,76 @@ stringData:
 `, clusterArgobotNamespace, clusterArgobotSecret, clusterArgobotNamespace, bytes.TrimSpace(privateKey))
 }
 
+// clusterArgobotManifests runs `argobot install --controller <controller>` in
+// the cluster as a one-off Pod and returns what it printed: argobot's
+// manifests for that controller, with the image pinned to the release the
+// install image was built as. The Pod is deleted afterwards, whether or not it
+// succeeded.
+func clusterArgobotManifests(kubeconfigPath, controller string, out io.Writer) ([]byte, error) {
+	deletePod := func(wait string) error {
+		return clusterKubectl(ctx, kubeconfigPath, nil, io.Discard,
+			"delete", "pod", clusterArgobotInstallPod, "-n", clusterArgobotInstallPodNamespace,
+			"--ignore-not-found", "--wait="+wait)
+	}
+	// A Pod left by an interrupted earlier run would make `kubectl run` fail.
+	if err := deletePod("true"); err != nil {
+		return nil, err
+	}
+	fmt.Fprintf(out, "Running `argobot install --controller %s` (%s) in the cluster...\n", controller, clusterArgobotImage)
+	// IfNotPresent: a :latest image otherwise defaults to Always, which would
+	// ignore an image loaded into the node with `kind load docker-image`.
+	if err := clusterKubectl(ctx, kubeconfigPath, nil, out,
+		"run", clusterArgobotInstallPod, "-n", clusterArgobotInstallPodNamespace,
+		"--image", clusterArgobotImage, "--image-pull-policy", "IfNotPresent", "--restart", "Never",
+		"--", "install", "--controller", controller); err != nil {
+		return nil, fmt.Errorf("start argobot install: %w", err)
+	}
+	defer func() { _ = deletePod("false") }()
+
+	if err := clusterArgobotWaitInstallPod(kubeconfigPath, 3*time.Minute); err != nil {
+		return nil, err
+	}
+	manifests, err := clusterKubectlOutput(ctx, kubeconfigPath,
+		"logs", "pod/"+clusterArgobotInstallPod, "-n", clusterArgobotInstallPodNamespace)
+	if err != nil {
+		return nil, fmt.Errorf("read argobot install output: %w", err)
+	}
+	if len(bytes.TrimSpace(manifests)) == 0 {
+		return nil, fmt.Errorf("argobot install --controller %s printed nothing", controller)
+	}
+	return manifests, nil
+}
+
+// clusterArgobotWaitInstallPod polls the install Pod until it has run to
+// completion. A Failed Pod is terminal, and its logs carry argobot's error.
+func clusterArgobotWaitInstallPod(kubeconfigPath string, budget time.Duration) error {
+	deadline := time.Now().Add(budget)
+	for {
+		phase, err := clusterKubectlOutput(ctx, kubeconfigPath,
+			"get", "pod", clusterArgobotInstallPod, "-n", clusterArgobotInstallPodNamespace,
+			"-o", "jsonpath={.status.phase}")
+		if err != nil {
+			return fmt.Errorf("check argobot install: %w", err)
+		}
+		switch string(phase) {
+		case "Succeeded":
+			return nil
+		case "Failed":
+			logs, _ := clusterKubectlOutput(ctx, kubeconfigPath,
+				"logs", "pod/"+clusterArgobotInstallPod, "-n", clusterArgobotInstallPodNamespace)
+			return fmt.Errorf("argobot install failed: %s", bytes.TrimSpace(logs))
+		}
+		if time.Now().After(deadline) {
+			return fmt.Errorf("argobot install Pod still %q after %s", phase, budget)
+		}
+		select {
+		case <-ctx.Done():
+			return ctx.Err()
+		case <-time.After(2 * time.Second):
+		}
+	}
+}
+
 // clusterArgobotOptions carries everything the argobot install needs from the
 // surrounding attachment.
 type clusterArgobotOptions struct {
@@ -228,7 +301,6 @@ type clusterArgobotOptions struct {
 	serviceAccountUserID uuid.UUID       // the cluster service account's user, granted Claim on the Channel
 	privateKey           json.RawMessage // the service account's private key (goes into the out-of-band Secret)
 	apiURLForContainer   string          // ConfigHub API URL as argobot (in-cluster) reaches it
-	ociRef               string          // argobot config-bundle OCI reference
 	kubeconfigPath       string
 }
 
@@ -257,18 +329,20 @@ func clusterInstallArgobot(out io.Writer, o clusterArgobotOptions) error {
 		baseVariant, baseSpace = clusterArgobotFluxBaseVariant, clusterArgobotFluxBaseSpace
 	}
 
-	// 1. Ensure the shared base component exists, installed from argobot's
-	// published OCI config bundle. Re-installing is a no-op: an upload is
-	// create-or-update, so a base another cluster already installed is matched
-	// against the bundle and left alone rather than conflicting with it. The
-	// pull is anonymous — local Docker credentials are never used (see
-	// ociAuthClient) — so a stale `docker login ghcr.io` can't turn into a hard
-	// 403 here.
-	fmt.Fprintf(out, "Installing argobot base component from %s...\n", o.ociRef)
-	if err := runCub("variant", "upload",
+	// 1. Ensure the shared base component exists, installed from the manifests
+	// `argobot install` prints for this controller. Re-installing is a no-op:
+	// an upload is create-or-update, so a base another cluster already
+	// installed is matched against the manifests and left alone rather than
+	// conflicting with it.
+	manifests, err := clusterArgobotManifests(o.kubeconfigPath, o.controller, out)
+	if err != nil {
+		return err
+	}
+	fmt.Fprintln(out, "Installing argobot base component...")
+	if err := runCubStdin(manifests, "variant", "upload",
 		"--component", clusterArgobotComponent,
 		"--variant", baseVariant,
-		o.ociRef); err != nil {
+		"-"); err != nil {
 		return fmt.Errorf("install argobot base component: %w", err)
 	}
 

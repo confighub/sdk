@@ -274,30 +274,6 @@ func TestClusterAttachFlagCombinations(t *testing.T) {
 	}
 }
 
-func TestClusterArgobotOCIRefFor(t *testing.T) {
-	cases := []struct {
-		controller string
-		flag       string
-		changed    bool
-		want       string
-	}{
-		{clusterControllerArgo, clusterArgobotOCIRef, false, clusterArgobotOCIRef},
-		{clusterControllerSveltos, clusterArgobotOCIRef, false, clusterArgobotSveltosOCIRef},
-		{clusterControllerFlux, clusterArgobotOCIRef, false, clusterArgobotFluxOCIRef},
-		{clusterControllerSveltos, "./argobot", true, "./argobot"},
-		{clusterControllerFlux, "./argobot", true, "./argobot"},
-	}
-	for _, tc := range cases {
-		got, err := clusterArgobotOCIRefFor(tc.controller, tc.flag, tc.changed)
-		if err != nil || got != tc.want {
-			t.Errorf("%s (changed=%v): got %q, %v; want %q", tc.controller, tc.changed, got, err, tc.want)
-		}
-	}
-	if _, err := clusterArgobotOCIRefFor("fleet", "", false); err == nil || !strings.Contains(err.Error(), "--controller \"fleet\"") {
-		t.Errorf("unknown controller: got %v", err)
-	}
-}
-
 func TestClusterControllerFrom(t *testing.T) {
 	cases := []struct {
 		name  string

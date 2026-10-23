@@ -489,27 +489,36 @@ type ClientInterface interface {
 
 	UpdateServiceAccount(ctx context.Context, serviceAccountId openapi_types.UUID, params *UpdateServiceAccountParams, body UpdateServiceAccountJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error)
 
-	// ListServiceAccountKeys request
-	ListServiceAccountKeys(ctx context.Context, serviceAccountId string, reqEditors ...RequestEditorFn) (*http.Response, error)
+	// ListServiceAccountUserKeys request
+	ListServiceAccountUserKeys(ctx context.Context, serviceAccountId string, params *ListServiceAccountUserKeysParams, reqEditors ...RequestEditorFn) (*http.Response, error)
 
-	// CreateServiceAccountKeyWithBody request with any body
-	CreateServiceAccountKeyWithBody(ctx context.Context, serviceAccountId string, params *CreateServiceAccountKeyParams, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error)
+	// CreateServiceAccountUserKeyWithBody request with any body
+	CreateServiceAccountUserKeyWithBody(ctx context.Context, serviceAccountId string, params *CreateServiceAccountUserKeyParams, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error)
 
-	CreateServiceAccountKey(ctx context.Context, serviceAccountId string, params *CreateServiceAccountKeyParams, body CreateServiceAccountKeyJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error)
+	CreateServiceAccountUserKey(ctx context.Context, serviceAccountId string, params *CreateServiceAccountUserKeyParams, body CreateServiceAccountUserKeyJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error)
 
-	// DeleteServiceAccountKey request
-	DeleteServiceAccountKey(ctx context.Context, serviceAccountId string, kid string, reqEditors ...RequestEditorFn) (*http.Response, error)
+	// DeleteServiceAccountUserKey request
+	DeleteServiceAccountUserKey(ctx context.Context, serviceAccountId string, userKeyId string, reqEditors ...RequestEditorFn) (*http.Response, error)
 
-	// ListServiceAccountTokens request
-	ListServiceAccountTokens(ctx context.Context, serviceAccountId string, reqEditors ...RequestEditorFn) (*http.Response, error)
+	// GetServiceAccountUserKey request
+	GetServiceAccountUserKey(ctx context.Context, serviceAccountId string, userKeyId string, params *GetServiceAccountUserKeyParams, reqEditors ...RequestEditorFn) (*http.Response, error)
 
-	// CreateServiceAccountTokenWithBody request with any body
-	CreateServiceAccountTokenWithBody(ctx context.Context, serviceAccountId string, params *CreateServiceAccountTokenParams, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error)
+	// ListServiceAccountUserTokens request
+	ListServiceAccountUserTokens(ctx context.Context, serviceAccountId string, params *ListServiceAccountUserTokensParams, reqEditors ...RequestEditorFn) (*http.Response, error)
 
-	CreateServiceAccountToken(ctx context.Context, serviceAccountId string, params *CreateServiceAccountTokenParams, body CreateServiceAccountTokenJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error)
+	// CreateServiceAccountUserTokenWithBody request with any body
+	CreateServiceAccountUserTokenWithBody(ctx context.Context, serviceAccountId string, params *CreateServiceAccountUserTokenParams, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error)
 
-	// RevokeServiceAccountToken request
-	RevokeServiceAccountToken(ctx context.Context, serviceAccountId string, jti string, reqEditors ...RequestEditorFn) (*http.Response, error)
+	CreateServiceAccountUserToken(ctx context.Context, serviceAccountId string, params *CreateServiceAccountUserTokenParams, body CreateServiceAccountUserTokenJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error)
+
+	// DeleteServiceAccountUserToken request
+	DeleteServiceAccountUserToken(ctx context.Context, serviceAccountId string, userTokenId string, reqEditors ...RequestEditorFn) (*http.Response, error)
+
+	// GetServiceAccountUserToken request
+	GetServiceAccountUserToken(ctx context.Context, serviceAccountId string, userTokenId string, params *GetServiceAccountUserTokenParams, reqEditors ...RequestEditorFn) (*http.Response, error)
+
+	// RevokeServiceAccountUserToken request
+	RevokeServiceAccountUserToken(ctx context.Context, serviceAccountId string, userTokenId string, reqEditors ...RequestEditorFn) (*http.Response, error)
 
 	// ListSpaces request
 	ListSpaces(ctx context.Context, params *ListSpacesParams, reqEditors ...RequestEditorFn) (*http.Response, error)
@@ -3044,8 +3053,8 @@ func (c *Client) UpdateServiceAccount(ctx context.Context, serviceAccountId open
 	return c.Client.Do(req)
 }
 
-func (c *Client) ListServiceAccountKeys(ctx context.Context, serviceAccountId string, reqEditors ...RequestEditorFn) (*http.Response, error) {
-	req, err := NewListServiceAccountKeysRequest(c.Server, serviceAccountId)
+func (c *Client) ListServiceAccountUserKeys(ctx context.Context, serviceAccountId string, params *ListServiceAccountUserKeysParams, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewListServiceAccountUserKeysRequest(c.Server, serviceAccountId, params)
 	if err != nil {
 		return nil, err
 	}
@@ -3056,8 +3065,8 @@ func (c *Client) ListServiceAccountKeys(ctx context.Context, serviceAccountId st
 	return c.Client.Do(req)
 }
 
-func (c *Client) CreateServiceAccountKeyWithBody(ctx context.Context, serviceAccountId string, params *CreateServiceAccountKeyParams, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error) {
-	req, err := NewCreateServiceAccountKeyRequestWithBody(c.Server, serviceAccountId, params, contentType, body)
+func (c *Client) CreateServiceAccountUserKeyWithBody(ctx context.Context, serviceAccountId string, params *CreateServiceAccountUserKeyParams, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewCreateServiceAccountUserKeyRequestWithBody(c.Server, serviceAccountId, params, contentType, body)
 	if err != nil {
 		return nil, err
 	}
@@ -3068,8 +3077,8 @@ func (c *Client) CreateServiceAccountKeyWithBody(ctx context.Context, serviceAcc
 	return c.Client.Do(req)
 }
 
-func (c *Client) CreateServiceAccountKey(ctx context.Context, serviceAccountId string, params *CreateServiceAccountKeyParams, body CreateServiceAccountKeyJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error) {
-	req, err := NewCreateServiceAccountKeyRequest(c.Server, serviceAccountId, params, body)
+func (c *Client) CreateServiceAccountUserKey(ctx context.Context, serviceAccountId string, params *CreateServiceAccountUserKeyParams, body CreateServiceAccountUserKeyJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewCreateServiceAccountUserKeyRequest(c.Server, serviceAccountId, params, body)
 	if err != nil {
 		return nil, err
 	}
@@ -3080,8 +3089,8 @@ func (c *Client) CreateServiceAccountKey(ctx context.Context, serviceAccountId s
 	return c.Client.Do(req)
 }
 
-func (c *Client) DeleteServiceAccountKey(ctx context.Context, serviceAccountId string, kid string, reqEditors ...RequestEditorFn) (*http.Response, error) {
-	req, err := NewDeleteServiceAccountKeyRequest(c.Server, serviceAccountId, kid)
+func (c *Client) DeleteServiceAccountUserKey(ctx context.Context, serviceAccountId string, userKeyId string, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewDeleteServiceAccountUserKeyRequest(c.Server, serviceAccountId, userKeyId)
 	if err != nil {
 		return nil, err
 	}
@@ -3092,8 +3101,8 @@ func (c *Client) DeleteServiceAccountKey(ctx context.Context, serviceAccountId s
 	return c.Client.Do(req)
 }
 
-func (c *Client) ListServiceAccountTokens(ctx context.Context, serviceAccountId string, reqEditors ...RequestEditorFn) (*http.Response, error) {
-	req, err := NewListServiceAccountTokensRequest(c.Server, serviceAccountId)
+func (c *Client) GetServiceAccountUserKey(ctx context.Context, serviceAccountId string, userKeyId string, params *GetServiceAccountUserKeyParams, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewGetServiceAccountUserKeyRequest(c.Server, serviceAccountId, userKeyId, params)
 	if err != nil {
 		return nil, err
 	}
@@ -3104,8 +3113,8 @@ func (c *Client) ListServiceAccountTokens(ctx context.Context, serviceAccountId 
 	return c.Client.Do(req)
 }
 
-func (c *Client) CreateServiceAccountTokenWithBody(ctx context.Context, serviceAccountId string, params *CreateServiceAccountTokenParams, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error) {
-	req, err := NewCreateServiceAccountTokenRequestWithBody(c.Server, serviceAccountId, params, contentType, body)
+func (c *Client) ListServiceAccountUserTokens(ctx context.Context, serviceAccountId string, params *ListServiceAccountUserTokensParams, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewListServiceAccountUserTokensRequest(c.Server, serviceAccountId, params)
 	if err != nil {
 		return nil, err
 	}
@@ -3116,8 +3125,8 @@ func (c *Client) CreateServiceAccountTokenWithBody(ctx context.Context, serviceA
 	return c.Client.Do(req)
 }
 
-func (c *Client) CreateServiceAccountToken(ctx context.Context, serviceAccountId string, params *CreateServiceAccountTokenParams, body CreateServiceAccountTokenJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error) {
-	req, err := NewCreateServiceAccountTokenRequest(c.Server, serviceAccountId, params, body)
+func (c *Client) CreateServiceAccountUserTokenWithBody(ctx context.Context, serviceAccountId string, params *CreateServiceAccountUserTokenParams, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewCreateServiceAccountUserTokenRequestWithBody(c.Server, serviceAccountId, params, contentType, body)
 	if err != nil {
 		return nil, err
 	}
@@ -3128,8 +3137,44 @@ func (c *Client) CreateServiceAccountToken(ctx context.Context, serviceAccountId
 	return c.Client.Do(req)
 }
 
-func (c *Client) RevokeServiceAccountToken(ctx context.Context, serviceAccountId string, jti string, reqEditors ...RequestEditorFn) (*http.Response, error) {
-	req, err := NewRevokeServiceAccountTokenRequest(c.Server, serviceAccountId, jti)
+func (c *Client) CreateServiceAccountUserToken(ctx context.Context, serviceAccountId string, params *CreateServiceAccountUserTokenParams, body CreateServiceAccountUserTokenJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewCreateServiceAccountUserTokenRequest(c.Server, serviceAccountId, params, body)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+func (c *Client) DeleteServiceAccountUserToken(ctx context.Context, serviceAccountId string, userTokenId string, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewDeleteServiceAccountUserTokenRequest(c.Server, serviceAccountId, userTokenId)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+func (c *Client) GetServiceAccountUserToken(ctx context.Context, serviceAccountId string, userTokenId string, params *GetServiceAccountUserTokenParams, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewGetServiceAccountUserTokenRequest(c.Server, serviceAccountId, userTokenId, params)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+func (c *Client) RevokeServiceAccountUserToken(ctx context.Context, serviceAccountId string, userTokenId string, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewRevokeServiceAccountUserTokenRequest(c.Server, serviceAccountId, userTokenId)
 	if err != nil {
 		return nil, err
 	}
@@ -14223,6 +14268,38 @@ func NewListAllCommandRunsRequest(server string, params *ListAllCommandRunsParam
 
 		}
 
+		if params.IncludeHidden != nil {
+
+			if queryFrag, err := runtime.StyleParamWithLocation("form", true, "include_hidden", runtime.ParamLocationQuery, *params.IncludeHidden); err != nil {
+				return nil, err
+			} else if parsed, err := url.ParseQuery(queryFrag); err != nil {
+				return nil, err
+			} else {
+				for k, v := range parsed {
+					for _, v2 := range v {
+						queryValues.Add(k, v2)
+					}
+				}
+			}
+
+		}
+
+		if params.View != nil {
+
+			if queryFrag, err := runtime.StyleParamWithLocation("form", true, "view", runtime.ParamLocationQuery, *params.View); err != nil {
+				return nil, err
+			} else if parsed, err := url.ParseQuery(queryFrag); err != nil {
+				return nil, err
+			} else {
+				for k, v := range parsed {
+					for _, v2 := range v {
+						queryValues.Add(k, v2)
+					}
+				}
+			}
+
+		}
+
 		if params.Limit != nil {
 
 			if queryFrag, err := runtime.StyleParamWithLocation("form", true, "limit", runtime.ParamLocationQuery, *params.Limit); err != nil {
@@ -22037,8 +22114,8 @@ func NewUpdateServiceAccountRequestWithBody(server string, serviceAccountId open
 	return req, nil
 }
 
-// NewListServiceAccountKeysRequest generates requests for ListServiceAccountKeys
-func NewListServiceAccountKeysRequest(server string, serviceAccountId string) (*http.Request, error) {
+// NewListServiceAccountUserKeysRequest generates requests for ListServiceAccountUserKeys
+func NewListServiceAccountUserKeysRequest(server string, serviceAccountId string, params *ListServiceAccountUserKeysParams) (*http.Request, error) {
 	var err error
 
 	var pathParam0 string
@@ -22053,7 +22130,7 @@ func NewListServiceAccountKeysRequest(server string, serviceAccountId string) (*
 		return nil, err
 	}
 
-	operationPath := fmt.Sprintf("/service_account/%s/key", pathParam0)
+	operationPath := fmt.Sprintf("/service_account/%s/user_key", pathParam0)
 	if operationPath[0] == '/' {
 		operationPath = "." + operationPath
 	}
@@ -22061,6 +22138,124 @@ func NewListServiceAccountKeysRequest(server string, serviceAccountId string) (*
 	queryURL, err := serverURL.Parse(operationPath)
 	if err != nil {
 		return nil, err
+	}
+
+	if params != nil {
+		queryValues := queryURL.Query()
+
+		if params.Where != nil {
+
+			if queryFrag, err := runtime.StyleParamWithLocation("form", true, "where", runtime.ParamLocationQuery, *params.Where); err != nil {
+				return nil, err
+			} else if parsed, err := url.ParseQuery(queryFrag); err != nil {
+				return nil, err
+			} else {
+				for k, v := range parsed {
+					for _, v2 := range v {
+						queryValues.Add(k, v2)
+					}
+				}
+			}
+
+		}
+
+		if params.Contains != nil {
+
+			if queryFrag, err := runtime.StyleParamWithLocation("form", true, "contains", runtime.ParamLocationQuery, *params.Contains); err != nil {
+				return nil, err
+			} else if parsed, err := url.ParseQuery(queryFrag); err != nil {
+				return nil, err
+			} else {
+				for k, v := range parsed {
+					for _, v2 := range v {
+						queryValues.Add(k, v2)
+					}
+				}
+			}
+
+		}
+
+		if params.Select != nil {
+
+			if queryFrag, err := runtime.StyleParamWithLocation("form", true, "select", runtime.ParamLocationQuery, *params.Select); err != nil {
+				return nil, err
+			} else if parsed, err := url.ParseQuery(queryFrag); err != nil {
+				return nil, err
+			} else {
+				for k, v := range parsed {
+					for _, v2 := range v {
+						queryValues.Add(k, v2)
+					}
+				}
+			}
+
+		}
+
+		if params.IncludeHidden != nil {
+
+			if queryFrag, err := runtime.StyleParamWithLocation("form", true, "include_hidden", runtime.ParamLocationQuery, *params.IncludeHidden); err != nil {
+				return nil, err
+			} else if parsed, err := url.ParseQuery(queryFrag); err != nil {
+				return nil, err
+			} else {
+				for k, v := range parsed {
+					for _, v2 := range v {
+						queryValues.Add(k, v2)
+					}
+				}
+			}
+
+		}
+
+		if params.Limit != nil {
+
+			if queryFrag, err := runtime.StyleParamWithLocation("form", true, "limit", runtime.ParamLocationQuery, *params.Limit); err != nil {
+				return nil, err
+			} else if parsed, err := url.ParseQuery(queryFrag); err != nil {
+				return nil, err
+			} else {
+				for k, v := range parsed {
+					for _, v2 := range v {
+						queryValues.Add(k, v2)
+					}
+				}
+			}
+
+		}
+
+		if params.OrderBy != nil {
+
+			if queryFrag, err := runtime.StyleParamWithLocation("form", true, "order_by", runtime.ParamLocationQuery, *params.OrderBy); err != nil {
+				return nil, err
+			} else if parsed, err := url.ParseQuery(queryFrag); err != nil {
+				return nil, err
+			} else {
+				for k, v := range parsed {
+					for _, v2 := range v {
+						queryValues.Add(k, v2)
+					}
+				}
+			}
+
+		}
+
+		if params.Continue != nil {
+
+			if queryFrag, err := runtime.StyleParamWithLocation("form", true, "continue", runtime.ParamLocationQuery, *params.Continue); err != nil {
+				return nil, err
+			} else if parsed, err := url.ParseQuery(queryFrag); err != nil {
+				return nil, err
+			} else {
+				for k, v := range parsed {
+					for _, v2 := range v {
+						queryValues.Add(k, v2)
+					}
+				}
+			}
+
+		}
+
+		queryURL.RawQuery = queryValues.Encode()
 	}
 
 	req, err := http.NewRequest("GET", queryURL.String(), nil)
@@ -22071,19 +22266,19 @@ func NewListServiceAccountKeysRequest(server string, serviceAccountId string) (*
 	return req, nil
 }
 
-// NewCreateServiceAccountKeyRequest calls the generic CreateServiceAccountKey builder with application/json body
-func NewCreateServiceAccountKeyRequest(server string, serviceAccountId string, params *CreateServiceAccountKeyParams, body CreateServiceAccountKeyJSONRequestBody) (*http.Request, error) {
+// NewCreateServiceAccountUserKeyRequest calls the generic CreateServiceAccountUserKey builder with application/json body
+func NewCreateServiceAccountUserKeyRequest(server string, serviceAccountId string, params *CreateServiceAccountUserKeyParams, body CreateServiceAccountUserKeyJSONRequestBody) (*http.Request, error) {
 	var bodyReader io.Reader
 	buf, err := json.Marshal(body)
 	if err != nil {
 		return nil, err
 	}
 	bodyReader = bytes.NewReader(buf)
-	return NewCreateServiceAccountKeyRequestWithBody(server, serviceAccountId, params, "application/json", bodyReader)
+	return NewCreateServiceAccountUserKeyRequestWithBody(server, serviceAccountId, params, "application/json", bodyReader)
 }
 
-// NewCreateServiceAccountKeyRequestWithBody generates requests for CreateServiceAccountKey with any type of body
-func NewCreateServiceAccountKeyRequestWithBody(server string, serviceAccountId string, params *CreateServiceAccountKeyParams, contentType string, body io.Reader) (*http.Request, error) {
+// NewCreateServiceAccountUserKeyRequestWithBody generates requests for CreateServiceAccountUserKey with any type of body
+func NewCreateServiceAccountUserKeyRequestWithBody(server string, serviceAccountId string, params *CreateServiceAccountUserKeyParams, contentType string, body io.Reader) (*http.Request, error) {
 	var err error
 
 	var pathParam0 string
@@ -22098,7 +22293,7 @@ func NewCreateServiceAccountKeyRequestWithBody(server string, serviceAccountId s
 		return nil, err
 	}
 
-	operationPath := fmt.Sprintf("/service_account/%s/key", pathParam0)
+	operationPath := fmt.Sprintf("/service_account/%s/user_key", pathParam0)
 	if operationPath[0] == '/' {
 		operationPath = "." + operationPath
 	}
@@ -22140,8 +22335,8 @@ func NewCreateServiceAccountKeyRequestWithBody(server string, serviceAccountId s
 	return req, nil
 }
 
-// NewDeleteServiceAccountKeyRequest generates requests for DeleteServiceAccountKey
-func NewDeleteServiceAccountKeyRequest(server string, serviceAccountId string, kid string) (*http.Request, error) {
+// NewDeleteServiceAccountUserKeyRequest generates requests for DeleteServiceAccountUserKey
+func NewDeleteServiceAccountUserKeyRequest(server string, serviceAccountId string, userKeyId string) (*http.Request, error) {
 	var err error
 
 	var pathParam0 string
@@ -22153,7 +22348,7 @@ func NewDeleteServiceAccountKeyRequest(server string, serviceAccountId string, k
 
 	var pathParam1 string
 
-	pathParam1, err = runtime.StyleParamWithLocation("simple", false, "kid", runtime.ParamLocationPath, kid)
+	pathParam1, err = runtime.StyleParamWithLocation("simple", false, "user_key_id", runtime.ParamLocationPath, userKeyId)
 	if err != nil {
 		return nil, err
 	}
@@ -22163,7 +22358,7 @@ func NewDeleteServiceAccountKeyRequest(server string, serviceAccountId string, k
 		return nil, err
 	}
 
-	operationPath := fmt.Sprintf("/service_account/%s/key/%s", pathParam0, pathParam1)
+	operationPath := fmt.Sprintf("/service_account/%s/user_key/%s", pathParam0, pathParam1)
 	if operationPath[0] == '/' {
 		operationPath = "." + operationPath
 	}
@@ -22181,8 +22376,8 @@ func NewDeleteServiceAccountKeyRequest(server string, serviceAccountId string, k
 	return req, nil
 }
 
-// NewListServiceAccountTokensRequest generates requests for ListServiceAccountTokens
-func NewListServiceAccountTokensRequest(server string, serviceAccountId string) (*http.Request, error) {
+// NewGetServiceAccountUserKeyRequest generates requests for GetServiceAccountUserKey
+func NewGetServiceAccountUserKeyRequest(server string, serviceAccountId string, userKeyId string, params *GetServiceAccountUserKeyParams) (*http.Request, error) {
 	var err error
 
 	var pathParam0 string
@@ -22192,12 +22387,19 @@ func NewListServiceAccountTokensRequest(server string, serviceAccountId string) 
 		return nil, err
 	}
 
+	var pathParam1 string
+
+	pathParam1, err = runtime.StyleParamWithLocation("simple", false, "user_key_id", runtime.ParamLocationPath, userKeyId)
+	if err != nil {
+		return nil, err
+	}
+
 	serverURL, err := url.Parse(server)
 	if err != nil {
 		return nil, err
 	}
 
-	operationPath := fmt.Sprintf("/service_account/%s/token", pathParam0)
+	operationPath := fmt.Sprintf("/service_account/%s/user_key/%s", pathParam0, pathParam1)
 	if operationPath[0] == '/' {
 		operationPath = "." + operationPath
 	}
@@ -22205,6 +22407,28 @@ func NewListServiceAccountTokensRequest(server string, serviceAccountId string) 
 	queryURL, err := serverURL.Parse(operationPath)
 	if err != nil {
 		return nil, err
+	}
+
+	if params != nil {
+		queryValues := queryURL.Query()
+
+		if params.Select != nil {
+
+			if queryFrag, err := runtime.StyleParamWithLocation("form", true, "select", runtime.ParamLocationQuery, *params.Select); err != nil {
+				return nil, err
+			} else if parsed, err := url.ParseQuery(queryFrag); err != nil {
+				return nil, err
+			} else {
+				for k, v := range parsed {
+					for _, v2 := range v {
+						queryValues.Add(k, v2)
+					}
+				}
+			}
+
+		}
+
+		queryURL.RawQuery = queryValues.Encode()
 	}
 
 	req, err := http.NewRequest("GET", queryURL.String(), nil)
@@ -22215,19 +22439,8 @@ func NewListServiceAccountTokensRequest(server string, serviceAccountId string) 
 	return req, nil
 }
 
-// NewCreateServiceAccountTokenRequest calls the generic CreateServiceAccountToken builder with application/json body
-func NewCreateServiceAccountTokenRequest(server string, serviceAccountId string, params *CreateServiceAccountTokenParams, body CreateServiceAccountTokenJSONRequestBody) (*http.Request, error) {
-	var bodyReader io.Reader
-	buf, err := json.Marshal(body)
-	if err != nil {
-		return nil, err
-	}
-	bodyReader = bytes.NewReader(buf)
-	return NewCreateServiceAccountTokenRequestWithBody(server, serviceAccountId, params, "application/json", bodyReader)
-}
-
-// NewCreateServiceAccountTokenRequestWithBody generates requests for CreateServiceAccountToken with any type of body
-func NewCreateServiceAccountTokenRequestWithBody(server string, serviceAccountId string, params *CreateServiceAccountTokenParams, contentType string, body io.Reader) (*http.Request, error) {
+// NewListServiceAccountUserTokensRequest generates requests for ListServiceAccountUserTokens
+func NewListServiceAccountUserTokensRequest(server string, serviceAccountId string, params *ListServiceAccountUserTokensParams) (*http.Request, error) {
 	var err error
 
 	var pathParam0 string
@@ -22242,7 +22455,170 @@ func NewCreateServiceAccountTokenRequestWithBody(server string, serviceAccountId
 		return nil, err
 	}
 
-	operationPath := fmt.Sprintf("/service_account/%s/token", pathParam0)
+	operationPath := fmt.Sprintf("/service_account/%s/user_token", pathParam0)
+	if operationPath[0] == '/' {
+		operationPath = "." + operationPath
+	}
+
+	queryURL, err := serverURL.Parse(operationPath)
+	if err != nil {
+		return nil, err
+	}
+
+	if params != nil {
+		queryValues := queryURL.Query()
+
+		if params.Where != nil {
+
+			if queryFrag, err := runtime.StyleParamWithLocation("form", true, "where", runtime.ParamLocationQuery, *params.Where); err != nil {
+				return nil, err
+			} else if parsed, err := url.ParseQuery(queryFrag); err != nil {
+				return nil, err
+			} else {
+				for k, v := range parsed {
+					for _, v2 := range v {
+						queryValues.Add(k, v2)
+					}
+				}
+			}
+
+		}
+
+		if params.Contains != nil {
+
+			if queryFrag, err := runtime.StyleParamWithLocation("form", true, "contains", runtime.ParamLocationQuery, *params.Contains); err != nil {
+				return nil, err
+			} else if parsed, err := url.ParseQuery(queryFrag); err != nil {
+				return nil, err
+			} else {
+				for k, v := range parsed {
+					for _, v2 := range v {
+						queryValues.Add(k, v2)
+					}
+				}
+			}
+
+		}
+
+		if params.Select != nil {
+
+			if queryFrag, err := runtime.StyleParamWithLocation("form", true, "select", runtime.ParamLocationQuery, *params.Select); err != nil {
+				return nil, err
+			} else if parsed, err := url.ParseQuery(queryFrag); err != nil {
+				return nil, err
+			} else {
+				for k, v := range parsed {
+					for _, v2 := range v {
+						queryValues.Add(k, v2)
+					}
+				}
+			}
+
+		}
+
+		if params.IncludeHidden != nil {
+
+			if queryFrag, err := runtime.StyleParamWithLocation("form", true, "include_hidden", runtime.ParamLocationQuery, *params.IncludeHidden); err != nil {
+				return nil, err
+			} else if parsed, err := url.ParseQuery(queryFrag); err != nil {
+				return nil, err
+			} else {
+				for k, v := range parsed {
+					for _, v2 := range v {
+						queryValues.Add(k, v2)
+					}
+				}
+			}
+
+		}
+
+		if params.Limit != nil {
+
+			if queryFrag, err := runtime.StyleParamWithLocation("form", true, "limit", runtime.ParamLocationQuery, *params.Limit); err != nil {
+				return nil, err
+			} else if parsed, err := url.ParseQuery(queryFrag); err != nil {
+				return nil, err
+			} else {
+				for k, v := range parsed {
+					for _, v2 := range v {
+						queryValues.Add(k, v2)
+					}
+				}
+			}
+
+		}
+
+		if params.OrderBy != nil {
+
+			if queryFrag, err := runtime.StyleParamWithLocation("form", true, "order_by", runtime.ParamLocationQuery, *params.OrderBy); err != nil {
+				return nil, err
+			} else if parsed, err := url.ParseQuery(queryFrag); err != nil {
+				return nil, err
+			} else {
+				for k, v := range parsed {
+					for _, v2 := range v {
+						queryValues.Add(k, v2)
+					}
+				}
+			}
+
+		}
+
+		if params.Continue != nil {
+
+			if queryFrag, err := runtime.StyleParamWithLocation("form", true, "continue", runtime.ParamLocationQuery, *params.Continue); err != nil {
+				return nil, err
+			} else if parsed, err := url.ParseQuery(queryFrag); err != nil {
+				return nil, err
+			} else {
+				for k, v := range parsed {
+					for _, v2 := range v {
+						queryValues.Add(k, v2)
+					}
+				}
+			}
+
+		}
+
+		queryURL.RawQuery = queryValues.Encode()
+	}
+
+	req, err := http.NewRequest("GET", queryURL.String(), nil)
+	if err != nil {
+		return nil, err
+	}
+
+	return req, nil
+}
+
+// NewCreateServiceAccountUserTokenRequest calls the generic CreateServiceAccountUserToken builder with application/json body
+func NewCreateServiceAccountUserTokenRequest(server string, serviceAccountId string, params *CreateServiceAccountUserTokenParams, body CreateServiceAccountUserTokenJSONRequestBody) (*http.Request, error) {
+	var bodyReader io.Reader
+	buf, err := json.Marshal(body)
+	if err != nil {
+		return nil, err
+	}
+	bodyReader = bytes.NewReader(buf)
+	return NewCreateServiceAccountUserTokenRequestWithBody(server, serviceAccountId, params, "application/json", bodyReader)
+}
+
+// NewCreateServiceAccountUserTokenRequestWithBody generates requests for CreateServiceAccountUserToken with any type of body
+func NewCreateServiceAccountUserTokenRequestWithBody(server string, serviceAccountId string, params *CreateServiceAccountUserTokenParams, contentType string, body io.Reader) (*http.Request, error) {
+	var err error
+
+	var pathParam0 string
+
+	pathParam0, err = runtime.StyleParamWithLocation("simple", false, "service_account_id", runtime.ParamLocationPath, serviceAccountId)
+	if err != nil {
+		return nil, err
+	}
+
+	serverURL, err := url.Parse(server)
+	if err != nil {
+		return nil, err
+	}
+
+	operationPath := fmt.Sprintf("/service_account/%s/user_token", pathParam0)
 	if operationPath[0] == '/' {
 		operationPath = "." + operationPath
 	}
@@ -22284,8 +22660,8 @@ func NewCreateServiceAccountTokenRequestWithBody(server string, serviceAccountId
 	return req, nil
 }
 
-// NewRevokeServiceAccountTokenRequest generates requests for RevokeServiceAccountToken
-func NewRevokeServiceAccountTokenRequest(server string, serviceAccountId string, jti string) (*http.Request, error) {
+// NewDeleteServiceAccountUserTokenRequest generates requests for DeleteServiceAccountUserToken
+func NewDeleteServiceAccountUserTokenRequest(server string, serviceAccountId string, userTokenId string) (*http.Request, error) {
 	var err error
 
 	var pathParam0 string
@@ -22297,7 +22673,7 @@ func NewRevokeServiceAccountTokenRequest(server string, serviceAccountId string,
 
 	var pathParam1 string
 
-	pathParam1, err = runtime.StyleParamWithLocation("simple", false, "jti", runtime.ParamLocationPath, jti)
+	pathParam1, err = runtime.StyleParamWithLocation("simple", false, "user_token_id", runtime.ParamLocationPath, userTokenId)
 	if err != nil {
 		return nil, err
 	}
@@ -22307,7 +22683,7 @@ func NewRevokeServiceAccountTokenRequest(server string, serviceAccountId string,
 		return nil, err
 	}
 
-	operationPath := fmt.Sprintf("/service_account/%s/token/%s", pathParam0, pathParam1)
+	operationPath := fmt.Sprintf("/service_account/%s/user_token/%s", pathParam0, pathParam1)
 	if operationPath[0] == '/' {
 		operationPath = "." + operationPath
 	}
@@ -22318,6 +22694,110 @@ func NewRevokeServiceAccountTokenRequest(server string, serviceAccountId string,
 	}
 
 	req, err := http.NewRequest("DELETE", queryURL.String(), nil)
+	if err != nil {
+		return nil, err
+	}
+
+	return req, nil
+}
+
+// NewGetServiceAccountUserTokenRequest generates requests for GetServiceAccountUserToken
+func NewGetServiceAccountUserTokenRequest(server string, serviceAccountId string, userTokenId string, params *GetServiceAccountUserTokenParams) (*http.Request, error) {
+	var err error
+
+	var pathParam0 string
+
+	pathParam0, err = runtime.StyleParamWithLocation("simple", false, "service_account_id", runtime.ParamLocationPath, serviceAccountId)
+	if err != nil {
+		return nil, err
+	}
+
+	var pathParam1 string
+
+	pathParam1, err = runtime.StyleParamWithLocation("simple", false, "user_token_id", runtime.ParamLocationPath, userTokenId)
+	if err != nil {
+		return nil, err
+	}
+
+	serverURL, err := url.Parse(server)
+	if err != nil {
+		return nil, err
+	}
+
+	operationPath := fmt.Sprintf("/service_account/%s/user_token/%s", pathParam0, pathParam1)
+	if operationPath[0] == '/' {
+		operationPath = "." + operationPath
+	}
+
+	queryURL, err := serverURL.Parse(operationPath)
+	if err != nil {
+		return nil, err
+	}
+
+	if params != nil {
+		queryValues := queryURL.Query()
+
+		if params.Select != nil {
+
+			if queryFrag, err := runtime.StyleParamWithLocation("form", true, "select", runtime.ParamLocationQuery, *params.Select); err != nil {
+				return nil, err
+			} else if parsed, err := url.ParseQuery(queryFrag); err != nil {
+				return nil, err
+			} else {
+				for k, v := range parsed {
+					for _, v2 := range v {
+						queryValues.Add(k, v2)
+					}
+				}
+			}
+
+		}
+
+		queryURL.RawQuery = queryValues.Encode()
+	}
+
+	req, err := http.NewRequest("GET", queryURL.String(), nil)
+	if err != nil {
+		return nil, err
+	}
+
+	return req, nil
+}
+
+// NewRevokeServiceAccountUserTokenRequest generates requests for RevokeServiceAccountUserToken
+func NewRevokeServiceAccountUserTokenRequest(server string, serviceAccountId string, userTokenId string) (*http.Request, error) {
+	var err error
+
+	var pathParam0 string
+
+	pathParam0, err = runtime.StyleParamWithLocation("simple", false, "service_account_id", runtime.ParamLocationPath, serviceAccountId)
+	if err != nil {
+		return nil, err
+	}
+
+	var pathParam1 string
+
+	pathParam1, err = runtime.StyleParamWithLocation("simple", false, "user_token_id", runtime.ParamLocationPath, userTokenId)
+	if err != nil {
+		return nil, err
+	}
+
+	serverURL, err := url.Parse(server)
+	if err != nil {
+		return nil, err
+	}
+
+	operationPath := fmt.Sprintf("/service_account/%s/user_token/%s/revoke", pathParam0, pathParam1)
+	if operationPath[0] == '/' {
+		operationPath = "." + operationPath
+	}
+
+	queryURL, err := serverURL.Parse(operationPath)
+	if err != nil {
+		return nil, err
+	}
+
+	req, err := http.NewRequest("POST", queryURL.String(), nil)
 	if err != nil {
 		return nil, err
 	}
@@ -27831,6 +28311,38 @@ func NewListCommandRunsRequest(server string, spaceId openapi_types.UUID, params
 
 		}
 
+		if params.IncludeHidden != nil {
+
+			if queryFrag, err := runtime.StyleParamWithLocation("form", true, "include_hidden", runtime.ParamLocationQuery, *params.IncludeHidden); err != nil {
+				return nil, err
+			} else if parsed, err := url.ParseQuery(queryFrag); err != nil {
+				return nil, err
+			} else {
+				for k, v := range parsed {
+					for _, v2 := range v {
+						queryValues.Add(k, v2)
+					}
+				}
+			}
+
+		}
+
+		if params.View != nil {
+
+			if queryFrag, err := runtime.StyleParamWithLocation("form", true, "view", runtime.ParamLocationQuery, *params.View); err != nil {
+				return nil, err
+			} else if parsed, err := url.ParseQuery(queryFrag); err != nil {
+				return nil, err
+			} else {
+				for k, v := range parsed {
+					for _, v2 := range v {
+						queryValues.Add(k, v2)
+					}
+				}
+			}
+
+		}
+
 		if params.Limit != nil {
 
 			if queryFrag, err := runtime.StyleParamWithLocation("form", true, "limit", runtime.ParamLocationQuery, *params.Limit); err != nil {
@@ -27998,6 +28510,22 @@ func NewGetCommandRunRequest(server string, spaceId openapi_types.UUID, commandR
 		if params.Wait != nil {
 
 			if queryFrag, err := runtime.StyleParamWithLocation("form", true, "wait", runtime.ParamLocationQuery, *params.Wait); err != nil {
+				return nil, err
+			} else if parsed, err := url.ParseQuery(queryFrag); err != nil {
+				return nil, err
+			} else {
+				for k, v := range parsed {
+					for _, v2 := range v {
+						queryValues.Add(k, v2)
+					}
+				}
+			}
+
+		}
+
+		if params.Include != nil {
+
+			if queryFrag, err := runtime.StyleParamWithLocation("form", true, "include", runtime.ParamLocationQuery, *params.Include); err != nil {
 				return nil, err
 			} else if parsed, err := url.ParseQuery(queryFrag); err != nil {
 				return nil, err
@@ -46559,27 +47087,36 @@ type ClientWithResponsesInterface interface {
 
 	UpdateServiceAccountWithResponse(ctx context.Context, serviceAccountId openapi_types.UUID, params *UpdateServiceAccountParams, body UpdateServiceAccountJSONRequestBody, reqEditors ...RequestEditorFn) (*UpdateServiceAccountResponse, error)
 
-	// ListServiceAccountKeysWithResponse request
-	ListServiceAccountKeysWithResponse(ctx context.Context, serviceAccountId string, reqEditors ...RequestEditorFn) (*ListServiceAccountKeysResponse, error)
+	// ListServiceAccountUserKeysWithResponse request
+	ListServiceAccountUserKeysWithResponse(ctx context.Context, serviceAccountId string, params *ListServiceAccountUserKeysParams, reqEditors ...RequestEditorFn) (*ListServiceAccountUserKeysResponse, error)
 
-	// CreateServiceAccountKeyWithBodyWithResponse request with any body
-	CreateServiceAccountKeyWithBodyWithResponse(ctx context.Context, serviceAccountId string, params *CreateServiceAccountKeyParams, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*CreateServiceAccountKeyResponse, error)
+	// CreateServiceAccountUserKeyWithBodyWithResponse request with any body
+	CreateServiceAccountUserKeyWithBodyWithResponse(ctx context.Context, serviceAccountId string, params *CreateServiceAccountUserKeyParams, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*CreateServiceAccountUserKeyResponse, error)
 
-	CreateServiceAccountKeyWithResponse(ctx context.Context, serviceAccountId string, params *CreateServiceAccountKeyParams, body CreateServiceAccountKeyJSONRequestBody, reqEditors ...RequestEditorFn) (*CreateServiceAccountKeyResponse, error)
+	CreateServiceAccountUserKeyWithResponse(ctx context.Context, serviceAccountId string, params *CreateServiceAccountUserKeyParams, body CreateServiceAccountUserKeyJSONRequestBody, reqEditors ...RequestEditorFn) (*CreateServiceAccountUserKeyResponse, error)
 
-	// DeleteServiceAccountKeyWithResponse request
-	DeleteServiceAccountKeyWithResponse(ctx context.Context, serviceAccountId string, kid string, reqEditors ...RequestEditorFn) (*DeleteServiceAccountKeyResponse, error)
+	// DeleteServiceAccountUserKeyWithResponse request
+	DeleteServiceAccountUserKeyWithResponse(ctx context.Context, serviceAccountId string, userKeyId string, reqEditors ...RequestEditorFn) (*DeleteServiceAccountUserKeyResponse, error)
 
-	// ListServiceAccountTokensWithResponse request
-	ListServiceAccountTokensWithResponse(ctx context.Context, serviceAccountId string, reqEditors ...RequestEditorFn) (*ListServiceAccountTokensResponse, error)
+	// GetServiceAccountUserKeyWithResponse request
+	GetServiceAccountUserKeyWithResponse(ctx context.Context, serviceAccountId string, userKeyId string, params *GetServiceAccountUserKeyParams, reqEditors ...RequestEditorFn) (*GetServiceAccountUserKeyResponse, error)
 
-	// CreateServiceAccountTokenWithBodyWithResponse request with any body
-	CreateServiceAccountTokenWithBodyWithResponse(ctx context.Context, serviceAccountId string, params *CreateServiceAccountTokenParams, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*CreateServiceAccountTokenResponse, error)
+	// ListServiceAccountUserTokensWithResponse request
+	ListServiceAccountUserTokensWithResponse(ctx context.Context, serviceAccountId string, params *ListServiceAccountUserTokensParams, reqEditors ...RequestEditorFn) (*ListServiceAccountUserTokensResponse, error)
 
-	CreateServiceAccountTokenWithResponse(ctx context.Context, serviceAccountId string, params *CreateServiceAccountTokenParams, body CreateServiceAccountTokenJSONRequestBody, reqEditors ...RequestEditorFn) (*CreateServiceAccountTokenResponse, error)
+	// CreateServiceAccountUserTokenWithBodyWithResponse request with any body
+	CreateServiceAccountUserTokenWithBodyWithResponse(ctx context.Context, serviceAccountId string, params *CreateServiceAccountUserTokenParams, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*CreateServiceAccountUserTokenResponse, error)
 
-	// RevokeServiceAccountTokenWithResponse request
-	RevokeServiceAccountTokenWithResponse(ctx context.Context, serviceAccountId string, jti string, reqEditors ...RequestEditorFn) (*RevokeServiceAccountTokenResponse, error)
+	CreateServiceAccountUserTokenWithResponse(ctx context.Context, serviceAccountId string, params *CreateServiceAccountUserTokenParams, body CreateServiceAccountUserTokenJSONRequestBody, reqEditors ...RequestEditorFn) (*CreateServiceAccountUserTokenResponse, error)
+
+	// DeleteServiceAccountUserTokenWithResponse request
+	DeleteServiceAccountUserTokenWithResponse(ctx context.Context, serviceAccountId string, userTokenId string, reqEditors ...RequestEditorFn) (*DeleteServiceAccountUserTokenResponse, error)
+
+	// GetServiceAccountUserTokenWithResponse request
+	GetServiceAccountUserTokenWithResponse(ctx context.Context, serviceAccountId string, userTokenId string, params *GetServiceAccountUserTokenParams, reqEditors ...RequestEditorFn) (*GetServiceAccountUserTokenResponse, error)
+
+	// RevokeServiceAccountUserTokenWithResponse request
+	RevokeServiceAccountUserTokenWithResponse(ctx context.Context, serviceAccountId string, userTokenId string, reqEditors ...RequestEditorFn) (*RevokeServiceAccountUserTokenResponse, error)
 
 	// ListSpacesWithResponse request
 	ListSpacesWithResponse(ctx context.Context, params *ListSpacesParams, reqEditors ...RequestEditorFn) (*ListSpacesResponse, error)
@@ -48550,7 +49087,7 @@ func (r ListAllCommandsResponse) StatusCode() int {
 type ListAllCommandRunsResponse struct {
 	Body         []byte
 	HTTPResponse *http.Response
-	JSON200      *[]CommandRun
+	JSON200      *[]ExtendedCommandRun
 	JSON400      *StandardErrorResponse
 	JSON401      *StandardErrorResponse
 	JSON403      *StandardErrorResponse
@@ -50351,10 +50888,10 @@ func (r UpdateServiceAccountResponse) StatusCode() int {
 	return 0
 }
 
-type ListServiceAccountKeysResponse struct {
+type ListServiceAccountUserKeysResponse struct {
 	Body         []byte
 	HTTPResponse *http.Response
-	JSON200      *[]UserKey
+	JSON200      *[]ExtendedUserKey
 	JSON400      *StandardErrorResponse
 	JSON401      *StandardErrorResponse
 	JSON403      *StandardErrorResponse
@@ -50364,7 +50901,7 @@ type ListServiceAccountKeysResponse struct {
 }
 
 // Status returns HTTPResponse.Status
-func (r ListServiceAccountKeysResponse) Status() string {
+func (r ListServiceAccountUserKeysResponse) Status() string {
 	if r.HTTPResponse != nil {
 		return r.HTTPResponse.Status
 	}
@@ -50372,14 +50909,14 @@ func (r ListServiceAccountKeysResponse) Status() string {
 }
 
 // StatusCode returns HTTPResponse.StatusCode
-func (r ListServiceAccountKeysResponse) StatusCode() int {
+func (r ListServiceAccountUserKeysResponse) StatusCode() int {
 	if r.HTTPResponse != nil {
 		return r.HTTPResponse.StatusCode
 	}
 	return 0
 }
 
-type CreateServiceAccountKeyResponse struct {
+type CreateServiceAccountUserKeyResponse struct {
 	Body         []byte
 	HTTPResponse *http.Response
 	JSON200      *UserKey
@@ -50393,7 +50930,7 @@ type CreateServiceAccountKeyResponse struct {
 }
 
 // Status returns HTTPResponse.Status
-func (r CreateServiceAccountKeyResponse) Status() string {
+func (r CreateServiceAccountUserKeyResponse) Status() string {
 	if r.HTTPResponse != nil {
 		return r.HTTPResponse.Status
 	}
@@ -50401,14 +50938,14 @@ func (r CreateServiceAccountKeyResponse) Status() string {
 }
 
 // StatusCode returns HTTPResponse.StatusCode
-func (r CreateServiceAccountKeyResponse) StatusCode() int {
+func (r CreateServiceAccountUserKeyResponse) StatusCode() int {
 	if r.HTTPResponse != nil {
 		return r.HTTPResponse.StatusCode
 	}
 	return 0
 }
 
-type DeleteServiceAccountKeyResponse struct {
+type DeleteServiceAccountUserKeyResponse struct {
 	Body         []byte
 	HTTPResponse *http.Response
 	JSON200      *DeleteResponse
@@ -50423,7 +50960,7 @@ type DeleteServiceAccountKeyResponse struct {
 }
 
 // Status returns HTTPResponse.Status
-func (r DeleteServiceAccountKeyResponse) Status() string {
+func (r DeleteServiceAccountUserKeyResponse) Status() string {
 	if r.HTTPResponse != nil {
 		return r.HTTPResponse.Status
 	}
@@ -50431,17 +50968,17 @@ func (r DeleteServiceAccountKeyResponse) Status() string {
 }
 
 // StatusCode returns HTTPResponse.StatusCode
-func (r DeleteServiceAccountKeyResponse) StatusCode() int {
+func (r DeleteServiceAccountUserKeyResponse) StatusCode() int {
 	if r.HTTPResponse != nil {
 		return r.HTTPResponse.StatusCode
 	}
 	return 0
 }
 
-type ListServiceAccountTokensResponse struct {
+type GetServiceAccountUserKeyResponse struct {
 	Body         []byte
 	HTTPResponse *http.Response
-	JSON200      *[]UserToken
+	JSON200      *ExtendedUserKey
 	JSON400      *StandardErrorResponse
 	JSON401      *StandardErrorResponse
 	JSON403      *StandardErrorResponse
@@ -50451,7 +50988,7 @@ type ListServiceAccountTokensResponse struct {
 }
 
 // Status returns HTTPResponse.Status
-func (r ListServiceAccountTokensResponse) Status() string {
+func (r GetServiceAccountUserKeyResponse) Status() string {
 	if r.HTTPResponse != nil {
 		return r.HTTPResponse.Status
 	}
@@ -50459,14 +50996,42 @@ func (r ListServiceAccountTokensResponse) Status() string {
 }
 
 // StatusCode returns HTTPResponse.StatusCode
-func (r ListServiceAccountTokensResponse) StatusCode() int {
+func (r GetServiceAccountUserKeyResponse) StatusCode() int {
 	if r.HTTPResponse != nil {
 		return r.HTTPResponse.StatusCode
 	}
 	return 0
 }
 
-type CreateServiceAccountTokenResponse struct {
+type ListServiceAccountUserTokensResponse struct {
+	Body         []byte
+	HTTPResponse *http.Response
+	JSON200      *[]ExtendedUserToken
+	JSON400      *StandardErrorResponse
+	JSON401      *StandardErrorResponse
+	JSON403      *StandardErrorResponse
+	JSON404      *StandardErrorResponse
+	JSON500      *StandardErrorResponse
+	JSONDefault  *StandardErrorResponse
+}
+
+// Status returns HTTPResponse.Status
+func (r ListServiceAccountUserTokensResponse) Status() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Status
+	}
+	return http.StatusText(0)
+}
+
+// StatusCode returns HTTPResponse.StatusCode
+func (r ListServiceAccountUserTokensResponse) StatusCode() int {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.StatusCode
+	}
+	return 0
+}
+
+type CreateServiceAccountUserTokenResponse struct {
 	Body         []byte
 	HTTPResponse *http.Response
 	JSON200      *IssuedUserToken
@@ -50480,7 +51045,7 @@ type CreateServiceAccountTokenResponse struct {
 }
 
 // Status returns HTTPResponse.Status
-func (r CreateServiceAccountTokenResponse) Status() string {
+func (r CreateServiceAccountUserTokenResponse) Status() string {
 	if r.HTTPResponse != nil {
 		return r.HTTPResponse.Status
 	}
@@ -50488,14 +51053,14 @@ func (r CreateServiceAccountTokenResponse) Status() string {
 }
 
 // StatusCode returns HTTPResponse.StatusCode
-func (r CreateServiceAccountTokenResponse) StatusCode() int {
+func (r CreateServiceAccountUserTokenResponse) StatusCode() int {
 	if r.HTTPResponse != nil {
 		return r.HTTPResponse.StatusCode
 	}
 	return 0
 }
 
-type RevokeServiceAccountTokenResponse struct {
+type DeleteServiceAccountUserTokenResponse struct {
 	Body         []byte
 	HTTPResponse *http.Response
 	JSON200      *DeleteResponse
@@ -50510,7 +51075,7 @@ type RevokeServiceAccountTokenResponse struct {
 }
 
 // Status returns HTTPResponse.Status
-func (r RevokeServiceAccountTokenResponse) Status() string {
+func (r DeleteServiceAccountUserTokenResponse) Status() string {
 	if r.HTTPResponse != nil {
 		return r.HTTPResponse.Status
 	}
@@ -50518,7 +51083,64 @@ func (r RevokeServiceAccountTokenResponse) Status() string {
 }
 
 // StatusCode returns HTTPResponse.StatusCode
-func (r RevokeServiceAccountTokenResponse) StatusCode() int {
+func (r DeleteServiceAccountUserTokenResponse) StatusCode() int {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.StatusCode
+	}
+	return 0
+}
+
+type GetServiceAccountUserTokenResponse struct {
+	Body         []byte
+	HTTPResponse *http.Response
+	JSON200      *ExtendedUserToken
+	JSON400      *StandardErrorResponse
+	JSON401      *StandardErrorResponse
+	JSON403      *StandardErrorResponse
+	JSON404      *StandardErrorResponse
+	JSON500      *StandardErrorResponse
+	JSONDefault  *StandardErrorResponse
+}
+
+// Status returns HTTPResponse.Status
+func (r GetServiceAccountUserTokenResponse) Status() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Status
+	}
+	return http.StatusText(0)
+}
+
+// StatusCode returns HTTPResponse.StatusCode
+func (r GetServiceAccountUserTokenResponse) StatusCode() int {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.StatusCode
+	}
+	return 0
+}
+
+type RevokeServiceAccountUserTokenResponse struct {
+	Body         []byte
+	HTTPResponse *http.Response
+	JSON200      *UserToken
+	JSON400      *StandardErrorResponse
+	JSON401      *StandardErrorResponse
+	JSON403      *StandardErrorResponse
+	JSON404      *StandardErrorResponse
+	JSON409      *StandardErrorResponse
+	JSON500      *StandardErrorResponse
+	JSONDefault  *StandardErrorResponse
+}
+
+// Status returns HTTPResponse.Status
+func (r RevokeServiceAccountUserTokenResponse) Status() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Status
+	}
+	return http.StatusText(0)
+}
+
+// StatusCode returns HTTPResponse.StatusCode
+func (r RevokeServiceAccountUserTokenResponse) StatusCode() int {
 	if r.HTTPResponse != nil {
 		return r.HTTPResponse.StatusCode
 	}
@@ -52218,7 +52840,7 @@ func (r ListCommandsResponse) StatusCode() int {
 type ListCommandRunsResponse struct {
 	Body         []byte
 	HTTPResponse *http.Response
-	JSON200      *[]CommandRun
+	JSON200      *[]ExtendedCommandRun
 	JSON400      *StandardErrorResponse
 	JSON401      *StandardErrorResponse
 	JSON403      *StandardErrorResponse
@@ -52250,8 +52872,9 @@ type CreateCommandRunResponse struct {
 	JSON400      *StandardErrorResponse
 	JSON401      *StandardErrorResponse
 	JSON403      *StandardErrorResponse
-	JSON404      *StandardErrorResponse
-	JSON409      *StandardErrorResponse
+	JSON404      *CommandRunRefusal
+	JSON409      *CommandRunRefusal
+	JSON422      *CommandRunRefusal
 	JSON500      *StandardErrorResponse
 	JSONDefault  *StandardErrorResponse
 }
@@ -52275,7 +52898,7 @@ func (r CreateCommandRunResponse) StatusCode() int {
 type GetCommandRunResponse struct {
 	Body         []byte
 	HTTPResponse *http.Response
-	JSON200      *CommandRun
+	JSON200      *ExtendedCommandRun
 	JSON400      *StandardErrorResponse
 	JSON401      *StandardErrorResponse
 	JSON403      *StandardErrorResponse
@@ -57525,74 +58148,101 @@ func (c *ClientWithResponses) UpdateServiceAccountWithResponse(ctx context.Conte
 	return ParseUpdateServiceAccountResponse(rsp)
 }
 
-// ListServiceAccountKeysWithResponse request returning *ListServiceAccountKeysResponse
-func (c *ClientWithResponses) ListServiceAccountKeysWithResponse(ctx context.Context, serviceAccountId string, reqEditors ...RequestEditorFn) (*ListServiceAccountKeysResponse, error) {
-	rsp, err := c.ListServiceAccountKeys(ctx, serviceAccountId, reqEditors...)
+// ListServiceAccountUserKeysWithResponse request returning *ListServiceAccountUserKeysResponse
+func (c *ClientWithResponses) ListServiceAccountUserKeysWithResponse(ctx context.Context, serviceAccountId string, params *ListServiceAccountUserKeysParams, reqEditors ...RequestEditorFn) (*ListServiceAccountUserKeysResponse, error) {
+	rsp, err := c.ListServiceAccountUserKeys(ctx, serviceAccountId, params, reqEditors...)
 	if err != nil {
 		return nil, err
 	}
-	return ParseListServiceAccountKeysResponse(rsp)
+	return ParseListServiceAccountUserKeysResponse(rsp)
 }
 
-// CreateServiceAccountKeyWithBodyWithResponse request with arbitrary body returning *CreateServiceAccountKeyResponse
-func (c *ClientWithResponses) CreateServiceAccountKeyWithBodyWithResponse(ctx context.Context, serviceAccountId string, params *CreateServiceAccountKeyParams, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*CreateServiceAccountKeyResponse, error) {
-	rsp, err := c.CreateServiceAccountKeyWithBody(ctx, serviceAccountId, params, contentType, body, reqEditors...)
+// CreateServiceAccountUserKeyWithBodyWithResponse request with arbitrary body returning *CreateServiceAccountUserKeyResponse
+func (c *ClientWithResponses) CreateServiceAccountUserKeyWithBodyWithResponse(ctx context.Context, serviceAccountId string, params *CreateServiceAccountUserKeyParams, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*CreateServiceAccountUserKeyResponse, error) {
+	rsp, err := c.CreateServiceAccountUserKeyWithBody(ctx, serviceAccountId, params, contentType, body, reqEditors...)
 	if err != nil {
 		return nil, err
 	}
-	return ParseCreateServiceAccountKeyResponse(rsp)
+	return ParseCreateServiceAccountUserKeyResponse(rsp)
 }
 
-func (c *ClientWithResponses) CreateServiceAccountKeyWithResponse(ctx context.Context, serviceAccountId string, params *CreateServiceAccountKeyParams, body CreateServiceAccountKeyJSONRequestBody, reqEditors ...RequestEditorFn) (*CreateServiceAccountKeyResponse, error) {
-	rsp, err := c.CreateServiceAccountKey(ctx, serviceAccountId, params, body, reqEditors...)
+func (c *ClientWithResponses) CreateServiceAccountUserKeyWithResponse(ctx context.Context, serviceAccountId string, params *CreateServiceAccountUserKeyParams, body CreateServiceAccountUserKeyJSONRequestBody, reqEditors ...RequestEditorFn) (*CreateServiceAccountUserKeyResponse, error) {
+	rsp, err := c.CreateServiceAccountUserKey(ctx, serviceAccountId, params, body, reqEditors...)
 	if err != nil {
 		return nil, err
 	}
-	return ParseCreateServiceAccountKeyResponse(rsp)
+	return ParseCreateServiceAccountUserKeyResponse(rsp)
 }
 
-// DeleteServiceAccountKeyWithResponse request returning *DeleteServiceAccountKeyResponse
-func (c *ClientWithResponses) DeleteServiceAccountKeyWithResponse(ctx context.Context, serviceAccountId string, kid string, reqEditors ...RequestEditorFn) (*DeleteServiceAccountKeyResponse, error) {
-	rsp, err := c.DeleteServiceAccountKey(ctx, serviceAccountId, kid, reqEditors...)
+// DeleteServiceAccountUserKeyWithResponse request returning *DeleteServiceAccountUserKeyResponse
+func (c *ClientWithResponses) DeleteServiceAccountUserKeyWithResponse(ctx context.Context, serviceAccountId string, userKeyId string, reqEditors ...RequestEditorFn) (*DeleteServiceAccountUserKeyResponse, error) {
+	rsp, err := c.DeleteServiceAccountUserKey(ctx, serviceAccountId, userKeyId, reqEditors...)
 	if err != nil {
 		return nil, err
 	}
-	return ParseDeleteServiceAccountKeyResponse(rsp)
+	return ParseDeleteServiceAccountUserKeyResponse(rsp)
 }
 
-// ListServiceAccountTokensWithResponse request returning *ListServiceAccountTokensResponse
-func (c *ClientWithResponses) ListServiceAccountTokensWithResponse(ctx context.Context, serviceAccountId string, reqEditors ...RequestEditorFn) (*ListServiceAccountTokensResponse, error) {
-	rsp, err := c.ListServiceAccountTokens(ctx, serviceAccountId, reqEditors...)
+// GetServiceAccountUserKeyWithResponse request returning *GetServiceAccountUserKeyResponse
+func (c *ClientWithResponses) GetServiceAccountUserKeyWithResponse(ctx context.Context, serviceAccountId string, userKeyId string, params *GetServiceAccountUserKeyParams, reqEditors ...RequestEditorFn) (*GetServiceAccountUserKeyResponse, error) {
+	rsp, err := c.GetServiceAccountUserKey(ctx, serviceAccountId, userKeyId, params, reqEditors...)
 	if err != nil {
 		return nil, err
 	}
-	return ParseListServiceAccountTokensResponse(rsp)
+	return ParseGetServiceAccountUserKeyResponse(rsp)
 }
 
-// CreateServiceAccountTokenWithBodyWithResponse request with arbitrary body returning *CreateServiceAccountTokenResponse
-func (c *ClientWithResponses) CreateServiceAccountTokenWithBodyWithResponse(ctx context.Context, serviceAccountId string, params *CreateServiceAccountTokenParams, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*CreateServiceAccountTokenResponse, error) {
-	rsp, err := c.CreateServiceAccountTokenWithBody(ctx, serviceAccountId, params, contentType, body, reqEditors...)
+// ListServiceAccountUserTokensWithResponse request returning *ListServiceAccountUserTokensResponse
+func (c *ClientWithResponses) ListServiceAccountUserTokensWithResponse(ctx context.Context, serviceAccountId string, params *ListServiceAccountUserTokensParams, reqEditors ...RequestEditorFn) (*ListServiceAccountUserTokensResponse, error) {
+	rsp, err := c.ListServiceAccountUserTokens(ctx, serviceAccountId, params, reqEditors...)
 	if err != nil {
 		return nil, err
 	}
-	return ParseCreateServiceAccountTokenResponse(rsp)
+	return ParseListServiceAccountUserTokensResponse(rsp)
 }
 
-func (c *ClientWithResponses) CreateServiceAccountTokenWithResponse(ctx context.Context, serviceAccountId string, params *CreateServiceAccountTokenParams, body CreateServiceAccountTokenJSONRequestBody, reqEditors ...RequestEditorFn) (*CreateServiceAccountTokenResponse, error) {
-	rsp, err := c.CreateServiceAccountToken(ctx, serviceAccountId, params, body, reqEditors...)
+// CreateServiceAccountUserTokenWithBodyWithResponse request with arbitrary body returning *CreateServiceAccountUserTokenResponse
+func (c *ClientWithResponses) CreateServiceAccountUserTokenWithBodyWithResponse(ctx context.Context, serviceAccountId string, params *CreateServiceAccountUserTokenParams, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*CreateServiceAccountUserTokenResponse, error) {
+	rsp, err := c.CreateServiceAccountUserTokenWithBody(ctx, serviceAccountId, params, contentType, body, reqEditors...)
 	if err != nil {
 		return nil, err
 	}
-	return ParseCreateServiceAccountTokenResponse(rsp)
+	return ParseCreateServiceAccountUserTokenResponse(rsp)
 }
 
-// RevokeServiceAccountTokenWithResponse request returning *RevokeServiceAccountTokenResponse
-func (c *ClientWithResponses) RevokeServiceAccountTokenWithResponse(ctx context.Context, serviceAccountId string, jti string, reqEditors ...RequestEditorFn) (*RevokeServiceAccountTokenResponse, error) {
-	rsp, err := c.RevokeServiceAccountToken(ctx, serviceAccountId, jti, reqEditors...)
+func (c *ClientWithResponses) CreateServiceAccountUserTokenWithResponse(ctx context.Context, serviceAccountId string, params *CreateServiceAccountUserTokenParams, body CreateServiceAccountUserTokenJSONRequestBody, reqEditors ...RequestEditorFn) (*CreateServiceAccountUserTokenResponse, error) {
+	rsp, err := c.CreateServiceAccountUserToken(ctx, serviceAccountId, params, body, reqEditors...)
 	if err != nil {
 		return nil, err
 	}
-	return ParseRevokeServiceAccountTokenResponse(rsp)
+	return ParseCreateServiceAccountUserTokenResponse(rsp)
+}
+
+// DeleteServiceAccountUserTokenWithResponse request returning *DeleteServiceAccountUserTokenResponse
+func (c *ClientWithResponses) DeleteServiceAccountUserTokenWithResponse(ctx context.Context, serviceAccountId string, userTokenId string, reqEditors ...RequestEditorFn) (*DeleteServiceAccountUserTokenResponse, error) {
+	rsp, err := c.DeleteServiceAccountUserToken(ctx, serviceAccountId, userTokenId, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseDeleteServiceAccountUserTokenResponse(rsp)
+}
+
+// GetServiceAccountUserTokenWithResponse request returning *GetServiceAccountUserTokenResponse
+func (c *ClientWithResponses) GetServiceAccountUserTokenWithResponse(ctx context.Context, serviceAccountId string, userTokenId string, params *GetServiceAccountUserTokenParams, reqEditors ...RequestEditorFn) (*GetServiceAccountUserTokenResponse, error) {
+	rsp, err := c.GetServiceAccountUserToken(ctx, serviceAccountId, userTokenId, params, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseGetServiceAccountUserTokenResponse(rsp)
+}
+
+// RevokeServiceAccountUserTokenWithResponse request returning *RevokeServiceAccountUserTokenResponse
+func (c *ClientWithResponses) RevokeServiceAccountUserTokenWithResponse(ctx context.Context, serviceAccountId string, userTokenId string, reqEditors ...RequestEditorFn) (*RevokeServiceAccountUserTokenResponse, error) {
+	rsp, err := c.RevokeServiceAccountUserToken(ctx, serviceAccountId, userTokenId, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseRevokeServiceAccountUserTokenResponse(rsp)
 }
 
 // ListSpacesWithResponse request returning *ListSpacesResponse
@@ -63347,7 +63997,7 @@ func ParseListAllCommandRunsResponse(rsp *http.Response) (*ListAllCommandRunsRes
 
 	switch {
 	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 200:
-		var dest []CommandRun
+		var dest []ExtendedCommandRun
 		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
 			return nil, err
 		}
@@ -68024,22 +68674,22 @@ func ParseUpdateServiceAccountResponse(rsp *http.Response) (*UpdateServiceAccoun
 	return response, nil
 }
 
-// ParseListServiceAccountKeysResponse parses an HTTP response from a ListServiceAccountKeysWithResponse call
-func ParseListServiceAccountKeysResponse(rsp *http.Response) (*ListServiceAccountKeysResponse, error) {
+// ParseListServiceAccountUserKeysResponse parses an HTTP response from a ListServiceAccountUserKeysWithResponse call
+func ParseListServiceAccountUserKeysResponse(rsp *http.Response) (*ListServiceAccountUserKeysResponse, error) {
 	bodyBytes, err := io.ReadAll(rsp.Body)
 	defer func() { _ = rsp.Body.Close() }()
 	if err != nil {
 		return nil, err
 	}
 
-	response := &ListServiceAccountKeysResponse{
+	response := &ListServiceAccountUserKeysResponse{
 		Body:         bodyBytes,
 		HTTPResponse: rsp,
 	}
 
 	switch {
 	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 200:
-		var dest []UserKey
+		var dest []ExtendedUserKey
 		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
 			return nil, err
 		}
@@ -68092,15 +68742,15 @@ func ParseListServiceAccountKeysResponse(rsp *http.Response) (*ListServiceAccoun
 	return response, nil
 }
 
-// ParseCreateServiceAccountKeyResponse parses an HTTP response from a CreateServiceAccountKeyWithResponse call
-func ParseCreateServiceAccountKeyResponse(rsp *http.Response) (*CreateServiceAccountKeyResponse, error) {
+// ParseCreateServiceAccountUserKeyResponse parses an HTTP response from a CreateServiceAccountUserKeyWithResponse call
+func ParseCreateServiceAccountUserKeyResponse(rsp *http.Response) (*CreateServiceAccountUserKeyResponse, error) {
 	bodyBytes, err := io.ReadAll(rsp.Body)
 	defer func() { _ = rsp.Body.Close() }()
 	if err != nil {
 		return nil, err
 	}
 
-	response := &CreateServiceAccountKeyResponse{
+	response := &CreateServiceAccountUserKeyResponse{
 		Body:         bodyBytes,
 		HTTPResponse: rsp,
 	}
@@ -68167,15 +68817,15 @@ func ParseCreateServiceAccountKeyResponse(rsp *http.Response) (*CreateServiceAcc
 	return response, nil
 }
 
-// ParseDeleteServiceAccountKeyResponse parses an HTTP response from a DeleteServiceAccountKeyWithResponse call
-func ParseDeleteServiceAccountKeyResponse(rsp *http.Response) (*DeleteServiceAccountKeyResponse, error) {
+// ParseDeleteServiceAccountUserKeyResponse parses an HTTP response from a DeleteServiceAccountUserKeyWithResponse call
+func ParseDeleteServiceAccountUserKeyResponse(rsp *http.Response) (*DeleteServiceAccountUserKeyResponse, error) {
 	bodyBytes, err := io.ReadAll(rsp.Body)
 	defer func() { _ = rsp.Body.Close() }()
 	if err != nil {
 		return nil, err
 	}
 
-	response := &DeleteServiceAccountKeyResponse{
+	response := &DeleteServiceAccountUserKeyResponse{
 		Body:         bodyBytes,
 		HTTPResponse: rsp,
 	}
@@ -68249,22 +68899,22 @@ func ParseDeleteServiceAccountKeyResponse(rsp *http.Response) (*DeleteServiceAcc
 	return response, nil
 }
 
-// ParseListServiceAccountTokensResponse parses an HTTP response from a ListServiceAccountTokensWithResponse call
-func ParseListServiceAccountTokensResponse(rsp *http.Response) (*ListServiceAccountTokensResponse, error) {
+// ParseGetServiceAccountUserKeyResponse parses an HTTP response from a GetServiceAccountUserKeyWithResponse call
+func ParseGetServiceAccountUserKeyResponse(rsp *http.Response) (*GetServiceAccountUserKeyResponse, error) {
 	bodyBytes, err := io.ReadAll(rsp.Body)
 	defer func() { _ = rsp.Body.Close() }()
 	if err != nil {
 		return nil, err
 	}
 
-	response := &ListServiceAccountTokensResponse{
+	response := &GetServiceAccountUserKeyResponse{
 		Body:         bodyBytes,
 		HTTPResponse: rsp,
 	}
 
 	switch {
 	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 200:
-		var dest []UserToken
+		var dest ExtendedUserKey
 		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
 			return nil, err
 		}
@@ -68317,15 +68967,83 @@ func ParseListServiceAccountTokensResponse(rsp *http.Response) (*ListServiceAcco
 	return response, nil
 }
 
-// ParseCreateServiceAccountTokenResponse parses an HTTP response from a CreateServiceAccountTokenWithResponse call
-func ParseCreateServiceAccountTokenResponse(rsp *http.Response) (*CreateServiceAccountTokenResponse, error) {
+// ParseListServiceAccountUserTokensResponse parses an HTTP response from a ListServiceAccountUserTokensWithResponse call
+func ParseListServiceAccountUserTokensResponse(rsp *http.Response) (*ListServiceAccountUserTokensResponse, error) {
 	bodyBytes, err := io.ReadAll(rsp.Body)
 	defer func() { _ = rsp.Body.Close() }()
 	if err != nil {
 		return nil, err
 	}
 
-	response := &CreateServiceAccountTokenResponse{
+	response := &ListServiceAccountUserTokensResponse{
+		Body:         bodyBytes,
+		HTTPResponse: rsp,
+	}
+
+	switch {
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 200:
+		var dest []ExtendedUserToken
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON200 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 400:
+		var dest StandardErrorResponse
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON400 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 401:
+		var dest StandardErrorResponse
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON401 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 403:
+		var dest StandardErrorResponse
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON403 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 404:
+		var dest StandardErrorResponse
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON404 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 500:
+		var dest StandardErrorResponse
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON500 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && true:
+		var dest StandardErrorResponse
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSONDefault = &dest
+
+	}
+
+	return response, nil
+}
+
+// ParseCreateServiceAccountUserTokenResponse parses an HTTP response from a CreateServiceAccountUserTokenWithResponse call
+func ParseCreateServiceAccountUserTokenResponse(rsp *http.Response) (*CreateServiceAccountUserTokenResponse, error) {
+	bodyBytes, err := io.ReadAll(rsp.Body)
+	defer func() { _ = rsp.Body.Close() }()
+	if err != nil {
+		return nil, err
+	}
+
+	response := &CreateServiceAccountUserTokenResponse{
 		Body:         bodyBytes,
 		HTTPResponse: rsp,
 	}
@@ -68392,15 +69110,15 @@ func ParseCreateServiceAccountTokenResponse(rsp *http.Response) (*CreateServiceA
 	return response, nil
 }
 
-// ParseRevokeServiceAccountTokenResponse parses an HTTP response from a RevokeServiceAccountTokenWithResponse call
-func ParseRevokeServiceAccountTokenResponse(rsp *http.Response) (*RevokeServiceAccountTokenResponse, error) {
+// ParseDeleteServiceAccountUserTokenResponse parses an HTTP response from a DeleteServiceAccountUserTokenWithResponse call
+func ParseDeleteServiceAccountUserTokenResponse(rsp *http.Response) (*DeleteServiceAccountUserTokenResponse, error) {
 	bodyBytes, err := io.ReadAll(rsp.Body)
 	defer func() { _ = rsp.Body.Close() }()
 	if err != nil {
 		return nil, err
 	}
 
-	response := &RevokeServiceAccountTokenResponse{
+	response := &DeleteServiceAccountUserTokenResponse{
 		Body:         bodyBytes,
 		HTTPResponse: rsp,
 	}
@@ -68454,6 +69172,149 @@ func ParseRevokeServiceAccountTokenResponse(rsp *http.Response) (*RevokeServiceA
 			return nil, err
 		}
 		response.JSON422 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 500:
+		var dest StandardErrorResponse
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON500 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && true:
+		var dest StandardErrorResponse
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSONDefault = &dest
+
+	}
+
+	return response, nil
+}
+
+// ParseGetServiceAccountUserTokenResponse parses an HTTP response from a GetServiceAccountUserTokenWithResponse call
+func ParseGetServiceAccountUserTokenResponse(rsp *http.Response) (*GetServiceAccountUserTokenResponse, error) {
+	bodyBytes, err := io.ReadAll(rsp.Body)
+	defer func() { _ = rsp.Body.Close() }()
+	if err != nil {
+		return nil, err
+	}
+
+	response := &GetServiceAccountUserTokenResponse{
+		Body:         bodyBytes,
+		HTTPResponse: rsp,
+	}
+
+	switch {
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 200:
+		var dest ExtendedUserToken
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON200 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 400:
+		var dest StandardErrorResponse
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON400 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 401:
+		var dest StandardErrorResponse
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON401 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 403:
+		var dest StandardErrorResponse
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON403 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 404:
+		var dest StandardErrorResponse
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON404 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 500:
+		var dest StandardErrorResponse
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON500 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && true:
+		var dest StandardErrorResponse
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSONDefault = &dest
+
+	}
+
+	return response, nil
+}
+
+// ParseRevokeServiceAccountUserTokenResponse parses an HTTP response from a RevokeServiceAccountUserTokenWithResponse call
+func ParseRevokeServiceAccountUserTokenResponse(rsp *http.Response) (*RevokeServiceAccountUserTokenResponse, error) {
+	bodyBytes, err := io.ReadAll(rsp.Body)
+	defer func() { _ = rsp.Body.Close() }()
+	if err != nil {
+		return nil, err
+	}
+
+	response := &RevokeServiceAccountUserTokenResponse{
+		Body:         bodyBytes,
+		HTTPResponse: rsp,
+	}
+
+	switch {
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 200:
+		var dest UserToken
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON200 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 400:
+		var dest StandardErrorResponse
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON400 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 401:
+		var dest StandardErrorResponse
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON401 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 403:
+		var dest StandardErrorResponse
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON403 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 404:
+		var dest StandardErrorResponse
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON404 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 409:
+		var dest StandardErrorResponse
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON409 = &dest
 
 	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 500:
 		var dest StandardErrorResponse
@@ -72767,7 +73628,7 @@ func ParseListCommandRunsResponse(rsp *http.Response) (*ListCommandRunsResponse,
 
 	switch {
 	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 200:
-		var dest []CommandRun
+		var dest []ExtendedCommandRun
 		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
 			return nil, err
 		}
@@ -72863,18 +73724,25 @@ func ParseCreateCommandRunResponse(rsp *http.Response) (*CreateCommandRunRespons
 		response.JSON403 = &dest
 
 	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 404:
-		var dest StandardErrorResponse
+		var dest CommandRunRefusal
 		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
 			return nil, err
 		}
 		response.JSON404 = &dest
 
 	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 409:
-		var dest StandardErrorResponse
+		var dest CommandRunRefusal
 		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
 			return nil, err
 		}
 		response.JSON409 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 422:
+		var dest CommandRunRefusal
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON422 = &dest
 
 	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 500:
 		var dest StandardErrorResponse
@@ -72910,7 +73778,7 @@ func ParseGetCommandRunResponse(rsp *http.Response) (*GetCommandRunResponse, err
 
 	switch {
 	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 200:
-		var dest CommandRun
+		var dest ExtendedCommandRun
 		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
 			return nil, err
 		}

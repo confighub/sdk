@@ -82,6 +82,8 @@ instead of, or as well as, option=value pairs.
 
 The run fails if the client reports Failed or Rejected, or if it expires or times out before the
 client answers. A channel whose client is not connected holds the run until its deadline.
+--dry-run checks the run as the server would create it, the channel, the options and the
+permission to use it, and creates nothing.
 
 Examples:
 `+"```"+`
@@ -101,8 +103,6 @@ Examples:
 
 var commandRunArgs struct {
 	channel  string
-	target   string
-	unit     string
 	params   string
 	deadline string
 	wait     bool
@@ -123,12 +123,11 @@ func init() {
 	commandCmd.AddCommand(commandGetCmd)
 
 	commandRunCmd.Flags().StringVar(&commandRunArgs.channel, "channel", "", "the channel to run it on, when several declare the command")
-	commandRunCmd.Flags().StringVar(&commandRunArgs.target, "target", "", "the Target the run is about, recorded on it")
-	commandRunCmd.Flags().StringVar(&commandRunArgs.unit, "unit", "", "the Unit the run is about, recorded on it")
 	commandRunCmd.Flags().StringVar(&commandRunArgs.params, "params", "", "options as a JSON object; option=value arguments override its keys")
 	commandRunCmd.Flags().StringVar(&commandRunArgs.deadline, "deadline", "", "how long the run waits for the client, as a duration such as 30s or 2m (server default if unset)")
 	commandRunCmd.Flags().BoolVar(&commandRunArgs.wait, "wait", true, "wait for the outcome")
 	commandRunCmd.Flags().StringVar(&commandRunArgs.timeout, "timeout", DefaultTimeoutDuration.String(), "how long to wait for the outcome, as a duration such as 30s or 2m")
+	enableDryRunFlag(commandRunCmd)
 	addStandardDisplayFlags(commandRunCmd)
 	commandCmd.AddCommand(commandRunCmd)
 }
@@ -268,40 +267,26 @@ func commandRunCmdRun(_ *cobra.Command, args []string) error {
 		}
 		body.Deadline = time.Now().Add(d)
 	}
-	if commandRunArgs.target != "" {
-		id, err := resolveTargetID(commandRunArgs.target)
-		if err != nil {
-			return err
-		}
-		body.TargetID = &id
-	}
-	if commandRunArgs.unit != "" {
-		id, err := resolveUnitID(commandRunArgs.unit)
-		if err != nil {
-			return err
-		}
-		body.UnitID = &id
-	}
-	res, err := cubClientNew.CreateCommandRunWithResponse(ctx, target.spaceID, &goclientnew.CreateCommandRunParams{}, body)
+	res, err := cubClientNew.CreateCommandRunWithResponse(ctx, target.spaceID, &goclientnew.CreateCommandRunParams{DryRun: dryRunParam()}, body)
 	if cubapi.IsAPIError(err, res) {
 		return cubapi.InterpretErrorGeneric(err, res)
 	}
-	run := res.JSON200
-	if commandRunArgs.wait {
-		waitFor, err := time.ParseDuration(commandRunArgs.timeout)
-		if err != nil {
-			return fmt.Errorf("invalid --timeout: %w", err)
-		}
-		run, err = awaitCommandRun(run.SpaceID, run.CommandRunID, waitFor)
-		if err != nil {
-			return err
-		}
+	created := res.JSON200
+	// A dry run creates nothing, so there is no outcome to wait for.
+	if !commandRunArgs.wait || dryRun {
+		displayGetResults(created, displayCommandRunDetails)
+		return nil
 	}
-	displayGetResults(run, displayCommandRunDetails)
-	if commandRunArgs.wait {
-		return commandRunOutcomeError(run)
+	waitFor, err := time.ParseDuration(commandRunArgs.timeout)
+	if err != nil {
+		return fmt.Errorf("invalid --timeout: %w", err)
 	}
-	return nil
+	run, err := awaitCommandRun(created.SpaceID, created.CommandRunID, waitFor)
+	if err != nil {
+		return err
+	}
+	displayGetResults(run, displayExtendedCommandRunDetails)
+	return commandRunOutcomeError(run.CommandRun)
 }
 
 // runTarget is where a run goes: the channel, its space, and the signature to type the options by.

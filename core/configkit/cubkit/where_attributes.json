@@ -602,7 +602,8 @@
     "CommandRun": {
       "ChannelID": {
         "dataType": "uuid",
-        "references": "Channel"
+        "references": "Channel",
+        "expandable": true
       },
       "Command": {
         "dataType": "string"
@@ -625,27 +626,27 @@
       "DeliveredAt": {
         "dataType": "time"
       },
+      "HiddenReason": {
+        "dataType": "string"
+      },
       "OrganizationID": {
         "dataType": "uuid",
-        "references": "Organization"
+        "references": "Organization",
+        "expandable": true
       },
       "SpaceID": {
         "dataType": "uuid",
-        "references": "Space"
+        "references": "Space",
+        "expandable": true
       },
       "Status": {
         "dataType": "string"
       },
-      "TargetID": {
-        "dataType": "uuid",
-        "references": "Target"
-      },
       "TimeoutAt": {
         "dataType": "time"
       },
-      "UnitID": {
-        "dataType": "uuid",
-        "references": "Unit"
+      "UpdatedAt": {
+        "dataType": "time"
       }
     },
     "Component": {
@@ -859,6 +860,11 @@
         "references": "BridgeWorker",
         "expandable": true
       },
+      "ChannelID": {
+        "dataType": "uuid",
+        "references": "Channel",
+        "expandable": true
+      },
       "CreatedAt": {
         "dataType": "time"
       },
@@ -1042,6 +1048,10 @@
       "BridgeWorkerID": {
         "dataType": "uuid",
         "references": "BridgeWorker"
+      },
+      "ChannelID": {
+        "dataType": "uuid",
+        "references": "Channel"
       },
       "CreatedAt": {
         "dataType": "time"
@@ -1810,6 +1820,11 @@
         "references": "BridgeWorker",
         "expandable": true
       },
+      "ChannelID": {
+        "dataType": "uuid",
+        "references": "Channel",
+        "expandable": true
+      },
       "Clearance": {
         "dataType": "JSON"
       },
@@ -2131,6 +2146,85 @@
       },
       "Username": {
         "dataType": "string"
+      }
+    },
+    "UserKey": {
+      "CreatedAt": {
+        "dataType": "time"
+      },
+      "Description": {
+        "dataType": "string"
+      },
+      "DisplayName": {
+        "dataType": "string"
+      },
+      "ExpiresAt": {
+        "dataType": "time"
+      },
+      "HiddenReason": {
+        "dataType": "string"
+      },
+      "Kid": {
+        "dataType": "string"
+      },
+      "LastUsedAt": {
+        "dataType": "time"
+      },
+      "Slug": {
+        "dataType": "string"
+      },
+      "UpdatedAt": {
+        "dataType": "time"
+      },
+      "UserID": {
+        "dataType": "uuid",
+        "references": "User"
+      },
+      "UserKeyID": {
+        "dataType": "uuid"
+      }
+    },
+    "UserToken": {
+      "CreatedAt": {
+        "dataType": "time"
+      },
+      "CreatedByUserID": {
+        "dataType": "uuid",
+        "references": "User"
+      },
+      "Description": {
+        "dataType": "string"
+      },
+      "DisplayName": {
+        "dataType": "string"
+      },
+      "ExpiresAt": {
+        "dataType": "time"
+      },
+      "HiddenReason": {
+        "dataType": "string"
+      },
+      "Jti": {
+        "dataType": "string"
+      },
+      "LastUsedAt": {
+        "dataType": "time"
+      },
+      "RevokedAt": {
+        "dataType": "time"
+      },
+      "Slug": {
+        "dataType": "string"
+      },
+      "UpdatedAt": {
+        "dataType": "time"
+      },
+      "UserID": {
+        "dataType": "uuid",
+        "references": "User"
+      },
+      "UserTokenID": {
+        "dataType": "uuid"
       }
     },
     "View": {

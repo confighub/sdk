@@ -30,7 +30,7 @@ const (
 	// in the cluster Space. `cub cluster detach` reads them rather than deriving
 	// the names from the cluster name, so the bot can be renamed or moved
 	// without the teardown losing track of it. Absent when the cluster was
-	// brought up with --no-argobot, or before they were recorded.
+	// brought up with --no-k8sbot, or before they were recorded.
 	clusterAnnotationBotSpace   = "confighub.com/cluster-bot-space"
 	clusterAnnotationBotChannel = "confighub.com/cluster-bot-channel"
 	// clusterAnnotationProvider records where `cub cluster attach` got the

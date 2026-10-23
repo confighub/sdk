@@ -93,15 +93,12 @@ Examples:
 		if err != nil {
 			return err
 		}
-		keysRes, err := cubClientNew.ListServiceAccountKeysWithResponse(ctx, serviceAccount.ServiceAccount.ServiceAccountID.String())
-		if cubapi.IsAPIError(err, keysRes) {
-			return cubapi.InterpretErrorGeneric(err, keysRes)
+		keys, err := cubapi.ListServiceAccountUserKeys(ctx, cubClient, serviceAccount.ServiceAccount.ServiceAccountID.String(),
+			cubapi.NewWhere(where), credentialListOpts())
+		if err != nil {
+			return err
 		}
-		keys := make([]*goclientnew.UserKey, 0, len(*keysRes.JSON200))
-		for i := range *keysRes.JSON200 {
-			keys = append(keys, &(*keysRes.JSON200)[i])
-		}
-		displayListResults(keys, getKidForCredential, displayKeyList)
+		displayListResults(keys, getKidForServiceAccountKey, displayServiceAccountKeyList)
 		return nil
 	},
 }
@@ -127,14 +124,67 @@ Examples:
 		if err != nil {
 			return err
 		}
+		serviceAccountID := serviceAccount.ServiceAccount.ServiceAccountID.String()
 		kid := args[1]
-		deleteRes, err := cubClientNew.DeleteServiceAccountKeyWithResponse(ctx, serviceAccount.ServiceAccount.ServiceAccountID.String(), kid)
+		key, err := resolveServiceAccountKey(serviceAccountID, kid)
+		if err != nil {
+			return err
+		}
+		deleteRes, err := cubClientNew.DeleteServiceAccountUserKeyWithResponse(ctx, serviceAccountID, key.UserKeyID.String())
 		if cubapi.IsAPIError(err, deleteRes) {
 			return cubapi.InterpretErrorGeneric(err, deleteRes)
 		}
 		displayDeleteResults("key", kid, kid, deleteRes.JSON200)
 		return nil
 	},
+}
+
+var serviceAccountKeyGetCmd = &cobra.Command{
+	Use:   "get <service account> <kid>",
+	Short: "Show one of a service account's public keys",
+	Long: getCommandHelp(`Show one of a service account's public keys, by its thumbprint.
+
+The key is shown in full with -o json rather than redacted, as in the list.
+
+Examples:
+`+"```"+`
+  cub serviceaccount key get deploy-bot NzbLsXh8uDCcd-6MNwXF4W_7noWXFZAfHkxZsRGC9Xs -o json
+`+"```"+`
+`, ""),
+	Args: cobra.ExactArgs(2),
+	RunE: func(_ *cobra.Command, args []string) error {
+		serviceAccount, err := resolveServiceAccount(args[0], "ServiceAccountID,Slug")
+		if err != nil {
+			return err
+		}
+		serviceAccountID := serviceAccount.ServiceAccount.ServiceAccountID.String()
+		key, err := resolveServiceAccountKey(serviceAccountID, args[1])
+		if err != nil {
+			return err
+		}
+		keyRes, err := cubClientNew.GetServiceAccountUserKeyWithResponse(ctx, serviceAccountID, key.UserKeyID.String(), &goclientnew.GetServiceAccountUserKeyParams{})
+		if cubapi.IsAPIError(err, keyRes) {
+			return cubapi.InterpretErrorGeneric(err, keyRes)
+		}
+		displayGetResults(keyRes.JSON200, func(extended *goclientnew.ExtendedUserKey) {
+			displayKeyList([]*goclientnew.UserKey{extended.UserKey})
+		})
+		return nil
+	},
+}
+
+// resolveServiceAccountKey finds the service account's key with the thumbprint, which is how a
+// key is named on the command line; the API addresses it by its ID.
+func resolveServiceAccountKey(serviceAccountID, kid string) (*goclientnew.UserKey, error) {
+	keys, err := cubapi.ListServiceAccountUserKeys(ctx, cubClient, serviceAccountID,
+		cubapi.Where{}.Eq("Kid", kid), cubapi.ListOpts{Select: "UserKeyID,Kid"})
+	if err != nil {
+		return nil, err
+	}
+	if len(keys) == 0 || keys[0].UserKey == nil {
+		return nil, fmt.Errorf("the service account has no key %s", kid)
+	}
+	return keys[0].UserKey, nil
 }
 
 func init() {
@@ -147,8 +197,16 @@ func init() {
 	enableDryRunFlag(serviceAccountKeyAddCmd)
 	serviceAccountKeyCmd.AddCommand(serviceAccountKeyAddCmd)
 
-	addStandardListFlags(serviceAccountKeyListCmd)
+	// The endpoint takes no filter or view.
+	enableWhereFlag(serviceAccountKeyListCmd)
+	enableContainsFlag(serviceAccountKeyListCmd)
+	enableSelectFlag(serviceAccountKeyListCmd)
+	addStandardListDisplayFlags(serviceAccountKeyListCmd)
+	enableListPagingFlags(serviceAccountKeyListCmd)
 	serviceAccountKeyCmd.AddCommand(serviceAccountKeyListCmd)
+
+	addStandardDisplayFlags(serviceAccountKeyGetCmd)
+	serviceAccountKeyCmd.AddCommand(serviceAccountKeyGetCmd)
 
 	serviceAccountKeyCmd.AddCommand(serviceAccountKeyDeleteCmd)
 }
@@ -167,13 +225,44 @@ func apiCreateServiceAccountKey(serviceAccountID string, publicJWK json.RawMessa
 	if err := json.Unmarshal(publicJWK, &jwk); err != nil {
 		return nil, fmt.Errorf("public key must be a JWK (JSON): %w", err)
 	}
-	body := goclientnew.CreateServiceAccountKeyJSONRequestBody{
+	body := goclientnew.CreateServiceAccountUserKeyJSONRequestBody{
 		PublicJWK:   jwk,
 		Description: description,
 	}
-	keyRes, err := cubClientNew.CreateServiceAccountKeyWithResponse(ctx, serviceAccountID, &goclientnew.CreateServiceAccountKeyParams{DryRun: dryRunParam()}, body)
+	keyRes, err := cubClientNew.CreateServiceAccountUserKeyWithResponse(ctx, serviceAccountID, &goclientnew.CreateServiceAccountUserKeyParams{DryRun: dryRunParam()}, body)
 	if cubapi.IsAPIError(err, keyRes) {
 		return nil, cubapi.InterpretErrorGeneric(err, keyRes)
 	}
 	return keyRes.JSON200, nil
+}
+
+// credentialListOpts are a key or token list's --select, --contains, --limit and --order-by.
+// Credentials are displayed oldest first, so a --limit keeps the oldest unless --order-by says
+// otherwise.
+func credentialListOpts() cubapi.ListOpts {
+	opts := listPageOpts("")
+	opts.Select = selectFields
+	opts.Contains = contains
+	return opts
+}
+
+// serviceAccountKeyAliases name a listed key's columns as a User's are named.
+var serviceAccountKeyAliases = map[string]string{
+	"Name": "UserKey.DisplayName",
+	"ID":   "UserKey.UserKeyID",
+}
+
+func getKidForServiceAccountKey(key *goclientnew.ExtendedUserKey) string {
+	return key.UserKey.Kid
+}
+
+func displayServiceAccountKeyList(keys []*goclientnew.ExtendedUserKey) {
+	if displayRequestedColumns(keys, serviceAccountKeyAliases, nil) {
+		return
+	}
+	credentials := make([]*goclientnew.UserKey, 0, len(keys))
+	for _, key := range keys {
+		credentials = append(credentials, key.UserKey)
+	}
+	displayKeyList(credentials)
 }

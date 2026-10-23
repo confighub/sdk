@@ -26,13 +26,11 @@ import (
 // clusters it names (deploymentType Remote).
 
 const (
-	// clusterSveltosVersion pins the Sveltos release. Its addon controller
-	// reads OCI policyRefs over plain HTTP (remoteURL.plainHTTP), which a local
-	// cub server needs, and applies CRDs before the resources that use them.
+	// clusterSveltosVersion pins the Sveltos release installed when
+	// --controller-version names none. Its addon controller reads OCI
+	// policyRefs over plain HTTP (remoteURL.plainHTTP), which a local cub
+	// server needs, and applies CRDs before the resources that use them.
 	clusterSveltosVersion = "v1.16.0"
-
-	clusterSveltosManifestURL  = "https://raw.githubusercontent.com/projectsveltos/sveltos/" + clusterSveltosVersion + "/manifest/manifest.yaml"
-	clusterSveltosDashboardURL = "https://raw.githubusercontent.com/projectsveltos/sveltos/" + clusterSveltosVersion + "/manifest/dashboard-manifest.yaml"
 
 	// clusterSveltosServiceMonitorCRDURL is the Prometheus Operator
 	// ServiceMonitor CRD. The Sveltos manifest includes ServiceMonitors, so
@@ -60,7 +58,7 @@ const (
 
 	// clusterSveltosFetchInterval is Sveltos's own poll interval
 	// (remoteURL.interval) when polling is the only way a publish reaches the
-	// cluster: a cluster brought up with --no-argobot, or one from before the
+	// cluster: a cluster brought up with --no-k8sbot, or one from before the
 	// interval was recorded on its target.
 	clusterSveltosFetchInterval = "1m0s"
 
@@ -71,6 +69,18 @@ const (
 	// missed, and can be infrequent.
 	clusterSveltosPollIntervalWithArgobot = "10m0s"
 )
+
+// clusterSveltosManifestURL returns the Sveltos install manifest for a release
+// tag.
+func clusterSveltosManifestURL(version string) string {
+	return "https://raw.githubusercontent.com/projectsveltos/sveltos/" + version + "/manifest/manifest.yaml"
+}
+
+// clusterSveltosDashboardURL returns the Sveltos dashboard manifest for a
+// release tag.
+func clusterSveltosDashboardURL(version string) string {
+	return "https://raw.githubusercontent.com/projectsveltos/sveltos/" + version + "/manifest/dashboard-manifest.yaml"
+}
 
 // clusterSveltosOptions says how clusterSveltosEnsure should get Sveltos into a
 // cluster: the counterpart of clusterArgoOptions.
@@ -86,8 +96,9 @@ type clusterSveltosOptions struct {
 
 // clusterSveltosEnsure makes sure Sveltos is in the cluster: installs it if
 // absent (per opts), and reports whether it did. A pre-existing Sveltos is
-// left as found.
-func clusterSveltosEnsure(ctx context.Context, kubeconfigPath string, opts clusterSveltosOptions, out io.Writer) (bool, error) {
+// left as found. version is the release to install; "" installs
+// clusterSveltosVersion.
+func clusterSveltosEnsure(ctx context.Context, kubeconfigPath, version string, opts clusterSveltosOptions, out io.Writer) (bool, error) {
 	present, err := clusterSveltosPresent(ctx, kubeconfigPath)
 	if err != nil {
 		return false, err
@@ -99,7 +110,7 @@ func clusterSveltosEnsure(ctx context.Context, kubeconfigPath string, opts clust
 	if !opts.installIfAbsent {
 		return false, fmt.Errorf("Sveltos not found in namespace %q (no addon-controller Deployment) and --no-install was given", clusterSveltosNamespace)
 	}
-	if err := clusterSveltosInstall(ctx, kubeconfigPath, opts.nodePort, out); err != nil {
+	if err := clusterSveltosInstall(ctx, kubeconfigPath, version, opts.nodePort, out); err != nil {
 		return false, err
 	}
 	return true, nil
@@ -134,22 +145,28 @@ func clusterSveltosHasOCICreds(ctx context.Context, kubeconfigPath string) (bool
 // and the dashboard manifest, creates the dashboard's admin ServiceAccount,
 // waits for every Sveltos Deployment to be Available, and, when nodePort is
 // positive, exposes the dashboard on that NodePort.
-func clusterSveltosInstall(ctx context.Context, kubeconfigPath string, nodePort int, out io.Writer) error {
+func clusterSveltosInstall(ctx context.Context, kubeconfigPath, version string, nodePort int, out io.Writer) error {
+	if version == "" {
+		version = clusterSveltosVersion
+	}
+	manifestURL := clusterSveltosManifestURL(version)
+	dashboardURL := clusterSveltosDashboardURL(version)
+
 	fmt.Fprintln(out, "Applying the ServiceMonitor CRD the Sveltos manifest needs...")
 	if err := clusterKubectl(ctx, kubeconfigPath, nil, out,
 		"apply", "--server-side", "-f", clusterSveltosServiceMonitorCRDURL); err != nil {
 		return fmt.Errorf("apply ServiceMonitor CRD: %w", err)
 	}
 
-	fmt.Fprintf(out, "Applying Sveltos install manifest from %s...\n", clusterSveltosManifestURL)
+	fmt.Fprintf(out, "Applying Sveltos install manifest from %s...\n", manifestURL)
 	if err := clusterKubectl(ctx, kubeconfigPath, nil, out,
-		"apply", "-f", clusterSveltosManifestURL); err != nil {
+		"apply", "-f", manifestURL); err != nil {
 		return fmt.Errorf("apply sveltos install: %w", err)
 	}
 
-	fmt.Fprintf(out, "Applying Sveltos dashboard manifest from %s...\n", clusterSveltosDashboardURL)
+	fmt.Fprintf(out, "Applying Sveltos dashboard manifest from %s...\n", dashboardURL)
 	if err := clusterKubectl(ctx, kubeconfigPath, nil, out,
-		"apply", "-f", clusterSveltosDashboardURL); err != nil {
+		"apply", "-f", dashboardURL); err != nil {
 		return fmt.Errorf("apply sveltos dashboard: %w", err)
 	}
 

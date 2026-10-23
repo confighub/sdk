@@ -4,6 +4,7 @@
 package main
 
 import (
+	"bytes"
 	"fmt"
 	"os"
 	"os/exec"
@@ -47,7 +48,16 @@ func cubBinaryPath() string {
 // output. Side effects go through cub so the caller reuses its create/link
 // semantics without re-implementing them.
 func runCub(args ...string) error {
+	return runCubStdin(nil, args...)
+}
+
+// runCubStdin is runCub with stdin fed from stdin, for a child that reads its
+// input from "-".
+func runCubStdin(stdin []byte, args ...string) error {
 	c := exec.Command(cubBinaryPath(), args...)
+	if stdin != nil {
+		c.Stdin = bytes.NewReader(stdin)
+	}
 	c.Stdout = os.Stdout
 	c.Stderr = os.Stderr
 	if err := c.Run(); err != nil {

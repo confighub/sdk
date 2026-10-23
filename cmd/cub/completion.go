@@ -45,6 +45,9 @@ const completionTimeout = 3 * time.Second
 type refKind struct {
 	name  string
 	slugs func(ctx context.Context, spaceID goclientnew.UUID) ([]string, error)
+	// organizationLevel marks a kind that is in no space, which completes flat, from the
+	// organization, with no space/ prefix.
+	organizationLevel bool
 }
 
 // slugLister adapts one cubapi list function to the slugs lookup. Only the
@@ -104,14 +107,20 @@ var (
 	kindVariantOrSpace = &refKind{name: "variant", slugs: kindSpace.slugs}
 	// A resource argument takes <kind>/[<namespace>/]<name>, completed by completeResource
 	// from the resources in scope; it has no slug lister.
-	kindResource = &refKind{name: "resource"}
-	// A Component is in no space, so its lister ignores the space it is given.
-	kindComponent = &refKind{name: "component", slugs: slugLister(cubapi.ListComponents,
+	kindResource  = &refKind{name: "resource"}
+	kindComponent = &refKind{name: "component", organizationLevel: true, slugs: slugLister(cubapi.ListComponents,
 		func(e *goclientnew.ExtendedComponent) string {
 			if e.Component == nil {
 				return ""
 			}
 			return e.Component.Slug
+		})}
+	kindServiceAccount = &refKind{name: "serviceaccount", organizationLevel: true, slugs: slugLister(cubapi.ListServiceAccounts,
+		func(e *goclientnew.ExtendedServiceAccount) string {
+			if e.ServiceAccount == nil {
+				return ""
+			}
+			return e.ServiceAccount.Slug
 		})}
 	kindTarget = &refKind{name: "target", slugs: slugLister(cubapi.ListTargets,
 		func(e *goclientnew.ExtendedTarget) string {
@@ -237,6 +246,9 @@ var refArgKinds = map[string][]*refKind{
 	"group add-worker": {nil, kindWorker}, "group remove-worker": {nil, kindWorker},
 	"invocation get": {kindInvocation}, "invocation update": {kindInvocation}, "invocation delete": {kindInvocation},
 	"invocation invoke get": {kindInvocation}, "invocation invoke set": {kindInvocation}, "invocation invoke vet": {kindInvocation},
+	"serviceaccount get": {kindServiceAccount}, "serviceaccount update": {kindServiceAccount}, "serviceaccount delete": {kindServiceAccount},
+	"serviceaccount key add": {kindServiceAccount}, "serviceaccount key list": {kindServiceAccount}, "serviceaccount key delete": {kindServiceAccount},
+	"serviceaccount token create": {kindServiceAccount}, "serviceaccount token list": {kindServiceAccount}, "serviceaccount token revoke": {kindServiceAccount},
 	"review-comment get": {kindUnit}, "review-comment list": {kindUnit}, "review-comment create": {kindUnit},
 	"review-comment update": {kindUnit}, "review-comment delete": {kindUnit},
 	"k8s collect":     {kindTarget},
@@ -279,6 +291,7 @@ var refArgKinds = map[string][]*refKind{
 	"invocation rename": {kindInvocation, nil}, "link rename": {kindLink, nil}, "space rename": {kindSpace, nil},
 	"tag rename": {kindTag, nil}, "target rename": {kindTarget, nil}, "trigger rename": {kindTrigger, nil},
 	"unit rename": {kindUnit, nil}, "view rename": {kindView, nil}, "worker rename": {kindWorker, nil},
+	"serviceaccount rename": {kindServiceAccount, nil},
 }
 
 // refFlagKinds maps a flag name to the kind of reference it takes, for every
@@ -629,13 +642,12 @@ func (c *refCompleter) complete(kind *refKind, toComplete string) ([]string, cob
 	if kind == kindResource {
 		return c.completeResource(toComplete)
 	}
-	if kind == kindComponent {
-		// Not space-resident either, so flat, from the organization.
-		components, err := kind.slugs(c.ctx, goclientnew.UUID{})
+	if kind.organizationLevel {
+		slugs, err := kind.slugs(c.ctx, goclientnew.UUID{})
 		if err != nil {
 			return nil, cobra.ShellCompDirectiveNoFileComp
 		}
-		return withPrefix(components, toComplete, ""), cobra.ShellCompDirectiveNoFileComp
+		return withPrefix(slugs, toComplete, ""), cobra.ShellCompDirectiveNoFileComp
 	}
 	if space, name, qualified := strings.Cut(toComplete, "/"); qualified {
 		// "*/" is the whole organization, which is the zero UUID.

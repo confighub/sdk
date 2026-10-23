@@ -2102,8 +2102,14 @@ type CommandRun struct {
 	// DeliveredAt DeliveredAt is when the run was handed to the client.
 	DeliveredAt time.Time `json:"DeliveredAt,omitempty,omitzero" yaml:"DeliveredAt,omitempty"`
 
+	// EntityType The type of entity.
+	EntityType string `json:"EntityType,omitempty" yaml:"EntityType,omitempty"`
+
 	// ErrorMessage ErrorMessage explains a Failed or Rejected run.
 	ErrorMessage string `json:"ErrorMessage,omitempty" yaml:"ErrorMessage,omitempty"`
+
+	// HiddenReason The reason the entity is hidden, if it is. A hidden entity is left out of List and Search results, and of what bulk operations act on, unless the include_hidden parameter names its reason or is *, or the where parameter names the entity by Slug or ID. ConfigHub/YAML Units are created hidden with the reason BackingUnit unless given another.
+	HiddenReason string `json:"HiddenReason,omitempty" yaml:"HiddenReason,omitempty"`
 
 	// OrganizationID OrganizationID of the Space the run is in.
 	OrganizationID openapi_types.UUID `json:"OrganizationID,omitempty,omitzero" yaml:"OrganizationID,omitempty"`
@@ -2123,17 +2129,29 @@ type CommandRun struct {
 	// Status Status is where the run is: Pending, Delivered, Completed, Failed, Rejected, Canceled, Expired or TimedOut.
 	Status string `json:"Status,omitempty" yaml:"Status,omitempty"`
 
-	// TargetID TargetID is the Target the run is about, if any. For the record; not a foreign key.
-	TargetID *openapi_types.UUID `json:"TargetID,omitempty" yaml:"TargetID,omitempty"`
-
 	// TimeoutAt TimeoutAt is when a Delivered run times out if the client has reported nothing.
 	TimeoutAt time.Time `json:"TimeoutAt,omitempty,omitzero" yaml:"TimeoutAt,omitempty"`
 
-	// UnitID UnitID is the Unit the run is about, if any. For the record; not a foreign key.
-	UnitID *openapi_types.UUID `json:"UnitID,omitempty" yaml:"UnitID,omitempty"`
+	// UpdatedAt When the run last changed: created, delivered, returned to Pending, or closed, in "2023-01-01T12:00:00Z" format.
+	UpdatedAt time.Time `json:"UpdatedAt,omitempty,omitzero" yaml:"UpdatedAt,omitempty"`
 
-	// Version An entity-specific sequence number used for optimistic concurrency control.
+	// Version An entity-specific sequence number used for optimistic concurrency control. A run is not updated by its callers, so they never send it.
 	Version int64 `json:"Version,omitempty" yaml:"Version,omitempty"`
+}
+
+// CommandRunRefusal defines model for CommandRunRefusal.
+type CommandRunRefusal struct {
+	// Channels The Channels in the Space that declare the command, when several do: name one as ChannelID.
+	Channels []DeclaredCommand `json:"Channels,omitempty" yaml:"Channels,omitempty"`
+
+	// Error The refusal as an error, as every error response carries one.
+	Error *ResponseError `json:"Error,omitempty" yaml:"Error,omitempty"`
+
+	// Message Why the run was refused, for a person.
+	Message string `json:"Message,omitempty" yaml:"Message,omitempty"`
+
+	// Reason Why the run was refused, as a code: CommandNotDeclared, CommandDeclaredByMany or ChannelDoesNotDeclare.
+	Reason string `json:"Reason,omitempty" yaml:"Reason,omitempty"`
 }
 
 // CommandRunResult CommandRunResult is what a Channel's client reports for a run it executed: Completed with a Result, or Failed or Rejected with an ErrorMessage.
@@ -2613,6 +2631,24 @@ type ExtendedChannel struct {
 	ViewColumns []ViewColumn `json:"ViewColumns,omitempty" yaml:"ViewColumns,omitempty"`
 }
 
+// ExtendedCommandRun CommandRun with additional related entities expanded based on the request's include parameter.
+type ExtendedCommandRun struct {
+	// Channel The Channel the run is delivered on.
+	Channel *Channel `json:"Channel,omitempty" yaml:"Channel,omitempty"`
+
+	// CommandRun The CommandRun.
+	CommandRun *CommandRun `json:"CommandRun,omitempty" yaml:"CommandRun,omitempty"`
+
+	// Organization The top-level container for an organization using ConfigHub.
+	Organization *Organization `json:"Organization,omitempty" yaml:"Organization,omitempty"`
+
+	// Space The Space the run is in: its Channel's.
+	Space *Space `json:"Space,omitempty" yaml:"Space,omitempty"`
+
+	// ViewColumns The values of the columns of the View named by the view parameter, in the View's column order. A column that selects several values, such as one with a wildcard, has an entry for each, all with the column's Name.
+	ViewColumns []ViewColumn `json:"ViewColumns,omitempty" yaml:"ViewColumns,omitempty"`
+}
+
 // ExtendedComponent defines model for ExtendedComponent.
 type ExtendedComponent struct {
 	// Component The Component a set of Variants make up. Each Variant is a Space naming the Component with ComponentID. The Component decides which ChangeWorkflows promotions and releases of its Variants, and ChangeSets opened on their Units, may use, and whether one is required.
@@ -2667,8 +2703,11 @@ type ExtendedInvocation struct {
 	// When starting a bridge worker program, both the BridgeWorkerID and Secret are
 	// required for authentication with the ConfigHub server. These credentials allow the
 	// bridge worker to establish a secure connection and receive function invocations.
-	BridgeWorker *BridgeWorker  `json:"BridgeWorker,omitempty" yaml:"BridgeWorker,omitempty"`
-	Error        *ResponseError `json:"Error,omitempty" yaml:"Error,omitempty"`
+	BridgeWorker *BridgeWorker `json:"BridgeWorker,omitempty" yaml:"BridgeWorker,omitempty"`
+
+	// Channel A Channel is a mailbox between ConfigHub and one bot. A client claims it and polls it; callers run the commands it declares on it, each as a CommandRun; it subscribes to events and bookmarks how far it has read. It owns no identity: a ServiceAccount claims it by holding Claim on it. Its Commands and Subscriptions are set by whoever manages it, not by the client.
+	Channel *Channel       `json:"Channel,omitempty" yaml:"Channel,omitempty"`
+	Error   *ResponseError `json:"Error,omitempty" yaml:"Error,omitempty"`
 
 	// Invocation Defines a stored, reusable call to one or more functions, executed in the order they are listed.
 	Invocation *Invocation `json:"Invocation,omitempty" yaml:"Invocation,omitempty"`
@@ -3002,8 +3041,11 @@ type ExtendedTrigger struct {
 	// When starting a bridge worker program, both the BridgeWorkerID and Secret are
 	// required for authentication with the ConfigHub server. These credentials allow the
 	// bridge worker to establish a secure connection and receive function invocations.
-	BridgeWorker *BridgeWorker  `json:"BridgeWorker,omitempty" yaml:"BridgeWorker,omitempty"`
-	Error        *ResponseError `json:"Error,omitempty" yaml:"Error,omitempty"`
+	BridgeWorker *BridgeWorker `json:"BridgeWorker,omitempty" yaml:"BridgeWorker,omitempty"`
+
+	// Channel A Channel is a mailbox between ConfigHub and one bot. A client claims it and polls it; callers run the commands it declares on it, each as a CommandRun; it subscribes to events and bookmarks how far it has read. It owns no identity: a ServiceAccount claims it by holding Claim on it. Its Commands and Subscriptions are set by whoever manages it, not by the client.
+	Channel *Channel       `json:"Channel,omitempty" yaml:"Channel,omitempty"`
+	Error   *ResponseError `json:"Error,omitempty" yaml:"Error,omitempty"`
 
 	// Invocation Defines a stored, reusable call to one or more functions, executed in the order they are listed.
 	Invocation *Invocation `json:"Invocation,omitempty" yaml:"Invocation,omitempty"`
@@ -3082,6 +3124,20 @@ type ExtendedUser struct {
 
 	// ViewColumns The values of the columns of the View named by the view parameter, in the View's column order. A column that selects several values, such as one with a wildcard, has an entry for each, all with the column's Name.
 	ViewColumns []ViewColumn `json:"ViewColumns,omitempty" yaml:"ViewColumns,omitempty"`
+}
+
+// ExtendedUserKey defines model for ExtendedUserKey.
+type ExtendedUserKey struct {
+	Error   *ResponseError `json:"Error,omitempty" yaml:"Error,omitempty"`
+	UserKey *UserKey       `json:"UserKey,omitempty" yaml:"UserKey,omitempty"`
+}
+
+// ExtendedUserToken defines model for ExtendedUserToken.
+type ExtendedUserToken struct {
+	Error *ResponseError `json:"Error,omitempty" yaml:"Error,omitempty"`
+
+	// UserToken The record of a long-lived token issued to a ServiceAccount. The token itself is shown once, when it is issued, and is not stored; this record is what lets it be listed, traced to whoever issued it, and revoked on its own.
+	UserToken *UserToken `json:"UserToken,omitempty" yaml:"UserToken,omitempty"`
 }
 
 // ExtendedView defines model for ExtendedView.
@@ -3482,8 +3538,11 @@ type Invocation struct {
 	Annotations   map[string]string   `json:"Annotations,omitempty" yaml:"Annotations,omitempty"`
 	BackingUnitID *openapi_types.UUID `json:"BackingUnitID,omitempty" yaml:"BackingUnitID,omitempty"`
 
-	// BridgeWorkerID Unique identifier for a Bridge Worker to execute the functions specified by the Invocation. If unspecified, use the builtin function executor.
+	// BridgeWorkerID Unique identifier for a Bridge Worker to execute the functions specified by the Invocation. If neither it nor ChannelID is specified, use the builtin function executor.
 	BridgeWorkerID *openapi_types.UUID `json:"BridgeWorkerID,omitempty" yaml:"BridgeWorkerID,omitempty"`
+
+	// ChannelID Unique identifier for a Channel whose client executes the functions specified by the Invocation. At most one of BridgeWorkerID and ChannelID is set.
+	ChannelID *openapi_types.UUID `json:"ChannelID,omitempty" yaml:"ChannelID,omitempty"`
 
 	// CreatedAt The timestamp when the entity was created in "2023-01-01T12:00:00Z" format.
 	CreatedAt time.Time `json:"CreatedAt,omitempty,omitzero" yaml:"CreatedAt,omitempty"`
@@ -3753,6 +3812,7 @@ type MoveResponse struct {
 // Mutation Mutation is a single source of mutation for a Revision.
 type Mutation struct {
 	BridgeWorkerID *openapi_types.UUID `json:"BridgeWorkerID,omitempty" yaml:"BridgeWorkerID,omitempty"`
+	ChannelID      *openapi_types.UUID `json:"ChannelID,omitempty" yaml:"ChannelID,omitempty"`
 
 	// CreatedAt The timestamp when the entity was created in "2023-01-01T12:00:00Z" format.
 	CreatedAt time.Time `json:"CreatedAt,omitempty,omitzero" yaml:"CreatedAt,omitempty"`
@@ -5217,7 +5277,7 @@ type Space struct {
 	// An example conjunction is:
 	// `CreatedAt >= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.
 	//
-	// Supported attributes for filtering on Trigger: Annotations, Arguments, BackingUnitID, BridgeWorkerID, Clearance, CreatedAt, DeleteGates, Description, Disabled, DisplayName, Event, FunctionName, Guards, Hash, HiddenReason, InvocationID, Labels, OrganizationID, OtherDataSource, Permissions, Protect, Slug, SpaceID, ToolchainType, TriggerID, UnitFilterID, UpdatedAt, UpstreamTriggerID, Validating, Warn, WhereResource, WhereUnit.
+	// Supported attributes for filtering on Trigger: Annotations, Arguments, BackingUnitID, BridgeWorkerID, ChannelID, Clearance, CreatedAt, DeleteGates, Description, Disabled, DisplayName, Event, FunctionName, Guards, Hash, HiddenReason, InvocationID, Labels, OrganizationID, OtherDataSource, Permissions, Protect, Slug, SpaceID, ToolchainType, TriggerID, UnitFilterID, UpdatedAt, UpstreamTriggerID, Validating, Warn, WhereResource, WhereUnit.
 	//
 	// The whole string must be query-encoded.
 	WhereTrigger string `json:"WhereTrigger,omitempty" yaml:"WhereTrigger,omitempty"`
@@ -5404,7 +5464,7 @@ type Target struct {
 	// An example conjunction is:
 	// `CreatedAt >= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.
 	//
-	// Supported attributes for filtering on Trigger: Annotations, Arguments, BackingUnitID, BridgeWorkerID, Clearance, CreatedAt, DeleteGates, Description, Disabled, DisplayName, Event, FunctionName, Guards, Hash, HiddenReason, InvocationID, Labels, OrganizationID, OtherDataSource, Permissions, Protect, Slug, SpaceID, ToolchainType, TriggerID, UnitFilterID, UpdatedAt, UpstreamTriggerID, Validating, Warn, WhereResource, WhereUnit.
+	// Supported attributes for filtering on Trigger: Annotations, Arguments, BackingUnitID, BridgeWorkerID, ChannelID, Clearance, CreatedAt, DeleteGates, Description, Disabled, DisplayName, Event, FunctionName, Guards, Hash, HiddenReason, InvocationID, Labels, OrganizationID, OtherDataSource, Permissions, Protect, Slug, SpaceID, ToolchainType, TriggerID, UnitFilterID, UpdatedAt, UpstreamTriggerID, Validating, Warn, WhereResource, WhereUnit.
 	//
 	// The whole string must be query-encoded.
 	WhereTrigger string `json:"WhereTrigger,omitempty" yaml:"WhereTrigger,omitempty"`
@@ -5435,9 +5495,12 @@ type Trigger struct {
 	Arguments     []FunctionArgument  `json:"Arguments" yaml:"Arguments"`
 	BackingUnitID *openapi_types.UUID `json:"BackingUnitID,omitempty" yaml:"BackingUnitID,omitempty"`
 
-	// BridgeWorkerID Unique identifier for a Bridge Worker to execute the function specified by the Trigger. If unspecified, use the builtin function executor.
+	// BridgeWorkerID Unique identifier for a Bridge Worker to execute the function specified by the Trigger. If neither it nor ChannelID is specified, use the builtin function executor.
 	BridgeWorkerID *openapi_types.UUID `json:"BridgeWorkerID,omitempty" yaml:"BridgeWorkerID,omitempty"`
-	Clearance      *Clearance          `json:"Clearance,omitempty" yaml:"Clearance,omitempty"`
+
+	// ChannelID Unique identifier for a Channel whose client executes the function specified by the Trigger. At most one of BridgeWorkerID and ChannelID is set. A Trigger that references an Invocation takes the Invocation's.
+	ChannelID *openapi_types.UUID `json:"ChannelID,omitempty" yaml:"ChannelID,omitempty"`
+	Clearance *Clearance          `json:"Clearance,omitempty" yaml:"Clearance,omitempty"`
 
 	// CreatedAt The timestamp when the entity was created in "2023-01-01T12:00:00Z" format.
 	CreatedAt time.Time `json:"CreatedAt,omitempty,omitzero" yaml:"CreatedAt,omitempty"`
@@ -5461,7 +5524,7 @@ type Trigger struct {
 	// Event Event specifies the type of event that will activate this trigger. Valid values are Mutation and PostClone
 	Event string `json:"Event" yaml:"Event"`
 
-	// FailOpenAfter Duration after which a disconnected BridgeWorker's triggers are treated as fail-open. Can only be set when BridgeWorkerID is set.
+	// FailOpenAfter Duration after which a disconnected BridgeWorker's triggers are treated as fail-open. Can only be set when BridgeWorkerID is set. A Trigger on a Channel fails closed instead: it waits for the Channel's client.
 	FailOpenAfter int `json:"FailOpenAfter" yaml:"FailOpenAfter"`
 
 	// FunctionName Function name
@@ -6359,14 +6422,33 @@ type User struct {
 
 // UserKey defines model for UserKey.
 type UserKey struct {
-	CreatedAt   time.Time          `json:"CreatedAt,omitempty,omitzero" yaml:"CreatedAt,omitempty"`
-	Description string             `json:"Description,omitempty" yaml:"Description,omitempty"`
-	ExpiresAt   time.Time          `json:"ExpiresAt,omitempty,omitzero" yaml:"ExpiresAt,omitempty"`
-	Kid         string             `json:"Kid,omitempty" yaml:"Kid,omitempty"`
-	LastUsedAt  time.Time          `json:"LastUsedAt,omitempty,omitzero" yaml:"LastUsedAt,omitempty"`
-	PublicJWK   interface{}        `json:"PublicJWK,omitempty" yaml:"PublicJWK,omitempty"`
-	UserID      openapi_types.UUID `json:"UserID,omitempty,omitzero" yaml:"UserID,omitempty"`
-	UserKeyID   openapi_types.UUID `json:"UserKeyID,omitempty,omitzero" yaml:"UserKeyID,omitempty"`
+	// CreatedAt The timestamp when the entity was created in "2023-01-01T12:00:00Z" format.
+	CreatedAt   time.Time `json:"CreatedAt,omitempty,omitzero" yaml:"CreatedAt,omitempty"`
+	Description string    `json:"Description,omitempty" yaml:"Description,omitempty"`
+
+	// DisplayName Friendly name for the entity.
+	DisplayName string `json:"DisplayName,omitempty" yaml:"DisplayName,omitempty"`
+
+	// EntityType The type of entity.
+	EntityType string    `json:"EntityType,omitempty" yaml:"EntityType,omitempty"`
+	ExpiresAt  time.Time `json:"ExpiresAt,omitempty,omitzero" yaml:"ExpiresAt,omitempty"`
+
+	// HiddenReason The reason the entity is hidden, if it is. A hidden entity is left out of List and Search results, and of what bulk operations act on, unless the include_hidden parameter names its reason or is *, or the where parameter names the entity by Slug or ID. ConfigHub/YAML Units are created hidden with the reason BackingUnit unless given another.
+	HiddenReason string      `json:"HiddenReason,omitempty" yaml:"HiddenReason,omitempty"`
+	Kid          string      `json:"Kid,omitempty" yaml:"Kid,omitempty"`
+	LastUsedAt   time.Time   `json:"LastUsedAt,omitempty,omitzero" yaml:"LastUsedAt,omitempty"`
+	PublicJWK    interface{} `json:"PublicJWK,omitempty" yaml:"PublicJWK,omitempty"`
+
+	// Slug Unique URL-safe identifier for the entity.
+	Slug string `json:"Slug" yaml:"Slug"`
+
+	// UpdatedAt The timestamp when the entity was last updated in "2023-01-01T12:00:00Z" format.
+	UpdatedAt time.Time          `json:"UpdatedAt,omitempty,omitzero" yaml:"UpdatedAt,omitempty"`
+	UserID    openapi_types.UUID `json:"UserID,omitempty,omitzero" yaml:"UserID,omitempty"`
+	UserKeyID openapi_types.UUID `json:"UserKeyID,omitempty,omitzero" yaml:"UserKeyID,omitempty"`
+
+	// Version An entity-specific sequence number used for optimistic concurrency control. The value read must be sent in calls to Update.
+	Version int64 `json:"Version,omitempty" yaml:"Version,omitempty"`
 }
 
 // UserToken The record of a long-lived token issued to a ServiceAccount. The token itself is shown once, when it is issued, and is not stored; this record is what lets it be listed, traced to whoever issued it, and revoked on its own.
@@ -6380,10 +6462,19 @@ type UserToken struct {
 	// Description Which system holds the token, so it can be retired without guessing what breaks.
 	Description string `json:"Description,omitempty" yaml:"Description,omitempty"`
 
+	// DisplayName Friendly name for the entity.
+	DisplayName string `json:"DisplayName,omitempty" yaml:"DisplayName,omitempty"`
+
+	// EntityType The type of entity.
+	EntityType string `json:"EntityType,omitempty" yaml:"EntityType,omitempty"`
+
 	// ExpiresAt When the token stops working. Zero when it does not expire.
 	ExpiresAt time.Time `json:"ExpiresAt,omitempty,omitzero" yaml:"ExpiresAt,omitempty"`
 
-	// Jti The token's jti claim, which names the token in a revocation. (readonly)
+	// HiddenReason The reason the entity is hidden, if it is. A hidden entity is left out of List and Search results, and of what bulk operations act on, unless the include_hidden parameter names its reason or is *, or the where parameter names the entity by Slug or ID. ConfigHub/YAML Units are created hidden with the reason BackingUnit unless given another.
+	HiddenReason string `json:"HiddenReason,omitempty" yaml:"HiddenReason,omitempty"`
+
+	// Jti The token's jti claim, which the token carries; a where clause names a token by it, as cub does. (readonly)
 	Jti string `json:"Jti,omitempty" yaml:"Jti,omitempty"`
 
 	// LastUsedAt When the token was last exchanged at the registry, stamped at most once per cache period per server. Zero when it has not been used. (readonly)
@@ -6392,11 +6483,20 @@ type UserToken struct {
 	// RevokedAt When the token was revoked. Zero when it is live. (readonly)
 	RevokedAt time.Time `json:"RevokedAt,omitempty,omitzero" yaml:"RevokedAt,omitempty"`
 
+	// Slug Unique URL-safe identifier for the entity.
+	Slug string `json:"Slug" yaml:"Slug"`
+
+	// UpdatedAt The timestamp when the entity was last updated in "2023-01-01T12:00:00Z" format.
+	UpdatedAt time.Time `json:"UpdatedAt,omitempty,omitzero" yaml:"UpdatedAt,omitempty"`
+
 	// UserID The User the token authenticates as: the ServiceAccount's User. (readonly)
 	UserID openapi_types.UUID `json:"UserID,omitempty,omitzero" yaml:"UserID,omitempty"`
 
-	// UserTokenID Unique identifier for the record. (readonly)
+	// UserTokenID Unique identifier for the record, by which the API addresses the token. (readonly)
 	UserTokenID openapi_types.UUID `json:"UserTokenID,omitempty,omitzero" yaml:"UserTokenID,omitempty"`
+
+	// Version An entity-specific sequence number used for optimistic concurrency control. The value read must be sent in calls to Update.
+	Version int64 `json:"Version,omitempty" yaml:"Version,omitempty"`
 }
 
 // ValidationResult defines model for ValidationResult.
@@ -11497,7 +11597,7 @@ type ListAllCommandRunsParams struct {
 	// An example conjunction is:
 	// `CreatedAt >= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.
 	//
-	// Supported attributes for filtering on CommandRun: ChannelID, Command, CommandRunID, CompletedAt, CreatedAt, CreatedBy, Deadline, DeliveredAt, OrganizationID, SpaceID, Status, TargetID, TimeoutAt, UnitID.
+	// Supported attributes for filtering on CommandRun: ChannelID, Command, CommandRunID, CompletedAt, CreatedAt, CreatedBy, Deadline, DeliveredAt, HiddenReason, OrganizationID, SpaceID, Status, TimeoutAt, UpdatedAt.
 	//
 	// The whole string must be query-encoded.
 	Where *string `form:"where,omitempty" json:"where,omitempty" yaml:"where,omitempty"`
@@ -11536,7 +11636,7 @@ type ListAllCommandRunsParams struct {
 	// The attribute names are case-sensitive, PascalCase, and
 	// expected in a comma-separated list format as in the JSON encoding.
 	//
-	// Supported attributes for CommandRun are .
+	// Supported attributes for CommandRun are ChannelID, OrganizationID, SpaceID.
 	//
 	// The whole string must be query-encoded.
 	Include *string `form:"include,omitempty" json:"include,omitempty" yaml:"include,omitempty"`
@@ -11558,6 +11658,24 @@ type ListAllCommandRunsParams struct {
 	// Supported values: Manage, Edit, Use, View.
 	WherePermission *ListAllCommandRunsParamsWherePermission `form:"where_permission,omitempty" json:"where_permission,omitempty" yaml:"where_permission,omitempty"`
 
+	// IncludeHidden Hidden CommandRun entities, those with a HiddenReason, are left out of the results, or of what a bulk operation acts on, unless this names their HiddenReason.
+	//
+	// It is a comma-separated list of HiddenReasons, or `*` for all of them.
+	//
+	// A where clause naming the entities, by their Slug or ID with `=` or `IN`, or naming HiddenReason at all, also returns hidden entities it selects.
+	//
+	// ConfigHub/YAML Units, which hold the configuration of entities, are hidden with the HiddenReason `BackingUnit`.
+	IncludeHidden *string `form:"include_hidden,omitempty" json:"include_hidden,omitempty" yaml:"include_hidden,omitempty"`
+
+	// View UUID of a View whose columns to compute for each CommandRun, returned as ViewColumns.
+	//
+	// The View must be in the same Organization as the user credentials, and be a View of CommandRun: its Of, or the From of its Filter, must be CommandRun.
+	//
+	// If the View has a Filter, the Filter selects the entities as the filter parameter does, so the two may not both be specified.
+	//
+	// The related entities and fields the View's columns read are included and selected automatically, so neither include nor select has to name them.
+	View *string `form:"view,omitempty" json:"view,omitempty" yaml:"view,omitempty"`
+
 	// Limit Maximum number of CommandRun entities to return. If not specified, all matching entities are returned. Values greater than 1000 are rejected with 400. When there may be more entities, the response has a ConfigHub-Continue header to pass as the continue parameter of the next request.
 	Limit *int `form:"limit,omitempty" json:"limit,omitempty" yaml:"limit,omitempty"`
 
@@ -11565,7 +11683,7 @@ type ListAllCommandRunsParams struct {
 	//
 	// Field names are case-sensitive and PascalCase, as in the JSON encoding. Sort direction defaults to ASC when the 'DIRECTION:' prefix is omitted.
 	//
-	// Supported attributes for ordering CommandRun: ChannelID, Command, CommandRunID, CompletedAt, CreatedAt, CreatedBy, Deadline, DeliveredAt, OrganizationID, Status, TargetID, TimeoutAt, UnitID.
+	// Supported attributes for ordering CommandRun: ChannelID, Command, CommandRunID, CompletedAt, CreatedAt, CreatedBy, Deadline, DeliveredAt, HiddenReason, OrganizationID, Status, TimeoutAt, UpdatedAt.
 	//
 	// Example: 'DESC:CreatedAt' or 'DisplayName,DESC:CreatedAt'.
 	//
@@ -12903,7 +13021,7 @@ type BulkDeleteInvocationsParams struct {
 	// An example conjunction is:
 	// `CreatedAt >= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.
 	//
-	// Supported attributes for filtering on Invocation: Annotations, BackingUnitID, BridgeWorkerID, CreatedAt, DeleteGates, DisplayName, FunctionInvocations, Hash, HiddenReason, InvocationID, Labels, OrganizationID, Parameters, Permissions, Slug, SpaceID, ToolchainType, UpdatedAt, UpstreamInvocationID.
+	// Supported attributes for filtering on Invocation: Annotations, BackingUnitID, BridgeWorkerID, ChannelID, CreatedAt, DeleteGates, DisplayName, FunctionInvocations, Hash, HiddenReason, InvocationID, Labels, OrganizationID, Parameters, Permissions, Slug, SpaceID, ToolchainType, UpdatedAt, UpstreamInvocationID.
 	//
 	// The functions an Invocation calls are addressed with dot notation into `FunctionInvocations`: `FunctionInvocations.*.FunctionName = 'set-image'` matches an Invocation that calls set-image anywhere in its list, and `FunctionInvocations.0.FunctionName` addresses the first function it calls.
 	//
@@ -12953,7 +13071,7 @@ type BulkDeleteInvocationsParams struct {
 	// The attribute names are case-sensitive, PascalCase, and
 	// expected in a comma-separated list format as in the JSON encoding.
 	//
-	// Supported attributes for Invocation are BridgeWorkerID, OrganizationID, SpaceID.
+	// Supported attributes for Invocation are BridgeWorkerID, ChannelID, OrganizationID, SpaceID.
 	//
 	// The whole string must be query-encoded.
 	Include *string `form:"include,omitempty" json:"include,omitempty" yaml:"include,omitempty"`
@@ -13004,7 +13122,7 @@ type ListAllInvocationsParams struct {
 	// An example conjunction is:
 	// `CreatedAt >= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.
 	//
-	// Supported attributes for filtering on Invocation: Annotations, BackingUnitID, BridgeWorkerID, CreatedAt, DeleteGates, DisplayName, FunctionInvocations, Hash, HiddenReason, InvocationID, Labels, OrganizationID, Parameters, Permissions, Slug, SpaceID, ToolchainType, UpdatedAt, UpstreamInvocationID.
+	// Supported attributes for filtering on Invocation: Annotations, BackingUnitID, BridgeWorkerID, ChannelID, CreatedAt, DeleteGates, DisplayName, FunctionInvocations, Hash, HiddenReason, InvocationID, Labels, OrganizationID, Parameters, Permissions, Slug, SpaceID, ToolchainType, UpdatedAt, UpstreamInvocationID.
 	//
 	// The functions an Invocation calls are addressed with dot notation into `FunctionInvocations`: `FunctionInvocations.*.FunctionName = 'set-image'` matches an Invocation that calls set-image anywhere in its list, and `FunctionInvocations.0.FunctionName` addresses the first function it calls.
 	//
@@ -13045,7 +13163,7 @@ type ListAllInvocationsParams struct {
 	// The attribute names are case-sensitive, PascalCase, and
 	// expected in a comma-separated list format as in the JSON encoding.
 	//
-	// Supported attributes for Invocation are BridgeWorkerID, OrganizationID, SpaceID.
+	// Supported attributes for Invocation are BridgeWorkerID, ChannelID, OrganizationID, SpaceID.
 	//
 	// The whole string must be query-encoded.
 	Include *string `form:"include,omitempty" json:"include,omitempty" yaml:"include,omitempty"`
@@ -13092,7 +13210,7 @@ type ListAllInvocationsParams struct {
 	//
 	// Field names are case-sensitive and PascalCase, as in the JSON encoding. Sort direction defaults to ASC when the 'DIRECTION:' prefix is omitted.
 	//
-	// Supported attributes for ordering Invocation: BackingUnitID, BridgeWorkerID, CreatedAt, DisplayName, Hash, HiddenReason, InvocationID, OrganizationID, Slug, SpaceID, ToolchainType, UpdatedAt, UpstreamInvocationID.
+	// Supported attributes for ordering Invocation: BackingUnitID, BridgeWorkerID, ChannelID, CreatedAt, DisplayName, Hash, HiddenReason, InvocationID, OrganizationID, Slug, SpaceID, ToolchainType, UpdatedAt, UpstreamInvocationID.
 	//
 	// Example: 'DESC:CreatedAt' or 'DisplayName,DESC:CreatedAt'.
 	//
@@ -13117,6 +13235,7 @@ type BulkPatchInvocationsApplicationMergePatchPlusJSONBody struct {
 	// Annotations An optional map of Annotation key/value pairs for tools to attach information to entities.
 	Annotations    *map[string]*string `json:"Annotations" yaml:"Annotations"`
 	BridgeWorkerID *openapi_types.UUID `json:"BridgeWorkerID" yaml:"BridgeWorkerID"`
+	ChannelID      *openapi_types.UUID `json:"ChannelID" yaml:"ChannelID"`
 
 	// DeleteGates An optional set of gates that, if any is present, will block deletion
 	DeleteGates *map[string]*bool `json:"DeleteGates" yaml:"DeleteGates"`
@@ -13177,7 +13296,7 @@ type BulkPatchInvocationsParams struct {
 	// An example conjunction is:
 	// `CreatedAt >= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.
 	//
-	// Supported attributes for filtering on Invocation: Annotations, BackingUnitID, BridgeWorkerID, CreatedAt, DeleteGates, DisplayName, FunctionInvocations, Hash, HiddenReason, InvocationID, Labels, OrganizationID, Parameters, Permissions, Slug, SpaceID, ToolchainType, UpdatedAt, UpstreamInvocationID.
+	// Supported attributes for filtering on Invocation: Annotations, BackingUnitID, BridgeWorkerID, ChannelID, CreatedAt, DeleteGates, DisplayName, FunctionInvocations, Hash, HiddenReason, InvocationID, Labels, OrganizationID, Parameters, Permissions, Slug, SpaceID, ToolchainType, UpdatedAt, UpstreamInvocationID.
 	//
 	// The functions an Invocation calls are addressed with dot notation into `FunctionInvocations`: `FunctionInvocations.*.FunctionName = 'set-image'` matches an Invocation that calls set-image anywhere in its list, and `FunctionInvocations.0.FunctionName` addresses the first function it calls.
 	//
@@ -13227,7 +13346,7 @@ type BulkPatchInvocationsParams struct {
 	// The attribute names are case-sensitive, PascalCase, and
 	// expected in a comma-separated list format as in the JSON encoding.
 	//
-	// Supported attributes for Invocation are BridgeWorkerID, OrganizationID, SpaceID.
+	// Supported attributes for Invocation are BridgeWorkerID, ChannelID, OrganizationID, SpaceID.
 	//
 	// The whole string must be query-encoded.
 	Include *string `form:"include,omitempty" json:"include,omitempty" yaml:"include,omitempty"`
@@ -13253,6 +13372,7 @@ type BulkCreateInvocationsApplicationMergePatchPlusJSONBody struct {
 	// Annotations An optional map of Annotation key/value pairs for tools to attach information to entities.
 	Annotations    *map[string]*string `json:"Annotations" yaml:"Annotations"`
 	BridgeWorkerID *openapi_types.UUID `json:"BridgeWorkerID" yaml:"BridgeWorkerID"`
+	ChannelID      *openapi_types.UUID `json:"ChannelID" yaml:"ChannelID"`
 
 	// DeleteGates An optional set of gates that, if any is present, will block deletion
 	DeleteGates *map[string]*bool `json:"DeleteGates" yaml:"DeleteGates"`
@@ -13313,7 +13433,7 @@ type BulkCreateInvocationsParams struct {
 	// An example conjunction is:
 	// `CreatedAt >= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.
 	//
-	// Supported attributes for filtering on Invocation: Annotations, BackingUnitID, BridgeWorkerID, CreatedAt, DeleteGates, DisplayName, FunctionInvocations, Hash, HiddenReason, InvocationID, Labels, OrganizationID, Parameters, Permissions, Slug, SpaceID, ToolchainType, UpdatedAt, UpstreamInvocationID.
+	// Supported attributes for filtering on Invocation: Annotations, BackingUnitID, BridgeWorkerID, ChannelID, CreatedAt, DeleteGates, DisplayName, FunctionInvocations, Hash, HiddenReason, InvocationID, Labels, OrganizationID, Parameters, Permissions, Slug, SpaceID, ToolchainType, UpdatedAt, UpstreamInvocationID.
 	//
 	// The functions an Invocation calls are addressed with dot notation into `FunctionInvocations`: `FunctionInvocations.*.FunctionName = 'set-image'` matches an Invocation that calls set-image anywhere in its list, and `FunctionInvocations.0.FunctionName` addresses the first function it calls.
 	//
@@ -13363,7 +13483,7 @@ type BulkCreateInvocationsParams struct {
 	// The attribute names are case-sensitive, PascalCase, and
 	// expected in a comma-separated list format as in the JSON encoding.
 	//
-	// Supported attributes for Invocation are BridgeWorkerID, OrganizationID, SpaceID.
+	// Supported attributes for Invocation are BridgeWorkerID, ChannelID, OrganizationID, SpaceID.
 	//
 	// The whole string must be query-encoded.
 	Include *string `form:"include,omitempty" json:"include,omitempty" yaml:"include,omitempty"`
@@ -13533,7 +13653,7 @@ type BulkMoveInvocationsParams struct {
 	// An example conjunction is:
 	// `CreatedAt >= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.
 	//
-	// Supported attributes for filtering on Invocation: Annotations, BackingUnitID, BridgeWorkerID, CreatedAt, DeleteGates, DisplayName, FunctionInvocations, Hash, HiddenReason, InvocationID, Labels, OrganizationID, Parameters, Permissions, Slug, SpaceID, ToolchainType, UpdatedAt, UpstreamInvocationID.
+	// Supported attributes for filtering on Invocation: Annotations, BackingUnitID, BridgeWorkerID, ChannelID, CreatedAt, DeleteGates, DisplayName, FunctionInvocations, Hash, HiddenReason, InvocationID, Labels, OrganizationID, Parameters, Permissions, Slug, SpaceID, ToolchainType, UpdatedAt, UpstreamInvocationID.
 	//
 	// The whole string must be query-encoded.
 	Where *string `form:"where,omitempty" json:"where,omitempty" yaml:"where,omitempty"`
@@ -13581,7 +13701,7 @@ type BulkMoveInvocationsParams struct {
 	// The attribute names are case-sensitive, PascalCase, and
 	// expected in a comma-separated list format as in the JSON encoding.
 	//
-	// Supported attributes for Invocation are BridgeWorkerID, OrganizationID, SpaceID.
+	// Supported attributes for Invocation are BridgeWorkerID, ChannelID, OrganizationID, SpaceID.
 	//
 	// The whole string must be query-encoded.
 	Include *string `form:"include,omitempty" json:"include,omitempty" yaml:"include,omitempty"`
@@ -15830,16 +15950,244 @@ type UpdateServiceAccountParams struct {
 	DryRun *bool `form:"dry_run,omitempty" json:"dry_run,omitempty" yaml:"dry_run,omitempty"`
 }
 
-// CreateServiceAccountKeyParams defines parameters for CreateServiceAccountKey.
-type CreateServiceAccountKeyParams struct {
+// ListServiceAccountUserKeysParams defines parameters for ListServiceAccountUserKeys.
+type ListServiceAccountUserKeysParams struct {
+	// Where The specified string is an expression for the purpose of filtering
+	// the list of UserKeys returned. The expression syntax was inspired by SQL.
+	// It supports conjunctions using `AND` of relational expressions of the form *attribute*
+	// *operator* *attribute_or_literal*. The attribute names are case-sensitive and PascalCase,
+	// as in the JSON encoding.
+	// Strings support the following operators: `<`, `>`, `<=`, `>=`, `=`, `!=`, `LIKE`, `NOT LIKE`, `ILIKE`, `~~`, `!~~`, `~`, `~*`, `!~`, `!~*`, `IN`, `NOT IN`.
+	// String pattern operators: `LIKE` and `~~` for pattern matching with `%` and `_` wildcards,
+	// `ILIKE` for case-insensitive pattern matching, `NOT LIKE` and `!~~` for negated pattern matching.
+	// String regex operators: `~` for regex matching, `~*` for case-insensitive regex,
+	// `!~` and `!~*` for regex not matching (case-sensitive and insensitive).
+	// Integers support the following operators: `<`, `>`, `<=`, `>=`, `=`, `!=`, `IN`, `NOT IN`.
+	// UUIDs and boolean attributes support equality and inequality only.
+	// UUID and time literals must be quoted as string literals.
+	// String literals are quoted with single quotes, such as `'string'`.
+	// Time literals use the same form as when serialized as JSON,
+	// such as: `CreatedAt > '2025-02-18T23:16:34'`.
+	// Integer and boolean literals are also supported for attributes of those types.
+	// Arrays support the `?` operator to to match any element of the array,
+	// as in `FromLinkID ? '7c61626f-ddbe-41af-93f6-b69f4ab6d308'`.
+	// Arrays can perform LEN() to check for length, as in `LEN(FromLinkID) > 0`.
+	// An attribute naming a list of other entities can be filtered on their attributes with a `*` segment,
+	// as in `FromLink.*.Slug = 'upgrade-app'`, which holds when any element satisfies it.
+	// Without the `*` such a reference is an error, since it names no single value to compare.
+	// Map support the dot notation to specify a particular map key, as in `Labels.tier = 'Backend'`.
+	// Maps support `IS NULL` and `IS NOT NULL` with dot notation to check for key absence or presence,
+	// as in `Labels.tier IS NULL` (key doesn't exist) or `Labels.tier IS NOT NULL` (key exists).
+	// Comparison results can be tested with `IS TRUE`, `IS FALSE`, `IS NOT TRUE`, and `IS NOT FALSE`.
+	// These are useful for nullable columns: `MergeSourceID = '<uuid>' IS NOT FALSE` matches rows where MergeSourceID equals the value OR is NULL.
+	// The `IN` and `NOT IN` operators accept a comma-separated list of values in parentheses,
+	// such as `Slug IN ('slugone', 'slugtwo')` or `Labels.environment IN ('prod', 'staging')`.
+	// Conjunctions are supported using the `AND` operator.
+	// An example conjunction is:
+	// `CreatedAt >= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.
+	//
+	// Supported attributes for filtering on UserKey: CreatedAt, Description, DisplayName, ExpiresAt, HiddenReason, Kid, LastUsedAt, Slug, UpdatedAt, UserID, UserKeyID.
+	//
+	// The whole string must be query-encoded.
+	Where *string `form:"where,omitempty" json:"where,omitempty" yaml:"where,omitempty"`
+
+	// Contains Free text search that approximately matches the specified string against string fields and map keys/values.
+	//
+	// The search is case-insensitive and uses pattern matching to find entities containing the text.
+	//
+	// Searchable string fields include attributes like Slug, DisplayName, and string-typed custom fields.
+	//
+	// For map fields (like Labels and Annotations), the search matches both map keys and values.
+	//
+	// The search uses OR logic across all searchable fields, so matching any field will return the entity.
+	//
+	// If both 'where' and 'contains' parameters are specified, they are combined with AND logic.
+	//
+	// Searchable fields for UserKey include string and map-type attributes from the queryable attributes list.
+	//
+	// The whole string must be query-encoded.
+	Contains *string `form:"contains,omitempty" json:"contains,omitempty" yaml:"contains,omitempty"`
+
+	// Select Select clause for specifying which fields to include in the response for UserKey.
+	// The attribute names are case-sensitive, PascalCase, and
+	// expected in a comma-separated list format as in the JSON encoding.
+	// If not specified, all fields are returned.
+	// Entity and parent IDs (like OrganizationID, SpaceID, UserKeyID) and Slug are always returned regardless of the select parameter.
+	// Fields used in where and contains filters, fields named by order_by, and fields read by the columns of the View named by view are also automatically included.
+	// Example: 'DisplayName,CreatedAt,Labels' will return only those fields plus the required ID and Slug fields.
+	// The whole string must be query-encoded.
+	Select *string `form:"select,omitempty" json:"select,omitempty" yaml:"select,omitempty"`
+
+	// IncludeHidden Hidden UserKey entities, those with a HiddenReason, are left out of the results, or of what a bulk operation acts on, unless this names their HiddenReason.
+	//
+	// It is a comma-separated list of HiddenReasons, or `*` for all of them.
+	//
+	// A where clause naming the entities, by their Slug or ID with `=` or `IN`, or naming HiddenReason at all, also returns hidden entities it selects.
+	//
+	// ConfigHub/YAML Units, which hold the configuration of entities, are hidden with the HiddenReason `BackingUnit`.
+	IncludeHidden *string `form:"include_hidden,omitempty" json:"include_hidden,omitempty" yaml:"include_hidden,omitempty"`
+
+	// Limit Maximum number of UserKey entities to return. If not specified, all matching entities are returned. Values greater than 1000 are rejected with 400. When there may be more entities, the response has a ConfigHub-Continue header to pass as the continue parameter of the next request.
+	Limit *int `form:"limit,omitempty" json:"limit,omitempty" yaml:"limit,omitempty"`
+
+	// OrderBy Comma-separated list of fields to sort UserKey results by, each in the form 'ASC|DESC:FieldName' or just 'FieldName'.
+	//
+	// Field names are case-sensitive and PascalCase, as in the JSON encoding. Sort direction defaults to ASC when the 'DIRECTION:' prefix is omitted.
+	//
+	// Supported attributes for ordering UserKey: CreatedAt, Description, DisplayName, ExpiresAt, HiddenReason, Kid, LastUsedAt, Slug, UpdatedAt, UserID, UserKeyID.
+	//
+	// Example: 'DESC:CreatedAt' or 'DisplayName,DESC:CreatedAt'.
+	//
+	// Results are ordered by the UserKey's ID after the fields named, and by the ID alone if none are.
+	//
+	// The whole string must be query-encoded.
+	OrderBy *string `form:"order_by,omitempty" json:"order_by,omitempty" yaml:"order_by,omitempty"`
+
+	// Continue The token from the ConfigHub-Continue header of the previous page, to return the UserKey entities after it.
+	//
+	// The request's other parameters, except limit, must be the same as those of the request that returned the token.
+	//
+	// Keep reading until a response has no such header: a page can hold fewer entities than the limit, or none, and still be followed by more.
+	Continue *string `form:"continue,omitempty" json:"continue,omitempty" yaml:"continue,omitempty"`
+}
+
+// CreateServiceAccountUserKeyParams defines parameters for CreateServiceAccountUserKey.
+type CreateServiceAccountUserKeyParams struct {
 	// DryRun If true, report what the write would do without doing it: the write runs, including every check it makes, and is then rolled back. The response is the one the write would return, with the entities as they would be written. An entity a dry run creates is given an ID that the real create will not reuse.
 	DryRun *bool `form:"dry_run,omitempty" json:"dry_run,omitempty" yaml:"dry_run,omitempty"`
 }
 
-// CreateServiceAccountTokenParams defines parameters for CreateServiceAccountToken.
-type CreateServiceAccountTokenParams struct {
+// GetServiceAccountUserKeyParams defines parameters for GetServiceAccountUserKey.
+type GetServiceAccountUserKeyParams struct {
+	// Select Select clause for specifying which fields to include in the response for UserKey.
+	// The attribute names are case-sensitive, PascalCase, and
+	// expected in a comma-separated list format as in the JSON encoding.
+	// If not specified, all fields are returned.
+	// Entity and parent IDs (like OrganizationID, SpaceID, UserKeyID) and Slug are always returned regardless of the select parameter.
+	// Fields used in where and contains filters, fields named by order_by, and fields read by the columns of the View named by view are also automatically included.
+	// Example: 'DisplayName,CreatedAt,Labels' will return only those fields plus the required ID and Slug fields.
+	// The whole string must be query-encoded.
+	Select *string `form:"select,omitempty" json:"select,omitempty" yaml:"select,omitempty"`
+}
+
+// ListServiceAccountUserTokensParams defines parameters for ListServiceAccountUserTokens.
+type ListServiceAccountUserTokensParams struct {
+	// Where The specified string is an expression for the purpose of filtering
+	// the list of UserTokens returned. The expression syntax was inspired by SQL.
+	// It supports conjunctions using `AND` of relational expressions of the form *attribute*
+	// *operator* *attribute_or_literal*. The attribute names are case-sensitive and PascalCase,
+	// as in the JSON encoding.
+	// Strings support the following operators: `<`, `>`, `<=`, `>=`, `=`, `!=`, `LIKE`, `NOT LIKE`, `ILIKE`, `~~`, `!~~`, `~`, `~*`, `!~`, `!~*`, `IN`, `NOT IN`.
+	// String pattern operators: `LIKE` and `~~` for pattern matching with `%` and `_` wildcards,
+	// `ILIKE` for case-insensitive pattern matching, `NOT LIKE` and `!~~` for negated pattern matching.
+	// String regex operators: `~` for regex matching, `~*` for case-insensitive regex,
+	// `!~` and `!~*` for regex not matching (case-sensitive and insensitive).
+	// Integers support the following operators: `<`, `>`, `<=`, `>=`, `=`, `!=`, `IN`, `NOT IN`.
+	// UUIDs and boolean attributes support equality and inequality only.
+	// UUID and time literals must be quoted as string literals.
+	// String literals are quoted with single quotes, such as `'string'`.
+	// Time literals use the same form as when serialized as JSON,
+	// such as: `CreatedAt > '2025-02-18T23:16:34'`.
+	// Integer and boolean literals are also supported for attributes of those types.
+	// Arrays support the `?` operator to to match any element of the array,
+	// as in `FromLinkID ? '7c61626f-ddbe-41af-93f6-b69f4ab6d308'`.
+	// Arrays can perform LEN() to check for length, as in `LEN(FromLinkID) > 0`.
+	// An attribute naming a list of other entities can be filtered on their attributes with a `*` segment,
+	// as in `FromLink.*.Slug = 'upgrade-app'`, which holds when any element satisfies it.
+	// Without the `*` such a reference is an error, since it names no single value to compare.
+	// Map support the dot notation to specify a particular map key, as in `Labels.tier = 'Backend'`.
+	// Maps support `IS NULL` and `IS NOT NULL` with dot notation to check for key absence or presence,
+	// as in `Labels.tier IS NULL` (key doesn't exist) or `Labels.tier IS NOT NULL` (key exists).
+	// Comparison results can be tested with `IS TRUE`, `IS FALSE`, `IS NOT TRUE`, and `IS NOT FALSE`.
+	// These are useful for nullable columns: `MergeSourceID = '<uuid>' IS NOT FALSE` matches rows where MergeSourceID equals the value OR is NULL.
+	// The `IN` and `NOT IN` operators accept a comma-separated list of values in parentheses,
+	// such as `Slug IN ('slugone', 'slugtwo')` or `Labels.environment IN ('prod', 'staging')`.
+	// Conjunctions are supported using the `AND` operator.
+	// An example conjunction is:
+	// `CreatedAt >= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.
+	//
+	// Supported attributes for filtering on UserToken: CreatedAt, CreatedByUserID, Description, DisplayName, ExpiresAt, HiddenReason, Jti, LastUsedAt, RevokedAt, Slug, UpdatedAt, UserID, UserTokenID.
+	//
+	// The whole string must be query-encoded.
+	Where *string `form:"where,omitempty" json:"where,omitempty" yaml:"where,omitempty"`
+
+	// Contains Free text search that approximately matches the specified string against string fields and map keys/values.
+	//
+	// The search is case-insensitive and uses pattern matching to find entities containing the text.
+	//
+	// Searchable string fields include attributes like Slug, DisplayName, and string-typed custom fields.
+	//
+	// For map fields (like Labels and Annotations), the search matches both map keys and values.
+	//
+	// The search uses OR logic across all searchable fields, so matching any field will return the entity.
+	//
+	// If both 'where' and 'contains' parameters are specified, they are combined with AND logic.
+	//
+	// Searchable fields for UserToken include string and map-type attributes from the queryable attributes list.
+	//
+	// The whole string must be query-encoded.
+	Contains *string `form:"contains,omitempty" json:"contains,omitempty" yaml:"contains,omitempty"`
+
+	// Select Select clause for specifying which fields to include in the response for UserToken.
+	// The attribute names are case-sensitive, PascalCase, and
+	// expected in a comma-separated list format as in the JSON encoding.
+	// If not specified, all fields are returned.
+	// Entity and parent IDs (like OrganizationID, SpaceID, UserTokenID) and Slug are always returned regardless of the select parameter.
+	// Fields used in where and contains filters, fields named by order_by, and fields read by the columns of the View named by view are also automatically included.
+	// Example: 'DisplayName,CreatedAt,Labels' will return only those fields plus the required ID and Slug fields.
+	// The whole string must be query-encoded.
+	Select *string `form:"select,omitempty" json:"select,omitempty" yaml:"select,omitempty"`
+
+	// IncludeHidden Hidden UserToken entities, those with a HiddenReason, are left out of the results, or of what a bulk operation acts on, unless this names their HiddenReason.
+	//
+	// It is a comma-separated list of HiddenReasons, or `*` for all of them.
+	//
+	// A where clause naming the entities, by their Slug or ID with `=` or `IN`, or naming HiddenReason at all, also returns hidden entities it selects.
+	//
+	// ConfigHub/YAML Units, which hold the configuration of entities, are hidden with the HiddenReason `BackingUnit`.
+	IncludeHidden *string `form:"include_hidden,omitempty" json:"include_hidden,omitempty" yaml:"include_hidden,omitempty"`
+
+	// Limit Maximum number of UserToken entities to return. If not specified, all matching entities are returned. Values greater than 1000 are rejected with 400. When there may be more entities, the response has a ConfigHub-Continue header to pass as the continue parameter of the next request.
+	Limit *int `form:"limit,omitempty" json:"limit,omitempty" yaml:"limit,omitempty"`
+
+	// OrderBy Comma-separated list of fields to sort UserToken results by, each in the form 'ASC|DESC:FieldName' or just 'FieldName'.
+	//
+	// Field names are case-sensitive and PascalCase, as in the JSON encoding. Sort direction defaults to ASC when the 'DIRECTION:' prefix is omitted.
+	//
+	// Supported attributes for ordering UserToken: CreatedAt, CreatedByUserID, Description, DisplayName, ExpiresAt, HiddenReason, Jti, LastUsedAt, RevokedAt, Slug, UpdatedAt, UserID, UserTokenID.
+	//
+	// Example: 'DESC:CreatedAt' or 'DisplayName,DESC:CreatedAt'.
+	//
+	// Results are ordered by the UserToken's ID after the fields named, and by the ID alone if none are.
+	//
+	// The whole string must be query-encoded.
+	OrderBy *string `form:"order_by,omitempty" json:"order_by,omitempty" yaml:"order_by,omitempty"`
+
+	// Continue The token from the ConfigHub-Continue header of the previous page, to return the UserToken entities after it.
+	//
+	// The request's other parameters, except limit, must be the same as those of the request that returned the token.
+	//
+	// Keep reading until a response has no such header: a page can hold fewer entities than the limit, or none, and still be followed by more.
+	Continue *string `form:"continue,omitempty" json:"continue,omitempty" yaml:"continue,omitempty"`
+}
+
+// CreateServiceAccountUserTokenParams defines parameters for CreateServiceAccountUserToken.
+type CreateServiceAccountUserTokenParams struct {
 	// DryRun If true, report what the write would do without doing it: the write runs, including every check it makes, and is then rolled back. The response is the one the write would return, with the entities as they would be written. An entity a dry run creates is given an ID that the real create will not reuse.
 	DryRun *bool `form:"dry_run,omitempty" json:"dry_run,omitempty" yaml:"dry_run,omitempty"`
+}
+
+// GetServiceAccountUserTokenParams defines parameters for GetServiceAccountUserToken.
+type GetServiceAccountUserTokenParams struct {
+	// Select Select clause for specifying which fields to include in the response for UserToken.
+	// The attribute names are case-sensitive, PascalCase, and
+	// expected in a comma-separated list format as in the JSON encoding.
+	// If not specified, all fields are returned.
+	// Entity and parent IDs (like OrganizationID, SpaceID, UserTokenID) and Slug are always returned regardless of the select parameter.
+	// Fields used in where and contains filters, fields named by order_by, and fields read by the columns of the View named by view are also automatically included.
+	// Example: 'DisplayName,CreatedAt,Labels' will return only those fields plus the required ID and Slug fields.
+	// The whole string must be query-encoded.
+	Select *string `form:"select,omitempty" json:"select,omitempty" yaml:"select,omitempty"`
 }
 
 // ListSpacesParams defines parameters for ListSpaces.
@@ -17658,7 +18006,7 @@ type ListCommandRunsParams struct {
 	// An example conjunction is:
 	// `CreatedAt >= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.
 	//
-	// Supported attributes for filtering on CommandRun: ChannelID, Command, CommandRunID, CompletedAt, CreatedAt, CreatedBy, Deadline, DeliveredAt, OrganizationID, SpaceID, Status, TargetID, TimeoutAt, UnitID.
+	// Supported attributes for filtering on CommandRun: ChannelID, Command, CommandRunID, CompletedAt, CreatedAt, CreatedBy, Deadline, DeliveredAt, HiddenReason, OrganizationID, SpaceID, Status, TimeoutAt, UpdatedAt.
 	//
 	// The whole string must be query-encoded.
 	Where *string `form:"where,omitempty" json:"where,omitempty" yaml:"where,omitempty"`
@@ -17697,7 +18045,7 @@ type ListCommandRunsParams struct {
 	// The attribute names are case-sensitive, PascalCase, and
 	// expected in a comma-separated list format as in the JSON encoding.
 	//
-	// Supported attributes for CommandRun are .
+	// Supported attributes for CommandRun are ChannelID, OrganizationID, SpaceID.
 	//
 	// The whole string must be query-encoded.
 	Include *string `form:"include,omitempty" json:"include,omitempty" yaml:"include,omitempty"`
@@ -17719,6 +18067,24 @@ type ListCommandRunsParams struct {
 	// Supported values: Manage, Edit, Use, View.
 	WherePermission *ListCommandRunsParamsWherePermission `form:"where_permission,omitempty" json:"where_permission,omitempty" yaml:"where_permission,omitempty"`
 
+	// IncludeHidden Hidden CommandRun entities, those with a HiddenReason, are left out of the results, or of what a bulk operation acts on, unless this names their HiddenReason.
+	//
+	// It is a comma-separated list of HiddenReasons, or `*` for all of them.
+	//
+	// A where clause naming the entities, by their Slug or ID with `=` or `IN`, or naming HiddenReason at all, also returns hidden entities it selects.
+	//
+	// ConfigHub/YAML Units, which hold the configuration of entities, are hidden with the HiddenReason `BackingUnit`.
+	IncludeHidden *string `form:"include_hidden,omitempty" json:"include_hidden,omitempty" yaml:"include_hidden,omitempty"`
+
+	// View UUID of a View whose columns to compute for each CommandRun, returned as ViewColumns.
+	//
+	// The View must be in the same Organization as the user credentials, and be a View of CommandRun: its Of, or the From of its Filter, must be CommandRun.
+	//
+	// If the View has a Filter, the Filter selects the entities as the filter parameter does, so the two may not both be specified.
+	//
+	// The related entities and fields the View's columns read are included and selected automatically, so neither include nor select has to name them.
+	View *string `form:"view,omitempty" json:"view,omitempty" yaml:"view,omitempty"`
+
 	// Limit Maximum number of CommandRun entities to return. If not specified, all matching entities are returned. Values greater than 1000 are rejected with 400. When there may be more entities, the response has a ConfigHub-Continue header to pass as the continue parameter of the next request.
 	Limit *int `form:"limit,omitempty" json:"limit,omitempty" yaml:"limit,omitempty"`
 
@@ -17726,7 +18092,7 @@ type ListCommandRunsParams struct {
 	//
 	// Field names are case-sensitive and PascalCase, as in the JSON encoding. Sort direction defaults to ASC when the 'DIRECTION:' prefix is omitted.
 	//
-	// Supported attributes for ordering CommandRun: ChannelID, Command, CommandRunID, CompletedAt, CreatedAt, CreatedBy, Deadline, DeliveredAt, OrganizationID, Status, TargetID, TimeoutAt, UnitID.
+	// Supported attributes for ordering CommandRun: ChannelID, Command, CommandRunID, CompletedAt, CreatedAt, CreatedBy, Deadline, DeliveredAt, HiddenReason, OrganizationID, Status, TimeoutAt, UpdatedAt.
 	//
 	// Example: 'DESC:CreatedAt' or 'DisplayName,DESC:CreatedAt'.
 	//
@@ -17756,6 +18122,15 @@ type CreateCommandRunParams struct {
 type GetCommandRunParams struct {
 	// Wait Seconds to hold for a terminal status; at most 25.
 	Wait *int `form:"wait,omitempty" json:"wait,omitempty" yaml:"wait,omitempty"`
+
+	// Include Include clause for expanding related entities in the response for CommandRun.
+	// The attribute names are case-sensitive, PascalCase, and
+	// expected in a comma-separated list format as in the JSON encoding.
+	//
+	// Supported attributes for CommandRun are ChannelID, OrganizationID, SpaceID.
+	//
+	// The whole string must be query-encoded.
+	Include *string `form:"include,omitempty" json:"include,omitempty" yaml:"include,omitempty"`
 
 	// Select Select clause for specifying which fields to include in the response for CommandRun.
 	// The attribute names are case-sensitive, PascalCase, and
@@ -18211,7 +18586,7 @@ type ListInvocationsParams struct {
 	// An example conjunction is:
 	// `CreatedAt >= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.
 	//
-	// Supported attributes for filtering on Invocation: Annotations, BackingUnitID, BridgeWorkerID, CreatedAt, DeleteGates, DisplayName, FunctionInvocations, Hash, HiddenReason, InvocationID, Labels, OrganizationID, Parameters, Permissions, Slug, SpaceID, ToolchainType, UpdatedAt, UpstreamInvocationID.
+	// Supported attributes for filtering on Invocation: Annotations, BackingUnitID, BridgeWorkerID, ChannelID, CreatedAt, DeleteGates, DisplayName, FunctionInvocations, Hash, HiddenReason, InvocationID, Labels, OrganizationID, Parameters, Permissions, Slug, SpaceID, ToolchainType, UpdatedAt, UpstreamInvocationID.
 	//
 	// The functions an Invocation calls are addressed with dot notation into `FunctionInvocations`: `FunctionInvocations.*.FunctionName = 'set-image'` matches an Invocation that calls set-image anywhere in its list, and `FunctionInvocations.0.FunctionName` addresses the first function it calls.
 	//
@@ -18252,7 +18627,7 @@ type ListInvocationsParams struct {
 	// The attribute names are case-sensitive, PascalCase, and
 	// expected in a comma-separated list format as in the JSON encoding.
 	//
-	// Supported attributes for Invocation are BridgeWorkerID, OrganizationID, SpaceID.
+	// Supported attributes for Invocation are BridgeWorkerID, ChannelID, OrganizationID, SpaceID.
 	//
 	// The whole string must be query-encoded.
 	Include *string `form:"include,omitempty" json:"include,omitempty" yaml:"include,omitempty"`
@@ -18299,7 +18674,7 @@ type ListInvocationsParams struct {
 	//
 	// Field names are case-sensitive and PascalCase, as in the JSON encoding. Sort direction defaults to ASC when the 'DIRECTION:' prefix is omitted.
 	//
-	// Supported attributes for ordering Invocation: BackingUnitID, BridgeWorkerID, CreatedAt, DisplayName, Hash, HiddenReason, InvocationID, OrganizationID, Slug, SpaceID, ToolchainType, UpdatedAt, UpstreamInvocationID.
+	// Supported attributes for ordering Invocation: BackingUnitID, BridgeWorkerID, ChannelID, CreatedAt, DisplayName, Hash, HiddenReason, InvocationID, OrganizationID, Slug, SpaceID, ToolchainType, UpdatedAt, UpstreamInvocationID.
 	//
 	// Example: 'DESC:CreatedAt' or 'DisplayName,DESC:CreatedAt'.
 	//
@@ -18337,7 +18712,7 @@ type GetInvocationParams struct {
 	// The attribute names are case-sensitive, PascalCase, and
 	// expected in a comma-separated list format as in the JSON encoding.
 	//
-	// Supported attributes for Invocation are BridgeWorkerID, OrganizationID, SpaceID.
+	// Supported attributes for Invocation are BridgeWorkerID, ChannelID, OrganizationID, SpaceID.
 	//
 	// The whole string must be query-encoded.
 	Include *string `form:"include,omitempty" json:"include,omitempty" yaml:"include,omitempty"`
@@ -18358,6 +18733,7 @@ type PatchInvocationApplicationMergePatchPlusJSONBody struct {
 	// Annotations An optional map of Annotation key/value pairs for tools to attach information to entities.
 	Annotations    *map[string]*string `json:"Annotations" yaml:"Annotations"`
 	BridgeWorkerID *openapi_types.UUID `json:"BridgeWorkerID" yaml:"BridgeWorkerID"`
+	ChannelID      *openapi_types.UUID `json:"ChannelID" yaml:"ChannelID"`
 
 	// DeleteGates An optional set of gates that, if any is present, will block deletion
 	DeleteGates *map[string]*bool `json:"DeleteGates" yaml:"DeleteGates"`
@@ -19332,7 +19708,7 @@ type ListTriggersParams struct {
 	// An example conjunction is:
 	// `CreatedAt >= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.
 	//
-	// Supported attributes for filtering on Trigger: Annotations, Arguments, BackingUnitID, BridgeWorkerID, Clearance, CreatedAt, DeleteGates, Description, Disabled, DisplayName, Event, FunctionName, Guards, Hash, HiddenReason, InvocationID, Labels, OrganizationID, OtherDataSource, Permissions, Protect, Slug, SpaceID, ToolchainType, TriggerID, UnitFilterID, UpdatedAt, UpstreamTriggerID, Validating, Warn, WhereResource, WhereUnit.
+	// Supported attributes for filtering on Trigger: Annotations, Arguments, BackingUnitID, BridgeWorkerID, ChannelID, Clearance, CreatedAt, DeleteGates, Description, Disabled, DisplayName, Event, FunctionName, Guards, Hash, HiddenReason, InvocationID, Labels, OrganizationID, OtherDataSource, Permissions, Protect, Slug, SpaceID, ToolchainType, TriggerID, UnitFilterID, UpdatedAt, UpstreamTriggerID, Validating, Warn, WhereResource, WhereUnit.
 	//
 	// A Trigger returns the function it invokes inline rather than in a FunctionInvocation object, so `where` names FunctionName and Arguments directly. The arguments are addressed with dot notation into `Arguments`, which is a list: `Arguments.?ParameterName=attribute-name.Value = 'owner'` reads the argument bound to a named parameter, `Arguments.*.Value` matches any argument's value, and `Arguments.0.Value` addresses the first argument. Arguments passed positionally have no ParameterName.
 	//
@@ -19373,7 +19749,7 @@ type ListTriggersParams struct {
 	// The attribute names are case-sensitive, PascalCase, and
 	// expected in a comma-separated list format as in the JSON encoding.
 	//
-	// Supported attributes for Trigger are BridgeWorkerID, InvocationID, OrganizationID, SpaceID, UnitFilterID.
+	// Supported attributes for Trigger are BridgeWorkerID, ChannelID, InvocationID, OrganizationID, SpaceID, UnitFilterID.
 	//
 	// The whole string must be query-encoded.
 	Include *string `form:"include,omitempty" json:"include,omitempty" yaml:"include,omitempty"`
@@ -19420,7 +19796,7 @@ type ListTriggersParams struct {
 	//
 	// Field names are case-sensitive and PascalCase, as in the JSON encoding. Sort direction defaults to ASC when the 'DIRECTION:' prefix is omitted.
 	//
-	// Supported attributes for ordering Trigger: BackingUnitID, BridgeWorkerID, CreatedAt, Description, Disabled, DisplayName, Event, FunctionName, Hash, HiddenReason, InvocationID, OrganizationID, OtherDataSource, Protect, Slug, SpaceID, ToolchainType, TriggerID, UnitFilterID, UpdatedAt, UpstreamTriggerID, Validating, Warn, WhereResource, WhereUnit.
+	// Supported attributes for ordering Trigger: BackingUnitID, BridgeWorkerID, ChannelID, CreatedAt, Description, Disabled, DisplayName, Event, FunctionName, Hash, HiddenReason, InvocationID, OrganizationID, OtherDataSource, Protect, Slug, SpaceID, ToolchainType, TriggerID, UnitFilterID, UpdatedAt, UpstreamTriggerID, Validating, Warn, WhereResource, WhereUnit.
 	//
 	// Example: 'DESC:CreatedAt' or 'DisplayName,DESC:CreatedAt'.
 	//
@@ -19458,7 +19834,7 @@ type GetTriggerParams struct {
 	// The attribute names are case-sensitive, PascalCase, and
 	// expected in a comma-separated list format as in the JSON encoding.
 	//
-	// Supported attributes for Trigger are BridgeWorkerID, InvocationID, OrganizationID, SpaceID, UnitFilterID.
+	// Supported attributes for Trigger are BridgeWorkerID, ChannelID, InvocationID, OrganizationID, SpaceID, UnitFilterID.
 	//
 	// The whole string must be query-encoded.
 	Include *string `form:"include,omitempty" json:"include,omitempty" yaml:"include,omitempty"`
@@ -19482,6 +19858,7 @@ type PatchTriggerApplicationMergePatchPlusJSONBody struct {
 	// Arguments Function arguments
 	Arguments      *[]map[string]interface{} `json:"Arguments" yaml:"Arguments"`
 	BridgeWorkerID *openapi_types.UUID       `json:"BridgeWorkerID" yaml:"BridgeWorkerID"`
+	ChannelID      *openapi_types.UUID       `json:"ChannelID" yaml:"ChannelID"`
 	Clearance      *[]map[string]interface{} `json:"Clearance" yaml:"Clearance"`
 
 	// DeleteGates An optional set of gates that, if any is present, will block deletion
@@ -19880,7 +20257,7 @@ type PatchUnitParams struct {
 	// An example conjunction is:
 	// `CreatedAt >= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.
 	//
-	// Supported attributes for filtering on Mutation: BridgeWorkerID, CreatedAt, FunctionInvocation.Arguments, FunctionInvocation.Clearance, FunctionInvocation.FunctionName, FunctionInvocation.Guards, FunctionInvocation.WhereResource, FunctionName, HiddenReason, InvocationID, InvocationParams, LinkID, MergeBaseRevisionNum, MergeEndRevisionNum, MergeSourceID, MutationID, MutationNum, OrganizationID, ReplayOutcome, ReplayReason, RestoredRevisionNum, RevisionID, RevisionNum, SpaceID, Subgroup, TriggerID, UnitID, UpdatedAt.
+	// Supported attributes for filtering on Mutation: BridgeWorkerID, ChannelID, CreatedAt, FunctionInvocation.Arguments, FunctionInvocation.Clearance, FunctionInvocation.FunctionName, FunctionInvocation.Guards, FunctionInvocation.WhereResource, FunctionName, HiddenReason, InvocationID, InvocationParams, LinkID, MergeBaseRevisionNum, MergeEndRevisionNum, MergeSourceID, MutationID, MutationNum, OrganizationID, ReplayOutcome, ReplayReason, RestoredRevisionNum, RevisionID, RevisionNum, SpaceID, Subgroup, TriggerID, UnitID, UpdatedAt.
 	//
 	// Selects Mutations of this Unit whose paths the merge must not overwrite, unioned with the Protected values stored on the Unit's MutationSources.
 	//
@@ -20005,7 +20382,7 @@ type UpdateUnitParams struct {
 	// An example conjunction is:
 	// `CreatedAt >= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.
 	//
-	// Supported attributes for filtering on Mutation: BridgeWorkerID, CreatedAt, FunctionInvocation.Arguments, FunctionInvocation.Clearance, FunctionInvocation.FunctionName, FunctionInvocation.Guards, FunctionInvocation.WhereResource, FunctionName, HiddenReason, InvocationID, InvocationParams, LinkID, MergeBaseRevisionNum, MergeEndRevisionNum, MergeSourceID, MutationID, MutationNum, OrganizationID, ReplayOutcome, ReplayReason, RestoredRevisionNum, RevisionID, RevisionNum, SpaceID, Subgroup, TriggerID, UnitID, UpdatedAt.
+	// Supported attributes for filtering on Mutation: BridgeWorkerID, ChannelID, CreatedAt, FunctionInvocation.Arguments, FunctionInvocation.Clearance, FunctionInvocation.FunctionName, FunctionInvocation.Guards, FunctionInvocation.WhereResource, FunctionName, HiddenReason, InvocationID, InvocationParams, LinkID, MergeBaseRevisionNum, MergeEndRevisionNum, MergeSourceID, MutationID, MutationNum, OrganizationID, ReplayOutcome, ReplayReason, RestoredRevisionNum, RevisionID, RevisionNum, SpaceID, Subgroup, TriggerID, UnitID, UpdatedAt.
 	//
 	// Selects Mutations of this Unit whose paths the merge must not overwrite, unioned with the Protected values stored on the Unit's MutationSources.
 	//
@@ -20149,7 +20526,7 @@ type ListExtendedMutationsParams struct {
 	// An example conjunction is:
 	// `CreatedAt >= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.
 	//
-	// Supported attributes for filtering on Mutation: BridgeWorkerID, CreatedAt, FunctionInvocation.Arguments, FunctionInvocation.Clearance, FunctionInvocation.FunctionName, FunctionInvocation.Guards, FunctionInvocation.WhereResource, FunctionName, HiddenReason, InvocationID, InvocationParams, LinkID, MergeBaseRevisionNum, MergeEndRevisionNum, MergeSourceID, MutationID, MutationNum, OrganizationID, ReplayOutcome, ReplayReason, RestoredRevisionNum, RevisionID, RevisionNum, SpaceID, Subgroup, TriggerID, UnitID, UpdatedAt.
+	// Supported attributes for filtering on Mutation: BridgeWorkerID, ChannelID, CreatedAt, FunctionInvocation.Arguments, FunctionInvocation.Clearance, FunctionInvocation.FunctionName, FunctionInvocation.Guards, FunctionInvocation.WhereResource, FunctionName, HiddenReason, InvocationID, InvocationParams, LinkID, MergeBaseRevisionNum, MergeEndRevisionNum, MergeSourceID, MutationID, MutationNum, OrganizationID, ReplayOutcome, ReplayReason, RestoredRevisionNum, RevisionID, RevisionNum, SpaceID, Subgroup, TriggerID, UnitID, UpdatedAt.
 	//
 	// The function invoked is returned as a FunctionInvocation object, and `where` names its fields the same way: `FunctionInvocation.FunctionName`, `FunctionInvocation.Guards.<reason>`, and `FunctionInvocation.Arguments`, which is a list addressed with dot notation. `FunctionInvocation.Arguments.?ParameterName=container-image.Value LIKE 'nginx%'` reads the argument bound to a named parameter, `FunctionInvocation.Arguments.*.Value` matches any argument's value, and `FunctionInvocation.Arguments.0.Value` addresses the first argument. Arguments passed positionally have no ParameterName.
 	//
@@ -20237,7 +20614,7 @@ type ListExtendedMutationsParams struct {
 	//
 	// Field names are case-sensitive and PascalCase, as in the JSON encoding. Sort direction defaults to ASC when the 'DIRECTION:' prefix is omitted.
 	//
-	// Supported attributes for ordering Mutation: BridgeWorkerID, CreatedAt, FunctionName, HiddenReason, InvocationID, LinkID, MergeBaseRevisionNum, MergeEndRevisionNum, MergeSourceID, MutationID, MutationNum, OrganizationID, ReplayOutcome, ReplayReason, RestoredRevisionNum, RevisionID, RevisionNum, Subgroup, TriggerID, UnitID, UpdatedAt.
+	// Supported attributes for ordering Mutation: BridgeWorkerID, ChannelID, CreatedAt, FunctionName, HiddenReason, InvocationID, LinkID, MergeBaseRevisionNum, MergeEndRevisionNum, MergeSourceID, MutationID, MutationNum, OrganizationID, ReplayOutcome, ReplayReason, RestoredRevisionNum, RevisionID, RevisionNum, Subgroup, TriggerID, UnitID, UpdatedAt.
 	//
 	// Example: 'DESC:CreatedAt' or 'DisplayName,DESC:CreatedAt'.
 	//
@@ -22676,7 +23053,7 @@ type BulkDeleteTriggersParams struct {
 	// An example conjunction is:
 	// `CreatedAt >= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.
 	//
-	// Supported attributes for filtering on Trigger: Annotations, Arguments, BackingUnitID, BridgeWorkerID, Clearance, CreatedAt, DeleteGates, Description, Disabled, DisplayName, Event, FunctionName, Guards, Hash, HiddenReason, InvocationID, Labels, OrganizationID, OtherDataSource, Permissions, Protect, Slug, SpaceID, ToolchainType, TriggerID, UnitFilterID, UpdatedAt, UpstreamTriggerID, Validating, Warn, WhereResource, WhereUnit.
+	// Supported attributes for filtering on Trigger: Annotations, Arguments, BackingUnitID, BridgeWorkerID, ChannelID, Clearance, CreatedAt, DeleteGates, Description, Disabled, DisplayName, Event, FunctionName, Guards, Hash, HiddenReason, InvocationID, Labels, OrganizationID, OtherDataSource, Permissions, Protect, Slug, SpaceID, ToolchainType, TriggerID, UnitFilterID, UpdatedAt, UpstreamTriggerID, Validating, Warn, WhereResource, WhereUnit.
 	//
 	// A Trigger returns the function it invokes inline rather than in a FunctionInvocation object, so `where` names FunctionName and Arguments directly. The arguments are addressed with dot notation into `Arguments`, which is a list: `Arguments.?ParameterName=attribute-name.Value = 'owner'` reads the argument bound to a named parameter, `Arguments.*.Value` matches any argument's value, and `Arguments.0.Value` addresses the first argument. Arguments passed positionally have no ParameterName.
 	//
@@ -22726,7 +23103,7 @@ type BulkDeleteTriggersParams struct {
 	// The attribute names are case-sensitive, PascalCase, and
 	// expected in a comma-separated list format as in the JSON encoding.
 	//
-	// Supported attributes for Trigger are BridgeWorkerID, InvocationID, OrganizationID, SpaceID, UnitFilterID.
+	// Supported attributes for Trigger are BridgeWorkerID, ChannelID, InvocationID, OrganizationID, SpaceID, UnitFilterID.
 	//
 	// The whole string must be query-encoded.
 	Include *string `form:"include,omitempty" json:"include,omitempty" yaml:"include,omitempty"`
@@ -22777,7 +23154,7 @@ type ListAllTriggersParams struct {
 	// An example conjunction is:
 	// `CreatedAt >= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.
 	//
-	// Supported attributes for filtering on Trigger: Annotations, Arguments, BackingUnitID, BridgeWorkerID, Clearance, CreatedAt, DeleteGates, Description, Disabled, DisplayName, Event, FunctionName, Guards, Hash, HiddenReason, InvocationID, Labels, OrganizationID, OtherDataSource, Permissions, Protect, Slug, SpaceID, ToolchainType, TriggerID, UnitFilterID, UpdatedAt, UpstreamTriggerID, Validating, Warn, WhereResource, WhereUnit.
+	// Supported attributes for filtering on Trigger: Annotations, Arguments, BackingUnitID, BridgeWorkerID, ChannelID, Clearance, CreatedAt, DeleteGates, Description, Disabled, DisplayName, Event, FunctionName, Guards, Hash, HiddenReason, InvocationID, Labels, OrganizationID, OtherDataSource, Permissions, Protect, Slug, SpaceID, ToolchainType, TriggerID, UnitFilterID, UpdatedAt, UpstreamTriggerID, Validating, Warn, WhereResource, WhereUnit.
 	//
 	// A Trigger returns the function it invokes inline rather than in a FunctionInvocation object, so `where` names FunctionName and Arguments directly. The arguments are addressed with dot notation into `Arguments`, which is a list: `Arguments.?ParameterName=attribute-name.Value = 'owner'` reads the argument bound to a named parameter, `Arguments.*.Value` matches any argument's value, and `Arguments.0.Value` addresses the first argument. Arguments passed positionally have no ParameterName.
 	//
@@ -22818,7 +23195,7 @@ type ListAllTriggersParams struct {
 	// The attribute names are case-sensitive, PascalCase, and
 	// expected in a comma-separated list format as in the JSON encoding.
 	//
-	// Supported attributes for Trigger are BridgeWorkerID, InvocationID, OrganizationID, SpaceID, UnitFilterID.
+	// Supported attributes for Trigger are BridgeWorkerID, ChannelID, InvocationID, OrganizationID, SpaceID, UnitFilterID.
 	//
 	// The whole string must be query-encoded.
 	Include *string `form:"include,omitempty" json:"include,omitempty" yaml:"include,omitempty"`
@@ -22865,7 +23242,7 @@ type ListAllTriggersParams struct {
 	//
 	// Field names are case-sensitive and PascalCase, as in the JSON encoding. Sort direction defaults to ASC when the 'DIRECTION:' prefix is omitted.
 	//
-	// Supported attributes for ordering Trigger: BackingUnitID, BridgeWorkerID, CreatedAt, Description, Disabled, DisplayName, Event, FunctionName, Hash, HiddenReason, InvocationID, OrganizationID, OtherDataSource, Protect, Slug, SpaceID, ToolchainType, TriggerID, UnitFilterID, UpdatedAt, UpstreamTriggerID, Validating, Warn, WhereResource, WhereUnit.
+	// Supported attributes for ordering Trigger: BackingUnitID, BridgeWorkerID, ChannelID, CreatedAt, Description, Disabled, DisplayName, Event, FunctionName, Hash, HiddenReason, InvocationID, OrganizationID, OtherDataSource, Protect, Slug, SpaceID, ToolchainType, TriggerID, UnitFilterID, UpdatedAt, UpstreamTriggerID, Validating, Warn, WhereResource, WhereUnit.
 	//
 	// Example: 'DESC:CreatedAt' or 'DisplayName,DESC:CreatedAt'.
 	//
@@ -22893,6 +23270,7 @@ type BulkPatchTriggersApplicationMergePatchPlusJSONBody struct {
 	// Arguments Function arguments
 	Arguments      *[]map[string]interface{} `json:"Arguments" yaml:"Arguments"`
 	BridgeWorkerID *openapi_types.UUID       `json:"BridgeWorkerID" yaml:"BridgeWorkerID"`
+	ChannelID      *openapi_types.UUID       `json:"ChannelID" yaml:"ChannelID"`
 	Clearance      *[]map[string]interface{} `json:"Clearance" yaml:"Clearance"`
 
 	// DeleteGates An optional set of gates that, if any is present, will block deletion
@@ -22971,7 +23349,7 @@ type BulkPatchTriggersParams struct {
 	// An example conjunction is:
 	// `CreatedAt >= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.
 	//
-	// Supported attributes for filtering on Trigger: Annotations, Arguments, BackingUnitID, BridgeWorkerID, Clearance, CreatedAt, DeleteGates, Description, Disabled, DisplayName, Event, FunctionName, Guards, Hash, HiddenReason, InvocationID, Labels, OrganizationID, OtherDataSource, Permissions, Protect, Slug, SpaceID, ToolchainType, TriggerID, UnitFilterID, UpdatedAt, UpstreamTriggerID, Validating, Warn, WhereResource, WhereUnit.
+	// Supported attributes for filtering on Trigger: Annotations, Arguments, BackingUnitID, BridgeWorkerID, ChannelID, Clearance, CreatedAt, DeleteGates, Description, Disabled, DisplayName, Event, FunctionName, Guards, Hash, HiddenReason, InvocationID, Labels, OrganizationID, OtherDataSource, Permissions, Protect, Slug, SpaceID, ToolchainType, TriggerID, UnitFilterID, UpdatedAt, UpstreamTriggerID, Validating, Warn, WhereResource, WhereUnit.
 	//
 	// A Trigger returns the function it invokes inline rather than in a FunctionInvocation object, so `where` names FunctionName and Arguments directly. The arguments are addressed with dot notation into `Arguments`, which is a list: `Arguments.?ParameterName=attribute-name.Value = 'owner'` reads the argument bound to a named parameter, `Arguments.*.Value` matches any argument's value, and `Arguments.0.Value` addresses the first argument. Arguments passed positionally have no ParameterName.
 	//
@@ -23021,7 +23399,7 @@ type BulkPatchTriggersParams struct {
 	// The attribute names are case-sensitive, PascalCase, and
 	// expected in a comma-separated list format as in the JSON encoding.
 	//
-	// Supported attributes for Trigger are BridgeWorkerID, InvocationID, OrganizationID, SpaceID, UnitFilterID.
+	// Supported attributes for Trigger are BridgeWorkerID, ChannelID, InvocationID, OrganizationID, SpaceID, UnitFilterID.
 	//
 	// The whole string must be query-encoded.
 	Include *string `form:"include,omitempty" json:"include,omitempty" yaml:"include,omitempty"`
@@ -23050,6 +23428,7 @@ type BulkCreateTriggersApplicationMergePatchPlusJSONBody struct {
 	// Arguments Function arguments
 	Arguments      *[]map[string]interface{} `json:"Arguments" yaml:"Arguments"`
 	BridgeWorkerID *openapi_types.UUID       `json:"BridgeWorkerID" yaml:"BridgeWorkerID"`
+	ChannelID      *openapi_types.UUID       `json:"ChannelID" yaml:"ChannelID"`
 	Clearance      *[]map[string]interface{} `json:"Clearance" yaml:"Clearance"`
 
 	// DeleteGates An optional set of gates that, if any is present, will block deletion
@@ -23128,7 +23507,7 @@ type BulkCreateTriggersParams struct {
 	// An example conjunction is:
 	// `CreatedAt >= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.
 	//
-	// Supported attributes for filtering on Trigger: Annotations, Arguments, BackingUnitID, BridgeWorkerID, Clearance, CreatedAt, DeleteGates, Description, Disabled, DisplayName, Event, FunctionName, Guards, Hash, HiddenReason, InvocationID, Labels, OrganizationID, OtherDataSource, Permissions, Protect, Slug, SpaceID, ToolchainType, TriggerID, UnitFilterID, UpdatedAt, UpstreamTriggerID, Validating, Warn, WhereResource, WhereUnit.
+	// Supported attributes for filtering on Trigger: Annotations, Arguments, BackingUnitID, BridgeWorkerID, ChannelID, Clearance, CreatedAt, DeleteGates, Description, Disabled, DisplayName, Event, FunctionName, Guards, Hash, HiddenReason, InvocationID, Labels, OrganizationID, OtherDataSource, Permissions, Protect, Slug, SpaceID, ToolchainType, TriggerID, UnitFilterID, UpdatedAt, UpstreamTriggerID, Validating, Warn, WhereResource, WhereUnit.
 	//
 	// A Trigger returns the function it invokes inline rather than in a FunctionInvocation object, so `where` names FunctionName and Arguments directly. The arguments are addressed with dot notation into `Arguments`, which is a list: `Arguments.?ParameterName=attribute-name.Value = 'owner'` reads the argument bound to a named parameter, `Arguments.*.Value` matches any argument's value, and `Arguments.0.Value` addresses the first argument. Arguments passed positionally have no ParameterName.
 	//
@@ -23178,7 +23557,7 @@ type BulkCreateTriggersParams struct {
 	// The attribute names are case-sensitive, PascalCase, and
 	// expected in a comma-separated list format as in the JSON encoding.
 	//
-	// Supported attributes for Trigger are BridgeWorkerID, InvocationID, OrganizationID, SpaceID, UnitFilterID.
+	// Supported attributes for Trigger are BridgeWorkerID, ChannelID, InvocationID, OrganizationID, SpaceID, UnitFilterID.
 	//
 	// The whole string must be query-encoded.
 	Include *string `form:"include,omitempty" json:"include,omitempty" yaml:"include,omitempty"`
@@ -23348,7 +23727,7 @@ type BulkMoveTriggersParams struct {
 	// An example conjunction is:
 	// `CreatedAt >= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.
 	//
-	// Supported attributes for filtering on Trigger: Annotations, Arguments, BackingUnitID, BridgeWorkerID, Clearance, CreatedAt, DeleteGates, Description, Disabled, DisplayName, Event, FunctionName, Guards, Hash, HiddenReason, InvocationID, Labels, OrganizationID, OtherDataSource, Permissions, Protect, Slug, SpaceID, ToolchainType, TriggerID, UnitFilterID, UpdatedAt, UpstreamTriggerID, Validating, Warn, WhereResource, WhereUnit.
+	// Supported attributes for filtering on Trigger: Annotations, Arguments, BackingUnitID, BridgeWorkerID, ChannelID, Clearance, CreatedAt, DeleteGates, Description, Disabled, DisplayName, Event, FunctionName, Guards, Hash, HiddenReason, InvocationID, Labels, OrganizationID, OtherDataSource, Permissions, Protect, Slug, SpaceID, ToolchainType, TriggerID, UnitFilterID, UpdatedAt, UpstreamTriggerID, Validating, Warn, WhereResource, WhereUnit.
 	//
 	// The whole string must be query-encoded.
 	Where *string `form:"where,omitempty" json:"where,omitempty" yaml:"where,omitempty"`
@@ -23396,7 +23775,7 @@ type BulkMoveTriggersParams struct {
 	// The attribute names are case-sensitive, PascalCase, and
 	// expected in a comma-separated list format as in the JSON encoding.
 	//
-	// Supported attributes for Trigger are BridgeWorkerID, InvocationID, OrganizationID, SpaceID, UnitFilterID.
+	// Supported attributes for Trigger are BridgeWorkerID, ChannelID, InvocationID, OrganizationID, SpaceID, UnitFilterID.
 	//
 	// The whole string must be query-encoded.
 	Include *string `form:"include,omitempty" json:"include,omitempty" yaml:"include,omitempty"`
@@ -23883,7 +24262,7 @@ type BulkPatchUnitsParams struct {
 	// An example conjunction is:
 	// `CreatedAt >= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.
 	//
-	// Supported attributes for filtering on Mutation: BridgeWorkerID, CreatedAt, FunctionInvocation.Arguments, FunctionInvocation.Clearance, FunctionInvocation.FunctionName, FunctionInvocation.Guards, FunctionInvocation.WhereResource, FunctionName, HiddenReason, InvocationID, InvocationParams, LinkID, MergeBaseRevisionNum, MergeEndRevisionNum, MergeSourceID, MutationID, MutationNum, OrganizationID, ReplayOutcome, ReplayReason, RestoredRevisionNum, RevisionID, RevisionNum, SpaceID, Subgroup, TriggerID, UnitID, UpdatedAt.
+	// Supported attributes for filtering on Mutation: BridgeWorkerID, ChannelID, CreatedAt, FunctionInvocation.Arguments, FunctionInvocation.Clearance, FunctionInvocation.FunctionName, FunctionInvocation.Guards, FunctionInvocation.WhereResource, FunctionName, HiddenReason, InvocationID, InvocationParams, LinkID, MergeBaseRevisionNum, MergeEndRevisionNum, MergeSourceID, MutationID, MutationNum, OrganizationID, ReplayOutcome, ReplayReason, RestoredRevisionNum, RevisionID, RevisionNum, SpaceID, Subgroup, TriggerID, UnitID, UpdatedAt.
 	//
 	// Selects Mutations of this Unit whose paths the merge must not overwrite, unioned with the Protected values stored on the Unit's MutationSources.
 	//
@@ -26177,11 +26556,11 @@ type PatchServiceAccountApplicationMergePatchPlusJSONRequestBody PatchServiceAcc
 // UpdateServiceAccountJSONRequestBody defines body for UpdateServiceAccount for application/json ContentType.
 type UpdateServiceAccountJSONRequestBody = ServiceAccount
 
-// CreateServiceAccountKeyJSONRequestBody defines body for CreateServiceAccountKey for application/json ContentType.
-type CreateServiceAccountKeyJSONRequestBody = CreateUserKeyRequest
+// CreateServiceAccountUserKeyJSONRequestBody defines body for CreateServiceAccountUserKey for application/json ContentType.
+type CreateServiceAccountUserKeyJSONRequestBody = CreateUserKeyRequest
 
-// CreateServiceAccountTokenJSONRequestBody defines body for CreateServiceAccountToken for application/json ContentType.
-type CreateServiceAccountTokenJSONRequestBody = CreateUserTokenRequest
+// CreateServiceAccountUserTokenJSONRequestBody defines body for CreateServiceAccountUserToken for application/json ContentType.
+type CreateServiceAccountUserTokenJSONRequestBody = CreateUserTokenRequest
 
 // CreateSpaceJSONRequestBody defines body for CreateSpace for application/json ContentType.
 type CreateSpaceJSONRequestBody = Space

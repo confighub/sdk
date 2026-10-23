@@ -69,7 +69,9 @@ canceled: it completes or times out.`, ""),
 	RunE:        commandRunCancelCmdRun,
 }
 
-var defaultCommandRunColumns = []string{"CommandRun.CommandRunID", "CommandRun.Command", "CommandRun.SpaceSlug", "CommandRun.Status", "CommandRun.CreatedAt", "CommandRun.CompletedAt", "CommandRun.ErrorMessage"}
+var defaultCommandRunColumns = []string{"CommandRun.CommandRunID", "CommandRun.Command", "Space.Slug", "Channel.Slug", "CommandRun.Status", "CommandRun.CreatedAt", "CommandRun.CompletedAt", "CommandRun.ErrorMessage"}
+
+const commandRunListInclude = "SpaceID,ChannelID"
 
 var commandRunAliases = map[string]string{
 	"ID": "CommandRun.CommandRunID",
@@ -98,7 +100,7 @@ func commandRunListCmdRun(_ *cobra.Command, _ []string) error {
 		whereClause = whereClause.SpaceID(goclientnew.UUID(uuid.MustParse(selectedSpaceID)))
 	}
 	selectValue := handleSelectParameter("", selectFields, func() string {
-		return buildSelectList("CommandRun", listColumnsFor("cub commandrun list"), "", defaultCommandRunColumns, commandRunAliases, nil, []string{"CommandRunID", "SpaceID", "OrganizationID", "ChannelID"})
+		return buildSelectList("CommandRun", listColumnsFor("cub commandrun list"), commandRunListInclude, defaultCommandRunColumns, commandRunAliases, nil, []string{"CommandRunID", "SpaceID", "OrganizationID", "ChannelID"})
 	})
 	orderBy := listOrderBy
 	if orderBy == "" {
@@ -108,11 +110,13 @@ func commandRunListCmdRun(_ *cobra.Command, _ []string) error {
 		Limit:   listLimit,
 		OrderBy: orderBy,
 		Select:  cubapi.SelectFields(selectValue),
+		Include: commandRunListInclude,
+		View:    listViewFor("cub commandrun list"),
 	})
 	if err != nil {
 		return err
 	}
-	displayListResults(runs, func(run *goclientnew.CommandRun) string { return run.CommandRunID.String() }, displayCommandRunList)
+	displayListResults(runs, func(run *goclientnew.ExtendedCommandRun) string { return run.CommandRun.CommandRunID.String() }, displayCommandRunList)
 	return nil
 }
 
@@ -126,12 +130,12 @@ func commandRunGetCmdRun(_ *cobra.Command, args []string) error {
 		if err != nil {
 			return fmt.Errorf("invalid --timeout: %w", err)
 		}
-		run, err = awaitCommandRun(run.SpaceID, run.CommandRunID, waitFor)
+		run, err = awaitCommandRun(run.CommandRun.SpaceID, run.CommandRun.CommandRunID, waitFor)
 		if err != nil {
 			return err
 		}
 	}
-	displayGetResults(run, displayCommandRunDetails)
+	displayGetResults(run, displayExtendedCommandRunDetails)
 	return nil
 }
 
@@ -140,7 +144,7 @@ func commandRunCancelCmdRun(_ *cobra.Command, args []string) error {
 	if err != nil {
 		return err
 	}
-	res, err := cubClientNew.CancelCommandRunWithResponse(ctx, run.SpaceID, run.CommandRunID)
+	res, err := cubClientNew.CancelCommandRunWithResponse(ctx, run.CommandRun.SpaceID, run.CommandRun.CommandRunID)
 	if cubapi.IsAPIError(err, res) {
 		return cubapi.InterpretErrorGeneric(err, res)
 	}
@@ -150,7 +154,7 @@ func commandRunCancelCmdRun(_ *cobra.Command, args []string) error {
 
 // awaitCommandRun reads the run until it reaches a terminal status or the timeout elapses,
 // letting the server hold each read open with ?wait=.
-func awaitCommandRun(spaceID, runID goclientnew.UUID, timeout time.Duration) (*goclientnew.CommandRun, error) {
+func awaitCommandRun(spaceID, runID goclientnew.UUID, timeout time.Duration) (*goclientnew.ExtendedCommandRun, error) {
 	deadline := time.Now().Add(timeout)
 	for {
 		remaining := time.Until(deadline)
@@ -162,7 +166,7 @@ func awaitCommandRun(spaceID, runID goclientnew.UUID, timeout time.Duration) (*g
 		if err != nil {
 			return nil, err
 		}
-		if isTerminalRunStatus(run.Status) {
+		if isTerminalRunStatus(run.CommandRun.Status) {
 			return run, nil
 		}
 	}
@@ -170,20 +174,26 @@ func awaitCommandRun(spaceID, runID goclientnew.UUID, timeout time.Duration) (*g
 	if err != nil {
 		return nil, err
 	}
-	if !isTerminalRunStatus(run.Status) {
-		return run, fmt.Errorf("run %s is still %s after %s", runID, run.Status, timeout)
+	if !isTerminalRunStatus(run.CommandRun.Status) {
+		return run, fmt.Errorf("run %s is still %s after %s", runID, run.CommandRun.Status, timeout)
 	}
 	return run, nil
 }
 
-func getCommandRun(spaceID, runID goclientnew.UUID, waitSeconds int) (*goclientnew.CommandRun, error) {
-	params := &goclientnew.GetCommandRunParams{}
+// getCommandRun reads the run with its Space and Channel, holding for up to waitSeconds for a
+// terminal status. The response always carries the run.
+func getCommandRun(spaceID, runID goclientnew.UUID, waitSeconds int) (*goclientnew.ExtendedCommandRun, error) {
+	include := commandRunListInclude
+	params := &goclientnew.GetCommandRunParams{Include: &include}
 	if waitSeconds > 0 {
 		params.Wait = &waitSeconds
 	}
 	res, err := cubClientNew.GetCommandRunWithResponse(ctx, spaceID, runID, params)
 	if cubapi.IsAPIError(err, res) {
 		return nil, cubapi.InterpretErrorGeneric(err, res)
+	}
+	if res.JSON200 == nil || res.JSON200.CommandRun == nil {
+		return nil, fmt.Errorf("the server returned no run for %s", runID)
 	}
 	return res.JSON200, nil
 }
@@ -214,12 +224,28 @@ func commandRunOutcomeError(run *goclientnew.CommandRun) error {
 	}
 }
 
+func displayExtendedCommandRunDetails(extended *goclientnew.ExtendedCommandRun) {
+	channel := ""
+	if extended.Channel != nil {
+		channel = extended.Channel.Slug
+	}
+	displayCommandRunTable(extended.CommandRun, channel)
+}
+
 func displayCommandRunDetails(run *goclientnew.CommandRun) {
+	displayCommandRunTable(run, "")
+}
+
+// displayCommandRunTable shows a run; channel is its Channel's slug, when the response carried it.
+func displayCommandRunTable(run *goclientnew.CommandRun, channel string) {
 	view := tableView()
 	view.Append([]string{"ID", run.CommandRunID.String()})
 	view.Append([]string{"Command", run.Command})
 	view.Append([]string{"Status", run.Status})
 	view.Append([]string{"Space", run.SpaceSlug})
+	if channel != "" {
+		view.Append([]string{"Channel", channel})
+	}
 	view.Append([]string{"Channel ID", run.ChannelID.String()})
 	view.Append([]string{"Params", compactJSON(run.Params)})
 	if run.Result != nil {
@@ -227,12 +253,6 @@ func displayCommandRunDetails(run *goclientnew.CommandRun) {
 	}
 	if run.ErrorMessage != "" {
 		view.Append([]string{"Error", run.ErrorMessage})
-	}
-	if run.TargetID != nil {
-		view.Append([]string{"Target ID", run.TargetID.String()})
-	}
-	if run.UnitID != nil {
-		view.Append([]string{"Unit ID", run.UnitID.String()})
 	}
 	view.Append([]string{"Created At", run.CreatedAt.String()})
 	view.Append([]string{"Created By", run.CreatedBy.String()})
@@ -249,15 +269,26 @@ func displayCommandRunDetails(run *goclientnew.CommandRun) {
 	view.Render()
 }
 
-func displayCommandRunList(runs []*goclientnew.CommandRun) {
-	if displayRequestedColumns(runs, commandRunAliases, nil) {
+func displayCommandRunList(extended []*goclientnew.ExtendedCommandRun) {
+	if displayRequestedColumns(extended, commandRunAliases, nil) {
 		return
 	}
 	table := tableView()
 	if !noheader {
-		table.SetHeader([]string{"ID", "Command", "Space", "Status", "Created", "Completed", "Error"})
+		table.SetHeader([]string{"ID", "Command", "Space", "Channel", "Status", "Created", "Completed", "Error"})
 	}
-	for _, run := range runs {
+	for _, e := range extended {
+		run := e.CommandRun
+		if run == nil {
+			continue
+		}
+		space, channel := run.SpaceSlug, ""
+		if e.Space != nil {
+			space = e.Space.Slug
+		}
+		if e.Channel != nil {
+			channel = e.Channel.Slug
+		}
 		completed := ""
 		if !run.CompletedAt.IsZero() {
 			completed = run.CompletedAt.Format("2006-01-02 15:04:05")
@@ -265,7 +296,8 @@ func displayCommandRunList(runs []*goclientnew.CommandRun) {
 		table.Append([]string{
 			run.CommandRunID.String(),
 			run.Command,
-			run.SpaceSlug,
+			space,
+			channel,
 			run.Status,
 			run.CreatedAt.Format("2006-01-02 15:04:05"),
 			completed,

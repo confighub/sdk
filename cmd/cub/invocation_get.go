@@ -83,6 +83,11 @@ func displayExtendedInvocationDetails(extendedInvocation *goclientnew.ExtendedIn
 	} else if invocationDetails.BridgeWorkerID != nil && *invocationDetails.BridgeWorkerID != uuid.Nil {
 		view.Append([]string{"Worker ID", invocationDetails.BridgeWorkerID.String()})
 	}
+	if extendedInvocation.Channel != nil {
+		view.Append([]string{"Channel", extendedInvocation.Channel.Slug})
+	} else if invocationDetails.ChannelID != nil && *invocationDetails.ChannelID != uuid.Nil {
+		view.Append([]string{"Channel ID", invocationDetails.ChannelID.String()})
+	}
 
 	view.Append([]string{"Toolchain Type", invocationDetails.ToolchainType})
 	for i := range invocationDetails.Parameters {

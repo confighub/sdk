@@ -28,12 +28,9 @@ import (
 // uses for flux-system.
 
 const (
-	// clusterFluxVersion pins the Flux release.
+	// clusterFluxVersion pins the Flux release installed when
+	// --controller-version names none.
 	clusterFluxVersion = "v2.9.2"
-
-	// clusterFluxManifestURL is the release's install manifest, applied with
-	// kubectl so `cub` does not need the flux CLI.
-	clusterFluxManifestURL = "https://github.com/fluxcd/flux2/releases/download/" + clusterFluxVersion + "/install.yaml"
 
 	// clusterFluxNamespace is where Flux runs, and where the OCIRepositories,
 	// Kustomizations and their registry credentials live.
@@ -68,14 +65,24 @@ const (
 	clusterFluxTimeout = "2m0s"
 )
 
+// clusterFluxManifestURL returns a release's install manifest, applied with
+// kubectl so `cub` does not need the flux CLI.
+func clusterFluxManifestURL(version string) string {
+	return "https://github.com/fluxcd/flux2/releases/download/" + version + "/install.yaml"
+}
+
 // clusterFluxInstall applies the Flux install manifest and waits for the two
 // controllers `cub cluster up` relies on, source-controller and
 // kustomize-controller, to be Available. The manifest also installs Flux's
 // helm, notification and image controllers, which nothing here uses.
-func clusterFluxInstall(ctx context.Context, kubeconfigPath string, out io.Writer) error {
-	fmt.Fprintf(out, "Applying Flux install manifest from %s...\n", clusterFluxManifestURL)
+func clusterFluxInstall(ctx context.Context, kubeconfigPath, version string, out io.Writer) error {
+	if version == "" {
+		version = clusterFluxVersion
+	}
+	manifestURL := clusterFluxManifestURL(version)
+	fmt.Fprintf(out, "Applying Flux install manifest from %s...\n", manifestURL)
 	if err := clusterKubectl(ctx, kubeconfigPath, nil, out,
-		"apply", "-f", clusterFluxManifestURL); err != nil {
+		"apply", "-f", manifestURL); err != nil {
 		return fmt.Errorf("apply flux install: %w", err)
 	}
 
@@ -90,8 +97,8 @@ func clusterFluxInstall(ctx context.Context, kubeconfigPath string, out io.Write
 
 // clusterFluxEnsure makes sure Flux is in the cluster: installs it if absent
 // and installIfAbsent, and reports whether it did. A pre-existing Flux is left
-// as found.
-func clusterFluxEnsure(ctx context.Context, kubeconfigPath string, installIfAbsent bool, out io.Writer) (bool, error) {
+// as found. version is the release to install; "" installs clusterFluxVersion.
+func clusterFluxEnsure(ctx context.Context, kubeconfigPath, version string, installIfAbsent bool, out io.Writer) (bool, error) {
 	present, err := clusterFluxPresent(ctx, kubeconfigPath)
 	if err != nil {
 		return false, err
@@ -103,7 +110,7 @@ func clusterFluxEnsure(ctx context.Context, kubeconfigPath string, installIfAbse
 	if !installIfAbsent {
 		return false, fmt.Errorf("Flux not found in namespace %q (no kustomize-controller Deployment) and --no-install was given", clusterFluxNamespace)
 	}
-	if err := clusterFluxInstall(ctx, kubeconfigPath, out); err != nil {
+	if err := clusterFluxInstall(ctx, kubeconfigPath, version, out); err != nil {
 		return false, err
 	}
 	return true, nil

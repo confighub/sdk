@@ -478,7 +478,9 @@ type ModelConstraint interface {
 		goclientnew.ExtendedRelease |
 		goclientnew.OAuthClient |
 		goclientnew.UserKey |
+		goclientnew.ExtendedUserKey |
 		goclientnew.UserToken |
+		goclientnew.ExtendedUserToken |
 		goclientnew.IssuedUserToken |
 		goclientnew.Component |
 		goclientnew.ExtendedComponent |
@@ -487,6 +489,7 @@ type ModelConstraint interface {
 		goclientnew.Channel |
 		goclientnew.ExtendedChannel |
 		goclientnew.CommandRun |
+		goclientnew.ExtendedCommandRun |
 		goclientnew.DeclaredCommand |
 		Component |
 		Context
