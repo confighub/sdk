@@ -37,8 +37,10 @@ server's error messages describe what it allows.
 
 ## Before you start
 
-`cub auth status` contacts the server and exits non-zero if the session is missing or expired.
-`cub context get` reads only local state. If a person's session has expired, ask them to run
+`cub auth status` contacts the server and exits non-zero if the session is missing or expired
+and cannot be renewed. `cub context get` reads only local state. Every command renews an expired
+session by itself when it can: from the refresh token a browser sign-in stored, or from the key
+a service account logs in with. If a person's session cannot be renewed, ask them to run
 `cub auth login`, which signs in through a browser. An agent can have an identity of its own
 instead: a service account, which logs in with a key and renews from it without a browser (see
 `cub serviceaccount --help` and `cub auth login --help`).

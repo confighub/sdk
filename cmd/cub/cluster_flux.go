@@ -59,6 +59,10 @@ const (
 	// OCIRepository on each publish, so polling only catches what argobot missed.
 	clusterFluxPollIntervalWithArgobot = "10m0s"
 
+	// clusterFluxFieldManager is the field manager cub patches Kustomizations
+	// as, which Flux leaves alone (see clusterFluxSetCascade).
+	clusterFluxFieldManager = "cub"
+
 	// clusterFluxTimeout bounds a Kustomization's apply and health check. With
 	// wait, a broken app reports Progressing for this long before Degraded.
 	clusterFluxTimeout = "2m0s"
@@ -274,8 +278,11 @@ spec:
 // (cascade: prune on, not suspended) or leaves it running (suspended: Flux
 // skips garbage collection when a suspended Kustomization is deleted). It
 // reports whether the Kustomization exists. The root's apply resets prune to
-// what the Unit says while the root still applies the child, but never touches
-// suspend, which the manifest does not set.
+// what the Unit says while the root still applies the child. The patch is made
+// as cub's own field manager: Flux's server-side apply takes back fields owned
+// by kubectl's managers (kubectl-patch among them), so a root that applies the
+// child again before it applies a Release without it would otherwise clear
+// suspend and let the child prune.
 func clusterFluxSetCascade(ctx context.Context, kubeconfigPath, name string, cascade bool) (bool, error) {
 	existing, err := clusterKubectlOutput(ctx, kubeconfigPath,
 		"get", "kustomization", name, "-n", clusterFluxNamespace, "--ignore-not-found", "-o", "name")
@@ -290,7 +297,8 @@ func clusterFluxSetCascade(ctx context.Context, kubeconfigPath, name string, cas
 		patch = `{"spec":{"prune":true,"suspend":false}}`
 	}
 	if _, err := clusterKubectlOutput(ctx, kubeconfigPath,
-		"patch", "kustomization", name, "-n", clusterFluxNamespace, "--type=merge", "-p", patch); err != nil {
+		"patch", "kustomization", name, "-n", clusterFluxNamespace, "--type=merge",
+		"--field-manager="+clusterFluxFieldManager, "-p", patch); err != nil {
 		return true, fmt.Errorf("set prune and suspend on Kustomization %q: %w", name, err)
 	}
 	return true, nil

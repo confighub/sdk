@@ -6009,6 +6009,9 @@ type UnitMutationSources struct {
 type UnitProtectionRequest struct {
 	// ResourceProtection Per-resource Protected edits to apply to the Unit's MutationSources
 	ResourceProtection []ResourceProtection `json:"ResourceProtection" yaml:"ResourceProtection"`
+
+	// UnprotectAll Clear every Protected value on the Unit's MutationSources before applying ResourceProtection
+	UnprotectAll bool `json:"UnprotectAll,omitempty" yaml:"UnprotectAll,omitempty"`
 }
 
 // UnitProtectionResponse defines model for UnitProtectionResponse.

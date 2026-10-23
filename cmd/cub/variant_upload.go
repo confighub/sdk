@@ -46,6 +46,7 @@ type variantUploadOptions struct {
 	dryRun           bool
 	yes              bool
 	clientPull       bool
+	noClusterApp     bool
 
 	// The old names of --unit-label and --unit-annotation, kept as deprecated aliases.
 	deprecatedLabels      []string
@@ -128,6 +129,12 @@ to "base", since an upload normally seeds the base that variants are created fro
 Space slug comes from --space-pattern (a Go template over .Labels), or from --space to
 set it explicitly. --unit-label and --unit-annotation set labels and annotations on
 every written Unit.
+
+When the upload creates the Space and --target is a cub-cluster target (one "cub cluster up"
+or "cub cluster attach" made), it also adds the Unit that deploys the Space to the cluster's
+apps space, as "cub variant create --target" does: an Argo CD Application, a Sveltos
+ClusterProfile, or a Flux OCIRepository and Kustomization. An upload into a Space that already
+exists adds none. Use --no-cluster-app to skip it.
 
 A Space is a Variant of one Component. An upload into a Space that is already a Variant
 of a different Component is refused, dry run included, rather than moving the Space; to
@@ -237,6 +244,7 @@ func init() {
 	variantUploadCmd.Flags().BoolVar(&variantUploadArgs.dryRun, "dry-run", false, "report what the upload would create, update, empty, revive, or adopt, and exit without changing anything")
 	variantUploadCmd.Flags().BoolVar(&variantUploadArgs.yes, "yes", false, "do not ask for confirmation when the upload would empty Units")
 	variantUploadCmd.Flags().BoolVar(&variantUploadArgs.clientPull, "client-pull", false, "pull oci:// inputs on this machine rather than having the server pull them, for a registry the server cannot reach")
+	variantUploadCmd.Flags().BoolVar(&variantUploadArgs.noClusterApp, "no-cluster-app", false, "skip adding the Argo CD Application, Sveltos ClusterProfile, or Flux OCIRepository and Kustomization, when the upload creates its Space with a cub-cluster --target")
 	variantCmd.AddCommand(variantUploadCmd)
 }
 
@@ -402,7 +410,44 @@ func variantUploadCmdRun(cmd *cobra.Command, args []string) error {
 		return nil
 	}
 	reportUploadRevert(result)
+	if component.TargetID != nil && !a.noClusterApp {
+		if err := createUploadClusterApp(cmd.OutOrStdout(), result, *component.TargetID); err != nil {
+			return err
+		}
+	}
 	return owner.apply()
+}
+
+// createUploadClusterApp adds the Unit that deploys each Space the upload created
+// to its cluster's apps Space, when the target is a cub-cluster target, as "cub
+// variant create --target" does. Only a created Space gets one, so a later upload
+// into it does not try to create the Unit again.
+func createUploadClusterApp(out io.Writer, result *goclientnew.UploadResult, targetID uuid.UUID) error {
+	var target *goclientnew.Target
+	for _, c := range result.Components {
+		for _, s := range c.Spaces {
+			if s.Action != "Create" || s.SpaceID == nil {
+				continue
+			}
+			if target == nil {
+				var err error
+				if target, err = resolveTargetCore(targetID.String(), "", "*"); err != nil {
+					return err
+				}
+			}
+			space := &goclientnew.Space{SpaceID: *s.SpaceID, Slug: s.SpaceSlug}
+			if _, err := createVariantArgoApp(out, target, space, targetID, false); err != nil {
+				return err
+			}
+			if _, err := createVariantSveltosProfile(out, target, space, targetID, false); err != nil {
+				return err
+			}
+			if _, err := createVariantFluxApp(out, target, space, targetID, false); err != nil {
+				return err
+			}
+		}
+	}
+	return nil
 }
 
 // uploadSpaceLabels are the labels the upload stamps on its Space: the Variant label, the

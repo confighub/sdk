@@ -10,6 +10,7 @@ import (
 	"fmt"
 	"io"
 	"net/http"
+	"strings"
 )
 
 // PerformAssertionAuth authenticates by signing a short-lived assertion and
@@ -77,7 +78,7 @@ func PerformAssertionAuthContext(ctx context.Context, httpClient *http.Client, s
 		// kid is worth printing: it is the only thing that distinguishes "this
 		// key is not registered" from "this key signed something invalid", and
 		// it is what `cub user key list` shows.
-		return nil, fmt.Errorf("authentication failed for key %s: %s", signer.Kid(), string(body))
+		return nil, fmt.Errorf("authentication failed for key %s: %s", signer.Kid(), strings.TrimSpace(string(body)))
 	}
 
 	body, err := io.ReadAll(res.Body)

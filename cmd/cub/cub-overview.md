@@ -18,7 +18,7 @@ To check whether you are authenticated, use:
 cub auth status
 ```
 
-This contacts the server to verify the access token and exits non-zero if it is missing or expired, in which case run `cub auth login` again. (`cub context get` reports a local token status but does not contact the server.)
+This contacts the server to verify the access token and exits non-zero if it is missing, or expired and cannot be renewed, in which case run `cub auth login` again. Commands renew an expired session by themselves when the context holds a refresh token from a browser sign-in or authenticates with a key. (`cub context get` reports a local token status but does not contact the server.)
 
 A context names a server, an organization and a user. A command says which space it means with `--space`, or by naming the entity as `<space>/<slug>`; lists and bulk operations span the organization unless `--space` narrows them.
 

@@ -13,7 +13,7 @@ import (
 )
 
 var unitSetProtectionCmd = &cobra.Command{
-	Use:   "set-protection <unit-slug> --protect <spec> [--unprotect <spec> ...]",
+	Use:   "set-protection <unit-slug> [--unprotect-all] [--protect <spec> ...] [--unprotect <spec> ...]",
 	Short: "Protect paths of a unit from being overwritten by a merge",
 	Long: getCommandHelp(`Set the Protected flags stored on a unit's MutationSources.
 
@@ -35,6 +35,11 @@ already present inherits the closest ancestor mutation's provenance. Protecting
 a path does not protect a path beneath it that a change of its own wrote, such
 as an env entry's value set after the entry was added: name that path too, and
 check the result with 'cub unit blame', which marks a protected field P.
+
+--unprotect-all clears every protected path of the unit, so a future merge may
+overwrite all of them. Combined with --protect, it clears the rest first, and
+the paths named are the only ones protected afterwards.
+
 Setting protection creates a new revision only if it changes.
 
 It prints the unit's MutationSources with -o json, yaml, jq or yq, or after its
@@ -49,6 +54,13 @@ Examples:
   # Re-open a path so a future merge may overwrite it again
   cub unit set-protection my-unit \
     --unprotect "apps/v1/Deployment:default/myapp:spec.replicas"
+
+  # Re-open every protected path of the unit
+  cub unit set-protection my-unit --unprotect-all
+
+  # Make the replica count the only protected path
+  cub unit set-protection my-unit --unprotect-all \
+    --protect "apps/v1/Deployment:default/myapp:spec.replicas"
 `+"```"+`
 `, ""),
 	Args: cobra.ExactArgs(1),
@@ -58,6 +70,7 @@ Examples:
 var (
 	protectSpecs   []string
 	unprotectSpecs []string
+	unprotectAll   bool
 )
 
 func init() {
@@ -65,6 +78,8 @@ func init() {
 		"path to protect from merges, as RESOURCE_TYPE:RESOURCE_NAME:PATH (repeatable)")
 	unitSetProtectionCmd.Flags().StringArrayVar(&unprotectSpecs, "unprotect", nil,
 		"path to re-open to merges, as RESOURCE_TYPE:RESOURCE_NAME:PATH (repeatable)")
+	unitSetProtectionCmd.Flags().BoolVar(&unprotectAll, "unprotect-all", false,
+		"re-open every protected path of the unit to merges, before applying --protect and --unprotect")
 	addStandardDisplayFlags(unitSetProtectionCmd)
 	enableOptionalSpace(unitSetProtectionCmd)
 	unitCmd.AddCommand(unitSetProtectionCmd)
@@ -82,8 +97,8 @@ func parseProtectionSpec(flag, spec string) (resourceType, resourceName, path st
 }
 
 func unitSetProtectionCmdRun(_ *cobra.Command, args []string) error {
-	if len(protectSpecs) == 0 && len(unprotectSpecs) == 0 {
-		return fmt.Errorf("at least one --protect or --unprotect is required")
+	if len(protectSpecs) == 0 && len(unprotectSpecs) == 0 && !unprotectAll {
+		return fmt.Errorf("at least one --protect, --unprotect or --unprotect-all is required")
 	}
 
 	configUnit, err := resolveUnit(args[0], selectedSpaceID, "UnitID,SpaceID")
@@ -117,7 +132,7 @@ func unitSetProtectionCmdRun(_ *cobra.Command, args []string) error {
 		return err
 	}
 
-	body := goclientnew.UnitProtectionRequest{}
+	body := goclientnew.UnitProtectionRequest{UnprotectAll: unprotectAll}
 	for _, key := range order {
 		resourceType := key.resourceType
 		resourceName := key.resourceName

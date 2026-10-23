@@ -39106,8 +39106,9 @@ paths:
     post:
       description: Set Protected values on the unit's MutationSources, marking paths
         as local overrides a merge must not overwrite when subtraction is disabled.
-        A merge's WhereMutation protects further paths on top of these. Creates a
-        new revision only if the protection actually changes. Requires Edit permission.
+        A merge's WhereMutation protects further paths on top of these. UnprotectAll
+        clears every Protected value before ResourceProtection is applied. Creates
+        a new revision only if the protection actually changes. Requires Edit permission.
       operationId: SetUnitProtection
       parameters:
       - description: Unique identifier for a space_id
@@ -64422,6 +64423,11 @@ components:
             $ref: '#/components/schemas/ResourceProtection'
           nullable: true
           type: array
+          x-go-type-skip-optional-pointer: true
+        UnprotectAll:
+          description: Clear every Protected value on the Unit's MutationSources before
+            applying ResourceProtection
+          type: boolean
           x-go-type-skip-optional-pointer: true
       type: object
     UnitProtectionResponse:

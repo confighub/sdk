@@ -52,6 +52,17 @@ func InitializeClient(ctx *Context) (*goclientnew.ClientWithResponses, error) {
 	// client simply omits the Authorization header in that case.
 	if tokenData, err := contextManager.LoadTokenData(ctx); err == nil {
 		opts.Token = tokenData.AccessToken
+		// A context that can renew its session does so when the server rejects
+		// it, so an expired session costs a command nothing. One that has
+		// expired already is renewed before its first request rather than after
+		// a 401 for it, and only once a request is made, so a command that makes
+		// none does not renew.
+		if canRenewSession(ctx, tokenData) {
+			opts.Authenticator = sessionAuthenticator(ctx, tokenData.AccessToken)
+			if tokenNeedsRenewal(tokenData.AccessToken) {
+				opts.Token = ""
+			}
+		}
 	}
 	c, err := cubapi.NewClient(opts)
 	if err != nil {

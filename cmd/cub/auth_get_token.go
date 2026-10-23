@@ -12,9 +12,12 @@ import (
 var authGetTokenCmd = &cobra.Command{
 	Use:   "get-token",
 	Short: "Get the current JWT access token",
-	Long:  getCommandHelp(`Get the current JWT access token from the session. Useful for scripting and integration with other tools.`, ""),
-	Args:  cobra.ExactArgs(0),
-	RunE:  authGetTokenCmdRun,
+	Long: getCommandHelp(`Get the current JWT access token from the session. Useful for scripting and integration with other tools.
+
+An expired token is renewed first when the context can renew it without a person: from the
+private key it authenticates with, or from the refresh token a browser sign-in stored.`, ""),
+	Args: cobra.ExactArgs(0),
+	RunE: authGetTokenCmdRun,
 }
 
 func init() {
@@ -23,7 +26,9 @@ func init() {
 
 func authGetTokenCmdRun(cmd *cobra.Command, args []string) error {
 	ctx := contextManager.ActiveContext()
-	tokenData, err := contextManager.LoadTokenData(ctx)
+	// A script puts the token in a header itself, so it gets one that is still
+	// good when the context can renew it.
+	tokenData, err := currentTokenData(ctx)
 	if err != nil {
 		return err
 	}

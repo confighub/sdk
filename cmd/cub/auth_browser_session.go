@@ -57,7 +57,7 @@ func authBrowserSessionCmdRun(cmd *cobra.Command, args []string) error {
 	if ctx == nil {
 		return fmt.Errorf("no active context: run 'cub auth login' first")
 	}
-	tokenData, err := contextManager.LoadTokenData(ctx)
+	tokenData, err := currentTokenData(ctx)
 	if err != nil || tokenData == nil || tokenData.AccessToken == "" {
 		return fmt.Errorf("not logged in: run 'cub auth login' first")
 	}

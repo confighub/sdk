@@ -5,6 +5,7 @@ package main
 
 import (
 	"encoding/json"
+	"errors"
 	"fmt"
 	"io"
 	"os"
@@ -25,6 +26,14 @@ import (
 // Call cubapi.InterpretErrorGeneric and return the result instead.
 func failOnError(err error) {
 	if err != nil {
+		// A session that could not be renewed fails whichever request found it
+		// expired, and the request's own wrapping (its URL, the transport's
+		// retry) says nothing the user can act on. The renewal error says what
+		// to do.
+		var renewalErr *sessionRenewalError
+		if errors.As(err, &renewalErr) {
+			err = renewalErr
+		}
 		tprintErr("Failed: %s", err.Error())
 		os.Exit(1)
 	}

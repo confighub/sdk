@@ -4,12 +4,8 @@
 package main
 
 import (
-	"bytes"
 	"context"
-	"encoding/json"
 	"fmt"
-	"io"
-	"net/http"
 	"strings"
 
 	"github.com/confighub/sdk/core/cubapi"
@@ -174,65 +170,18 @@ func findBestMatchingOrganization(extendedOrganizations []*goclientnew.ExtendedO
 	return nil
 }
 
-// switchOrganizationRequest is the body of POST /auth/refresh. An organization id
-// asks the server to mint for that organization instead of the current one; it
-// verifies membership itself, because Keycloak does not honour an organization
-// selection on a refresh_token grant before 26.6.
-type switchOrganizationRequest struct {
-	RefreshToken   string `json:"refresh_token"`
-	OrganizationID string `json:"organization_id"`
-}
-
-// switchOrganizationResponse is the pair of tokens the refresh returns.
-type switchOrganizationResponse struct {
-	AccessToken  string `json:"access_token"`
-	RefreshToken string `json:"refresh_token"`
-}
-
 // callSwitchOrganizationAPI mints a session for another organization through
-// POST /auth/refresh.
-//
-// The endpoint authenticates the caller twice over: the refresh token proves the
-// identity provider session, and the current ConfigHub token in the Authorization
-// header proves which session is asking. Both are already in the context, so this
-// needs nothing the CLI does not hold.
-func callSwitchOrganizationAPI(accessToken, refreshToken, organizationID string) (*switchOrganizationResponse, error) {
-	body, err := json.Marshal(switchOrganizationRequest{
-		RefreshToken:   refreshToken,
-		OrganizationID: organizationID,
-	})
+// POST /auth/refresh. The refresh token proves the identity provider session;
+// the server verifies the user's membership in the organization itself, because
+// a refresh_token grant keeps the organization Keycloak selected at login.
+func callSwitchOrganizationAPI(accessToken, refreshToken, organizationID string) (*cubapi.AuthSession, error) {
+	session, err := cubapi.RefreshSession(context.Background(), nil,
+		contextManager.ActiveContext().Coordinate.ServerURL, refreshToken, accessToken, organizationID)
 	if err != nil {
-		return nil, fmt.Errorf("failed to build request: %w", err)
+		return nil, err
 	}
-
-	refreshURL := strings.TrimSuffix(contextManager.ActiveContext().Coordinate.ServerURL, "/api") + "/auth/refresh"
-	req, err := http.NewRequestWithContext(context.Background(), http.MethodPost, refreshURL, bytes.NewReader(body))
-	if err != nil {
-		return nil, fmt.Errorf("failed to create request: %w", err)
-	}
-	req.Header.Set("Content-Type", "application/json")
-	req.Header.Set("Authorization", "Bearer "+accessToken)
-
-	resp, err := http.DefaultClient.Do(req)
-	if err != nil {
-		return nil, fmt.Errorf("failed to make request: %w", err)
-	}
-	defer resp.Body.Close()
-
-	if resp.StatusCode != http.StatusOK {
-		// The body carries the server's reason -- not a member of that
-		// organization, an expired refresh token -- which is worth more than the
-		// status alone.
-		detail, _ := io.ReadAll(io.LimitReader(resp.Body, 2048))
-		return nil, fmt.Errorf("API request failed with status %d: %s", resp.StatusCode, strings.TrimSpace(string(detail)))
-	}
-
-	var tokens switchOrganizationResponse
-	if err := json.NewDecoder(resp.Body).Decode(&tokens); err != nil {
-		return nil, fmt.Errorf("failed to read the new session: %w", err)
-	}
-	if tokens.AccessToken == "" || tokens.RefreshToken == "" {
+	if session.RefreshToken == "" {
 		return nil, fmt.Errorf("the server returned no session for that organization")
 	}
-	return &tokens, nil
+	return session, nil
 }

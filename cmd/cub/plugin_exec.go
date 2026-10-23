@@ -50,7 +50,9 @@ func pluginEnv() []string {
 	env = append(env, fmt.Sprintf("CUB_CONTEXT=%s", activeCtx.Name))
 	env = append(env, fmt.Sprintf("CUB_SERVER=%s", activeCtx.Coordinate.ServerURL))
 
-	tokenData, err := contextManager.LoadTokenData(activeCtx)
+	// The plugin gets the token, not a way to renew it, so it gets one that is
+	// still good when the context can renew it.
+	tokenData, err := currentTokenData(activeCtx)
 	if err == nil && tokenData.AccessToken != "" {
 		env = append(env, fmt.Sprintf("CUB_TOKEN=%s", tokenData.AccessToken))
 	}
