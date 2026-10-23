@@ -55,6 +55,9 @@ ${FCTL} do test-data/deployment.yaml "MyDeployment" set-container-port nginx htt
 ${FCTL} do test-data/deployment.yaml "MyDeployment" --data-only set-pod-defaults true true true true true > ${DIR}/set-pod-defaults.yaml
 ${FCTL} do ${DIR}/set-pod-defaults.yaml MyApp vet-schemas > ${DIR}/vet-schemas-set-pod-defaults.txt
 ${FCTL} do test-data/deployment.yaml "MyDeployment" --data-only -- set-pod-defaults --pod-security=true --automount-service-account-token=true --security-context=true --resources=true --probes=false > ${DIR}/set-pod-defaults-no-probes.yaml
+${FCTL} do test-data/deployment.yaml "MyDeployment" vet-pod-security-standard restricted > ${DIR}/vet-pod-security-standard-fail.txt
+${FCTL} do ${DIR}/set-pod-defaults.yaml MyApp vet-pod-security-standard restricted > ${DIR}/vet-pod-security-standard-set-pod-defaults.txt
+${FCTL} do test-data/configmap.yaml "MyCM" vet-pod-security-standard restricted > ${DIR}/vet-pod-security-standard-no-workloads.txt
 
 # Test new defaulting functions (split from set-pod-defaults)
 ${FCTL} do test-data/namespace.yaml "MyNS" --data-only set-pod-security-defaults > ${DIR}/set-pod-security-defaults.yaml

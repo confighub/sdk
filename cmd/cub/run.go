@@ -47,6 +47,8 @@ func init() {
 
 	addSpaceFlags(runCmd)
 	runCmd.PersistentFlags().StringVar(&workerSlug, "worker", "", "worker to execute the function")
+	runCmd.PersistentFlags().StringVar(&functionChannel, "channel", "", channelFlagUsage)
+	runCmd.MarkFlagsMutuallyExclusive("worker", "channel")
 	runCmd.PersistentFlags().StringVar(&showSection, "show", "",
 		"Select which part of the function response to display. One of: output, values, data")
 	runCmd.PersistentFlags().BoolVar(&outputOnly, "output-only", false, "show output without other response details")
@@ -106,7 +108,7 @@ func RunRunCmd(cmd *cobra.Command, args []string) error {
 	}
 
 	// Preload builtin functions
-	_, _, err := listAndMaybeSaveFunctions("", "")
+	_, _, err := listAndMaybeSaveFunctions(functionHost{}, "")
 	failOnError(err)
 	tprint("Function list saved to %s", functionSpecFilePath())
 	return nil

@@ -25,8 +25,8 @@ var attestationCreateCmd = &cobra.Command{
 
 The units are those --where selects, every unit in the space by default. The revision
 of each is named by --revision in the form the other unit commands take: a number,
-HeadRevisionNum, LastReleasedRevisionNum, Tag:<tag>, ChangeSet:<changeset> or
-ChangeOrder:<changeorder>, optionally prefixed with Before:. With --change-order and no
+HeadRevisionNum, LastReleasedRevisionNum, Tag:<tag>, ChangeSet:<changeset>,
+ChangeOrder:<changeorder> or Release:<release-number>, optionally prefixed with Before:. With --change-order and no
 --revision, it is the revision a release of the change would bundle, which the change
 order's release tag marks, or the one its end tag marks for a unit the release tag does
 not mark; otherwise it is the head. A unit with no such revision is reported as skipped rather than covered at some

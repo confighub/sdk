@@ -147,4 +147,5 @@ func RegisterFunctions(rp *k8skit.K8sResourceProviderType, fh handler.FunctionRe
 	registerK8sCELFunctions(fh, rp)
 	registerAccessFunctions(fh)
 	registerPruneConfigMaps(fh, rp)
+	registerPodSecurityFunctions(fh, rp)
 }

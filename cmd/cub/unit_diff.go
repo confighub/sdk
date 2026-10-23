@@ -605,6 +605,10 @@ func resolveFormattedRevision(formatted string, isUUID bool, unit *goclientnew.U
 		return unit.LastReleasedRevisionNum, nil
 	}
 
+	if num, ok, err := resolveReleaseRevision(formatted, unit); ok {
+		return num, err
+	}
+
 	// Check for Tag: or ChangeSet: prefix - these need API lookup
 	if strings.HasPrefix(formatted, "Tag:") || strings.HasPrefix(formatted, "ChangeSet:") ||
 		strings.HasPrefix(formatted, "Before:") {
@@ -620,6 +624,30 @@ func resolveFormattedRevision(formatted string, isUUID bool, unit *goclientnew.U
 		return 0, fmt.Errorf("could not resolve revision '%s'", formatted)
 	}
 	return num, nil
+}
+
+// resolveReleaseRevision resolves Release:<id>, or Before:Release:<id>, to the number of the
+// Revision of unit that the Release bundled, or the one before it. ok is false for any other
+// selector.
+func resolveReleaseRevision(formatted string, unit *goclientnew.Unit) (int64, bool, error) {
+	spec, before := strings.CutPrefix(formatted, "Before:")
+	releaseID, isRelease := strings.CutPrefix(spec, "Release:")
+	if !isRelease {
+		return 0, false, nil
+	}
+	where := fmt.Sprintf("Releases ? '%s'", releaseID)
+	revisions, err := apiListRevisions(unit.SpaceID.String(), unit.UnitID.String(), where, "RevisionNum", "")
+	if err != nil {
+		return 0, true, err
+	}
+	if len(revisions) == 0 || revisions[0].Revision == nil {
+		return 0, true, fmt.Errorf("the release bundles no revision of unit %s", unit.Slug)
+	}
+	num := revisions[0].Revision.RevisionNum
+	if before {
+		num--
+	}
+	return num, true, nil
 }
 
 // apiGetRevisionFromUUID fetches a revision by UUID.

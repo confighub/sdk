@@ -144,6 +144,30 @@ func apiGetExtendedReleaseByArg(arg string) (*goclientnew.ExtendedRelease, error
 	return apiGetExtendedReleaseByWhere(selectedSpaceID, fmt.Sprintf("ReleaseNum = %d", num), fmt.Sprintf("number %d", num))
 }
 
+// resolveReleaseIDIn resolves a Release named by its id, or by its number within spaceID.
+func resolveReleaseIDIn(spaceID string, ref string) (uuid.UUID, error) {
+	if releaseID, err := uuid.Parse(ref); err == nil {
+		return releaseID, nil
+	}
+	num, err := strconv.ParseInt(ref, 10, 64)
+	if err != nil || num < 1 {
+		return uuid.Nil, fmt.Errorf("expected a release number or id")
+	}
+	if spaceID == "" || spaceID == "*" {
+		return uuid.Nil, fmt.Errorf("a release number requires a specific --space")
+	}
+	releases, err := apiListReleases(spaceID, fmt.Sprintf("ReleaseNum = %d", num), "ReleaseID,ReleaseNum", "", "")
+	if err != nil {
+		return uuid.Nil, err
+	}
+	for _, er := range releases {
+		if er.Release != nil {
+			return er.Release.ReleaseID, nil
+		}
+	}
+	return uuid.Nil, fmt.Errorf("no release %d in space %s", num, releaseSpaceName(spaceID))
+}
+
 // releaseSpaceName names a Space in a message by the slug the user selected it with, when it is that one.
 func releaseSpaceName(spaceID string) string {
 	if spaceID == selectedSpaceID && selectedSpaceSlug != "" {

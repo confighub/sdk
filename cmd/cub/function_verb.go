@@ -48,7 +48,7 @@ func (m FunctionKindMode) verb() string {
 //
 // Signatures are sourced from the on-disk cache of builtin functions populated by
 // listAndMaybeSaveFunctions. If the initial lookup misses, the functions are
-// listed once more (for --worker too, when set) before giving up.
+// listed once more (for --worker or --channel too, when set) before giving up.
 // When neither form resolves, the original name is returned so the downstream
 // kind-validation error message refers to what the user actually typed.
 func resolveFunctionNameForVerb(mode FunctionKindMode, name string) string {
@@ -75,21 +75,21 @@ func resolveFunctionNameForVerb(mode FunctionKindMode, name string) string {
 	if resolved, ok := lookup(); ok {
 		return resolved
 	}
-	// Cache miss: best-effort refresh, then retry once. Pass --worker through
-	// so worker-provided functions participate in the convenience.
-	// A worker listing is not cached, so its signatures are merged from the
+	// Cache miss: best-effort refresh, then retry once. Pass --worker or --channel
+	// through so the functions they serve participate in the convenience.
+	// Such a listing is not cached, so its signatures are merged from the
 	// response rather than re-read from the cache.
-	if _, funcs, err := listAndMaybeSaveFunctions(workerSlug, ""); err == nil {
+	if _, funcs, err := listAndMaybeSaveFunctions(currentFunctionHost(), ""); err == nil {
 		addFunctionSignatures(sigs, funcs)
 		if resolved, ok := lookup(); ok {
 			return resolved
 		}
 	}
-	if workerSlug != "" {
+	if !currentFunctionHost().isBuiltin() {
 		// Also refresh the builtin entity so verb-prefix resolution against
-		// builtin functions still works when --worker is set but the short
-		// name refers to a builtin.
-		if _, funcs, err := listAndMaybeSaveFunctions("", ""); err == nil {
+		// builtin functions still works when --worker or --channel is set but
+		// the short name refers to a builtin.
+		if _, funcs, err := listAndMaybeSaveFunctions(functionHost{}, ""); err == nil {
 			addFunctionSignatures(sigs, funcs)
 			if resolved, ok := lookup(); ok {
 				return resolved
@@ -153,13 +153,13 @@ func validateFunctionKinds(mode FunctionKindMode, body *goclientnew.FunctionInvo
 		}
 	}
 	if missing {
-		// Best-effort refresh. Include --worker if set so worker-provided
-		// functions are validated against their own catalog. A worker listing
-		// is not cached, so its signatures are merged from the response.
-		if _, funcs, err := listAndMaybeSaveFunctions(workerSlug, ""); err == nil {
+		// Best-effort refresh. Include --worker or --channel if set so the
+		// functions they serve are validated against their own catalog. Such a
+		// listing is not cached, so its signatures are merged from the response.
+		if _, funcs, err := listAndMaybeSaveFunctions(currentFunctionHost(), ""); err == nil {
 			addFunctionSignatures(sigs, funcs)
 		}
-		// If the worker refresh didn't resolve everything, top up with builtin.
+		// If that refresh didn't resolve everything, top up with builtin.
 		stillMissing := false
 		for _, n := range names {
 			if _, ok := sigs[n]; !ok {
@@ -167,8 +167,8 @@ func validateFunctionKinds(mode FunctionKindMode, body *goclientnew.FunctionInvo
 				break
 			}
 		}
-		if stillMissing && workerSlug != "" {
-			if _, funcs, err := listAndMaybeSaveFunctions("", ""); err == nil {
+		if stillMissing && !currentFunctionHost().isBuiltin() {
+			if _, funcs, err := listAndMaybeSaveFunctions(functionHost{}, ""); err == nil {
 				addFunctionSignatures(sigs, funcs)
 			}
 		}
@@ -244,6 +244,8 @@ func registerFunctionVerbFlags(cmd *cobra.Command) {
 	// registering the same flag twice on different commands is fine since
 	// spf13/cobra namespaces per-command by pointer.
 	cmd.Flags().StringVar(&workerSlug, "worker", "", "worker to execute the function")
+	cmd.Flags().StringVar(&functionChannel, "channel", "", channelFlagUsage)
+	cmd.MarkFlagsMutuallyExclusive("worker", "channel")
 	enableShowFlag(cmd)
 	cmd.Flags().StringVar(&changeDescription, "change-desc", "", "change description")
 	cmd.Flags().StringVar(&functionChangesetSlug, "changeset", "", "changeset to associate units with")

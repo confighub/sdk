@@ -32529,7 +32529,7 @@
           {
             "name": "entity",
             "in": "query",
-            "description": "Type of entity used to identify the worker whose functions should be listed: worker",
+            "description": "Type of entity whose functions should be listed: worker or channel",
             "required": false,
             "schema": {
               "type": "string"
@@ -32538,7 +32538,7 @@
           {
             "name": "id",
             "in": "query",
-            "description": "ID of the entity used to identify the worker whose functions should be listed",
+            "description": "ID of the worker or channel whose functions should be listed",
             "required": false,
             "schema": {
               "type": "string"
@@ -42021,7 +42021,7 @@
           {
             "name": "from",
             "in": "query",
-            "description": "The Revision on the From side: a number, a Revision ID, HeadRevisionNum, LastReleasedRevisionNum, Tag:\u003cid\u003e, ChangeSet:\u003cid\u003e, or ChangeOrder:\u003cid\u003e, any of them optionally prefixed with Before:.",
+            "description": "The Revision on the From side: a number, a Revision ID, HeadRevisionNum, LastReleasedRevisionNum, Tag:\u003cid\u003e, ChangeSet:\u003cid\u003e, ChangeOrder:\u003cid\u003e, or Release:\u003cid\u003e (the Revision the Release bundled), any of them optionally prefixed with Before:.",
             "required": false,
             "schema": {
               "type": "string"
@@ -52802,7 +52802,7 @@
           "Unit"
         ],
         "summary": "Get the difference between two Revisions of many Units across spaces",
-        "description": "Returns, for every Unit the where clause selects, across every Space in the organization, what changed in its configuration between the Revision from names and the Revision to names, path by path with the values on both sides. This is the bulk counterpart of the single-Unit diff subresource. from and to must each pick out a Revision in every Unit: HeadRevisionNum, LastReleasedRevisionNum, Tag:\u003cid\u003e, ChangeSet:\u003cid\u003e or ChangeOrder:\u003cid\u003e, optionally prefixed with Before:. A Unit with no Revision a side names is absent on that side, and its diff runs against nothing. Scope it to one Space with a where clause.",
+        "description": "Returns, for every Unit the where clause selects, across every Space in the organization, what changed in its configuration between the Revision from names and the Revision to names, path by path with the values on both sides. This is the bulk counterpart of the single-Unit diff subresource. from and to must each pick out a Revision in every Unit: HeadRevisionNum, LastReleasedRevisionNum, Tag:\u003cid\u003e, ChangeSet:\u003cid\u003e, ChangeOrder:\u003cid\u003e or Release:\u003cid\u003e, optionally prefixed with Before:. A Unit with no Revision a side names is absent on that side, and its diff runs against nothing. Scope it to one Space with a where clause.",
         "operationId": "SearchUnitDiff",
         "parameters": [
           {
@@ -52955,7 +52955,7 @@
           {
             "name": "from",
             "in": "query",
-            "description": "The Revision on the From side: a number, a Revision ID, HeadRevisionNum, LastReleasedRevisionNum, Tag:\u003cid\u003e, ChangeSet:\u003cid\u003e, or ChangeOrder:\u003cid\u003e, any of them optionally prefixed with Before:.",
+            "description": "The Revision on the From side: a number, a Revision ID, HeadRevisionNum, LastReleasedRevisionNum, Tag:\u003cid\u003e, ChangeSet:\u003cid\u003e, ChangeOrder:\u003cid\u003e, or Release:\u003cid\u003e (the Revision the Release bundled), any of them optionally prefixed with Before:.",
             "required": false,
             "schema": {
               "type": "string"
@@ -69529,7 +69529,7 @@
           },
           "CreateNamespace": {
             "type": "boolean",
-            "description": "Synthesize the release Namespace if the bundle lacks it. Off by default.",
+            "description": "Synthesize the release Namespace if the bundle lacks it and it is not one every cluster has (default, kube-node-lease, kube-public, kube-system). Off by default.",
             "x-go-type-skip-optional-pointer": true
           },
           "DependsOn": {

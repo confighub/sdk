@@ -971,7 +971,7 @@ func clusterPrintSummaryHead(out io.Writer, verb string, r clusterAttachResult, 
 		case clusterControllerFlux:
 			fmt.Fprintf(out, "  argobot:    %s-%s (Flux Kustomization; reconciles on publish), channel %s/%s\n", clusterArgobotComponent, spec.name, spec.spaceSlug, clusterArgobotChannelSlug)
 		default:
-			fmt.Fprintf(out, "  argobot:    %s-%s (Argo app; kubernetes sync mode), channel %s/%s\n", clusterArgobotComponent, spec.name, spec.spaceSlug, clusterArgobotChannelSlug)
+			fmt.Fprintf(out, "  argobot:    %s-%s (Argo app; refreshes on publish), channel %s/%s\n", clusterArgobotComponent, spec.name, spec.spaceSlug, clusterArgobotChannelSlug)
 		}
 	}
 	if spec.noPlaceholderGate {

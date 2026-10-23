@@ -172,9 +172,13 @@ func displayExtendedMutationDetails(extendedMutationDetails *goclientnew.Extende
 	}
 
 	// Which executor ran the function. Nil means the builtin one, which is the common case and
-	// says nothing worth a row; a worker is what makes the Mutation's replay worker-dependent.
+	// says nothing worth a row; a worker or channel is what makes the Mutation's replay depend on
+	// that client.
 	if isSetUUID(mutationDetails.BridgeWorkerID) {
 		view.Append([]string{"Bridge Worker", resolveBridgeWorkerName(*mutationDetails.BridgeWorkerID, mutationDetails.SpaceSlug)})
+	}
+	if isSetUUID(mutationDetails.ChannelID) {
+		view.Append([]string{"Channel", resolveChannelName(*mutationDetails.ChannelID, mutationDetails.SpaceSlug)})
 	}
 
 	// What a merge did with this Mutation, and why. Empty on a Mutation no merge produced.
@@ -230,6 +234,19 @@ func resolveBridgeWorkerName(workerID uuid.UUID, mutationSpaceSlug string) strin
 		workerSpace = workers[0].Space.Slug
 	}
 	return qualifySlug(workers[0].BridgeWorker.Slug, workerSpace, mutationSpaceSlug)
+}
+
+func resolveChannelName(channelID uuid.UUID, mutationSpaceSlug string) string {
+	channels, err := cubapi.ListChannels(ctx, cubClient, cubapi.NewWhere("").Eq("ChannelID", channelID.String()),
+		cubapi.ListOpts{Select: "ChannelID,Slug,SpaceID", Include: "SpaceID"})
+	if err != nil || len(channels) == 0 || channels[0].Channel == nil || channels[0].Channel.Slug == "" {
+		return channelID.String()
+	}
+	channelSpace := ""
+	if channels[0].Space != nil {
+		channelSpace = channels[0].Space.Slug
+	}
+	return qualifySlug(channels[0].Channel.Slug, channelSpace, mutationSpaceSlug)
 }
 
 func apiGetMutationFromNumber(mutationNum int64, unitID string, spaceID string, selectParam string) (*goclientnew.ExtendedMutation, error) {

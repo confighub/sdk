@@ -23,7 +23,7 @@ plain read-only and validating functions). Mutating functions are rejected;
 use 'cub function set' for those.
 
 Non-mutating means a function does not change the units' configuration data, not that
-it has no effect at all: generate-kubecontext, served by a worker in a cluster, issues a
+it has no effect at all: generate-kubecontext, served from inside a cluster, issues a
 time-bound credential, and --update-validation-results with --trigger records
 ValidationErrors and ValidationWarnings on the units.
 

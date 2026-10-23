@@ -228,7 +228,7 @@ func init() {
 	unitUpdateCmd.Flags().StringVar(&priorRevisions, "prior-revisions", "", "with --change-order and --upgrade or --resolve, what to do for a unit that has not merged as far as the change order's start on its source -- typically because a link in the source's space, such as a TransformPaths link, wrote revisions after the unit last merged: Include (the default) merges those revisions first, as revisions that do not carry the change order, and puts the start tag after them; Skip merges only the change order's range, as though the unit had already merged as far as its start, and those revisions do not arrive later; Error refuses, naming the unit, the link, and the revisions; All merges them as Include does. Defaults to the change order's PriorRevisions")
 	unitUpdateCmd.Flags().StringVarP(&unitUpdateToolchainType, "toolchain", "t", "", "toolchain type to change the unit to, for a unit created with the wrong one; the unit's data is not converted")
 	unitUpdateCmd.Flags().StringVar(&providerType, "provider", "", "provider type for the unit; None marks the unit as not applied and not included in releases")
-	unitUpdateCmd.Flags().StringVar(&restore, "restore", "", "restore to a revision: a tag slug, Tag:slug, ChangeSet:slug, ChangeOrder:slug, Revision:uuid, an integer (revision number), a negative delta from head, or one of HeadRevisionNum/LastReleasedRevisionNum, optionally prefixed with Before:")
+	unitUpdateCmd.Flags().StringVar(&restore, "restore", "", "restore to a revision: a tag slug, Tag:slug, ChangeSet:slug, ChangeOrder:slug, Release:number, Revision:uuid, an integer (revision number), a negative delta from head, or one of HeadRevisionNum/LastReleasedRevisionNum, optionally prefixed with Before:")
 	unitUpdateCmd.Flags().StringVar(&resolve, "resolve", "", "resolve links from this unit: Link:* for every link that can resolve, Link:<uuid> or Link:<slug> for one, just <slug> (e.g. space/link-name), or Link:<where expression> to select among them (e.g. \"Link:UpdateType = 'MergeUnits'\") -- the form to use in a bulk operation, where a uuid cannot be. An AutoUpdate link can be resolved by hand and does nothing when it is already level with its source")
 	unitUpdateCmd.Flags().BoolVar(&isUpgrade, "upgrade", false, "upgrade the unit to the latest version of its upstream unit")
 	unitUpdateCmd.Flags().BoolVar(&protectChange, "protect", false, "record the paths this change writes as protected local overrides, so a later merge from upstream does not overwrite them; by default a change claims nothing and each path keeps the protection it already has. Refused on the merges protection holds paths against: --upgrade, --merge-source other than Self, --merge-external-source, and --resolve of an UpgradeUnit or MergeUnits link")
@@ -1509,6 +1509,18 @@ func parseSelectedRevisionParameterIn(spaceID string, revisionSpec string, resol
 		}
 		return fmt.Sprintf("ChangeOrder:%s", changeorderUUID), false, nil
 
+	} else if entityType == "Release" {
+		// A Release bundles one Revision of each Unit it covers, which is what this names. Its
+		// number is counted within the Space it was published in, which is the Unit's.
+		releaseUUID, err := resolveReleaseIDIn(spaceID, identifier)
+		if err != nil {
+			return "", false, fmt.Errorf("failed to parse release '%s': %w", identifier, err)
+		}
+		if isBeforeModifier {
+			return fmt.Sprintf("Before:Release:%s", releaseUUID), false, nil
+		}
+		return fmt.Sprintf("Release:%s", releaseUUID), false, nil
+
 	} else if entityType == "Revision" {
 		// Handle Revision:uuid format. The caller decides how to pass a revision ID on, so the
 		// Before: modifier has nowhere to go here.
@@ -1522,7 +1534,7 @@ func parseSelectedRevisionParameterIn(spaceID string, revisionSpec string, resol
 		return revisionUUID.String(), true, nil
 	}
 
-	return "", false, fmt.Errorf("unsupported entity type '%s': supported types are Tag, ChangeSet, ChangeOrder, and Revision", entityType)
+	return "", false, fmt.Errorf("unsupported entity type '%s': supported types are Tag, ChangeSet, ChangeOrder, Release, and Revision", entityType)
 }
 
 // changeSetBoundaryTagID returns the Tag marking the Revision a ChangeSet names, for a caller that

@@ -31020,15 +31020,13 @@ paths:
         schema:
           format: uuid
           type: string
-      - description: 'Type of entity used to identify the worker whose functions should
-          be listed: worker'
+      - description: 'Type of entity whose functions should be listed: worker or channel'
         in: query
         name: entity
         required: false
         schema:
           type: string
-      - description: ID of the entity used to identify the worker whose functions
-          should be listed
+      - description: ID of the worker or channel whose functions should be listed
         in: query
         name: id
         required: false
@@ -39114,8 +39112,9 @@ paths:
           format: uuid
           type: string
       - description: 'The Revision on the From side: a number, a Revision ID, HeadRevisionNum,
-          LastReleasedRevisionNum, Tag:<id>, ChangeSet:<id>, or ChangeOrder:<id>,
-          any of them optionally prefixed with Before:.'
+          LastReleasedRevisionNum, Tag:<id>, ChangeSet:<id>, ChangeOrder:<id>, or
+          Release:<id> (the Revision the Release bundled), any of them optionally
+          prefixed with Before:.'
         in: query
         name: from
         required: false
@@ -50212,9 +50211,9 @@ paths:
         from names and the Revision to names, path by path with the values on both
         sides. This is the bulk counterpart of the single-Unit diff subresource. from
         and to must each pick out a Revision in every Unit: HeadRevisionNum, LastReleasedRevisionNum,
-        Tag:<id>, ChangeSet:<id> or ChangeOrder:<id>, optionally prefixed with Before:.
-        A Unit with no Revision a side names is absent on that side, and its diff
-        runs against nothing. Scope it to one Space with a where clause.'
+        Tag:<id>, ChangeSet:<id>, ChangeOrder:<id> or Release:<id>, optionally prefixed
+        with Before:. A Unit with no Revision a side names is absent on that side,
+        and its diff runs against nothing. Scope it to one Space with a where clause.'
       operationId: SearchUnitDiff
       parameters:
       - description: |-
@@ -50454,8 +50453,9 @@ paths:
         schema:
           type: boolean
       - description: 'The Revision on the From side: a number, a Revision ID, HeadRevisionNum,
-          LastReleasedRevisionNum, Tag:<id>, ChangeSet:<id>, or ChangeOrder:<id>,
-          any of them optionally prefixed with Before:.'
+          LastReleasedRevisionNum, Tag:<id>, ChangeSet:<id>, ChangeOrder:<id>, or
+          Release:<id> (the Revision the Release bundled), any of them optionally
+          prefixed with Before:.'
         in: query
         name: from
         required: false
@@ -65235,8 +65235,9 @@ components:
           type: string
           x-go-type-skip-optional-pointer: true
         CreateNamespace:
-          description: Synthesize the release Namespace if the bundle lacks it. Off
-            by default.
+          description: Synthesize the release Namespace if the bundle lacks it and
+            it is not one every cluster has (default, kube-node-lease, kube-public,
+            kube-system). Off by default.
           type: boolean
           x-go-type-skip-optional-pointer: true
         DependsOn:

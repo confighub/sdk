@@ -196,7 +196,8 @@ var parameterizedInvocationParams map[string]any
 
 func init() {
 	functionDoCmd.Flags().StringVar(&workerSlug, "worker", "", "worker to execute the function")
-	functionDoCmd.Flags().StringVar(&functionChannel, "channel", "", "channel whose client executes the function, as a run of the command the channel declares for it")
+	functionDoCmd.Flags().StringVar(&functionChannel, "channel", "", channelFlagUsage)
+	functionDoCmd.MarkFlagsMutuallyExclusive("worker", "channel")
 	enableShowFlag(functionDoCmd)
 	functionDoCmd.Flags().BoolVar(&outputOnly, "output-only", false, "show output without other response details")
 	_ = functionDoCmd.Flags().MarkDeprecated("output-only", "use --show output")
@@ -247,6 +248,8 @@ var (
 	resolvedInvocations []goclientnew.Invocation
 	functionChannel     string
 )
+
+const channelFlagUsage = "channel whose client executes the function, as a run of the command the channel declares for it"
 
 func newFunctionInvocationsRequest() *goclientnew.FunctionInvocationsRequest {
 	req := &goclientnew.FunctionInvocationsRequest{}

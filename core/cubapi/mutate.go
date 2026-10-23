@@ -23,6 +23,7 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"strings"
 
 	api "github.com/confighub/sdk/core/function/api"
 	goclientnew "github.com/confighub/sdk/core/openapi/goclient-new"
@@ -288,9 +289,15 @@ func UpgradeUnits(ctx context.Context, c *Client, where string, ch Change) (*Res
 	return out, nil
 }
 
+// errString is a response error's message followed by its details, which carry
+// the reasons a function gave per resource; the message alone is often only
+// "Function invocations failed".
 func errString(e *goclientnew.ResponseError) string {
 	if e == nil {
 		return ""
 	}
-	return e.Message
+	if len(e.Details) == 0 {
+		return e.Message
+	}
+	return e.Message + ": " + strings.Join(e.Details, "; ")
 }

@@ -41,18 +41,20 @@ The output includes a ready-to-use command template showing required and optiona
 
 Important flags:
 - --toolchain: Specify function toolchain (defaults to "Kubernetes/YAML")
-- Use the same --worker flag as 'function list' if needed`
+- Use the same --channel or --worker flag as 'function list' if needed`
 
 	return getCommandHelp(baseHelp, agentContext)
 }
 
 var functionExplainCmdArgs struct {
-	workerSlug    string
+	host          functionHost
 	toolchainType string
 }
 
 func init() {
-	functionExplainCmd.Flags().StringVar(&functionExplainCmdArgs.workerSlug, "worker", "", "Worker slug to explain a function for")
+	functionExplainCmd.Flags().StringVar(&functionExplainCmdArgs.host.worker, "worker", "", "Worker slug to explain a function for")
+	functionExplainCmd.Flags().StringVar(&functionExplainCmdArgs.host.channel, "channel", "", "Channel whose served function to explain")
+	functionExplainCmd.MarkFlagsMutuallyExclusive("worker", "channel")
 	functionExplainCmd.Flags().StringVar(&functionExplainCmdArgs.toolchainType, "toolchain", "Kubernetes/YAML", "Toolchain type to explain a function for")
 	addStandardDisplayFlags(functionExplainCmd)
 	functionCmd.AddCommand(functionExplainCmd)
@@ -65,7 +67,7 @@ func functionExplainCmdRun(cmd *cobra.Command, args []string) error {
 	// Filter the server-side list down to exactly the requested (toolchain, function).
 	// The result is not cached locally since it's a filtered listing.
 	whereClause := fmt.Sprintf("ToolchainType = '%s' AND FunctionName = '%s'", toolchainType, functionName)
-	_, funcs, err := listFunctions(functionExplainCmdArgs.workerSlug, whereClause)
+	_, funcs, err := listFunctions(functionExplainCmdArgs.host, whereClause)
 	failOnError(err)
 
 	toolchainFuncs, found := funcs[toolchainType]

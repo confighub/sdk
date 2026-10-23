@@ -66,6 +66,8 @@ vet-cel "r.kind != 'Deployment' || r.spec.replicas > 1"
 
 func init() {
 	functionExecCmd.Flags().StringVar(&workerSlug, "worker", "", "worker to execute the function")
+	functionExecCmd.Flags().StringVar(&functionChannel, "channel", "", channelFlagUsage)
+	functionExecCmd.MarkFlagsMutuallyExclusive("worker", "channel")
 	enableShowFlag(functionExecCmd)
 	functionExecCmd.Flags().BoolVar(&outputOnly, "output-only", false, "show output without other response details")
 	_ = functionExecCmd.Flags().MarkDeprecated("output-only", "use --show output")

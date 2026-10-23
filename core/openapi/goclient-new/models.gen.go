@@ -6118,7 +6118,7 @@ type UploadComponentRequest struct {
 	// BackingUnitSpace The Space, by slug, for the backing Units of the bundle's Space and Component documents; it may be the component's own Space. Required when the bundle has either.
 	BackingUnitSpace string `json:"BackingUnitSpace,omitempty" yaml:"BackingUnitSpace,omitempty"`
 
-	// CreateNamespace Synthesize the release Namespace if the bundle lacks it. Off by default.
+	// CreateNamespace Synthesize the release Namespace if the bundle lacks it and it is not one every cluster has (default, kube-node-lease, kube-public, kube-system). Off by default.
 	CreateNamespace bool `json:"CreateNamespace,omitempty" yaml:"CreateNamespace,omitempty"`
 
 	// DependsOn Names of the components this one depends on, recorded by ComponentID in the Space's DependsOn annotation. Each Component must already exist. Requires a Variant Space label.
@@ -18382,10 +18382,10 @@ type UpdateFilterDocumentParams struct {
 
 // ListFunctionsParams defines parameters for ListFunctions.
 type ListFunctionsParams struct {
-	// Entity Type of entity used to identify the worker whose functions should be listed: worker
+	// Entity Type of entity whose functions should be listed: worker or channel
 	Entity *string `form:"entity,omitempty" json:"entity,omitempty" yaml:"entity,omitempty"`
 
-	// Id ID of the entity used to identify the worker whose functions should be listed
+	// Id ID of the worker or channel whose functions should be listed
 	Id *string `form:"id,omitempty" json:"id,omitempty" yaml:"id,omitempty"`
 
 	// Where The specified string is an expression for the purpose of filtering
@@ -20475,7 +20475,7 @@ type UploadUnitDataParams struct {
 
 // GetUnitDiffParams defines parameters for GetUnitDiff.
 type GetUnitDiffParams struct {
-	// From The Revision on the From side: a number, a Revision ID, HeadRevisionNum, LastReleasedRevisionNum, Tag:<id>, ChangeSet:<id>, or ChangeOrder:<id>, any of them optionally prefixed with Before:.
+	// From The Revision on the From side: a number, a Revision ID, HeadRevisionNum, LastReleasedRevisionNum, Tag:<id>, ChangeSet:<id>, ChangeOrder:<id>, or Release:<id> (the Revision the Release bundled), any of them optionally prefixed with Before:.
 	From *string `form:"from,omitempty" json:"from,omitempty" yaml:"from,omitempty"`
 
 	// To The Revision on the To side, in the same syntax as from.
@@ -25236,7 +25236,7 @@ type SearchUnitDiffParams struct {
 	// TriggersPassed When true, return units that pass trigger validation; when false (default), return units that fail. Only applies when where_trigger or trigger_filter is specified.
 	TriggersPassed *bool `form:"triggers_passed,omitempty" json:"triggers_passed,omitempty" yaml:"triggers_passed,omitempty"`
 
-	// From The Revision on the From side: a number, a Revision ID, HeadRevisionNum, LastReleasedRevisionNum, Tag:<id>, ChangeSet:<id>, or ChangeOrder:<id>, any of them optionally prefixed with Before:.
+	// From The Revision on the From side: a number, a Revision ID, HeadRevisionNum, LastReleasedRevisionNum, Tag:<id>, ChangeSet:<id>, ChangeOrder:<id>, or Release:<id> (the Revision the Release bundled), any of them optionally prefixed with Before:.
 	From *string `form:"from,omitempty" json:"from,omitempty" yaml:"from,omitempty"`
 
 	// To The Revision on the To side, in the same syntax as from.

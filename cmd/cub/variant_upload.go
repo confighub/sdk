@@ -227,7 +227,7 @@ func init() {
 	variantUploadCmd.Flags().StringVar(&variantUploadArgs.backingUnitSpace, "backing-unit-space", "", "space, by slug, for the backing Units of the bundle's Space and Component documents, which are in no space of their own; required with either")
 	variantUploadCmd.Flags().StringVar(&variantUploadArgs.sourceName, "source-name", "", "ownership name for the Units, Links, and Invocations this upload writes; defaults to --component")
 	variantUploadCmd.Flags().StringVar(&variantUploadArgs.namespace, "namespace", "", "the release namespace: where namespaced resources that name no namespace, and cluster-scoped resources, belong")
-	variantUploadCmd.Flags().BoolVar(&variantUploadArgs.createNamespace, "create-namespace", false, "synthesize the release Namespace resource if the bundle does not contain it")
+	variantUploadCmd.Flags().BoolVar(&variantUploadArgs.createNamespace, "create-namespace", false, "synthesize the release Namespace resource if the bundle does not contain it and it is not built in (default, kube-system, ...)")
 	variantUploadCmd.Flags().StringVar(&variantUploadArgs.target, "target", "", "target for the created Units, in <target-slug> or <space-slug>/<target-slug> form")
 	variantUploadCmd.Flags().StringSliceVar(&variantUploadArgs.spaceLabels, "space-label", nil, "label key=value to set on the Space (repeatable); it may not name a label another flag sets, such as Component")
 	variantUploadCmd.Flags().StringSliceVar(&variantUploadArgs.labels, "unit-label", nil, "label key=value to set on every written Unit (repeatable)")

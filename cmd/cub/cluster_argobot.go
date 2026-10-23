@@ -309,9 +309,8 @@ type clusterArgobotOptions struct {
 // account's user the access live-status reporting needs), and the Channel
 // argobot listens on is created in the cluster Space, subscribed to the
 // Target's deploys and claimable by that service account. The argobot
-// Deployment runs in the default kubernetes sync mode — it patches an
-// Application's refresh annotation via the in-cluster ServiceAccount, needing
-// no Argo CD API token.
+// Deployment patches an Application's refresh annotation via the in-cluster
+// ServiceAccount, needing no Argo CD API token.
 //
 // It creates argobot's units and publishes argobot's own variant Release. The
 // child Argo Application Unit that makes argobot live is created in the apps
@@ -426,7 +425,7 @@ func clusterInstallArgobot(out io.Writer, o clusterArgobotOptions) error {
 			argobotSpace, argobotSpace, channelRef)
 		return nil
 	}
-	fmt.Fprintf(out, "argobot installed: variant %q, Argo app %q, channel %q (kubernetes sync mode)\n",
+	fmt.Fprintf(out, "argobot installed: variant %q, Argo app %q, channel %q\n",
 		argobotSpace, argobotSpace, channelRef)
 	return nil
 }

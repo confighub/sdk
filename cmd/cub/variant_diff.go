@@ -41,11 +41,12 @@ Each side has to name something that picks out a Revision in every Unit of the s
   Before:ChangeSet:<slug>        the state it started from
   ChangeOrder:<slug>             where the change arrived
   Before:ChangeOrder:<slug>      the state before it
+  Release:<number>               the Revision that Release bundled
   HeadRevisionNum                each Unit's head Revision
 
-A Unit with no Revision carrying the Tag is absent on that side rather than falling back
-to its head, so it shows as a whole addition or removal and is labeled "absent". That is
-where this differs from `+"`cub release publish --revision`"+`, which selects the same
+A Unit with no Revision carrying the Tag, or bundled into the Release, is absent on that
+side rather than falling back to its head, so it shows as a whole addition or removal and
+is labeled "absent". That is where this differs from `+"`cub release publish --revision`"+`, which selects the same
 Revision but has to bundle something for every Unit, and so falls back.
 
 A revision number, a delta from head, a Revision ID and LastReleasedRevisionNum each pick
@@ -119,7 +120,7 @@ const (
 
 // variantDiffRevisionForms says what each side of the diff can name, for the error when it
 // names something else.
-const variantDiffRevisionForms = "name a Tag, a ChangeSet or a ChangeOrder -- optionally prefixed with Before: for the two that bound an interval -- or HeadRevisionNum"
+const variantDiffRevisionForms = "name a Tag, a ChangeSet or a ChangeOrder -- optionally prefixed with Before: for the two that bound an interval -- a Release, or HeadRevisionNum"
 
 // variantDiffHead is the one named revision a variant diff accepts, and the default for the
 // to side. It needs no predicate of its own: a Unit's head is its highest-numbered Revision,
@@ -166,6 +167,19 @@ func parseVariantDiffRevision(revisionSpec string) (string, error) {
 	if !perUnit {
 		return "", errors.Newf("invalid revision '%s': %s, since a variant diff selects a Revision in every Unit of the space",
 			revisionSpec, variantDiffRevisionForms)
+	}
+
+	// A Release is selected by the Revisions it bundled, as a Tag is by the ones it marks, and
+	// like a Tag it has no predicate for the Revision before each of them.
+	if entityType == "Release" {
+		if strings.HasPrefix(revisionSpec, "Before:") {
+			return "", errors.Newf("invalid revision '%s': %s", revisionSpec, variantDiffRevisionForms)
+		}
+		releaseID, err := resolveReleaseIDIn(selectedSpaceID, identifier)
+		if err != nil {
+			return "", errors.Wrapf(err, "failed to parse release '%s'", identifier)
+		}
+		return fmt.Sprintf("Release:%s", releaseID), nil
 	}
 
 	// resolveToTag rather than serverResolvedRevision: the selection is made here, by one
@@ -234,8 +248,8 @@ type variantDiffSide struct {
 //
 // HeadRevisionNum needs no predicate of its own: the search endpoint keeps one row per
 // Unit, the highest-numbered, and a Unit's head is its highest-numbered Revision. A Tag
-// carries its own predicate and marks one Revision per Unit, so that dedup is left with
-// nothing to choose between.
+// carries its own predicate and marks one Revision per Unit, as a Release bundles one, so
+// that dedup is left with nothing to choose between.
 //
 // Both terms have to be ones the database evaluates. A term reaching through the Revision's
 // UnitID reference, "RevisionNum = Unit.HeadRevisionNum", is evaluated in memory over the
@@ -245,6 +259,9 @@ type variantDiffSide struct {
 func variantDiffRevisionWhere(spaceID uuid.UUID, revisionSpec string) string {
 	if revisionSpec == variantDiffHead {
 		return fmt.Sprintf("SpaceID = '%s'", spaceID)
+	}
+	if releaseID, ok := strings.CutPrefix(revisionSpec, "Release:"); ok {
+		return fmt.Sprintf("SpaceID = '%s' AND Releases ? '%s'", spaceID, releaseID)
 	}
 	return fmt.Sprintf("SpaceID = '%s' AND Tags ? '%s'", spaceID, strings.TrimPrefix(revisionSpec, "Tag:"))
 }

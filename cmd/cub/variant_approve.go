@@ -51,8 +51,8 @@ unit. --where narrows the units further. The revision of each is the head, or wi
 tag marks -- the revision its end tag marks, for a unit the release tag does not mark --
 so one approval satisfies both the change order's entry gates and its release gates. Or
 --revision: a number,
-LastReleasedRevisionNum, Tag:<tag>, ChangeSet:<changeset> or ChangeOrder:<changeorder>,
-optionally prefixed with Before:. A unit with no such revision is reported and skipped.
+LastReleasedRevisionNum, Tag:<tag>, ChangeSet:<changeset>, ChangeOrder:<changeorder> or
+Release:<release-number>, optionally prefixed with Before:. A unit with no such revision is reported and skipped.
 
 --reject records a rejection instead, and --note says why.
 

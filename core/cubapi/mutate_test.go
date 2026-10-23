@@ -107,6 +107,24 @@ func TestInvokeFunctionDryRunWiring(t *testing.T) {
 	}
 }
 
+// A Unit's failure keeps the reasons the server gave, not only its summary.
+func TestInvokeFunctionFailureDetails(t *testing.T) {
+	body := `[{"UnitSlug":"base","SpaceSlug":"prod","Success":false,"Error":{"Message":"Function invocations failed","Details":["apps/v1/Deployment default/web: could not read the pod spec"]}}]`
+	var cap mutCapture
+	c := invokeServer(t, &cap, body, "")
+
+	res, err := InvokeFunction(context.Background(), c,
+		api.FunctionInvocation{FunctionName: "vet-pod-security-standard", Arguments: []api.FunctionArgument{{Value: "restricted"}}},
+		Selector{Where: "Slug = 'base'"}, Change{})
+	if err != nil {
+		t.Fatalf("InvokeFunction: %v", err)
+	}
+	want := "Function invocations failed: apps/v1/Deployment default/web: could not read the pod spec"
+	if len(res.Outcomes) != 1 || res.Outcomes[0].Success || res.Outcomes[0].Error != want {
+		t.Fatalf("outcomes = %+v, want one failure with error %q", res.Outcomes, want)
+	}
+}
+
 func TestInvokeFunctionCommitWiring(t *testing.T) {
 	var cap mutCapture
 	c := invokeServer(t, &cap, `[{"UnitSlug":"checkout","Success":true}]`, "")

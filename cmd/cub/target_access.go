@@ -26,9 +26,10 @@ import (
 )
 
 var targetAccessArgs struct {
-	ttl    string
-	output string
-	worker string
+	ttl     string
+	output  string
+	worker  string
+	channel string
 }
 
 var targetAccessCmd = &cobra.Command{
@@ -39,24 +40,25 @@ Request temporary kubectl access by invoking the generate-kubecontext
 function on an access policy unit assigned to a target. The unit must
 contain a ServiceAccount with the confighub.com/generate-kubecontext: allow
 annotation and must have been published in a Release for the target. The
-function runs on the worker named by --worker: a worker process you run in
-the cluster that serves generate-kubecontext, since ConfigHub itself holds no
-credentials to the cluster.
+function runs on the client of the channel named by --channel, or on the
+worker named by --worker: a process you run in the cluster that serves
+generate-kubecontext, since ConfigHub itself holds no credentials to the
+cluster.
 
 The resulting kubeconfig is encrypted end-to-end — the ConfigHub server
 never sees the credentials.`, `
   # Print kubeconfig to stdout
-  cub target access --space infra my-cluster access-readonly --worker my-cluster-worker
+  cub target access --space infra my-cluster access-readonly --channel my-cluster-access
 
   # Save to a file and use with kubectl
-  cub target access --space infra my-cluster access-readonly --worker my-cluster-worker --output ~/.kube/confighub-prod
+  cub target access --space infra my-cluster access-readonly --channel my-cluster-access --output ~/.kube/confighub-prod
   kubectl --kubeconfig ~/.kube/confighub-prod get pods
 
   # Pipe directly
-  cub target access --space infra my-cluster access-readonly --worker my-cluster-worker | kubectl --kubeconfig /dev/stdin get pods
+  cub target access --space infra my-cluster access-readonly --channel my-cluster-access | kubectl --kubeconfig /dev/stdin get pods
 
   # Request a shorter TTL
-  cub target access --space infra my-cluster access-readonly --worker my-cluster-worker --ttl 30m`),
+  cub target access --space infra my-cluster access-readonly --channel my-cluster-access --ttl 30m`),
 	Args:    cobra.ExactArgs(2),
 	PreRunE: spacePreRunE,
 	RunE:    targetAccessRun,
@@ -66,7 +68,9 @@ func init() {
 	targetAccessCmd.Flags().StringVar(&targetAccessArgs.ttl, "ttl", "", "requested token TTL (e.g., 30m, 1h); capped by the policy's max-ttl")
 	targetAccessCmd.Flags().StringVar(&targetAccessArgs.output, "output", "", "write kubeconfig to this file instead of stdout")
 	targetAccessCmd.Flags().StringVar(&targetAccessArgs.worker, "worker", "", "slug or ID of the worker running in the cluster, which runs generate-kubecontext")
-	_ = targetAccessCmd.MarkFlagRequired("worker")
+	targetAccessCmd.Flags().StringVar(&targetAccessArgs.channel, "channel", "", "slug or ID of the channel whose client runs in the cluster and serves generate-kubecontext")
+	targetAccessCmd.MarkFlagsOneRequired("worker", "channel")
+	targetAccessCmd.MarkFlagsMutuallyExclusive("worker", "channel")
 	enableOptionalSpace(targetAccessCmd)
 	targetCmd.AddCommand(targetAccessCmd)
 }
@@ -120,16 +124,25 @@ func targetAccessRun(cmd *cobra.Command, args []string) error {
 		},
 	}
 
-	worker, err := resolveWorker(targetAccessArgs.worker, selectedSpaceID, idSelect("BridgeWorkerID"))
-	if err != nil {
-		return fmt.Errorf("worker %q not found: %w", targetAccessArgs.worker, err)
-	}
-	workerID := goclientnew.UUID(worker.BridgeWorker.BridgeWorkerID)
 	whereClause := fmt.Sprintf("Slug = '%s'", unitSlug)
 	req := goclientnew.FunctionInvocationsRequest{
 		ToolchainType:       "Kubernetes/YAML",
-		BridgeWorkerID:      &workerID,
 		FunctionInvocations: &invocations,
+	}
+	if targetAccessArgs.channel != "" {
+		channel, err := resolveChannel(targetAccessArgs.channel, selectedSpaceID, idSelect("ChannelID"))
+		if err != nil {
+			return fmt.Errorf("channel %q not found: %w", targetAccessArgs.channel, err)
+		}
+		channelID := channel.Channel.ChannelID
+		req.ChannelID = &channelID
+	} else {
+		worker, err := resolveWorker(targetAccessArgs.worker, selectedSpaceID, idSelect("BridgeWorkerID"))
+		if err != nil {
+			return fmt.Errorf("worker %q not found: %w", targetAccessArgs.worker, err)
+		}
+		workerID := goclientnew.UUID(worker.BridgeWorker.BridgeWorkerID)
+		req.BridgeWorkerID = &workerID
 	}
 
 	params := &goclientnew.InvokeFunctionsParams{
