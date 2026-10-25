@@ -37,10 +37,23 @@ const DefaultToolchainType = "Kubernetes/YAML"
 type Change struct {
 	// Description is recorded with the change on commit. Empty means dry-run.
 	Description string
+	// Diff asks the server what the change does to each Unit, path by path with
+	// the values on both sides -- on a dry run, what it would do -- returned as
+	// [UnitOutcome.Diff].
+	Diff bool
 }
 
 // DryRun reports whether this is a preview (no Description).
 func (ch Change) DryRun() bool { return ch.Description == "" }
+
+// include is the request's include for what ch asks the server to return.
+func (ch Change) include() *string {
+	if !ch.Diff {
+		return nil
+	}
+	include := "Diff"
+	return &include
+}
 
 // Selector scopes a mutation to a set of units using the org-level endpoints.
 // Where is required for org-wide invocation and bulk patch.
@@ -132,8 +145,12 @@ type UnitOutcome struct {
 	Success      bool
 	Error        string
 	HasMutations bool
-	// Mutations carries the (old -> new) diffs for rendering, when present.
+	// Mutations records which paths the change set, when present. What it set them
+	// from and to is Diff.
 	Mutations *goclientnew.ResourceMutationList
+	// Diff is what the change did to the Unit, or on a dry run would do, when
+	// [Change.Diff] asked for it.
+	Diff *goclientnew.ConfigDiff
 	// Outputs holds function output types mapped to embedded-JSON output data
 	// (e.g. the result of a read-only function like get-resources).
 	Outputs map[string]string
@@ -160,12 +177,24 @@ func (r *Result) Failed() []UnitOutcome {
 // dry-run preview or a commit per ch. It also serves read-only functions (e.g.
 // get-resources): inspect [UnitOutcome.Outputs] on the result.
 func InvokeFunction(ctx context.Context, c *Client, fn api.FunctionInvocation, sel Selector, ch Change) (*Result, error) {
+	return InvokeFunctions(ctx, c, []api.FunctionInvocation{fn}, sel, ch)
+}
+
+// InvokeFunctions runs several functions over the units matching sel in one
+// request, each on the output of the one before. Each Unit gets one Revision for
+// all of them on commit, and on a dry run one preview of their combined effect,
+// rather than one per function run on its own.
+func InvokeFunctions(ctx context.Context, c *Client, fns []api.FunctionInvocation, sel Selector, ch Change) (*Result, error) {
 	req := baseRequest(sel, ch)
-	req.FunctionInvocations = &[]goclientnew.FunctionInvocation{{
-		FunctionName:  fn.FunctionName,
-		Arguments:     Arguments(fn.Arguments),
-		WhereResource: fn.WhereResource,
-	}}
+	invocations := make([]goclientnew.FunctionInvocation, 0, len(fns))
+	for _, fn := range fns {
+		invocations = append(invocations, goclientnew.FunctionInvocation{
+			FunctionName:  fn.FunctionName,
+			Arguments:     Arguments(fn.Arguments),
+			WhereResource: fn.WhereResource,
+		})
+	}
+	req.FunctionInvocations = &invocations
 	return invoke(ctx, c, sel, ch, req)
 }
 
@@ -209,6 +238,7 @@ func invoke(ctx context.Context, c *Client, sel Selector, ch Change, req goclien
 		dryRun := "true"
 		params.DryRun = &dryRun
 	}
+	params.Include = ch.include()
 
 	res, err := c.API.InvokeFunctionsOnOrgWithResponse(ctx, params, req)
 	if IsAPIError(err, res) {
@@ -232,6 +262,7 @@ func invoke(ctx context.Context, c *Client, sel Selector, ch Change, req goclien
 				HasMutations: fr.HasNewMutations,
 				Mutations:    fr.Mutations,
 				Outputs:      fr.Outputs,
+				Diff:         fr.Diff,
 			})
 		}
 	}
@@ -252,6 +283,7 @@ func UpgradeUnits(ctx context.Context, c *Client, where string, ch Change) (*Res
 		dryRun := true
 		params.DryRun = &dryRun
 	}
+	params.Include = ch.include()
 
 	// On commit, record the change description via a merge patch; on dry-run the
 	// patch is empty.
@@ -276,7 +308,7 @@ func UpgradeUnits(ctx context.Context, c *Client, where string, ch Change) (*Res
 	if responses != nil {
 		for i := range *responses {
 			ur := &(*responses)[i]
-			oc := UnitOutcome{Success: ur.Error == nil, Error: errString(ur.Error)}
+			oc := UnitOutcome{Success: ur.Error == nil, Error: errString(ur.Error), Diff: ur.Diff}
 			if ur.Unit != nil {
 				oc.UnitID = ur.Unit.UnitID.String()
 				oc.SpaceID = ur.Unit.SpaceID.String()

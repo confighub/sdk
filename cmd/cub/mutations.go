@@ -180,16 +180,6 @@ func displayMutationEntries(mutations *goclientnew.ResourceMutationList, mutatio
 	}
 }
 
-// trimMutationValue cleans up a mutation value for display.
-func trimMutationValue(value string) string {
-	return strings.TrimRight(value, "\n")
-}
-
-// indentMultiline adds indent to each line of a potentially multi-line string.
-func indentMultiline(s, indent string) string {
-	return indent + strings.ReplaceAll(s, "\n", "\n"+indent)
-}
-
 // mutationTypeSymbol returns a colored symbol for a mutation type.
 func mutationTypeSymbol(mt goclientnew.MutationType) string {
 	switch mt {

@@ -4,6 +4,7 @@
 package kubernetes
 
 import (
+	"fmt"
 	"strings"
 	"testing"
 
@@ -222,4 +223,67 @@ func TestVetPodSecurityStandard_InvalidArguments(t *testing.T) {
 	assert.ErrorContains(t, err, `invalid level "strict"`)
 	_, _, err = k8sFnVetPodSecurityStandard(testResourceProvider, docs, "baseline", "1.30", nil)
 	assert.ErrorContains(t, err, `invalid version "1.30"`)
+}
+
+// withLabels puts labels on a manifest's own metadata, right after its name.
+func withLabels(manifest, name string, labels map[string]string) string {
+	block := "  labels:\n"
+	for k, v := range labels {
+		block += fmt.Sprintf("    %s: %q\n", k, v)
+	}
+	return strings.Replace(manifest, "  name: "+name+"\n", "  name: "+name+"\n"+block, 1)
+}
+
+// Without a level, each workload is held to its own enforce label, as on its namespace, and one
+// without the label is not checked.
+func TestVetPodSecurityStandard_LevelFromWorkloadLabels(t *testing.T) {
+	restrictedWeb := withLabels(podSecurityPlainDeployment, "web", map[string]string{podSecurityEnforceLabel: "restricted"})
+	baselineWeb := withLabels(podSecurityPlainDeployment, "web", map[string]string{podSecurityEnforceLabel: "baseline"})
+
+	vr := vetPodSecurity(t, restrictedWeb, "", "")
+	assert.False(t, vr.Passed)
+	require.Len(t, vr.FailedAttributes, 1)
+	assert.Contains(t, issueMessages(vr), `violates PodSecurity "restricted:latest"`)
+
+	vr = vetPodSecurity(t, baselineWeb, "", "")
+	assert.True(t, vr.Passed, issueMessages(vr))
+
+	vr = vetPodSecurity(t, podSecurityPlainDeployment, "", "")
+	assert.True(t, vr.Passed, "an unlabeled workload is not checked")
+
+	// Only the labeled workload is checked when a Unit holds several.
+	vr = vetPodSecurity(t, restrictedWeb+"---\n"+podSecurityPrivilegedDaemonSet, "", "")
+	require.Len(t, vr.FailedAttributes, 1)
+	assert.Equal(t, api.ResourceName("/web"), vr.FailedAttributes[0].ResourceName)
+
+	// A level given overrides the labels.
+	vr = vetPodSecurity(t, restrictedWeb, "baseline", "")
+	assert.True(t, vr.Passed, issueMessages(vr))
+}
+
+func TestVetPodSecurityStandard_VersionFromWorkloadLabel(t *testing.T) {
+	web := withLabels(podSecurityPlainDeployment, "web", map[string]string{
+		podSecurityEnforceLabel:        "restricted",
+		podSecurityEnforceVersionLabel: "v1.30",
+	})
+	vr := vetPodSecurity(t, web, "", "")
+	assert.False(t, vr.Passed)
+	assert.Contains(t, issueMessages(vr), `violates PodSecurity "restricted:v1.30"`)
+}
+
+// A label that names no level fails that workload, saying which label, rather than the invocation.
+func TestVetPodSecurityStandard_InvalidWorkloadLabel(t *testing.T) {
+	for _, tc := range []struct {
+		labels map[string]string
+		path   string
+	}{
+		{map[string]string{podSecurityEnforceLabel: "strict"}, "metadata.labels.pod-security~1kubernetes~1io/enforce"},
+		{map[string]string{podSecurityEnforceLabel: "baseline", podSecurityEnforceVersionLabel: "1.30"}, "metadata.labels.pod-security~1kubernetes~1io/enforce-version"},
+	} {
+		vr := vetPodSecurity(t, withLabels(podSecurityPlainDeployment, "web", tc.labels), "", "")
+		assert.False(t, vr.Passed)
+		require.Len(t, vr.FailedAttributes, 1)
+		assert.Equal(t, api.ResolvedPath(tc.path), vr.FailedAttributes[0].Path)
+		assert.Equal(t, api.ResourceName("/web"), vr.FailedAttributes[0].ResourceName)
+	}
 }

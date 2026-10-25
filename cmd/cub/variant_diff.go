@@ -295,17 +295,13 @@ func variantMutationsDiff(space *goclientnew.Space, units []*goclientnew.Unit, s
 	if selectionWhere != "" {
 		whereClause = selectionWhere + " AND " + whereClause
 	}
-	params := &goclientnew.SearchUnitDiffParams{Where: &whereClause, From: &from.revision, To: &to.revision,
-		Include: diffContextInclude(variantDiffArgs.context)}
-	res, err := cubClientNew.SearchUnitDiffWithResponse(ctx, params)
-	if cubapi.IsAPIError(err, res) {
-		return cubapi.InterpretErrorGeneric(err, res)
+	results, err := cubapi.SearchUnitDiffs(ctx, cubClient, whereClause, from.revision, to.revision, variantDiffArgs.context)
+	if err != nil {
+		return err
 	}
 	diffs := map[uuid.UUID]*goclientnew.UnitDiff{}
-	if res.JSON200 != nil {
-		for i := range *res.JSON200 {
-			diffs[(*res.JSON200)[i].UnitID] = &(*res.JSON200)[i]
-		}
+	for i := range results {
+		diffs[results[i].UnitID] = &results[i]
 	}
 
 	changed, unchanged, absent := 0, 0, 0

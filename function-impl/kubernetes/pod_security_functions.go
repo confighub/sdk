@@ -38,8 +38,8 @@ func registerPodSecurityFunctions(fh handler.FunctionRegistry, rp *k8skit.K8sRes
 			Parameters: []api.FunctionParameter{
 				{
 					ParameterName: "level",
-					Required:      true,
-					Description:   `Pod Security Standard level the workloads must meet: "privileged", "baseline", or "restricted"`,
+					Required:      false,
+					Description:   `Pod Security Standard level every workload must meet: "privileged", "baseline", or "restricted". Omitted, each workload is checked at the level in its own pod-security.kubernetes.io/enforce label, and a workload without one is not checked`,
 					DataType:      api.DataTypeString,
 					ValueConstraints: api.ValueConstraints{EnumValues: []string{
 						string(psaapi.LevelPrivileged), string(psaapi.LevelBaseline), string(psaapi.LevelRestricted),
@@ -48,11 +48,11 @@ func registerPodSecurityFunctions(fh handler.FunctionRegistry, rp *k8skit.K8sRes
 				{
 					ParameterName: "version",
 					Required:      false,
-					Description:   `Version of the standard to check against, as in the pod-security.kubernetes.io/enforce-version label: "latest" (the default) or a Kubernetes minor version such as "v1.30"`,
+					Description:   `Version of the standard to check against, as in the pod-security.kubernetes.io/enforce-version label: "latest" (the default) or a Kubernetes minor version such as "v1.30". A workload's own enforce-version label takes precedence when level is omitted`,
 					DataType:      api.DataTypeString,
 				},
 			},
-			RequiredParameters: 1,
+			RequiredParameters: 0,
 			OutputInfo: &api.FunctionOutput{
 				ResultName:  "passed",
 				Description: "True if every workload meets the level, false otherwise",
@@ -63,9 +63,11 @@ func registerPodSecurityFunctions(fh handler.FunctionRegistry, rp *k8skit.K8sRes
 			Validating: true,
 			Hermetic:   true,
 			Idempotent: true,
-			Description: "Validates that every pod template in the configuration meets the specified Pod Security " +
-				"Standard level (https://kubernetes.io/docs/concepts/security/pod-security-standards/), " +
-				"using the same checks the PodSecurity admission controller applies. Passes when there are no workloads.",
+			Description: "Validates that every pod template in the configuration meets a Pod Security Standard level " +
+				"(https://kubernetes.io/docs/concepts/security/pod-security-standards/), using the same checks the " +
+				"PodSecurity admission controller applies: the level given, or without one, the level in each workload's own " +
+				"pod-security.kubernetes.io/enforce label, as on its namespace, so one Trigger can hold every workload to " +
+				"its namespace's level. Passes when there are no workloads, or none to check.",
 			FunctionType:          api.FunctionTypeCustom,
 			AffectedResourceTypes: k8skit.PodSpecResourceTypes(),
 		},
@@ -90,11 +92,14 @@ func registerPodSecurityFunctions(fh handler.FunctionRegistry, rp *k8skit.K8sRes
 	}
 }
 
+// The labels that set a namespace's Pod Security Standard level. On a workload they say which level
+// it is held to when vet-pod-security-standard is given none.
+const (
+	podSecurityEnforceLabel        = "pod-security.kubernetes.io/enforce"
+	podSecurityEnforceVersionLabel = "pod-security.kubernetes.io/enforce-version"
+)
+
 func k8sFnVetPodSecurityStandard(rp *k8skit.K8sResourceProviderType, parsedData gaby.Container, levelArg, versionArg string, options *api.FunctionOptions) (gaby.Container, any, error) {
-	level, err := psaapi.ParseLevel(levelArg)
-	if err != nil {
-		return parsedData, nil, errors.Wrapf(err, "invalid level %q", levelArg)
-	}
 	if versionArg == "" {
 		versionArg = "latest"
 	}
@@ -102,7 +107,15 @@ func k8sFnVetPodSecurityStandard(rp *k8skit.K8sResourceProviderType, parsedData 
 	if err != nil {
 		return parsedData, nil, errors.Wrapf(err, "invalid version %q", versionArg)
 	}
-	lv := psaapi.LevelVersion{Level: level, Version: version}
+	// With a level, every workload is held to it; without one, each is held to its own label.
+	var fixed *psaapi.LevelVersion
+	if levelArg != "" {
+		level, err := psaapi.ParseLevel(levelArg)
+		if err != nil {
+			return parsedData, nil, errors.Wrapf(err, "invalid level %q", levelArg)
+		}
+		fixed = &psaapi.LevelVersion{Level: level, Version: version}
+	}
 	evaluator, err := podSecurityEvaluator()
 	if err != nil {
 		return parsedData, nil, errors.Wrap(err, "failed to build the Pod Security Standards checks")
@@ -111,9 +124,27 @@ func k8sFnVetPodSecurityStandard(rp *k8skit.K8sResourceProviderType, parsedData 
 	result := api.ValidationResult{Passed: true}
 	_, err = yamlkit.VisitResourcesFiltered(parsedData, &result, rp, options, func(doc *gaby.YamlDoc, output any, index int, resourceInfo *api.ResourceInfo) (any, []error) {
 		vr := output.(*api.ValidationResult)
+		podSpecPaths := k8skit.PodSpecPaths(resourceInfo.ResourceType)
+		if len(podSpecPaths) == 0 {
+			return vr, nil
+		}
+		lv := fixed
+		if lv == nil {
+			labeled, invalid := labeledLevel(doc, version)
+			if invalid != nil {
+				vr.Passed = false
+				invalid.ResourceInfo = *resourceInfo
+				vr.FailedAttributes = append(vr.FailedAttributes, *invalid)
+				return vr, nil
+			}
+			if labeled == nil {
+				return vr, nil
+			}
+			lv = labeled
+		}
 		var errs []error
-		for _, podSpecPath := range k8skit.PodSpecPaths(resourceInfo.ResourceType) {
-			issues, found, err := evaluatePodSecurity(evaluator, lv, doc, podSpecPath)
+		for _, podSpecPath := range podSpecPaths {
+			issues, found, err := evaluatePodSecurity(evaluator, *lv, doc, podSpecPath)
 			if err != nil {
 				errs = append(errs, errors.Wrapf(err, "%s %s", resourceInfo.ResourceType, resourceInfo.ResourceName))
 				continue
@@ -142,9 +173,46 @@ func k8sFnVetPodSecurityStandard(rp *k8skit.K8sResourceProviderType, parsedData 
 	return parsedData, result, nil
 }
 
+// labeledLevel is the level and version a workload's own labels hold it to, or nil when it has
+// no enforce label. A label whose value is not a level or version is returned as a failed
+// attribute naming it, without the ResourceInfo the caller fills in.
+func labeledLevel(doc *gaby.YamlDoc, defaultVersion psaapi.Version) (*psaapi.LevelVersion, *api.AttributeValue) {
+	labelValue := func(key string) (string, bool) {
+		value, ok := doc.Search("metadata", "labels", key).Data().(string)
+		return value, ok
+	}
+	invalid := func(key, value, why string) *api.AttributeValue {
+		return &api.AttributeValue{
+			AttributeInfo: api.AttributeInfo{
+				AttributeIdentifier: api.AttributeIdentifier{
+					Path: api.ResolvedPath("metadata.labels." + yamlkit.EscapeDotsInPathSegment(key)),
+				},
+				AttributeMetadata: api.AttributeMetadata{AttributeName: api.AttributeNameNone},
+			},
+			Value:  value,
+			Issues: []api.Issue{{Identifier: "invalid " + key, Message: fmt.Sprintf("label %s=%q %s", key, value, why)}},
+		}
+	}
+	levelValue, ok := labelValue(podSecurityEnforceLabel)
+	if !ok {
+		return nil, nil
+	}
+	level, err := psaapi.ParseLevel(levelValue)
+	if err != nil {
+		return nil, invalid(podSecurityEnforceLabel, levelValue, err.Error())
+	}
+	version := defaultVersion
+	if versionValue, ok := labelValue(podSecurityEnforceVersionLabel); ok {
+		if version, err = psaapi.ParseVersion(versionValue); err != nil {
+			return nil, invalid(podSecurityEnforceVersionLabel, versionValue, err.Error())
+		}
+	}
+	return &psaapi.LevelVersion{Level: level, Version: version}, nil
+}
+
 // evaluatePodSecurity checks the PodSpec at podSpecPath and returns one Issue per check it fails,
-// identified by the check's reason and worded as the admission controller words its rejection. found is false when the resource has
-// no PodSpec there.
+// identified by the check's reason and worded as the admission controller words its rejection.
+// found is false when the resource has no PodSpec there.
 func evaluatePodSecurity(evaluator policy.Evaluator, lv psaapi.LevelVersion, doc *gaby.YamlDoc, podSpecPath string) ([]api.Issue, bool, error) {
 	podSpecDoc, found, err := yamlkit.YamlSafePathGetDoc(doc, api.ResolvedPath(podSpecPath), true)
 	if err != nil || !found {

@@ -1,0 +1,41 @@
+SUCCESS    true    
+OUTPUT
+------
+[
+  {
+    "Passed": false,
+    "Index": 0,
+    "FunctionName": "vet-pod-security-standard",
+    "FailedAttributes": [
+      {
+        "ResourceName": "example/mydep",
+        "ResourceNameWithoutScope": "mydep",
+        "ResourceType": "apps/v1/Deployment",
+        "ResourceCategory": "Resource",
+        "Path": "spec.template.spec",
+        "AttributeName": "none",
+        "DataType": "",
+        "Value": "",
+        "Index": 0,
+        "Issues": [
+          {
+            "Identifier": "allowPrivilegeEscalation != false",
+            "Message": "violates PodSecurity \"restricted:latest\": allowPrivilegeEscalation != false (containers \"nginx\", \"otel-sidecar\" must set securityContext.allowPrivilegeEscalation=false)"
+          },
+          {
+            "Identifier": "unrestricted capabilities",
+            "Message": "violates PodSecurity \"restricted:latest\": unrestricted capabilities (containers \"nginx\", \"otel-sidecar\" must set securityContext.capabilities.drop=[\"ALL\"])"
+          },
+          {
+            "Identifier": "runAsNonRoot != true",
+            "Message": "violates PodSecurity \"restricted:latest\": runAsNonRoot != true (pod or containers \"nginx\", \"otel-sidecar\" must set securityContext.runAsNonRoot=true)"
+          },
+          {
+            "Identifier": "seccompProfile",
+            "Message": "violates PodSecurity \"restricted:latest\": seccompProfile (pod or containers \"nginx\", \"otel-sidecar\" must set securityContext.seccompProfile.type to \"RuntimeDefault\" or \"Localhost\")"
+          }
+        ]
+      }
+    ]
+  }
+]

@@ -58,6 +58,9 @@ ${FCTL} do test-data/deployment.yaml "MyDeployment" --data-only -- set-pod-defau
 ${FCTL} do test-data/deployment.yaml "MyDeployment" vet-pod-security-standard restricted > ${DIR}/vet-pod-security-standard-fail.txt
 ${FCTL} do ${DIR}/set-pod-defaults.yaml MyApp vet-pod-security-standard restricted > ${DIR}/vet-pod-security-standard-set-pod-defaults.txt
 ${FCTL} do test-data/configmap.yaml "MyCM" vet-pod-security-standard restricted > ${DIR}/vet-pod-security-standard-no-workloads.txt
+${FCTL} do test-data/deployment.yaml "MyDeployment" --data-only set-label pod-security.kubernetes.io/enforce restricted > ${DIR}/pod-security-labeled.yaml
+${FCTL} do ${DIR}/pod-security-labeled.yaml "MyDeployment" vet-pod-security-standard > ${DIR}/vet-pod-security-standard-from-label.txt
+${FCTL} do test-data/deployment.yaml "MyDeployment" vet-pod-security-standard > ${DIR}/vet-pod-security-standard-unlabeled.txt
 
 # Test new defaulting functions (split from set-pod-defaults)
 ${FCTL} do test-data/namespace.yaml "MyNS" --data-only set-pod-security-defaults > ${DIR}/set-pod-security-defaults.yaml

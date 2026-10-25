@@ -52,6 +52,7 @@ func TestArguments(t *testing.T) {
 type mutCapture struct {
 	method  string
 	dryRun  string
+	include string
 	reqBody []byte
 }
 
@@ -60,6 +61,7 @@ func invokeServer(t *testing.T, cap *mutCapture, invokeBody, patchBody string) *
 	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		cap.method = r.Method
 		cap.dryRun = r.URL.Query().Get("dry_run")
+		cap.include = r.URL.Query().Get("include")
 		cap.reqBody, _ = io.ReadAll(r.Body)
 		w.Header().Set("Content-Type", "application/json")
 		w.WriteHeader(http.StatusOK)
@@ -91,6 +93,9 @@ func TestInvokeFunctionDryRunWiring(t *testing.T) {
 	}
 	if !res.DryRun || cap.dryRun != "true" {
 		t.Fatalf("dryRun result=%v query=%q", res.DryRun, cap.dryRun)
+	}
+	if cap.include != "" {
+		t.Fatalf("include = %q, want none when the Change does not ask for a diff", cap.include)
 	}
 	if len(res.Outcomes) != 1 || res.Outcomes[0].Outputs["resources"] != "[]" {
 		t.Fatalf("outcomes = %+v", res.Outcomes)
@@ -163,6 +168,42 @@ func TestInvokeStoredInvocation(t *testing.T) {
 	}
 }
 
+// Several functions go in one request, in order, and with Diff the preview of
+// their combined effect comes back per Unit.
+func TestInvokeFunctionsAsksForDiff(t *testing.T) {
+	body := `[{"UnitSlug":"web","SpaceSlug":"prod","Success":true,"HasNewMutations":true,` +
+		`"Diff":{"Resources":[{"Resource":{"ResourceType":"apps/v1/Deployment","ResourceName":"prod/web"},"ChangeType":"Update",` +
+		`"Changes":[{"DisplayPath":"spec.replicas","ChangeType":"Update","FromValue":"1","ToValue":"3"}]}]}}]`
+	var cap mutCapture
+	c := invokeServer(t, &cap, body, "")
+
+	res, err := InvokeFunctions(context.Background(), c, []api.FunctionInvocation{
+		{FunctionName: "set-replicas", Arguments: []api.FunctionArgument{{Value: 3}}},
+		{FunctionName: "set-automount-service-account-token-false"},
+	}, Selector{Where: "Slug = 'web'"}, Change{Diff: true})
+	if err != nil {
+		t.Fatalf("InvokeFunctions: %v", err)
+	}
+	if cap.include != "Diff" {
+		t.Fatalf("include = %q, want Diff", cap.include)
+	}
+	var sent goclientnew.FunctionInvocationsRequest
+	if err := json.Unmarshal(cap.reqBody, &sent); err != nil {
+		t.Fatalf("unmarshal: %v", err)
+	}
+	if sent.FunctionInvocations == nil || len(*sent.FunctionInvocations) != 2 ||
+		(*sent.FunctionInvocations)[0].FunctionName != "set-replicas" ||
+		(*sent.FunctionInvocations)[1].FunctionName != "set-automount-service-account-token-false" {
+		t.Fatalf("invocations = %+v, want both functions in order", sent.FunctionInvocations)
+	}
+	if len(res.Outcomes) != 1 || res.Outcomes[0].Diff == nil || len(res.Outcomes[0].Diff.Resources) != 1 {
+		t.Fatalf("outcomes = %+v, want one with the server's diff", res.Outcomes)
+	}
+	if change := res.Outcomes[0].Diff.Resources[0].Changes[0]; change.DisplayPath != "spec.replicas" || change.ToValue != "3" {
+		t.Fatalf("change = %+v", change)
+	}
+}
+
 func TestUpgradeUnits(t *testing.T) {
 	var cap mutCapture
 	c := invokeServer(t, &cap, "", `[{"Unit":{"Slug":"checkout","SpaceSlug":"prod"}},{"Error":{"Message":"conflict"}}]`)
@@ -178,5 +219,23 @@ func TestUpgradeUnits(t *testing.T) {
 	}
 	if failed := res.Failed(); len(failed) != 1 || failed[0].Error != "conflict" {
 		t.Fatalf("failed = %+v", failed)
+	}
+	if cap.include != "" {
+		t.Fatalf("include = %q, want none when the Change does not ask for a diff", cap.include)
+	}
+}
+
+func TestUpgradeUnitsDiff(t *testing.T) {
+	var cap mutCapture
+	c := invokeServer(t, &cap, "", `[{"Unit":{"Slug":"checkout","SpaceSlug":"prod"},"Diff":{"Resources":[]}}]`)
+	res, err := UpgradeUnits(context.Background(), c, "Slug = 'checkout'", Change{Diff: true})
+	if err != nil {
+		t.Fatalf("UpgradeUnits: %v", err)
+	}
+	if cap.include != "Diff" || cap.dryRun != "true" {
+		t.Fatalf("include = %q dry_run = %q, want Diff on a dry run", cap.include, cap.dryRun)
+	}
+	if len(res.Outcomes) != 1 || res.Outcomes[0].Diff == nil {
+		t.Fatalf("outcomes = %+v, want the server's diff", res.Outcomes)
 	}
 }
