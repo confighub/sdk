@@ -454,3 +454,60 @@ func TestKubernetesPathSupport(t *testing.T) {
 		})
 	}
 }
+
+// A term can test whether a path selects anything, which is how a Trigger's WhereResource
+// skips the resources carrying an exception annotation.
+func TestWhereNullTests(t *testing.T) {
+	for _, tc := range []struct {
+		input    string
+		operator string
+		path     string
+	}{
+		{"metadata.annotations.exceptions~1guardrails~1confighub~1com/no-rbac-wildcards IS NULL", OperatorIsNull, "metadata.annotations.exceptions~1guardrails~1confighub~1com/no-rbac-wildcards"},
+		{"spec.template IS NOT NULL", OperatorIsNotNull, "spec.template"},
+		{"metadata.labels.app IS   NOT\tNULL", OperatorIsNotNull, "metadata.labels.app"},
+	} {
+		exprs, err := ParseAndValidateWhereResource(tc.input)
+		require.NoError(t, err, tc.input)
+		require.Len(t, exprs, 1, tc.input)
+		assert.Equal(t, tc.operator, exprs[0].Operator, tc.input)
+		assert.Equal(t, tc.path, exprs[0].Path, tc.input)
+		assert.True(t, exprs[0].IsNullTest(), tc.input)
+	}
+
+	// Null tests conjoin with comparisons, in either order.
+	exprs, err := ParseAndValidateWhereResource("kind = 'ClusterRole' AND metadata.annotations.team IS NULL AND ConfigHub.ResourceType = 'rbac.authorization.k8s.io/v1/ClusterRole'")
+	require.NoError(t, err)
+	require.Len(t, exprs, 3)
+	assert.Equal(t, "=", exprs[0].Operator)
+	assert.Equal(t, OperatorIsNull, exprs[1].Operator)
+	assert.False(t, exprs[2].IsNullTest())
+
+	// Any path WhereResource takes can be tested.
+	for _, input := range []string{"ConfigHub.ResourceType IS NOT NULL", "spec.template.spec.containers.*.securityContext IS NULL"} {
+		exprs, err := ParseAndValidateWhereResource(input)
+		require.NoError(t, err, input)
+		require.Len(t, exprs, 1, input)
+		assert.True(t, exprs[0].IsNullTest(), input)
+	}
+
+	for _, bad := range []string{
+		"metadata.annotations.team IS NULLX", // not the operator
+		"metadata.annotations.team IS NULLAND kind = 'x'",
+		"metadata.annotations.team IS NULL kind = 'x'", // no AND
+	} {
+		_, err := ParseAndValidateWhereResource(bad)
+		assert.Error(t, err, bad)
+	}
+
+	// Every where filter takes them, split paths included; the import filter does not.
+	exprs, err = ParseAndValidateWhereFilter("spec.containers.*.|securityContext IS NULL AND kind = 'Deployment'")
+	require.NoError(t, err)
+	require.Len(t, exprs, 2)
+	assert.True(t, exprs[0].IsSplitPath)
+	assert.Equal(t, "spec.containers.*", exprs[0].VisitorPath)
+	assert.Equal(t, "securityContext", exprs[0].SubPath)
+	assert.Equal(t, OperatorIsNull, exprs[0].Operator)
+	_, err = ParseAndValidateWhereFilterForImport("metadata.namespace IS NULL")
+	assert.Error(t, err)
+}

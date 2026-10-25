@@ -35,7 +35,10 @@ func evaluateSplitPathExpressionWithComparators(expression *api.VisitorRelationa
 
 		// currentDoc.Data() could be nil, but that could be tested in the query
 
-		if !found {
+		if expression.IsNullTest() {
+			// A null is nothing there, as it is on a plain path and in SQL.
+			matches = (found && value != nil) == (expression.Operator == api.OperatorIsNotNull)
+		} else if !found {
 			// Property not present - handle special case for != operator
 			if expression.Operator == "!=" {
 				matches = true // != always evaluates to true for missing properties
@@ -68,6 +71,38 @@ func evaluateSplitPathExpressionWithComparators(expression *api.VisitorRelationa
 	return matchingResources, nil
 }
 
+// evaluateNullTest returns the resources of resourceType that have something at the
+// expression's path, for IS NOT NULL, or nothing there, for IS NULL. A null test asks whether
+// there is a value, not what it is, so the path is read as any type.
+func evaluateNullTest(expression *api.VisitorRelationalExpression, resourceType string, resourceProvider yamlkit.ResourceProvider, parsedData gaby.Container, options *api.FunctionOptions) (map[api.ResourceTypeAndName]bool, error) {
+	resourceTypeToPaths := yamlkit.GetVisitorMapForPath(resourceProvider, api.ResourceType(resourceType), api.UnresolvedPath(expression.Path))
+	values, err := yamlkit.GetPathsAnyType(parsedData, resourceTypeToPaths, nil, resourceProvider, api.DataTypeNone, false, false, options)
+	if err != nil {
+		return nil, err
+	}
+	present := map[api.ResourceTypeAndName]bool{}
+	for _, value := range values {
+		present[api.ResourceTypeAndFullNameFromResourceInfo(resourceProvider, value.ResourceInfo)] = true
+	}
+	if expression.Operator == api.OperatorIsNotNull {
+		return present, nil
+	}
+	absent := map[api.ResourceTypeAndName]bool{}
+	_, err = yamlkit.VisitResourcesFiltered(parsedData, nil, resourceProvider, options, func(doc *gaby.YamlDoc, output any, index int, resourceInfo *api.ResourceInfo) (any, []error) {
+		if resourceType != "*" && resourceInfo.ResourceType != api.ResourceType(resourceType) {
+			return output, nil
+		}
+		if key := api.ResourceTypeAndFullNameFromResourceInfo(resourceProvider, *resourceInfo); !present[key] {
+			absent[key] = true
+		}
+		return output, nil
+	})
+	if err != nil {
+		return nil, err
+	}
+	return absent, nil
+}
+
 func registerWhereFilter(fh handler.FunctionRegistry, converter configkit.ConfigConverter, resourceProvider yamlkit.ResourceProvider) {
 	if err := fh.RegisterFunction("where-filter", &handler.FunctionRegistration{
 		FunctionSignature: api.FunctionSignature{
@@ -82,7 +117,7 @@ func registerWhereFilter(fh handler.FunctionRegistry, converter configkit.Config
 				{
 					ParameterName: "where-expression",
 					Required:      true,
-					Description:   "The specified string is an expression for the purpose of evaluating whether the configuration data matches the filter. It supports conjunctions using `AND` of relational expressions of the form *path* *operator* *literal*. The path specifications are dot-separated, for both map fields and array indices, as in `spec.template.spec.containers.0.image = 'ghcr.io/headlamp-k8s/headlamp:latest' AND spec.replicas > 1`. Path expressions support `*` for wildcard array or map segments and `?key=value` syntax for associative matches of array elements containing objects with a `key` attribute. Strings support the following operators: `<`, `>`, `<=`, `>=`, `=`, `!=`, `LIKE`, `NOT LIKE`, `ILIKE`, `~~`, `!~~`, `~`, `!~`, `~*`, `!~*`, `IN`, `NOT IN`. String pattern operators: `LIKE` and `~~` for pattern matching with `%` and `_` wildcards, `ILIKE` for case-insensitive pattern matching, `NOT LIKE` and `!~~` for negated pattern matching. String regex operators: `~` for regex matching, `~*` for case-insensitive regex, `!~` and `!~*` for regex not matching (case-sensitive and insensitive). Integers support the following operators: `<`, `>`, `<=`, `>=`, `=`, `!=`, `IN`, `NOT IN`. Boolean values support equality and inequality only. The `IN` and `NOT IN` operators accept a comma-separated list of values in parentheses, such as `spec.template.spec.containers.0.image#reference IN (':latest', ':arm64-latest')`. The syntax `.|` splits the path: the left side selects, and the right side is a property of what was selected. On the right side of a `.|`, and only there, `!=` is true when the property is absent: `spec.containers.*.|image != 'nginx'` selects the containers and asks that none of their images be nginx, which a container with no image satisfies. Everywhere else a path that is not present is not a match, `!=` included. String literals are quoted with single quotes, such as `'string'`. Integer and boolean literals are also supported for attributes of those types.",
+					Description:   "The specified string is an expression for the purpose of evaluating whether the configuration data matches the filter. It supports conjunctions using `AND` of relational expressions of the form *path* *operator* *literal*. The path specifications are dot-separated, for both map fields and array indices, as in `spec.template.spec.containers.0.image = 'ghcr.io/headlamp-k8s/headlamp:latest' AND spec.replicas > 1`. Path expressions support `*` for wildcard array or map segments and `?key=value` syntax for associative matches of array elements containing objects with a `key` attribute. Strings support the following operators: `<`, `>`, `<=`, `>=`, `=`, `!=`, `LIKE`, `NOT LIKE`, `ILIKE`, `~~`, `!~~`, `~`, `!~`, `~*`, `!~*`, `IN`, `NOT IN`. String pattern operators: `LIKE` and `~~` for pattern matching with `%` and `_` wildcards, `ILIKE` for case-insensitive pattern matching, `NOT LIKE` and `!~~` for negated pattern matching. String regex operators: `~` for regex matching, `~*` for case-insensitive regex, `!~` and `!~*` for regex not matching (case-sensitive and insensitive). Integers support the following operators: `<`, `>`, `<=`, `>=`, `=`, `!=`, `IN`, `NOT IN`. Boolean values support equality and inequality only. The `IN` and `NOT IN` operators accept a comma-separated list of values in parentheses, such as `spec.template.spec.containers.0.image#reference IN (':latest', ':arm64-latest')`. The syntax `.|` splits the path: the left side selects, and the right side is a property of what was selected. On the right side of a `.|`, and only there, `!=` is true when the property is absent: `spec.containers.*.|image != 'nginx'` selects the containers and asks that none of their images be nginx, which a container with no image satisfies. Everywhere else a path that is not present is not a match, `!=` included. `IS NULL` and `IS NOT NULL` take no literal and ask whether a path selects anything, a null counting as nothing: `metadata.annotations.team IS NULL` matches a resource with no team annotation, and on the right side of a `.|` the test is of each selected element, so `spec.containers.*.|securityContext IS NULL` matches when some container has no securityContext. String literals are quoted with single quotes, such as `'string'`. Integer and boolean literals are also supported for attributes of those types.",
 					DataType:      api.DataTypeString,
 				},
 			},
@@ -191,7 +226,23 @@ func findMatchingResourcesWithComparators(resourceProvider yamlkit.ResourceProvi
 		// If no paths are found for a resource, that's not a match.
 		// If there are errors finding any paths, that's not a match.
 
-		if expression.IsSplitPath {
+		if expression.IsNullTest() && !expression.IsSplitPath {
+			matchingResourcesForExpression, err := evaluateNullTest(expression, resourceType, resourceProvider, parsedData, mergedOptions)
+			if err != nil {
+				multiErrs = append(multiErrs, err)
+				matchingResources = nil
+				break
+			}
+			if i == 0 {
+				matchingResources = matchingResourcesForExpression
+			} else {
+				for key := range matchingResources {
+					if !matchingResourcesForExpression[key] {
+						delete(matchingResources, key)
+					}
+				}
+			}
+		} else if expression.IsSplitPath {
 			// Handle split path syntax with .| separator
 			matchingResourcesForExpression, err := evaluateSplitPathExpressionWithComparators(expression, resourceType, resourceProvider, parsedData, customComparators)
 			if err != nil {

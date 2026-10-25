@@ -68,11 +68,22 @@ func ResolveConfigHubPath(path string, resourceInfo *api.ResourceInfo) (any, err
 
 // MatchesWhereResourceExpressions evaluates each expression against a resource.
 // For paths with the "ConfigHub." prefix, values are resolved from ResourceInfo metadata.
-// For other paths, values are resolved from the resource's YAML document using YamlSafePathGetValueAnyType.
+// For other paths, values are resolved from the resource's YAML document using YamlSafePathGetValueAnyType;
+// a path that selects nothing matches no comparison, and is what IS NULL holds of.
 // Returns false if any expression doesn't match.
 // Keep consistent with ValidWhereResourcePaths.
 func MatchesWhereResourceExpressions(doc *gaby.YamlDoc, resourceInfo *api.ResourceInfo, expressions []*api.VisitorRelationalExpression) (bool, error) {
 	for _, expr := range expressions {
+		if expr.IsNullTest() {
+			found, err := pathSelectsSomething(doc, resourceInfo, expr.Path)
+			if err != nil {
+				return false, err
+			}
+			if found != (expr.Operator == api.OperatorIsNotNull) {
+				return false, nil
+			}
+			continue
+		}
 		var leftValue any
 		if strings.HasPrefix(expr.Path, "ConfigHub.") {
 			var err error
@@ -100,6 +111,21 @@ func MatchesWhereResourceExpressions(doc *gaby.YamlDoc, resourceInfo *api.Resour
 		}
 	}
 	return true, nil
+}
+
+// pathSelectsSomething reports whether a WhereResource path has a value for this resource: a
+// ConfigHub.* path from its ResourceInfo, any other from its document, where a null counts as
+// nothing, as it does in the function engine and the SQL filters.
+func pathSelectsSomething(doc *gaby.YamlDoc, resourceInfo *api.ResourceInfo, path string) (bool, error) {
+	if strings.HasPrefix(path, "ConfigHub.") {
+		value, err := ResolveConfigHubPath(path, resourceInfo)
+		if err != nil {
+			return false, err
+		}
+		return value != nil && value != "", nil
+	}
+	value, found, err := YamlSafePathGetValueAnyType(doc, api.ResolvedPath(path), true)
+	return found && value != nil, err
 }
 
 // VisitResourcesFiltered iterates over resources, skipping those that don't match the

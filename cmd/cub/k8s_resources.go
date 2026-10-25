@@ -274,7 +274,11 @@ func whereResourceToResourceClause(expression string) (string, error) {
 		} else {
 			path = "Data." + path
 		}
-		clauses = append(clauses, path+" "+expr.Operator+" "+expr.Literal)
+		clause := path + " " + expr.Operator
+		if !expr.IsNullTest() {
+			clause += " " + expr.Literal
+		}
+		clauses = append(clauses, clause)
 	}
 	return strings.Join(clauses, " AND "), nil
 }

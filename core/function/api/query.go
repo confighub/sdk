@@ -37,6 +37,7 @@ const (
 	whitespaceRegexpString                 = "^[ \t][ \t]*"
 	relationalOperatorRegexpString         = "^(<=|>=|<|>|=|\\!=|NOT LIKE|LIKE|ILIKE|~~|!~~|~\\*|!~\\*|~|!~|IN|NOT IN)"
 	logicalOperatorRegexpString            = "^AND"
+	nullTestOperatorRegexpString           = `^IS(?:[ \t]+NOT)?[ \t]+NULL\b`
 	booleanLiteralRegexpString             = "^(true|TRUE|false|FALSE)"
 	integerLiteralRegexpString             = "^[0-9][0-9]{0,9}"
 	safeStringCharsRegexpString            = `[^'"\\]*`
@@ -66,6 +67,7 @@ var (
 	pathNameRegexp           = regexp.MustCompile(PathRegexpString)
 	whitespaceRegexp         = regexp.MustCompile(whitespaceRegexpString)
 	relationalOperatorRegexp = regexp.MustCompile(relationalOperatorRegexpString)
+	nullTestOperatorRegexp   = regexp.MustCompile(nullTestOperatorRegexpString)
 	LogicalOperatorRegexp    = regexp.MustCompile(logicalOperatorRegexpString)
 
 	// Exported Literal patterns
@@ -160,6 +162,20 @@ func ParseLiteral(decodedQueryString string) (string, string, DataType, error) {
 	return decodedQueryString, "", DataTypeNone, fmt.Errorf("no operand found at `%s`", decodedQueryString)
 }
 
+// The null tests a term may use in place of a comparison. A comparison does not hold of a path
+// that selects nothing, so these are how a term asks whether there is anything there at all --
+// such as an annotation excepting a resource from a check.
+const (
+	OperatorIsNull    = "IS NULL"
+	OperatorIsNotNull = "IS NOT NULL"
+)
+
+// IsNullTest reports whether an expression is an IS NULL or IS NOT NULL test, which has no
+// literal.
+func (e *RelationalExpression) IsNullTest() bool {
+	return e.Operator == OperatorIsNull || e.Operator == OperatorIsNotNull
+}
+
 type RelationalExpression struct {
 	Path               string // The path of the left operand, which must be an attribute. During evaluation this is used to trigger custom evaluators.
 	Operator           string
@@ -207,6 +223,17 @@ func parseAndValidateBinaryExpressionWithRegex(decodedQueryString string, operat
 	} else {
 		expression.Path = path
 		expression.IsSplitPath = false
+	}
+
+	// A null test takes no literal. The import parser's operators do not include them.
+	if operatorRegex == relationalOperatorRegexp {
+		if test := nullTestOperatorRegexp.FindString(decodedQueryString); test != "" {
+			expression.Operator = OperatorIsNull
+			if strings.Contains(test, "NOT") {
+				expression.Operator = OperatorIsNotNull
+			}
+			return decodedQueryString[len(test):], &expression, nil
+		}
 	}
 
 	// Get the operator using the specified regex
