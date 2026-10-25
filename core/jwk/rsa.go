@@ -16,7 +16,7 @@ import (
 
 // The RSA signing key a ConfigHub server mints its tokens with.
 //
-// Written by whatever stands a server up and read back from JWT_PRIVATE_KEY_JWK
+// Written by whatever stands a server up and read back from CONFIGHUB_TOKEN_SIGNING_KEY_JWK
 // at startup, so the encoding is a contract between two programs. A server that
 // cannot use the key it was given generates its own and carries on, so a
 // disagreement shows up as every session ending at the next restart rather than

@@ -5,6 +5,7 @@ package main
 
 import (
 	"encoding/json"
+	"io"
 	"slices"
 	"strings"
 	"testing"
@@ -56,5 +57,55 @@ func TestClusterArgobotSubscriptions(t *testing.T) {
 	}
 	if want := []string{clusterArgobotEventReleasePublished}; !slices.Equal(sub.EventTypes, want) {
 		t.Fatalf("EventTypes = %v, want %v", sub.EventTypes, want)
+	}
+}
+
+func TestClusterArgobotImageIn(t *testing.T) {
+	deployment := `apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: argobot
+  namespace: argobot
+spec:
+  template:
+    spec:
+      containers:
+      - name: sidecar
+        image: example.com/sidecar:v1
+      - name: argobot
+        image: ghcr.io/confighub/argobot:v0.1.6
+`
+	for name, tc := range map[string]struct {
+		data string
+		want string
+	}{
+		"one Deployment": {data: deployment, want: "ghcr.io/confighub/argobot:v0.1.6"},
+		"all of argobot in one Unit": {
+			data: "apiVersion: v1\nkind: Namespace\nmetadata:\n  name: argobot\n---\n" + deployment + "---\napiVersion: v1\nkind: ServiceAccount\nmetadata:\n  name: argobot\n",
+			want: "ghcr.io/confighub/argobot:v0.1.6",
+		},
+		"no Deployment":        {data: "apiVersion: v1\nkind: Namespace\nmetadata:\n  name: argobot\n"},
+		"not YAML":             {data: "{"},
+		"no argobot container": {data: strings.Replace(deployment, "- name: argobot", "- name: other", 1)},
+	} {
+		t.Run(name, func(t *testing.T) {
+			if got := clusterArgobotImageIn(tc.data); got != tc.want {
+				t.Errorf("clusterArgobotImageIn() = %q, want %q", got, tc.want)
+			}
+		})
+	}
+}
+
+// A --k8sbot-base value is taken as given, with no question and no call to
+// ConfigHub, and anything else is refused.
+func TestClusterChooseArgobotBaseFlag(t *testing.T) {
+	for _, flag := range []string{clusterArgobotBaseUpdate, clusterArgobotBaseClone} {
+		got, err := clusterChooseArgobotBase(io.Discard, clusterControllerArgo, flag)
+		if err != nil || got != flag {
+			t.Errorf("clusterChooseArgobotBase(%q) = %q, %v; want %q", flag, got, err, flag)
+		}
+	}
+	if _, err := clusterChooseArgobotBase(io.Discard, clusterControllerArgo, "replace"); err == nil {
+		t.Error("clusterChooseArgobotBase(\"replace\") succeeded; want an error")
 	}
 }

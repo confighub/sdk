@@ -189,10 +189,19 @@ func parseValidationErrorsMapKey(decodedQueryString string, attributeName string
 	return parseMapKey(decodedQueryString, attributeName, spec2)
 }
 
-// parsePermissionsMapKey parses Permissions.<action>.UserIDs syntax
+// PermissionsAnyAction is the action key of a Permissions term that matches a subject under any
+// action: Permissions.*.UserIDs ? '<user id>'.
+const PermissionsAnyAction = "*"
+
+// parsePermissionsMapKey parses Permissions.<action>.<field> syntax, where the field is UserIDs or
+// GroupIDs.
 // For LEN(Permissions), we may just have the action key or nothing at all.
 // For LEN(Permissions.Edit.UserIDs), we need both action and field.
-// For Permissions.Edit.UserIDs ? <uuid>, we need both action and field.
+// For Permissions.Edit.UserIDs ? <uuid>, we need both action and field. The action may be
+// PermissionsAnyAction, `*`, which asks whether any action names the subject: that is how a
+// caller finds everything granted to a User or Group without one query per action. A count
+// under any action has no such meaning, and LEN's path admits only letters and dots, so it never
+// reaches here with one.
 // Returns: remaining string, action key, nested field key, error
 func parsePermissionsMapKey(decodedQueryString string, attributeName string, lengthExpr bool) (string, string, string, error) {
 	if attributeName != "Permissions" {
@@ -209,14 +218,20 @@ func parsePermissionsMapKey(decodedQueryString string, attributeName string, len
 	}
 	decodedQueryString = decodedQueryString[1:]
 
-	// Parse the action key (e.g., "Edit", "Manage", "View", etc.)
+	// Parse the action key (e.g., "Edit", "Manage", "View", etc.), or `*` for any action.
 	// ActionCategory names are PascalCase identifiers
-	actionPos := attributeNameRegexp.FindStringIndex(decodedQueryString)
-	if actionPos == nil {
-		return decodedQueryString, "", "", errors.Newf("invalid Permissions action key at %s", decodedQueryString)
+	var actionKey string
+	if strings.HasPrefix(decodedQueryString, PermissionsAnyAction) {
+		actionKey = PermissionsAnyAction
+		decodedQueryString = decodedQueryString[len(PermissionsAnyAction):]
+	} else {
+		actionPos := attributeNameRegexp.FindStringIndex(decodedQueryString)
+		if actionPos == nil {
+			return decodedQueryString, "", "", errors.Newf("invalid Permissions action key at %s", decodedQueryString)
+		}
+		actionKey = decodedQueryString[actionPos[0]:actionPos[1]]
+		decodedQueryString = decodedQueryString[actionPos[1]:]
 	}
-	actionKey := decodedQueryString[actionPos[0]:actionPos[1]]
-	decodedQueryString = decodedQueryString[actionPos[1]:]
 
 	// For LEN(Permissions.Edit), the action key is enough
 	// Check if there's a second dot for the nested field
@@ -231,7 +246,7 @@ func parsePermissionsMapKey(decodedQueryString string, attributeName string, len
 	}
 	decodedQueryString = decodedQueryString[1:]
 
-	// Parse the nested field key (currently only UserIDs is supported)
+	// Parse the nested field key: UserIDs or GroupIDs
 	nestedPos := attributeNameRegexp.FindStringIndex(decodedQueryString)
 	if nestedPos == nil {
 		return decodedQueryString, "", "", errors.Newf("invalid Permissions nested field at %s", decodedQueryString)
@@ -239,9 +254,8 @@ func parsePermissionsMapKey(decodedQueryString string, attributeName string, len
 	nestedKey := decodedQueryString[nestedPos[0]:nestedPos[1]]
 	decodedQueryString = decodedQueryString[nestedPos[1]:]
 
-	// Validate the nested key - currently only UserIDs is supported
-	if nestedKey != "UserIDs" {
-		return decodedQueryString, "", "", errors.Newf("unsupported Permissions field %s; only UserIDs is supported", nestedKey)
+	if nestedKey != "UserIDs" && nestedKey != "GroupIDs" {
+		return decodedQueryString, "", "", errors.Newf("unsupported Permissions field %s; only UserIDs and GroupIDs are supported", nestedKey)
 	}
 
 	return decodedQueryString, actionKey, nestedKey, nil

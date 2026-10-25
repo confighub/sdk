@@ -4,15 +4,21 @@
 package main
 
 import (
+	"bufio"
 	"bytes"
 	"encoding/json"
 	"fmt"
 	"io"
+	"os"
+	"slices"
+	"strings"
 	"time"
 
 	"github.com/confighub/sdk/core/cubapi"
 	goclientnew "github.com/confighub/sdk/core/openapi/goclient-new"
 	"github.com/google/uuid"
+	"golang.org/x/term"
+	"sigs.k8s.io/yaml"
 )
 
 // argobot install for `cub cluster attach` (and so `cub cluster up`). argobot
@@ -76,6 +82,16 @@ const (
 	// clusterArgobotChannelSlug is the Channel argobot listens on, created in
 	// the cluster Space beside the Target whose deploys it reacts to.
 	clusterArgobotChannelSlug = "argobot"
+)
+
+// What to do with a shared base Space that already exists (--k8sbot-base).
+// Update uploads the manifests `argobot install` prints over it before cloning,
+// so the cluster runs the release clusterArgobotImage names; clone leaves it as
+// it is, so every cluster cloned from it runs the same argobot. A base that does
+// not exist yet is installed either way.
+const (
+	clusterArgobotBaseUpdate = "update"
+	clusterArgobotBaseClone  = "clone"
 )
 
 // The event type argobot reacts to: a Release published for the cluster's
@@ -153,6 +169,7 @@ func clusterInstallArgobotStep(out io.Writer, opts clusterAttachSpec, dep cluste
 		privateKey:           dep.privateKey,
 		apiURLForContainer:   apiURLForContainer,
 		kubeconfigPath:       dep.kubeconfigPath,
+		baseMode:             opts.argobotBase,
 	})
 }
 
@@ -302,6 +319,7 @@ type clusterArgobotOptions struct {
 	privateKey           json.RawMessage // the service account's private key (goes into the out-of-band Secret)
 	apiURLForContainer   string          // ConfigHub API URL as argobot (in-cluster) reaches it
 	kubeconfigPath       string
+	baseMode             string // clusterArgobotBaseUpdate or clusterArgobotBaseClone, from clusterChooseArgobotBase
 }
 
 // clusterInstallArgobot installs argobot for a freshly attached cluster: argobot
@@ -320,29 +338,32 @@ type clusterArgobotOptions struct {
 // returns, so that the root app-of-apps' first sync already includes argobot.
 func clusterInstallArgobot(out io.Writer, o clusterArgobotOptions) error {
 	argobotSpace := clusterArgobotComponent + "-" + o.clusterName
-	baseVariant, baseSpace := clusterArgobotBaseVariant, clusterArgobotBaseSpace
-	switch o.controller {
-	case clusterControllerSveltos:
-		baseVariant, baseSpace = clusterArgobotSveltosBaseVariant, clusterArgobotSveltosBaseSpace
-	case clusterControllerFlux:
-		baseVariant, baseSpace = clusterArgobotFluxBaseVariant, clusterArgobotFluxBaseSpace
-	}
+	baseVariant, baseSpace := clusterArgobotBase(o.controller)
 
 	// 1. Ensure the shared base component exists, installed from the manifests
-	// `argobot install` prints for this controller. Re-installing is a no-op:
-	// an upload is create-or-update, so a base another cluster already
-	// installed is matched against the manifests and left alone rather than
-	// conflicting with it.
+	// `argobot install` prints for this controller. An upload is
+	// create-or-update, so updating a base another cluster already installed
+	// changes only what differs from the manifests. With --k8sbot-base clone an
+	// existing base is not updated. Either way the base is checked first for
+	// Units no upload owns that define argobot's resources, since a variant
+	// cloned from it would apply both.
 	manifests, err := clusterArgobotManifests(o.kubeconfigPath, o.controller, out)
 	if err != nil {
 		return err
 	}
-	fmt.Fprintln(out, "Installing argobot base component...")
-	if err := runCubStdin(manifests, "variant", "upload",
-		"--component", clusterArgobotComponent,
-		"--variant", baseVariant,
-		"-"); err != nil {
-		return fmt.Errorf("install argobot base component: %w", err)
+	if err := clusterArgobotCheckBase(baseSpace, manifests); err != nil {
+		return err
+	}
+	if o.baseMode == clusterArgobotBaseClone {
+		fmt.Fprintf(out, "Cloning the existing argobot base %q as it is...\n", baseSpace)
+	} else {
+		fmt.Fprintln(out, "Installing argobot base component...")
+		if err := runCubStdin(manifests, "variant", "upload",
+			"--component", clusterArgobotComponent,
+			"--variant", baseVariant,
+			"-"); err != nil {
+			return fmt.Errorf("install argobot base component: %w", err)
+		}
 	}
 
 	// 2. Per-cluster downstream variant, cloned from the base and bound to this
@@ -428,4 +449,154 @@ func clusterInstallArgobot(out io.Writer, o clusterArgobotOptions) error {
 	fmt.Fprintf(out, "argobot installed: variant %q, Argo app %q, channel %q\n",
 		argobotSpace, argobotSpace, channelRef)
 	return nil
+}
+
+// clusterArgobotBase returns the Variant label and slug of the shared base Space
+// for a controller.
+func clusterArgobotBase(controller string) (variant, space string) {
+	switch controller {
+	case clusterControllerSveltos:
+		return clusterArgobotSveltosBaseVariant, clusterArgobotSveltosBaseSpace
+	case clusterControllerFlux:
+		return clusterArgobotFluxBaseVariant, clusterArgobotFluxBaseSpace
+	}
+	return clusterArgobotBaseVariant, clusterArgobotBaseSpace
+}
+
+// clusterChooseArgobotBase decides what the install does with the shared base
+// Space: the --k8sbot-base value when given, and otherwise, when the base exists
+// and stdin is a terminal, the answer to a question. It runs with the other
+// preconditions, before anything is created, so the question is never asked
+// halfway through. Without a terminal it is update, which is what every run did
+// before the question existed.
+func clusterChooseArgobotBase(out io.Writer, controller, flag string) (string, error) {
+	switch flag {
+	case clusterArgobotBaseUpdate, clusterArgobotBaseClone:
+		return flag, nil
+	case "":
+	default:
+		return "", fmt.Errorf("--k8sbot-base %q: must be %s or %s", flag, clusterArgobotBaseUpdate, clusterArgobotBaseClone)
+	}
+	_, baseSpace := clusterArgobotBase(controller)
+	exists, err := clusterSpaceExists(baseSpace)
+	if err != nil {
+		return "", err
+	}
+	if !exists || !term.IsTerminal(int(os.Stdin.Fd())) {
+		return clusterArgobotBaseUpdate, nil
+	}
+
+	current := clusterArgobotBaseImage(baseSpace)
+	if current == "" {
+		current = "unknown"
+	}
+	fmt.Fprintf(out, "The shared argobot base %q already exists; it runs %s.\n", baseSpace, current)
+	fmt.Fprintf(out, "  [u] update it to what %s installs, then clone it (default)\n", clusterArgobotImage)
+	fmt.Fprintln(out, "  [c] clone it as it is")
+	fmt.Fprint(out, "Update or clone? [U/c]: ")
+	answer, err := bufio.NewReader(os.Stdin).ReadString('\n')
+	if err != nil {
+		return "", fmt.Errorf("read answer: %w", err)
+	}
+	switch strings.ToLower(strings.TrimSpace(answer)) {
+	case "", "u", "update":
+		return clusterArgobotBaseUpdate, nil
+	case "c", "clone":
+		return clusterArgobotBaseClone, nil
+	default:
+		return "", fmt.Errorf("cancelled: answer u or c, or pass --k8sbot-base %s|%s", clusterArgobotBaseUpdate, clusterArgobotBaseClone)
+	}
+}
+
+// clusterArgobotBaseImage is the image argobot's Deployment names in the base
+// Space, for the question; "" when it cannot be read.
+func clusterArgobotBaseImage(baseSpace string) string {
+	space, err := resolveSpace(baseSpace, "SpaceID")
+	if err != nil {
+		return ""
+	}
+	unit, err := resolveUnit(clusterArgobotUnitSlug, space.Space.SpaceID.String(), "UnitID")
+	if err != nil {
+		return ""
+	}
+	data, err := fetchUnitData(space.Space.SpaceID, unit.Unit.UnitID)
+	if err != nil {
+		return ""
+	}
+	return clusterArgobotImageIn(data)
+}
+
+// clusterArgobotImageIn finds the image of argobot's container in a Unit's
+// data, which may hold several documents.
+func clusterArgobotImageIn(data string) string {
+	for _, doc := range strings.Split(data, "\n---") {
+		var deployment struct {
+			Kind string `json:"kind"`
+			Spec struct {
+				Template struct {
+					Spec struct {
+						Containers []struct {
+							Name  string `json:"name"`
+							Image string `json:"image"`
+						} `json:"containers"`
+					} `json:"spec"`
+				} `json:"template"`
+			} `json:"spec"`
+		}
+		if yaml.Unmarshal([]byte(doc), &deployment) != nil || deployment.Kind != "Deployment" {
+			continue
+		}
+		for _, c := range deployment.Spec.Template.Spec.Containers {
+			if c.Name == clusterArgobotContainer {
+				return c.Image
+			}
+		}
+	}
+	return ""
+}
+
+// clusterArgobotCheckBase refuses a base Space holding Units that define
+// argobot's resources but that no upload of argobot owns, such as the single
+// Unit an early installer wrote. An upload never writes or empties such a Unit,
+// so it would sit beside the upload's own, and a variant cloned from the base
+// would apply both. The check is a dry run of the upload, whose plan reports
+// exactly those Units.
+func clusterArgobotCheckBase(baseSpace string, manifests []byte) error {
+	plan, err := cubapi.Upload(ctx, cubClient, goclientnew.UploadRequest{
+		Components: []goclientnew.UploadComponentRequest{{Name: clusterArgobotComponent, Space: baseSpace}},
+		Files:      []goclientnew.UploadRequestFile{{Path: "stdin.yaml", Content: string(manifests)}},
+		Source:     &goclientnew.UploadSourceInfo{Ref: "-", Client: "cub", ClientVersion: Version},
+	}, true)
+	if err != nil {
+		return fmt.Errorf("check argobot base %q: %w", baseSpace, err)
+	}
+	strays := map[string][]string{}
+	for _, c := range plan.Components {
+		for _, s := range c.Spaces {
+			for _, d := range s.Duplicates {
+				for _, o := range d.Others {
+					if !slices.Contains(strays[o.SpaceSlug], o.UnitSlug) {
+						strays[o.SpaceSlug] = append(strays[o.SpaceSlug], o.UnitSlug)
+					}
+				}
+			}
+		}
+	}
+	if len(strays) == 0 {
+		return nil
+	}
+	spaces := make([]string, 0, len(strays))
+	for space := range strays {
+		spaces = append(spaces, space)
+	}
+	slices.Sort(spaces)
+	var b strings.Builder
+	fmt.Fprintf(&b, "argobot base %q has Units that define argobot's resources but were not uploaded as argobot, so a cluster cloned from it would run two copies of argobot. Delete them and run again:", baseSpace)
+	for _, space := range spaces {
+		slices.Sort(strays[space])
+		for _, unit := range strays[space] {
+			fmt.Fprintf(&b, "\n  cub unit delete --space %s %s", space, unit)
+		}
+	}
+	return fmt.Errorf("%s", b.String())
 }

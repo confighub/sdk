@@ -145,7 +145,6 @@ func RegisterFunctions(rp *k8skit.K8sResourceProviderType, fh handler.FunctionRe
 	registerContainerFunctions(fh, rp)
 	registerDefaultingFunctions(fh, rp)
 	registerK8sCELFunctions(fh, rp)
-	registerAccessFunctions(fh)
 	registerPruneConfigMaps(fh, rp)
 	registerPodSecurityFunctions(fh, rp)
 }

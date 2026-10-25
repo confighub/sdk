@@ -32,6 +32,7 @@ var clusterAttachArgs struct {
 	noInstall         bool
 	noArgoCD          bool
 	noArgobot         bool
+	argobotBase       string
 	noPlaceholderGate bool
 	prune             bool
 }
@@ -193,6 +194,7 @@ func init() {
 	clusterAttachCmd.Flags().BoolVar(&clusterAttachArgs.noArgoCD, "no-argocd", false, "--controller argo: the same as --no-install")
 	_ = clusterAttachCmd.Flags().MarkHidden("no-argocd")
 	clusterAttachCmd.Flags().BoolVar(&clusterAttachArgs.noArgobot, "no-k8sbot", false, "skip installing argobot (the event-driven Argo CD sync, Sveltos redeploy, or Flux reconciliation, bot)")
+	clusterAttachCmd.Flags().StringVar(&clusterAttachArgs.argobotBase, "k8sbot-base", "", "what to do with argobot's shared base Space when it already exists: update (upload what argobot:latest installs over it, then clone it) or clone (clone it as it is); asked when stdin is a terminal, otherwise update")
 	clusterAttachCmd.Flags().BoolVar(&clusterAttachArgs.noPlaceholderGate, "no-placeholder-gate", false, "skip the default vet-placeholders Trigger, allowing Releases with unfilled confighubplaceholder values to be published to this cluster")
 	clusterAttachCmd.Flags().BoolVar(&clusterAttachArgs.prune, "prune", false, "let the controller delete what a removed deployment deployed: the root prunes deployments whose Units leave the apps space (Sveltos's always does), and deployments created later prune what they deployed")
 	clusterCmd.AddCommand(clusterAttachCmd)
@@ -213,6 +215,7 @@ type clusterAttachOptions struct {
 	controllerVersion string
 	noInstall         bool
 	noArgobot         bool
+	argobotBase       string
 	noPlaceholderGate bool
 	prune             bool
 }
@@ -240,6 +243,7 @@ func clusterAttachCmdRun(cmd *cobra.Command, args []string) error {
 		controllerVersion: clusterAttachArgs.controllerVersion,
 		noInstall:         clusterAttachArgs.noInstall || clusterAttachArgs.noArgoCD,
 		noArgobot:         clusterAttachArgs.noArgobot,
+		argobotBase:       clusterAttachArgs.argobotBase,
 		noPlaceholderGate: clusterAttachArgs.noPlaceholderGate,
 		prune:             clusterAttachArgs.prune,
 	})
@@ -283,6 +287,13 @@ func clusterAttachRun(out io.Writer, opts clusterAttachOptions) error {
 	}
 	if err := clusterRequireFreshConfigHub(opts.name, opts.spaceSlug, appsSlug, argobotSlug); err != nil {
 		return err
+	}
+	if !opts.noArgobot {
+		mode, err := clusterChooseArgobotBase(out, opts.controller, opts.argobotBase)
+		if err != nil {
+			return err
+		}
+		opts.argobotBase = mode
 	}
 
 	// A self-contained copy of the credentials, at the path every other
@@ -376,6 +387,7 @@ func clusterAttachRun(out io.Writer, opts clusterAttachOptions) error {
 		},
 		fluxInstallIfAbsent: !opts.noInstall,
 		noArgobot:           opts.noArgobot,
+		argobotBase:         opts.argobotBase,
 		noPlaceholderGate:   opts.noPlaceholderGate,
 		prune:               opts.prune,
 	}, func(f func()) { rollback = append(rollback, f) })
@@ -655,7 +667,10 @@ type clusterAttachSpec struct {
 	// its absence into an error (controller flux, --no-install).
 	fluxInstallIfAbsent bool
 
-	noArgobot         bool
+	noArgobot bool
+	// argobotBase is clusterArgobotBaseUpdate or clusterArgobotBaseClone, as
+	// clusterChooseArgobotBase decided it.
+	argobotBase       string
 	noPlaceholderGate bool
 	// prune gives the root Argo CD Application or Flux Kustomization prune and
 	// records it on the OCI target for the deployments `cub variant create`

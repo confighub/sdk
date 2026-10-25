@@ -1484,6 +1484,16 @@ func EvaluatePermissionsExpression(operator string, leftValue PermissionsData, r
 		return false, fmt.Errorf("expected UUID for Permissions containment check, got %T", rightValue)
 	}
 
+	// "*" names any action, as it does in the entity filter grammar.
+	if actionKey == "*" {
+		for _, subjects := range leftValue {
+			if subjects[fieldKey][rightUUID] {
+				return true, nil
+			}
+		}
+		return false, nil
+	}
+
 	subjects, exists := leftValue[actionKey]
 	if !exists {
 		return false, nil

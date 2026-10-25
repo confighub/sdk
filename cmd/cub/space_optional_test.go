@@ -30,7 +30,7 @@ var referenceOperandCommands = []string{
 	"review-comment get", "review-comment list", "review-comment create",
 	"attestation get", "attestation revoke",
 	"unit-action get", "unit-action data", "unit-event get",
-	"target access", "k8s collect",
+	"k8s collect",
 	"worker get-envs", "worker get-secret", "worker list-function", "worker list-status",
 	"worker key add", "worker key list", "worker key delete",
 	"user key add", "user key list", "user key delete",

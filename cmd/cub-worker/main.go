@@ -32,7 +32,6 @@ import (
 	"github.com/confighub/sdk/core/worker/lib"
 	"github.com/confighub/sdk/core/workerapi"
 	funcimpl "github.com/confighub/sdk/function-impl"
-	k8sfunc "github.com/confighub/sdk/function-impl/kubernetes"
 	kyvernoserver "github.com/confighub/sdk/worker-function-impl/kyverno-server"
 	opagatekeeper "github.com/confighub/sdk/worker-function-impl/opa-gatekeeper"
 )
@@ -140,13 +139,6 @@ var availableWorkerFunctions = map[string]struct {
 			FunctionSignature: opagatekeeper.GetVetOPAGatekeeperSignature(),
 			Function:          opagatekeeper.VetOPAGatekeeperFunction,
 			FunctionInit:      opagatekeeper.InitOPAGatekeeper,
-		},
-	},
-	"generate-kubecontext": {
-		toolchain: workerapi.ToolchainKubernetesYAML,
-		registration: handler.FunctionRegistration{
-			FunctionSignature: k8sfunc.GetGenerateKubecontextSignature(),
-			Function:          k8sfunc.GenerateKubecontextFunction,
 		},
 	},
 }

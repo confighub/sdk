@@ -265,7 +265,6 @@ var refArgKinds = map[string][]*refKind{
 	"space get":       {kindSpace}, "space update": {kindSpace}, "space delete": {kindSpace}, "space open": {kindSpace},
 	"tag get": {kindTag}, "tag update": {kindTag}, "tag delete": {kindTag},
 	"target get": {kindTarget}, "target update": {kindTarget}, "target delete": {kindTarget},
-	"target access": {kindTarget, kindUnit},
 	"target create": {nil, nil, kindWorker},
 	"trigger get":   {kindTrigger}, "trigger update": {kindTrigger}, "trigger delete": {kindTrigger},
 	"unit get": {kindUnit}, "unit update": {kindUnit}, "unit delete": {kindUnit}, "unit open": {kindUnit},
