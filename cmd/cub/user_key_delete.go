@@ -25,7 +25,7 @@ confirm the new key's Last-Used is moving, and only then delete the old one.
 Examples:
 `+"```"+`
   # Retire a key by thumbprint
-  cub user key delete --worker my-worker NzbLsXh8uDCcd-6MNwXF4W_7noWXFZAfHkxZsRGC9Xs
+  cub user key delete --user deploy-bot NzbLsXh8uDCcd-6MNwXF4W_7noWXFZAfHkxZsRGC9Xs
 `+"```"+`
 `, ""),
 	Args: cobra.ExactArgs(1),

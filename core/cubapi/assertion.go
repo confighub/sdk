@@ -118,13 +118,24 @@ func (s *AssertionSigner) Subject() string { return s.subject }
 // Kid is the thumbprint the server will look the key up by.
 func (s *AssertionSigner) Kid() string { return s.kid }
 
-// Sign produces a assertion valid from now.
+// Sign produces an assertion valid from now, for the signer's audience.
 //
-// iss and sub both carry the identity: RFC 7523 §3 requires both, and for
-// client authentication the client is its own subject. The server checks that
-// they match the identity that owns the key, so an assertion signed with a real
-// key cannot claim to be about somebody else.
+// iss and sub both carry the identity: RFC 7523 §3 requires both, and the holder
+// of the key is the subject it speaks for. The server checks that they match the
+// identity that owns the key, so an assertion signed with a real key cannot claim
+// to be about somebody else.
 func (s *AssertionSigner) Sign() (string, error) {
+	return s.sign(s.audience)
+}
+
+// SignFor produces an assertion valid from now whose aud names the given token endpoint, as
+// RFC 7523 §3 has it, and the signer's audience, which servers older than the endpoint's
+// JWT-bearer grant require.
+func (s *AssertionSigner) SignFor(tokenEndpoint string) (string, error) {
+	return s.sign([]string{tokenEndpoint, s.audience})
+}
+
+func (s *AssertionSigner) sign(audience any) (string, error) {
 	jti := make([]byte, 16)
 	if _, err := rand.Read(jti); err != nil {
 		return "", fmt.Errorf("generating assertion id: %w", err)
@@ -142,7 +153,7 @@ func (s *AssertionSigner) Sign() (string, error) {
 	claims := map[string]any{
 		"iss": s.subject,
 		"sub": s.subject,
-		"aud": s.audience,
+		"aud": audience,
 		"jti": base64.RawURLEncoding.EncodeToString(jti),
 		"iat": now.Unix(),
 		"exp": now.Add(assertionLifetime).Unix(),

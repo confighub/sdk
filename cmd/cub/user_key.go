@@ -34,9 +34,7 @@ receives again on every token refresh.
 For a service account, use "cub serviceaccount key", which requires Impersonate
 permission on the service account rather than the admin or manager role.
 
-Identities are named one of two ways. Use --worker to name a worker (workers are
-deprecated) and have it resolved to the bot user it runs as; use --user to name
-an identity directly.
+Name the identity with --user.
 
 Registering a key hands out an identity: whoever holds the private key
 authenticates as that identity from then on. It requires the admin or manager
@@ -57,6 +55,7 @@ func init() {
 		"identity to manage keys for, by username or UUID")
 	userKeyCmd.PersistentFlags().StringVar(&userKeyWorker, "worker", "",
 		"worker whose bot user to manage keys for, by slug or UUID")
+	_ = userKeyCmd.PersistentFlags().MarkDeprecated("worker", "workers are being removed; use a service account and \"cub serviceaccount key\"")
 	userCmd.AddCommand(userKeyCmd)
 }
 
@@ -89,7 +88,7 @@ func resolveKeyTargetUser() (*goclientnew.User, error) {
 	case userKeyUser != "":
 		return resolveUserCore(userKeyUser)
 	default:
-		return nil, fmt.Errorf("name an identity with --user or a worker with --worker")
+		return nil, fmt.Errorf("name an identity with --user")
 	}
 }
 

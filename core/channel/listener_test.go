@@ -173,7 +173,7 @@ func newFakeChannel(t *testing.T, declared ...string) (*fakeChannel, *httptest.S
 		writeJSON(w, goclientnew.CommandRun{CommandRunID: runID, Status: result.Status})
 		f.served <- struct{}{}
 	})
-	mux.HandleFunc("/auth/worker", func(w http.ResponseWriter, r *http.Request) {
+	mux.HandleFunc("/auth/token", func(w http.ResponseWriter, r *http.Request) {
 		f.mu.Lock()
 		f.auths++
 		f.mu.Unlock()
@@ -409,7 +409,7 @@ func TestClientRenewsTheSessionOnce(t *testing.T) {
 	auths, refused := 0, 0
 	allRefused := make(chan struct{})
 	mux := http.NewServeMux()
-	mux.HandleFunc("/auth/worker", func(w http.ResponseWriter, r *http.Request) {
+	mux.HandleFunc("/auth/token", func(w http.ResponseWriter, r *http.Request) {
 		mu.Lock()
 		auths++
 		token := fmt.Sprintf("session-%d", auths)
@@ -437,7 +437,7 @@ func TestClientRenewsTheSessionOnce(t *testing.T) {
 	server := httptest.NewServer(mux)
 	defer server.Close()
 	client, err := cubapi.NewClient(cubapi.ClientOptions{ServerURL: server.URL, Authenticator: func(ctx context.Context) (*cubapi.AuthSession, error) {
-		res, err := http.Post(server.URL+"/auth/worker", "application/json", strings.NewReader("{}"))
+		res, err := http.Post(server.URL+"/auth/token", "application/json", strings.NewReader("{}"))
 		if err != nil {
 			return nil, err
 		}

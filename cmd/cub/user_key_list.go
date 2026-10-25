@@ -24,14 +24,14 @@ by starting to be used.
 
 Examples:
 `+"```"+`
-  # List the keys a worker can authenticate with
-  cub user key list --worker my-worker
+  # List the keys an identity can authenticate with
+  cub user key list --user deploy-bot
 
   # Full key material, for comparing against what a client holds
-  cub user key list --worker my-worker -o json
+  cub user key list --user deploy-bot -o json
 
   # Just the thumbprints, for scripting
-  cub user key list --worker my-worker --no-headers -o jq='.[].Kid'
+  cub user key list --user deploy-bot --no-headers -o jq='.[].Kid'
 `+"```"+`
 `, ""),
 	Args: cobra.NoArgs,

@@ -67,9 +67,6 @@ Examples:
   # Login by signing with a key at an explicit path
   cub auth login --private-key=./deploy.jwk
 
-  # Login as a worker (workers are deprecated) using environment variables
-  cub auth login --as-worker
-
   # Login without automatically opening browser
   cub auth login --no-browser
 `+"```"+`
@@ -80,10 +77,11 @@ Examples:
 
 func init() {
 	authLoginCmd.Flags().BoolVar(&asWorker, "as-worker", false, "Authenticate as a worker using CONFIGHUB_WORKER_ID and CONFIGHUB_WORKER_SECRET environment variables")
+	_ = authLoginCmd.Flags().MarkDeprecated("as-worker", "workers are being removed; log in as a service account with --private-key")
 	authLoginCmd.Flags().StringVar(&privateKeyRef, "private-key", "",
 		"Authenticate by signing with a private key: an alias under ~/.confighub/keys, a path, or empty to use CONFIGHUB_AUTH_PRIVATE_KEY")
 	// The flag is usable with no value, so `--private-key` alone falls back to
-	// the environment the way --as-worker does. NoOptDefVal needs a non-empty
+	// the environment. NoOptDefVal needs a non-empty
 	// sentinel because an empty one is indistinguishable from "not given".
 	authLoginCmd.Flags().Lookup("private-key").NoOptDefVal = privateKeyFromEnv
 	authLoginCmd.Flags().StringVar(&serverURL, "server", "", "Server URL to authenticate to (e.g., https://hub.confighub.com)")

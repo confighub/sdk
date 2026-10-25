@@ -36,20 +36,20 @@ locally and only the public half is sent.
 
 Examples:
 `+"```"+`
-  # Generate a keypair, storing it under ~/.confighub/keys as the alias "my-worker"
-  cub user key add --worker my-worker --generate my-worker
+  # Generate a keypair, storing it under ~/.confighub/keys as the alias "deploy-bot"
+  cub user key add --user deploy-bot --generate deploy-bot
 
   # ...then authenticate with it
-  cub auth login --private-key=my-worker
+  cub auth login --private-key=deploy-bot
 
   # Generate to an explicit path instead of an alias
-  cub user key add --worker my-worker --generate ./my-worker.jwk
+  cub user key add --user deploy-bot --generate ./deploy-bot.jwk
 
   # Register a public key you already have
-  cub user key add --worker my-worker --public-key ./worker.pub.jwk
+  cub user key add --user deploy-bot --public-key ./deploy-bot.pub.jwk
 
   # Register a public key from stdin, with a note about who holds it
-  cat worker.pub.jwk | cub user key add --worker my-worker --public-key - \
+  cat deploy-bot.pub.jwk | cub user key add --user deploy-bot --public-key - \
       --description "CI runner, us-east"
 `+"```"+`
 `, ""),
