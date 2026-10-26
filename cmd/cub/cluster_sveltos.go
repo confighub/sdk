@@ -6,12 +6,17 @@ package main
 import (
 	"bytes"
 	"context"
+	"encoding/base64"
+	"encoding/json"
 	"fmt"
 	"io"
 	"os"
+	"path/filepath"
 	"strings"
+	"time"
 
 	goclientnew "github.com/confighub/sdk/core/openapi/goclient-new"
+	"k8s.io/apimachinery/pkg/util/validation"
 )
 
 // Sveltos install + configuration inside a kind cluster, so it can pull config
@@ -237,21 +242,119 @@ func clusterSveltosDashboardEndpoint(name string, env map[string]string, space *
 // from `cub cluster open` is valid.
 const clusterSveltosDashboardTokenDuration = "24h"
 
-// clusterSveltosDashboardToken creates a fresh login token for the Sveltos
-// dashboard from its ServiceAccount. Tokens expire, so one is created each time
-// rather than stored.
-func clusterSveltosDashboardToken(ctx context.Context, name string) (string, error) {
+// clusterSveltosTokenMinValidity is how long a stored dashboard token must
+// still be valid to be reused, so it does not expire during the login it is
+// handed over for.
+const clusterSveltosTokenMinValidity = 10 * time.Minute
+
+// clusterSveltosAccount is a ServiceAccount a dashboard login token is created
+// from.
+type clusterSveltosAccount struct {
+	namespace, name string
+}
+
+func (a clusterSveltosAccount) String() string {
+	return a.namespace + "/" + a.name
+}
+
+// clusterSveltosDefaultAccount is the ServiceAccount `cub cluster up` creates
+// for the dashboard login.
+var clusterSveltosDefaultAccount = clusterSveltosAccount{namespace: "default", name: clusterSveltosDashboardAccount}
+
+// clusterParseSveltosAccount parses --cluster-identity for a Sveltos cluster:
+// <namespace>/<name>, or a bare name in the default namespace. "" is the
+// dashboard's own ServiceAccount.
+func clusterParseSveltosAccount(identity string) (clusterSveltosAccount, error) {
+	if identity == "" {
+		return clusterSveltosDefaultAccount, nil
+	}
+	account := clusterSveltosAccount{namespace: "default", name: identity}
+	if namespace, name, ok := strings.Cut(identity, "/"); ok {
+		account = clusterSveltosAccount{namespace: namespace, name: name}
+	}
+	if errs := validation.IsDNS1123Label(account.namespace); len(errs) > 0 {
+		return clusterSveltosAccount{}, fmt.Errorf("--cluster-identity %q: namespace %q is not valid: %s", identity, account.namespace, strings.Join(errs, "; "))
+	}
+	if errs := validation.IsDNS1123Subdomain(account.name); len(errs) > 0 {
+		return clusterSveltosAccount{}, fmt.Errorf("--cluster-identity %q: ServiceAccount name %q is not valid: %s", identity, account.name, strings.Join(errs, "; "))
+	}
+	return account, nil
+}
+
+// clusterSveltosTokenDir returns where the cluster's dashboard login tokens are
+// kept between runs of `cub cluster open`, one file per ServiceAccount:
+// <config-dir>/clusters/<name>.sveltos-tokens.
+func clusterSveltosTokenDir(name string) string {
+	return filepath.Join(clusterKubeconfigDir(), name+".sveltos-tokens")
+}
+
+// clusterSveltosTokenPath returns the file holding the token of one
+// ServiceAccount: <namespace>.<name>, unambiguous since a namespace has no dot.
+func clusterSveltosTokenPath(name string, account clusterSveltosAccount) string {
+	return filepath.Join(clusterSveltosTokenDir(name), account.namespace+"."+account.name)
+}
+
+// clusterSveltosDashboardToken returns a login token for the Sveltos dashboard,
+// and when it expires: the stored one while it is still valid for
+// clusterSveltosTokenMinValidity, otherwise a new one created from the
+// ServiceAccount and stored in its place. The API server cannot hand an issued
+// token back, so storing it is the only way to reuse it. A token whose expiry
+// cannot be read is returned with a zero time and not stored.
+func clusterSveltosDashboardToken(ctx context.Context, out io.Writer, name string, account clusterSveltosAccount) (string, time.Time, error) {
+	tokenPath := clusterSveltosTokenPath(name, account)
+	if stored, err := os.ReadFile(tokenPath); err == nil {
+		token := strings.TrimSpace(string(stored))
+		if expiry, err := clusterJWTExpiry(token); err == nil && time.Until(expiry) > clusterSveltosTokenMinValidity {
+			return token, expiry, nil
+		}
+	}
+
 	kubeconfigPath := clusterKubeconfigPath(name)
 	if _, err := os.Stat(kubeconfigPath); err != nil {
-		return "", fmt.Errorf("no kubeconfig at %s to create a dashboard token with", kubeconfigPath)
+		return "", time.Time{}, fmt.Errorf("no kubeconfig at %s to create a dashboard token with", kubeconfigPath)
 	}
-	token, err := clusterKubectlOutput(ctx, kubeconfigPath,
-		"create", "token", clusterSveltosDashboardAccount, "-n", "default",
+	created, err := clusterKubectlOutput(ctx, kubeconfigPath,
+		"create", "token", account.name, "-n", account.namespace,
 		"--duration="+clusterSveltosDashboardTokenDuration)
 	if err != nil {
-		return "", fmt.Errorf("create a dashboard token: %w", err)
+		return "", time.Time{}, fmt.Errorf("create a dashboard token for ServiceAccount %s: %w", account, err)
 	}
-	return strings.TrimSpace(string(token)), nil
+	token := strings.TrimSpace(string(created))
+	expiry, err := clusterJWTExpiry(token)
+	if err != nil {
+		fmt.Fprintf(out, "  warning: not storing the dashboard token, whose expiry cannot be read: %v\n", err)
+		return token, time.Time{}, nil
+	}
+	if err := os.MkdirAll(filepath.Dir(tokenPath), 0o700); err != nil {
+		fmt.Fprintf(out, "  warning: storing the dashboard token: %v\n", err)
+	} else if err := os.WriteFile(tokenPath, []byte(token+"\n"), 0o600); err != nil {
+		fmt.Fprintf(out, "  warning: storing the dashboard token: %v\n", err)
+	}
+	return token, expiry, nil
+}
+
+// clusterJWTExpiry reads a JWT's exp claim without verifying its signature: it
+// only decides whether a stored token is worth reusing, and the API server
+// still checks the token itself.
+func clusterJWTExpiry(token string) (time.Time, error) {
+	parts := strings.Split(token, ".")
+	if len(parts) != 3 {
+		return time.Time{}, fmt.Errorf("not a JWT")
+	}
+	payload, err := base64.RawURLEncoding.DecodeString(parts[1])
+	if err != nil {
+		return time.Time{}, fmt.Errorf("decode the JWT payload: %w", err)
+	}
+	var claims struct {
+		Exp int64 `json:"exp"`
+	}
+	if err := json.Unmarshal(payload, &claims); err != nil {
+		return time.Time{}, fmt.Errorf("parse the JWT payload: %w", err)
+	}
+	if claims.Exp == 0 {
+		return time.Time{}, fmt.Errorf("the JWT has no exp claim")
+	}
+	return time.Unix(claims.Exp, 0), nil
 }
 
 // clusterSveltosApplyOCICreds installs the Secret the ClusterProfiles'

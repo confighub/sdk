@@ -18,6 +18,7 @@ import (
 var clusterOpenArgs struct {
 	name          string
 	printPassword bool
+	identity      string
 }
 
 var clusterOpenCmd = &cobra.Command{
@@ -30,8 +31,15 @@ login form instead of digging it out of the cluster.
 
 For a cluster from "cub cluster up --controller sveltos", this opens the Sveltos
 dashboard instead, and copies a login token to your clipboard. The token is
-created each time from the cluster's platform-admin ServiceAccount, and is valid
-for 24 hours. --print-password prints it instead.
+created from the cluster's platform-admin ServiceAccount, valid for 24 hours, and
+kept in <config-dir>/clusters/<name>.sveltos-tokens: later runs reuse it until it
+has less than 10 minutes left. --print-password prints it instead.
+
+--cluster-identity logs in as someone else. For Sveltos it names the
+ServiceAccount to create the token from, as <namespace>/<name> or a bare name
+in the default namespace, and each ServiceAccount's token is kept apart. For
+Argo CD it names the user; only admin's password can be read from the cluster,
+so for any other user the UI is opened and the password left to you.
 
 A cluster from "cub cluster up --controller flux" has no UI to open, so this
 prints the commands that show Flux's state instead.
@@ -45,9 +53,10 @@ The endpoint and password come from the cluster's env file
 gone, the endpoint is read from the cluster's ConfigHub Space annotations, in
 the context the cluster's record says it is wired to, and the password from the
 argocd-initial-admin-secret in the live cluster. An attached cluster has no
-host port for Argo CD; this prints the port-forward to use instead. If no password
-can be found — an admin who changes it deletes that Secret — the UI is still
-opened and only the username is reported.
+host port for Argo CD; this prints the port-forward to use instead. What cannot
+be found is reported, and the rest is still done: with no password or token —
+an admin who changes the password deletes that Secret — the UI is still opened,
+and with no endpoint, or no browser, the credentials are still handed over.
 
 Examples:
 `+"```"+`
@@ -62,6 +71,9 @@ Examples:
 
   # Print the Argo CD URL instead of opening a browser
   cub cluster open my-cluster --print-url
+
+  # Log in to a Sveltos dashboard with a token from the ServiceAccount ops/viewer
+  cub cluster open my-cluster --cluster-identity ops/viewer
 `+"```"+`
 `, ""),
 	RunE: clusterOpenCmdRun,
@@ -72,6 +84,7 @@ func init() {
 	clusterOpenCmd.Flags().StringVar(&clusterOpenArgs.name, "name", "", "cluster name (the argument; kept as a flag for older scripts)")
 	_ = clusterOpenCmd.Flags().MarkHidden("name")
 	clusterOpenCmd.Flags().BoolVar(&clusterOpenArgs.printPassword, "print-password", false, "print the admin password (for Sveltos, the dashboard token) to the terminal instead of copying it to the clipboard")
+	clusterOpenCmd.Flags().StringVar(&clusterOpenArgs.identity, "cluster-identity", "", "who to log in as: for Sveltos, the ServiceAccount to create the dashboard token from (<namespace>/<name>, or <name> in default; default default/"+clusterSveltosDashboardAccount+"); for Argo CD, the user (default admin)")
 	clusterCmd.AddCommand(clusterOpenCmd)
 }
 
@@ -80,10 +93,10 @@ func clusterOpenCmdRun(cmd *cobra.Command, args []string) error {
 	if err != nil {
 		return err
 	}
-	return clusterOpenRun(cmd.OutOrStdout(), name, clusterOpenArgs.printPassword)
+	return clusterOpenRun(cmd.OutOrStdout(), name, clusterOpenArgs.printPassword, clusterOpenArgs.identity)
 }
 
-func clusterOpenRun(out io.Writer, name string, printPassword bool) error {
+func clusterOpenRun(out io.Writer, name string, printPassword bool, identity string) error {
 	name, err := clusterResolveName(name)
 	if err != nil {
 		return err
@@ -96,17 +109,8 @@ func clusterOpenRun(out io.Writer, name string, printPassword bool) error {
 	if rec, err := clusterReadRecord(name); err != nil {
 		return err
 	} else if env["ARGOCD_SERVER"] == "" && env["SVELTOS_DASHBOARD"] == "" {
-		if rec != nil && rec.Origin == clusterOriginAttach {
-			switch clusterControllerFrom(rec, nil) {
-			case clusterControllerSveltos:
-				return fmt.Errorf("cluster %q was attached, and attach does not expose the Sveltos dashboard on a host port; reach it with\n  kubectl --kubeconfig %s port-forward svc/dashboard -n %s 8080:80\nopen http://localhost:8080, and log in with a token from\n  kubectl --kubeconfig %s create token %s --duration=%s",
-					name, clusterKubeconfigPath(name), clusterSveltosNamespace,
-					clusterKubeconfigPath(name), clusterSveltosDashboardAccount, clusterSveltosDashboardTokenDuration)
-			case clusterControllerFlux:
-				return clusterOpenFlux(out, name)
-			}
-			return fmt.Errorf("cluster %q was attached, and attach does not expose Argo CD on a host port; reach the UI with\n  kubectl --kubeconfig %s port-forward svc/argocd-server -n %s 8080:80\nand open http://localhost:8080",
-				name, clusterKubeconfigPath(name), clusterArgoNamespace)
+		if rec != nil && rec.Origin == clusterOriginAttach && clusterControllerFrom(rec, nil) == clusterControllerFlux {
+			return clusterOpenFlux(out, name)
 		}
 		if err := clusterUseRecordedContext(out, rec); err != nil {
 			return err
@@ -119,30 +123,41 @@ func clusterOpenRun(out io.Writer, name string, printPassword bool) error {
 	}
 	switch controller {
 	case clusterControllerSveltos:
-		return clusterOpenSveltos(out, name, env, space, printPassword)
+		return clusterOpenSveltos(out, name, env, space, printPassword, identity)
 	case clusterControllerFlux:
 		return clusterOpenFlux(out, name)
 	}
-
-	url, err := clusterArgoURL(name, env)
-	if err != nil {
-		return err
+	user := identity
+	if user == "" {
+		user = "admin"
 	}
 
+	url, urlErr := clusterArgoURL(name, env)
 	if printURL {
+		if urlErr != nil {
+			return urlErr
+		}
 		fmt.Fprintln(out, url)
 		return nil
 	}
 
 	// Fetch the password before launching the browser, so the paste is ready by
-	// the time the login form is.
-	password, passwordErr := clusterArgoPassword(name, env)
-
-	if err := open.Start(url); err != nil {
-		return fmt.Errorf("failed to open browser on %s: %w", url, err)
+	// the time the login form is. Argo CD keeps only a hash of any other user's
+	// password, so admin's is the only one there is to fetch.
+	password, passwordErr := "", fmt.Errorf("only admin's password can be read from the cluster")
+	if user == "admin" {
+		password, passwordErr = clusterArgoPassword(name, env)
 	}
-	fmt.Fprintf(out, "Opened the Argo CD UI of cluster %q: %s\n", name, url)
-	fmt.Fprintf(out, "  user:     admin\n")
+
+	switch {
+	case urlErr != nil:
+		fmt.Fprintf(out, "Could not find the Argo CD UI of cluster %q: %v\n", name, urlErr)
+	case open.Start(url) != nil:
+		fmt.Fprintf(out, "Could not open a browser; the Argo CD UI of cluster %q is at %s\n", name, url)
+	default:
+		fmt.Fprintf(out, "Opened the Argo CD UI of cluster %q: %s\n", name, url)
+	}
+	fmt.Fprintf(out, "  user:     %s\n", user)
 	switch {
 	case password == "":
 		fmt.Fprintf(out, "  password: could not be determined (%v)\n", passwordErr)
@@ -199,24 +214,33 @@ func clusterOpenFlux(out io.Writer, name string) error {
 // clusterOpenSveltos opens a Sveltos cluster's dashboard with a fresh login
 // token in hand: copied to the clipboard, or printed with --print-password.
 // Without a token the dashboard is still opened, and the error is reported.
-func clusterOpenSveltos(out io.Writer, name string, env map[string]string, space *clusterSpace, printToken bool) error {
-	url, err := clusterSveltosDashboardEndpoint(name, env, space)
+func clusterOpenSveltos(out io.Writer, name string, env map[string]string, space *clusterSpace, printToken bool, identity string) error {
+	account, err := clusterParseSveltosAccount(identity)
 	if err != nil {
 		return err
 	}
+	url, urlErr := clusterSveltosDashboardEndpoint(name, env, space)
 	if printURL {
+		if urlErr != nil {
+			return urlErr
+		}
 		fmt.Fprintln(out, url)
 		return nil
 	}
 
 	// Create the token before launching the browser, so the paste is ready by
 	// the time the login form is.
-	token, tokenErr := clusterSveltosDashboardToken(ctx, name)
+	token, expiry, tokenErr := clusterSveltosDashboardToken(ctx, out, name, account)
 
-	if err := open.Start(url); err != nil {
-		return fmt.Errorf("failed to open browser on %s: %w", url, err)
+	switch {
+	case urlErr != nil:
+		fmt.Fprintf(out, "Could not find the Sveltos dashboard of cluster %q: %v\n", name, urlErr)
+	case open.Start(url) != nil:
+		fmt.Fprintf(out, "Could not open a browser; the Sveltos dashboard of cluster %q is at %s\n", name, url)
+	default:
+		fmt.Fprintf(out, "Opened the Sveltos dashboard of cluster %q: %s\n", name, url)
 	}
-	fmt.Fprintf(out, "Opened the Sveltos dashboard of cluster %q: %s\n", name, url)
+	fmt.Fprintf(out, "  service account: %s\n", account)
 	switch {
 	case token == "":
 		fmt.Fprintf(out, "  token: could not be created (%v)\n", tokenErr)
@@ -225,8 +249,10 @@ func clusterOpenSveltos(out io.Writer, name string, env map[string]string, space
 	default:
 		if cerr := clipboardCopy(ctx, token); cerr != nil {
 			fmt.Fprintf(out, "  token: %s  (could not copy to clipboard: %v)\n", token, cerr)
+		} else if expiry.IsZero() {
+			fmt.Fprintf(out, "  token: in your clipboard — paste it into the dashboard's login form\n")
 		} else {
-			fmt.Fprintf(out, "  token: in your clipboard, valid for %s — paste it into the dashboard's login form\n", clusterSveltosDashboardTokenDuration)
+			fmt.Fprintf(out, "  token: in your clipboard, valid until %s — paste it into the dashboard's login form\n", expiry.Local().Format("Jan 2 15:04"))
 		}
 	}
 	return nil

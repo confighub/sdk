@@ -169,6 +169,9 @@ func clusterRemoveLocalFiles(out io.Writer, name string) {
 	if err := os.Remove(clusterEnvFilePath(name)); err != nil && !os.IsNotExist(err) {
 		fmt.Fprintf(out, "  warning: removing env file: %v\n", err)
 	}
+	if err := os.RemoveAll(clusterSveltosTokenDir(name)); err != nil {
+		fmt.Fprintf(out, "  warning: removing Sveltos dashboard tokens: %v\n", err)
+	}
 	if err := clusterRemoveRecord(name); err != nil {
 		fmt.Fprintf(out, "  warning: removing record: %v\n", err)
 	}

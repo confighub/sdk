@@ -247,6 +247,13 @@ func clusterUpRun(out io.Writer, opts clusterUpOptions) error {
 	kubeconfigPath := clusterKubeconfigPath(opts.name)
 	envFilePath := clusterEnvFilePath(opts.name)
 
+	// A cluster of the same name deleted without `cub cluster down` leaves its
+	// dashboard tokens behind, which `cub cluster open` would hand over until
+	// they expired: the new cluster rejects them.
+	if err := os.RemoveAll(clusterSveltosTokenDir(opts.name)); err != nil {
+		return fmt.Errorf("remove a previous cluster's Sveltos dashboard tokens: %w", err)
+	}
+
 	// Reserve a port window: first port = the controller UI's NodePort
 	// (argocd-server, or the Sveltos dashboard), the rest (if any) =
 	// user-allocatable NodePorts. Flux has no UI, so the whole window is the
@@ -401,8 +408,8 @@ func clusterUpRun(out io.Writer, opts clusterUpOptions) error {
 }
 
 // clusterBuildSveltosEnvFile renders the shell-source env file for a cluster
-// running Sveltos. The dashboard token is not stored: it expires, so it is
-// created when needed.
+// running Sveltos. The dashboard token is not in it: `cub cluster open` keeps it
+// in a file of its own, and replaces it when it expires.
 func clusterBuildSveltosEnvFile(name, kubeconfigPath string, dashboardPort int) string {
 	return fmt.Sprintf(`# cub cluster: %s
 # Source this file: source %s

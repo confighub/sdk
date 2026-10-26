@@ -5,6 +5,8 @@ package main
 
 import (
 	"bytes"
+	"crypto/rand"
+	"crypto/sha256"
 	"encoding/base64"
 	"encoding/json"
 	"fmt"
@@ -504,21 +506,20 @@ func getApiInfo(coordinate Coordinate) (*goclientnew.ApiInfo, error) {
 	return apiinfo.JSON200, nil
 }
 
-// generateCodeVerifier generates a PKCE code verifier
+// generateCodeVerifier generates a PKCE code verifier (RFC 7636 §4.1): 32 random
+// bytes, base64url-encoded without padding, giving 43 characters from the
+// unreserved set.
 func generateCodeVerifier() string {
-	const chars = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789-._~"
-	result := make([]byte, 128)
-	for i := range result {
-		result[i] = chars[time.Now().UnixNano()%int64(len(chars))]
-	}
-	return string(result)
+	b := make([]byte, 32)
+	rand.Read(b)
+	return base64.RawURLEncoding.EncodeToString(b)
 }
 
-// generateCodeChallenge generates a PKCE code challenge from the verifier
+// generateCodeChallenge derives the S256 code challenge from the verifier
+// (RFC 7636 §4.2).
 func generateCodeChallenge(codeVerifier string) string {
-	// For simplicity, we'll use the plain method (S256 would require crypto/sha256)
-	// In production, you should use S256 method
-	return codeVerifier
+	sum := sha256.Sum256([]byte(codeVerifier))
+	return base64.RawURLEncoding.EncodeToString(sum[:])
 }
 
 // DeviceLoginInfo represents the response from the identity provider's device authorization endpoint
@@ -536,7 +537,7 @@ func getDeviceLoginInfo(clientID, codeChallenge, deviceAuthURL string) (*DeviceL
 	params := url.Values{}
 	params.Set("client_id", clientID)
 	params.Set("code_challenge", codeChallenge)
-	params.Set("code_challenge_method", "plain")
+	params.Set("code_challenge_method", "S256")
 	params.Set("scope", "openid email")
 
 	req, err := http.NewRequest(http.MethodPost, deviceAuthURL, strings.NewReader(params.Encode()))

@@ -142,3 +142,23 @@ func TestUploadServerPull(t *testing.T) {
 		})
 	}
 }
+
+// A directory upload sends its configuration files and its README, and nothing else.
+func TestIsUploadFile(t *testing.T) {
+	for path, want := range map[string]bool{
+		"web.yaml":          true,
+		"web.yml":           true,
+		"config/app.env":    true,
+		"README.md":         true,
+		"docs/README.md":    true,
+		"NOTES.md":          false,
+		"notes.txt":         false,
+		"chart/.helmignore": false,
+		"config/app.toml":   true,
+		"config/readme.md":  false,
+	} {
+		if got := isUploadFile(path); got != want {
+			t.Errorf("isUploadFile(%q) = %v, want %v", path, got, want)
+		}
+	}
+}

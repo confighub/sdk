@@ -62,7 +62,7 @@ var variantUploadCmd = &cobra.Command{
 
 The input is a stream of rendered resources — from the installer, "kustomize build",
 or "helm template" — supplied as files, directories (walked for .yaml, .yml, .json,
-.env, .properties, .toml, and .ini), "-" for
+.env, .properties, .toml, and .ini files, and README.md), "-" for
 stdin, or an "oci://" reference to a manifest bundle. This command does not render
 anything; it ingests what you give it.
 
@@ -116,6 +116,8 @@ holding application configuration rather than Kubernetes resources — a .proper
 .env, .toml, or .ini file, or YAML or JSON with no apiVersion and kind — becomes one
 untargeted AppConfig Unit, named by its configHub.configName or else by its path
 (config/app.properties becomes config-app). A YAML file mixing the two is refused.
+A README.md becomes an untargeted AppConfig/Text Unit named README.md, which the UI
+shows as the Variant's Readme.
 
 Links between Units are inferred from references, label selectors, and custom-resource
 → CRD relationships. Because ConfigHub does not break dependency cycles, any cycle in
@@ -676,11 +678,19 @@ func walkUploadDir(dir string, add func(path, content string)) error {
 	})
 }
 
+// readmeFile is uploaded as an AppConfig/Text Unit of the same name, which the UI
+// shows as the Variant's Readme.
+const readmeFile = "README.md"
+
 // isUploadFile reports whether a file is one the server classifies: YAML or JSON,
-// or an AppConfig format's extension. Text is the exception, as it is on the
-// server: ".txt" is too common in a directory to send every such file. Anything
-// else in a directory is skipped rather than sent.
+// an AppConfig format's extension, or a README.md. Text is the exception, as it
+// is on the server: ".txt" is too common in a directory to send every such file,
+// and a README is the one Text file a bundle names on purpose. Anything else in
+// a directory is skipped rather than sent.
 func isUploadFile(path string) bool {
+	if filepath.Base(path) == readmeFile {
+		return true
+	}
 	ext := strings.ToLower(filepath.Ext(path))
 	if ext == ".yml" {
 		return true
