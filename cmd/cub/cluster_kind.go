@@ -6,11 +6,14 @@ package main
 import (
 	"bytes"
 	"context"
+	"encoding/json"
 	"fmt"
 	"io"
+	"maps"
 	"os"
 	"os/exec"
 	"slices"
+	"strconv"
 	"strings"
 )
 
@@ -42,21 +45,22 @@ func clusterKindAvailable() error {
 
 // clusterKindCreate runs `kind create cluster` with a generated config that
 // opens the given port mappings and host mounts on the control-plane node.
-// kind writes the cluster's kubeconfig to the given path (rather than merging
-// into ~/.kube/config) so each cluster's credentials stay isolated. Returns
-// the kube context name kind wires up (`kind-<name>`).
-func clusterKindCreate(ctx context.Context, name, kubeconfigPath string, ports []clusterPortMapping, mounts []clusterMount, out io.Writer) (string, error) {
-	configPath, err := clusterWriteKindConfig(name, ports, mounts)
+// kind writes the cluster's kubeconfig to kubeconfigPath when it is set, which
+// keeps a cub-managed cluster's credentials isolated, and otherwise merges it
+// into $KUBECONFIG or ~/.kube/config. Returns the kube context name kind wires
+// up (`kind-<name>`).
+func clusterKindCreate(ctx context.Context, name, kubeconfigPath string, ports []clusterPortMapping, mounts []clusterMount, nodeLabels map[string]string, out io.Writer) (string, error) {
+	configPath, err := clusterWriteKindConfig(name, ports, mounts, nodeLabels)
 	if err != nil {
 		return "", err
 	}
 	defer os.Remove(configPath)
 
-	cmd := exec.CommandContext(ctx, "kind", "create", "cluster",
-		"--name", name,
-		"--kubeconfig", kubeconfigPath,
-		"--config", configPath,
-	)
+	args := []string{"create", "cluster", "--name", name, "--config", configPath}
+	if kubeconfigPath != "" {
+		args = append(args, "--kubeconfig", kubeconfigPath)
+	}
+	cmd := exec.CommandContext(ctx, "kind", args...)
 	cmd.Stdout = out
 	cmd.Stderr = out
 	if err := cmd.Run(); err != nil {
@@ -67,7 +71,7 @@ func clusterKindCreate(ctx context.Context, name, kubeconfigPath string, ports [
 
 // clusterWriteKindConfig generates a kind v1alpha4 cluster config to a temp
 // file and returns its path. The caller removes the file.
-func clusterWriteKindConfig(name string, ports []clusterPortMapping, mounts []clusterMount) (string, error) {
+func clusterWriteKindConfig(name string, ports []clusterPortMapping, mounts []clusterMount, nodeLabels map[string]string) (string, error) {
 	var b strings.Builder
 	b.WriteString("kind: Cluster\n")
 	b.WriteString("apiVersion: kind.x-k8s.io/v1alpha4\n")
@@ -76,6 +80,12 @@ func clusterWriteKindConfig(name string, ports []clusterPortMapping, mounts []cl
 	b.WriteString("\n")
 	b.WriteString("nodes:\n")
 	b.WriteString("- role: control-plane\n")
+	if len(nodeLabels) > 0 {
+		b.WriteString("  labels:\n")
+		for _, k := range slices.Sorted(maps.Keys(nodeLabels)) {
+			fmt.Fprintf(&b, "    %s: %q\n", k, nodeLabels[k])
+		}
+	}
 	if len(ports) > 0 {
 		b.WriteString("  extraPortMappings:\n")
 		for _, p := range ports {
@@ -179,6 +189,53 @@ func clusterKindExists(ctx context.Context, name string) (bool, error) {
 		return false, err
 	}
 	return slices.Contains(clusters, name), nil
+}
+
+// clusterKindNodeLabels returns the labels of a kind cluster's control-plane
+// node, where `cub cluster create` records what it made: the host port window
+// it mapped (clusterAnnotationPortRange) and that cub created the cluster
+// (clusterAnnotationOrigin, clusterOriginKind). A cluster made by hand, or
+// before the labels were written, has neither.
+func clusterKindNodeLabels(ctx context.Context, kubeconfigPath string) (map[string]string, error) {
+	raw, err := clusterKubectlOutput(ctx, kubeconfigPath, "get", "nodes",
+		"-l", "node-role.kubernetes.io/control-plane", "-o", "json")
+	if err != nil {
+		return nil, err
+	}
+	var nodes struct {
+		Items []struct {
+			Metadata struct {
+				Labels map[string]string `json:"labels"`
+			} `json:"metadata"`
+		} `json:"items"`
+	}
+	if err := json.Unmarshal(raw, &nodes); err != nil {
+		return nil, fmt.Errorf("parse nodes: %w", err)
+	}
+	if len(nodes.Items) == 0 {
+		return nil, nil
+	}
+	return nodes.Items[0].Metadata.Labels, nil
+}
+
+// clusterParsePortRange parses a "<first>-<last>" port window.
+func clusterParsePortRange(v string) (start, size int, err error) {
+	first, last, ok := strings.Cut(v, "-")
+	if !ok {
+		return 0, 0, fmt.Errorf("port range %q: want <first>-<last>", v)
+	}
+	start, err = strconv.Atoi(first)
+	if err != nil {
+		return 0, 0, fmt.Errorf("port range %q: %w", v, err)
+	}
+	end, err := strconv.Atoi(last)
+	if err != nil {
+		return 0, 0, fmt.Errorf("port range %q: %w", v, err)
+	}
+	if end < start {
+		return 0, 0, fmt.Errorf("port range %q: last port before first", v)
+	}
+	return start, end - start + 1, nil
 }
 
 // clusterKubectlApply pipes the manifest to `kubectl --kubeconfig <path> apply -f -`.

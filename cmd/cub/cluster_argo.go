@@ -16,8 +16,8 @@ import (
 
 // Argo CD install + configuration inside a cluster, so it can pull config from
 // ConfigHub's OCI registry. All operations shell out to kubectl using a
-// per-cluster kubeconfig. The caller is clusterAttach, on behalf of both `cub
-// cluster up` and `cub cluster attach`.
+// per-cluster kubeconfig. The caller is clusterInstallController, on behalf of
+// `cub cluster controller-install`, `cub cluster attach` and `cub cluster up`.
 
 // clusterArgoDefaultVersion is the Argo CD release installed when none is
 // named. "stable" tracks upstream's stable tag — currency outweighs an exact

@@ -304,7 +304,7 @@ func clusterArgoURL(name string, env map[string]string) (string, error) {
 		return "", fmt.Errorf("cluster %q: no env file at %s and no cub-managed Space for it in the current cub context (are you in the right context? see 'cub cluster list')",
 			name, clusterEnvFilePath(name))
 	}
-	if space.Origin == clusterOriginAttach {
+	if space.Origin == clusterOriginAttach && space.ArgoPort == "" {
 		return "", fmt.Errorf("cluster %q was attached, and attach does not expose Argo CD on a host port; reach the UI with\n  kubectl --kubeconfig %s port-forward svc/argocd-server -n %s 8080:80\nand open http://localhost:8080",
 			name, clusterKubeconfigPath(name), clusterArgoNamespace)
 	}

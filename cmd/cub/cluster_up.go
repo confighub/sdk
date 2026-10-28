@@ -31,11 +31,12 @@ var clusterUpCmd = &cobra.Command{
 	Use:   "up [<name>]",
 	Args:  cobra.MaximumNArgs(1),
 	Short: "Create a kind cluster and attach it to ConfigHub, via Argo CD, Sveltos or Flux",
-	Long: `Creates a local kind cluster and attaches it: everything "cub cluster attach"
-does — the controller, the cluster and apps Spaces, the service account, the
-gated OCI target, the root app-of-apps, argobot — on a cluster this command
-just created. See "cub cluster attach --help" for what attaching sets up; this
-help covers what "up" adds.
+	Long: `Creates a local kind cluster and attaches it: "cub cluster create" followed by
+"cub cluster attach --provider kind", which sets up the controller, the
+cluster and apps Spaces, the service account, the gated OCI target, the root
+app-of-apps and argobot. See "cub cluster attach --help" for what attaching
+sets up; this help covers what "up" adds. Unlike a cluster attached by hand,
+one "up" brings up is torn down again with "cub cluster down".
 
 The kind node gets a window of host ports mapped through: the first is the
 controller UI's NodePort, so Argo CD is at http://localhost:<argo-port>
@@ -99,7 +100,7 @@ func init() {
 	clusterUpCmd.Flags().StringVar(&clusterUpArgs.controller, "controller", clusterControllerArgo, "controller to install and wire to ConfigHub: argo (Argo CD), sveltos (Sveltos) or flux (Flux)")
 	clusterUpCmd.Flags().StringArrayVar(&clusterUpArgs.mounts, "mount", nil, "host:container bind mount (repeatable; container path defaults to /mnt/<basename>)")
 	clusterUpCmd.Flags().BoolVar(&clusterUpArgs.noPorts, "no-ports", false, "only reserve the controller UI's NodePort (none for Flux); skip the user-app NodePort window")
-	clusterUpCmd.Flags().BoolVar(&clusterUpArgs.noArgobot, "no-k8sbot", false, "skip installing argobot (the event-driven Argo CD sync, Sveltos redeploy, or Flux reconciliation, bot)")
+	clusterUpCmd.Flags().BoolVar(&clusterUpArgs.noArgobot, "no-k8sbot", false, "skip installing argobot (the event-driven Argo CD sync, Sveltos redeploy, or Flux reconciliation, bot); 'cub cluster k8sbot-install' installs it later")
 	clusterUpCmd.Flags().StringVar(&clusterUpArgs.argobotBase, "k8sbot-base", "", "what to do with argobot's shared base Space when it already exists: update (upload what argobot:latest installs over it, then clone it) or clone (clone it as it is); asked when stdin is a terminal, otherwise update")
 	clusterUpCmd.Flags().BoolVar(&clusterUpArgs.noPlaceholderGate, "no-placeholder-gate", false, "skip the default vet-placeholders Trigger, allowing Releases with unfilled confighubplaceholder values to be published to this cluster")
 	clusterUpCmd.Flags().StringVar(&clusterUpArgs.controllerVersion, "controller-version", "", "controller release to install (default: argo "+clusterArgoDefaultVersion+", sveltos "+clusterSveltosVersion+", flux "+clusterFluxVersion+"; Argo CD must be v3.1 or later, which oci:// sources need)")
@@ -223,7 +224,7 @@ func clusterUpRun(out io.Writer, opts clusterUpOptions) error {
 	if !opts.noArgobot {
 		argobotSlug = clusterArgobotComponent + "-" + opts.name
 	}
-	if err := clusterRequireFreshConfigHub(opts.name, opts.spaceSlug, appsSlug, argobotSlug); err != nil {
+	if err := clusterRequireFreshConfigHub(opts.name, opts.spaceSlug, appsSlug, argobotSlug, true); err != nil {
 		return err
 	}
 	if !opts.noArgobot {
@@ -234,19 +235,6 @@ func clusterUpRun(out io.Writer, opts clusterUpOptions) error {
 		opts.argobotBase = mode
 	}
 
-	if exists, err := clusterKindExists(ctx, opts.name); err != nil {
-		return err
-	} else if exists {
-		return fmt.Errorf("kind cluster %q already exists", opts.name)
-	}
-
-	if err := clusterEnsureKubeconfigDir(); err != nil {
-		return err
-	}
-
-	kubeconfigPath := clusterKubeconfigPath(opts.name)
-	envFilePath := clusterEnvFilePath(opts.name)
-
 	// A cluster of the same name deleted without `cub cluster down` leaves its
 	// dashboard tokens behind, which `cub cluster open` would hand over until
 	// they expired: the new cluster rejects them.
@@ -254,134 +242,70 @@ func clusterUpRun(out io.Writer, opts clusterUpOptions) error {
 		return fmt.Errorf("remove a previous cluster's Sveltos dashboard tokens: %w", err)
 	}
 
-	// Reserve a port window: first port = the controller UI's NodePort
-	// (argocd-server, or the Sveltos dashboard), the rest (if any) =
-	// user-allocatable NodePorts. Flux has no UI, so the whole window is the
-	// user's, and --no-ports leaves none.
-	hasUI := opts.controller != clusterControllerFlux
-	windowSize := clusterPortRangeSize
-	if opts.noPorts {
-		windowSize = 0
-		if hasUI {
-			windowSize = 1
-		}
-	}
-	var startPort, uiPort int
-	var ports []clusterPortMapping
-	portRange := ""
-	if windowSize > 0 {
-		bound, err := clusterBoundHostPorts(ctx)
-		if err != nil {
-			return fmt.Errorf("probe docker for bound ports: %w", err)
-		}
-		startPort, err = clusterPickFreePortWindow(bound, clusterPortRangeStart, clusterPortRangeEnd, windowSize)
-		if err != nil {
-			return err
-		}
-		if hasUI {
-			uiPort = startPort
-		}
-		ports = make([]clusterPortMapping, 0, windowSize)
-		for p := startPort; p < startPort+windowSize; p++ {
-			ports = append(ports, clusterPortMapping{HostPort: p, ContainerPort: p})
-		}
-		portRange = fmt.Sprintf("%d-%d", startPort, startPort+windowSize-1)
-	}
-
-	fmt.Fprintf(out, "Creating kind cluster %q (kubeconfig: %s)...\n", opts.name, kubeconfigPath)
-	if _, err := clusterKindCreate(ctx, opts.name, kubeconfigPath, ports, opts.mounts, out); err != nil {
-		return err
-	}
-	rollback := []func(){
-		func() {
-			fmt.Fprintf(out, "Rolling back: kind delete cluster %q\n", opts.name)
-			_ = clusterKindDelete(ctx, opts.name, kubeconfigPath, out)
-			// kind drains its entries but leaves the kubeconfig file behind;
-			// remove it so a retry with the same name doesn't trip the
-			// "kubeconfig already exists" precondition.
-			_ = os.Remove(kubeconfigPath)
-			_ = os.Remove(envFilePath)
-			_ = clusterRemoveRecord(opts.name)
-		},
-	}
-	commit := false
-	defer func() {
-		if commit {
-			return
-		}
-		for i := len(rollback) - 1; i >= 0; i-- {
-			rollback[i]()
-		}
-	}()
-
-	// Everything from here is the attachment, with the pieces only a kind
-	// cluster has: the port window on the Space, the controller UI exposed on
-	// the mapped NodePort, and a deep link to it on the target.
-	spaceAnnotations := map[string]string{}
-	if portRange != "" {
-		spaceAnnotations[clusterAnnotationPortRange] = portRange
-	}
-	targetAnnotations := map[string]string{}
-	switch opts.controller {
-	case clusterControllerSveltos:
-		spaceAnnotations[clusterAnnotationSveltosPort] = fmt.Sprintf("%d", uiPort)
-		targetAnnotations[clusterAnnotationTargetUI] = clusterSveltosTargetUI(uiPort)
-	case clusterControllerFlux:
-		// No UI, so no port and no deep link.
-	default:
-		spaceAnnotations[clusterAnnotationArgoPort] = fmt.Sprintf("%d", uiPort)
-		// URL-TargetUI deep link: the ConfigHub UI substitutes "{slug}" with the
-		// Space slug at render time, linking a Unit straight to its Argo CD
-		// Application UI on the locally-forwarded argocd-server NodePort.
-		targetAnnotations[clusterAnnotationTargetUI] = fmt.Sprintf("http://localhost:%d/applications/argocd/{slug}", uiPort)
-	}
-	result, err := clusterAttach(out, clusterAttachSpec{
-		name:              opts.name,
-		spaceSlug:         opts.spaceSlug,
-		kubeconfigPath:    kubeconfigPath,
-		origin:            clusterOriginKind,
-		controller:        opts.controller,
-		spaceAnnotations:  spaceAnnotations,
-		targetAnnotations: targetAnnotations,
-		controllerVersion: opts.controllerVersion,
-		argo: clusterArgoOptions{
-			installIfAbsent: true,
-			nodePort:        uiPort,
-		},
-		sveltos: clusterSveltosOptions{
-			installIfAbsent: true,
-			nodePort:        uiPort,
-		},
-		fluxInstallIfAbsent: true,
-		noArgobot:           opts.noArgobot,
-		argobotBase:         opts.argobotBase,
-		noPlaceholderGate:   opts.noPlaceholderGate,
-		prune:               opts.prune,
-	}, func(f func()) { rollback = append(rollback, f) })
+	// kind's own kubeconfig goes to a scratch file, kept until the end so the
+	// rollback's `kind delete` can clean it: attach writes the copy every other
+	// `cub cluster` command reads, from `kind get kubeconfig`.
+	scratch, err := os.CreateTemp("", "cub-cluster-"+opts.name+"-*.kubeconfig")
 	if err != nil {
 		return err
 	}
-	adminPassword := result.argo.adminPassword
+	scratch.Close()
+	defer os.Remove(scratch.Name())
 
-	if err := clusterWriteRecord(clusterNewRecord(opts.name, opts.spaceSlug, clusterOriginKind, opts.controller)); err != nil {
-		return fmt.Errorf("write cluster record: %w", err)
+	// `cub cluster create`. The first port of the window is for the
+	// controller's UI (argocd-server, or the Sveltos dashboard), which attach
+	// puts there; --no-ports keeps only that one. Flux has no UI, so the whole
+	// window is the user's, and --no-ports leaves none.
+	_, undoCreate, err := clusterCreateKind(out, clusterCreateSpec{
+		name:           opts.name,
+		kubeconfigPath: scratch.Name(),
+		mounts:         opts.mounts,
+		noPorts:        opts.noPorts,
+		uiPort:         opts.controller != clusterControllerFlux,
+	})
+	if err != nil {
+		return err
 	}
-	var envContents string
-	switch opts.controller {
+	clusterPrintMounts(out, opts.mounts)
+
+	// `cub cluster attach --provider kind`, as a cluster cub created: `cub
+	// cluster down` deletes it. attach rolls back its own side when it fails;
+	// the kind cluster is ours to delete.
+	if err := clusterAttachRun(out, clusterAttachOptions{
+		name:              opts.name,
+		spaceSlug:         opts.spaceSlug,
+		provider:          clusterProviderKind,
+		cluster:           opts.name,
+		controller:        opts.controller,
+		controllerVersion: opts.controllerVersion,
+		noArgobot:         opts.noArgobot,
+		argobotBase:       opts.argobotBase,
+		noPlaceholderGate: opts.noPlaceholderGate,
+		prune:             opts.prune,
+		origin:            clusterOriginKind,
+	}); err != nil {
+		undoCreate()
+		return err
+	}
+	return nil
+}
+
+// clusterBuildPortEnvFile renders the shell-source env file for a kind cluster
+// whose controller UI is on host port uiPort (Flux has none).
+func clusterBuildPortEnvFile(controller, name, kubeconfigPath string, uiPort int, adminPassword string) string {
+	switch controller {
 	case clusterControllerSveltos:
-		envContents = clusterBuildSveltosEnvFile(opts.name, kubeconfigPath, uiPort)
+		return clusterBuildSveltosEnvFile(name, kubeconfigPath, uiPort)
 	case clusterControllerFlux:
-		envContents = clusterBuildFluxEnvFile(opts.name, kubeconfigPath)
-	default:
-		envContents = clusterBuildEnvFile(opts.name, kubeconfigPath, uiPort, adminPassword)
+		return clusterBuildFluxEnvFile(name, kubeconfigPath)
 	}
-	if err := os.WriteFile(envFilePath, []byte(envContents), 0o600); err != nil {
-		return fmt.Errorf("write env file: %w", err)
-	}
+	return clusterBuildEnvFile(name, kubeconfigPath, uiPort, adminPassword)
+}
 
-	commit = true
-	clusterPrintSummaryHead(out, "Done", result, kubeconfigPath, envFilePath)
-	switch opts.controller {
+// clusterPrintPortUI prints where a kind cluster's controller UI is on the
+// host, and how to log in to it.
+func clusterPrintPortUI(out io.Writer, controller, name, kubeconfigPath string, uiPort int, adminPassword string) {
+	switch controller {
 	case clusterControllerSveltos:
 		fmt.Fprintf(out, "\nSveltos dashboard: http://localhost:%d\n", uiPort)
 		fmt.Fprintf(out, "Log in with a token from:\n  KUBECONFIG=%s kubectl create token %s --duration=24h\n", kubeconfigPath, clusterSveltosDashboardAccount)
@@ -389,22 +313,8 @@ func clusterUpRun(out io.Writer, opts clusterUpOptions) error {
 		fmt.Fprintf(out, "\nFlux has no UI. See its state with:\n  KUBECONFIG=%s %s\n", kubeconfigPath, clusterFluxStatusCommand())
 	default:
 		fmt.Fprintf(out, "\nArgo CD: http://localhost:%d  (admin / %s)\n", uiPort, adminPassword)
-		fmt.Fprintf(out, "Reopen it later with the password on your clipboard:\n  cub cluster open %s\n", opts.name)
+		fmt.Fprintf(out, "Reopen it later with the password on your clipboard:\n  cub cluster open %s\n", name)
 	}
-	switch {
-	case hasUI && len(ports) > 1:
-		fmt.Fprintf(out, "\nUser NodePort window: %d-%d (%s uses %d; rest are open)\n", startPort, startPort+windowSize-1, opts.controller, uiPort)
-	case !hasUI && len(ports) > 0:
-		fmt.Fprintf(out, "\nUser NodePort window: %d-%d (all open)\n", startPort, startPort+windowSize-1)
-	}
-	if len(opts.mounts) > 0 {
-		fmt.Fprintf(out, "\nHost mounts (host → node, accessible to pods via hostPath):\n")
-		for _, m := range opts.mounts {
-			fmt.Fprintf(out, "  %s → %s\n", m.HostPath, m.ContainerPath)
-		}
-	}
-	clusterPrintSummaryTail(out, result, envFilePath)
-	return nil
 }
 
 // clusterBuildSveltosEnvFile renders the shell-source env file for a cluster

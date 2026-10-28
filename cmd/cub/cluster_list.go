@@ -59,6 +59,7 @@ type clusterListRow struct {
 	portRange   string
 	controller  string // from the Space or record; empty when unknown
 	uiPort      string // the controller UI's NodePort: Argo CD's, or the Sveltos dashboard's; none for Flux
+	stage       string // clusterStageController or clusterStageServiceAccount before attach has run, from the Space
 	createdAt   time.Time
 }
 
@@ -132,6 +133,7 @@ func clusterListRun(out io.Writer) error {
 		r.spaceSlug = s.SpaceSlug
 		r.portRange = s.PortRange
 		r.controller = s.Controller
+		r.stage = s.Stage
 		switch s.Controller {
 		case clusterControllerSveltos:
 			r.uiPort = s.SveltosPort
@@ -209,6 +211,12 @@ func clusterStatusOf(r *clusterListRow) string {
 		default:
 			return "Other context (not checked)"
 		}
+	}
+	switch r.stage {
+	case clusterStageController:
+		return "Controller installed (finish with cub cluster attach)"
+	case clusterStageServiceAccount:
+		return "Service account bootstrapped (finish with cub cluster attach)"
 	}
 	if r.origin == clusterOriginAttach {
 		switch {

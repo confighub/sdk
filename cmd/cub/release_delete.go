@@ -22,6 +22,10 @@ var releaseDeleteCmd = &cobra.Command{
 Deletion removes the release and its stored bundle. To take a release out of
 service while retaining it, use `+"`cub release withdraw`"+` instead.
 
+Deleting changes what is served to the cluster behind the release Target, so, as
+publishing does, it requires TargetEditChildren on the release's Space, as well as
+Edit on the release.
+
 The release is located by its ID regardless of which Space it lives in, so --space
 is not required (a Release lives in its bundled Units' Space, which need not be the
 caller's default).

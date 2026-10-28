@@ -63,7 +63,7 @@ func init() {
 	spaceUpdateCmd.Flags().StringVar(&spaceUpdateArgs.whereTrigger, "where-trigger", "", "filter expression to identify Triggers that should be invoked on Units within this Space; with neither it nor a trigger filter, the Triggers in the Space are (use '-' to clear)")
 	spaceUpdateCmd.Flags().StringVar(&spaceUpdateArgs.triggerFilter, "trigger-filter", "", "Filter slug or UUID to identify Triggers that should be invoked on Units within this Space (use '-' to clear)")
 	spaceUpdateArgs.attributes = addSpaceAttributeFlags(spaceUpdateCmd)
-	spaceUpdateCmd.Flags().StringVar(&spaceUpdateArgs.releaseTarget, "release-target", "", "Target to use as the default release Target for Units in this Space, addressed as <target-space>/<target-slug> (a bare <target-slug> resolves in --space; a Target ID is also accepted; use '-' to clear)")
+	spaceUpdateCmd.Flags().StringVar(&spaceUpdateArgs.releaseTarget, "release-target", "", "Target to use as the default release Target for Units in this Space, addressed as <target-space>/<target-slug> (a bare <target-slug> resolves in --space; a Target ID is also accepted; use '-' to clear). Setting it requires Use on the Target, and any change requires Edit on each Unit whose Target it changes: those with the previous release Target, or, when there was none, those with no Target")
 	spaceUpdateCmd.Flags().StringVar(&spaceUpdateArgs.component, "component", "", "slug or ID of the Component the Space is a Variant of (use '-' to clear)")
 	spaceUpdateCmd.Flags().StringSliceVar(&spaceUpdateArgs.permissions, "permission", []string{}, permissionUpdateHelp)
 	spaceUpdateArgs.spaceLabels = addStandardLabelFlags(spaceUpdateCmd, "Space", standardSpaceLabels)

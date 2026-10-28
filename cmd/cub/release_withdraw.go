@@ -21,6 +21,11 @@ var releaseWithdrawCmd = &cobra.Command{
 Withdrawal takes the release out of service: it is no longer published for download,
 but the release itself is retained. Use `+"`cub release delete`"+` to remove it.
 
+Withdrawing changes what is served to the cluster behind the release Target, so,
+as publishing does, it requires TargetEditChildren on the release's Space, as well
+as Edit on the release. EditChildren on the Target grants Edit on the release, which
+lets the tool deploying it report its live status, but does not let it withdraw it.
+
 The release is located by its ID regardless of which Space it lives in, so --space
 is not required.
 

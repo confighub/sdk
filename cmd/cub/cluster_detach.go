@@ -178,6 +178,13 @@ func clusterDetach(ctx context.Context, out io.Writer, name, kubeconfigPath stri
 			"delete", "namespace", clusterArgobotNamespace, "--ignore-not-found", "--wait=false"); err != nil {
 			fmt.Fprintf(out, "  warning: %v\n", err)
 		}
+	} else if hasKey, err := clusterHasArgobotKey(kubeconfigPath); err == nil && hasKey {
+		// `cub cluster svc-account-bootstrap` applies the key before argobot is
+		// installed, so a cluster detached in between has the key and no bot.
+		if err := clusterKubectl(ctx, kubeconfigPath, nil, out,
+			"delete", "secret", clusterArgobotSecret, "-n", clusterArgobotNamespace, "--ignore-not-found"); err != nil {
+			fmt.Fprintf(out, "  warning: %v\n", err)
+		}
 	}
 	if err := clusterKubectl(ctx, kubeconfigPath, nil, out,
 		"delete", "secret", credsSecret, "-n", controllerNamespace, "--ignore-not-found"); err != nil {

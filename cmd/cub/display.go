@@ -621,7 +621,7 @@ func displayBulkDeleteResults(responses200 *[]goclientnew.DeleteResponse, respon
 		// Display verbose success messages
 		if verbose && len(successMessages) > 0 {
 			for _, msg := range successMessages {
-				fmt.Printf("Successfully %sd %s: %s\n", operationName, entityName, msg)
+				fmt.Printf("Successfully %s %s: %s\n", pastTense(operationName), entityName, msg)
 			}
 		}
 
@@ -648,6 +648,15 @@ func displayBulkDeleteResults(responses200 *[]goclientnew.DeleteResponse, respon
 	}
 
 	return nil
+}
+
+// pastTense is the past tense of a bulk operation's verb, as its results report it: "updated",
+// "refreshed".
+func pastTense(operationName string) string {
+	if strings.HasSuffix(operationName, "e") {
+		return operationName + "d"
+	}
+	return operationName + "ed"
 }
 
 // Generic display function for entity types
@@ -706,7 +715,7 @@ func displayBulkGenericCreateOrUpdateResults[T any](
 				if dryRun {
 					fmt.Printf("Would %s %s: %s\n", operationName, entityName, name)
 				} else {
-					fmt.Printf("Successfully %sd %s: %s\n", operationName, entityName, name)
+					fmt.Printf("Successfully %s %s: %s\n", pastTense(operationName), entityName, name)
 				}
 			}
 		}

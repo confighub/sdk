@@ -57,6 +57,13 @@ orders they belong to; Include, the default, releases them.
 --dry-run publishes in a transaction that is rolled back, reporting the Release
 that would be published or why it would be refused.
 
+Publishing changes what the release Target's cluster runs, so it requires
+TargetEditChildren permission on <variant>'s Space, and no permission on the
+release Target: Use on it was required to make it the Space's release Target.
+Without --revision, publishing also creates a Tag recording what the Release
+bundles, which requires CreateChildren on the Space. Publishing a ChangeOrder
+also requires Use on the ChangeOrder.
+
 A publish is refused when a bundled Unit has outstanding ValidationErrors on the
 Revision it would bundle, or when that Revision is part of a ChangeSet that has not
 closed or is not where the ChangeSet ended. It is also refused when the Component

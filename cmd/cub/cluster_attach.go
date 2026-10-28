@@ -8,11 +8,14 @@ import (
 	"context"
 	"fmt"
 	"io"
+	"maps"
 	"net/url"
 	"os"
 	"os/exec"
+	"strconv"
 	"strings"
 
+	"github.com/google/uuid"
 	"github.com/spf13/cobra"
 	"sigs.k8s.io/yaml"
 )
@@ -47,6 +50,20 @@ after creating its kind cluster, and "cub cluster up" is built on it.
 
 Attach never creates or destroys a cluster. The inverse, "cub cluster detach",
 removes the wiring and leaves the cluster running.
+
+Its first part — the controller in the cluster, the cluster Space and its OCI
+target — is "cub cluster controller-install", and its second — the cluster's
+service account, with its key and pull token in the cluster — is "cub cluster
+svc-account-bootstrap". Either can be run on its own first, in that order.
+Its third — the apps Space and the root — is "cub cluster app-bootstrap",
+which finishes the attachment without argobot, and its last, argobot, is "cub
+cluster k8sbot-install", which installs it in a cluster attached with
+--no-k8sbot.
+Attach then picks the cluster up where they left it: it keeps the
+credentials, controller, Space, target and service account, takes the
+controller and Space from them, and ignores the flags of those parts
+(--provider and the credential flags, --controller-version, --no-install and
+--no-placeholder-gate).
 
 Where the cluster's credentials come from is --provider:
 
@@ -128,7 +145,11 @@ reach.
 Argo CD is not exposed outside the cluster by attach. Reach its UI with
 "kubectl port-forward svc/argocd-server -n argocd 8080:80" against the
 kubeconfig attach wrote; the initial admin password is in
-argocd-initial-admin-secret.
+argocd-initial-admin-secret. The exception is a kind cluster that "cub cluster
+create" made: its node carries the host port window create mapped, and when
+attach installs Argo CD or Sveltos it puts the UI on the window's first port,
+records the window on the cluster Space, and "cub cluster open" opens the UI
+there, as for "cub cluster up".
 
 With --controller sveltos, Sveltos takes Argo CD's place: it is installed
 from the upstream manifest, with its dashboard, if the projectsveltos
@@ -188,12 +209,12 @@ func init() {
 	clusterAttachCmd.Flags().StringVar(&clusterAttachArgs.awsRegion, "aws-region", "", "--provider eks: the cluster's AWS region (defaults to the AWS CLI's: AWS_REGION or the profile's)")
 	clusterAttachCmd.Flags().StringVar(&clusterAttachArgs.awsProfile, "aws-profile", "", "--provider eks: the AWS CLI profile (defaults to AWS_PROFILE)")
 	clusterAttachCmd.Flags().BoolVar(&clusterAttachArgs.grantAccess, "grant-access", false, "--provider eks: if your AWS identity has no access entry on the cluster, add one with cluster-admin")
-	clusterAttachCmd.Flags().StringVar(&clusterAttachArgs.controller, "controller", clusterControllerArgo, "controller to wire to ConfigHub: argo (Argo CD), sveltos (Sveltos) or flux (Flux)")
+	clusterAttachCmd.Flags().StringVar(&clusterAttachArgs.controller, "controller", "", "controller to wire to ConfigHub: argo (Argo CD), sveltos (Sveltos) or flux (Flux) (default argo, or the one 'cub cluster controller-install' installed)")
 	clusterAttachCmd.Flags().StringVar(&clusterAttachArgs.controllerVersion, "controller-version", "", "controller release to install when absent (default: argo "+clusterArgoDefaultVersion+", sveltos "+clusterSveltosVersion+", flux "+clusterFluxVersion+"; Argo CD must be v3.1 or later, which oci:// sources need)")
 	clusterAttachCmd.Flags().BoolVar(&clusterAttachArgs.noInstall, "no-install", false, "never install the controller; fail if the cluster has none")
 	clusterAttachCmd.Flags().BoolVar(&clusterAttachArgs.noArgoCD, "no-argocd", false, "--controller argo: the same as --no-install")
 	_ = clusterAttachCmd.Flags().MarkHidden("no-argocd")
-	clusterAttachCmd.Flags().BoolVar(&clusterAttachArgs.noArgobot, "no-k8sbot", false, "skip installing argobot (the event-driven Argo CD sync, Sveltos redeploy, or Flux reconciliation, bot)")
+	clusterAttachCmd.Flags().BoolVar(&clusterAttachArgs.noArgobot, "no-k8sbot", false, "skip installing argobot (the event-driven Argo CD sync, Sveltos redeploy, or Flux reconciliation, bot); 'cub cluster k8sbot-install' installs it later")
 	clusterAttachCmd.Flags().StringVar(&clusterAttachArgs.argobotBase, "k8sbot-base", "", "what to do with argobot's shared base Space when it already exists: update (upload what argobot:latest installs over it, then clone it) or clone (clone it as it is); asked when stdin is a terminal, otherwise update")
 	clusterAttachCmd.Flags().BoolVar(&clusterAttachArgs.noPlaceholderGate, "no-placeholder-gate", false, "skip the default vet-placeholders Trigger, allowing Releases with unfilled confighubplaceholder values to be published to this cluster")
 	clusterAttachCmd.Flags().BoolVar(&clusterAttachArgs.prune, "prune", false, "let the controller delete what a removed deployment deployed: the root prunes deployments whose Units leave the apps space (Sveltos's always does), and deployments created later prune what they deployed")
@@ -218,6 +239,10 @@ type clusterAttachOptions struct {
 	argobotBase       string
 	noPlaceholderGate bool
 	prune             bool
+	// origin is clusterOriginAttach, or clusterOriginKind when `cub cluster up`
+	// attaches the kind cluster it just created, which makes it a cluster `cub
+	// cluster down` deletes rather than one `cub cluster detach` leaves running.
+	origin string
 }
 
 func clusterAttachCmdRun(cmd *cobra.Command, args []string) error {
@@ -226,7 +251,7 @@ func clusterAttachCmdRun(cmd *cobra.Command, args []string) error {
 		return err
 	}
 	// --no-argocd is --no-install from when Argo CD was the only controller.
-	if clusterAttachArgs.noArgoCD && clusterAttachArgs.controller != clusterControllerArgo {
+	if clusterAttachArgs.noArgoCD && clusterAttachArgs.controller != "" && clusterAttachArgs.controller != clusterControllerArgo {
 		return fmt.Errorf("--no-argocd applies to --controller %s; use --no-install", clusterControllerArgo)
 	}
 	return clusterAttachRun(cmd.OutOrStdout(), clusterAttachOptions{
@@ -253,39 +278,67 @@ func clusterAttachRun(out io.Writer, opts clusterAttachOptions) error {
 	if opts.name == "" {
 		return fmt.Errorf("a cluster name is required: cub cluster attach <name>")
 	}
-	switch opts.controller {
-	case clusterControllerArgo, clusterControllerSveltos, clusterControllerFlux:
-	default:
-		return fmt.Errorf("--controller %q: must be %s, %s or %s", opts.controller,
-			clusterControllerArgo, clusterControllerSveltos, clusterControllerFlux)
+	// An empty --controller is Argo CD, or for a cluster `cub cluster
+	// controller-install` set up, the controller it installed.
+	if opts.controller != "" {
+		if err := clusterCheckController(opts.controller); err != nil {
+			return err
+		}
 	}
 	if _, err := exec.LookPath("kubectl"); err != nil {
 		return fmt.Errorf("kubectl not found on PATH")
 	}
-	if err := clusterAttachCheckProviderFlags(&opts); err != nil {
+	if opts.origin == "" {
+		opts.origin = clusterOriginAttach
+	}
+
+	// A cluster `cub cluster controller-install` set up is picked up where it
+	// left off: its credentials, controller, cluster Space and target are kept.
+	installedSpace, err := clusterFindControllerInstalled(out, opts.name)
+	if err != nil {
 		return err
 	}
-	eks := opts.provider == clusterProviderEKS
-	if opts.spaceSlug == "" {
-		opts.spaceSlug = opts.name
+	if installedSpace != nil {
+		if opts.controller != "" && opts.controller != installedSpace.Controller {
+			return fmt.Errorf("--controller %s: cluster %q has %s, which 'cub cluster controller-install' installed", opts.controller, opts.name, installedSpace.Controller)
+		}
+		if opts.spaceSlug != "" && opts.spaceSlug != installedSpace.SpaceSlug {
+			return fmt.Errorf("--space %s: cluster %q is in space %q, which 'cub cluster controller-install' created", opts.spaceSlug, opts.name, installedSpace.SpaceSlug)
+		}
+		opts.controller = installedSpace.Controller
+		opts.spaceSlug = installedSpace.SpaceSlug
+		opts.origin = installedSpace.Origin
+		leftBy := "controller-install"
+		if installedSpace.Stage == clusterStageServiceAccount {
+			leftBy = "svc-account-bootstrap"
+		}
+		fmt.Fprintf(out, "Picking up cluster %q where 'cub cluster %s' left it (space %q)...\n", opts.name, leftBy, opts.spaceSlug)
+	} else {
+		if opts.controller == "" {
+			opts.controller = clusterControllerArgo
+		}
+		if err := clusterAttachCheckProviderFlags(&opts); err != nil {
+			return err
+		}
+		if opts.spaceSlug == "" {
+			opts.spaceSlug = opts.name
+		}
 	}
 	appsSlug := opts.spaceSlug + clusterAppsSuffix(opts.controller)
 	kubeconfigPath := clusterKubeconfigPath(opts.name)
 	envFilePath := clusterEnvFilePath(opts.name)
 
-	if rec, err := clusterReadRecord(opts.name); err != nil {
-		return err
-	} else if rec != nil {
-		return fmt.Errorf("cluster %q is already cub-managed on this machine, wired to %s (see 'cub cluster list'); use another name, or detach it first (see 'cub cluster list')", opts.name, clusterRecordWhere(rec))
-	}
-	if _, err := os.Stat(kubeconfigPath); err == nil {
-		return fmt.Errorf("kubeconfig %s already exists; cluster %q is already cub-managed (see 'cub cluster list')", kubeconfigPath, opts.name)
-	}
 	argobotSlug := ""
 	if !opts.noArgobot {
 		argobotSlug = clusterArgobotComponent + "-" + opts.name
 	}
-	if err := clusterRequireFreshConfigHub(opts.name, opts.spaceSlug, appsSlug, argobotSlug); err != nil {
+	// What an earlier stage created is expected to exist; the rest is not.
+	freshSpaceSlug, freshServiceAccount := opts.spaceSlug, true
+	if installedSpace != nil {
+		freshSpaceSlug = ""
+		freshServiceAccount = installedSpace.Stage != clusterStageServiceAccount
+	}
+	if err := clusterRequireFreshConfigHub(opts.name, freshSpaceSlug, appsSlug, argobotSlug, freshServiceAccount); err != nil {
 		return err
 	}
 	if !opts.noArgobot {
@@ -296,12 +349,193 @@ func clusterAttachRun(out io.Writer, opts clusterAttachOptions) error {
 		opts.argobotBase = mode
 	}
 
+	var rollback []func()
+	commit := false
+	defer func() {
+		if commit {
+			return
+		}
+		for i := len(rollback) - 1; i >= 0; i-- {
+			rollback[i]()
+		}
+	}()
+	addRollback := func(f func()) { rollback = append(rollback, f) }
+
+	var inst clusterInstalled
+	if installedSpace != nil {
+		inst, err = clusterLoadInstalled(installedSpace, kubeconfigPath)
+	} else {
+		inst, err = clusterControllerInstallStage(out, &opts, addRollback)
+		// Recorded now, as `cub cluster controller-install` does, so a run
+		// stopped from here on is one the next attach picks up by the stage
+		// marker; the stage's rollback removes the record with the other
+		// local files.
+		if err == nil {
+			err = clusterWriteRecord(clusterNewRecord(opts.name, opts.spaceSlug, opts.origin, opts.controller))
+		}
+	}
+	if err != nil {
+		return err
+	}
+
+	if freshServiceAccount {
+		if err := clusterBootstrapServiceAccount(out, clusterServiceAccountSpec{
+			name:           opts.name,
+			spaceSlug:      opts.spaceSlug,
+			kubeconfigPath: kubeconfigPath,
+			controller:     opts.controller,
+			noArgobot:      opts.noArgobot,
+		}, inst, addRollback); err != nil {
+			return err
+		}
+	}
+
+	spec := clusterAttachSpec{
+		clusterControllerSpec: clusterControllerSpec{
+			name:              opts.name,
+			spaceSlug:         opts.spaceSlug,
+			kubeconfigPath:    kubeconfigPath,
+			origin:            opts.origin,
+			controller:        opts.controller,
+			noPlaceholderGate: inst.noPlaceholderGate,
+		},
+		noArgobot:   opts.noArgobot,
+		argobotBase: opts.argobotBase,
+		prune:       opts.prune,
+	}
+	// argobot goes in before the first apps-Space Release, so the root's first
+	// sync already deploys it.
+	var installBot func() error
+	if !opts.noArgobot {
+		installBot = func() error {
+			return clusterInstallK8sbot(out, clusterK8sbotSpec{
+				name:           opts.name,
+				spaceSlug:      opts.spaceSlug,
+				kubeconfigPath: kubeconfigPath,
+				controller:     opts.controller,
+				spaceID:        inst.spaceID,
+				targetID:       inst.targetID,
+				argobotBase:    opts.argobotBase,
+			}, addRollback)
+		}
+	}
+	result, err := clusterBootstrapApps(out, spec, inst, installBot, addRollback)
+	if err != nil {
+		return err
+	}
+
+	if err := clusterWriteRecord(clusterNewRecord(opts.name, opts.spaceSlug, opts.origin, opts.controller)); err != nil {
+		return fmt.Errorf("write cluster record: %w", err)
+	}
+	if err := clusterWriteEnvFile(opts.name, opts.origin, opts.controller, inst); err != nil {
+		return err
+	}
+
+	commit = true
+	verb := "Attached"
+	if opts.origin == clusterOriginKind {
+		verb = "Done"
+	}
+	clusterPrintSummaryHead(out, verb, result, kubeconfigPath, envFilePath)
+	clusterPrintControllerSummary(out, opts.name, opts.controller, kubeconfigPath, inst)
+	clusterPrintSummaryTail(out, result, envFilePath)
+	return nil
+}
+
+// clusterCheckController validates --controller.
+func clusterCheckController(controller string) error {
+	switch controller {
+	case clusterControllerArgo, clusterControllerSveltos, clusterControllerFlux:
+		return nil
+	}
+	return fmt.Errorf("--controller %q: must be %s, %s or %s", controller,
+		clusterControllerArgo, clusterControllerSveltos, clusterControllerFlux)
+}
+
+// clusterFindControllerInstalled returns the cluster Space of a cluster `cub
+// cluster controller-install` set up, and perhaps `cub cluster
+// svc-account-bootstrap` after it, and nothing has attached yet, switching
+// to the context its record names; nil when cub has never managed a cluster of
+// that name on this machine. Any other cub-managed cluster is an error.
+func clusterFindControllerInstalled(out io.Writer, name string) (*clusterSpace, error) {
+	kubeconfigPath := clusterKubeconfigPath(name)
+	rec, err := clusterReadRecord(name)
+	if err != nil {
+		return nil, err
+	}
+	if rec == nil {
+		if _, err := os.Stat(kubeconfigPath); err == nil {
+			return nil, fmt.Errorf("kubeconfig %s already exists; cluster %q is already cub-managed (see 'cub cluster list')", kubeconfigPath, name)
+		}
+		return nil, nil
+	}
+	alreadyManaged := fmt.Errorf("cluster %q is already cub-managed on this machine, wired to %s (see 'cub cluster list'); use another name, or detach it first", name, clusterRecordWhere(rec))
+	if err := clusterUseRecordedContext(out, rec); err != nil {
+		return nil, err
+	}
+	space, err := clusterSpaceByNameInOrg(name)
+	if err != nil {
+		return nil, fmt.Errorf("look up cluster spaces: %w", err)
+	}
+	if space == nil || (space.Stage != clusterStageController && space.Stage != clusterStageServiceAccount) {
+		return nil, alreadyManaged
+	}
+	if _, err := os.Stat(kubeconfigPath); err != nil {
+		return nil, fmt.Errorf("cluster %q: 'cub cluster controller-install' left no kubeconfig at %s; 'cub cluster detach %s --delete-config' and run it again", name, kubeconfigPath, name)
+	}
+	return space, nil
+}
+
+// clusterLoadInstalled reads back what `cub cluster controller-install` left
+// for a cluster: its OCI target, whether it has a placeholder gate, and where
+// its controller's UI and port window are.
+func clusterLoadInstalled(space *clusterSpace, kubeconfigPath string) (clusterInstalled, error) {
+	inst := clusterInstalled{spaceID: space.SpaceID, pickedUp: true}
+	target, err := resolveTargetCore(clusterTargetSlug, space.SpaceID.String(), "*")
+	if err != nil {
+		return inst, fmt.Errorf("cluster space %q: find its OCI target %q: %w", space.SpaceSlug, clusterTargetSlug, err)
+	}
+	inst.targetID = target.TargetID
+	inst.noPlaceholderGate = len(target.TriggerIDs) == 0
+	uiPort := space.ArgoPort
+	if space.Controller == clusterControllerSveltos {
+		uiPort = space.SveltosPort
+	}
+	if uiPort != "" {
+		if inst.uiPort, err = strconv.Atoi(uiPort); err != nil {
+			return inst, fmt.Errorf("cluster space %q: UI port %q: %w", space.SpaceSlug, uiPort, err)
+		}
+	}
+	if space.PortRange != "" {
+		if inst.portStart, inst.portWindow, err = clusterParsePortRange(space.PortRange); err != nil {
+			return inst, fmt.Errorf("cluster space %q: %w", space.SpaceSlug, err)
+		}
+	}
+	if space.Controller == clusterControllerArgo {
+		// Best effort: the initial Secret may legitimately be gone.
+		inst.argo.adminPassword, _ = clusterArgoAdminPassword(ctx, kubeconfigPath)
+	}
+	return inst, nil
+}
+
+// clusterControllerInstallStage takes a self-contained copy of the cluster's
+// credentials, checks the cluster can be wired, and runs
+// clusterInstallController on it. It registers the removal of the local files
+// and every ConfigHub entity it creates with addRollback. It sets opts.origin
+// to clusterOriginKind for a kind cluster `cub cluster create` made, which the
+// caller records.
+func clusterControllerInstallStage(out io.Writer, opts *clusterAttachOptions, addRollback func(func())) (clusterInstalled, error) {
+	var inst clusterInstalled
+	eks := opts.provider == clusterProviderEKS
+	kubeconfigPath := clusterKubeconfigPath(opts.name)
+	envFilePath := clusterEnvFilePath(opts.name)
+
 	// A self-contained copy of the credentials, at the path every other
 	// `cub cluster` command looks for. Taken before anything is created, so a
 	// kubeconfig that does not name a usable context fails here, with nothing
 	// to roll back.
 	if err := clusterEnsureKubeconfigDir(); err != nil {
-		return err
+		return inst, err
 	}
 	var kubeconfig []byte
 	var err error
@@ -318,50 +552,39 @@ func clusterAttachRun(out io.Writer, opts clusterAttachOptions) error {
 	}
 	if err != nil {
 		_ = os.Remove(kubeconfigPath)
-		return err
+		return inst, err
 	}
 	if problem := clusterAttachReachabilityProblem(clusterServerURL(), clusterKubeconfigServer(kubeconfig)); problem != "" {
 		_ = os.Remove(kubeconfigPath)
-		return fmt.Errorf("%s", problem)
+		return inst, fmt.Errorf("%s", problem)
 	}
 	if err := os.WriteFile(kubeconfigPath, kubeconfig, 0o600); err != nil {
-		return fmt.Errorf("write kubeconfig: %w", err)
+		return inst, fmt.Errorf("write kubeconfig: %w", err)
 	}
-	rollback := []func(){
-		func() {
-			fmt.Fprintf(out, "Rolling back: removing %s\n", kubeconfigPath)
-			_ = os.Remove(kubeconfigPath)
-			_ = os.Remove(envFilePath)
-			_ = clusterRemoveRecord(opts.name)
-		},
-	}
-	commit := false
-	defer func() {
-		if commit {
-			return
-		}
-		for i := len(rollback) - 1; i >= 0; i-- {
-			rollback[i]()
-		}
-	}()
+	addRollback(func() {
+		fmt.Fprintf(out, "Rolling back: removing %s\n", kubeconfigPath)
+		_ = os.Remove(kubeconfigPath)
+		_ = os.Remove(envFilePath)
+		_ = clusterRemoveRecord(opts.name)
+	})
 
 	// Installing the controller and applying the root need cluster-admin.
 	// Fail here rather than halfway through a 20k-line manifest.
 	fmt.Fprintln(out, "Checking cluster access (needs cluster-admin)...")
 	if err := clusterRequireClusterAdmin(ctx, kubeconfigPath); err != nil {
 		if !eks {
-			return err
+			return inst, err
 		}
 		// An EKS cluster that rejects its own kubeconfig is almost always the
 		// access-entry cliff; say so, or fix it.
 		if err := clusterEKSEnsureAccess(ctx, kubeconfigPath, opts.awsProfile, opts.awsRegion, opts.cluster, opts.grantAccess, out); err != nil {
-			return err
+			return inst, err
 		}
 	}
 	// One ConfigHub per cluster. The registry credentials Secret is the
 	// in-cluster mark of an attachment, whichever server it was to.
 	if err := clusterAttachRequireUnwired(ctx, kubeconfigPath, opts.controller); err != nil {
-		return err
+		return inst, err
 	}
 
 	spaceAnnotations := map[string]string{clusterAnnotationProvider: opts.provider}
@@ -371,59 +594,105 @@ func clusterAttachRun(out io.Writer, opts clusterAttachOptions) error {
 	if eks && opts.awsRegion != "" {
 		spaceAnnotations[clusterAnnotationEKSRegion] = opts.awsRegion
 	}
-	result, err := clusterAttach(out, clusterAttachSpec{
+	// A kind cluster `cub cluster create` made is cub's, as one `cub cluster
+	// up` made is: `cub cluster down` deletes it. It has a host port window
+	// mapped into its node, and the first port of it takes the controller's
+	// UI, as `cub cluster up` does. Flux has no UI, so the window stays the
+	// user's.
+	var portStart, portWindow, uiPort int
+	if opts.provider == clusterProviderKind {
+		labels, err := clusterKindNodeLabels(ctx, kubeconfigPath)
+		if err != nil {
+			return inst, fmt.Errorf("read the kind cluster's node labels: %w", err)
+		}
+		if labels[clusterAnnotationOrigin] == clusterOriginKind {
+			opts.origin = clusterOriginKind
+		}
+		if r := labels[clusterAnnotationPortRange]; r != "" {
+			if portStart, portWindow, err = clusterParsePortRange(r); err != nil {
+				return inst, fmt.Errorf("the kind cluster's port window: %w", err)
+			}
+		}
+		if portWindow > 0 {
+			spaceAnnotations[clusterAnnotationPortRange] = fmt.Sprintf("%d-%d", portStart, portStart+portWindow-1)
+			if opts.controller != clusterControllerFlux {
+				uiPort = portStart
+			}
+		}
+	}
+	inst, err = clusterInstallController(out, clusterControllerSpec{
 		name:              opts.name,
 		spaceSlug:         opts.spaceSlug,
 		kubeconfigPath:    kubeconfigPath,
-		origin:            clusterOriginAttach,
+		origin:            opts.origin,
 		controller:        opts.controller,
 		spaceAnnotations:  spaceAnnotations,
 		controllerVersion: opts.controllerVersion,
-		argo: clusterArgoOptions{
-			installIfAbsent: !opts.noInstall,
-		},
-		sveltos: clusterSveltosOptions{
-			installIfAbsent: !opts.noInstall,
-		},
-		fluxInstallIfAbsent: !opts.noInstall,
-		noArgobot:           opts.noArgobot,
-		argobotBase:         opts.argobotBase,
-		noPlaceholderGate:   opts.noPlaceholderGate,
-		prune:               opts.prune,
-	}, func(f func()) { rollback = append(rollback, f) })
-	if err != nil {
-		return err
-	}
+		installIfAbsent:   !opts.noInstall,
+		uiPort:            uiPort,
+		noPlaceholderGate: opts.noPlaceholderGate,
+	}, addRollback)
+	inst.portStart, inst.portWindow = portStart, portWindow
+	return inst, err
+}
 
-	if err := clusterWriteRecord(clusterNewRecord(opts.name, opts.spaceSlug, clusterOriginAttach, opts.controller)); err != nil {
-		return fmt.Errorf("write cluster record: %w", err)
+// clusterWriteEnvFile writes the cluster's shell-source env file: the
+// controller's UI and credentials when it is on a host port (and for a kind
+// cluster `cub cluster up` made, whose Flux has none), otherwise only
+// KUBECONFIG and the cub context.
+func clusterWriteEnvFile(name, origin, controller string, inst clusterInstalled) error {
+	kubeconfigPath := clusterKubeconfigPath(name)
+	envContents := clusterBuildAttachEnvFile(name, kubeconfigPath)
+	if inst.uiPort > 0 || origin == clusterOriginKind {
+		envContents = clusterBuildPortEnvFile(controller, name, kubeconfigPath, inst.uiPort, inst.argo.adminPassword)
 	}
-	if err := os.WriteFile(envFilePath, []byte(clusterBuildAttachEnvFile(opts.name, kubeconfigPath)), 0o600); err != nil {
+	if err := os.WriteFile(clusterEnvFilePath(name), []byte(envContents), 0o600); err != nil {
 		return fmt.Errorf("write env file: %w", err)
 	}
+	return nil
+}
 
-	commit = true
-	clusterPrintSummaryHead(out, "Attached", result, kubeconfigPath, envFilePath)
+// clusterPrintControllerSummary prints where the controller's UI is, or how to
+// reach it, and the kind node's port window.
+func clusterPrintControllerSummary(out io.Writer, name, controller, kubeconfigPath string, inst clusterInstalled) {
+	const leftBy = "as 'cub cluster controller-install' left it"
 	switch {
-	case opts.controller == clusterControllerSveltos && result.controllerInstalled:
+	case inst.uiPort > 0:
+		clusterPrintPortUI(out, controller, name, kubeconfigPath, inst.uiPort, inst.argo.adminPassword)
+	case inst.pickedUp && controller == clusterControllerSveltos:
+		fmt.Fprintf(out, "\nSveltos: %s. Its dashboard is not exposed outside the cluster; reach it with\n  kubectl --kubeconfig %s port-forward svc/dashboard -n %s 8080:80\n",
+			leftBy, kubeconfigPath, clusterSveltosNamespace)
+	case inst.pickedUp && controller == clusterControllerFlux:
+		fmt.Fprintf(out, "\nFlux: %s. It has no UI; see its state with\n  KUBECONFIG=%s %s\n", leftBy, kubeconfigPath, clusterFluxStatusCommand())
+	case inst.pickedUp && inst.argo.adminPassword != "":
+		fmt.Fprintf(out, "\nArgo CD: %s (initial admin password: %s). Reach the UI with\n  kubectl --kubeconfig %s port-forward svc/argocd-server -n argocd 8080:80\n",
+			leftBy, inst.argo.adminPassword, kubeconfigPath)
+	case inst.pickedUp:
+		fmt.Fprintf(out, "\nArgo CD: %s. Reach the UI with\n  kubectl --kubeconfig %s port-forward svc/argocd-server -n argocd 8080:80\n",
+			leftBy, kubeconfigPath)
+	case controller == clusterControllerSveltos && inst.controllerInstalled:
 		fmt.Fprintf(out, "\nSveltos: installed. Its dashboard is not exposed outside the cluster; reach it with\n  kubectl --kubeconfig %s port-forward svc/dashboard -n %s 8080:80\nand log in with a token from\n  kubectl --kubeconfig %s create token %s --duration=24h\n",
 			kubeconfigPath, clusterSveltosNamespace, kubeconfigPath, clusterSveltosDashboardAccount)
-	case opts.controller == clusterControllerSveltos:
+	case controller == clusterControllerSveltos:
 		fmt.Fprintf(out, "\nSveltos: already installed, left as found\n")
-	case opts.controller == clusterControllerFlux && result.controllerInstalled:
+	case controller == clusterControllerFlux && inst.controllerInstalled:
 		fmt.Fprintf(out, "\nFlux: installed. It has no UI; see its state with\n  KUBECONFIG=%s %s\n", kubeconfigPath, clusterFluxStatusCommand())
-	case opts.controller == clusterControllerFlux:
+	case controller == clusterControllerFlux:
 		fmt.Fprintf(out, "\nFlux: already installed, left as found\n")
-	case result.argo.installed:
+	case inst.argo.installed:
 		fmt.Fprintf(out, "\nArgo CD: installed (admin / %s). It is not exposed outside the cluster; reach the UI with\n  kubectl --kubeconfig %s port-forward svc/argocd-server -n argocd 8080:80\n",
-			result.argo.adminPassword, kubeconfigPath)
-	case result.argo.adminPassword != "":
-		fmt.Fprintf(out, "\nArgo CD: already installed, left as found (initial admin password: %s)\n", result.argo.adminPassword)
+			inst.argo.adminPassword, kubeconfigPath)
+	case inst.argo.adminPassword != "":
+		fmt.Fprintf(out, "\nArgo CD: already installed, left as found (initial admin password: %s)\n", inst.argo.adminPassword)
 	default:
 		fmt.Fprintf(out, "\nArgo CD: already installed, left as found\n")
 	}
-	clusterPrintSummaryTail(out, result, envFilePath)
-	return nil
+	switch {
+	case inst.uiPort > 0 && inst.portWindow > 1:
+		fmt.Fprintf(out, "\nUser NodePort window: %d-%d (%s uses %d; rest are open)\n", inst.portStart, inst.portStart+inst.portWindow-1, controller, inst.uiPort)
+	case inst.uiPort == 0 && inst.portWindow > 0:
+		fmt.Fprintf(out, "\nUser NodePort window: %d-%d (all open)\n", inst.portStart, inst.portStart+inst.portWindow-1)
+	}
 }
 
 // clusterAttachRequireUnwired fails when an earlier attachment's registry
@@ -638,12 +907,10 @@ func clusterEnvFileContextLine() string {
 	return fmt.Sprintf("export CUB_CONTEXT=%q\n", name)
 }
 
-// clusterAttachSpec is what wiring a reachable cluster into ConfigHub needs,
-// independent of how the cluster came to exist. `cub cluster attach` fills it
-// from the user's kubeconfig; `cub cluster up` fills it from the kind cluster
-// it just created, adding the port annotations and the controller's NodePort
-// only it knows.
-type clusterAttachSpec struct {
+// clusterControllerSpec is what installing the controller in a reachable
+// cluster and representing the cluster in ConfigHub needs: `cub cluster
+// controller-install`, and the first part of `cub cluster attach`.
+type clusterControllerSpec struct {
 	name           string
 	spaceSlug      string
 	kubeconfigPath string
@@ -659,19 +926,52 @@ type clusterAttachSpec struct {
 	// has none (--controller-version); "" installs the controller's pinned
 	// default.
 	controllerVersion string
-	// argo says how to get Argo CD into the cluster (controller argo).
-	argo clusterArgoOptions
-	// sveltos says how to get Sveltos into the cluster (controller sveltos).
-	sveltos clusterSveltosOptions
-	// fluxInstallIfAbsent installs Flux when the cluster has none; false turns
-	// its absence into an error (controller flux, --no-install).
-	fluxInstallIfAbsent bool
+	// installIfAbsent installs the controller when the cluster has none; false
+	// turns its absence into an error (--no-install).
+	installIfAbsent bool
+	// uiPort is a NodePort the kind node maps to the same host port, for the
+	// controller's UI (Argo CD or the Sveltos dashboard); 0 for none. The UI is
+	// exposed there only when this installs the controller, since an existing
+	// one is left as found.
+	uiPort            int
+	noPlaceholderGate bool
+}
+
+// clusterInstalled is what the controller stage leaves for the rest of an
+// attachment: the cluster Space and its OCI target in ConfigHub, and the
+// controller in the cluster. It comes from clusterInstallController, or from
+// the cluster Space of a cluster `cub cluster controller-install` set up.
+type clusterInstalled struct {
+	spaceID  uuid.UUID
+	targetID uuid.UUID
+	argo     clusterArgoResult
+	// controllerInstalled is true when this run installed Sveltos or Flux,
+	// false when it was already present and left alone. For Argo CD see
+	// argo.installed.
+	controllerInstalled bool
+	// uiPort is the host port the controller's UI is exposed on, 0 when it is
+	// not.
+	uiPort int
+	// portStart and portWindow are the kind node's host port window, a window
+	// of 0 for none.
+	portStart, portWindow int
+	noPlaceholderGate     bool
+	// pickedUp is true when the controller stage was `cub cluster
+	// controller-install`'s, which this run cannot tell installed the
+	// controller or found it there.
+	pickedUp bool
+}
+
+// clusterAttachSpec is what wiring a reachable cluster into ConfigHub needs,
+// independent of how the cluster came to exist: the controller stage, then the
+// rest of the attachment.
+type clusterAttachSpec struct {
+	clusterControllerSpec
 
 	noArgobot bool
 	// argobotBase is clusterArgobotBaseUpdate or clusterArgobotBaseClone, as
 	// clusterChooseArgobotBase decided it.
-	argobotBase       string
-	noPlaceholderGate bool
+	argobotBase string
 	// prune gives the root Argo CD Application or Flux Kustomization prune and
 	// records it on the OCI target for the deployments `cub variant create`
 	// adds (controllers argo and flux).
@@ -681,60 +981,57 @@ type clusterAttachSpec struct {
 // clusterAttachResult is what clusterAttach leaves behind, for the summary.
 type clusterAttachResult struct {
 	spec               clusterAttachSpec
+	installed          clusterInstalled
 	appsSlug           string
 	serviceAccountSlug string
-	argo               clusterArgoResult
-	// controllerInstalled is true when this attachment installed Sveltos or
-	// Flux, false when it was already present and left alone. For Argo CD see
-	// argo.installed.
-	controllerInstalled bool
 }
 
-// clusterAttach wires a cluster into ConfigHub: the controller in the cluster,
-// the cluster and apps Spaces with their service account, gate, target and root
-// Unit, the registry credentials, argobot, the first apps-Space Release, and
-// the one kubectl apply that bootstraps the root. Every ConfigHub entity it
-// creates is registered with addRollback; the caller runs those (in reverse)
-// if anything after this fails, and clusterAttach returns an error before
-// completing.
-func clusterAttach(out io.Writer, spec clusterAttachSpec, addRollback func(func())) (clusterAttachResult, error) {
-	var result clusterAttachResult
+// clusterInstallController installs the controller in the cluster (unless it
+// is there already) and creates the cluster Space, its placeholder gate and
+// its OCI target, granting no one access to the target yet. The Space carries
+// clusterAnnotationStage until an attachment finishes. Every ConfigHub entity
+// it creates is registered with addRollback.
+func clusterInstallController(out io.Writer, spec clusterControllerSpec, addRollback func(func())) (clusterInstalled, error) {
+	var inst clusterInstalled
 	sveltos := spec.controller == clusterControllerSveltos
-	flux := spec.controller == clusterControllerFlux
-	appsSlug := spec.spaceSlug + clusterAppsSuffix(spec.controller)
 	kubeconfigPath := spec.kubeconfigPath
 
-	var argo clusterArgoResult
-	var controllerInstalled bool
 	switch spec.controller {
 	case clusterControllerSveltos:
 		fmt.Fprintln(out, "Ensuring Sveltos...")
 		var err error
-		controllerInstalled, err = clusterSveltosEnsure(ctx, kubeconfigPath, spec.controllerVersion, spec.sveltos, out)
+		inst.controllerInstalled, err = clusterSveltosEnsure(ctx, kubeconfigPath, spec.controllerVersion,
+			clusterSveltosOptions{installIfAbsent: spec.installIfAbsent, nodePort: spec.uiPort}, out)
 		if err != nil {
-			return result, err
+			return inst, err
 		}
 	case clusterControllerFlux:
 		fmt.Fprintln(out, "Ensuring Flux...")
 		var err error
-		controllerInstalled, err = clusterFluxEnsure(ctx, kubeconfigPath, spec.controllerVersion, spec.fluxInstallIfAbsent, out)
+		inst.controllerInstalled, err = clusterFluxEnsure(ctx, kubeconfigPath, spec.controllerVersion, spec.installIfAbsent, out)
 		if err != nil {
-			return result, err
+			return inst, err
 		}
 	default:
 		fmt.Fprintln(out, "Ensuring Argo CD...")
 		var err error
-		argo, err = clusterArgoEnsure(ctx, kubeconfigPath, spec.controllerVersion, spec.argo, out)
+		inst.argo, err = clusterArgoEnsure(ctx, kubeconfigPath, spec.controllerVersion,
+			clusterArgoOptions{installIfAbsent: spec.installIfAbsent, nodePort: spec.uiPort}, out)
 		if err != nil {
-			return result, err
+			return inst, err
 		}
 	}
 
+	// The UI is on the host port only if the install above put it there.
+	if spec.uiPort > 0 && (inst.argo.installed || (sveltos && inst.controllerInstalled)) {
+		inst.uiPort = spec.uiPort
+	}
+	uiSpaceAnnotations, uiTargetAnnotations := clusterUIAnnotations(spec.controller, inst.uiPort)
+
 	// The cluster (target-prefix) Space holds the target and channel. It carries
 	// the cluster label + confighub.com/cluster-* annotations so `cub cluster
-	// list`/`down` find the cluster from it; the apps Space below is derived and
-	// left unlabeled so the cluster lists once. The bot's Space and Channel are
-	// recorded here too, so `down` reads them rather than deriving them.
+	// list`/`down` find the cluster from it; the apps Space is derived and left
+	// unlabeled so the cluster lists once.
 	fmt.Fprintf(out, "Creating ConfigHub space %q (target + argobot channel)...\n", spec.spaceSlug)
 	hostname, _ := os.Hostname()
 	annotations := map[string]string{
@@ -742,18 +1039,14 @@ func clusterAttach(out io.Writer, spec clusterAttachSpec, addRollback func(func(
 		clusterAnnotationHost:       hostname,
 		clusterAnnotationOrigin:     spec.origin,
 		clusterAnnotationController: spec.controller,
+		clusterAnnotationStage:      clusterStageController,
 	}
-	if !spec.noArgobot {
-		annotations[clusterAnnotationBotSpace] = clusterArgobotComponent + "-" + spec.name
-		annotations[clusterAnnotationBotChannel] = clusterArgobotChannelSlug
-	}
-	for k, v := range spec.spaceAnnotations {
-		annotations[k] = v
-	}
+	maps.Copy(annotations, uiSpaceAnnotations)
+	maps.Copy(annotations, spec.spaceAnnotations)
 	spaceID, err := clusterCreateSpace(spec.spaceSlug, spec.spaceSlug,
 		map[string]string{clusterLabel: "true"}, annotations)
 	if err != nil {
-		return result, err
+		return inst, err
 	}
 	addRollback(func() {
 		fmt.Fprintf(out, "Rolling back: cub space delete --recursive %q\n", spec.spaceSlug)
@@ -762,33 +1055,7 @@ func clusterAttach(out io.Writer, spec clusterAttachSpec, addRollback func(func(
 		// and deletes the Units bound to this target before we delete it here.
 		_ = clusterDeleteSpace(spec.spaceSlug, true)
 	})
-
-	// The cluster's identity on the ConfigHub side: one service account, used
-	// two ways. The controller pulls the cluster's Releases from the OCI
-	// registry with a long-lived token of it, and argobot authenticates as it
-	// with a key. It has no organization role; the Target and Channel below
-	// grant its user exactly the cluster's deployment path. Org-scoped, so it
-	// is rolled back on its own rather than with a Space.
-	serviceAccountSlug := clusterServiceAccountSlug(spec.name)
-	fmt.Fprintf(out, "Creating service account %q (OrgRole=none; the controller pulls and argobot runs as it)...\n", serviceAccountSlug)
-	serviceAccountID, serviceAccountUserID, err := clusterCreateServiceAccount(serviceAccountSlug, serviceAccountSlug,
-		map[string]string{clusterAnnotationName: spec.name})
-	if err != nil {
-		return result, err
-	}
-	addRollback(func() {
-		fmt.Fprintf(out, "Rolling back: cub serviceaccount delete %q\n", serviceAccountSlug)
-		_ = clusterDeleteServiceAccount(serviceAccountSlug)
-	})
-	fmt.Fprintf(out, "Issuing a key for argobot and a pull token on %q...\n", serviceAccountSlug)
-	privateKey, err := clusterCreateServiceAccountKey(serviceAccountID, serviceAccountUserID, "argobot in cluster "+spec.name)
-	if err != nil {
-		return result, fmt.Errorf("issue the service account key: %w", err)
-	}
-	pullToken, err := clusterCreateServiceAccountToken(serviceAccountID, "cluster "+spec.name+" (OCI pull)")
-	if err != nil {
-		return result, fmt.Errorf("issue the service account token: %w", err)
-	}
+	inst.spaceID = spaceID
 
 	// The default gate, created BEFORE the target: the server resolves a
 	// Target's WhereTrigger into its read-only TriggerIDs at create time, so a
@@ -798,43 +1065,72 @@ func clusterAttach(out io.Writer, spec clusterAttachSpec, addRollback func(func(
 	if !spec.noPlaceholderGate {
 		fmt.Fprintf(out, "Creating placeholder gate trigger %q (vet-placeholders on every Mutation)...\n", clusterGateTriggerSlug)
 		if _, err := clusterCreateGateTrigger(spaceID, clusterGateTriggerSlug); err != nil {
-			return result, fmt.Errorf("create placeholder gate trigger: %w", err)
+			return inst, fmt.Errorf("create placeholder gate trigger: %w", err)
 		}
 	}
+	inst.noPlaceholderGate = spec.noPlaceholderGate
 
-	fmt.Fprintf(out, "Creating OCI target %q (granting %q its deployment path)...\n", clusterTargetSlug, serviceAccountSlug)
+	fmt.Fprintf(out, "Creating OCI target %q...\n", clusterTargetSlug)
 	// apps-space lets API clients resolve the apps Space, which holds the
 	// cluster's controller Units, from the target. The controller annotation
 	// says which kind of Unit `cub variant create --target` adds there: an Argo
-	// Application, a Sveltos ClusterProfile or a Flux Kustomization. The argobot
-	// annotation tells `cub variant create` whether a deploy is picked up at
-	// once or waits for a poll.
+	// Application, a Sveltos ClusterProfile or a Flux Kustomization.
 	targetAnnotations := map[string]string{
 		clusterAnnotationController: spec.controller,
-		clusterAnnotationAppsSpace:  appsSlug,
+		clusterAnnotationAppsSpace:  spec.spaceSlug + clusterAppsSuffix(spec.controller),
 	}
-	if !spec.noArgobot {
-		targetAnnotations[clusterAnnotationArgobot] = "true"
-	}
-	if spec.prune {
-		targetAnnotations[clusterAnnotationPrune] = "true"
-	}
-	switch spec.controller {
-	case clusterControllerSveltos:
-		targetAnnotations[clusterAnnotationSveltosPollInterval] = clusterSveltosPollInterval(!spec.noArgobot)
-	case clusterControllerFlux:
-		targetAnnotations[clusterAnnotationFluxPollInterval] = clusterFluxPollInterval(!spec.noArgobot)
-	}
-	for k, v := range spec.targetAnnotations {
-		targetAnnotations[k] = v
-	}
+	maps.Copy(targetAnnotations, uiTargetAnnotations)
+	maps.Copy(targetAnnotations, spec.targetAnnotations)
 	// Selecting the cluster Space's Triggers makes them gate every Unit bound to
 	// this target, wherever that Unit lives — the apps Space, the argobot
 	// variant, and every deployment variant, including ones created later.
-	targetID, err := clusterCreateOCITarget(spaceID, serviceAccountUserID, clusterTargetSlug, clusterTargetSlug,
+	inst.targetID, err = clusterCreateOCITarget(spaceID, clusterTargetSlug, clusterTargetSlug,
 		targetAnnotations, clusterWhereTriggerForSpace(spaceID))
 	if err != nil {
-		return result, err
+		return inst, err
+	}
+	return inst, nil
+}
+
+// clusterBootstrapApps is the last stage of an attachment, `cub cluster
+// app-bootstrap`: the apps Space with its root Unit, the first apps-Space
+// Release, and the one kubectl apply that bootstraps the root, after which the
+// cluster is attached. The cluster's service account has been set up already,
+// with its grants on the OCI target and its credentials in the cluster.
+// installBot, when not nil, installs argobot (`cub cluster k8sbot-install`'s
+// stage) between creating the root Unit and the first publish, and
+// spec.noArgobot says whether it is given. Every ConfigHub entity it creates
+// is registered with addRollback; the caller runs those (in reverse) if
+// anything after this fails, and clusterBootstrapApps returns an error before
+// completing.
+func clusterBootstrapApps(out io.Writer, spec clusterAttachSpec, inst clusterInstalled, installBot func() error, addRollback func(func())) (clusterAttachResult, error) {
+	var result clusterAttachResult
+	sveltos := spec.controller == clusterControllerSveltos
+	flux := spec.controller == clusterControllerFlux
+	appsSlug := spec.spaceSlug + clusterAppsSuffix(spec.controller)
+	kubeconfigPath := spec.kubeconfigPath
+	spaceID, targetID := inst.spaceID, inst.targetID
+	serviceAccountSlug := clusterServiceAccountSlug(spec.name)
+
+	// The argobot annotation tells `cub variant create` whether a deploy is
+	// picked up at once or waits for a poll, and the poll interval is the one
+	// the root gets below; prune covers deployments created later.
+	attachAnnotations := map[string]string{}
+	if !spec.noArgobot {
+		attachAnnotations[clusterAnnotationArgobot] = "true"
+	}
+	if spec.prune {
+		attachAnnotations[clusterAnnotationPrune] = "true"
+	}
+	switch spec.controller {
+	case clusterControllerSveltos:
+		attachAnnotations[clusterAnnotationSveltosPollInterval] = clusterSveltosPollInterval(!spec.noArgobot)
+	case clusterControllerFlux:
+		attachAnnotations[clusterAnnotationFluxPollInterval] = clusterFluxPollInterval(!spec.noArgobot)
+	}
+	targetAnnotations, err := clusterGrantTarget(spaceID, targetID, uuid.Nil, attachAnnotations)
+	if err != nil {
+		return result, fmt.Errorf("annotate the target: %w", err)
 	}
 
 	// The apps Space holds the root app-of-apps and every child Argo Application
@@ -862,17 +1158,7 @@ func clusterAttach(out io.Writer, spec clusterAttachSpec, addRollback func(func(
 		return result, err
 	}
 
-	// Where the server says its registry is. Asked once and used for both the
-	// endpoint and its transport below, so the two cannot disagree.
-	ociServerURL, err := clusterOCIServerURL()
-	if err != nil {
-		return result, err
-	}
-	// OCI URL for the controller (running inside the cluster) — the advertised
-	// registry, rewritten to the docker host address for loopback cub servers,
-	// which only a cluster on this machine can reach anyway. A remote server
-	// passes through untouched.
-	ociURLForArgo, err := clusterOCIEndpointFromContainer(ociServerURL, clusterServerURL())
+	ociURLForArgo, ociInsecure, err := clusterControllerOCIEndpoint()
 	if err != nil {
 		return result, err
 	}
@@ -881,36 +1167,19 @@ func clusterAttach(out io.Writer, spec clusterAttachSpec, addRollback func(func(
 	// the apps Space's Release, served at /space/<apps-slug>, tag "latest".
 	rootRepoURL := strings.TrimRight(ociURLForArgo, "/") + "/space/" + appsSlug
 
-	// Plain-HTTP OCI from the advertised registry's scheme, or failing that from
-	// the cub server URL's: http:// API → http:// OCI (the local-dev case),
-	// https:// API → TLS OCI.
-	ociInsecure, err := clusterOCIInsecure(ociServerURL, clusterServerURL())
-	if err != nil {
-		return result, err
-	}
-
 	// rootName is the root's name in the controller, which its URL-TargetUI
 	// links to. Flux has no UI, so it needs none.
 	var rootManifest []byte
 	var rootName string
 	switch {
 	case sveltos:
-		if err := clusterSveltosApplyOCICreds(ctx, kubeconfigPath, pullToken, out); err != nil {
-			return result, err
-		}
 		fmt.Fprintf(out, "Creating root ClusterProfile Unit %q in apps space %q...\n", clusterRootUnitSlug, appsSlug)
 		rootManifest = clusterSveltosRootProfileManifest(rootRepoURL, clusterSveltosPollInterval(!spec.noArgobot), ociInsecure)
 		rootName = clusterSveltosRootProfile
 	case flux:
-		if err := clusterFluxApplyOCICreds(ctx, kubeconfigPath, ociURLForArgo, pullToken, out); err != nil {
-			return result, err
-		}
 		fmt.Fprintf(out, "Creating root OCIRepository and Kustomization Unit %q in apps space %q...\n", clusterRootUnitSlug, appsSlug)
 		rootManifest = clusterFluxRootManifest(rootRepoURL, clusterFluxPollInterval(!spec.noArgobot), ociInsecure, spec.prune)
 	default:
-		if err := clusterArgoApplyOCIRepoCreds(ctx, kubeconfigPath, ociURLForArgo, pullToken, ociInsecure, out); err != nil {
-			return result, err
-		}
 		fmt.Fprintf(out, "Creating root Application Unit %q in apps space %q...\n", clusterRootUnitSlug, appsSlug)
 		rootManifest = clusterArgoRootAppManifest(appsSlug, rootRepoURL, spec.prune)
 		rootName = appsSlug
@@ -935,16 +1204,11 @@ func clusterAttach(out io.Writer, spec clusterAttachSpec, addRollback func(func(
 	// child Unit via `cub variant create --target` (auto-derived from the OCI
 	// target's apps-space annotation, the same path any deployment uses) and
 	// publishes argobot's own variant Release; the child Unit is left in the
-	// apps Space for the single authoritative publish below. All argobot
-	// specifics live in cluster_argobot.go.
-	if err := clusterInstallArgobotStep(out, spec, clusterArgobotDeps{
-		clusterSpaceID:       spaceID,
-		targetID:             targetID,
-		serviceAccountUserID: serviceAccountUserID,
-		privateKey:           privateKey,
-		kubeconfigPath:       kubeconfigPath,
-	}, addRollback); err != nil {
-		return result, fmt.Errorf("install argobot: %w", err)
+	// apps Space for the single authoritative publish below.
+	if installBot != nil {
+		if err := installBot(); err != nil {
+			return result, fmt.Errorf("install argobot: %w", err)
+		}
 	}
 
 	// Publish the apps Space's Release once, after root's triggers settle, so
@@ -964,7 +1228,40 @@ func clusterAttach(out io.Writer, spec clusterAttachSpec, addRollback func(func(
 		return result, err
 	}
 
-	return clusterAttachResult{spec: spec, appsSlug: appsSlug, serviceAccountSlug: serviceAccountSlug, argo: argo, controllerInstalled: controllerInstalled}, nil
+	// Last, so a cluster that failed partway stays one attach can pick up
+	// again: the bot's Space and Channel go on the cluster Space, where `down`
+	// and `detach` read them rather than deriving them, and the stage marker
+	// comes off.
+	botSpace, botChannel := "", ""
+	if !spec.noArgobot {
+		botSpace, botChannel = clusterArgobotComponent+"-"+spec.name, clusterArgobotChannelSlug
+	}
+	if err := clusterFinishSpaceAnnotations(spaceID, botSpace, botChannel); err != nil {
+		return result, err
+	}
+
+	return clusterAttachResult{spec: spec, installed: inst, appsSlug: appsSlug, serviceAccountSlug: serviceAccountSlug}, nil
+}
+
+// clusterUIAnnotations returns the annotations that record a controller UI
+// exposed on a host port: the port on the cluster Space, which is how `cub
+// cluster open` finds it, and a deep link on the OCI target. None for a port
+// of 0, or for Flux, which has no UI.
+func clusterUIAnnotations(controller string, uiPort int) (space, target map[string]string) {
+	if uiPort == 0 {
+		return nil, nil
+	}
+	switch controller {
+	case clusterControllerSveltos:
+		return map[string]string{clusterAnnotationSveltosPort: strconv.Itoa(uiPort)},
+			map[string]string{clusterAnnotationTargetUI: clusterSveltosTargetUI(uiPort)}
+	case clusterControllerArgo:
+		// The ConfigHub UI substitutes "{slug}" with the Space slug at render
+		// time, linking a Unit straight to its Argo CD Application.
+		return map[string]string{clusterAnnotationArgoPort: strconv.Itoa(uiPort)},
+			map[string]string{clusterAnnotationTargetUI: fmt.Sprintf("http://localhost:%d/applications/argocd/{slug}", uiPort)}
+	}
+	return nil, nil
 }
 
 // clusterPrintSummaryHead prints the "Done" block every attachment ends with:

@@ -6,6 +6,7 @@ package main
 import (
 	"encoding/json"
 	"fmt"
+	"maps"
 	"strings"
 	"time"
 
@@ -34,6 +35,7 @@ type clusterSpace struct {
 	Origin      string // clusterOriginKind or clusterOriginAttach; see clusterOriginOf
 	BotSpace    string // the bot's variant Space slug, from clusterAnnotationBotSpace; "" when unrecorded
 	BotChannel  string // the bot's Channel slug in the cluster Space, from clusterAnnotationBotChannel
+	Stage       string // clusterStageController or clusterStageServiceAccount before attach has run, from clusterAnnotationStage
 	CreatedAt   time.Time
 }
 
@@ -147,8 +149,16 @@ func clusterSpaceByNameInOrg(name string) (*clusterSpace, error) {
 // fail-fast, without --allow-exists, during the install. The cluster's service
 // account is org-scoped, so a leftover one is not caught by the Space checks
 // and is checked here too.
-func clusterRequireFreshConfigHub(name, spaceSlug, appsSlug, argobotSlug string) error {
+//
+// spaceSlug is empty when attach picks up a cluster `cub cluster
+// controller-install` set up, whose cluster Space is expected to exist, and
+// serviceAccount false when `cub cluster svc-account-bootstrap` has created
+// the service account too.
+func clusterRequireFreshConfigHub(name, spaceSlug, appsSlug, argobotSlug string, serviceAccount bool) error {
 	for _, slug := range []string{spaceSlug, appsSlug} {
+		if slug == "" {
+			continue
+		}
 		if exists, err := clusterSpaceExists(slug); err != nil {
 			return err
 		} else if exists {
@@ -161,6 +171,9 @@ func clusterRequireFreshConfigHub(name, spaceSlug, appsSlug, argobotSlug string)
 		} else if exists {
 			return fmt.Errorf("ConfigHub space %q already exists (leftover argobot install; delete it with 'cub space delete --recursive %s' or pass --no-k8sbot)", argobotSlug, argobotSlug)
 		}
+	}
+	if !serviceAccount {
+		return nil
 	}
 	saSlug := clusterServiceAccountSlug(name)
 	if exists, err := clusterServiceAccountExists(saSlug); err != nil {
@@ -217,6 +230,7 @@ func clusterListSpaces() ([]clusterSpace, error) {
 			Origin:      clusterOriginOf(s.Annotations),
 			BotSpace:    s.Annotations[clusterAnnotationBotSpace],
 			BotChannel:  s.Annotations[clusterAnnotationBotChannel],
+			Stage:       s.Annotations[clusterAnnotationStage],
 			CreatedAt:   s.CreatedAt,
 		})
 	}
@@ -259,6 +273,41 @@ func clusterServiceAccountExists(slug string) (bool, error) {
 		}
 	}
 	return false, nil
+}
+
+// clusterServiceAccountIDs returns the ID of the service account with the
+// slug and of the user it acts as, for a step that grants it access or issues
+// it a key after another created it.
+func clusterServiceAccountIDs(slug string) (serviceAccountID, userID uuid.UUID, err error) {
+	where := fmt.Sprintf("Slug = '%s'", slug)
+	res, err := cubClientNew.ListServiceAccountsWithResponse(ctx, &goclientnew.ListServiceAccountsParams{Where: &where})
+	if cubapi.IsAPIError(err, res) {
+		return uuid.Nil, uuid.Nil, cubapi.InterpretErrorGeneric(err, res)
+	}
+	for _, sa := range *res.JSON200 {
+		if sa.ServiceAccount != nil && sa.ServiceAccount.Slug == slug {
+			return uuid.UUID(sa.ServiceAccount.ServiceAccountID), uuid.UUID(sa.ServiceAccount.UserID), nil
+		}
+	}
+	return uuid.Nil, uuid.Nil, fmt.Errorf("service account %q not found", slug)
+}
+
+// clusterRemoveTargetAnnotation removes an annotation from the cluster's
+// Target, for undoing clusterGrantTarget's.
+func clusterRemoveTargetAnnotation(spaceID, targetID uuid.UUID, key string) error {
+	target, err := clusterGetTarget(spaceID, targetID)
+	if err != nil {
+		return err
+	}
+	if _, ok := target.Annotations[key]; !ok {
+		return nil
+	}
+	delete(target.Annotations, key)
+	res, err := cubClientNew.UpdateTargetWithResponse(ctx, spaceID, targetID, &goclientnew.UpdateTargetParams{}, *target)
+	if cubapi.IsAPIError(err, res) {
+		return cubapi.InterpretErrorGeneric(err, res)
+	}
+	return nil
 }
 
 // clusterCreateServiceAccount creates the cluster's service account with no
@@ -392,29 +441,17 @@ func clusterCreateGateTrigger(spaceID uuid.UUID, slug string) (uuid.UUID, error)
 	return res.JSON200.TriggerID, nil
 }
 
-// clusterCreateOCITarget creates the cluster's Target and grants the cluster
-// service account's user View, Edit, ViewChildren and EditChildren on it.
-// ViewChildren is what authorizes Argo, pulling as that service account, to
-// pull the Releases of every Space that releases to the Target; View is what
-// lets argobot, running as the same service account, find it; Edit is what
-// lets argobot store the facts it collects from the cluster on it; and
-// EditChildren is what lets argobot record each Release's LiveStatus.
+// clusterCreateOCITarget creates the cluster's Target, granting no one access:
+// clusterGrantTarget does that once the cluster's service account exists.
 // annotations (may be nil) are attached to the Target, e.g. the URL-TargetUI
 // deep link. whereTrigger selects the Triggers that gate Units bound to this
 // Target; the server resolves it into TriggerIDs here, so any Trigger it
 // selects must already exist.
-func clusterCreateOCITarget(spaceID, botUserID uuid.UUID, slug, displayName string, annotations map[string]string, whereTrigger string) (uuid.UUID, error) {
-	permissions := goclientnew.Permissions{
-		"View":         {UserIDs: map[string]bool{botUserID.String(): true}},
-		"Edit":         {UserIDs: map[string]bool{botUserID.String(): true}},
-		"ViewChildren": {UserIDs: map[string]bool{botUserID.String(): true}},
-		"EditChildren": {UserIDs: map[string]bool{botUserID.String(): true}},
-	}
+func clusterCreateOCITarget(spaceID uuid.UUID, slug, displayName string, annotations map[string]string, whereTrigger string) (uuid.UUID, error) {
 	body := goclientnew.Target{
 		SpaceID:      spaceID,
 		Slug:         slug,
 		DisplayName:  displayName,
-		Permissions:  &permissions,
 		Annotations:  annotations,
 		WhereTrigger: whereTrigger,
 	}
@@ -423,6 +460,90 @@ func clusterCreateOCITarget(spaceID, botUserID uuid.UUID, slug, displayName stri
 		return uuid.Nil, cubapi.InterpretErrorGeneric(err, res)
 	}
 	return res.JSON200.TargetID, nil
+}
+
+// clusterGetTarget reads the cluster's Target.
+func clusterGetTarget(spaceID, targetID uuid.UUID) (*goclientnew.Target, error) {
+	res, err := cubClientNew.GetTargetWithResponse(ctx, spaceID, targetID, &goclientnew.GetTargetParams{})
+	if cubapi.IsAPIError(err, res) {
+		return nil, cubapi.InterpretErrorGeneric(err, res)
+	}
+	return res.JSON200.Target, nil
+}
+
+// clusterGrantTarget grants the cluster service account's user View, Edit,
+// ViewChildren and EditChildren on the cluster's Target, and adds annotations
+// to it, returning the Target's annotations afterwards. ViewChildren is what
+// authorizes the controller, pulling as that service account, to pull the
+// Releases of every Space that releases to the Target; View is what lets
+// argobot, running as the same service account, find it; Edit is what lets
+// argobot store the facts it collects from the cluster on it; and EditChildren
+// is what lets argobot record each Release's LiveStatus. Grants the Target
+// already has are kept. A botUserID of uuid.Nil grants nothing and only adds
+// the annotations.
+func clusterGrantTarget(spaceID, targetID, botUserID uuid.UUID, annotations map[string]string) (map[string]string, error) {
+	target, err := clusterGetTarget(spaceID, targetID)
+	if err != nil {
+		return nil, err
+	}
+	if target.Permissions == nil {
+		target.Permissions = &goclientnew.Permissions{}
+	}
+	for _, action := range []string{"View", "Edit", "ViewChildren", "EditChildren"} {
+		if botUserID == uuid.Nil {
+			break
+		}
+		subjects := (*target.Permissions)[action]
+		if subjects.UserIDs == nil {
+			subjects.UserIDs = map[string]bool{}
+		}
+		subjects.UserIDs[botUserID.String()] = true
+		(*target.Permissions)[action] = subjects
+	}
+	if target.Annotations == nil {
+		target.Annotations = map[string]string{}
+	}
+	maps.Copy(target.Annotations, annotations)
+	res, err := cubClientNew.UpdateTargetWithResponse(ctx, spaceID, targetID, &goclientnew.UpdateTargetParams{}, *target)
+	if cubapi.IsAPIError(err, res) {
+		return nil, cubapi.InterpretErrorGeneric(err, res)
+	}
+	return res.JSON200.Annotations, nil
+}
+
+// clusterSetSpaceStage moves the cluster Space's clusterAnnotationStage on to
+// stage.
+func clusterSetSpaceStage(spaceID uuid.UUID, stage string) error {
+	patchData, err := json.Marshal(map[string]any{
+		"Annotations": map[string]string{clusterAnnotationStage: stage},
+	})
+	if err != nil {
+		return err
+	}
+	if _, err := patchSpace(spaceID, patchData); err != nil {
+		return fmt.Errorf("record the stage on the cluster space: %w", err)
+	}
+	return nil
+}
+
+// clusterFinishSpaceAnnotations records where the cluster's bot lives on the
+// cluster Space, botSpace and botChannel empty for none, and removes the
+// controller-install stage marker. The merge patch leaves the Space's other
+// annotations alone.
+func clusterFinishSpaceAnnotations(spaceID uuid.UUID, botSpace, botChannel string) error {
+	annotations := map[string]any{clusterAnnotationStage: nil}
+	if botSpace != "" {
+		annotations[clusterAnnotationBotSpace] = botSpace
+		annotations[clusterAnnotationBotChannel] = botChannel
+	}
+	patchData, err := json.Marshal(map[string]any{"Annotations": annotations})
+	if err != nil {
+		return err
+	}
+	if _, err := patchSpace(spaceID, patchData); err != nil {
+		return fmt.Errorf("record the attachment on the cluster space: %w", err)
+	}
+	return nil
 }
 
 // clusterUnitTargetUIAnnotations returns the annotations for a controller-app

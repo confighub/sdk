@@ -189,6 +189,9 @@ type ClientInterface interface {
 
 	BulkCreateChangeOrdersWithApplicationMergePatchPlusJSONBody(ctx context.Context, params *BulkCreateChangeOrdersParams, body BulkCreateChangeOrdersApplicationMergePatchPlusJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error)
 
+	// BulkRefreshChangeOrderStages request
+	BulkRefreshChangeOrderStages(ctx context.Context, params *BulkRefreshChangeOrderStagesParams, reqEditors ...RequestEditorFn) (*http.Response, error)
+
 	// BulkDeleteChangeSets request
 	BulkDeleteChangeSets(ctx context.Context, params *BulkDeleteChangeSetsParams, reqEditors ...RequestEditorFn) (*http.Response, error)
 
@@ -643,6 +646,9 @@ type ClientInterface interface {
 	UpdateChangeOrderWithBody(ctx context.Context, spaceId openapi_types.UUID, changeOrderId openapi_types.UUID, params *UpdateChangeOrderParams, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error)
 
 	UpdateChangeOrder(ctx context.Context, spaceId openapi_types.UUID, changeOrderId openapi_types.UUID, params *UpdateChangeOrderParams, body UpdateChangeOrderJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error)
+
+	// RefreshChangeOrderStage request
+	RefreshChangeOrderStage(ctx context.Context, spaceId openapi_types.UUID, changeOrderId openapi_types.UUID, params *RefreshChangeOrderStageParams, reqEditors ...RequestEditorFn) (*http.Response, error)
 
 	// ListChangeSets request
 	ListChangeSets(ctx context.Context, spaceId openapi_types.UUID, params *ListChangeSetsParams, reqEditors ...RequestEditorFn) (*http.Response, error)
@@ -1711,6 +1717,18 @@ func (c *Client) BulkCreateChangeOrdersWithBody(ctx context.Context, params *Bul
 
 func (c *Client) BulkCreateChangeOrdersWithApplicationMergePatchPlusJSONBody(ctx context.Context, params *BulkCreateChangeOrdersParams, body BulkCreateChangeOrdersApplicationMergePatchPlusJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error) {
 	req, err := NewBulkCreateChangeOrdersRequestWithApplicationMergePatchPlusJSONBody(c.Server, params, body)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+func (c *Client) BulkRefreshChangeOrderStages(ctx context.Context, params *BulkRefreshChangeOrderStagesParams, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewBulkRefreshChangeOrderStagesRequest(c.Server, params)
 	if err != nil {
 		return nil, err
 	}
@@ -3727,6 +3745,18 @@ func (c *Client) UpdateChangeOrderWithBody(ctx context.Context, spaceId openapi_
 
 func (c *Client) UpdateChangeOrder(ctx context.Context, spaceId openapi_types.UUID, changeOrderId openapi_types.UUID, params *UpdateChangeOrderParams, body UpdateChangeOrderJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error) {
 	req, err := NewUpdateChangeOrderRequest(c.Server, spaceId, changeOrderId, params, body)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+func (c *Client) RefreshChangeOrderStage(ctx context.Context, spaceId openapi_types.UUID, changeOrderId openapi_types.UUID, params *RefreshChangeOrderStageParams, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewRefreshChangeOrderStageRequest(c.Server, spaceId, changeOrderId, params)
 	if err != nil {
 		return nil, err
 	}
@@ -11005,6 +11035,167 @@ func NewBulkCreateChangeOrdersRequestWithBody(server string, params *BulkCreateC
 	}
 
 	req.Header.Add("Content-Type", contentType)
+
+	return req, nil
+}
+
+// NewBulkRefreshChangeOrderStagesRequest generates requests for BulkRefreshChangeOrderStages
+func NewBulkRefreshChangeOrderStagesRequest(server string, params *BulkRefreshChangeOrderStagesParams) (*http.Request, error) {
+	var err error
+
+	serverURL, err := url.Parse(server)
+	if err != nil {
+		return nil, err
+	}
+
+	operationPath := fmt.Sprintf("/change_order/refresh_stage")
+	if operationPath[0] == '/' {
+		operationPath = "." + operationPath
+	}
+
+	queryURL, err := serverURL.Parse(operationPath)
+	if err != nil {
+		return nil, err
+	}
+
+	if params != nil {
+		queryValues := queryURL.Query()
+
+		if params.Where != nil {
+
+			if queryFrag, err := runtime.StyleParamWithLocation("form", true, "where", runtime.ParamLocationQuery, *params.Where); err != nil {
+				return nil, err
+			} else if parsed, err := url.ParseQuery(queryFrag); err != nil {
+				return nil, err
+			} else {
+				for k, v := range parsed {
+					for _, v2 := range v {
+						queryValues.Add(k, v2)
+					}
+				}
+			}
+
+		}
+
+		if params.Filter != nil {
+
+			if queryFrag, err := runtime.StyleParamWithLocation("form", true, "filter", runtime.ParamLocationQuery, *params.Filter); err != nil {
+				return nil, err
+			} else if parsed, err := url.ParseQuery(queryFrag); err != nil {
+				return nil, err
+			} else {
+				for k, v := range parsed {
+					for _, v2 := range v {
+						queryValues.Add(k, v2)
+					}
+				}
+			}
+
+		}
+
+		if params.Contains != nil {
+
+			if queryFrag, err := runtime.StyleParamWithLocation("form", true, "contains", runtime.ParamLocationQuery, *params.Contains); err != nil {
+				return nil, err
+			} else if parsed, err := url.ParseQuery(queryFrag); err != nil {
+				return nil, err
+			} else {
+				for k, v := range parsed {
+					for _, v2 := range v {
+						queryValues.Add(k, v2)
+					}
+				}
+			}
+
+		}
+
+		if params.IncludeHidden != nil {
+
+			if queryFrag, err := runtime.StyleParamWithLocation("form", true, "include_hidden", runtime.ParamLocationQuery, *params.IncludeHidden); err != nil {
+				return nil, err
+			} else if parsed, err := url.ParseQuery(queryFrag); err != nil {
+				return nil, err
+			} else {
+				for k, v := range parsed {
+					for _, v2 := range v {
+						queryValues.Add(k, v2)
+					}
+				}
+			}
+
+		}
+
+		if params.Include != nil {
+
+			if queryFrag, err := runtime.StyleParamWithLocation("form", true, "include", runtime.ParamLocationQuery, *params.Include); err != nil {
+				return nil, err
+			} else if parsed, err := url.ParseQuery(queryFrag); err != nil {
+				return nil, err
+			} else {
+				for k, v := range parsed {
+					for _, v2 := range v {
+						queryValues.Add(k, v2)
+					}
+				}
+			}
+
+		}
+
+		if params.Limit != nil {
+
+			if queryFrag, err := runtime.StyleParamWithLocation("form", true, "limit", runtime.ParamLocationQuery, *params.Limit); err != nil {
+				return nil, err
+			} else if parsed, err := url.ParseQuery(queryFrag); err != nil {
+				return nil, err
+			} else {
+				for k, v := range parsed {
+					for _, v2 := range v {
+						queryValues.Add(k, v2)
+					}
+				}
+			}
+
+		}
+
+		if params.Continue != nil {
+
+			if queryFrag, err := runtime.StyleParamWithLocation("form", true, "continue", runtime.ParamLocationQuery, *params.Continue); err != nil {
+				return nil, err
+			} else if parsed, err := url.ParseQuery(queryFrag); err != nil {
+				return nil, err
+			} else {
+				for k, v := range parsed {
+					for _, v2 := range v {
+						queryValues.Add(k, v2)
+					}
+				}
+			}
+
+		}
+
+		if params.DryRun != nil {
+
+			if queryFrag, err := runtime.StyleParamWithLocation("form", true, "dry_run", runtime.ParamLocationQuery, *params.DryRun); err != nil {
+				return nil, err
+			} else if parsed, err := url.ParseQuery(queryFrag); err != nil {
+				return nil, err
+			} else {
+				for k, v := range parsed {
+					for _, v2 := range v {
+						queryValues.Add(k, v2)
+					}
+				}
+			}
+
+		}
+
+		queryURL.RawQuery = queryValues.Encode()
+	}
+
+	req, err := http.NewRequest("POST", queryURL.String(), nil)
+	if err != nil {
+		return nil, err
+	}
 
 	return req, nil
 }
@@ -25904,6 +26095,69 @@ func NewUpdateChangeOrderRequestWithBody(server string, spaceId openapi_types.UU
 	}
 
 	req.Header.Add("Content-Type", contentType)
+
+	return req, nil
+}
+
+// NewRefreshChangeOrderStageRequest generates requests for RefreshChangeOrderStage
+func NewRefreshChangeOrderStageRequest(server string, spaceId openapi_types.UUID, changeOrderId openapi_types.UUID, params *RefreshChangeOrderStageParams) (*http.Request, error) {
+	var err error
+
+	var pathParam0 string
+
+	pathParam0, err = runtime.StyleParamWithLocation("simple", false, "space_id", runtime.ParamLocationPath, spaceId)
+	if err != nil {
+		return nil, err
+	}
+
+	var pathParam1 string
+
+	pathParam1, err = runtime.StyleParamWithLocation("simple", false, "change_order_id", runtime.ParamLocationPath, changeOrderId)
+	if err != nil {
+		return nil, err
+	}
+
+	serverURL, err := url.Parse(server)
+	if err != nil {
+		return nil, err
+	}
+
+	operationPath := fmt.Sprintf("/space/%s/change_order/%s/refresh_stage", pathParam0, pathParam1)
+	if operationPath[0] == '/' {
+		operationPath = "." + operationPath
+	}
+
+	queryURL, err := serverURL.Parse(operationPath)
+	if err != nil {
+		return nil, err
+	}
+
+	if params != nil {
+		queryValues := queryURL.Query()
+
+		if params.DryRun != nil {
+
+			if queryFrag, err := runtime.StyleParamWithLocation("form", true, "dry_run", runtime.ParamLocationQuery, *params.DryRun); err != nil {
+				return nil, err
+			} else if parsed, err := url.ParseQuery(queryFrag); err != nil {
+				return nil, err
+			} else {
+				for k, v := range parsed {
+					for _, v2 := range v {
+						queryValues.Add(k, v2)
+					}
+				}
+			}
+
+		}
+
+		queryURL.RawQuery = queryValues.Encode()
+	}
+
+	req, err := http.NewRequest("POST", queryURL.String(), nil)
+	if err != nil {
+		return nil, err
+	}
 
 	return req, nil
 }
@@ -46787,6 +47041,9 @@ type ClientWithResponsesInterface interface {
 
 	BulkCreateChangeOrdersWithApplicationMergePatchPlusJSONBodyWithResponse(ctx context.Context, params *BulkCreateChangeOrdersParams, body BulkCreateChangeOrdersApplicationMergePatchPlusJSONRequestBody, reqEditors ...RequestEditorFn) (*BulkCreateChangeOrdersResponse, error)
 
+	// BulkRefreshChangeOrderStagesWithResponse request
+	BulkRefreshChangeOrderStagesWithResponse(ctx context.Context, params *BulkRefreshChangeOrderStagesParams, reqEditors ...RequestEditorFn) (*BulkRefreshChangeOrderStagesResponse, error)
+
 	// BulkDeleteChangeSetsWithResponse request
 	BulkDeleteChangeSetsWithResponse(ctx context.Context, params *BulkDeleteChangeSetsParams, reqEditors ...RequestEditorFn) (*BulkDeleteChangeSetsResponse, error)
 
@@ -47241,6 +47498,9 @@ type ClientWithResponsesInterface interface {
 	UpdateChangeOrderWithBodyWithResponse(ctx context.Context, spaceId openapi_types.UUID, changeOrderId openapi_types.UUID, params *UpdateChangeOrderParams, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*UpdateChangeOrderResponse, error)
 
 	UpdateChangeOrderWithResponse(ctx context.Context, spaceId openapi_types.UUID, changeOrderId openapi_types.UUID, params *UpdateChangeOrderParams, body UpdateChangeOrderJSONRequestBody, reqEditors ...RequestEditorFn) (*UpdateChangeOrderResponse, error)
+
+	// RefreshChangeOrderStageWithResponse request
+	RefreshChangeOrderStageWithResponse(ctx context.Context, spaceId openapi_types.UUID, changeOrderId openapi_types.UUID, params *RefreshChangeOrderStageParams, reqEditors ...RequestEditorFn) (*RefreshChangeOrderStageResponse, error)
 
 	// ListChangeSetsWithResponse request
 	ListChangeSetsWithResponse(ctx context.Context, spaceId openapi_types.UUID, params *ListChangeSetsParams, reqEditors ...RequestEditorFn) (*ListChangeSetsResponse, error)
@@ -48599,6 +48859,36 @@ func (r BulkCreateChangeOrdersResponse) Status() string {
 
 // StatusCode returns HTTPResponse.StatusCode
 func (r BulkCreateChangeOrdersResponse) StatusCode() int {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.StatusCode
+	}
+	return 0
+}
+
+type BulkRefreshChangeOrderStagesResponse struct {
+	Body         []byte
+	HTTPResponse *http.Response
+	JSON200      *[]ChangeOrderCreateOrUpdateResponse
+	JSON207      *[]ChangeOrderCreateOrUpdateResponse
+	JSON400      *StandardErrorResponse
+	JSON401      *StandardErrorResponse
+	JSON403      *StandardErrorResponse
+	JSON404      *StandardErrorResponse
+	JSON409      *StandardErrorResponse
+	JSON500      *StandardErrorResponse
+	JSONDefault  *StandardErrorResponse
+}
+
+// Status returns HTTPResponse.Status
+func (r BulkRefreshChangeOrderStagesResponse) Status() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Status
+	}
+	return http.StatusText(0)
+}
+
+// StatusCode returns HTTPResponse.StatusCode
+func (r BulkRefreshChangeOrderStagesResponse) StatusCode() int {
 	if r.HTTPResponse != nil {
 		return r.HTTPResponse.StatusCode
 	}
@@ -52053,6 +52343,35 @@ func (r UpdateChangeOrderResponse) Status() string {
 
 // StatusCode returns HTTPResponse.StatusCode
 func (r UpdateChangeOrderResponse) StatusCode() int {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.StatusCode
+	}
+	return 0
+}
+
+type RefreshChangeOrderStageResponse struct {
+	Body         []byte
+	HTTPResponse *http.Response
+	JSON200      *ChangeOrder
+	JSON400      *StandardErrorResponse
+	JSON401      *StandardErrorResponse
+	JSON403      *StandardErrorResponse
+	JSON404      *StandardErrorResponse
+	JSON409      *StandardErrorResponse
+	JSON500      *StandardErrorResponse
+	JSONDefault  *StandardErrorResponse
+}
+
+// Status returns HTTPResponse.Status
+func (r RefreshChangeOrderStageResponse) Status() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Status
+	}
+	return http.StatusText(0)
+}
+
+// StatusCode returns HTTPResponse.StatusCode
+func (r RefreshChangeOrderStageResponse) StatusCode() int {
 	if r.HTTPResponse != nil {
 		return r.HTTPResponse.StatusCode
 	}
@@ -57182,6 +57501,15 @@ func (c *ClientWithResponses) BulkCreateChangeOrdersWithApplicationMergePatchPlu
 	return ParseBulkCreateChangeOrdersResponse(rsp)
 }
 
+// BulkRefreshChangeOrderStagesWithResponse request returning *BulkRefreshChangeOrderStagesResponse
+func (c *ClientWithResponses) BulkRefreshChangeOrderStagesWithResponse(ctx context.Context, params *BulkRefreshChangeOrderStagesParams, reqEditors ...RequestEditorFn) (*BulkRefreshChangeOrderStagesResponse, error) {
+	rsp, err := c.BulkRefreshChangeOrderStages(ctx, params, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseBulkRefreshChangeOrderStagesResponse(rsp)
+}
+
 // BulkDeleteChangeSetsWithResponse request returning *BulkDeleteChangeSetsResponse
 func (c *ClientWithResponses) BulkDeleteChangeSetsWithResponse(ctx context.Context, params *BulkDeleteChangeSetsParams, reqEditors ...RequestEditorFn) (*BulkDeleteChangeSetsResponse, error) {
 	rsp, err := c.BulkDeleteChangeSets(ctx, params, reqEditors...)
@@ -58643,6 +58971,15 @@ func (c *ClientWithResponses) UpdateChangeOrderWithResponse(ctx context.Context,
 		return nil, err
 	}
 	return ParseUpdateChangeOrderResponse(rsp)
+}
+
+// RefreshChangeOrderStageWithResponse request returning *RefreshChangeOrderStageResponse
+func (c *ClientWithResponses) RefreshChangeOrderStageWithResponse(ctx context.Context, spaceId openapi_types.UUID, changeOrderId openapi_types.UUID, params *RefreshChangeOrderStageParams, reqEditors ...RequestEditorFn) (*RefreshChangeOrderStageResponse, error) {
+	rsp, err := c.RefreshChangeOrderStage(ctx, spaceId, changeOrderId, params, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseRefreshChangeOrderStageResponse(rsp)
 }
 
 // ListChangeSetsWithResponse request returning *ListChangeSetsResponse
@@ -62604,6 +62941,88 @@ func ParseBulkCreateChangeOrdersResponse(rsp *http.Response) (*BulkCreateChangeO
 	}
 
 	response := &BulkCreateChangeOrdersResponse{
+		Body:         bodyBytes,
+		HTTPResponse: rsp,
+	}
+
+	switch {
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 200:
+		var dest []ChangeOrderCreateOrUpdateResponse
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON200 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 207:
+		var dest []ChangeOrderCreateOrUpdateResponse
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON207 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 400:
+		var dest StandardErrorResponse
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON400 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 401:
+		var dest StandardErrorResponse
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON401 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 403:
+		var dest StandardErrorResponse
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON403 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 404:
+		var dest StandardErrorResponse
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON404 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 409:
+		var dest StandardErrorResponse
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON409 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 500:
+		var dest StandardErrorResponse
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON500 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && true:
+		var dest StandardErrorResponse
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSONDefault = &dest
+
+	}
+
+	return response, nil
+}
+
+// ParseBulkRefreshChangeOrderStagesResponse parses an HTTP response from a BulkRefreshChangeOrderStagesWithResponse call
+func ParseBulkRefreshChangeOrderStagesResponse(rsp *http.Response) (*BulkRefreshChangeOrderStagesResponse, error) {
+	bodyBytes, err := io.ReadAll(rsp.Body)
+	defer func() { _ = rsp.Body.Close() }()
+	if err != nil {
+		return nil, err
+	}
+
+	response := &BulkRefreshChangeOrderStagesResponse{
 		Body:         bodyBytes,
 		HTTPResponse: rsp,
 	}
@@ -71557,6 +71976,81 @@ func ParseUpdateChangeOrderResponse(rsp *http.Response) (*UpdateChangeOrderRespo
 	}
 
 	response := &UpdateChangeOrderResponse{
+		Body:         bodyBytes,
+		HTTPResponse: rsp,
+	}
+
+	switch {
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 200:
+		var dest ChangeOrder
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON200 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 400:
+		var dest StandardErrorResponse
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON400 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 401:
+		var dest StandardErrorResponse
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON401 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 403:
+		var dest StandardErrorResponse
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON403 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 404:
+		var dest StandardErrorResponse
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON404 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 409:
+		var dest StandardErrorResponse
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON409 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 500:
+		var dest StandardErrorResponse
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON500 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && true:
+		var dest StandardErrorResponse
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSONDefault = &dest
+
+	}
+
+	return response, nil
+}
+
+// ParseRefreshChangeOrderStageResponse parses an HTTP response from a RefreshChangeOrderStageWithResponse call
+func ParseRefreshChangeOrderStageResponse(rsp *http.Response) (*RefreshChangeOrderStageResponse, error) {
+	bodyBytes, err := io.ReadAll(rsp.Body)
+	defer func() { _ = rsp.Body.Close() }()
+	if err != nil {
+		return nil, err
+	}
+
+	response := &RefreshChangeOrderStageResponse{
 		Body:         bodyBytes,
 		HTTPResponse: rsp,
 	}

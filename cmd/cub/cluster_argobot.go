@@ -35,8 +35,9 @@ import (
 //
 // Everything argobot-specific lives in this file; the rest of the cluster
 // package is generic (kind, Argo CD, ConfigHub Spaces/Targets/ServiceAccounts).
-// The one coupling into the attachment is clusterInstallArgobotStep, called
-// once from clusterAttach.
+// The one coupling into the attachment is clusterInstallK8sbot, the stage `cub
+// cluster k8sbot-install` runs and `cub cluster attach` runs inside
+// clusterBootstrapApps.
 
 // argobot install constants. argobot is installed as a ConfigHub component from
 // the manifests `argobot install` prints, then given a per-cluster downstream
@@ -99,31 +100,95 @@ const (
 // Channel is created without running the bot.
 const clusterArgobotEventReleasePublished = "release.published"
 
-// clusterArgobotDeps carries the cluster-derived values the argobot install
-// needs from clusterAttach — the pieces of a freshly attached cluster argobot
-// binds to. The child Argo Application is created by `cub variant create` from
-// the OCI target's apps-space annotation, so the install itself only needs
-// the identity argobot runs as (for the Channel grant and the out-of-band
-// Secret) and the kubeconfig.
-type clusterArgobotDeps struct {
-	clusterSpaceID       uuid.UUID       // the cluster Space; argobot's Channel lives here, beside the Target
-	targetID             uuid.UUID       // the cluster's OCI target, which the Channel's subscription is scoped to
-	serviceAccountUserID uuid.UUID       // the user of the cluster's service account, which claims the Channel
-	privateKey           json.RawMessage // its private key (goes into the out-of-band Secret)
-	kubeconfigPath       string
+// clusterK8sbotSpec is what installing argobot in a cluster needs: the
+// cluster's Space, OCI target and apps Space, which argobot's Channel and
+// Units go in, and the cluster's service account, which it runs as.
+type clusterK8sbotSpec struct {
+	name           string
+	spaceSlug      string
+	kubeconfigPath string
+	controller     string
+	spaceID        uuid.UUID // the cluster Space; argobot's Channel lives here, beside the Target
+	targetID       uuid.UUID // the cluster's OCI target, which the Channel's subscription is scoped to
+	// argobotBase is clusterArgobotBaseUpdate or clusterArgobotBaseClone, as
+	// clusterChooseArgobotBase decided it.
+	argobotBase string
+	// standalone is true for `cub cluster k8sbot-install` on a cluster attached
+	// already: its root runs, so the stage marks the target as argobot's,
+	// records the bot on the cluster Space, and republishes the apps Space
+	// itself. Within an attachment, attach does all three.
+	standalone bool
 }
 
-// clusterInstallArgobotStep is the single argobot seam into clusterAttach (and
-// so into both `cub cluster up` and `cub cluster attach`). It is a no-op when
-// --no-k8sbot is set; otherwise it registers the argobot variant Space for
-// rollback (via registerRollback), derives argobot's in-cluster ConfigHub URL,
-// and runs the install. The child Argo Application Unit lands in the apps
-// Space as a side effect of `cub variant create --target` (auto-created from
-// the OCI target's apps-space annotation), so there is nothing for the caller
-// to add to the apps Space's Release.
-func clusterInstallArgobotStep(out io.Writer, opts clusterAttachSpec, dep clusterArgobotDeps, registerRollback func(func())) error {
-	if opts.noArgobot {
-		return nil
+// clusterInstallK8sbot installs argobot in a cluster, as `cub cluster
+// k8sbot-install` and as the last stage of `cub cluster attach` before its
+// first apps-Space Release. argobot authenticates as the cluster's service
+// account with a key in the argobot-secrets Secret, issued here unless
+// svc-account-bootstrap already put one in the cluster. Everything it creates
+// is registered with registerRollback.
+func clusterInstallK8sbot(out io.Writer, spec clusterK8sbotSpec, registerRollback func(func())) error {
+	serviceAccountSlug := clusterServiceAccountSlug(spec.name)
+	serviceAccountID, serviceAccountUserID, err := clusterServiceAccountIDs(serviceAccountSlug)
+	if err != nil {
+		return err
+	}
+	hasKey, err := clusterHasArgobotKey(spec.kubeconfigPath)
+	if err != nil {
+		return err
+	}
+	if !hasKey {
+		fmt.Fprintf(out, "Issuing a key for argobot on %q...\n", serviceAccountSlug)
+		privateKey, err := clusterCreateServiceAccountKey(serviceAccountID, serviceAccountUserID, "argobot in cluster "+spec.name)
+		if err != nil {
+			return fmt.Errorf("issue the service account key: %w", err)
+		}
+		if err := clusterApplyArgobotKey(out, spec.kubeconfigPath, privateKey, registerRollback); err != nil {
+			return err
+		}
+	}
+
+	appsSlug := spec.spaceSlug + clusterAppsSuffix(spec.controller)
+	argobotSlug := clusterArgobotComponent + "-" + spec.name
+	if spec.standalone {
+		// `cub variant create` reads the annotation to decide whether argobot's
+		// own deployment is released at once (Flux).
+		if _, err := clusterGrantTarget(spec.spaceID, spec.targetID, uuid.Nil,
+			map[string]string{clusterAnnotationArgobot: "true"}); err != nil {
+			return fmt.Errorf("mark the target as argobot's: %w", err)
+		}
+		registerRollback(func() {
+			_ = clusterRemoveTargetAnnotation(spec.spaceID, spec.targetID, clusterAnnotationArgobot)
+		})
+		// The root deploys the apps Space's Release, which `cub variant create`
+		// adds argobot's Unit to: take it back out so the root drops argobot.
+		registerRollback(func() {
+			appsSpace, err := resolveSpace(appsSlug, "SpaceID")
+			if err != nil {
+				return
+			}
+			unit, err := resolveUnit(argobotSlug, appsSpace.Space.SpaceID.String(), "UnitID")
+			if err != nil {
+				return
+			}
+			fmt.Fprintf(out, "Rolling back: removing argobot's Unit from apps space %q\n", appsSlug)
+			_, _ = cubClientNew.DeleteUnitWithResponse(ctx, appsSpace.Space.SpaceID, unit.Unit.UnitID, &goclientnew.DeleteUnitParams{})
+			_ = clusterPublishRelease(appsSpace.Space.SpaceID)
+		})
+		// Within an attachment the Channel goes with the cluster Space.
+		registerRollback(func() {
+			channel, err := resolveChannel(clusterArgobotChannelSlug, spec.spaceID.String(), "ChannelID")
+			if err != nil {
+				return
+			}
+			fmt.Fprintf(out, "Rolling back: cub channel delete %s/%s\n", spec.spaceSlug, clusterArgobotChannelSlug)
+			_, _ = cubClientNew.DeleteChannelWithResponse(ctx, spec.spaceID, channel.Channel.ChannelID)
+		})
+		// Before `cub variant create`, so argobot's own deployment polls like
+		// the root. Its rollbacks run before the ones above, so the apps-Space
+		// publish that takes argobot back out carries the old root.
+		if err := clusterPollWithArgobot(out, spec, appsSlug, registerRollback); err != nil {
+			return err
+		}
 	}
 
 	// Register the per-cluster argobot variant Space for rollback before the
@@ -131,7 +196,6 @@ func clusterInstallArgobotStep(out io.Writer, opts clusterAttachSpec, dep cluste
 	// release-target reference that would otherwise block deleting the cluster's
 	// OCI target. Resolve by slug at rollback time (it may not exist yet). The
 	// shared argobot-base Space is intentionally left alone.
-	argobotSlug := clusterArgobotComponent + "-" + opts.name
 	registerRollback(func() {
 		sp, err := resolveSpace(argobotSlug, "SpaceID")
 		if err != nil {
@@ -150,7 +214,7 @@ func clusterInstallArgobotStep(out io.Writer, opts clusterAttachSpec, dep cluste
 		return err
 	}
 
-	switch opts.controller {
+	switch spec.controller {
 	case clusterControllerSveltos:
 		fmt.Fprintln(out, "\nInstalling argobot (event-driven Sveltos redeploy)...")
 	case clusterControllerFlux:
@@ -158,19 +222,143 @@ func clusterInstallArgobotStep(out io.Writer, opts clusterAttachSpec, dep cluste
 	default:
 		fmt.Fprintln(out, "\nInstalling argobot (event-driven Argo CD sync)...")
 	}
-	return clusterInstallArgobot(out, clusterArgobotOptions{
-		controller:           opts.controller,
-		clusterName:          opts.name,
-		clusterSpaceID:       dep.clusterSpaceID,
-		clusterSpaceSlug:     opts.spaceSlug,
-		targetID:             dep.targetID,
-		ociTargetRef:         opts.spaceSlug + "/" + clusterTargetSlug,
-		serviceAccountUserID: dep.serviceAccountUserID,
-		privateKey:           dep.privateKey,
+	if err := clusterInstallArgobot(out, clusterArgobotOptions{
+		controller:           spec.controller,
+		clusterName:          spec.name,
+		clusterSpaceID:       spec.spaceID,
+		clusterSpaceSlug:     spec.spaceSlug,
+		targetID:             spec.targetID,
+		ociTargetRef:         spec.spaceSlug + "/" + clusterTargetSlug,
+		serviceAccountUserID: serviceAccountUserID,
 		apiURLForContainer:   apiURLForContainer,
-		kubeconfigPath:       dep.kubeconfigPath,
-		baseMode:             opts.argobotBase,
+		kubeconfigPath:       spec.kubeconfigPath,
+		baseMode:             spec.argobotBase,
+	}); err != nil {
+		return err
+	}
+	if !spec.standalone {
+		return nil
+	}
+
+	// The root deploys argobot from the apps Space's Release: publish it with
+	// argobot's Unit in it, whichever controller's `cub variant create` left it
+	// unpublished, and with Argo CD ask the root to re-read it now rather than
+	// on its next poll.
+	appsSpace, err := resolveSpace(appsSlug, "SpaceID")
+	if err != nil {
+		return fmt.Errorf("resolve apps space %q: %w", appsSlug, err)
+	}
+	fmt.Fprintf(out, "Publishing the apps space's release (adds argobot to what the root deploys)...\n")
+	if err := clusterPublishRelease(appsSpace.Space.SpaceID); err != nil {
+		return err
+	}
+	if spec.controller == clusterControllerArgo {
+		if err := clusterKubectl(ctx, spec.kubeconfigPath, nil, io.Discard,
+			"annotate", "application", appsSlug, "-n", clusterArgoNamespace, "argocd.argoproj.io/refresh=hard", "--overwrite"); err != nil {
+			fmt.Fprintf(out, "  warning: refresh root Application %q: %v\n", appsSlug, err)
+		}
+	}
+	return clusterFinishSpaceAnnotations(spec.spaceID, argobotSlug, clusterArgobotChannelSlug)
+}
+
+// clusterPollWithArgobot moves a Sveltos or Flux cluster attached without
+// argobot to the poll interval it has with argobot, as if attached with it:
+// infrequent, since argobot has each Release deployed when it is published. The
+// interval goes on the target, which deployments created from here on take it
+// from (argobot's own first), and on the root Unit, which the apps-Space
+// publish after argobot's install carries to the cluster. Deployments that
+// already exist keep polling every minute. Argo CD has no interval of cub's to
+// change.
+func clusterPollWithArgobot(out io.Writer, spec clusterK8sbotSpec, appsSlug string, registerRollback func(func())) error {
+	var key string
+	var render func(interval, rootRepoURL string, insecure, prune bool) []byte
+	switch spec.controller {
+	case clusterControllerSveltos:
+		key = clusterAnnotationSveltosPollInterval
+		render = func(interval, rootRepoURL string, insecure, _ bool) []byte {
+			return clusterSveltosRootProfileManifest(rootRepoURL, interval, insecure)
+		}
+	case clusterControllerFlux:
+		key = clusterAnnotationFluxPollInterval
+		render = func(interval, rootRepoURL string, insecure, prune bool) []byte {
+			return clusterFluxRootManifest(rootRepoURL, interval, insecure, prune)
+		}
+	default:
+		return nil
+	}
+	interval := clusterSveltosPollInterval(true)
+	if spec.controller == clusterControllerFlux {
+		interval = clusterFluxPollInterval(true)
+	}
+	target, err := clusterGetTarget(spec.spaceID, spec.targetID)
+	if err != nil {
+		return err
+	}
+	old := target.Annotations[key]
+	if old == interval {
+		return nil
+	}
+	prune := target.Annotations[clusterAnnotationPrune] == "true"
+
+	fmt.Fprintf(out, "Moving the cluster's poll interval to %s, as with argobot...\n", interval)
+	if _, err := clusterGrantTarget(spec.spaceID, spec.targetID, uuid.Nil, map[string]string{key: interval}); err != nil {
+		return fmt.Errorf("record the poll interval on the target: %w", err)
+	}
+	registerRollback(func() {
+		if old == "" {
+			_ = clusterRemoveTargetAnnotation(spec.spaceID, spec.targetID, key)
+			return
+		}
+		_, _ = clusterGrantTarget(spec.spaceID, spec.targetID, uuid.Nil, map[string]string{key: old})
 	})
+
+	appsSpace, err := resolveSpace(appsSlug, "SpaceID")
+	if err != nil {
+		return fmt.Errorf("resolve apps space %q: %w", appsSlug, err)
+	}
+	appsSpaceID := appsSpace.Space.SpaceID
+	root, err := resolveUnit(clusterRootUnitSlug, appsSpaceID.String(), "UnitID")
+	if err != nil {
+		return fmt.Errorf("resolve root unit in apps space %q: %w", appsSlug, err)
+	}
+	rootUnitID := root.Unit.UnitID
+	ociURLForCluster, insecure, err := clusterControllerOCIEndpoint()
+	if err != nil {
+		return err
+	}
+	rootRepoURL := strings.TrimRight(ociURLForCluster, "/") + "/space/" + appsSlug
+	if _, err := putUnitData(appsSpaceID, rootUnitID, string(render(interval, rootRepoURL, insecure, prune)), nil); err != nil {
+		return fmt.Errorf("update root unit: %w", err)
+	}
+	registerRollback(func() {
+		previous := old
+		if previous == "" {
+			previous = clusterSveltosPollInterval(false)
+			if spec.controller == clusterControllerFlux {
+				previous = clusterFluxPollInterval(false)
+			}
+		}
+		_, _ = putUnitData(appsSpaceID, rootUnitID, string(render(previous, rootRepoURL, insecure, prune)), nil)
+		_ = clusterWaitUnitTriggers(appsSpaceID, rootUnitID)
+	})
+	return clusterWaitUnitTriggers(appsSpaceID, rootUnitID)
+}
+
+// clusterApplyArgobotKey applies argobot's key to the cluster, as the
+// argobot-secrets Secret in the argobot namespace (created with it), where
+// argobot reads CONFIGHUB_AUTH_PRIVATE_KEY from. Applied straight to the
+// cluster so the key never enters a published Release, and before argobot's
+// Deployment so it is there when the pod starts.
+func clusterApplyArgobotKey(out io.Writer, kubeconfigPath string, privateKey json.RawMessage, registerRollback func(func())) error {
+	fmt.Fprintf(out, "Applying argobot key Secret to the %q namespace...\n", clusterArgobotNamespace)
+	if err := clusterKubectlApply(ctx, kubeconfigPath, clusterArgobotSecretManifest(privateKey), out); err != nil {
+		return fmt.Errorf("apply argobot secret: %w", err)
+	}
+	registerRollback(func() {
+		_ = clusterKubectl(ctx, kubeconfigPath, nil, io.Discard,
+			"delete", "secret", clusterArgobotSecret, "-n", clusterArgobotNamespace, "--ignore-not-found")
+	})
+	return nil
 }
 
 // clusterArgobotSubscriptions is what argobot's Channel subscribes to: the
@@ -309,15 +497,14 @@ func clusterArgobotWaitInstallPod(kubeconfigPath string, budget time.Duration) e
 // clusterArgobotOptions carries everything the argobot install needs from the
 // surrounding attachment.
 type clusterArgobotOptions struct {
-	controller           string          // the cluster's controller; argobot's Sveltos and Flux deployments come from bases of their own
-	clusterName          string          // cluster name; also the argobot variant name
-	clusterSpaceID       uuid.UUID       // the cluster Space, where argobot's Channel is created
-	clusterSpaceSlug     string          // its slug, the Space part of argobot's CONFIGHUB_CHANNEL
-	targetID             uuid.UUID       // the cluster's OCI target, which the Channel subscribes to
-	ociTargetRef         string          // "<prefix>/target" — argobot's release target, and its CONFIGHUB_TARGET
-	serviceAccountUserID uuid.UUID       // the cluster service account's user, granted Claim on the Channel
-	privateKey           json.RawMessage // the service account's private key (goes into the out-of-band Secret)
-	apiURLForContainer   string          // ConfigHub API URL as argobot (in-cluster) reaches it
+	controller           string    // the cluster's controller; argobot's Sveltos and Flux deployments come from bases of their own
+	clusterName          string    // cluster name; also the argobot variant name
+	clusterSpaceID       uuid.UUID // the cluster Space, where argobot's Channel is created
+	clusterSpaceSlug     string    // its slug, the Space part of argobot's CONFIGHUB_CHANNEL
+	targetID             uuid.UUID // the cluster's OCI target, which the Channel subscribes to
+	ociTargetRef         string    // "<prefix>/target" — argobot's release target, and its CONFIGHUB_TARGET
+	serviceAccountUserID uuid.UUID // the cluster service account's user, granted Claim on the Channel
+	apiURLForContainer   string    // ConfigHub API URL as argobot (in-cluster) reaches it
 	kubeconfigPath       string
 	baseMode             string // clusterArgobotBaseUpdate or clusterArgobotBaseClone, from clusterChooseArgobotBase
 }
@@ -404,7 +591,8 @@ func clusterInstallArgobot(out io.Writer, o clusterArgobotOptions) error {
 
 	// 4. Point argobot at this ConfigHub, its Channel, and the Target it
 	// stores the cluster's facts on. set-env upserts literal env vars; the key
-	// stays a secretKeyRef (supplied out of band, step 6).
+	// stays a secretKeyRef to the Secret clusterBootstrapServiceAccount applied
+	// out of band.
 	fmt.Fprintln(out, "Configuring argobot (CONFIGHUB_URL, CONFIGHUB_CHANNEL, CONFIGHUB_TARGET)...")
 	if err := runCub("function", "do", "--quiet",
 		"--space", argobotSpace, "--unit", clusterArgobotUnitSlug,
@@ -426,14 +614,6 @@ func clusterInstallArgobot(out io.Writer, o clusterArgobotOptions) error {
 	fmt.Fprintf(out, "Publishing argobot variant Release (%s)...\n", argobotSpace)
 	if err := clusterPublishRelease(space.Space.SpaceID); err != nil {
 		return err
-	}
-
-	// 6. Apply the out-of-band key Secret (and its Namespace) so argobot's pod
-	// can authenticate. Kept out of the OCI bundle deliberately.
-	fmt.Fprintf(out, "Applying argobot key Secret to the %q namespace...\n", clusterArgobotNamespace)
-	if err := clusterKubectlApply(ctx, o.kubeconfigPath,
-		clusterArgobotSecretManifest(o.privateKey), out); err != nil {
-		return fmt.Errorf("apply argobot secret: %w", err)
 	}
 
 	switch o.controller {

@@ -12,7 +12,10 @@ import (
 // Annotation/label keys cub writes onto every cluster Space `cub cluster up`
 // or `cub cluster attach` creates.
 const (
-	clusterAnnotationName      = "confighub.com/cluster-name"
+	clusterAnnotationName = "confighub.com/cluster-name"
+	// clusterAnnotationPortRange is also the label `cub cluster create` puts on
+	// a kind cluster's control-plane node, which is how `cub cluster attach
+	// --provider kind` learns the window later.
 	clusterAnnotationPortRange = "confighub.com/cluster-port-range"
 	clusterAnnotationHost      = "confighub.com/cluster-host"
 	clusterAnnotationArgoPort  = "confighub.com/cluster-argo-port"
@@ -37,7 +40,7 @@ const (
 	// cluster's credentials (clusterProviderKubeconfig, clusterProviderEKS,
 	// clusterProviderKind), and clusterAnnotationProviderCluster the cluster's
 	// name at that provider when the provider names clusters itself. `cub
-	// cluster up` writes neither: its origin says kind already.
+	// cluster up` attaches through the kind provider, so it writes both.
 	clusterAnnotationProvider        = "confighub.com/cluster-provider"
 	clusterAnnotationProviderCluster = "confighub.com/cluster-provider-cluster"
 	// clusterAnnotationController names the controller `cub cluster up`
@@ -47,6 +50,17 @@ const (
 	// clusterAnnotationSveltosPort is the Sveltos dashboard's NodePort, the
 	// counterpart of clusterAnnotationArgoPort.
 	clusterAnnotationSveltosPort = "confighub.com/cluster-sveltos-port"
+	// clusterAnnotationStage is on the cluster Space of a cluster that is partly
+	// set up and nothing has attached yet: clusterStageController after `cub
+	// cluster controller-install` (the controller, the Space and its OCI
+	// target), clusterStageServiceAccount after `cub cluster
+	// svc-account-bootstrap` (the cluster's service account too, with its key
+	// and token in the cluster). `cub cluster attach` picks such a cluster up
+	// instead of refusing it as already cub-managed, and removes the annotation
+	// when done.
+	clusterAnnotationStage     = "confighub.com/cluster-stage"
+	clusterStageController     = "controller"
+	clusterStageServiceAccount = "service-account"
 	// clusterLabel is the queryable marker label on every cluster Space.
 	clusterLabel = "confighub.com/cluster"
 
@@ -164,6 +178,19 @@ single cub unit create and no worker runs anywhere.
 
   cub cluster attach   wire a cluster you already have into ConfigHub (Argo CD only)
   cub cluster detach   the inverse: remove the wiring, leave the cluster running
+  cub cluster create   create a local kind cluster, without attaching it
+  cub cluster controller-install
+                       install the controller and create the cluster's target,
+                       the first part of attach
+  cub cluster svc-account-bootstrap
+                       create the cluster's service account and put its
+                       credentials in the cluster, the second part
+  cub cluster app-bootstrap
+                       create the apps space and bootstrap the root, the third
+                       part, which finishes attaching without argobot
+  cub cluster k8sbot-install
+                       install argobot in a cluster attached without it, the
+                       last part
   cub cluster up       create a local kind cluster, then attach it
   cub cluster down     the inverse: detach, then delete the kind cluster
   cub cluster list     every cluster this machine holds credentials for, and the
