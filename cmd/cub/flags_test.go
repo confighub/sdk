@@ -195,11 +195,11 @@ func TestUpdateHasNoFlagForImmutableField(t *testing.T) {
 }
 
 // Every create and update that sets labels writes an entity with a HiddenReason, and all but a
-// Release have a DisplayName. The exceptions are the two the identity provider holds, whose
-// positional argument is the name.
+// Release have a DisplayName. The exception is the OrganizationMember, which the identity
+// provider holds, and whose positional argument names the member.
 func TestCreateAndUpdateSetDisplayNameAndHiddenReason(t *testing.T) {
 	withoutDisplayName := map[string]bool{"cub release update": true}
-	heldByIdentityProvider := map[string]bool{"cub organization create": true, "cub organization-member create": true}
+	heldByIdentityProvider := map[string]bool{"cub organization-member create": true}
 	checked := 0
 	var visit func(cmd *cobra.Command)
 	visit = func(cmd *cobra.Command) {

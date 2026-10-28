@@ -1591,6 +1591,12 @@ resourceTypes:
   - type: cilium.io/v2alpha1/CiliumCIDRGroup
     scope: Cluster
 
+  - type: config.projectsveltos.io/v1beta1/ClusterProfile
+    scope: Cluster
+
+  - type: config.projectsveltos.io/v1beta1/ClusterPromotion
+    scope: Cluster
+
   - type: external-secrets.io/v1/ClusterExternalSecret
     scope: Cluster
 
@@ -1660,6 +1666,42 @@ resourceTypes:
     scope: Cluster
 
   - type: kyverno.io/v2beta1/ClusterPolicy
+    scope: Cluster
+
+  - type: lib.projectsveltos.io/v1beta1/Classifier
+    scope: Cluster
+
+  - type: lib.projectsveltos.io/v1beta1/ClusterHealthCheck
+    scope: Cluster
+
+  - type: lib.projectsveltos.io/v1beta1/ClusterSet
+    scope: Cluster
+
+  - type: lib.projectsveltos.io/v1beta1/DebuggingConfiguration
+    scope: Cluster
+
+  - type: lib.projectsveltos.io/v1beta1/EventSource
+    scope: Cluster
+
+  - type: lib.projectsveltos.io/v1beta1/EventTrigger
+    scope: Cluster
+
+  - type: lib.projectsveltos.io/v1beta1/HealthCheck
+    scope: Cluster
+
+  - type: lib.projectsveltos.io/v1beta1/ManagementClusterClassifier
+    scope: Cluster
+
+  - type: lib.projectsveltos.io/v1beta1/Reloader
+    scope: Cluster
+
+  - type: lib.projectsveltos.io/v1beta1/RoleRequest
+    scope: Cluster
+
+  - type: lib.projectsveltos.io/v1beta1/SveltosLicense
+    scope: Cluster
+
+  - type: lib.projectsveltos.io/v1beta1/Techsupport
     scope: Cluster
 
   - type: mutations.gatekeeper.sh/v1/Assign

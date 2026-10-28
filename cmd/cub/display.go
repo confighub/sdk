@@ -502,7 +502,6 @@ type DeleteConstraint interface {
 		goclientnew.DeleteFilterResponse |
 		goclientnew.DeleteInvocationResponse |
 		goclientnew.DeleteLinkResponse |
-		goclientnew.DeleteOrganizationResponse |
 		goclientnew.DeleteOrganizationMemberResponse |
 		goclientnew.DeleteSpaceResponse |
 		goclientnew.DeleteTagResponse |

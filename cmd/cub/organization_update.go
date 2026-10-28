@@ -4,6 +4,10 @@
 package main
 
 import (
+	"bytes"
+	"errors"
+	"fmt"
+
 	"github.com/confighub/sdk/core/cubapi"
 	goclientnew "github.com/confighub/sdk/core/openapi/goclient-new"
 	"github.com/spf13/cobra"
@@ -12,13 +16,38 @@ import (
 var organizationUpdateCmd = &cobra.Command{
 	Use:   "update <slug or id>",
 	Short: "Update an organization",
-	Long:  getCommandHelp(`Update an organization.`, ""),
-	Args:  cobra.ExactArgs(1),
-	RunE:  organizationUpdateCmdRun,
+	Long: getCommandHelp(`Update an organization.
+
+An organization's permissions grant access to it, and its Children permissions, such as
+CreateChildren and ViewChildren, to the spaces and the other entities that belong to the
+organization rather than to a space. They do not reach what is in a space: that is the space's
+own permissions to grant. Changing them requires Manage permission on the organization.
+
+With --patch, only the fields named are changed, as is usual for labels, annotations and
+permissions: a label or annotation given as key=- is removed.
+
+Examples:
+`+"```"+`
+  # Let a group create spaces
+  cub organization update --patch my-org --permission CreateChildren:group:platform
+
+  # Let a user view every space, and no longer manage the organization
+  cub organization update --patch my-org --permission ViewChildren:user@example.com --permission -Manage:user@example.com
+
+  # Add a label and remove another
+  cub organization update --patch my-org --label tier=enterprise --label trial=-
+`+"```"+`
+`, ""),
+	Args: cobra.ExactArgs(1),
+	RunE: organizationUpdateCmdRun,
 }
+
+var organizationUpdatePermissions []string
 
 func init() {
 	addStandardUpdateFlags(organizationUpdateCmd)
+	organizationUpdateCmd.Flags().StringSliceVar(&organizationUpdatePermissions, "permission", []string{}, permissionUpdateHelp)
+	organizationUpdateCmd.Flags().BoolVar(&isPatch, "patch", false, "use patch API")
 	organizationCmd.AddCommand(organizationUpdateCmd)
 }
 
@@ -27,12 +56,13 @@ func organizationUpdateCmdRun(cmd *cobra.Command, args []string) error {
 		return err
 	}
 
-	// Validate label removal (organization doesn't support patch mode)
-	if err := ValidateLabelRemoval(label, false); err != nil {
+	if isPatch && flagReplace {
+		return errors.New("only one of --patch and --replace should be specified")
+	}
+	if err := ValidateLabelRemoval(label, isPatch); err != nil {
 		return err
 	}
-	// Validate delete gate removal (organization doesn't support patch mode)
-	if err := ValidateDeleteGateRemoval(deleteGate, false); err != nil {
+	if err := ValidateDeleteGateRemoval(deleteGate, isPatch); err != nil {
 		return err
 	}
 
@@ -41,6 +71,21 @@ func organizationUpdateCmdRun(cmd *cobra.Command, args []string) error {
 		return err
 	}
 	currentOrganization := extendedOrganization.Organization
+
+	if isPatch {
+		patchData, err := BuildPatchDataWithPermissions(nil, organizationUpdatePermissions)
+		if err != nil {
+			return fmt.Errorf("failed to build patch data: %w", err)
+		}
+		orgRes, err := cubClientNew.PatchOrganizationWithBodyWithResponse(ctx, currentOrganization.OrganizationID,
+			&goclientnew.PatchOrganizationParams{DryRun: dryRunParam()}, "application/merge-patch+json", bytes.NewReader(patchData))
+		if cubapi.IsAPIError(err, orgRes) {
+			return cubapi.InterpretErrorGeneric(err, orgRes)
+		}
+		organizationDetails := orgRes.JSON200
+		displayUpdateResults(organizationDetails, "organization", args[0], organizationDetails.OrganizationID.String(), displayOrganizationDetails)
+		return nil
+	}
 	// Handle --from-stdin or --filename with optional --replace
 	if flagPopulateModelFromStdin || flagFilename != "" {
 		existingOrganization := currentOrganization
@@ -67,6 +112,10 @@ func organizationUpdateCmdRun(cmd *cobra.Command, args []string) error {
 		return err
 	}
 	err = setDeleteGates(&currentOrganization.DeleteGates)
+	if err != nil {
+		return err
+	}
+	err = applyPermissions(organizationUpdatePermissions, &currentOrganization.Permissions)
 	if err != nil {
 		return err
 	}

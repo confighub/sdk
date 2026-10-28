@@ -47,6 +47,8 @@ func TestIsResourceTypeClusterScoped(t *testing.T) {
 		{"v1/Namespace", true},
 		{"rbac.authorization.k8s.io/v1/ClusterRole", true},
 		{"apiextensions.crossplane.io/v1/Composition", true},
+		{"config.projectsveltos.io/v1beta1/ClusterProfile", true},
+		{"lib.projectsveltos.io/v1beta1/HealthCheck", true},
 		// From the group-suffix rule, which the map does not enumerate.
 		{"eks.aws.upbound.io/v1beta2/Cluster", true},
 		{"eks.aws.upbound.io/v1beta1/NodeGroup", true},
@@ -56,6 +58,8 @@ func TestIsResourceTypeClusterScoped(t *testing.T) {
 		{"eks.aws.m.upbound.io/v1beta1/Cluster", false},
 		// Ordinary namespaced resources.
 		{"apps/v1/Deployment", false},
+		{"config.projectsveltos.io/v1beta1/Profile", false},
+		{"lib.projectsveltos.io/v1beta1/HealthCheckReport", false},
 		{"v1/ConfigMap", false},
 		{"v1/Pod", false},
 	}

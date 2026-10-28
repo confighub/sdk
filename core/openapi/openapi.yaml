@@ -17830,7 +17830,7 @@ paths:
           An example conjunction is:
           `CreatedAt >= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.
 
-          Supported attributes for filtering on Organization: Annotations, CreatedAt, DeleteGates, DisplayName, EmailDomain, ExternalID, HiddenReason, Labels, OrganizationID, Slug, UpdatedAt.
+          Supported attributes for filtering on Organization: Annotations, CreatedAt, DeleteGates, DisplayName, EmailDomain, ExternalID, HiddenReason, Labels, OrganizationID, Permissions, Slug, UpdatedAt.
 
           The whole string must be query-encoded.
         in: query
@@ -17908,7 +17908,7 @@ paths:
 
           A list made to choose an entity to act on can name the permission the action needs, such as Edit to change it or Use to refer to it from another entity, so that it leaves out the entities the action would be refused on.
 
-          Supported values: Manage, Edit, Use, View.
+          Supported values: Manage, Edit, Use, View, ManageChildren, EditChildren, UseChildren, ViewChildren, CreateChildren.
         in: query
         name: where_permission
         required: false
@@ -17918,6 +17918,11 @@ paths:
           - Edit
           - Use
           - View
+          - ManageChildren
+          - EditChildren
+          - UseChildren
+          - ViewChildren
+          - CreateChildren
           type: string
       - description: |-
           Hidden Organization entities, those with a HiddenReason, are left out of the results, or of what a bulk operation acts on, unless this names their HiddenReason.
@@ -17993,145 +17998,7 @@ paths:
       summary: List Organizations
       tags:
       - Organization
-    post:
-      description: Create Organization
-      operationId: CreateOrganization
-      parameters:
-      - description: Allowed values are true and false. Default is false. When true,
-          reports success when an entity already exists and returns the existing entity
-        in: query
-        name: allow_exists
-        required: false
-        schema:
-          type: string
-      requestBody:
-        content:
-          application/json:
-            schema:
-              $ref: '#/components/schemas/Organization'
-      responses:
-        "200":
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/Organization'
-          description: The top-level container for an organization using ConfigHub.
-        "400":
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/StandardErrorResponse'
-          description: Organization request is invalid (Bad Request).
-        "401":
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/StandardErrorResponse'
-          description: Unauthorized access.
-        "403":
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/StandardErrorResponse'
-          description: Forbidden access.
-        "404":
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/StandardErrorResponse'
-          description: Organization not found.
-        "409":
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/StandardErrorResponse'
-          description: Organization data conflict. Data has changed since last read.
-        "500":
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/StandardErrorResponse'
-          description: Something went wrong while processing Organization.
-        default:
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/StandardErrorResponse'
-          description: Unexpected error.
-      summary: Create Organization
-      tags:
-      - Organization
   /organization/{organization_id}:
-    delete:
-      description: Delete Organization
-      operationId: DeleteOrganization
-      parameters:
-      - description: Unique identifier for a organization_id
-        in: path
-        name: organization_id
-        required: true
-        schema:
-          format: uuid
-          type: string
-      responses:
-        "200":
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/DeleteResponse'
-          description: Response for successful delete operation
-        "400":
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/StandardErrorResponse'
-          description: Organization request is invalid (Bad Request).
-        "401":
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/StandardErrorResponse'
-          description: Unauthorized access.
-        "403":
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/StandardErrorResponse'
-          description: Forbidden access.
-        "404":
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/StandardErrorResponse'
-          description: Organization not found.
-        "409":
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/StandardErrorResponse'
-          description: 'Organization is still in use: it has DeleteGates, or other
-            entities still reference it. Or data has changed since last read.'
-        "422":
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/StandardErrorResponse'
-          description: Organization could not be deleted.
-        "500":
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/StandardErrorResponse'
-          description: Something went wrong while processing Organization.
-        default:
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/StandardErrorResponse'
-          description: Unexpected error.
-      summary: Delete Organization
-      tags:
-      - Organization
     get:
       description: Get Organization
       operationId: GetOrganization
@@ -18214,6 +18081,145 @@ paths:
                 $ref: '#/components/schemas/StandardErrorResponse'
           description: Unexpected error.
       summary: Get Organization
+      tags:
+      - Organization
+    patch:
+      description: Patch Organization
+      operationId: PatchOrganization
+      parameters:
+      - description: Unique identifier for a organization_id
+        in: path
+        name: organization_id
+        required: true
+        schema:
+          format: uuid
+          type: string
+      - description: 'If true, report what the write would do without doing it: the
+          write runs, including every check it makes, and is then rolled back. The
+          response is the one the write would return, with the entities as they would
+          be written. An entity a dry run creates is given an ID that the real create
+          will not reuse.'
+        in: query
+        name: dry_run
+        required: false
+        schema:
+          type: boolean
+      requestBody:
+        content:
+          application/merge-patch+json:
+            schema:
+              description: JSON Merge Patch schema for Organization. All fields are
+                optional and nullable. Readonly fields are ignored.
+              properties:
+                Annotations:
+                  additionalProperties:
+                    nullable: true
+                    type: string
+                  description: An optional map of Annotation key/value pairs for tools
+                    to attach information to entities.
+                  nullable: true
+                  type: object
+                DeleteGates:
+                  additionalProperties:
+                    nullable: true
+                    type: boolean
+                  description: An optional set of gates that, if any is present, will
+                    block deletion
+                  nullable: true
+                  type: object
+                DisplayName:
+                  description: Friendly name for the entity.
+                  nullable: true
+                  type: string
+                EmailDomain:
+                  description: ""
+                  nullable: true
+                  type: string
+                HiddenReason:
+                  description: The reason the entity is hidden, if it is. A hidden
+                    entity is left out of List and Search results, and of what bulk
+                    operations act on, unless the include_hidden parameter names its
+                    reason or is *, or the where parameter names the entity by Slug
+                    or ID. ConfigHub/YAML Units are created hidden with the reason
+                    BackingUnit unless given another.
+                  nullable: true
+                  type: string
+                Labels:
+                  additionalProperties:
+                    nullable: true
+                    type: string
+                  description: An optional map of Label key/value pairs to specify
+                    identifying attributes of entities for the purpose of grouping
+                    and filtering them.
+                  nullable: true
+                  type: object
+                Permissions:
+                  additionalProperties:
+                    nullable: true
+                    type: object
+                  description: ""
+                  nullable: true
+                  type: object
+                Slug:
+                  description: Unique URL-safe identifier for the entity.
+                  nullable: true
+                  type: string
+                Version:
+                  description: An entity-specific sequence number used for optimistic
+                    concurrency control. The value read must be sent in calls to Update.
+                  nullable: true
+                  type: integer
+              type: object
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Organization'
+          description: The top-level container for an organization using ConfigHub.
+        "400":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/StandardErrorResponse'
+          description: Organization request is invalid (Bad Request).
+        "401":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/StandardErrorResponse'
+          description: Unauthorized access.
+        "403":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/StandardErrorResponse'
+          description: Forbidden access.
+        "404":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/StandardErrorResponse'
+          description: Organization not found.
+        "409":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/StandardErrorResponse'
+          description: Organization data conflict. Data has changed since last read.
+        "500":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/StandardErrorResponse'
+          description: Something went wrong while processing Organization.
+        default:
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/StandardErrorResponse'
+          description: Unexpected error.
+      summary: Patch Organization
       tags:
       - Organization
     put:
@@ -60665,6 +60671,14 @@ components:
             dataType: uuid
           x-go-type-skip-optional-pointer: true
           x-omitzero: true
+        Permissions:
+          allOf:
+          - $ref: '#/components/schemas/Permissions'
+          description: Permissions to access this organization. Its Children categories
+            apply to the spaces and the other entities that belong to the organization
+            rather than to a space.
+          x-confighub-where:
+            dataType: map[string]map[string]map[uuid]bool
         Slug:
           description: Unique URL-safe identifier for the entity.
           maxLength: 128

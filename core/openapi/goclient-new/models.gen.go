@@ -270,10 +270,15 @@ const (
 
 // Defines values for ListOrganizationsParamsWherePermission.
 const (
-	ListOrganizationsParamsWherePermissionEdit   ListOrganizationsParamsWherePermission = "Edit"
-	ListOrganizationsParamsWherePermissionManage ListOrganizationsParamsWherePermission = "Manage"
-	ListOrganizationsParamsWherePermissionUse    ListOrganizationsParamsWherePermission = "Use"
-	ListOrganizationsParamsWherePermissionView   ListOrganizationsParamsWherePermission = "View"
+	ListOrganizationsParamsWherePermissionCreateChildren ListOrganizationsParamsWherePermission = "CreateChildren"
+	ListOrganizationsParamsWherePermissionEdit           ListOrganizationsParamsWherePermission = "Edit"
+	ListOrganizationsParamsWherePermissionEditChildren   ListOrganizationsParamsWherePermission = "EditChildren"
+	ListOrganizationsParamsWherePermissionManage         ListOrganizationsParamsWherePermission = "Manage"
+	ListOrganizationsParamsWherePermissionManageChildren ListOrganizationsParamsWherePermission = "ManageChildren"
+	ListOrganizationsParamsWherePermissionUse            ListOrganizationsParamsWherePermission = "Use"
+	ListOrganizationsParamsWherePermissionUseChildren    ListOrganizationsParamsWherePermission = "UseChildren"
+	ListOrganizationsParamsWherePermissionView           ListOrganizationsParamsWherePermission = "View"
+	ListOrganizationsParamsWherePermissionViewChildren   ListOrganizationsParamsWherePermission = "ViewChildren"
 )
 
 // Defines values for ListOrganizationMembersParamsWherePermission.
@@ -4026,6 +4031,9 @@ type Organization struct {
 
 	// OrganizationID Unique identifier for an organization.
 	OrganizationID openapi_types.UUID `json:"OrganizationID,omitempty,omitzero" yaml:"OrganizationID,omitempty"`
+
+	// Permissions Permissions to access this organization. Its Children categories apply to the spaces and the other entities that belong to the organization rather than to a space.
+	Permissions *Permissions `json:"Permissions,omitempty" yaml:"Permissions,omitempty"`
 
 	// Slug Unique URL-safe identifier for the entity.
 	Slug string `json:"Slug" yaml:"Slug"`
@@ -14498,7 +14506,7 @@ type ListOrganizationsParams struct {
 	// An example conjunction is:
 	// `CreatedAt >= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.
 	//
-	// Supported attributes for filtering on Organization: Annotations, CreatedAt, DeleteGates, DisplayName, EmailDomain, ExternalID, HiddenReason, Labels, OrganizationID, Slug, UpdatedAt.
+	// Supported attributes for filtering on Organization: Annotations, CreatedAt, DeleteGates, DisplayName, EmailDomain, ExternalID, HiddenReason, Labels, OrganizationID, Permissions, Slug, UpdatedAt.
 	//
 	// The whole string must be query-encoded.
 	Where *string `form:"where,omitempty" json:"where,omitempty" yaml:"where,omitempty"`
@@ -14556,7 +14564,7 @@ type ListOrganizationsParams struct {
 	//
 	// A list made to choose an entity to act on can name the permission the action needs, such as Edit to change it or Use to refer to it from another entity, so that it leaves out the entities the action would be refused on.
 	//
-	// Supported values: Manage, Edit, Use, View.
+	// Supported values: Manage, Edit, Use, View, ManageChildren, EditChildren, UseChildren, ViewChildren, CreateChildren.
 	WherePermission *ListOrganizationsParamsWherePermission `form:"where_permission,omitempty" json:"where_permission,omitempty" yaml:"where_permission,omitempty"`
 
 	// IncludeHidden Hidden Organization entities, those with a HiddenReason, are left out of the results, or of what a bulk operation acts on, unless this names their HiddenReason.
@@ -14581,12 +14589,6 @@ type ListOrganizationsParams struct {
 // ListOrganizationsParamsWherePermission defines parameters for ListOrganizations.
 type ListOrganizationsParamsWherePermission string
 
-// CreateOrganizationParams defines parameters for CreateOrganization.
-type CreateOrganizationParams struct {
-	// AllowExists Allowed values are true and false. Default is false. When true, reports success when an entity already exists and returns the existing entity
-	AllowExists *string `form:"allow_exists,omitempty" json:"allow_exists,omitempty" yaml:"allow_exists,omitempty"`
-}
-
 // GetOrganizationParams defines parameters for GetOrganization.
 type GetOrganizationParams struct {
 	// Include Include clause for expanding related entities in the response for Organization.
@@ -14607,6 +14609,38 @@ type GetOrganizationParams struct {
 	// Example: 'DisplayName,CreatedAt,Labels' will return only those fields plus the required ID and Slug fields.
 	// The whole string must be query-encoded.
 	Select *string `form:"select,omitempty" json:"select,omitempty" yaml:"select,omitempty"`
+}
+
+// PatchOrganizationApplicationMergePatchPlusJSONBody defines parameters for PatchOrganization.
+type PatchOrganizationApplicationMergePatchPlusJSONBody struct {
+	// Annotations An optional map of Annotation key/value pairs for tools to attach information to entities.
+	Annotations *map[string]*string `json:"Annotations" yaml:"Annotations"`
+
+	// DeleteGates An optional set of gates that, if any is present, will block deletion
+	DeleteGates *map[string]*bool `json:"DeleteGates" yaml:"DeleteGates"`
+
+	// DisplayName Friendly name for the entity.
+	DisplayName *string `json:"DisplayName" yaml:"DisplayName"`
+	EmailDomain *string `json:"EmailDomain" yaml:"EmailDomain"`
+
+	// HiddenReason The reason the entity is hidden, if it is. A hidden entity is left out of List and Search results, and of what bulk operations act on, unless the include_hidden parameter names its reason or is *, or the where parameter names the entity by Slug or ID. ConfigHub/YAML Units are created hidden with the reason BackingUnit unless given another.
+	HiddenReason *string `json:"HiddenReason" yaml:"HiddenReason"`
+
+	// Labels An optional map of Label key/value pairs to specify identifying attributes of entities for the purpose of grouping and filtering them.
+	Labels      *map[string]*string                 `json:"Labels" yaml:"Labels"`
+	Permissions *map[string]*map[string]interface{} `json:"Permissions" yaml:"Permissions"`
+
+	// Slug Unique URL-safe identifier for the entity.
+	Slug *string `json:"Slug" yaml:"Slug"`
+
+	// Version An entity-specific sequence number used for optimistic concurrency control. The value read must be sent in calls to Update.
+	Version *int `json:"Version" yaml:"Version"`
+}
+
+// PatchOrganizationParams defines parameters for PatchOrganization.
+type PatchOrganizationParams struct {
+	// DryRun If true, report what the write would do without doing it: the write runs, including every check it makes, and is then rolled back. The response is the one the write would return, with the entities as they would be written. An entity a dry run creates is given an ID that the real create will not reuse.
+	DryRun *bool `form:"dry_run,omitempty" json:"dry_run,omitempty" yaml:"dry_run,omitempty"`
 }
 
 // UpdateOrganizationParams defines parameters for UpdateOrganization.
@@ -26637,8 +26671,8 @@ type BulkCreateLinksApplicationMergePatchPlusJSONRequestBody BulkCreateLinksAppl
 // CreateOAuthClientJSONRequestBody defines body for CreateOAuthClient for application/json ContentType.
 type CreateOAuthClientJSONRequestBody = OAuthClient
 
-// CreateOrganizationJSONRequestBody defines body for CreateOrganization for application/json ContentType.
-type CreateOrganizationJSONRequestBody = Organization
+// PatchOrganizationApplicationMergePatchPlusJSONRequestBody defines body for PatchOrganization for application/merge-patch+json ContentType.
+type PatchOrganizationApplicationMergePatchPlusJSONRequestBody PatchOrganizationApplicationMergePatchPlusJSONBody
 
 // UpdateOrganizationJSONRequestBody defines body for UpdateOrganization for application/json ContentType.
 type UpdateOrganizationJSONRequestBody = Organization

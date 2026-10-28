@@ -1183,6 +1183,9 @@
       "OrganizationID": {
         "dataType": "uuid"
       },
+      "Permissions": {
+        "dataType": "map[string]map[string]map[uuid]bool"
+      },
       "Slug": {
         "dataType": "string"
       },
