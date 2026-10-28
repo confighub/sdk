@@ -22,6 +22,7 @@ var clusterUpArgs struct {
 	noPorts           bool
 	noArgobot         bool
 	argobotBase       string
+	registry          string
 	noPlaceholderGate bool
 	controllerVersion string
 	prune             bool
@@ -102,6 +103,7 @@ func init() {
 	clusterUpCmd.Flags().BoolVar(&clusterUpArgs.noPorts, "no-ports", false, "only reserve the controller UI's NodePort (none for Flux); skip the user-app NodePort window")
 	clusterUpCmd.Flags().BoolVar(&clusterUpArgs.noArgobot, "no-k8sbot", false, "skip installing argobot (the event-driven Argo CD sync, Sveltos redeploy, or Flux reconciliation, bot); 'cub cluster k8sbot-install' installs it later")
 	clusterUpCmd.Flags().StringVar(&clusterUpArgs.argobotBase, "k8sbot-base", "", "what to do with argobot's shared base Space when it already exists: update (upload what argobot:latest installs over it, then clone it) or clone (clone it as it is); asked when stdin is a terminal, otherwise update")
+	clusterUpCmd.Flags().StringVar(&clusterUpArgs.registry, "registry", "", clusterRegistryFlagUsage)
 	clusterUpCmd.Flags().BoolVar(&clusterUpArgs.noPlaceholderGate, "no-placeholder-gate", false, "skip the default vet-placeholders Trigger, allowing Releases with unfilled confighubplaceholder values to be published to this cluster")
 	clusterUpCmd.Flags().StringVar(&clusterUpArgs.controllerVersion, "controller-version", "", "controller release to install (default: argo "+clusterArgoDefaultVersion+", sveltos "+clusterSveltosVersion+", flux "+clusterFluxVersion+"; Argo CD must be v3.1 or later, which oci:// sources need)")
 	clusterUpCmd.Flags().BoolVar(&clusterUpArgs.prune, "prune", false, "let the controller delete what a removed deployment deployed: the root prunes deployments whose Units leave the apps space (Sveltos's always does), and deployments created later prune what they deployed")
@@ -116,6 +118,7 @@ type clusterUpOptions struct {
 	noPorts           bool
 	noArgobot         bool
 	argobotBase       string
+	registry          string
 	noPlaceholderGate bool
 	controllerVersion string
 	prune             bool
@@ -138,6 +141,7 @@ func clusterUpCmdRun(cmd *cobra.Command, args []string) error {
 		noPorts:           clusterUpArgs.noPorts,
 		noArgobot:         clusterUpArgs.noArgobot,
 		argobotBase:       clusterUpArgs.argobotBase,
+		registry:          clusterUpArgs.registry,
 		noPlaceholderGate: clusterUpArgs.noPlaceholderGate,
 		controllerVersion: clusterUpArgs.controllerVersion,
 		prune:             clusterUpArgs.prune,
@@ -228,7 +232,11 @@ func clusterUpRun(out io.Writer, opts clusterUpOptions) error {
 		return err
 	}
 	if !opts.noArgobot {
-		mode, err := clusterChooseArgobotBase(out, opts.controller, opts.argobotBase)
+		repository, err := clusterArgobotRepository(opts.registry)
+		if err != nil {
+			return err
+		}
+		mode, err := clusterChooseArgobotBase(out, opts.controller, opts.argobotBase, repository)
 		if err != nil {
 			return err
 		}
@@ -280,6 +288,7 @@ func clusterUpRun(out io.Writer, opts clusterUpOptions) error {
 		controllerVersion: opts.controllerVersion,
 		noArgobot:         opts.noArgobot,
 		argobotBase:       opts.argobotBase,
+		registry:          opts.registry,
 		noPlaceholderGate: opts.noPlaceholderGate,
 		prune:             opts.prune,
 		origin:            clusterOriginKind,

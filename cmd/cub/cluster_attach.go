@@ -36,6 +36,7 @@ var clusterAttachArgs struct {
 	noArgoCD          bool
 	noArgobot         bool
 	argobotBase       string
+	registry          string
 	noPlaceholderGate bool
 	prune             bool
 }
@@ -216,6 +217,7 @@ func init() {
 	_ = clusterAttachCmd.Flags().MarkHidden("no-argocd")
 	clusterAttachCmd.Flags().BoolVar(&clusterAttachArgs.noArgobot, "no-k8sbot", false, "skip installing argobot (the event-driven Argo CD sync, Sveltos redeploy, or Flux reconciliation, bot); 'cub cluster k8sbot-install' installs it later")
 	clusterAttachCmd.Flags().StringVar(&clusterAttachArgs.argobotBase, "k8sbot-base", "", "what to do with argobot's shared base Space when it already exists: update (upload what argobot:latest installs over it, then clone it) or clone (clone it as it is); asked when stdin is a terminal, otherwise update")
+	clusterAttachCmd.Flags().StringVar(&clusterAttachArgs.registry, "registry", "", clusterRegistryFlagUsage)
 	clusterAttachCmd.Flags().BoolVar(&clusterAttachArgs.noPlaceholderGate, "no-placeholder-gate", false, "skip the default vet-placeholders Trigger, allowing Releases with unfilled confighubplaceholder values to be published to this cluster")
 	clusterAttachCmd.Flags().BoolVar(&clusterAttachArgs.prune, "prune", false, "let the controller delete what a removed deployment deployed: the root prunes deployments whose Units leave the apps space (Sveltos's always does), and deployments created later prune what they deployed")
 	clusterCmd.AddCommand(clusterAttachCmd)
@@ -237,6 +239,7 @@ type clusterAttachOptions struct {
 	noInstall         bool
 	noArgobot         bool
 	argobotBase       string
+	registry          string
 	noPlaceholderGate bool
 	prune             bool
 	// origin is clusterOriginAttach, or clusterOriginKind when `cub cluster up`
@@ -269,6 +272,7 @@ func clusterAttachCmdRun(cmd *cobra.Command, args []string) error {
 		noInstall:         clusterAttachArgs.noInstall || clusterAttachArgs.noArgoCD,
 		noArgobot:         clusterAttachArgs.noArgobot,
 		argobotBase:       clusterAttachArgs.argobotBase,
+		registry:          clusterAttachArgs.registry,
 		noPlaceholderGate: clusterAttachArgs.noPlaceholderGate,
 		prune:             clusterAttachArgs.prune,
 	})
@@ -341,8 +345,12 @@ func clusterAttachRun(out io.Writer, opts clusterAttachOptions) error {
 	if err := clusterRequireFreshConfigHub(opts.name, freshSpaceSlug, appsSlug, argobotSlug, freshServiceAccount); err != nil {
 		return err
 	}
+	var argobotRepository string
 	if !opts.noArgobot {
-		mode, err := clusterChooseArgobotBase(out, opts.controller, opts.argobotBase)
+		if argobotRepository, err = clusterArgobotRepository(opts.registry); err != nil {
+			return err
+		}
+		mode, err := clusterChooseArgobotBase(out, opts.controller, opts.argobotBase, argobotRepository)
 		if err != nil {
 			return err
 		}
@@ -409,13 +417,14 @@ func clusterAttachRun(out io.Writer, opts clusterAttachOptions) error {
 	if !opts.noArgobot {
 		installBot = func() error {
 			return clusterInstallK8sbot(out, clusterK8sbotSpec{
-				name:           opts.name,
-				spaceSlug:      opts.spaceSlug,
-				kubeconfigPath: kubeconfigPath,
-				controller:     opts.controller,
-				spaceID:        inst.spaceID,
-				targetID:       inst.targetID,
-				argobotBase:    opts.argobotBase,
+				name:              opts.name,
+				spaceSlug:         opts.spaceSlug,
+				kubeconfigPath:    kubeconfigPath,
+				controller:        opts.controller,
+				spaceID:           inst.spaceID,
+				targetID:          inst.targetID,
+				argobotBase:       opts.argobotBase,
+				argobotRepository: argobotRepository,
 			}, addRollback)
 		}
 	}

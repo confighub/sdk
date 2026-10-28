@@ -831,6 +831,38 @@ func ListLinks(ctx context.Context, c *Client, where Where, opts ListOpts) ([]*g
 	})
 }
 
+// ListReleases returns Releases across the organization matching where. The
+// server keeps only the highest-numbered match of each Space unless DistinctOn
+// is set to Off, which requires a limit; opts.Limit of math.MaxInt reads every
+// page.
+func ListReleases(ctx context.Context, c *Client, where Where, opts ListOpts, with ...func(*goclientnew.ListAllReleasesParams)) ([]*goclientnew.ExtendedRelease, error) {
+	if err := where.Err(); err != nil {
+		return nil, err
+	}
+	params := &goclientnew.ListAllReleasesParams{
+		Where:           ptrIf(where.String()),
+		Select:          ptrIf(opts.Select),
+		WherePermission: enumIf[goclientnew.ListAllReleasesParamsWherePermission](opts.WherePermission),
+		Include:         ptrIf(opts.Include),
+		Filter:          ptrIf(opts.Filter),
+		Contains:        ptrIf(opts.Contains),
+		IncludeHidden:   ptrIf(opts.IncludeHidden),
+		OrderBy:         ptrIf(opts.OrderBy),
+		View:            ptrIf(opts.View),
+	}
+	for _, fn := range with {
+		fn(params)
+	}
+	return ReadPages(opts, func(limit *int, token *string) (*http.Response, *[]goclientnew.ExtendedRelease, error) {
+		params.Limit, params.Continue = limit, token
+		res, err := c.API.ListAllReleasesWithResponse(ctx, params)
+		if IsAPIError(err, res) {
+			return nil, nil, InterpretErrorGeneric(err, res)
+		}
+		return res.HTTPResponse, res.JSON200, nil
+	})
+}
+
 // ListChannels lists Channels across the organization, narrowed by where.
 func ListChannels(ctx context.Context, c *Client, where Where, opts ListOpts, with ...func(*goclientnew.ListAllChannelsParams)) ([]*goclientnew.ExtendedChannel, error) {
 	if err := where.Err(); err != nil {

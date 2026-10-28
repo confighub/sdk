@@ -14,6 +14,7 @@ import (
 
 var clusterK8sbotInstallArgs struct {
 	argobotBase string
+	registry    string
 }
 
 var clusterK8sbotInstallCmd = &cobra.Command{
@@ -62,15 +63,20 @@ argobot. Deployments that already exist keep polling every minute.
 
 func init() {
 	clusterK8sbotInstallCmd.Flags().StringVar(&clusterK8sbotInstallArgs.argobotBase, "k8sbot-base", "", "what to do with argobot's shared base Space when it already exists: update (upload what argobot:latest installs over it, then clone it) or clone (clone it as it is); asked when stdin is a terminal, otherwise update")
+	clusterK8sbotInstallCmd.Flags().StringVar(&clusterK8sbotInstallArgs.registry, "registry", "", clusterRegistryFlagUsage)
 	clusterCmd.AddCommand(clusterK8sbotInstallCmd)
 }
 
 func clusterK8sbotInstallCmdRun(cmd *cobra.Command, args []string) error {
-	return clusterK8sbotInstallRun(cmd.OutOrStdout(), args[0], clusterK8sbotInstallArgs.argobotBase)
+	return clusterK8sbotInstallRun(cmd.OutOrStdout(), args[0], clusterK8sbotInstallArgs.argobotBase, clusterK8sbotInstallArgs.registry)
 }
 
 // clusterK8sbotInstallRun installs argobot in a cluster attached without it.
-func clusterK8sbotInstallRun(out io.Writer, name, argobotBase string) error {
+func clusterK8sbotInstallRun(out io.Writer, name, argobotBase, registry string) error {
+	repository, err := clusterArgobotRepository(registry)
+	if err != nil {
+		return err
+	}
 	if _, err := exec.LookPath("kubectl"); err != nil {
 		return fmt.Errorf("kubectl not found on PATH")
 	}
@@ -108,7 +114,7 @@ func clusterK8sbotInstallRun(out io.Writer, name, argobotBase string) error {
 	if err != nil {
 		return fmt.Errorf("cluster space %q: find its OCI target %q: %w", space.SpaceSlug, clusterTargetSlug, err)
 	}
-	mode, err := clusterChooseArgobotBase(out, space.Controller, argobotBase)
+	mode, err := clusterChooseArgobotBase(out, space.Controller, argobotBase, repository)
 	if err != nil {
 		return err
 	}
@@ -124,14 +130,15 @@ func clusterK8sbotInstallRun(out io.Writer, name, argobotBase string) error {
 		}
 	}()
 	if err := clusterInstallK8sbot(out, clusterK8sbotSpec{
-		name:           name,
-		spaceSlug:      space.SpaceSlug,
-		kubeconfigPath: kubeconfigPath,
-		controller:     space.Controller,
-		spaceID:        space.SpaceID,
-		targetID:       target.TargetID,
-		argobotBase:    mode,
-		standalone:     true,
+		name:              name,
+		spaceSlug:         space.SpaceSlug,
+		kubeconfigPath:    kubeconfigPath,
+		controller:        space.Controller,
+		spaceID:           space.SpaceID,
+		targetID:          target.TargetID,
+		argobotBase:       mode,
+		argobotRepository: repository,
+		standalone:        true,
 	}, func(f func()) { rollback = append(rollback, f) }); err != nil {
 		return err
 	}

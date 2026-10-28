@@ -100,12 +100,32 @@ spec:
 // ConfigHub, and anything else is refused.
 func TestClusterChooseArgobotBaseFlag(t *testing.T) {
 	for _, flag := range []string{clusterArgobotBaseUpdate, clusterArgobotBaseClone} {
-		got, err := clusterChooseArgobotBase(io.Discard, clusterControllerArgo, flag)
+		got, err := clusterChooseArgobotBase(io.Discard, clusterControllerArgo, flag, clusterArgobotGHCR)
 		if err != nil || got != flag {
 			t.Errorf("clusterChooseArgobotBase(%q) = %q, %v; want %q", flag, got, err, flag)
 		}
 	}
-	if _, err := clusterChooseArgobotBase(io.Discard, clusterControllerArgo, "replace"); err == nil {
+	if _, err := clusterChooseArgobotBase(io.Discard, clusterControllerArgo, "replace", clusterArgobotGHCR); err == nil {
 		t.Error("clusterChooseArgobotBase(\"replace\") succeeded; want an error")
+	}
+}
+
+// --registry names ghcr, gcr, or a mirror prefix, which argobot's image sits
+// under; a bare word that is neither is refused rather than taken as a host.
+func TestClusterArgobotRepository(t *testing.T) {
+	for registry, want := range map[string]string{
+		"":                                 clusterArgobotGHCR,
+		"ghcr":                             clusterArgobotGHCR,
+		"gcr":                              clusterArgobotGCR,
+		"gcr.io":                           clusterArgobotGCR,
+		"registry.example.com/confighub/":  "registry.example.com/confighub/argobot",
+		"registry.example.com:5000/mirror": "registry.example.com:5000/mirror/argobot",
+	} {
+		if got, err := clusterArgobotRepository(registry); err != nil || got != want {
+			t.Errorf("clusterArgobotRepository(%q) = %q, %v; want %q", registry, got, err, want)
+		}
+	}
+	if _, err := clusterArgobotRepository("quay"); err == nil {
+		t.Error("clusterArgobotRepository(\"quay\") succeeded; want an error")
 	}
 }
