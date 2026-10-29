@@ -151,6 +151,14 @@ func (p *Parser) isValidEntityPrefix(prefix string, isArrayElement bool) bool {
 		return false
 	}
 
+	// Permissions is keyed by action and then by the kind of subject, and there the `*` stands
+	// for any action, as in `Permissions.*.UserIDs ? '<user id>'`. So it is always a map access,
+	// even where the subjects it names are expanded.
+	if attribute, ok := p.attributes.Attribute(p.primaryEntityName, prefix); ok &&
+		attribute.DataType == api.DataTypeStringStringUUIDBoolMap {
+		return false
+	}
+
 	// Check if this prefix matches any of the included field entities
 	_, present := p.includedFieldMap[prefix]
 	if present {

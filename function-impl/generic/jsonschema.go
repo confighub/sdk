@@ -16,6 +16,7 @@ import (
 	"github.com/confighub/sdk/core/function/api"
 	"github.com/confighub/sdk/core/function/handler"
 	"github.com/confighub/sdk/core/third_party/gaby"
+	"github.com/confighub/sdk/core/workerapi"
 	"github.com/xeipuuv/gojsonschema"
 )
 
@@ -61,7 +62,7 @@ func registerVetJSONSchema(fh handler.FunctionRegistry, converter configkit.Conf
 	}
 }
 
-func GenericFnVetJSONSchema(resourceProvider yamlkit.ResourceProvider, options *api.FunctionOptions, _ *api.FunctionContext, parsedData gaby.Container, args []api.FunctionArgument) (gaby.Container, any, error) {
+func GenericFnVetJSONSchema(resourceProvider yamlkit.ResourceProvider, options *api.FunctionOptions, functionContext *api.FunctionContext, parsedData gaby.Container, args []api.FunctionArgument) (gaby.Container, any, error) {
 	schemaMapJSON, ok := args[0].Value.(string)
 	if !ok {
 		return parsedData, api.ValidationResultFalse, errors.New("schema-map must be a string")
@@ -96,7 +97,15 @@ func GenericFnVetJSONSchema(resourceProvider yamlkit.ResourceProvider, options *
 		}
 	}
 
-	return VetAgainstSchemas(resourceProvider, options, parsedData, func(resourceType api.ResourceType) (*gojsonschema.Schema, error) {
+	// An AppConfig Unit's configHub metadata names the file and its schema; it is
+	// not part of the configuration the schema describes, and rendering the Unit
+	// into a ConfigMap strips it, so validation leaves it out too.
+	metadataPath := ""
+	if functionContext != nil && workerapi.IsAppConfigToolchain(functionContext.ToolchainType) {
+		metadataPath = strings.TrimSuffix(resourceProvider.ContextPath(""), ".")
+	}
+
+	return VetAgainstSchemas(resourceProvider, options, parsedData, metadataPath, func(resourceType api.ResourceType) (*gojsonschema.Schema, error) {
 		schemaInterface, ok := schemaMap[string(resourceType)]
 		if !ok {
 			// No schema for this resource type, skip validation
@@ -120,9 +129,11 @@ var ErrNoSchema = errors.New("no schema")
 
 // VetAgainstSchemas validates each resource against the schema schemaFor returns for its type,
 // and reports every violation as a failed path. schemaFor returns nil for a type it does not
-// validate, and an error wrapping ErrNoSchema for a type that fails for want of one.
+// validate, and an error wrapping ErrNoSchema for a type that fails for want of one. A
+// metadataPath other than "" names a dotted path, such as an AppConfig Unit's configHub block,
+// that is left out of what is validated.
 func VetAgainstSchemas(resourceProvider yamlkit.ResourceProvider, options *api.FunctionOptions, parsedData gaby.Container,
-	schemaFor func(api.ResourceType) (*gojsonschema.Schema, error)) (gaby.Container, any, error) {
+	metadataPath string, schemaFor func(api.ResourceType) (*gojsonschema.Schema, error)) (gaby.Container, any, error) {
 	var multiErrs []error
 	details := []string{}
 	failedPaths := api.AttributeValueList{}
@@ -160,6 +171,13 @@ func VetAgainstSchemas(resourceProvider yamlkit.ResourceProvider, options *api.F
 		if err != nil {
 			errs = append(errs, errors.Wrapf(err, "failed to marshal document to JSON for resource %s/%s", resourceType, resourceInfo.ResourceName))
 			return output, errs
+		}
+		if metadataPath != "" {
+			docJSON, err = withoutPath(docJSON, metadataPath)
+			if err != nil {
+				errs = append(errs, errors.Wrapf(err, "failed to leave %s out of resource %s/%s", metadataPath, resourceType, resourceInfo.ResourceName))
+				return output, errs
+			}
 		}
 
 		// Validate
@@ -240,4 +258,24 @@ func VetAgainstSchemas(resourceProvider yamlkit.ResourceProvider, options *api.F
 	failureResult.FailedAttributes = failedPaths
 
 	return parsedData, failureResult, join.Join(multiErrs...)
+}
+
+// withoutPath returns docJSON without the value at a dotted path of object keys. The
+// document is not changed when the path is not in it.
+func withoutPath(docJSON []byte, path string) ([]byte, error) {
+	var doc map[string]any
+	if err := json.Unmarshal(docJSON, &doc); err != nil {
+		return nil, err
+	}
+	keys := strings.Split(path, ".")
+	parent := doc
+	for _, key := range keys[:len(keys)-1] {
+		child, ok := parent[key].(map[string]any)
+		if !ok {
+			return docJSON, nil
+		}
+		parent = child
+	}
+	delete(parent, keys[len(keys)-1])
+	return json.Marshal(doc)
 }

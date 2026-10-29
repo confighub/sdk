@@ -10,6 +10,7 @@ import (
 	"io"
 	"os"
 	"reflect"
+	"sort"
 	"strings"
 
 	"github.com/confighub/sdk/configkit/yqkit"
@@ -150,24 +151,52 @@ func annotationsToString(annotations map[string]string) string {
 	return mapToLines(annotations)
 }
 
-func permissionsToString(permissions *goclientnew.Permissions) string {
+// permissionsToString lists the subjects of each action category, naming them by the entities
+// include=Permissions expanded: a ServiceAccount by its slug, since it is named by the User it acts
+// as, a User by username and a Group by slug, and any subject that was not expanded by its UUID.
+func permissionsToString(permissions *goclientnew.Permissions, expanded *goclientnew.ExtendedPermissions) string {
 	if permissions == nil || len(*permissions) == 0 {
 		return ""
 	}
-	var parts []string
-	for actionCategory, subjects := range *permissions {
-		if len(subjects.UserIDs) > 0 {
-			userIDs := make([]string, 0, len(subjects.UserIDs))
-			for userID := range subjects.UserIDs {
-				userIDs = append(userIDs, userID)
-			}
-			parts = append(parts, fmt.Sprintf("%s: [%s]", actionCategory, strings.Join(userIDs, ", ")))
+	nameOf := func(names map[string]string, id string) string {
+		if name := names[id]; name != "" {
+			return name
 		}
+		return id
 	}
-	if len(parts) == 0 {
-		return ""
+	var expandedSubjects goclientnew.ExtendedSubjects
+	if expanded != nil && expanded.Subjects != nil {
+		expandedSubjects = *expanded.Subjects
 	}
-	return strings.Join(parts, "; ")
+
+	lines := make(map[string]string, len(*permissions))
+	for actionCategory, subjects := range *permissions {
+		userNames := make(map[string]string, len(expandedSubjects.Users[actionCategory]))
+		for _, user := range expandedSubjects.Users[actionCategory] {
+			userNames[user.UserID.String()] = user.Username
+		}
+		for _, serviceAccount := range expandedSubjects.ServiceAccounts[actionCategory] {
+			userNames[serviceAccount.UserID.String()] = serviceAccount.Slug + " (service account)"
+		}
+		groupNames := make(map[string]string, len(expandedSubjects.Groups[actionCategory]))
+		for _, group := range expandedSubjects.Groups[actionCategory] {
+			groupNames[group.GroupID.String()] = group.Slug + " (group)"
+		}
+
+		names := make([]string, 0, len(subjects.UserIDs)+len(subjects.GroupIDs))
+		for userID := range subjects.UserIDs {
+			names = append(names, nameOf(userNames, userID))
+		}
+		for groupID := range subjects.GroupIDs {
+			names = append(names, nameOf(groupNames, groupID))
+		}
+		if len(names) == 0 {
+			continue
+		}
+		sort.Strings(names)
+		lines[actionCategory] = "[" + strings.Join(names, ", ") + "]"
+	}
+	return mapToLines(lines)
 }
 
 func uuidSliceToString(uuids []openapi_types.UUID) string {

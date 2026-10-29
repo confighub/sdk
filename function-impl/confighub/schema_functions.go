@@ -39,7 +39,7 @@ func registerSchemaFunctions(fh handler.FunctionRegistry, rp *cubkit.ConfigHubRe
 			AffectedResourceTypes: cubkit.DocumentSchemaTypes(),
 		},
 		Function: func(fArgs handler.FunctionImplementationArguments) (gaby.Container, any, error) {
-			return generic.VetAgainstSchemas(rp, fArgs.Options, fArgs.ParsedData, compiledDocumentSchema)
+			return generic.VetAgainstSchemas(rp, fArgs.Options, fArgs.ParsedData, "", compiledDocumentSchema)
 		},
 	}); err != nil {
 		slog.Error("failed to register function", "error", err)

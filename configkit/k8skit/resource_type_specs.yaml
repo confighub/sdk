@@ -629,8 +629,11 @@ resourceTypes:
     mergeKeys:
       - {path: spec.ports, key: port, extraKeys: [protocol]}
     attributes:
+      # external-dns reads the alpha prefix through v0.21 and the unprefixed one from v0.22,
+      # so both are declared. A setter writes only the annotations a Service already has.
       hostname:
         - {path: metadata.annotations.external-dns~1alpha~1kubernetes~1io/hostname}
+        - {path: metadata.annotations.external-dns~1kubernetes~1io/hostname}
       pod-label-selector:
         - {path: spec.selector}
       immutable:

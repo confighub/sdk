@@ -1281,6 +1281,7 @@ attribute	v1/ReplicationController	resource-name	spec.template.spec.volumes.*.se
 attribute	v1/ResourceQuota	immutable	spec.scopes	
 attribute	v1/Secret	immutable	type	
 attribute	v1/Service	hostname	metadata.annotations.external-dns~1alpha~1kubernetes~1io/hostname	
+attribute	v1/Service	hostname	metadata.annotations.external-dns~1kubernetes~1io/hostname	
 attribute	v1/Service	immutable	spec.clusterIP	
 attribute	v1/Service	immutable	spec.clusterIPs	
 attribute	v1/Service	immutable	spec.healthCheckNodePort	

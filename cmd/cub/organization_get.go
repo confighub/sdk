@@ -51,10 +51,14 @@ func organizationGetCmdRun(cmd *cobra.Command, args []string) error {
 // displayExtendedOrganizationDetails renders what get returns: the Organization wrapped the way
 // every other get's entity is, so -o json and -o jq read it as .Organization, as list does.
 func displayExtendedOrganizationDetails(extendedOrganization *goclientnew.ExtendedOrganization) {
-	displayOrganizationDetails(extendedOrganization.Organization)
+	renderOrganizationDetails(extendedOrganization.Organization, extendedOrganization.Permissions)
 }
 
 func displayOrganizationDetails(organizationDetails *goclientnew.Organization) {
+	renderOrganizationDetails(organizationDetails, nil)
+}
+
+func renderOrganizationDetails(organizationDetails *goclientnew.Organization, expanded *goclientnew.ExtendedPermissions) {
 	view := tableView()
 	view.Append([]string{"Organization ID", organizationDetails.OrganizationID.String()})
 	view.Append([]string{"Display Name", organizationDetails.DisplayName})
@@ -63,6 +67,7 @@ func displayOrganizationDetails(organizationDetails *goclientnew.Organization) {
 	view.Append([]string{"Labels", labelsToString(organizationDetails.Labels)})
 	view.Append([]string{"Delete Gates", deleteGatesToString(organizationDetails.DeleteGates)})
 	view.Append([]string{"Annotations", annotationsToString(organizationDetails.Annotations)})
+	view.Append([]string{"Permissions", permissionsToString(organizationDetails.Permissions, expanded)})
 	view.Append([]string{"External ID", organizationDetails.ExternalID})
 	view.Append([]string{"Email Domain", organizationDetails.EmailDomain})
 	view.Render()

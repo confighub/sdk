@@ -58,7 +58,7 @@ func displayExtendedComponentDetails(extendedComponent *goclientnew.ExtendedComp
 	spaces, err := componentSpaces(component.ComponentID)
 	failOnError(err)
 	owner := componentOwner(component.Labels, spaces)
-	renderComponentEntityDetails(component, &owner)
+	renderComponentEntityDetails(component, &owner, extendedComponent.Permissions)
 }
 
 func allowedChangeWorkflowIDsToString(allowed []goclientnew.UUID) string {
@@ -71,12 +71,12 @@ func allowedChangeWorkflowIDsToString(allowed []goclientnew.UUID) string {
 }
 
 func displayComponentEntityDetails(component *goclientnew.Component) {
-	renderComponentEntityDetails(component, nil)
+	renderComponentEntityDetails(component, nil, nil)
 }
 
 // renderComponentEntityDetails prints the Component, with an Owner row when owner is given:
 // get reads the Component's spaces to work it out, and create and update do not.
-func renderComponentEntityDetails(component *goclientnew.Component, owner *string) {
+func renderComponentEntityDetails(component *goclientnew.Component, owner *string, expanded *goclientnew.ExtendedPermissions) {
 	view := tableView()
 	view.Append([]string{"ID", component.ComponentID.String()})
 	view.Append([]string{"Name", component.Slug})
@@ -89,7 +89,7 @@ func renderComponentEntityDetails(component *goclientnew.Component, owner *strin
 	appendBackingUnitRow(view, component.BackingUnitID)
 	view.Append([]string{"Delete Gates", deleteGatesToString(component.DeleteGates)})
 	view.Append([]string{"Annotations", annotationsToString(component.Annotations)})
-	view.Append([]string{"Permissions", permissionsToString(component.Permissions)})
+	view.Append([]string{"Permissions", permissionsToString(component.Permissions, expanded)})
 	view.Append([]string{"Allowed ChangeWorkflows", allowedChangeWorkflowIDsToString(component.AllowedChangeWorkflowIDs)})
 	changeWorkflowRequired := "false"
 	if component.ChangeWorkflowRequired {

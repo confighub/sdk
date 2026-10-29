@@ -75,10 +75,10 @@
           {
             "name": "include",
             "in": "query",
-            "description": "Include clause for expanding related entities in the response for Component.\nThe attribute names are case-sensitive, PascalCase, and\nexpected in a comma-separated list format as in the JSON encoding.\n\nSupported attributes for Component are OrganizationID.\n\nThe whole string must be query-encoded.",
+            "description": "Include clause for expanding related entities in the response for Component.\nThe attribute names are case-sensitive, PascalCase, and\nexpected in a comma-separated list format as in the JSON encoding.\n\nSupported attributes for Component are OrganizationID, Permissions.\n\nThe whole string must be query-encoded.",
             "required": false,
             "schema": {
-              "pattern": "^\\s*(OrganizationID)\\s*(?:,\\s*(?:OrganizationID)\\s*)*$",
+              "pattern": "^\\s*(OrganizationID|Permissions)\\s*(?:,\\s*(?:OrganizationID|Permissions)\\s*)*$",
               "type": "string"
             }
           },
@@ -277,10 +277,10 @@
           {
             "name": "include",
             "in": "query",
-            "description": "Include clause for expanding related entities in the response for Component.\nThe attribute names are case-sensitive, PascalCase, and\nexpected in a comma-separated list format as in the JSON encoding.\n\nSupported attributes for Component are OrganizationID.\n\nThe whole string must be query-encoded.",
+            "description": "Include clause for expanding related entities in the response for Component.\nThe attribute names are case-sensitive, PascalCase, and\nexpected in a comma-separated list format as in the JSON encoding.\n\nSupported attributes for Component are OrganizationID, Permissions.\n\nThe whole string must be query-encoded.",
             "required": false,
             "schema": {
-              "pattern": "^\\s*(OrganizationID)\\s*(?:,\\s*(?:OrganizationID)\\s*)*$",
+              "pattern": "^\\s*(OrganizationID|Permissions)\\s*(?:,\\s*(?:OrganizationID|Permissions)\\s*)*$",
               "type": "string"
             }
           },
@@ -591,10 +591,10 @@
           {
             "name": "include",
             "in": "query",
-            "description": "Include clause for expanding related entities in the response for ServiceAccount.\nThe attribute names are case-sensitive, PascalCase, and\nexpected in a comma-separated list format as in the JSON encoding.\n\nSupported attributes for ServiceAccount are OrganizationID.\n\nThe whole string must be query-encoded.",
+            "description": "Include clause for expanding related entities in the response for ServiceAccount.\nThe attribute names are case-sensitive, PascalCase, and\nexpected in a comma-separated list format as in the JSON encoding.\n\nSupported attributes for ServiceAccount are OrganizationID, Permissions.\n\nThe whole string must be query-encoded.",
             "required": false,
             "schema": {
-              "pattern": "^\\s*(OrganizationID)\\s*(?:,\\s*(?:OrganizationID)\\s*)*$",
+              "pattern": "^\\s*(OrganizationID|Permissions)\\s*(?:,\\s*(?:OrganizationID|Permissions)\\s*)*$",
               "type": "string"
             }
           },
@@ -784,10 +784,10 @@
           {
             "name": "include",
             "in": "query",
-            "description": "Include clause for expanding related entities in the response for ServiceAccount.\nThe attribute names are case-sensitive, PascalCase, and\nexpected in a comma-separated list format as in the JSON encoding.\n\nSupported attributes for ServiceAccount are OrganizationID.\n\nThe whole string must be query-encoded.",
+            "description": "Include clause for expanding related entities in the response for ServiceAccount.\nThe attribute names are case-sensitive, PascalCase, and\nexpected in a comma-separated list format as in the JSON encoding.\n\nSupported attributes for ServiceAccount are OrganizationID, Permissions.\n\nThe whole string must be query-encoded.",
             "required": false,
             "schema": {
-              "pattern": "^\\s*(OrganizationID)\\s*(?:,\\s*(?:OrganizationID)\\s*)*$",
+              "pattern": "^\\s*(OrganizationID|Permissions)\\s*(?:,\\s*(?:OrganizationID|Permissions)\\s*)*$",
               "type": "string"
             }
           },
@@ -1051,10 +1051,10 @@
           {
             "name": "include",
             "in": "query",
-            "description": "Include clause for expanding related entities in the response for Space.\nThe attribute names are case-sensitive, PascalCase, and\nexpected in a comma-separated list format as in the JSON encoding.\n\nSupported attributes for Space are AttributeFilterID, AttributeIDs, ComponentID, OrganizationID, ReleaseTargetID, TriggerFilterID, TriggerIDs.\n\nThe whole string must be query-encoded.",
+            "description": "Include clause for expanding related entities in the response for Space.\nThe attribute names are case-sensitive, PascalCase, and\nexpected in a comma-separated list format as in the JSON encoding.\n\nSupported attributes for Space are AttributeFilterID, AttributeIDs, ComponentID, OrganizationID, Permissions, ReleaseTargetID, TriggerFilterID, TriggerIDs.\n\nThe whole string must be query-encoded.",
             "required": false,
             "schema": {
-              "pattern": "^\\s*(AttributeFilterID|AttributeIDs|ComponentID|OrganizationID|ReleaseTargetID|TriggerFilterID|TriggerIDs)\\s*(?:,\\s*(?:AttributeFilterID|AttributeIDs|ComponentID|OrganizationID|ReleaseTargetID|TriggerFilterID|TriggerIDs)\\s*)*$",
+              "pattern": "^\\s*(AttributeFilterID|AttributeIDs|ComponentID|OrganizationID|Permissions|ReleaseTargetID|TriggerFilterID|TriggerIDs)\\s*(?:,\\s*(?:AttributeFilterID|AttributeIDs|ComponentID|OrganizationID|Permissions|ReleaseTargetID|TriggerFilterID|TriggerIDs)\\s*)*$",
               "type": "string"
             }
           },
@@ -1280,10 +1280,10 @@
           {
             "name": "include",
             "in": "query",
-            "description": "Include clause for expanding related entities in the response for Space.\nThe attribute names are case-sensitive, PascalCase, and\nexpected in a comma-separated list format as in the JSON encoding.\n\nSupported attributes for Space are AttributeFilterID, AttributeIDs, ComponentID, OrganizationID, ReleaseTargetID, TriggerFilterID, TriggerIDs.\n\nThe whole string must be query-encoded.",
+            "description": "Include clause for expanding related entities in the response for Space.\nThe attribute names are case-sensitive, PascalCase, and\nexpected in a comma-separated list format as in the JSON encoding.\n\nSupported attributes for Space are AttributeFilterID, AttributeIDs, ComponentID, OrganizationID, Permissions, ReleaseTargetID, TriggerFilterID, TriggerIDs.\n\nThe whole string must be query-encoded.",
             "required": false,
             "schema": {
-              "pattern": "^\\s*(AttributeFilterID|AttributeIDs|ComponentID|OrganizationID|ReleaseTargetID|TriggerFilterID|TriggerIDs)\\s*(?:,\\s*(?:AttributeFilterID|AttributeIDs|ComponentID|OrganizationID|ReleaseTargetID|TriggerFilterID|TriggerIDs)\\s*)*$",
+              "pattern": "^\\s*(AttributeFilterID|AttributeIDs|ComponentID|OrganizationID|Permissions|ReleaseTargetID|TriggerFilterID|TriggerIDs)\\s*(?:,\\s*(?:AttributeFilterID|AttributeIDs|ComponentID|OrganizationID|Permissions|ReleaseTargetID|TriggerFilterID|TriggerIDs)\\s*)*$",
               "type": "string"
             }
           },
@@ -1620,10 +1620,10 @@
           {
             "name": "include",
             "in": "query",
-            "description": "Include clause for expanding related entities in the response for Space.\nThe attribute names are case-sensitive, PascalCase, and\nexpected in a comma-separated list format as in the JSON encoding.\n\nSupported attributes for Space are AttributeFilterID, AttributeIDs, ComponentID, OrganizationID, ReleaseTargetID, TriggerFilterID, TriggerIDs.\n\nThe whole string must be query-encoded.",
+            "description": "Include clause for expanding related entities in the response for Space.\nThe attribute names are case-sensitive, PascalCase, and\nexpected in a comma-separated list format as in the JSON encoding.\n\nSupported attributes for Space are AttributeFilterID, AttributeIDs, ComponentID, OrganizationID, Permissions, ReleaseTargetID, TriggerFilterID, TriggerIDs.\n\nThe whole string must be query-encoded.",
             "required": false,
             "schema": {
-              "pattern": "^\\s*(AttributeFilterID|AttributeIDs|ComponentID|OrganizationID|ReleaseTargetID|TriggerFilterID|TriggerIDs)\\s*(?:,\\s*(?:AttributeFilterID|AttributeIDs|ComponentID|OrganizationID|ReleaseTargetID|TriggerFilterID|TriggerIDs)\\s*)*$",
+              "pattern": "^\\s*(AttributeFilterID|AttributeIDs|ComponentID|OrganizationID|Permissions|ReleaseTargetID|TriggerFilterID|TriggerIDs)\\s*(?:,\\s*(?:AttributeFilterID|AttributeIDs|ComponentID|OrganizationID|Permissions|ReleaseTargetID|TriggerFilterID|TriggerIDs)\\s*)*$",
               "type": "string"
             }
           },
@@ -2129,10 +2129,10 @@
           {
             "name": "include",
             "in": "query",
-            "description": "Include clause for expanding related entities in the response for Attestation.\nThe attribute names are case-sensitive, PascalCase, and\nexpected in a comma-separated list format as in the JSON encoding.\n\nSupported attributes for Attestation are OrganizationID, SpaceID.\n\nThe whole string must be query-encoded.",
+            "description": "Include clause for expanding related entities in the response for Attestation.\nThe attribute names are case-sensitive, PascalCase, and\nexpected in a comma-separated list format as in the JSON encoding.\n\nSupported attributes for Attestation are OrganizationID, Permissions, SpaceID.\n\nThe whole string must be query-encoded.",
             "required": false,
             "schema": {
-              "pattern": "^\\s*(OrganizationID|SpaceID)\\s*(?:,\\s*(?:OrganizationID|SpaceID)\\s*)*$",
+              "pattern": "^\\s*(OrganizationID|Permissions|SpaceID)\\s*(?:,\\s*(?:OrganizationID|Permissions|SpaceID)\\s*)*$",
               "type": "string"
             }
           },
@@ -2343,10 +2343,10 @@
           {
             "name": "include",
             "in": "query",
-            "description": "Include clause for expanding related entities in the response for Attribute.\nThe attribute names are case-sensitive, PascalCase, and\nexpected in a comma-separated list format as in the JSON encoding.\n\nSupported attributes for Attribute are OrganizationID, SpaceID.\n\nThe whole string must be query-encoded.",
+            "description": "Include clause for expanding related entities in the response for Attribute.\nThe attribute names are case-sensitive, PascalCase, and\nexpected in a comma-separated list format as in the JSON encoding.\n\nSupported attributes for Attribute are OrganizationID, Permissions, SpaceID.\n\nThe whole string must be query-encoded.",
             "required": false,
             "schema": {
-              "pattern": "^\\s*(OrganizationID|SpaceID)\\s*(?:,\\s*(?:OrganizationID|SpaceID)\\s*)*$",
+              "pattern": "^\\s*(OrganizationID|Permissions|SpaceID)\\s*(?:,\\s*(?:OrganizationID|Permissions|SpaceID)\\s*)*$",
               "type": "string"
             }
           },
@@ -2536,10 +2536,10 @@
           {
             "name": "include",
             "in": "query",
-            "description": "Include clause for expanding related entities in the response for Attribute.\nThe attribute names are case-sensitive, PascalCase, and\nexpected in a comma-separated list format as in the JSON encoding.\n\nSupported attributes for Attribute are OrganizationID, SpaceID.\n\nThe whole string must be query-encoded.",
+            "description": "Include clause for expanding related entities in the response for Attribute.\nThe attribute names are case-sensitive, PascalCase, and\nexpected in a comma-separated list format as in the JSON encoding.\n\nSupported attributes for Attribute are OrganizationID, Permissions, SpaceID.\n\nThe whole string must be query-encoded.",
             "required": false,
             "schema": {
-              "pattern": "^\\s*(OrganizationID|SpaceID)\\s*(?:,\\s*(?:OrganizationID|SpaceID)\\s*)*$",
+              "pattern": "^\\s*(OrganizationID|Permissions|SpaceID)\\s*(?:,\\s*(?:OrganizationID|Permissions|SpaceID)\\s*)*$",
               "type": "string"
             }
           },
@@ -2748,10 +2748,10 @@
           {
             "name": "include",
             "in": "query",
-            "description": "Include clause for expanding related entities in the response for Attribute.\nThe attribute names are case-sensitive, PascalCase, and\nexpected in a comma-separated list format as in the JSON encoding.\n\nSupported attributes for Attribute are OrganizationID, SpaceID.\n\nThe whole string must be query-encoded.",
+            "description": "Include clause for expanding related entities in the response for Attribute.\nThe attribute names are case-sensitive, PascalCase, and\nexpected in a comma-separated list format as in the JSON encoding.\n\nSupported attributes for Attribute are OrganizationID, Permissions, SpaceID.\n\nThe whole string must be query-encoded.",
             "required": false,
             "schema": {
-              "pattern": "^\\s*(OrganizationID|SpaceID)\\s*(?:,\\s*(?:OrganizationID|SpaceID)\\s*)*$",
+              "pattern": "^\\s*(OrganizationID|Permissions|SpaceID)\\s*(?:,\\s*(?:OrganizationID|Permissions|SpaceID)\\s*)*$",
               "type": "string"
             }
           },
@@ -3069,10 +3069,10 @@
           {
             "name": "include",
             "in": "query",
-            "description": "Include clause for expanding related entities in the response for Attribute.\nThe attribute names are case-sensitive, PascalCase, and\nexpected in a comma-separated list format as in the JSON encoding.\n\nSupported attributes for Attribute are OrganizationID, SpaceID.\n\nThe whole string must be query-encoded.",
+            "description": "Include clause for expanding related entities in the response for Attribute.\nThe attribute names are case-sensitive, PascalCase, and\nexpected in a comma-separated list format as in the JSON encoding.\n\nSupported attributes for Attribute are OrganizationID, Permissions, SpaceID.\n\nThe whole string must be query-encoded.",
             "required": false,
             "schema": {
-              "pattern": "^\\s*(OrganizationID|SpaceID)\\s*(?:,\\s*(?:OrganizationID|SpaceID)\\s*)*$",
+              "pattern": "^\\s*(OrganizationID|Permissions|SpaceID)\\s*(?:,\\s*(?:OrganizationID|Permissions|SpaceID)\\s*)*$",
               "type": "string"
             }
           },
@@ -3446,10 +3446,10 @@
           {
             "name": "include",
             "in": "query",
-            "description": "Include clause for expanding related entities in the response for Attribute.\nThe attribute names are case-sensitive, PascalCase, and\nexpected in a comma-separated list format as in the JSON encoding.\n\nSupported attributes for Attribute are OrganizationID, SpaceID.\n\nThe whole string must be query-encoded.",
+            "description": "Include clause for expanding related entities in the response for Attribute.\nThe attribute names are case-sensitive, PascalCase, and\nexpected in a comma-separated list format as in the JSON encoding.\n\nSupported attributes for Attribute are OrganizationID, Permissions, SpaceID.\n\nThe whole string must be query-encoded.",
             "required": false,
             "schema": {
-              "pattern": "^\\s*(OrganizationID|SpaceID)\\s*(?:,\\s*(?:OrganizationID|SpaceID)\\s*)*$",
+              "pattern": "^\\s*(OrganizationID|Permissions|SpaceID)\\s*(?:,\\s*(?:OrganizationID|Permissions|SpaceID)\\s*)*$",
               "type": "string"
             }
           },
@@ -3620,10 +3620,10 @@
           {
             "name": "include",
             "in": "query",
-            "description": "Include clause for expanding related entities in the response for BridgeWorker.\nThe attribute names are case-sensitive, PascalCase, and\nexpected in a comma-separated list format as in the JSON encoding.\n\nSupported attributes for BridgeWorker are OrganizationID, SpaceID.\n\nThe whole string must be query-encoded.",
+            "description": "Include clause for expanding related entities in the response for BridgeWorker.\nThe attribute names are case-sensitive, PascalCase, and\nexpected in a comma-separated list format as in the JSON encoding.\n\nSupported attributes for BridgeWorker are OrganizationID, Permissions, SpaceID.\n\nThe whole string must be query-encoded.",
             "required": false,
             "schema": {
-              "pattern": "^\\s*(OrganizationID|SpaceID)\\s*(?:,\\s*(?:OrganizationID|SpaceID)\\s*)*$",
+              "pattern": "^\\s*(OrganizationID|Permissions|SpaceID)\\s*(?:,\\s*(?:OrganizationID|Permissions|SpaceID)\\s*)*$",
               "type": "string"
             }
           },
@@ -3813,10 +3813,10 @@
           {
             "name": "include",
             "in": "query",
-            "description": "Include clause for expanding related entities in the response for BridgeWorker.\nThe attribute names are case-sensitive, PascalCase, and\nexpected in a comma-separated list format as in the JSON encoding.\n\nSupported attributes for BridgeWorker are OrganizationID, SpaceID.\n\nThe whole string must be query-encoded.",
+            "description": "Include clause for expanding related entities in the response for BridgeWorker.\nThe attribute names are case-sensitive, PascalCase, and\nexpected in a comma-separated list format as in the JSON encoding.\n\nSupported attributes for BridgeWorker are OrganizationID, Permissions, SpaceID.\n\nThe whole string must be query-encoded.",
             "required": false,
             "schema": {
-              "pattern": "^\\s*(OrganizationID|SpaceID)\\s*(?:,\\s*(?:OrganizationID|SpaceID)\\s*)*$",
+              "pattern": "^\\s*(OrganizationID|Permissions|SpaceID)\\s*(?:,\\s*(?:OrganizationID|Permissions|SpaceID)\\s*)*$",
               "type": "string"
             }
           },
@@ -4042,10 +4042,10 @@
           {
             "name": "include",
             "in": "query",
-            "description": "Include clause for expanding related entities in the response for BridgeWorker.\nThe attribute names are case-sensitive, PascalCase, and\nexpected in a comma-separated list format as in the JSON encoding.\n\nSupported attributes for BridgeWorker are OrganizationID, SpaceID.\n\nThe whole string must be query-encoded.",
+            "description": "Include clause for expanding related entities in the response for BridgeWorker.\nThe attribute names are case-sensitive, PascalCase, and\nexpected in a comma-separated list format as in the JSON encoding.\n\nSupported attributes for BridgeWorker are OrganizationID, Permissions, SpaceID.\n\nThe whole string must be query-encoded.",
             "required": false,
             "schema": {
-              "pattern": "^\\s*(OrganizationID|SpaceID)\\s*(?:,\\s*(?:OrganizationID|SpaceID)\\s*)*$",
+              "pattern": "^\\s*(OrganizationID|Permissions|SpaceID)\\s*(?:,\\s*(?:OrganizationID|Permissions|SpaceID)\\s*)*$",
               "type": "string"
             }
           },
@@ -4709,10 +4709,10 @@
           {
             "name": "include",
             "in": "query",
-            "description": "Include clause for expanding related entities in the response for ChangeOrder.\nThe attribute names are case-sensitive, PascalCase, and\nexpected in a comma-separated list format as in the JSON encoding.\n\nSupported attributes for ChangeOrder are EndTagID, InvocationID, OrganizationID, ReleaseTagID, RestoreTagID, SpaceFilterID, SpaceID, StartTagID, UnitFilterID.\n\nThe whole string must be query-encoded.",
+            "description": "Include clause for expanding related entities in the response for ChangeOrder.\nThe attribute names are case-sensitive, PascalCase, and\nexpected in a comma-separated list format as in the JSON encoding.\n\nSupported attributes for ChangeOrder are EndTagID, InvocationID, OrganizationID, Permissions, ReleaseTagID, RestoreTagID, SpaceFilterID, SpaceID, StartTagID, UnitFilterID.\n\nThe whole string must be query-encoded.",
             "required": false,
             "schema": {
-              "pattern": "^\\s*(EndTagID|InvocationID|OrganizationID|ReleaseTagID|RestoreTagID|SpaceFilterID|SpaceID|StartTagID|UnitFilterID)\\s*(?:,\\s*(?:EndTagID|InvocationID|OrganizationID|ReleaseTagID|RestoreTagID|SpaceFilterID|SpaceID|StartTagID|UnitFilterID)\\s*)*$",
+              "pattern": "^\\s*(EndTagID|InvocationID|OrganizationID|Permissions|ReleaseTagID|RestoreTagID|SpaceFilterID|SpaceID|StartTagID|UnitFilterID)\\s*(?:,\\s*(?:EndTagID|InvocationID|OrganizationID|Permissions|ReleaseTagID|RestoreTagID|SpaceFilterID|SpaceID|StartTagID|UnitFilterID)\\s*)*$",
               "type": "string"
             }
           },
@@ -4902,10 +4902,10 @@
           {
             "name": "include",
             "in": "query",
-            "description": "Include clause for expanding related entities in the response for ChangeOrder.\nThe attribute names are case-sensitive, PascalCase, and\nexpected in a comma-separated list format as in the JSON encoding.\n\nSupported attributes for ChangeOrder are EndTagID, InvocationID, OrganizationID, ReleaseTagID, RestoreTagID, SpaceFilterID, SpaceID, StartTagID, UnitFilterID.\n\nThe whole string must be query-encoded.",
+            "description": "Include clause for expanding related entities in the response for ChangeOrder.\nThe attribute names are case-sensitive, PascalCase, and\nexpected in a comma-separated list format as in the JSON encoding.\n\nSupported attributes for ChangeOrder are EndTagID, InvocationID, OrganizationID, Permissions, ReleaseTagID, RestoreTagID, SpaceFilterID, SpaceID, StartTagID, UnitFilterID.\n\nThe whole string must be query-encoded.",
             "required": false,
             "schema": {
-              "pattern": "^\\s*(EndTagID|InvocationID|OrganizationID|ReleaseTagID|RestoreTagID|SpaceFilterID|SpaceID|StartTagID|UnitFilterID)\\s*(?:,\\s*(?:EndTagID|InvocationID|OrganizationID|ReleaseTagID|RestoreTagID|SpaceFilterID|SpaceID|StartTagID|UnitFilterID)\\s*)*$",
+              "pattern": "^\\s*(EndTagID|InvocationID|OrganizationID|Permissions|ReleaseTagID|RestoreTagID|SpaceFilterID|SpaceID|StartTagID|UnitFilterID)\\s*(?:,\\s*(?:EndTagID|InvocationID|OrganizationID|Permissions|ReleaseTagID|RestoreTagID|SpaceFilterID|SpaceID|StartTagID|UnitFilterID)\\s*)*$",
               "type": "string"
             }
           },
@@ -5114,10 +5114,10 @@
           {
             "name": "include",
             "in": "query",
-            "description": "Include clause for expanding related entities in the response for ChangeOrder.\nThe attribute names are case-sensitive, PascalCase, and\nexpected in a comma-separated list format as in the JSON encoding.\n\nSupported attributes for ChangeOrder are EndTagID, InvocationID, OrganizationID, ReleaseTagID, RestoreTagID, SpaceFilterID, SpaceID, StartTagID, UnitFilterID.\n\nThe whole string must be query-encoded.",
+            "description": "Include clause for expanding related entities in the response for ChangeOrder.\nThe attribute names are case-sensitive, PascalCase, and\nexpected in a comma-separated list format as in the JSON encoding.\n\nSupported attributes for ChangeOrder are EndTagID, InvocationID, OrganizationID, Permissions, ReleaseTagID, RestoreTagID, SpaceFilterID, SpaceID, StartTagID, UnitFilterID.\n\nThe whole string must be query-encoded.",
             "required": false,
             "schema": {
-              "pattern": "^\\s*(EndTagID|InvocationID|OrganizationID|ReleaseTagID|RestoreTagID|SpaceFilterID|SpaceID|StartTagID|UnitFilterID)\\s*(?:,\\s*(?:EndTagID|InvocationID|OrganizationID|ReleaseTagID|RestoreTagID|SpaceFilterID|SpaceID|StartTagID|UnitFilterID)\\s*)*$",
+              "pattern": "^\\s*(EndTagID|InvocationID|OrganizationID|Permissions|ReleaseTagID|RestoreTagID|SpaceFilterID|SpaceID|StartTagID|UnitFilterID)\\s*(?:,\\s*(?:EndTagID|InvocationID|OrganizationID|Permissions|ReleaseTagID|RestoreTagID|SpaceFilterID|SpaceID|StartTagID|UnitFilterID)\\s*)*$",
               "type": "string"
             }
           },
@@ -5472,10 +5472,10 @@
           {
             "name": "include",
             "in": "query",
-            "description": "Include clause for expanding related entities in the response for ChangeOrder.\nThe attribute names are case-sensitive, PascalCase, and\nexpected in a comma-separated list format as in the JSON encoding.\n\nSupported attributes for ChangeOrder are EndTagID, InvocationID, OrganizationID, ReleaseTagID, RestoreTagID, SpaceFilterID, SpaceID, StartTagID, UnitFilterID.\n\nThe whole string must be query-encoded.",
+            "description": "Include clause for expanding related entities in the response for ChangeOrder.\nThe attribute names are case-sensitive, PascalCase, and\nexpected in a comma-separated list format as in the JSON encoding.\n\nSupported attributes for ChangeOrder are EndTagID, InvocationID, OrganizationID, Permissions, ReleaseTagID, RestoreTagID, SpaceFilterID, SpaceID, StartTagID, UnitFilterID.\n\nThe whole string must be query-encoded.",
             "required": false,
             "schema": {
-              "pattern": "^\\s*(EndTagID|InvocationID|OrganizationID|ReleaseTagID|RestoreTagID|SpaceFilterID|SpaceID|StartTagID|UnitFilterID)\\s*(?:,\\s*(?:EndTagID|InvocationID|OrganizationID|ReleaseTagID|RestoreTagID|SpaceFilterID|SpaceID|StartTagID|UnitFilterID)\\s*)*$",
+              "pattern": "^\\s*(EndTagID|InvocationID|OrganizationID|Permissions|ReleaseTagID|RestoreTagID|SpaceFilterID|SpaceID|StartTagID|UnitFilterID)\\s*(?:,\\s*(?:EndTagID|InvocationID|OrganizationID|Permissions|ReleaseTagID|RestoreTagID|SpaceFilterID|SpaceID|StartTagID|UnitFilterID)\\s*)*$",
               "type": "string"
             }
           },
@@ -5877,10 +5877,10 @@
           {
             "name": "include",
             "in": "query",
-            "description": "Include clause for expanding related entities in the response for ChangeOrder.\nThe attribute names are case-sensitive, PascalCase, and\nexpected in a comma-separated list format as in the JSON encoding.\n\nSupported attributes for ChangeOrder are EndTagID, InvocationID, OrganizationID, ReleaseTagID, RestoreTagID, SpaceFilterID, SpaceID, StartTagID, UnitFilterID.\n\nThe whole string must be query-encoded.",
+            "description": "Include clause for expanding related entities in the response for ChangeOrder.\nThe attribute names are case-sensitive, PascalCase, and\nexpected in a comma-separated list format as in the JSON encoding.\n\nSupported attributes for ChangeOrder are EndTagID, InvocationID, OrganizationID, Permissions, ReleaseTagID, RestoreTagID, SpaceFilterID, SpaceID, StartTagID, UnitFilterID.\n\nThe whole string must be query-encoded.",
             "required": false,
             "schema": {
-              "pattern": "^\\s*(EndTagID|InvocationID|OrganizationID|ReleaseTagID|RestoreTagID|SpaceFilterID|SpaceID|StartTagID|UnitFilterID)\\s*(?:,\\s*(?:EndTagID|InvocationID|OrganizationID|ReleaseTagID|RestoreTagID|SpaceFilterID|SpaceID|StartTagID|UnitFilterID)\\s*)*$",
+              "pattern": "^\\s*(EndTagID|InvocationID|OrganizationID|Permissions|ReleaseTagID|RestoreTagID|SpaceFilterID|SpaceID|StartTagID|UnitFilterID)\\s*(?:,\\s*(?:EndTagID|InvocationID|OrganizationID|Permissions|ReleaseTagID|RestoreTagID|SpaceFilterID|SpaceID|StartTagID|UnitFilterID)\\s*)*$",
               "type": "string"
             }
           },
@@ -6071,10 +6071,10 @@
           {
             "name": "include",
             "in": "query",
-            "description": "Include clause for expanding related entities in the response for ChangeSet.\nThe attribute names are case-sensitive, PascalCase, and\nexpected in a comma-separated list format as in the JSON encoding.\n\nSupported attributes for ChangeSet are EndTagID, OrganizationID, SpaceID, StartTagID.\n\nThe whole string must be query-encoded.",
+            "description": "Include clause for expanding related entities in the response for ChangeSet.\nThe attribute names are case-sensitive, PascalCase, and\nexpected in a comma-separated list format as in the JSON encoding.\n\nSupported attributes for ChangeSet are EndTagID, OrganizationID, Permissions, SpaceID, StartTagID.\n\nThe whole string must be query-encoded.",
             "required": false,
             "schema": {
-              "pattern": "^\\s*(EndTagID|OrganizationID|SpaceID|StartTagID)\\s*(?:,\\s*(?:EndTagID|OrganizationID|SpaceID|StartTagID)\\s*)*$",
+              "pattern": "^\\s*(EndTagID|OrganizationID|Permissions|SpaceID|StartTagID)\\s*(?:,\\s*(?:EndTagID|OrganizationID|Permissions|SpaceID|StartTagID)\\s*)*$",
               "type": "string"
             }
           },
@@ -6264,10 +6264,10 @@
           {
             "name": "include",
             "in": "query",
-            "description": "Include clause for expanding related entities in the response for ChangeSet.\nThe attribute names are case-sensitive, PascalCase, and\nexpected in a comma-separated list format as in the JSON encoding.\n\nSupported attributes for ChangeSet are EndTagID, OrganizationID, SpaceID, StartTagID.\n\nThe whole string must be query-encoded.",
+            "description": "Include clause for expanding related entities in the response for ChangeSet.\nThe attribute names are case-sensitive, PascalCase, and\nexpected in a comma-separated list format as in the JSON encoding.\n\nSupported attributes for ChangeSet are EndTagID, OrganizationID, Permissions, SpaceID, StartTagID.\n\nThe whole string must be query-encoded.",
             "required": false,
             "schema": {
-              "pattern": "^\\s*(EndTagID|OrganizationID|SpaceID|StartTagID)\\s*(?:,\\s*(?:EndTagID|OrganizationID|SpaceID|StartTagID)\\s*)*$",
+              "pattern": "^\\s*(EndTagID|OrganizationID|Permissions|SpaceID|StartTagID)\\s*(?:,\\s*(?:EndTagID|OrganizationID|Permissions|SpaceID|StartTagID)\\s*)*$",
               "type": "string"
             }
           },
@@ -6476,10 +6476,10 @@
           {
             "name": "include",
             "in": "query",
-            "description": "Include clause for expanding related entities in the response for ChangeSet.\nThe attribute names are case-sensitive, PascalCase, and\nexpected in a comma-separated list format as in the JSON encoding.\n\nSupported attributes for ChangeSet are EndTagID, OrganizationID, SpaceID, StartTagID.\n\nThe whole string must be query-encoded.",
+            "description": "Include clause for expanding related entities in the response for ChangeSet.\nThe attribute names are case-sensitive, PascalCase, and\nexpected in a comma-separated list format as in the JSON encoding.\n\nSupported attributes for ChangeSet are EndTagID, OrganizationID, Permissions, SpaceID, StartTagID.\n\nThe whole string must be query-encoded.",
             "required": false,
             "schema": {
-              "pattern": "^\\s*(EndTagID|OrganizationID|SpaceID|StartTagID)\\s*(?:,\\s*(?:EndTagID|OrganizationID|SpaceID|StartTagID)\\s*)*$",
+              "pattern": "^\\s*(EndTagID|OrganizationID|Permissions|SpaceID|StartTagID)\\s*(?:,\\s*(?:EndTagID|OrganizationID|Permissions|SpaceID|StartTagID)\\s*)*$",
               "type": "string"
             }
           },
@@ -6756,10 +6756,10 @@
           {
             "name": "include",
             "in": "query",
-            "description": "Include clause for expanding related entities in the response for ChangeSet.\nThe attribute names are case-sensitive, PascalCase, and\nexpected in a comma-separated list format as in the JSON encoding.\n\nSupported attributes for ChangeSet are EndTagID, OrganizationID, SpaceID, StartTagID.\n\nThe whole string must be query-encoded.",
+            "description": "Include clause for expanding related entities in the response for ChangeSet.\nThe attribute names are case-sensitive, PascalCase, and\nexpected in a comma-separated list format as in the JSON encoding.\n\nSupported attributes for ChangeSet are EndTagID, OrganizationID, Permissions, SpaceID, StartTagID.\n\nThe whole string must be query-encoded.",
             "required": false,
             "schema": {
-              "pattern": "^\\s*(EndTagID|OrganizationID|SpaceID|StartTagID)\\s*(?:,\\s*(?:EndTagID|OrganizationID|SpaceID|StartTagID)\\s*)*$",
+              "pattern": "^\\s*(EndTagID|OrganizationID|Permissions|SpaceID|StartTagID)\\s*(?:,\\s*(?:EndTagID|OrganizationID|Permissions|SpaceID|StartTagID)\\s*)*$",
               "type": "string"
             }
           },
@@ -7092,10 +7092,10 @@
           {
             "name": "include",
             "in": "query",
-            "description": "Include clause for expanding related entities in the response for ChangeSet.\nThe attribute names are case-sensitive, PascalCase, and\nexpected in a comma-separated list format as in the JSON encoding.\n\nSupported attributes for ChangeSet are EndTagID, OrganizationID, SpaceID, StartTagID.\n\nThe whole string must be query-encoded.",
+            "description": "Include clause for expanding related entities in the response for ChangeSet.\nThe attribute names are case-sensitive, PascalCase, and\nexpected in a comma-separated list format as in the JSON encoding.\n\nSupported attributes for ChangeSet are EndTagID, OrganizationID, Permissions, SpaceID, StartTagID.\n\nThe whole string must be query-encoded.",
             "required": false,
             "schema": {
-              "pattern": "^\\s*(EndTagID|OrganizationID|SpaceID|StartTagID)\\s*(?:,\\s*(?:EndTagID|OrganizationID|SpaceID|StartTagID)\\s*)*$",
+              "pattern": "^\\s*(EndTagID|OrganizationID|Permissions|SpaceID|StartTagID)\\s*(?:,\\s*(?:EndTagID|OrganizationID|Permissions|SpaceID|StartTagID)\\s*)*$",
               "type": "string"
             }
           },
@@ -7266,10 +7266,10 @@
           {
             "name": "include",
             "in": "query",
-            "description": "Include clause for expanding related entities in the response for ChangeWorkflow.\nThe attribute names are case-sensitive, PascalCase, and\nexpected in a comma-separated list format as in the JSON encoding.\n\nSupported attributes for ChangeWorkflow are OrganizationID, SpaceID.\n\nThe whole string must be query-encoded.",
+            "description": "Include clause for expanding related entities in the response for ChangeWorkflow.\nThe attribute names are case-sensitive, PascalCase, and\nexpected in a comma-separated list format as in the JSON encoding.\n\nSupported attributes for ChangeWorkflow are OrganizationID, Permissions, SpaceID.\n\nThe whole string must be query-encoded.",
             "required": false,
             "schema": {
-              "pattern": "^\\s*(OrganizationID|SpaceID)\\s*(?:,\\s*(?:OrganizationID|SpaceID)\\s*)*$",
+              "pattern": "^\\s*(OrganizationID|Permissions|SpaceID)\\s*(?:,\\s*(?:OrganizationID|Permissions|SpaceID)\\s*)*$",
               "type": "string"
             }
           },
@@ -7459,10 +7459,10 @@
           {
             "name": "include",
             "in": "query",
-            "description": "Include clause for expanding related entities in the response for ChangeWorkflow.\nThe attribute names are case-sensitive, PascalCase, and\nexpected in a comma-separated list format as in the JSON encoding.\n\nSupported attributes for ChangeWorkflow are OrganizationID, SpaceID.\n\nThe whole string must be query-encoded.",
+            "description": "Include clause for expanding related entities in the response for ChangeWorkflow.\nThe attribute names are case-sensitive, PascalCase, and\nexpected in a comma-separated list format as in the JSON encoding.\n\nSupported attributes for ChangeWorkflow are OrganizationID, Permissions, SpaceID.\n\nThe whole string must be query-encoded.",
             "required": false,
             "schema": {
-              "pattern": "^\\s*(OrganizationID|SpaceID)\\s*(?:,\\s*(?:OrganizationID|SpaceID)\\s*)*$",
+              "pattern": "^\\s*(OrganizationID|Permissions|SpaceID)\\s*(?:,\\s*(?:OrganizationID|Permissions|SpaceID)\\s*)*$",
               "type": "string"
             }
           },
@@ -7671,10 +7671,10 @@
           {
             "name": "include",
             "in": "query",
-            "description": "Include clause for expanding related entities in the response for ChangeWorkflow.\nThe attribute names are case-sensitive, PascalCase, and\nexpected in a comma-separated list format as in the JSON encoding.\n\nSupported attributes for ChangeWorkflow are OrganizationID, SpaceID.\n\nThe whole string must be query-encoded.",
+            "description": "Include clause for expanding related entities in the response for ChangeWorkflow.\nThe attribute names are case-sensitive, PascalCase, and\nexpected in a comma-separated list format as in the JSON encoding.\n\nSupported attributes for ChangeWorkflow are OrganizationID, Permissions, SpaceID.\n\nThe whole string must be query-encoded.",
             "required": false,
             "schema": {
-              "pattern": "^\\s*(OrganizationID|SpaceID)\\s*(?:,\\s*(?:OrganizationID|SpaceID)\\s*)*$",
+              "pattern": "^\\s*(OrganizationID|Permissions|SpaceID)\\s*(?:,\\s*(?:OrganizationID|Permissions|SpaceID)\\s*)*$",
               "type": "string"
             }
           },
@@ -7991,10 +7991,10 @@
           {
             "name": "include",
             "in": "query",
-            "description": "Include clause for expanding related entities in the response for ChangeWorkflow.\nThe attribute names are case-sensitive, PascalCase, and\nexpected in a comma-separated list format as in the JSON encoding.\n\nSupported attributes for ChangeWorkflow are OrganizationID, SpaceID.\n\nThe whole string must be query-encoded.",
+            "description": "Include clause for expanding related entities in the response for ChangeWorkflow.\nThe attribute names are case-sensitive, PascalCase, and\nexpected in a comma-separated list format as in the JSON encoding.\n\nSupported attributes for ChangeWorkflow are OrganizationID, Permissions, SpaceID.\n\nThe whole string must be query-encoded.",
             "required": false,
             "schema": {
-              "pattern": "^\\s*(OrganizationID|SpaceID)\\s*(?:,\\s*(?:OrganizationID|SpaceID)\\s*)*$",
+              "pattern": "^\\s*(OrganizationID|Permissions|SpaceID)\\s*(?:,\\s*(?:OrganizationID|Permissions|SpaceID)\\s*)*$",
               "type": "string"
             }
           },
@@ -8394,10 +8394,10 @@
           {
             "name": "include",
             "in": "query",
-            "description": "Include clause for expanding related entities in the response for ChangeWorkflow.\nThe attribute names are case-sensitive, PascalCase, and\nexpected in a comma-separated list format as in the JSON encoding.\n\nSupported attributes for ChangeWorkflow are OrganizationID, SpaceID.\n\nThe whole string must be query-encoded.",
+            "description": "Include clause for expanding related entities in the response for ChangeWorkflow.\nThe attribute names are case-sensitive, PascalCase, and\nexpected in a comma-separated list format as in the JSON encoding.\n\nSupported attributes for ChangeWorkflow are OrganizationID, Permissions, SpaceID.\n\nThe whole string must be query-encoded.",
             "required": false,
             "schema": {
-              "pattern": "^\\s*(OrganizationID|SpaceID)\\s*(?:,\\s*(?:OrganizationID|SpaceID)\\s*)*$",
+              "pattern": "^\\s*(OrganizationID|Permissions|SpaceID)\\s*(?:,\\s*(?:OrganizationID|Permissions|SpaceID)\\s*)*$",
               "type": "string"
             }
           },
@@ -8568,10 +8568,10 @@
           {
             "name": "include",
             "in": "query",
-            "description": "Include clause for expanding related entities in the response for Channel.\nThe attribute names are case-sensitive, PascalCase, and\nexpected in a comma-separated list format as in the JSON encoding.\n\nSupported attributes for Channel are OrganizationID, SpaceID.\n\nThe whole string must be query-encoded.",
+            "description": "Include clause for expanding related entities in the response for Channel.\nThe attribute names are case-sensitive, PascalCase, and\nexpected in a comma-separated list format as in the JSON encoding.\n\nSupported attributes for Channel are OrganizationID, Permissions, SpaceID.\n\nThe whole string must be query-encoded.",
             "required": false,
             "schema": {
-              "pattern": "^\\s*(OrganizationID|SpaceID)\\s*(?:,\\s*(?:OrganizationID|SpaceID)\\s*)*$",
+              "pattern": "^\\s*(OrganizationID|Permissions|SpaceID)\\s*(?:,\\s*(?:OrganizationID|Permissions|SpaceID)\\s*)*$",
               "type": "string"
             }
           },
@@ -8761,10 +8761,10 @@
           {
             "name": "include",
             "in": "query",
-            "description": "Include clause for expanding related entities in the response for Channel.\nThe attribute names are case-sensitive, PascalCase, and\nexpected in a comma-separated list format as in the JSON encoding.\n\nSupported attributes for Channel are OrganizationID, SpaceID.\n\nThe whole string must be query-encoded.",
+            "description": "Include clause for expanding related entities in the response for Channel.\nThe attribute names are case-sensitive, PascalCase, and\nexpected in a comma-separated list format as in the JSON encoding.\n\nSupported attributes for Channel are OrganizationID, Permissions, SpaceID.\n\nThe whole string must be query-encoded.",
             "required": false,
             "schema": {
-              "pattern": "^\\s*(OrganizationID|SpaceID)\\s*(?:,\\s*(?:OrganizationID|SpaceID)\\s*)*$",
+              "pattern": "^\\s*(OrganizationID|Permissions|SpaceID)\\s*(?:,\\s*(?:OrganizationID|Permissions|SpaceID)\\s*)*$",
               "type": "string"
             }
           },
@@ -8974,10 +8974,10 @@
           {
             "name": "include",
             "in": "query",
-            "description": "Include clause for expanding related entities in the response for Channel.\nThe attribute names are case-sensitive, PascalCase, and\nexpected in a comma-separated list format as in the JSON encoding.\n\nSupported attributes for Channel are OrganizationID, SpaceID.\n\nThe whole string must be query-encoded.",
+            "description": "Include clause for expanding related entities in the response for Channel.\nThe attribute names are case-sensitive, PascalCase, and\nexpected in a comma-separated list format as in the JSON encoding.\n\nSupported attributes for Channel are OrganizationID, Permissions, SpaceID.\n\nThe whole string must be query-encoded.",
             "required": false,
             "schema": {
-              "pattern": "^\\s*(OrganizationID|SpaceID)\\s*(?:,\\s*(?:OrganizationID|SpaceID)\\s*)*$",
+              "pattern": "^\\s*(OrganizationID|Permissions|SpaceID)\\s*(?:,\\s*(?:OrganizationID|Permissions|SpaceID)\\s*)*$",
               "type": "string"
             }
           },
@@ -9285,10 +9285,10 @@
           {
             "name": "include",
             "in": "query",
-            "description": "Include clause for expanding related entities in the response for Channel.\nThe attribute names are case-sensitive, PascalCase, and\nexpected in a comma-separated list format as in the JSON encoding.\n\nSupported attributes for Channel are OrganizationID, SpaceID.\n\nThe whole string must be query-encoded.",
+            "description": "Include clause for expanding related entities in the response for Channel.\nThe attribute names are case-sensitive, PascalCase, and\nexpected in a comma-separated list format as in the JSON encoding.\n\nSupported attributes for Channel are OrganizationID, Permissions, SpaceID.\n\nThe whole string must be query-encoded.",
             "required": false,
             "schema": {
-              "pattern": "^\\s*(OrganizationID|SpaceID)\\s*(?:,\\s*(?:OrganizationID|SpaceID)\\s*)*$",
+              "pattern": "^\\s*(OrganizationID|Permissions|SpaceID)\\s*(?:,\\s*(?:OrganizationID|Permissions|SpaceID)\\s*)*$",
               "type": "string"
             }
           },
@@ -9679,10 +9679,10 @@
           {
             "name": "include",
             "in": "query",
-            "description": "Include clause for expanding related entities in the response for Channel.\nThe attribute names are case-sensitive, PascalCase, and\nexpected in a comma-separated list format as in the JSON encoding.\n\nSupported attributes for Channel are OrganizationID, SpaceID.\n\nThe whole string must be query-encoded.",
+            "description": "Include clause for expanding related entities in the response for Channel.\nThe attribute names are case-sensitive, PascalCase, and\nexpected in a comma-separated list format as in the JSON encoding.\n\nSupported attributes for Channel are OrganizationID, Permissions, SpaceID.\n\nThe whole string must be query-encoded.",
             "required": false,
             "schema": {
-              "pattern": "^\\s*(OrganizationID|SpaceID)\\s*(?:,\\s*(?:OrganizationID|SpaceID)\\s*)*$",
+              "pattern": "^\\s*(OrganizationID|Permissions|SpaceID)\\s*(?:,\\s*(?:OrganizationID|Permissions|SpaceID)\\s*)*$",
               "type": "string"
             }
           },
@@ -10145,10 +10145,10 @@
           {
             "name": "include",
             "in": "query",
-            "description": "Include clause for expanding related entities in the response for Component.\nThe attribute names are case-sensitive, PascalCase, and\nexpected in a comma-separated list format as in the JSON encoding.\n\nSupported attributes for Component are OrganizationID.\n\nThe whole string must be query-encoded.",
+            "description": "Include clause for expanding related entities in the response for Component.\nThe attribute names are case-sensitive, PascalCase, and\nexpected in a comma-separated list format as in the JSON encoding.\n\nSupported attributes for Component are OrganizationID, Permissions.\n\nThe whole string must be query-encoded.",
             "required": false,
             "schema": {
-              "pattern": "^\\s*(OrganizationID)\\s*(?:,\\s*(?:OrganizationID)\\s*)*$",
+              "pattern": "^\\s*(OrganizationID|Permissions)\\s*(?:,\\s*(?:OrganizationID|Permissions)\\s*)*$",
               "type": "string"
             }
           },
@@ -10572,10 +10572,10 @@
           {
             "name": "include",
             "in": "query",
-            "description": "Include clause for expanding related entities in the response for Component.\nThe attribute names are case-sensitive, PascalCase, and\nexpected in a comma-separated list format as in the JSON encoding.\n\nSupported attributes for Component are OrganizationID.\n\nThe whole string must be query-encoded.",
+            "description": "Include clause for expanding related entities in the response for Component.\nThe attribute names are case-sensitive, PascalCase, and\nexpected in a comma-separated list format as in the JSON encoding.\n\nSupported attributes for Component are OrganizationID, Permissions.\n\nThe whole string must be query-encoded.",
             "required": false,
             "schema": {
-              "pattern": "^\\s*(OrganizationID)\\s*(?:,\\s*(?:OrganizationID)\\s*)*$",
+              "pattern": "^\\s*(OrganizationID|Permissions)\\s*(?:,\\s*(?:OrganizationID|Permissions)\\s*)*$",
               "type": "string"
             }
           },
@@ -11513,10 +11513,10 @@
           {
             "name": "include",
             "in": "query",
-            "description": "Include clause for expanding related entities in the response for Filter.\nThe attribute names are case-sensitive, PascalCase, and\nexpected in a comma-separated list format as in the JSON encoding.\n\nSupported attributes for Filter are FromSpaceID, OrganizationID, SpaceID.\n\nThe whole string must be query-encoded.",
+            "description": "Include clause for expanding related entities in the response for Filter.\nThe attribute names are case-sensitive, PascalCase, and\nexpected in a comma-separated list format as in the JSON encoding.\n\nSupported attributes for Filter are FromSpaceID, OrganizationID, Permissions, SpaceID.\n\nThe whole string must be query-encoded.",
             "required": false,
             "schema": {
-              "pattern": "^\\s*(FromSpaceID|OrganizationID|SpaceID)\\s*(?:,\\s*(?:FromSpaceID|OrganizationID|SpaceID)\\s*)*$",
+              "pattern": "^\\s*(FromSpaceID|OrganizationID|Permissions|SpaceID)\\s*(?:,\\s*(?:FromSpaceID|OrganizationID|Permissions|SpaceID)\\s*)*$",
               "type": "string"
             }
           },
@@ -11706,10 +11706,10 @@
           {
             "name": "include",
             "in": "query",
-            "description": "Include clause for expanding related entities in the response for Filter.\nThe attribute names are case-sensitive, PascalCase, and\nexpected in a comma-separated list format as in the JSON encoding.\n\nSupported attributes for Filter are FromSpaceID, OrganizationID, SpaceID.\n\nThe whole string must be query-encoded.",
+            "description": "Include clause for expanding related entities in the response for Filter.\nThe attribute names are case-sensitive, PascalCase, and\nexpected in a comma-separated list format as in the JSON encoding.\n\nSupported attributes for Filter are FromSpaceID, OrganizationID, Permissions, SpaceID.\n\nThe whole string must be query-encoded.",
             "required": false,
             "schema": {
-              "pattern": "^\\s*(FromSpaceID|OrganizationID|SpaceID)\\s*(?:,\\s*(?:FromSpaceID|OrganizationID|SpaceID)\\s*)*$",
+              "pattern": "^\\s*(FromSpaceID|OrganizationID|Permissions|SpaceID)\\s*(?:,\\s*(?:FromSpaceID|OrganizationID|Permissions|SpaceID)\\s*)*$",
               "type": "string"
             }
           },
@@ -11936,10 +11936,10 @@
           {
             "name": "include",
             "in": "query",
-            "description": "Include clause for expanding related entities in the response for Filter.\nThe attribute names are case-sensitive, PascalCase, and\nexpected in a comma-separated list format as in the JSON encoding.\n\nSupported attributes for Filter are FromSpaceID, OrganizationID, SpaceID.\n\nThe whole string must be query-encoded.",
+            "description": "Include clause for expanding related entities in the response for Filter.\nThe attribute names are case-sensitive, PascalCase, and\nexpected in a comma-separated list format as in the JSON encoding.\n\nSupported attributes for Filter are FromSpaceID, OrganizationID, Permissions, SpaceID.\n\nThe whole string must be query-encoded.",
             "required": false,
             "schema": {
-              "pattern": "^\\s*(FromSpaceID|OrganizationID|SpaceID)\\s*(?:,\\s*(?:FromSpaceID|OrganizationID|SpaceID)\\s*)*$",
+              "pattern": "^\\s*(FromSpaceID|OrganizationID|Permissions|SpaceID)\\s*(?:,\\s*(?:FromSpaceID|OrganizationID|Permissions|SpaceID)\\s*)*$",
               "type": "string"
             }
           },
@@ -12255,10 +12255,10 @@
           {
             "name": "include",
             "in": "query",
-            "description": "Include clause for expanding related entities in the response for Filter.\nThe attribute names are case-sensitive, PascalCase, and\nexpected in a comma-separated list format as in the JSON encoding.\n\nSupported attributes for Filter are FromSpaceID, OrganizationID, SpaceID.\n\nThe whole string must be query-encoded.",
+            "description": "Include clause for expanding related entities in the response for Filter.\nThe attribute names are case-sensitive, PascalCase, and\nexpected in a comma-separated list format as in the JSON encoding.\n\nSupported attributes for Filter are FromSpaceID, OrganizationID, Permissions, SpaceID.\n\nThe whole string must be query-encoded.",
             "required": false,
             "schema": {
-              "pattern": "^\\s*(FromSpaceID|OrganizationID|SpaceID)\\s*(?:,\\s*(?:FromSpaceID|OrganizationID|SpaceID)\\s*)*$",
+              "pattern": "^\\s*(FromSpaceID|OrganizationID|Permissions|SpaceID)\\s*(?:,\\s*(?:FromSpaceID|OrganizationID|Permissions|SpaceID)\\s*)*$",
               "type": "string"
             }
           },
@@ -12657,10 +12657,10 @@
           {
             "name": "include",
             "in": "query",
-            "description": "Include clause for expanding related entities in the response for Filter.\nThe attribute names are case-sensitive, PascalCase, and\nexpected in a comma-separated list format as in the JSON encoding.\n\nSupported attributes for Filter are FromSpaceID, OrganizationID, SpaceID.\n\nThe whole string must be query-encoded.",
+            "description": "Include clause for expanding related entities in the response for Filter.\nThe attribute names are case-sensitive, PascalCase, and\nexpected in a comma-separated list format as in the JSON encoding.\n\nSupported attributes for Filter are FromSpaceID, OrganizationID, Permissions, SpaceID.\n\nThe whole string must be query-encoded.",
             "required": false,
             "schema": {
-              "pattern": "^\\s*(FromSpaceID|OrganizationID|SpaceID)\\s*(?:,\\s*(?:FromSpaceID|OrganizationID|SpaceID)\\s*)*$",
+              "pattern": "^\\s*(FromSpaceID|OrganizationID|Permissions|SpaceID)\\s*(?:,\\s*(?:FromSpaceID|OrganizationID|Permissions|SpaceID)\\s*)*$",
               "type": "string"
             }
           },
@@ -13837,10 +13837,10 @@
           {
             "name": "include",
             "in": "query",
-            "description": "Include clause for expanding related entities in the response for Invocation.\nThe attribute names are case-sensitive, PascalCase, and\nexpected in a comma-separated list format as in the JSON encoding.\n\nSupported attributes for Invocation are BridgeWorkerID, ChannelID, OrganizationID, SpaceID.\n\nThe whole string must be query-encoded.",
+            "description": "Include clause for expanding related entities in the response for Invocation.\nThe attribute names are case-sensitive, PascalCase, and\nexpected in a comma-separated list format as in the JSON encoding.\n\nSupported attributes for Invocation are BridgeWorkerID, ChannelID, OrganizationID, Permissions, SpaceID.\n\nThe whole string must be query-encoded.",
             "required": false,
             "schema": {
-              "pattern": "^\\s*(BridgeWorkerID|ChannelID|OrganizationID|SpaceID)\\s*(?:,\\s*(?:BridgeWorkerID|ChannelID|OrganizationID|SpaceID)\\s*)*$",
+              "pattern": "^\\s*(BridgeWorkerID|ChannelID|OrganizationID|Permissions|SpaceID)\\s*(?:,\\s*(?:BridgeWorkerID|ChannelID|OrganizationID|Permissions|SpaceID)\\s*)*$",
               "type": "string"
             }
           },
@@ -14030,10 +14030,10 @@
           {
             "name": "include",
             "in": "query",
-            "description": "Include clause for expanding related entities in the response for Invocation.\nThe attribute names are case-sensitive, PascalCase, and\nexpected in a comma-separated list format as in the JSON encoding.\n\nSupported attributes for Invocation are BridgeWorkerID, ChannelID, OrganizationID, SpaceID.\n\nThe whole string must be query-encoded.",
+            "description": "Include clause for expanding related entities in the response for Invocation.\nThe attribute names are case-sensitive, PascalCase, and\nexpected in a comma-separated list format as in the JSON encoding.\n\nSupported attributes for Invocation are BridgeWorkerID, ChannelID, OrganizationID, Permissions, SpaceID.\n\nThe whole string must be query-encoded.",
             "required": false,
             "schema": {
-              "pattern": "^\\s*(BridgeWorkerID|ChannelID|OrganizationID|SpaceID)\\s*(?:,\\s*(?:BridgeWorkerID|ChannelID|OrganizationID|SpaceID)\\s*)*$",
+              "pattern": "^\\s*(BridgeWorkerID|ChannelID|OrganizationID|Permissions|SpaceID)\\s*(?:,\\s*(?:BridgeWorkerID|ChannelID|OrganizationID|Permissions|SpaceID)\\s*)*$",
               "type": "string"
             }
           },
@@ -14242,10 +14242,10 @@
           {
             "name": "include",
             "in": "query",
-            "description": "Include clause for expanding related entities in the response for Invocation.\nThe attribute names are case-sensitive, PascalCase, and\nexpected in a comma-separated list format as in the JSON encoding.\n\nSupported attributes for Invocation are BridgeWorkerID, ChannelID, OrganizationID, SpaceID.\n\nThe whole string must be query-encoded.",
+            "description": "Include clause for expanding related entities in the response for Invocation.\nThe attribute names are case-sensitive, PascalCase, and\nexpected in a comma-separated list format as in the JSON encoding.\n\nSupported attributes for Invocation are BridgeWorkerID, ChannelID, OrganizationID, Permissions, SpaceID.\n\nThe whole string must be query-encoded.",
             "required": false,
             "schema": {
-              "pattern": "^\\s*(BridgeWorkerID|ChannelID|OrganizationID|SpaceID)\\s*(?:,\\s*(?:BridgeWorkerID|ChannelID|OrganizationID|SpaceID)\\s*)*$",
+              "pattern": "^\\s*(BridgeWorkerID|ChannelID|OrganizationID|Permissions|SpaceID)\\s*(?:,\\s*(?:BridgeWorkerID|ChannelID|OrganizationID|Permissions|SpaceID)\\s*)*$",
               "type": "string"
             }
           },
@@ -14565,10 +14565,10 @@
           {
             "name": "include",
             "in": "query",
-            "description": "Include clause for expanding related entities in the response for Invocation.\nThe attribute names are case-sensitive, PascalCase, and\nexpected in a comma-separated list format as in the JSON encoding.\n\nSupported attributes for Invocation are BridgeWorkerID, ChannelID, OrganizationID, SpaceID.\n\nThe whole string must be query-encoded.",
+            "description": "Include clause for expanding related entities in the response for Invocation.\nThe attribute names are case-sensitive, PascalCase, and\nexpected in a comma-separated list format as in the JSON encoding.\n\nSupported attributes for Invocation are BridgeWorkerID, ChannelID, OrganizationID, Permissions, SpaceID.\n\nThe whole string must be query-encoded.",
             "required": false,
             "schema": {
-              "pattern": "^\\s*(BridgeWorkerID|ChannelID|OrganizationID|SpaceID)\\s*(?:,\\s*(?:BridgeWorkerID|ChannelID|OrganizationID|SpaceID)\\s*)*$",
+              "pattern": "^\\s*(BridgeWorkerID|ChannelID|OrganizationID|Permissions|SpaceID)\\s*(?:,\\s*(?:BridgeWorkerID|ChannelID|OrganizationID|Permissions|SpaceID)\\s*)*$",
               "type": "string"
             }
           },
@@ -14971,10 +14971,10 @@
           {
             "name": "include",
             "in": "query",
-            "description": "Include clause for expanding related entities in the response for Invocation.\nThe attribute names are case-sensitive, PascalCase, and\nexpected in a comma-separated list format as in the JSON encoding.\n\nSupported attributes for Invocation are BridgeWorkerID, ChannelID, OrganizationID, SpaceID.\n\nThe whole string must be query-encoded.",
+            "description": "Include clause for expanding related entities in the response for Invocation.\nThe attribute names are case-sensitive, PascalCase, and\nexpected in a comma-separated list format as in the JSON encoding.\n\nSupported attributes for Invocation are BridgeWorkerID, ChannelID, OrganizationID, Permissions, SpaceID.\n\nThe whole string must be query-encoded.",
             "required": false,
             "schema": {
-              "pattern": "^\\s*(BridgeWorkerID|ChannelID|OrganizationID|SpaceID)\\s*(?:,\\s*(?:BridgeWorkerID|ChannelID|OrganizationID|SpaceID)\\s*)*$",
+              "pattern": "^\\s*(BridgeWorkerID|ChannelID|OrganizationID|Permissions|SpaceID)\\s*(?:,\\s*(?:BridgeWorkerID|ChannelID|OrganizationID|Permissions|SpaceID)\\s*)*$",
               "type": "string"
             }
           },
@@ -15145,10 +15145,10 @@
           {
             "name": "include",
             "in": "query",
-            "description": "Include clause for expanding related entities in the response for Link.\nThe attribute names are case-sensitive, PascalCase, and\nexpected in a comma-separated list format as in the JSON encoding.\n\nSupported attributes for Link are FromUnitID, OrganizationID, SpaceID, ToSpaceID, ToUnitID, TransformInvocationID.\n\nThe whole string must be query-encoded.",
+            "description": "Include clause for expanding related entities in the response for Link.\nThe attribute names are case-sensitive, PascalCase, and\nexpected in a comma-separated list format as in the JSON encoding.\n\nSupported attributes for Link are FromUnitID, OrganizationID, Permissions, SpaceID, ToSpaceID, ToUnitID, TransformInvocationID.\n\nThe whole string must be query-encoded.",
             "required": false,
             "schema": {
-              "pattern": "^\\s*(FromUnitID|OrganizationID|SpaceID|ToSpaceID|ToUnitID|TransformInvocationID)\\s*(?:,\\s*(?:FromUnitID|OrganizationID|SpaceID|ToSpaceID|ToUnitID|TransformInvocationID)\\s*)*$",
+              "pattern": "^\\s*(FromUnitID|OrganizationID|Permissions|SpaceID|ToSpaceID|ToUnitID|TransformInvocationID)\\s*(?:,\\s*(?:FromUnitID|OrganizationID|Permissions|SpaceID|ToSpaceID|ToUnitID|TransformInvocationID)\\s*)*$",
               "type": "string"
             }
           },
@@ -15338,10 +15338,10 @@
           {
             "name": "include",
             "in": "query",
-            "description": "Include clause for expanding related entities in the response for Link.\nThe attribute names are case-sensitive, PascalCase, and\nexpected in a comma-separated list format as in the JSON encoding.\n\nSupported attributes for Link are FromUnitID, OrganizationID, SpaceID, ToSpaceID, ToUnitID, TransformInvocationID.\n\nThe whole string must be query-encoded.",
+            "description": "Include clause for expanding related entities in the response for Link.\nThe attribute names are case-sensitive, PascalCase, and\nexpected in a comma-separated list format as in the JSON encoding.\n\nSupported attributes for Link are FromUnitID, OrganizationID, Permissions, SpaceID, ToSpaceID, ToUnitID, TransformInvocationID.\n\nThe whole string must be query-encoded.",
             "required": false,
             "schema": {
-              "pattern": "^\\s*(FromUnitID|OrganizationID|SpaceID|ToSpaceID|ToUnitID|TransformInvocationID)\\s*(?:,\\s*(?:FromUnitID|OrganizationID|SpaceID|ToSpaceID|ToUnitID|TransformInvocationID)\\s*)*$",
+              "pattern": "^\\s*(FromUnitID|OrganizationID|Permissions|SpaceID|ToSpaceID|ToUnitID|TransformInvocationID)\\s*(?:,\\s*(?:FromUnitID|OrganizationID|Permissions|SpaceID|ToSpaceID|ToUnitID|TransformInvocationID)\\s*)*$",
               "type": "string"
             }
           },
@@ -15550,10 +15550,10 @@
           {
             "name": "include",
             "in": "query",
-            "description": "Include clause for expanding related entities in the response for Link.\nThe attribute names are case-sensitive, PascalCase, and\nexpected in a comma-separated list format as in the JSON encoding.\n\nSupported attributes for Link are FromUnitID, OrganizationID, SpaceID, ToSpaceID, ToUnitID, TransformInvocationID.\n\nThe whole string must be query-encoded.",
+            "description": "Include clause for expanding related entities in the response for Link.\nThe attribute names are case-sensitive, PascalCase, and\nexpected in a comma-separated list format as in the JSON encoding.\n\nSupported attributes for Link are FromUnitID, OrganizationID, Permissions, SpaceID, ToSpaceID, ToUnitID, TransformInvocationID.\n\nThe whole string must be query-encoded.",
             "required": false,
             "schema": {
-              "pattern": "^\\s*(FromUnitID|OrganizationID|SpaceID|ToSpaceID|ToUnitID|TransformInvocationID)\\s*(?:,\\s*(?:FromUnitID|OrganizationID|SpaceID|ToSpaceID|ToUnitID|TransformInvocationID)\\s*)*$",
+              "pattern": "^\\s*(FromUnitID|OrganizationID|Permissions|SpaceID|ToSpaceID|ToUnitID|TransformInvocationID)\\s*(?:,\\s*(?:FromUnitID|OrganizationID|Permissions|SpaceID|ToSpaceID|ToUnitID|TransformInvocationID)\\s*)*$",
               "type": "string"
             }
           },
@@ -16969,9 +16969,10 @@
           {
             "name": "include",
             "in": "query",
-            "description": "Include clause for expanding related entities in the response for Organization.\nThe attribute names are case-sensitive, PascalCase, and\nexpected in a comma-separated list format as in the JSON encoding.\n\nSupported attributes for Organization are .\n\nThe whole string must be query-encoded.",
+            "description": "Include clause for expanding related entities in the response for Organization.\nThe attribute names are case-sensitive, PascalCase, and\nexpected in a comma-separated list format as in the JSON encoding.\n\nSupported attributes for Organization are Permissions.\n\nThe whole string must be query-encoded.",
             "required": false,
             "schema": {
+              "pattern": "^\\s*(Permissions)\\s*(?:,\\s*(?:Permissions)\\s*)*$",
               "type": "string"
             }
           },
@@ -17112,9 +17113,10 @@
           {
             "name": "include",
             "in": "query",
-            "description": "Include clause for expanding related entities in the response for Organization.\nThe attribute names are case-sensitive, PascalCase, and\nexpected in a comma-separated list format as in the JSON encoding.\n\nSupported attributes for Organization are .\n\nThe whole string must be query-encoded.",
+            "description": "Include clause for expanding related entities in the response for Organization.\nThe attribute names are case-sensitive, PascalCase, and\nexpected in a comma-separated list format as in the JSON encoding.\n\nSupported attributes for Organization are Permissions.\n\nThe whole string must be query-encoded.",
             "required": false,
             "schema": {
+              "pattern": "^\\s*(Permissions)\\s*(?:,\\s*(?:Permissions)\\s*)*$",
               "type": "string"
             }
           },
@@ -18183,10 +18185,10 @@
           {
             "name": "include",
             "in": "query",
-            "description": "Include clause for expanding related entities in the response for Release.\nThe attribute names are case-sensitive, PascalCase, and\nexpected in a comma-separated list format as in the JSON encoding.\n\nSupported attributes for Release are ChangeOrderID, OrganizationID, SpaceID, TagID, TargetID, UserID.\n\nThe whole string must be query-encoded.",
+            "description": "Include clause for expanding related entities in the response for Release.\nThe attribute names are case-sensitive, PascalCase, and\nexpected in a comma-separated list format as in the JSON encoding.\n\nSupported attributes for Release are ChangeOrderID, OrganizationID, Permissions, SpaceID, TagID, TargetID, UserID.\n\nThe whole string must be query-encoded.",
             "required": false,
             "schema": {
-              "pattern": "^\\s*(ChangeOrderID|OrganizationID|SpaceID|TagID|TargetID|UserID)\\s*(?:,\\s*(?:ChangeOrderID|OrganizationID|SpaceID|TagID|TargetID|UserID)\\s*)*$",
+              "pattern": "^\\s*(ChangeOrderID|OrganizationID|Permissions|SpaceID|TagID|TargetID|UserID)\\s*(?:,\\s*(?:ChangeOrderID|OrganizationID|Permissions|SpaceID|TagID|TargetID|UserID)\\s*)*$",
               "type": "string"
             }
           },
@@ -19945,10 +19947,10 @@
           {
             "name": "include",
             "in": "query",
-            "description": "Include clause for expanding related entities in the response for ServiceAccount.\nThe attribute names are case-sensitive, PascalCase, and\nexpected in a comma-separated list format as in the JSON encoding.\n\nSupported attributes for ServiceAccount are OrganizationID.\n\nThe whole string must be query-encoded.",
+            "description": "Include clause for expanding related entities in the response for ServiceAccount.\nThe attribute names are case-sensitive, PascalCase, and\nexpected in a comma-separated list format as in the JSON encoding.\n\nSupported attributes for ServiceAccount are OrganizationID, Permissions.\n\nThe whole string must be query-encoded.",
             "required": false,
             "schema": {
-              "pattern": "^\\s*(OrganizationID)\\s*(?:,\\s*(?:OrganizationID)\\s*)*$",
+              "pattern": "^\\s*(OrganizationID|Permissions)\\s*(?:,\\s*(?:OrganizationID|Permissions)\\s*)*$",
               "type": "string"
             }
           },
@@ -20355,10 +20357,10 @@
           {
             "name": "include",
             "in": "query",
-            "description": "Include clause for expanding related entities in the response for ServiceAccount.\nThe attribute names are case-sensitive, PascalCase, and\nexpected in a comma-separated list format as in the JSON encoding.\n\nSupported attributes for ServiceAccount are OrganizationID.\n\nThe whole string must be query-encoded.",
+            "description": "Include clause for expanding related entities in the response for ServiceAccount.\nThe attribute names are case-sensitive, PascalCase, and\nexpected in a comma-separated list format as in the JSON encoding.\n\nSupported attributes for ServiceAccount are OrganizationID, Permissions.\n\nThe whole string must be query-encoded.",
             "required": false,
             "schema": {
-              "pattern": "^\\s*(OrganizationID)\\s*(?:,\\s*(?:OrganizationID)\\s*)*$",
+              "pattern": "^\\s*(OrganizationID|Permissions)\\s*(?:,\\s*(?:OrganizationID|Permissions)\\s*)*$",
               "type": "string"
             }
           },
@@ -21953,10 +21955,10 @@
           {
             "name": "include",
             "in": "query",
-            "description": "Include clause for expanding related entities in the response for Space.\nThe attribute names are case-sensitive, PascalCase, and\nexpected in a comma-separated list format as in the JSON encoding.\n\nSupported attributes for Space are AttributeFilterID, AttributeIDs, ComponentID, OrganizationID, ReleaseTargetID, TriggerFilterID, TriggerIDs.\n\nThe whole string must be query-encoded.",
+            "description": "Include clause for expanding related entities in the response for Space.\nThe attribute names are case-sensitive, PascalCase, and\nexpected in a comma-separated list format as in the JSON encoding.\n\nSupported attributes for Space are AttributeFilterID, AttributeIDs, ComponentID, OrganizationID, Permissions, ReleaseTargetID, TriggerFilterID, TriggerIDs.\n\nThe whole string must be query-encoded.",
             "required": false,
             "schema": {
-              "pattern": "^\\s*(AttributeFilterID|AttributeIDs|ComponentID|OrganizationID|ReleaseTargetID|TriggerFilterID|TriggerIDs)\\s*(?:,\\s*(?:AttributeFilterID|AttributeIDs|ComponentID|OrganizationID|ReleaseTargetID|TriggerFilterID|TriggerIDs)\\s*)*$",
+              "pattern": "^\\s*(AttributeFilterID|AttributeIDs|ComponentID|OrganizationID|Permissions|ReleaseTargetID|TriggerFilterID|TriggerIDs)\\s*(?:,\\s*(?:AttributeFilterID|AttributeIDs|ComponentID|OrganizationID|Permissions|ReleaseTargetID|TriggerFilterID|TriggerIDs)\\s*)*$",
               "type": "string"
             }
           },
@@ -22424,10 +22426,10 @@
           {
             "name": "include",
             "in": "query",
-            "description": "Include clause for expanding related entities in the response for Space.\nThe attribute names are case-sensitive, PascalCase, and\nexpected in a comma-separated list format as in the JSON encoding.\n\nSupported attributes for Space are AttributeFilterID, AttributeIDs, ComponentID, OrganizationID, ReleaseTargetID, TriggerFilterID, TriggerIDs.\n\nThe whole string must be query-encoded.",
+            "description": "Include clause for expanding related entities in the response for Space.\nThe attribute names are case-sensitive, PascalCase, and\nexpected in a comma-separated list format as in the JSON encoding.\n\nSupported attributes for Space are AttributeFilterID, AttributeIDs, ComponentID, OrganizationID, Permissions, ReleaseTargetID, TriggerFilterID, TriggerIDs.\n\nThe whole string must be query-encoded.",
             "required": false,
             "schema": {
-              "pattern": "^\\s*(AttributeFilterID|AttributeIDs|ComponentID|OrganizationID|ReleaseTargetID|TriggerFilterID|TriggerIDs)\\s*(?:,\\s*(?:AttributeFilterID|AttributeIDs|ComponentID|OrganizationID|ReleaseTargetID|TriggerFilterID|TriggerIDs)\\s*)*$",
+              "pattern": "^\\s*(AttributeFilterID|AttributeIDs|ComponentID|OrganizationID|Permissions|ReleaseTargetID|TriggerFilterID|TriggerIDs)\\s*(?:,\\s*(?:AttributeFilterID|AttributeIDs|ComponentID|OrganizationID|Permissions|ReleaseTargetID|TriggerFilterID|TriggerIDs)\\s*)*$",
               "type": "string"
             }
           },
@@ -22934,10 +22936,10 @@
           {
             "name": "include",
             "in": "query",
-            "description": "Include clause for expanding related entities in the response for Attestation.\nThe attribute names are case-sensitive, PascalCase, and\nexpected in a comma-separated list format as in the JSON encoding.\n\nSupported attributes for Attestation are OrganizationID, SpaceID.\n\nThe whole string must be query-encoded.",
+            "description": "Include clause for expanding related entities in the response for Attestation.\nThe attribute names are case-sensitive, PascalCase, and\nexpected in a comma-separated list format as in the JSON encoding.\n\nSupported attributes for Attestation are OrganizationID, Permissions, SpaceID.\n\nThe whole string must be query-encoded.",
             "required": false,
             "schema": {
-              "pattern": "^\\s*(OrganizationID|SpaceID)\\s*(?:,\\s*(?:OrganizationID|SpaceID)\\s*)*$",
+              "pattern": "^\\s*(OrganizationID|Permissions|SpaceID)\\s*(?:,\\s*(?:OrganizationID|Permissions|SpaceID)\\s*)*$",
               "type": "string"
             }
           },
@@ -23242,10 +23244,10 @@
           {
             "name": "include",
             "in": "query",
-            "description": "Include clause for expanding related entities in the response for Attestation.\nThe attribute names are case-sensitive, PascalCase, and\nexpected in a comma-separated list format as in the JSON encoding.\n\nSupported attributes for Attestation are OrganizationID, SpaceID.\n\nThe whole string must be query-encoded.",
+            "description": "Include clause for expanding related entities in the response for Attestation.\nThe attribute names are case-sensitive, PascalCase, and\nexpected in a comma-separated list format as in the JSON encoding.\n\nSupported attributes for Attestation are OrganizationID, Permissions, SpaceID.\n\nThe whole string must be query-encoded.",
             "required": false,
             "schema": {
-              "pattern": "^\\s*(OrganizationID|SpaceID)\\s*(?:,\\s*(?:OrganizationID|SpaceID)\\s*)*$",
+              "pattern": "^\\s*(OrganizationID|Permissions|SpaceID)\\s*(?:,\\s*(?:OrganizationID|Permissions|SpaceID)\\s*)*$",
               "type": "string"
             }
           },
@@ -23392,10 +23394,10 @@
           {
             "name": "include",
             "in": "query",
-            "description": "Include clause for expanding related entities in the response for Attribute.\nThe attribute names are case-sensitive, PascalCase, and\nexpected in a comma-separated list format as in the JSON encoding.\n\nSupported attributes for Attribute are OrganizationID, SpaceID.\n\nThe whole string must be query-encoded.",
+            "description": "Include clause for expanding related entities in the response for Attribute.\nThe attribute names are case-sensitive, PascalCase, and\nexpected in a comma-separated list format as in the JSON encoding.\n\nSupported attributes for Attribute are OrganizationID, Permissions, SpaceID.\n\nThe whole string must be query-encoded.",
             "required": false,
             "schema": {
-              "pattern": "^\\s*(OrganizationID|SpaceID)\\s*(?:,\\s*(?:OrganizationID|SpaceID)\\s*)*$",
+              "pattern": "^\\s*(OrganizationID|Permissions|SpaceID)\\s*(?:,\\s*(?:OrganizationID|Permissions|SpaceID)\\s*)*$",
               "type": "string"
             }
           },
@@ -23840,10 +23842,10 @@
           {
             "name": "include",
             "in": "query",
-            "description": "Include clause for expanding related entities in the response for Attribute.\nThe attribute names are case-sensitive, PascalCase, and\nexpected in a comma-separated list format as in the JSON encoding.\n\nSupported attributes for Attribute are OrganizationID, SpaceID.\n\nThe whole string must be query-encoded.",
+            "description": "Include clause for expanding related entities in the response for Attribute.\nThe attribute names are case-sensitive, PascalCase, and\nexpected in a comma-separated list format as in the JSON encoding.\n\nSupported attributes for Attribute are OrganizationID, Permissions, SpaceID.\n\nThe whole string must be query-encoded.",
             "required": false,
             "schema": {
-              "pattern": "^\\s*(OrganizationID|SpaceID)\\s*(?:,\\s*(?:OrganizationID|SpaceID)\\s*)*$",
+              "pattern": "^\\s*(OrganizationID|Permissions|SpaceID)\\s*(?:,\\s*(?:OrganizationID|Permissions|SpaceID)\\s*)*$",
               "type": "string"
             }
           },
@@ -24576,10 +24578,10 @@
           {
             "name": "include",
             "in": "query",
-            "description": "Include clause for expanding related entities in the response for BridgeWorker.\nThe attribute names are case-sensitive, PascalCase, and\nexpected in a comma-separated list format as in the JSON encoding.\n\nSupported attributes for BridgeWorker are OrganizationID, SpaceID.\n\nThe whole string must be query-encoded.",
+            "description": "Include clause for expanding related entities in the response for BridgeWorker.\nThe attribute names are case-sensitive, PascalCase, and\nexpected in a comma-separated list format as in the JSON encoding.\n\nSupported attributes for BridgeWorker are OrganizationID, Permissions, SpaceID.\n\nThe whole string must be query-encoded.",
             "required": false,
             "schema": {
-              "pattern": "^\\s*(OrganizationID|SpaceID)\\s*(?:,\\s*(?:OrganizationID|SpaceID)\\s*)*$",
+              "pattern": "^\\s*(OrganizationID|Permissions|SpaceID)\\s*(?:,\\s*(?:OrganizationID|Permissions|SpaceID)\\s*)*$",
               "type": "string"
             }
           },
@@ -25032,10 +25034,10 @@
           {
             "name": "include",
             "in": "query",
-            "description": "Include clause for expanding related entities in the response for BridgeWorker.\nThe attribute names are case-sensitive, PascalCase, and\nexpected in a comma-separated list format as in the JSON encoding.\n\nSupported attributes for BridgeWorker are OrganizationID, SpaceID.\n\nThe whole string must be query-encoded.",
+            "description": "Include clause for expanding related entities in the response for BridgeWorker.\nThe attribute names are case-sensitive, PascalCase, and\nexpected in a comma-separated list format as in the JSON encoding.\n\nSupported attributes for BridgeWorker are OrganizationID, Permissions, SpaceID.\n\nThe whole string must be query-encoded.",
             "required": false,
             "schema": {
-              "pattern": "^\\s*(OrganizationID|SpaceID)\\s*(?:,\\s*(?:OrganizationID|SpaceID)\\s*)*$",
+              "pattern": "^\\s*(OrganizationID|Permissions|SpaceID)\\s*(?:,\\s*(?:OrganizationID|Permissions|SpaceID)\\s*)*$",
               "type": "string"
             }
           },
@@ -25782,10 +25784,10 @@
           {
             "name": "include",
             "in": "query",
-            "description": "Include clause for expanding related entities in the response for ChangeOrder.\nThe attribute names are case-sensitive, PascalCase, and\nexpected in a comma-separated list format as in the JSON encoding.\n\nSupported attributes for ChangeOrder are EndTagID, InvocationID, OrganizationID, ReleaseTagID, RestoreTagID, SpaceFilterID, SpaceID, StartTagID, UnitFilterID.\n\nThe whole string must be query-encoded.",
+            "description": "Include clause for expanding related entities in the response for ChangeOrder.\nThe attribute names are case-sensitive, PascalCase, and\nexpected in a comma-separated list format as in the JSON encoding.\n\nSupported attributes for ChangeOrder are EndTagID, InvocationID, OrganizationID, Permissions, ReleaseTagID, RestoreTagID, SpaceFilterID, SpaceID, StartTagID, UnitFilterID.\n\nThe whole string must be query-encoded.",
             "required": false,
             "schema": {
-              "pattern": "^\\s*(EndTagID|InvocationID|OrganizationID|ReleaseTagID|RestoreTagID|SpaceFilterID|SpaceID|StartTagID|UnitFilterID)\\s*(?:,\\s*(?:EndTagID|InvocationID|OrganizationID|ReleaseTagID|RestoreTagID|SpaceFilterID|SpaceID|StartTagID|UnitFilterID)\\s*)*$",
+              "pattern": "^\\s*(EndTagID|InvocationID|OrganizationID|Permissions|ReleaseTagID|RestoreTagID|SpaceFilterID|SpaceID|StartTagID|UnitFilterID)\\s*(?:,\\s*(?:EndTagID|InvocationID|OrganizationID|Permissions|ReleaseTagID|RestoreTagID|SpaceFilterID|SpaceID|StartTagID|UnitFilterID)\\s*)*$",
               "type": "string"
             }
           },
@@ -26230,10 +26232,10 @@
           {
             "name": "include",
             "in": "query",
-            "description": "Include clause for expanding related entities in the response for ChangeOrder.\nThe attribute names are case-sensitive, PascalCase, and\nexpected in a comma-separated list format as in the JSON encoding.\n\nSupported attributes for ChangeOrder are EndTagID, InvocationID, OrganizationID, ReleaseTagID, RestoreTagID, SpaceFilterID, SpaceID, StartTagID, UnitFilterID.\n\nThe whole string must be query-encoded.",
+            "description": "Include clause for expanding related entities in the response for ChangeOrder.\nThe attribute names are case-sensitive, PascalCase, and\nexpected in a comma-separated list format as in the JSON encoding.\n\nSupported attributes for ChangeOrder are EndTagID, InvocationID, OrganizationID, Permissions, ReleaseTagID, RestoreTagID, SpaceFilterID, SpaceID, StartTagID, UnitFilterID.\n\nThe whole string must be query-encoded.",
             "required": false,
             "schema": {
-              "pattern": "^\\s*(EndTagID|InvocationID|OrganizationID|ReleaseTagID|RestoreTagID|SpaceFilterID|SpaceID|StartTagID|UnitFilterID)\\s*(?:,\\s*(?:EndTagID|InvocationID|OrganizationID|ReleaseTagID|RestoreTagID|SpaceFilterID|SpaceID|StartTagID|UnitFilterID)\\s*)*$",
+              "pattern": "^\\s*(EndTagID|InvocationID|OrganizationID|Permissions|ReleaseTagID|RestoreTagID|SpaceFilterID|SpaceID|StartTagID|UnitFilterID)\\s*(?:,\\s*(?:EndTagID|InvocationID|OrganizationID|Permissions|ReleaseTagID|RestoreTagID|SpaceFilterID|SpaceID|StartTagID|UnitFilterID)\\s*)*$",
               "type": "string"
             }
           },
@@ -26929,10 +26931,10 @@
           {
             "name": "include",
             "in": "query",
-            "description": "Include clause for expanding related entities in the response for ChangeSet.\nThe attribute names are case-sensitive, PascalCase, and\nexpected in a comma-separated list format as in the JSON encoding.\n\nSupported attributes for ChangeSet are EndTagID, OrganizationID, SpaceID, StartTagID.\n\nThe whole string must be query-encoded.",
+            "description": "Include clause for expanding related entities in the response for ChangeSet.\nThe attribute names are case-sensitive, PascalCase, and\nexpected in a comma-separated list format as in the JSON encoding.\n\nSupported attributes for ChangeSet are EndTagID, OrganizationID, Permissions, SpaceID, StartTagID.\n\nThe whole string must be query-encoded.",
             "required": false,
             "schema": {
-              "pattern": "^\\s*(EndTagID|OrganizationID|SpaceID|StartTagID)\\s*(?:,\\s*(?:EndTagID|OrganizationID|SpaceID|StartTagID)\\s*)*$",
+              "pattern": "^\\s*(EndTagID|OrganizationID|Permissions|SpaceID|StartTagID)\\s*(?:,\\s*(?:EndTagID|OrganizationID|Permissions|SpaceID|StartTagID)\\s*)*$",
               "type": "string"
             }
           },
@@ -27377,10 +27379,10 @@
           {
             "name": "include",
             "in": "query",
-            "description": "Include clause for expanding related entities in the response for ChangeSet.\nThe attribute names are case-sensitive, PascalCase, and\nexpected in a comma-separated list format as in the JSON encoding.\n\nSupported attributes for ChangeSet are EndTagID, OrganizationID, SpaceID, StartTagID.\n\nThe whole string must be query-encoded.",
+            "description": "Include clause for expanding related entities in the response for ChangeSet.\nThe attribute names are case-sensitive, PascalCase, and\nexpected in a comma-separated list format as in the JSON encoding.\n\nSupported attributes for ChangeSet are EndTagID, OrganizationID, Permissions, SpaceID, StartTagID.\n\nThe whole string must be query-encoded.",
             "required": false,
             "schema": {
-              "pattern": "^\\s*(EndTagID|OrganizationID|SpaceID|StartTagID)\\s*(?:,\\s*(?:EndTagID|OrganizationID|SpaceID|StartTagID)\\s*)*$",
+              "pattern": "^\\s*(EndTagID|OrganizationID|Permissions|SpaceID|StartTagID)\\s*(?:,\\s*(?:EndTagID|OrganizationID|Permissions|SpaceID|StartTagID)\\s*)*$",
               "type": "string"
             }
           },
@@ -27866,10 +27868,10 @@
           {
             "name": "include",
             "in": "query",
-            "description": "Include clause for expanding related entities in the response for ChangeWorkflow.\nThe attribute names are case-sensitive, PascalCase, and\nexpected in a comma-separated list format as in the JSON encoding.\n\nSupported attributes for ChangeWorkflow are OrganizationID, SpaceID.\n\nThe whole string must be query-encoded.",
+            "description": "Include clause for expanding related entities in the response for ChangeWorkflow.\nThe attribute names are case-sensitive, PascalCase, and\nexpected in a comma-separated list format as in the JSON encoding.\n\nSupported attributes for ChangeWorkflow are OrganizationID, Permissions, SpaceID.\n\nThe whole string must be query-encoded.",
             "required": false,
             "schema": {
-              "pattern": "^\\s*(OrganizationID|SpaceID)\\s*(?:,\\s*(?:OrganizationID|SpaceID)\\s*)*$",
+              "pattern": "^\\s*(OrganizationID|Permissions|SpaceID)\\s*(?:,\\s*(?:OrganizationID|Permissions|SpaceID)\\s*)*$",
               "type": "string"
             }
           },
@@ -28314,10 +28316,10 @@
           {
             "name": "include",
             "in": "query",
-            "description": "Include clause for expanding related entities in the response for ChangeWorkflow.\nThe attribute names are case-sensitive, PascalCase, and\nexpected in a comma-separated list format as in the JSON encoding.\n\nSupported attributes for ChangeWorkflow are OrganizationID, SpaceID.\n\nThe whole string must be query-encoded.",
+            "description": "Include clause for expanding related entities in the response for ChangeWorkflow.\nThe attribute names are case-sensitive, PascalCase, and\nexpected in a comma-separated list format as in the JSON encoding.\n\nSupported attributes for ChangeWorkflow are OrganizationID, Permissions, SpaceID.\n\nThe whole string must be query-encoded.",
             "required": false,
             "schema": {
-              "pattern": "^\\s*(OrganizationID|SpaceID)\\s*(?:,\\s*(?:OrganizationID|SpaceID)\\s*)*$",
+              "pattern": "^\\s*(OrganizationID|Permissions|SpaceID)\\s*(?:,\\s*(?:OrganizationID|Permissions|SpaceID)\\s*)*$",
               "type": "string"
             }
           },
@@ -29049,10 +29051,10 @@
           {
             "name": "include",
             "in": "query",
-            "description": "Include clause for expanding related entities in the response for Channel.\nThe attribute names are case-sensitive, PascalCase, and\nexpected in a comma-separated list format as in the JSON encoding.\n\nSupported attributes for Channel are OrganizationID, SpaceID.\n\nThe whole string must be query-encoded.",
+            "description": "Include clause for expanding related entities in the response for Channel.\nThe attribute names are case-sensitive, PascalCase, and\nexpected in a comma-separated list format as in the JSON encoding.\n\nSupported attributes for Channel are OrganizationID, Permissions, SpaceID.\n\nThe whole string must be query-encoded.",
             "required": false,
             "schema": {
-              "pattern": "^\\s*(OrganizationID|SpaceID)\\s*(?:,\\s*(?:OrganizationID|SpaceID)\\s*)*$",
+              "pattern": "^\\s*(OrganizationID|Permissions|SpaceID)\\s*(?:,\\s*(?:OrganizationID|Permissions|SpaceID)\\s*)*$",
               "type": "string"
             }
           },
@@ -29498,10 +29500,10 @@
           {
             "name": "include",
             "in": "query",
-            "description": "Include clause for expanding related entities in the response for Channel.\nThe attribute names are case-sensitive, PascalCase, and\nexpected in a comma-separated list format as in the JSON encoding.\n\nSupported attributes for Channel are OrganizationID, SpaceID.\n\nThe whole string must be query-encoded.",
+            "description": "Include clause for expanding related entities in the response for Channel.\nThe attribute names are case-sensitive, PascalCase, and\nexpected in a comma-separated list format as in the JSON encoding.\n\nSupported attributes for Channel are OrganizationID, Permissions, SpaceID.\n\nThe whole string must be query-encoded.",
             "required": false,
             "schema": {
-              "pattern": "^\\s*(OrganizationID|SpaceID)\\s*(?:,\\s*(?:OrganizationID|SpaceID)\\s*)*$",
+              "pattern": "^\\s*(OrganizationID|Permissions|SpaceID)\\s*(?:,\\s*(?:OrganizationID|Permissions|SpaceID)\\s*)*$",
               "type": "string"
             }
           },
@@ -31640,10 +31642,10 @@
           {
             "name": "include",
             "in": "query",
-            "description": "Include clause for expanding related entities in the response for Filter.\nThe attribute names are case-sensitive, PascalCase, and\nexpected in a comma-separated list format as in the JSON encoding.\n\nSupported attributes for Filter are FromSpaceID, OrganizationID, SpaceID.\n\nThe whole string must be query-encoded.",
+            "description": "Include clause for expanding related entities in the response for Filter.\nThe attribute names are case-sensitive, PascalCase, and\nexpected in a comma-separated list format as in the JSON encoding.\n\nSupported attributes for Filter are FromSpaceID, OrganizationID, Permissions, SpaceID.\n\nThe whole string must be query-encoded.",
             "required": false,
             "schema": {
-              "pattern": "^\\s*(FromSpaceID|OrganizationID|SpaceID)\\s*(?:,\\s*(?:FromSpaceID|OrganizationID|SpaceID)\\s*)*$",
+              "pattern": "^\\s*(FromSpaceID|OrganizationID|Permissions|SpaceID)\\s*(?:,\\s*(?:FromSpaceID|OrganizationID|Permissions|SpaceID)\\s*)*$",
               "type": "string"
             }
           },
@@ -32106,10 +32108,10 @@
           {
             "name": "include",
             "in": "query",
-            "description": "Include clause for expanding related entities in the response for Filter.\nThe attribute names are case-sensitive, PascalCase, and\nexpected in a comma-separated list format as in the JSON encoding.\n\nSupported attributes for Filter are FromSpaceID, OrganizationID, SpaceID.\n\nThe whole string must be query-encoded.",
+            "description": "Include clause for expanding related entities in the response for Filter.\nThe attribute names are case-sensitive, PascalCase, and\nexpected in a comma-separated list format as in the JSON encoding.\n\nSupported attributes for Filter are FromSpaceID, OrganizationID, Permissions, SpaceID.\n\nThe whole string must be query-encoded.",
             "required": false,
             "schema": {
-              "pattern": "^\\s*(FromSpaceID|OrganizationID|SpaceID)\\s*(?:,\\s*(?:FromSpaceID|OrganizationID|SpaceID)\\s*)*$",
+              "pattern": "^\\s*(FromSpaceID|OrganizationID|Permissions|SpaceID)\\s*(?:,\\s*(?:FromSpaceID|OrganizationID|Permissions|SpaceID)\\s*)*$",
               "type": "string"
             }
           },
@@ -33330,10 +33332,10 @@
           {
             "name": "include",
             "in": "query",
-            "description": "Include clause for expanding related entities in the response for Invocation.\nThe attribute names are case-sensitive, PascalCase, and\nexpected in a comma-separated list format as in the JSON encoding.\n\nSupported attributes for Invocation are BridgeWorkerID, ChannelID, OrganizationID, SpaceID.\n\nThe whole string must be query-encoded.",
+            "description": "Include clause for expanding related entities in the response for Invocation.\nThe attribute names are case-sensitive, PascalCase, and\nexpected in a comma-separated list format as in the JSON encoding.\n\nSupported attributes for Invocation are BridgeWorkerID, ChannelID, OrganizationID, Permissions, SpaceID.\n\nThe whole string must be query-encoded.",
             "required": false,
             "schema": {
-              "pattern": "^\\s*(BridgeWorkerID|ChannelID|OrganizationID|SpaceID)\\s*(?:,\\s*(?:BridgeWorkerID|ChannelID|OrganizationID|SpaceID)\\s*)*$",
+              "pattern": "^\\s*(BridgeWorkerID|ChannelID|OrganizationID|Permissions|SpaceID)\\s*(?:,\\s*(?:BridgeWorkerID|ChannelID|OrganizationID|Permissions|SpaceID)\\s*)*$",
               "type": "string"
             }
           },
@@ -33778,10 +33780,10 @@
           {
             "name": "include",
             "in": "query",
-            "description": "Include clause for expanding related entities in the response for Invocation.\nThe attribute names are case-sensitive, PascalCase, and\nexpected in a comma-separated list format as in the JSON encoding.\n\nSupported attributes for Invocation are BridgeWorkerID, ChannelID, OrganizationID, SpaceID.\n\nThe whole string must be query-encoded.",
+            "description": "Include clause for expanding related entities in the response for Invocation.\nThe attribute names are case-sensitive, PascalCase, and\nexpected in a comma-separated list format as in the JSON encoding.\n\nSupported attributes for Invocation are BridgeWorkerID, ChannelID, OrganizationID, Permissions, SpaceID.\n\nThe whole string must be query-encoded.",
             "required": false,
             "schema": {
-              "pattern": "^\\s*(BridgeWorkerID|ChannelID|OrganizationID|SpaceID)\\s*(?:,\\s*(?:BridgeWorkerID|ChannelID|OrganizationID|SpaceID)\\s*)*$",
+              "pattern": "^\\s*(BridgeWorkerID|ChannelID|OrganizationID|Permissions|SpaceID)\\s*(?:,\\s*(?:BridgeWorkerID|ChannelID|OrganizationID|Permissions|SpaceID)\\s*)*$",
               "type": "string"
             }
           },
@@ -34516,10 +34518,10 @@
           {
             "name": "include",
             "in": "query",
-            "description": "Include clause for expanding related entities in the response for Link.\nThe attribute names are case-sensitive, PascalCase, and\nexpected in a comma-separated list format as in the JSON encoding.\n\nSupported attributes for Link are FromUnitID, OrganizationID, SpaceID, ToSpaceID, ToUnitID, TransformInvocationID.\n\nThe whole string must be query-encoded.",
+            "description": "Include clause for expanding related entities in the response for Link.\nThe attribute names are case-sensitive, PascalCase, and\nexpected in a comma-separated list format as in the JSON encoding.\n\nSupported attributes for Link are FromUnitID, OrganizationID, Permissions, SpaceID, ToSpaceID, ToUnitID, TransformInvocationID.\n\nThe whole string must be query-encoded.",
             "required": false,
             "schema": {
-              "pattern": "^\\s*(FromUnitID|OrganizationID|SpaceID|ToSpaceID|ToUnitID|TransformInvocationID)\\s*(?:,\\s*(?:FromUnitID|OrganizationID|SpaceID|ToSpaceID|ToUnitID|TransformInvocationID)\\s*)*$",
+              "pattern": "^\\s*(FromUnitID|OrganizationID|Permissions|SpaceID|ToSpaceID|ToUnitID|TransformInvocationID)\\s*(?:,\\s*(?:FromUnitID|OrganizationID|Permissions|SpaceID|ToSpaceID|ToUnitID|TransformInvocationID)\\s*)*$",
               "type": "string"
             }
           },
@@ -34964,10 +34966,10 @@
           {
             "name": "include",
             "in": "query",
-            "description": "Include clause for expanding related entities in the response for Link.\nThe attribute names are case-sensitive, PascalCase, and\nexpected in a comma-separated list format as in the JSON encoding.\n\nSupported attributes for Link are FromUnitID, OrganizationID, SpaceID, ToSpaceID, ToUnitID, TransformInvocationID.\n\nThe whole string must be query-encoded.",
+            "description": "Include clause for expanding related entities in the response for Link.\nThe attribute names are case-sensitive, PascalCase, and\nexpected in a comma-separated list format as in the JSON encoding.\n\nSupported attributes for Link are FromUnitID, OrganizationID, Permissions, SpaceID, ToSpaceID, ToUnitID, TransformInvocationID.\n\nThe whole string must be query-encoded.",
             "required": false,
             "schema": {
-              "pattern": "^\\s*(FromUnitID|OrganizationID|SpaceID|ToSpaceID|ToUnitID|TransformInvocationID)\\s*(?:,\\s*(?:FromUnitID|OrganizationID|SpaceID|ToSpaceID|ToUnitID|TransformInvocationID)\\s*)*$",
+              "pattern": "^\\s*(FromUnitID|OrganizationID|Permissions|SpaceID|ToSpaceID|ToUnitID|TransformInvocationID)\\s*(?:,\\s*(?:FromUnitID|OrganizationID|Permissions|SpaceID|ToSpaceID|ToUnitID|TransformInvocationID)\\s*)*$",
               "type": "string"
             }
           },
@@ -35808,10 +35810,10 @@
           {
             "name": "include",
             "in": "query",
-            "description": "Include clause for expanding related entities in the response for Release.\nThe attribute names are case-sensitive, PascalCase, and\nexpected in a comma-separated list format as in the JSON encoding.\n\nSupported attributes for Release are ChangeOrderID, OrganizationID, SpaceID, TagID, TargetID, UserID.\n\nThe whole string must be query-encoded.",
+            "description": "Include clause for expanding related entities in the response for Release.\nThe attribute names are case-sensitive, PascalCase, and\nexpected in a comma-separated list format as in the JSON encoding.\n\nSupported attributes for Release are ChangeOrderID, OrganizationID, Permissions, SpaceID, TagID, TargetID, UserID.\n\nThe whole string must be query-encoded.",
             "required": false,
             "schema": {
-              "pattern": "^\\s*(ChangeOrderID|OrganizationID|SpaceID|TagID|TargetID|UserID)\\s*(?:,\\s*(?:ChangeOrderID|OrganizationID|SpaceID|TagID|TargetID|UserID)\\s*)*$",
+              "pattern": "^\\s*(ChangeOrderID|OrganizationID|Permissions|SpaceID|TagID|TargetID|UserID)\\s*(?:,\\s*(?:ChangeOrderID|OrganizationID|Permissions|SpaceID|TagID|TargetID|UserID)\\s*)*$",
               "type": "string"
             }
           },
@@ -36248,10 +36250,10 @@
           {
             "name": "include",
             "in": "query",
-            "description": "Include clause for expanding related entities in the response for Release.\nThe attribute names are case-sensitive, PascalCase, and\nexpected in a comma-separated list format as in the JSON encoding.\n\nSupported attributes for Release are ChangeOrderID, OrganizationID, SpaceID, TagID, TargetID, UserID.\n\nThe whole string must be query-encoded.",
+            "description": "Include clause for expanding related entities in the response for Release.\nThe attribute names are case-sensitive, PascalCase, and\nexpected in a comma-separated list format as in the JSON encoding.\n\nSupported attributes for Release are ChangeOrderID, OrganizationID, Permissions, SpaceID, TagID, TargetID, UserID.\n\nThe whole string must be query-encoded.",
             "required": false,
             "schema": {
-              "pattern": "^\\s*(ChangeOrderID|OrganizationID|SpaceID|TagID|TargetID|UserID)\\s*(?:,\\s*(?:ChangeOrderID|OrganizationID|SpaceID|TagID|TargetID|UserID)\\s*)*$",
+              "pattern": "^\\s*(ChangeOrderID|OrganizationID|Permissions|SpaceID|TagID|TargetID|UserID)\\s*(?:,\\s*(?:ChangeOrderID|OrganizationID|Permissions|SpaceID|TagID|TargetID|UserID)\\s*)*$",
               "type": "string"
             }
           },
@@ -36941,10 +36943,10 @@
           {
             "name": "include",
             "in": "query",
-            "description": "Include clause for expanding related entities in the response for Tag.\nThe attribute names are case-sensitive, PascalCase, and\nexpected in a comma-separated list format as in the JSON encoding.\n\nSupported attributes for Tag are ChangeSetID, OrganizationID, SpaceID.\n\nThe whole string must be query-encoded.",
+            "description": "Include clause for expanding related entities in the response for Tag.\nThe attribute names are case-sensitive, PascalCase, and\nexpected in a comma-separated list format as in the JSON encoding.\n\nSupported attributes for Tag are ChangeSetID, OrganizationID, Permissions, SpaceID.\n\nThe whole string must be query-encoded.",
             "required": false,
             "schema": {
-              "pattern": "^\\s*(ChangeSetID|OrganizationID|SpaceID)\\s*(?:,\\s*(?:ChangeSetID|OrganizationID|SpaceID)\\s*)*$",
+              "pattern": "^\\s*(ChangeSetID|OrganizationID|Permissions|SpaceID)\\s*(?:,\\s*(?:ChangeSetID|OrganizationID|Permissions|SpaceID)\\s*)*$",
               "type": "string"
             }
           },
@@ -37389,10 +37391,10 @@
           {
             "name": "include",
             "in": "query",
-            "description": "Include clause for expanding related entities in the response for Tag.\nThe attribute names are case-sensitive, PascalCase, and\nexpected in a comma-separated list format as in the JSON encoding.\n\nSupported attributes for Tag are ChangeSetID, OrganizationID, SpaceID.\n\nThe whole string must be query-encoded.",
+            "description": "Include clause for expanding related entities in the response for Tag.\nThe attribute names are case-sensitive, PascalCase, and\nexpected in a comma-separated list format as in the JSON encoding.\n\nSupported attributes for Tag are ChangeSetID, OrganizationID, Permissions, SpaceID.\n\nThe whole string must be query-encoded.",
             "required": false,
             "schema": {
-              "pattern": "^\\s*(ChangeSetID|OrganizationID|SpaceID)\\s*(?:,\\s*(?:ChangeSetID|OrganizationID|SpaceID)\\s*)*$",
+              "pattern": "^\\s*(ChangeSetID|OrganizationID|Permissions|SpaceID)\\s*(?:,\\s*(?:ChangeSetID|OrganizationID|Permissions|SpaceID)\\s*)*$",
               "type": "string"
             }
           },
@@ -37858,10 +37860,10 @@
           {
             "name": "include",
             "in": "query",
-            "description": "Include clause for expanding related entities in the response for Target.\nThe attribute names are case-sensitive, PascalCase, and\nexpected in a comma-separated list format as in the JSON encoding.\n\nSupported attributes for Target are OrganizationID, SpaceID, TriggerFilterID, TriggerIDs.\n\nThe whole string must be query-encoded.",
+            "description": "Include clause for expanding related entities in the response for Target.\nThe attribute names are case-sensitive, PascalCase, and\nexpected in a comma-separated list format as in the JSON encoding.\n\nSupported attributes for Target are OrganizationID, Permissions, SpaceID, TriggerFilterID, TriggerIDs.\n\nThe whole string must be query-encoded.",
             "required": false,
             "schema": {
-              "pattern": "^\\s*(OrganizationID|SpaceID|TriggerFilterID|TriggerIDs)\\s*(?:,\\s*(?:OrganizationID|SpaceID|TriggerFilterID|TriggerIDs)\\s*)*$",
+              "pattern": "^\\s*(OrganizationID|Permissions|SpaceID|TriggerFilterID|TriggerIDs)\\s*(?:,\\s*(?:OrganizationID|Permissions|SpaceID|TriggerFilterID|TriggerIDs)\\s*)*$",
               "type": "string"
             }
           },
@@ -38323,10 +38325,10 @@
           {
             "name": "include",
             "in": "query",
-            "description": "Include clause for expanding related entities in the response for Target.\nThe attribute names are case-sensitive, PascalCase, and\nexpected in a comma-separated list format as in the JSON encoding.\n\nSupported attributes for Target are OrganizationID, SpaceID, TriggerFilterID, TriggerIDs.\n\nThe whole string must be query-encoded.",
+            "description": "Include clause for expanding related entities in the response for Target.\nThe attribute names are case-sensitive, PascalCase, and\nexpected in a comma-separated list format as in the JSON encoding.\n\nSupported attributes for Target are OrganizationID, Permissions, SpaceID, TriggerFilterID, TriggerIDs.\n\nThe whole string must be query-encoded.",
             "required": false,
             "schema": {
-              "pattern": "^\\s*(OrganizationID|SpaceID|TriggerFilterID|TriggerIDs)\\s*(?:,\\s*(?:OrganizationID|SpaceID|TriggerFilterID|TriggerIDs)\\s*)*$",
+              "pattern": "^\\s*(OrganizationID|Permissions|SpaceID|TriggerFilterID|TriggerIDs)\\s*(?:,\\s*(?:OrganizationID|Permissions|SpaceID|TriggerFilterID|TriggerIDs)\\s*)*$",
               "type": "string"
             }
           },
@@ -39064,10 +39066,10 @@
           {
             "name": "include",
             "in": "query",
-            "description": "Include clause for expanding related entities in the response for Trigger.\nThe attribute names are case-sensitive, PascalCase, and\nexpected in a comma-separated list format as in the JSON encoding.\n\nSupported attributes for Trigger are BridgeWorkerID, ChannelID, InvocationID, OrganizationID, SpaceID, UnitFilterID.\n\nThe whole string must be query-encoded.",
+            "description": "Include clause for expanding related entities in the response for Trigger.\nThe attribute names are case-sensitive, PascalCase, and\nexpected in a comma-separated list format as in the JSON encoding.\n\nSupported attributes for Trigger are BridgeWorkerID, ChannelID, InvocationID, OrganizationID, Permissions, SpaceID, UnitFilterID.\n\nThe whole string must be query-encoded.",
             "required": false,
             "schema": {
-              "pattern": "^\\s*(BridgeWorkerID|ChannelID|InvocationID|OrganizationID|SpaceID|UnitFilterID)\\s*(?:,\\s*(?:BridgeWorkerID|ChannelID|InvocationID|OrganizationID|SpaceID|UnitFilterID)\\s*)*$",
+              "pattern": "^\\s*(BridgeWorkerID|ChannelID|InvocationID|OrganizationID|Permissions|SpaceID|UnitFilterID)\\s*(?:,\\s*(?:BridgeWorkerID|ChannelID|InvocationID|OrganizationID|Permissions|SpaceID|UnitFilterID)\\s*)*$",
               "type": "string"
             }
           },
@@ -39512,10 +39514,10 @@
           {
             "name": "include",
             "in": "query",
-            "description": "Include clause for expanding related entities in the response for Trigger.\nThe attribute names are case-sensitive, PascalCase, and\nexpected in a comma-separated list format as in the JSON encoding.\n\nSupported attributes for Trigger are BridgeWorkerID, ChannelID, InvocationID, OrganizationID, SpaceID, UnitFilterID.\n\nThe whole string must be query-encoded.",
+            "description": "Include clause for expanding related entities in the response for Trigger.\nThe attribute names are case-sensitive, PascalCase, and\nexpected in a comma-separated list format as in the JSON encoding.\n\nSupported attributes for Trigger are BridgeWorkerID, ChannelID, InvocationID, OrganizationID, Permissions, SpaceID, UnitFilterID.\n\nThe whole string must be query-encoded.",
             "required": false,
             "schema": {
-              "pattern": "^\\s*(BridgeWorkerID|ChannelID|InvocationID|OrganizationID|SpaceID|UnitFilterID)\\s*(?:,\\s*(?:BridgeWorkerID|ChannelID|InvocationID|OrganizationID|SpaceID|UnitFilterID)\\s*)*$",
+              "pattern": "^\\s*(BridgeWorkerID|ChannelID|InvocationID|OrganizationID|Permissions|SpaceID|UnitFilterID)\\s*(?:,\\s*(?:BridgeWorkerID|ChannelID|InvocationID|OrganizationID|Permissions|SpaceID|UnitFilterID)\\s*)*$",
               "type": "string"
             }
           },
@@ -40321,10 +40323,10 @@
           {
             "name": "include",
             "in": "query",
-            "description": "Include clause for expanding related entities in the response for Unit.\nThe attribute names are case-sensitive, PascalCase, and\nexpected in a comma-separated list format as in the JSON encoding.\n\nSupported attributes for Unit are ChangeSetID, FromLinkID, HeadMutationNum, HeadRevisionNum, LastReleasedRevisionNum, OrganizationID, SpaceID, TargetID, UnitEventID, UpstreamSpaceID, UpstreamUnitID.\n\nThe whole string must be query-encoded.",
+            "description": "Include clause for expanding related entities in the response for Unit.\nThe attribute names are case-sensitive, PascalCase, and\nexpected in a comma-separated list format as in the JSON encoding.\n\nSupported attributes for Unit are ChangeSetID, FromLinkID, HeadMutationNum, HeadRevisionNum, LastReleasedRevisionNum, OrganizationID, Permissions, SpaceID, TargetID, UnitEventID, UpstreamSpaceID, UpstreamUnitID.\n\nThe whole string must be query-encoded.",
             "required": false,
             "schema": {
-              "pattern": "^\\s*(ChangeSetID|FromLinkID|HeadMutationNum|HeadRevisionNum|LastReleasedRevisionNum|OrganizationID|SpaceID|TargetID|UnitEventID|UpstreamSpaceID|UpstreamUnitID)\\s*(?:,\\s*(?:ChangeSetID|FromLinkID|HeadMutationNum|HeadRevisionNum|LastReleasedRevisionNum|OrganizationID|SpaceID|TargetID|UnitEventID|UpstreamSpaceID|UpstreamUnitID)\\s*)*$",
+              "pattern": "^\\s*(ChangeSetID|FromLinkID|HeadMutationNum|HeadRevisionNum|LastReleasedRevisionNum|OrganizationID|Permissions|SpaceID|TargetID|UnitEventID|UpstreamSpaceID|UpstreamUnitID)\\s*(?:,\\s*(?:ChangeSetID|FromLinkID|HeadMutationNum|HeadRevisionNum|LastReleasedRevisionNum|OrganizationID|Permissions|SpaceID|TargetID|UnitEventID|UpstreamSpaceID|UpstreamUnitID)\\s*)*$",
               "type": "string"
             }
           },
@@ -40903,10 +40905,10 @@
           {
             "name": "include",
             "in": "query",
-            "description": "Include clause for expanding related entities in the response for Unit.\nThe attribute names are case-sensitive, PascalCase, and\nexpected in a comma-separated list format as in the JSON encoding.\n\nSupported attributes for Unit are ChangeSetID, FromLinkID, HeadMutationNum, HeadRevisionNum, LastReleasedRevisionNum, OrganizationID, SpaceID, TargetID, UnitEventID, UpstreamSpaceID, UpstreamUnitID.\n\nThe whole string must be query-encoded.",
+            "description": "Include clause for expanding related entities in the response for Unit.\nThe attribute names are case-sensitive, PascalCase, and\nexpected in a comma-separated list format as in the JSON encoding.\n\nSupported attributes for Unit are ChangeSetID, FromLinkID, HeadMutationNum, HeadRevisionNum, LastReleasedRevisionNum, OrganizationID, Permissions, SpaceID, TargetID, UnitEventID, UpstreamSpaceID, UpstreamUnitID.\n\nThe whole string must be query-encoded.",
             "required": false,
             "schema": {
-              "pattern": "^\\s*(ChangeSetID|FromLinkID|HeadMutationNum|HeadRevisionNum|LastReleasedRevisionNum|OrganizationID|SpaceID|TargetID|UnitEventID|UpstreamSpaceID|UpstreamUnitID)\\s*(?:,\\s*(?:ChangeSetID|FromLinkID|HeadMutationNum|HeadRevisionNum|LastReleasedRevisionNum|OrganizationID|SpaceID|TargetID|UnitEventID|UpstreamSpaceID|UpstreamUnitID)\\s*)*$",
+              "pattern": "^\\s*(ChangeSetID|FromLinkID|HeadMutationNum|HeadRevisionNum|LastReleasedRevisionNum|OrganizationID|Permissions|SpaceID|TargetID|UnitEventID|UpstreamSpaceID|UpstreamUnitID)\\s*(?:,\\s*(?:ChangeSetID|FromLinkID|HeadMutationNum|HeadRevisionNum|LastReleasedRevisionNum|OrganizationID|Permissions|SpaceID|TargetID|UnitEventID|UpstreamSpaceID|UpstreamUnitID)\\s*)*$",
               "type": "string"
             }
           },
@@ -45730,10 +45732,10 @@
           {
             "name": "include",
             "in": "query",
-            "description": "Include clause for expanding related entities in the response for View.\nThe attribute names are case-sensitive, PascalCase, and\nexpected in a comma-separated list format as in the JSON encoding.\n\nSupported attributes for View are FilterID, OrganizationID, SpaceID.\n\nThe whole string must be query-encoded.",
+            "description": "Include clause for expanding related entities in the response for View.\nThe attribute names are case-sensitive, PascalCase, and\nexpected in a comma-separated list format as in the JSON encoding.\n\nSupported attributes for View are FilterID, OrganizationID, Permissions, SpaceID.\n\nThe whole string must be query-encoded.",
             "required": false,
             "schema": {
-              "pattern": "^\\s*(FilterID|OrganizationID|SpaceID)\\s*(?:,\\s*(?:FilterID|OrganizationID|SpaceID)\\s*)*$",
+              "pattern": "^\\s*(FilterID|OrganizationID|Permissions|SpaceID)\\s*(?:,\\s*(?:FilterID|OrganizationID|Permissions|SpaceID)\\s*)*$",
               "type": "string"
             }
           },
@@ -46178,10 +46180,10 @@
           {
             "name": "include",
             "in": "query",
-            "description": "Include clause for expanding related entities in the response for View.\nThe attribute names are case-sensitive, PascalCase, and\nexpected in a comma-separated list format as in the JSON encoding.\n\nSupported attributes for View are FilterID, OrganizationID, SpaceID.\n\nThe whole string must be query-encoded.",
+            "description": "Include clause for expanding related entities in the response for View.\nThe attribute names are case-sensitive, PascalCase, and\nexpected in a comma-separated list format as in the JSON encoding.\n\nSupported attributes for View are FilterID, OrganizationID, Permissions, SpaceID.\n\nThe whole string must be query-encoded.",
             "required": false,
             "schema": {
-              "pattern": "^\\s*(FilterID|OrganizationID|SpaceID)\\s*(?:,\\s*(?:FilterID|OrganizationID|SpaceID)\\s*)*$",
+              "pattern": "^\\s*(FilterID|OrganizationID|Permissions|SpaceID)\\s*(?:,\\s*(?:FilterID|OrganizationID|Permissions|SpaceID)\\s*)*$",
               "type": "string"
             }
           },
@@ -46915,10 +46917,10 @@
           {
             "name": "include",
             "in": "query",
-            "description": "Include clause for expanding related entities in the response for Tag.\nThe attribute names are case-sensitive, PascalCase, and\nexpected in a comma-separated list format as in the JSON encoding.\n\nSupported attributes for Tag are ChangeSetID, OrganizationID, SpaceID.\n\nThe whole string must be query-encoded.",
+            "description": "Include clause for expanding related entities in the response for Tag.\nThe attribute names are case-sensitive, PascalCase, and\nexpected in a comma-separated list format as in the JSON encoding.\n\nSupported attributes for Tag are ChangeSetID, OrganizationID, Permissions, SpaceID.\n\nThe whole string must be query-encoded.",
             "required": false,
             "schema": {
-              "pattern": "^\\s*(ChangeSetID|OrganizationID|SpaceID)\\s*(?:,\\s*(?:ChangeSetID|OrganizationID|SpaceID)\\s*)*$",
+              "pattern": "^\\s*(ChangeSetID|OrganizationID|Permissions|SpaceID)\\s*(?:,\\s*(?:ChangeSetID|OrganizationID|Permissions|SpaceID)\\s*)*$",
               "type": "string"
             }
           },
@@ -47108,10 +47110,10 @@
           {
             "name": "include",
             "in": "query",
-            "description": "Include clause for expanding related entities in the response for Tag.\nThe attribute names are case-sensitive, PascalCase, and\nexpected in a comma-separated list format as in the JSON encoding.\n\nSupported attributes for Tag are ChangeSetID, OrganizationID, SpaceID.\n\nThe whole string must be query-encoded.",
+            "description": "Include clause for expanding related entities in the response for Tag.\nThe attribute names are case-sensitive, PascalCase, and\nexpected in a comma-separated list format as in the JSON encoding.\n\nSupported attributes for Tag are ChangeSetID, OrganizationID, Permissions, SpaceID.\n\nThe whole string must be query-encoded.",
             "required": false,
             "schema": {
-              "pattern": "^\\s*(ChangeSetID|OrganizationID|SpaceID)\\s*(?:,\\s*(?:ChangeSetID|OrganizationID|SpaceID)\\s*)*$",
+              "pattern": "^\\s*(ChangeSetID|OrganizationID|Permissions|SpaceID)\\s*(?:,\\s*(?:ChangeSetID|OrganizationID|Permissions|SpaceID)\\s*)*$",
               "type": "string"
             }
           },
@@ -47320,10 +47322,10 @@
           {
             "name": "include",
             "in": "query",
-            "description": "Include clause for expanding related entities in the response for Tag.\nThe attribute names are case-sensitive, PascalCase, and\nexpected in a comma-separated list format as in the JSON encoding.\n\nSupported attributes for Tag are ChangeSetID, OrganizationID, SpaceID.\n\nThe whole string must be query-encoded.",
+            "description": "Include clause for expanding related entities in the response for Tag.\nThe attribute names are case-sensitive, PascalCase, and\nexpected in a comma-separated list format as in the JSON encoding.\n\nSupported attributes for Tag are ChangeSetID, OrganizationID, Permissions, SpaceID.\n\nThe whole string must be query-encoded.",
             "required": false,
             "schema": {
-              "pattern": "^\\s*(ChangeSetID|OrganizationID|SpaceID)\\s*(?:,\\s*(?:ChangeSetID|OrganizationID|SpaceID)\\s*)*$",
+              "pattern": "^\\s*(ChangeSetID|OrganizationID|Permissions|SpaceID)\\s*(?:,\\s*(?:ChangeSetID|OrganizationID|Permissions|SpaceID)\\s*)*$",
               "type": "string"
             }
           },
@@ -47580,10 +47582,10 @@
           {
             "name": "include",
             "in": "query",
-            "description": "Include clause for expanding related entities in the response for Tag.\nThe attribute names are case-sensitive, PascalCase, and\nexpected in a comma-separated list format as in the JSON encoding.\n\nSupported attributes for Tag are ChangeSetID, OrganizationID, SpaceID.\n\nThe whole string must be query-encoded.",
+            "description": "Include clause for expanding related entities in the response for Tag.\nThe attribute names are case-sensitive, PascalCase, and\nexpected in a comma-separated list format as in the JSON encoding.\n\nSupported attributes for Tag are ChangeSetID, OrganizationID, Permissions, SpaceID.\n\nThe whole string must be query-encoded.",
             "required": false,
             "schema": {
-              "pattern": "^\\s*(ChangeSetID|OrganizationID|SpaceID)\\s*(?:,\\s*(?:ChangeSetID|OrganizationID|SpaceID)\\s*)*$",
+              "pattern": "^\\s*(ChangeSetID|OrganizationID|Permissions|SpaceID)\\s*(?:,\\s*(?:ChangeSetID|OrganizationID|Permissions|SpaceID)\\s*)*$",
               "type": "string"
             }
           },
@@ -47896,10 +47898,10 @@
           {
             "name": "include",
             "in": "query",
-            "description": "Include clause for expanding related entities in the response for Tag.\nThe attribute names are case-sensitive, PascalCase, and\nexpected in a comma-separated list format as in the JSON encoding.\n\nSupported attributes for Tag are ChangeSetID, OrganizationID, SpaceID.\n\nThe whole string must be query-encoded.",
+            "description": "Include clause for expanding related entities in the response for Tag.\nThe attribute names are case-sensitive, PascalCase, and\nexpected in a comma-separated list format as in the JSON encoding.\n\nSupported attributes for Tag are ChangeSetID, OrganizationID, Permissions, SpaceID.\n\nThe whole string must be query-encoded.",
             "required": false,
             "schema": {
-              "pattern": "^\\s*(ChangeSetID|OrganizationID|SpaceID)\\s*(?:,\\s*(?:ChangeSetID|OrganizationID|SpaceID)\\s*)*$",
+              "pattern": "^\\s*(ChangeSetID|OrganizationID|Permissions|SpaceID)\\s*(?:,\\s*(?:ChangeSetID|OrganizationID|Permissions|SpaceID)\\s*)*$",
               "type": "string"
             }
           },
@@ -48070,10 +48072,10 @@
           {
             "name": "include",
             "in": "query",
-            "description": "Include clause for expanding related entities in the response for Target.\nThe attribute names are case-sensitive, PascalCase, and\nexpected in a comma-separated list format as in the JSON encoding.\n\nSupported attributes for Target are OrganizationID, SpaceID, TriggerFilterID, TriggerIDs.\n\nThe whole string must be query-encoded.",
+            "description": "Include clause for expanding related entities in the response for Target.\nThe attribute names are case-sensitive, PascalCase, and\nexpected in a comma-separated list format as in the JSON encoding.\n\nSupported attributes for Target are OrganizationID, Permissions, SpaceID, TriggerFilterID, TriggerIDs.\n\nThe whole string must be query-encoded.",
             "required": false,
             "schema": {
-              "pattern": "^\\s*(OrganizationID|SpaceID|TriggerFilterID|TriggerIDs)\\s*(?:,\\s*(?:OrganizationID|SpaceID|TriggerFilterID|TriggerIDs)\\s*)*$",
+              "pattern": "^\\s*(OrganizationID|Permissions|SpaceID|TriggerFilterID|TriggerIDs)\\s*(?:,\\s*(?:OrganizationID|Permissions|SpaceID|TriggerFilterID|TriggerIDs)\\s*)*$",
               "type": "string"
             }
           },
@@ -48272,10 +48274,10 @@
           {
             "name": "include",
             "in": "query",
-            "description": "Include clause for expanding related entities in the response for Target.\nThe attribute names are case-sensitive, PascalCase, and\nexpected in a comma-separated list format as in the JSON encoding.\n\nSupported attributes for Target are OrganizationID, SpaceID, TriggerFilterID, TriggerIDs.\n\nThe whole string must be query-encoded.",
+            "description": "Include clause for expanding related entities in the response for Target.\nThe attribute names are case-sensitive, PascalCase, and\nexpected in a comma-separated list format as in the JSON encoding.\n\nSupported attributes for Target are OrganizationID, Permissions, SpaceID, TriggerFilterID, TriggerIDs.\n\nThe whole string must be query-encoded.",
             "required": false,
             "schema": {
-              "pattern": "^\\s*(OrganizationID|SpaceID|TriggerFilterID|TriggerIDs)\\s*(?:,\\s*(?:OrganizationID|SpaceID|TriggerFilterID|TriggerIDs)\\s*)*$",
+              "pattern": "^\\s*(OrganizationID|Permissions|SpaceID|TriggerFilterID|TriggerIDs)\\s*(?:,\\s*(?:OrganizationID|Permissions|SpaceID|TriggerFilterID|TriggerIDs)\\s*)*$",
               "type": "string"
             }
           },
@@ -48492,10 +48494,10 @@
           {
             "name": "include",
             "in": "query",
-            "description": "Include clause for expanding related entities in the response for Target.\nThe attribute names are case-sensitive, PascalCase, and\nexpected in a comma-separated list format as in the JSON encoding.\n\nSupported attributes for Target are OrganizationID, SpaceID, TriggerFilterID, TriggerIDs.\n\nThe whole string must be query-encoded.",
+            "description": "Include clause for expanding related entities in the response for Target.\nThe attribute names are case-sensitive, PascalCase, and\nexpected in a comma-separated list format as in the JSON encoding.\n\nSupported attributes for Target are OrganizationID, Permissions, SpaceID, TriggerFilterID, TriggerIDs.\n\nThe whole string must be query-encoded.",
             "required": false,
             "schema": {
-              "pattern": "^\\s*(OrganizationID|SpaceID|TriggerFilterID|TriggerIDs)\\s*(?:,\\s*(?:OrganizationID|SpaceID|TriggerFilterID|TriggerIDs)\\s*)*$",
+              "pattern": "^\\s*(OrganizationID|Permissions|SpaceID|TriggerFilterID|TriggerIDs)\\s*(?:,\\s*(?:OrganizationID|Permissions|SpaceID|TriggerFilterID|TriggerIDs)\\s*)*$",
               "type": "string"
             }
           },
@@ -48809,10 +48811,10 @@
           {
             "name": "include",
             "in": "query",
-            "description": "Include clause for expanding related entities in the response for Target.\nThe attribute names are case-sensitive, PascalCase, and\nexpected in a comma-separated list format as in the JSON encoding.\n\nSupported attributes for Target are OrganizationID, SpaceID, TriggerFilterID, TriggerIDs.\n\nThe whole string must be query-encoded.",
+            "description": "Include clause for expanding related entities in the response for Target.\nThe attribute names are case-sensitive, PascalCase, and\nexpected in a comma-separated list format as in the JSON encoding.\n\nSupported attributes for Target are OrganizationID, Permissions, SpaceID, TriggerFilterID, TriggerIDs.\n\nThe whole string must be query-encoded.",
             "required": false,
             "schema": {
-              "pattern": "^\\s*(OrganizationID|SpaceID|TriggerFilterID|TriggerIDs)\\s*(?:,\\s*(?:OrganizationID|SpaceID|TriggerFilterID|TriggerIDs)\\s*)*$",
+              "pattern": "^\\s*(OrganizationID|Permissions|SpaceID|TriggerFilterID|TriggerIDs)\\s*(?:,\\s*(?:OrganizationID|Permissions|SpaceID|TriggerFilterID|TriggerIDs)\\s*)*$",
               "type": "string"
             }
           },
@@ -49200,10 +49202,10 @@
           {
             "name": "include",
             "in": "query",
-            "description": "Include clause for expanding related entities in the response for Target.\nThe attribute names are case-sensitive, PascalCase, and\nexpected in a comma-separated list format as in the JSON encoding.\n\nSupported attributes for Target are OrganizationID, SpaceID, TriggerFilterID, TriggerIDs.\n\nThe whole string must be query-encoded.",
+            "description": "Include clause for expanding related entities in the response for Target.\nThe attribute names are case-sensitive, PascalCase, and\nexpected in a comma-separated list format as in the JSON encoding.\n\nSupported attributes for Target are OrganizationID, Permissions, SpaceID, TriggerFilterID, TriggerIDs.\n\nThe whole string must be query-encoded.",
             "required": false,
             "schema": {
-              "pattern": "^\\s*(OrganizationID|SpaceID|TriggerFilterID|TriggerIDs)\\s*(?:,\\s*(?:OrganizationID|SpaceID|TriggerFilterID|TriggerIDs)\\s*)*$",
+              "pattern": "^\\s*(OrganizationID|Permissions|SpaceID|TriggerFilterID|TriggerIDs)\\s*(?:,\\s*(?:OrganizationID|Permissions|SpaceID|TriggerFilterID|TriggerIDs)\\s*)*$",
               "type": "string"
             }
           },
@@ -49374,10 +49376,10 @@
           {
             "name": "include",
             "in": "query",
-            "description": "Include clause for expanding related entities in the response for Trigger.\nThe attribute names are case-sensitive, PascalCase, and\nexpected in a comma-separated list format as in the JSON encoding.\n\nSupported attributes for Trigger are BridgeWorkerID, ChannelID, InvocationID, OrganizationID, SpaceID, UnitFilterID.\n\nThe whole string must be query-encoded.",
+            "description": "Include clause for expanding related entities in the response for Trigger.\nThe attribute names are case-sensitive, PascalCase, and\nexpected in a comma-separated list format as in the JSON encoding.\n\nSupported attributes for Trigger are BridgeWorkerID, ChannelID, InvocationID, OrganizationID, Permissions, SpaceID, UnitFilterID.\n\nThe whole string must be query-encoded.",
             "required": false,
             "schema": {
-              "pattern": "^\\s*(BridgeWorkerID|ChannelID|InvocationID|OrganizationID|SpaceID|UnitFilterID)\\s*(?:,\\s*(?:BridgeWorkerID|ChannelID|InvocationID|OrganizationID|SpaceID|UnitFilterID)\\s*)*$",
+              "pattern": "^\\s*(BridgeWorkerID|ChannelID|InvocationID|OrganizationID|Permissions|SpaceID|UnitFilterID)\\s*(?:,\\s*(?:BridgeWorkerID|ChannelID|InvocationID|OrganizationID|Permissions|SpaceID|UnitFilterID)\\s*)*$",
               "type": "string"
             }
           },
@@ -49567,10 +49569,10 @@
           {
             "name": "include",
             "in": "query",
-            "description": "Include clause for expanding related entities in the response for Trigger.\nThe attribute names are case-sensitive, PascalCase, and\nexpected in a comma-separated list format as in the JSON encoding.\n\nSupported attributes for Trigger are BridgeWorkerID, ChannelID, InvocationID, OrganizationID, SpaceID, UnitFilterID.\n\nThe whole string must be query-encoded.",
+            "description": "Include clause for expanding related entities in the response for Trigger.\nThe attribute names are case-sensitive, PascalCase, and\nexpected in a comma-separated list format as in the JSON encoding.\n\nSupported attributes for Trigger are BridgeWorkerID, ChannelID, InvocationID, OrganizationID, Permissions, SpaceID, UnitFilterID.\n\nThe whole string must be query-encoded.",
             "required": false,
             "schema": {
-              "pattern": "^\\s*(BridgeWorkerID|ChannelID|InvocationID|OrganizationID|SpaceID|UnitFilterID)\\s*(?:,\\s*(?:BridgeWorkerID|ChannelID|InvocationID|OrganizationID|SpaceID|UnitFilterID)\\s*)*$",
+              "pattern": "^\\s*(BridgeWorkerID|ChannelID|InvocationID|OrganizationID|Permissions|SpaceID|UnitFilterID)\\s*(?:,\\s*(?:BridgeWorkerID|ChannelID|InvocationID|OrganizationID|Permissions|SpaceID|UnitFilterID)\\s*)*$",
               "type": "string"
             }
           },
@@ -49779,10 +49781,10 @@
           {
             "name": "include",
             "in": "query",
-            "description": "Include clause for expanding related entities in the response for Trigger.\nThe attribute names are case-sensitive, PascalCase, and\nexpected in a comma-separated list format as in the JSON encoding.\n\nSupported attributes for Trigger are BridgeWorkerID, ChannelID, InvocationID, OrganizationID, SpaceID, UnitFilterID.\n\nThe whole string must be query-encoded.",
+            "description": "Include clause for expanding related entities in the response for Trigger.\nThe attribute names are case-sensitive, PascalCase, and\nexpected in a comma-separated list format as in the JSON encoding.\n\nSupported attributes for Trigger are BridgeWorkerID, ChannelID, InvocationID, OrganizationID, Permissions, SpaceID, UnitFilterID.\n\nThe whole string must be query-encoded.",
             "required": false,
             "schema": {
-              "pattern": "^\\s*(BridgeWorkerID|ChannelID|InvocationID|OrganizationID|SpaceID|UnitFilterID)\\s*(?:,\\s*(?:BridgeWorkerID|ChannelID|InvocationID|OrganizationID|SpaceID|UnitFilterID)\\s*)*$",
+              "pattern": "^\\s*(BridgeWorkerID|ChannelID|InvocationID|OrganizationID|Permissions|SpaceID|UnitFilterID)\\s*(?:,\\s*(?:BridgeWorkerID|ChannelID|InvocationID|OrganizationID|Permissions|SpaceID|UnitFilterID)\\s*)*$",
               "type": "string"
             }
           },
@@ -50173,10 +50175,10 @@
           {
             "name": "include",
             "in": "query",
-            "description": "Include clause for expanding related entities in the response for Trigger.\nThe attribute names are case-sensitive, PascalCase, and\nexpected in a comma-separated list format as in the JSON encoding.\n\nSupported attributes for Trigger are BridgeWorkerID, ChannelID, InvocationID, OrganizationID, SpaceID, UnitFilterID.\n\nThe whole string must be query-encoded.",
+            "description": "Include clause for expanding related entities in the response for Trigger.\nThe attribute names are case-sensitive, PascalCase, and\nexpected in a comma-separated list format as in the JSON encoding.\n\nSupported attributes for Trigger are BridgeWorkerID, ChannelID, InvocationID, OrganizationID, Permissions, SpaceID, UnitFilterID.\n\nThe whole string must be query-encoded.",
             "required": false,
             "schema": {
-              "pattern": "^\\s*(BridgeWorkerID|ChannelID|InvocationID|OrganizationID|SpaceID|UnitFilterID)\\s*(?:,\\s*(?:BridgeWorkerID|ChannelID|InvocationID|OrganizationID|SpaceID|UnitFilterID)\\s*)*$",
+              "pattern": "^\\s*(BridgeWorkerID|ChannelID|InvocationID|OrganizationID|Permissions|SpaceID|UnitFilterID)\\s*(?:,\\s*(?:BridgeWorkerID|ChannelID|InvocationID|OrganizationID|Permissions|SpaceID|UnitFilterID)\\s*)*$",
               "type": "string"
             }
           },
@@ -50650,10 +50652,10 @@
           {
             "name": "include",
             "in": "query",
-            "description": "Include clause for expanding related entities in the response for Trigger.\nThe attribute names are case-sensitive, PascalCase, and\nexpected in a comma-separated list format as in the JSON encoding.\n\nSupported attributes for Trigger are BridgeWorkerID, ChannelID, InvocationID, OrganizationID, SpaceID, UnitFilterID.\n\nThe whole string must be query-encoded.",
+            "description": "Include clause for expanding related entities in the response for Trigger.\nThe attribute names are case-sensitive, PascalCase, and\nexpected in a comma-separated list format as in the JSON encoding.\n\nSupported attributes for Trigger are BridgeWorkerID, ChannelID, InvocationID, OrganizationID, Permissions, SpaceID, UnitFilterID.\n\nThe whole string must be query-encoded.",
             "required": false,
             "schema": {
-              "pattern": "^\\s*(BridgeWorkerID|ChannelID|InvocationID|OrganizationID|SpaceID|UnitFilterID)\\s*(?:,\\s*(?:BridgeWorkerID|ChannelID|InvocationID|OrganizationID|SpaceID|UnitFilterID)\\s*)*$",
+              "pattern": "^\\s*(BridgeWorkerID|ChannelID|InvocationID|OrganizationID|Permissions|SpaceID|UnitFilterID)\\s*(?:,\\s*(?:BridgeWorkerID|ChannelID|InvocationID|OrganizationID|Permissions|SpaceID|UnitFilterID)\\s*)*$",
               "type": "string"
             }
           },
@@ -50824,10 +50826,10 @@
           {
             "name": "include",
             "in": "query",
-            "description": "Include clause for expanding related entities in the response for Unit.\nThe attribute names are case-sensitive, PascalCase, and\nexpected in a comma-separated list format as in the JSON encoding.\n\nSupported attributes for Unit are ChangeSetID, FromLinkID, HeadMutationNum, HeadRevisionNum, LastReleasedRevisionNum, OrganizationID, SpaceID, TargetID, UnitEventID, UpstreamSpaceID, UpstreamUnitID.\n\nThe whole string must be query-encoded.",
+            "description": "Include clause for expanding related entities in the response for Unit.\nThe attribute names are case-sensitive, PascalCase, and\nexpected in a comma-separated list format as in the JSON encoding.\n\nSupported attributes for Unit are ChangeSetID, FromLinkID, HeadMutationNum, HeadRevisionNum, LastReleasedRevisionNum, OrganizationID, Permissions, SpaceID, TargetID, UnitEventID, UpstreamSpaceID, UpstreamUnitID.\n\nThe whole string must be query-encoded.",
             "required": false,
             "schema": {
-              "pattern": "^\\s*(ChangeSetID|FromLinkID|HeadMutationNum|HeadRevisionNum|LastReleasedRevisionNum|OrganizationID|SpaceID|TargetID|UnitEventID|UpstreamSpaceID|UpstreamUnitID)\\s*(?:,\\s*(?:ChangeSetID|FromLinkID|HeadMutationNum|HeadRevisionNum|LastReleasedRevisionNum|OrganizationID|SpaceID|TargetID|UnitEventID|UpstreamSpaceID|UpstreamUnitID)\\s*)*$",
+              "pattern": "^\\s*(ChangeSetID|FromLinkID|HeadMutationNum|HeadRevisionNum|LastReleasedRevisionNum|OrganizationID|Permissions|SpaceID|TargetID|UnitEventID|UpstreamSpaceID|UpstreamUnitID)\\s*(?:,\\s*(?:ChangeSetID|FromLinkID|HeadMutationNum|HeadRevisionNum|LastReleasedRevisionNum|OrganizationID|Permissions|SpaceID|TargetID|UnitEventID|UpstreamSpaceID|UpstreamUnitID)\\s*)*$",
               "type": "string"
             }
           },
@@ -51027,10 +51029,10 @@
           {
             "name": "include",
             "in": "query",
-            "description": "Include clause for expanding related entities in the response for Unit.\nThe attribute names are case-sensitive, PascalCase, and\nexpected in a comma-separated list format as in the JSON encoding.\n\nSupported attributes for Unit are ChangeSetID, FromLinkID, HeadMutationNum, HeadRevisionNum, LastReleasedRevisionNum, OrganizationID, SpaceID, TargetID, UnitEventID, UpstreamSpaceID, UpstreamUnitID.\n\nThe whole string must be query-encoded.",
+            "description": "Include clause for expanding related entities in the response for Unit.\nThe attribute names are case-sensitive, PascalCase, and\nexpected in a comma-separated list format as in the JSON encoding.\n\nSupported attributes for Unit are ChangeSetID, FromLinkID, HeadMutationNum, HeadRevisionNum, LastReleasedRevisionNum, OrganizationID, Permissions, SpaceID, TargetID, UnitEventID, UpstreamSpaceID, UpstreamUnitID.\n\nThe whole string must be query-encoded.",
             "required": false,
             "schema": {
-              "pattern": "^\\s*(ChangeSetID|FromLinkID|HeadMutationNum|HeadRevisionNum|LastReleasedRevisionNum|OrganizationID|SpaceID|TargetID|UnitEventID|UpstreamSpaceID|UpstreamUnitID)\\s*(?:,\\s*(?:ChangeSetID|FromLinkID|HeadMutationNum|HeadRevisionNum|LastReleasedRevisionNum|OrganizationID|SpaceID|TargetID|UnitEventID|UpstreamSpaceID|UpstreamUnitID)\\s*)*$",
+              "pattern": "^\\s*(ChangeSetID|FromLinkID|HeadMutationNum|HeadRevisionNum|LastReleasedRevisionNum|OrganizationID|Permissions|SpaceID|TargetID|UnitEventID|UpstreamSpaceID|UpstreamUnitID)\\s*(?:,\\s*(?:ChangeSetID|FromLinkID|HeadMutationNum|HeadRevisionNum|LastReleasedRevisionNum|OrganizationID|Permissions|SpaceID|TargetID|UnitEventID|UpstreamSpaceID|UpstreamUnitID)\\s*)*$",
               "type": "string"
             }
           },
@@ -51296,10 +51298,10 @@
           {
             "name": "include",
             "in": "query",
-            "description": "Include clause for expanding related entities in the response for Unit.\nThe attribute names are case-sensitive, PascalCase, and\nexpected in a comma-separated list format as in the JSON encoding.\n\nSupported attributes for Unit are ChangeSetID, FromLinkID, HeadMutationNum, HeadRevisionNum, LastReleasedRevisionNum, OrganizationID, SpaceID, TargetID, UnitEventID, UpstreamSpaceID, UpstreamUnitID.\n\nA write also accepts the parts of its result: ConfigData for the configuration the operation produced, MutationSources for what set each value in it, and Diff for what the operation changed, path by path with the values on both sides. None is a field of a Unit, and each costs something to return, so they are returned only when named. A dry run stores nothing, so this is the only way to see what it would have produced.\n\nSupported values: ChangeSetID, FromLinkID, HeadMutationNum, HeadRevisionNum, LastReleasedRevisionNum, OrganizationID, SpaceID, TargetID, UnitEventID, UpstreamSpaceID, UpstreamUnitID, ConfigData, MutationSources, Diff.\n\nThe whole string must be query-encoded.",
+            "description": "Include clause for expanding related entities in the response for Unit.\nThe attribute names are case-sensitive, PascalCase, and\nexpected in a comma-separated list format as in the JSON encoding.\n\nSupported attributes for Unit are ChangeSetID, FromLinkID, HeadMutationNum, HeadRevisionNum, LastReleasedRevisionNum, OrganizationID, Permissions, SpaceID, TargetID, UnitEventID, UpstreamSpaceID, UpstreamUnitID.\n\nA write also accepts the parts of its result: ConfigData for the configuration the operation produced, MutationSources for what set each value in it, and Diff for what the operation changed, path by path with the values on both sides. None is a field of a Unit, and each costs something to return, so they are returned only when named. A dry run stores nothing, so this is the only way to see what it would have produced.\n\nSupported values: ChangeSetID, FromLinkID, HeadMutationNum, HeadRevisionNum, LastReleasedRevisionNum, OrganizationID, Permissions, SpaceID, TargetID, UnitEventID, UpstreamSpaceID, UpstreamUnitID, ConfigData, MutationSources, Diff.\n\nThe whole string must be query-encoded.",
             "required": false,
             "schema": {
-              "pattern": "^\\s*(ChangeSetID|FromLinkID|HeadMutationNum|HeadRevisionNum|LastReleasedRevisionNum|OrganizationID|SpaceID|TargetID|UnitEventID|UpstreamSpaceID|UpstreamUnitID|ConfigData|MutationSources|Diff)\\s*(?:,\\s*(?:ChangeSetID|FromLinkID|HeadMutationNum|HeadRevisionNum|LastReleasedRevisionNum|OrganizationID|SpaceID|TargetID|UnitEventID|UpstreamSpaceID|UpstreamUnitID|ConfigData|MutationSources|Diff)\\s*)*$",
+              "pattern": "^\\s*(ChangeSetID|FromLinkID|HeadMutationNum|HeadRevisionNum|LastReleasedRevisionNum|OrganizationID|Permissions|SpaceID|TargetID|UnitEventID|UpstreamSpaceID|UpstreamUnitID|ConfigData|MutationSources|Diff)\\s*(?:,\\s*(?:ChangeSetID|FromLinkID|HeadMutationNum|HeadRevisionNum|LastReleasedRevisionNum|OrganizationID|Permissions|SpaceID|TargetID|UnitEventID|UpstreamSpaceID|UpstreamUnitID|ConfigData|MutationSources|Diff)\\s*)*$",
               "type": "string"
             }
           },
@@ -51794,10 +51796,10 @@
           {
             "name": "include",
             "in": "query",
-            "description": "Include clause for expanding related entities in the response for Unit.\nThe attribute names are case-sensitive, PascalCase, and\nexpected in a comma-separated list format as in the JSON encoding.\n\nSupported attributes for Unit are ChangeSetID, FromLinkID, HeadMutationNum, HeadRevisionNum, LastReleasedRevisionNum, OrganizationID, SpaceID, TargetID, UnitEventID, UpstreamSpaceID, UpstreamUnitID.\n\nA write also accepts the parts of its result: ConfigData for the configuration the operation produced, MutationSources for what set each value in it, and Diff for what the operation changed, path by path with the values on both sides. None is a field of a Unit, and each costs something to return, so they are returned only when named. A dry run stores nothing, so this is the only way to see what it would have produced.\n\nSupported values: ChangeSetID, FromLinkID, HeadMutationNum, HeadRevisionNum, LastReleasedRevisionNum, OrganizationID, SpaceID, TargetID, UnitEventID, UpstreamSpaceID, UpstreamUnitID, ConfigData, MutationSources, Diff.\n\nThe whole string must be query-encoded.",
+            "description": "Include clause for expanding related entities in the response for Unit.\nThe attribute names are case-sensitive, PascalCase, and\nexpected in a comma-separated list format as in the JSON encoding.\n\nSupported attributes for Unit are ChangeSetID, FromLinkID, HeadMutationNum, HeadRevisionNum, LastReleasedRevisionNum, OrganizationID, Permissions, SpaceID, TargetID, UnitEventID, UpstreamSpaceID, UpstreamUnitID.\n\nA write also accepts the parts of its result: ConfigData for the configuration the operation produced, MutationSources for what set each value in it, and Diff for what the operation changed, path by path with the values on both sides. None is a field of a Unit, and each costs something to return, so they are returned only when named. A dry run stores nothing, so this is the only way to see what it would have produced.\n\nSupported values: ChangeSetID, FromLinkID, HeadMutationNum, HeadRevisionNum, LastReleasedRevisionNum, OrganizationID, Permissions, SpaceID, TargetID, UnitEventID, UpstreamSpaceID, UpstreamUnitID, ConfigData, MutationSources, Diff.\n\nThe whole string must be query-encoded.",
             "required": false,
             "schema": {
-              "pattern": "^\\s*(ChangeSetID|FromLinkID|HeadMutationNum|HeadRevisionNum|LastReleasedRevisionNum|OrganizationID|SpaceID|TargetID|UnitEventID|UpstreamSpaceID|UpstreamUnitID|ConfigData|MutationSources|Diff)\\s*(?:,\\s*(?:ChangeSetID|FromLinkID|HeadMutationNum|HeadRevisionNum|LastReleasedRevisionNum|OrganizationID|SpaceID|TargetID|UnitEventID|UpstreamSpaceID|UpstreamUnitID|ConfigData|MutationSources|Diff)\\s*)*$",
+              "pattern": "^\\s*(ChangeSetID|FromLinkID|HeadMutationNum|HeadRevisionNum|LastReleasedRevisionNum|OrganizationID|Permissions|SpaceID|TargetID|UnitEventID|UpstreamSpaceID|UpstreamUnitID|ConfigData|MutationSources|Diff)\\s*(?:,\\s*(?:ChangeSetID|FromLinkID|HeadMutationNum|HeadRevisionNum|LastReleasedRevisionNum|OrganizationID|Permissions|SpaceID|TargetID|UnitEventID|UpstreamSpaceID|UpstreamUnitID|ConfigData|MutationSources|Diff)\\s*)*$",
               "type": "string"
             }
           },
@@ -52183,10 +52185,10 @@
           {
             "name": "include",
             "in": "query",
-            "description": "Include clause for expanding related entities in the response for Unit.\nThe attribute names are case-sensitive, PascalCase, and\nexpected in a comma-separated list format as in the JSON encoding.\n\nSupported attributes for Unit are ChangeSetID, FromLinkID, HeadMutationNum, HeadRevisionNum, LastReleasedRevisionNum, OrganizationID, SpaceID, TargetID, UnitEventID, UpstreamSpaceID, UpstreamUnitID.\n\nThe whole string must be query-encoded.",
+            "description": "Include clause for expanding related entities in the response for Unit.\nThe attribute names are case-sensitive, PascalCase, and\nexpected in a comma-separated list format as in the JSON encoding.\n\nSupported attributes for Unit are ChangeSetID, FromLinkID, HeadMutationNum, HeadRevisionNum, LastReleasedRevisionNum, OrganizationID, Permissions, SpaceID, TargetID, UnitEventID, UpstreamSpaceID, UpstreamUnitID.\n\nThe whole string must be query-encoded.",
             "required": false,
             "schema": {
-              "pattern": "^\\s*(ChangeSetID|FromLinkID|HeadMutationNum|HeadRevisionNum|LastReleasedRevisionNum|OrganizationID|SpaceID|TargetID|UnitEventID|UpstreamSpaceID|UpstreamUnitID)\\s*(?:,\\s*(?:ChangeSetID|FromLinkID|HeadMutationNum|HeadRevisionNum|LastReleasedRevisionNum|OrganizationID|SpaceID|TargetID|UnitEventID|UpstreamSpaceID|UpstreamUnitID)\\s*)*$",
+              "pattern": "^\\s*(ChangeSetID|FromLinkID|HeadMutationNum|HeadRevisionNum|LastReleasedRevisionNum|OrganizationID|Permissions|SpaceID|TargetID|UnitEventID|UpstreamSpaceID|UpstreamUnitID)\\s*(?:,\\s*(?:ChangeSetID|FromLinkID|HeadMutationNum|HeadRevisionNum|LastReleasedRevisionNum|OrganizationID|Permissions|SpaceID|TargetID|UnitEventID|UpstreamSpaceID|UpstreamUnitID)\\s*)*$",
               "type": "string"
             }
           }
@@ -52349,10 +52351,10 @@
           {
             "name": "include",
             "in": "query",
-            "description": "Include clause for expanding related entities in the response for Unit.\nThe attribute names are case-sensitive, PascalCase, and\nexpected in a comma-separated list format as in the JSON encoding.\n\nSupported attributes for Unit are ChangeSetID, FromLinkID, HeadMutationNum, HeadRevisionNum, LastReleasedRevisionNum, OrganizationID, SpaceID, TargetID, UnitEventID, UpstreamSpaceID, UpstreamUnitID.\n\nThe whole string must be query-encoded.",
+            "description": "Include clause for expanding related entities in the response for Unit.\nThe attribute names are case-sensitive, PascalCase, and\nexpected in a comma-separated list format as in the JSON encoding.\n\nSupported attributes for Unit are ChangeSetID, FromLinkID, HeadMutationNum, HeadRevisionNum, LastReleasedRevisionNum, OrganizationID, Permissions, SpaceID, TargetID, UnitEventID, UpstreamSpaceID, UpstreamUnitID.\n\nThe whole string must be query-encoded.",
             "required": false,
             "schema": {
-              "pattern": "^\\s*(ChangeSetID|FromLinkID|HeadMutationNum|HeadRevisionNum|LastReleasedRevisionNum|OrganizationID|SpaceID|TargetID|UnitEventID|UpstreamSpaceID|UpstreamUnitID)\\s*(?:,\\s*(?:ChangeSetID|FromLinkID|HeadMutationNum|HeadRevisionNum|LastReleasedRevisionNum|OrganizationID|SpaceID|TargetID|UnitEventID|UpstreamSpaceID|UpstreamUnitID)\\s*)*$",
+              "pattern": "^\\s*(ChangeSetID|FromLinkID|HeadMutationNum|HeadRevisionNum|LastReleasedRevisionNum|OrganizationID|Permissions|SpaceID|TargetID|UnitEventID|UpstreamSpaceID|UpstreamUnitID)\\s*(?:,\\s*(?:ChangeSetID|FromLinkID|HeadMutationNum|HeadRevisionNum|LastReleasedRevisionNum|OrganizationID|Permissions|SpaceID|TargetID|UnitEventID|UpstreamSpaceID|UpstreamUnitID)\\s*)*$",
               "type": "string"
             }
           },
@@ -52523,10 +52525,10 @@
           {
             "name": "include",
             "in": "query",
-            "description": "Include clause for expanding related entities in the response for Unit.\nThe attribute names are case-sensitive, PascalCase, and\nexpected in a comma-separated list format as in the JSON encoding.\n\nSupported attributes for Unit are ChangeSetID, FromLinkID, HeadMutationNum, HeadRevisionNum, LastReleasedRevisionNum, OrganizationID, SpaceID, TargetID, UnitEventID, UpstreamSpaceID, UpstreamUnitID.\n\nThe whole string must be query-encoded.",
+            "description": "Include clause for expanding related entities in the response for Unit.\nThe attribute names are case-sensitive, PascalCase, and\nexpected in a comma-separated list format as in the JSON encoding.\n\nSupported attributes for Unit are ChangeSetID, FromLinkID, HeadMutationNum, HeadRevisionNum, LastReleasedRevisionNum, OrganizationID, Permissions, SpaceID, TargetID, UnitEventID, UpstreamSpaceID, UpstreamUnitID.\n\nThe whole string must be query-encoded.",
             "required": false,
             "schema": {
-              "pattern": "^\\s*(ChangeSetID|FromLinkID|HeadMutationNum|HeadRevisionNum|LastReleasedRevisionNum|OrganizationID|SpaceID|TargetID|UnitEventID|UpstreamSpaceID|UpstreamUnitID)\\s*(?:,\\s*(?:ChangeSetID|FromLinkID|HeadMutationNum|HeadRevisionNum|LastReleasedRevisionNum|OrganizationID|SpaceID|TargetID|UnitEventID|UpstreamSpaceID|UpstreamUnitID)\\s*)*$",
+              "pattern": "^\\s*(ChangeSetID|FromLinkID|HeadMutationNum|HeadRevisionNum|LastReleasedRevisionNum|OrganizationID|Permissions|SpaceID|TargetID|UnitEventID|UpstreamSpaceID|UpstreamUnitID)\\s*(?:,\\s*(?:ChangeSetID|FromLinkID|HeadMutationNum|HeadRevisionNum|LastReleasedRevisionNum|OrganizationID|Permissions|SpaceID|TargetID|UnitEventID|UpstreamSpaceID|UpstreamUnitID)\\s*)*$",
               "type": "string"
             }
           }
@@ -52857,10 +52859,10 @@
           {
             "name": "include",
             "in": "query",
-            "description": "Include clause for expanding related entities in the response for Unit.\nThe attribute names are case-sensitive, PascalCase, and\nexpected in a comma-separated list format as in the JSON encoding.\n\nSupported attributes for Unit are ChangeSetID, FromLinkID, HeadMutationNum, HeadRevisionNum, LastReleasedRevisionNum, OrganizationID, SpaceID, TargetID, UnitEventID, UpstreamSpaceID, UpstreamUnitID.\n\nThe whole string must be query-encoded.",
+            "description": "Include clause for expanding related entities in the response for Unit.\nThe attribute names are case-sensitive, PascalCase, and\nexpected in a comma-separated list format as in the JSON encoding.\n\nSupported attributes for Unit are ChangeSetID, FromLinkID, HeadMutationNum, HeadRevisionNum, LastReleasedRevisionNum, OrganizationID, Permissions, SpaceID, TargetID, UnitEventID, UpstreamSpaceID, UpstreamUnitID.\n\nThe whole string must be query-encoded.",
             "required": false,
             "schema": {
-              "pattern": "^\\s*(ChangeSetID|FromLinkID|HeadMutationNum|HeadRevisionNum|LastReleasedRevisionNum|OrganizationID|SpaceID|TargetID|UnitEventID|UpstreamSpaceID|UpstreamUnitID)\\s*(?:,\\s*(?:ChangeSetID|FromLinkID|HeadMutationNum|HeadRevisionNum|LastReleasedRevisionNum|OrganizationID|SpaceID|TargetID|UnitEventID|UpstreamSpaceID|UpstreamUnitID)\\s*)*$",
+              "pattern": "^\\s*(ChangeSetID|FromLinkID|HeadMutationNum|HeadRevisionNum|LastReleasedRevisionNum|OrganizationID|Permissions|SpaceID|TargetID|UnitEventID|UpstreamSpaceID|UpstreamUnitID)\\s*(?:,\\s*(?:ChangeSetID|FromLinkID|HeadMutationNum|HeadRevisionNum|LastReleasedRevisionNum|OrganizationID|Permissions|SpaceID|TargetID|UnitEventID|UpstreamSpaceID|UpstreamUnitID)\\s*)*$",
               "type": "string"
             }
           },
@@ -53600,10 +53602,10 @@
           {
             "name": "include",
             "in": "query",
-            "description": "Include clause for expanding related entities in the response for Unit.\nThe attribute names are case-sensitive, PascalCase, and\nexpected in a comma-separated list format as in the JSON encoding.\n\nSupported attributes for Unit are ChangeSetID, FromLinkID, HeadMutationNum, HeadRevisionNum, LastReleasedRevisionNum, OrganizationID, SpaceID, TargetID, UnitEventID, UpstreamSpaceID, UpstreamUnitID.\n\nThe whole string must be query-encoded.",
+            "description": "Include clause for expanding related entities in the response for Unit.\nThe attribute names are case-sensitive, PascalCase, and\nexpected in a comma-separated list format as in the JSON encoding.\n\nSupported attributes for Unit are ChangeSetID, FromLinkID, HeadMutationNum, HeadRevisionNum, LastReleasedRevisionNum, OrganizationID, Permissions, SpaceID, TargetID, UnitEventID, UpstreamSpaceID, UpstreamUnitID.\n\nThe whole string must be query-encoded.",
             "required": false,
             "schema": {
-              "pattern": "^\\s*(ChangeSetID|FromLinkID|HeadMutationNum|HeadRevisionNum|LastReleasedRevisionNum|OrganizationID|SpaceID|TargetID|UnitEventID|UpstreamSpaceID|UpstreamUnitID)\\s*(?:,\\s*(?:ChangeSetID|FromLinkID|HeadMutationNum|HeadRevisionNum|LastReleasedRevisionNum|OrganizationID|SpaceID|TargetID|UnitEventID|UpstreamSpaceID|UpstreamUnitID)\\s*)*$",
+              "pattern": "^\\s*(ChangeSetID|FromLinkID|HeadMutationNum|HeadRevisionNum|LastReleasedRevisionNum|OrganizationID|Permissions|SpaceID|TargetID|UnitEventID|UpstreamSpaceID|UpstreamUnitID)\\s*(?:,\\s*(?:ChangeSetID|FromLinkID|HeadMutationNum|HeadRevisionNum|LastReleasedRevisionNum|OrganizationID|Permissions|SpaceID|TargetID|UnitEventID|UpstreamSpaceID|UpstreamUnitID)\\s*)*$",
               "type": "string"
             }
           },
@@ -54659,10 +54661,10 @@
           {
             "name": "include",
             "in": "query",
-            "description": "Include clause for expanding related entities in the response for View.\nThe attribute names are case-sensitive, PascalCase, and\nexpected in a comma-separated list format as in the JSON encoding.\n\nSupported attributes for View are FilterID, OrganizationID, SpaceID.\n\nThe whole string must be query-encoded.",
+            "description": "Include clause for expanding related entities in the response for View.\nThe attribute names are case-sensitive, PascalCase, and\nexpected in a comma-separated list format as in the JSON encoding.\n\nSupported attributes for View are FilterID, OrganizationID, Permissions, SpaceID.\n\nThe whole string must be query-encoded.",
             "required": false,
             "schema": {
-              "pattern": "^\\s*(FilterID|OrganizationID|SpaceID)\\s*(?:,\\s*(?:FilterID|OrganizationID|SpaceID)\\s*)*$",
+              "pattern": "^\\s*(FilterID|OrganizationID|Permissions|SpaceID)\\s*(?:,\\s*(?:FilterID|OrganizationID|Permissions|SpaceID)\\s*)*$",
               "type": "string"
             }
           },
@@ -54852,10 +54854,10 @@
           {
             "name": "include",
             "in": "query",
-            "description": "Include clause for expanding related entities in the response for View.\nThe attribute names are case-sensitive, PascalCase, and\nexpected in a comma-separated list format as in the JSON encoding.\n\nSupported attributes for View are FilterID, OrganizationID, SpaceID.\n\nThe whole string must be query-encoded.",
+            "description": "Include clause for expanding related entities in the response for View.\nThe attribute names are case-sensitive, PascalCase, and\nexpected in a comma-separated list format as in the JSON encoding.\n\nSupported attributes for View are FilterID, OrganizationID, Permissions, SpaceID.\n\nThe whole string must be query-encoded.",
             "required": false,
             "schema": {
-              "pattern": "^\\s*(FilterID|OrganizationID|SpaceID)\\s*(?:,\\s*(?:FilterID|OrganizationID|SpaceID)\\s*)*$",
+              "pattern": "^\\s*(FilterID|OrganizationID|Permissions|SpaceID)\\s*(?:,\\s*(?:FilterID|OrganizationID|Permissions|SpaceID)\\s*)*$",
               "type": "string"
             }
           },
@@ -55064,10 +55066,10 @@
           {
             "name": "include",
             "in": "query",
-            "description": "Include clause for expanding related entities in the response for View.\nThe attribute names are case-sensitive, PascalCase, and\nexpected in a comma-separated list format as in the JSON encoding.\n\nSupported attributes for View are FilterID, OrganizationID, SpaceID.\n\nThe whole string must be query-encoded.",
+            "description": "Include clause for expanding related entities in the response for View.\nThe attribute names are case-sensitive, PascalCase, and\nexpected in a comma-separated list format as in the JSON encoding.\n\nSupported attributes for View are FilterID, OrganizationID, Permissions, SpaceID.\n\nThe whole string must be query-encoded.",
             "required": false,
             "schema": {
-              "pattern": "^\\s*(FilterID|OrganizationID|SpaceID)\\s*(?:,\\s*(?:FilterID|OrganizationID|SpaceID)\\s*)*$",
+              "pattern": "^\\s*(FilterID|OrganizationID|Permissions|SpaceID)\\s*(?:,\\s*(?:FilterID|OrganizationID|Permissions|SpaceID)\\s*)*$",
               "type": "string"
             }
           },
@@ -55387,10 +55389,10 @@
           {
             "name": "include",
             "in": "query",
-            "description": "Include clause for expanding related entities in the response for View.\nThe attribute names are case-sensitive, PascalCase, and\nexpected in a comma-separated list format as in the JSON encoding.\n\nSupported attributes for View are FilterID, OrganizationID, SpaceID.\n\nThe whole string must be query-encoded.",
+            "description": "Include clause for expanding related entities in the response for View.\nThe attribute names are case-sensitive, PascalCase, and\nexpected in a comma-separated list format as in the JSON encoding.\n\nSupported attributes for View are FilterID, OrganizationID, Permissions, SpaceID.\n\nThe whole string must be query-encoded.",
             "required": false,
             "schema": {
-              "pattern": "^\\s*(FilterID|OrganizationID|SpaceID)\\s*(?:,\\s*(?:FilterID|OrganizationID|SpaceID)\\s*)*$",
+              "pattern": "^\\s*(FilterID|OrganizationID|Permissions|SpaceID)\\s*(?:,\\s*(?:FilterID|OrganizationID|Permissions|SpaceID)\\s*)*$",
               "type": "string"
             }
           },
@@ -55793,10 +55795,10 @@
           {
             "name": "include",
             "in": "query",
-            "description": "Include clause for expanding related entities in the response for View.\nThe attribute names are case-sensitive, PascalCase, and\nexpected in a comma-separated list format as in the JSON encoding.\n\nSupported attributes for View are FilterID, OrganizationID, SpaceID.\n\nThe whole string must be query-encoded.",
+            "description": "Include clause for expanding related entities in the response for View.\nThe attribute names are case-sensitive, PascalCase, and\nexpected in a comma-separated list format as in the JSON encoding.\n\nSupported attributes for View are FilterID, OrganizationID, Permissions, SpaceID.\n\nThe whole string must be query-encoded.",
             "required": false,
             "schema": {
-              "pattern": "^\\s*(FilterID|OrganizationID|SpaceID)\\s*(?:,\\s*(?:FilterID|OrganizationID|SpaceID)\\s*)*$",
+              "pattern": "^\\s*(FilterID|OrganizationID|Permissions|SpaceID)\\s*(?:,\\s*(?:FilterID|OrganizationID|Permissions|SpaceID)\\s*)*$",
               "type": "string"
             }
           },
@@ -60848,6 +60850,9 @@
           "Organization": {
             "$ref": "#/components/schemas/Organization"
           },
+          "Permissions": {
+            "$ref": "#/components/schemas/ExtendedPermissions"
+          },
           "Space": {
             "allOf": [
               {
@@ -60879,6 +60884,9 @@
           "Organization": {
             "$ref": "#/components/schemas/Organization"
           },
+          "Permissions": {
+            "$ref": "#/components/schemas/ExtendedPermissions"
+          },
           "Space": {
             "$ref": "#/components/schemas/Space"
           },
@@ -60903,6 +60911,9 @@
           },
           "Organization": {
             "$ref": "#/components/schemas/Organization"
+          },
+          "Permissions": {
+            "$ref": "#/components/schemas/ExtendedPermissions"
           },
           "Space": {
             "$ref": "#/components/schemas/Space"
@@ -60934,6 +60945,9 @@
           },
           "Organization": {
             "$ref": "#/components/schemas/Organization"
+          },
+          "Permissions": {
+            "$ref": "#/components/schemas/ExtendedPermissions"
           },
           "ReleaseTag": {
             "$ref": "#/components/schemas/Tag"
@@ -60978,6 +60992,9 @@
           "Organization": {
             "$ref": "#/components/schemas/Organization"
           },
+          "Permissions": {
+            "$ref": "#/components/schemas/ExtendedPermissions"
+          },
           "Space": {
             "$ref": "#/components/schemas/Space"
           },
@@ -61006,6 +61023,9 @@
           "Organization": {
             "$ref": "#/components/schemas/Organization"
           },
+          "Permissions": {
+            "$ref": "#/components/schemas/ExtendedPermissions"
+          },
           "Space": {
             "$ref": "#/components/schemas/Space"
           },
@@ -61030,6 +61050,9 @@
           },
           "Organization": {
             "$ref": "#/components/schemas/Organization"
+          },
+          "Permissions": {
+            "$ref": "#/components/schemas/ExtendedPermissions"
           },
           "Space": {
             "$ref": "#/components/schemas/Space"
@@ -61097,6 +61120,9 @@
           "Organization": {
             "$ref": "#/components/schemas/Organization"
           },
+          "Permissions": {
+            "$ref": "#/components/schemas/ExtendedPermissions"
+          },
           "ViewColumns": {
             "type": "array",
             "items": {
@@ -61121,6 +61147,9 @@
           },
           "Organization": {
             "$ref": "#/components/schemas/Organization"
+          },
+          "Permissions": {
+            "$ref": "#/components/schemas/ExtendedPermissions"
           },
           "Space": {
             "$ref": "#/components/schemas/Space"
@@ -61178,6 +61207,9 @@
           "Organization": {
             "$ref": "#/components/schemas/Organization"
           },
+          "Permissions": {
+            "$ref": "#/components/schemas/ExtendedPermissions"
+          },
           "Space": {
             "$ref": "#/components/schemas/Space"
           },
@@ -61205,6 +61237,9 @@
           },
           "Organization": {
             "$ref": "#/components/schemas/Organization"
+          },
+          "Permissions": {
+            "$ref": "#/components/schemas/ExtendedPermissions"
           },
           "Space": {
             "$ref": "#/components/schemas/Space"
@@ -61280,6 +61315,9 @@
           "Organization": {
             "$ref": "#/components/schemas/Organization"
           },
+          "Permissions": {
+            "$ref": "#/components/schemas/ExtendedPermissions"
+          },
           "ViewColumns": {
             "type": "array",
             "items": {
@@ -61309,6 +61347,17 @@
           }
         }
       },
+      "ExtendedPermissions": {
+        "type": "object",
+        "properties": {
+          "Permissions": {
+            "$ref": "#/components/schemas/Permissions"
+          },
+          "Subjects": {
+            "$ref": "#/components/schemas/ExtendedSubjects"
+          }
+        }
+      },
       "ExtendedRelease": {
         "type": "object",
         "properties": {
@@ -61322,6 +61371,9 @@
           },
           "Organization": {
             "$ref": "#/components/schemas/Organization"
+          },
+          "Permissions": {
+            "$ref": "#/components/schemas/ExtendedPermissions"
           },
           "Release": {
             "allOf": [
@@ -61516,6 +61568,9 @@
           "Organization": {
             "$ref": "#/components/schemas/Organization"
           },
+          "Permissions": {
+            "$ref": "#/components/schemas/ExtendedPermissions"
+          },
           "ServiceAccount": {
             "$ref": "#/components/schemas/ServiceAccount"
           },
@@ -61555,6 +61610,9 @@
           },
           "Organization": {
             "$ref": "#/components/schemas/Organization"
+          },
+          "Permissions": {
+            "$ref": "#/components/schemas/ExtendedPermissions"
           },
           "ReleaseTarget": {
             "$ref": "#/components/schemas/Target"
@@ -61680,6 +61738,41 @@
           }
         }
       },
+      "ExtendedSubjects": {
+        "type": "object",
+        "properties": {
+          "Groups": {
+            "type": "object",
+            "additionalProperties": {
+              "type": "array",
+              "items": {
+                "$ref": "#/components/schemas/Group"
+              }
+            },
+            "x-go-type-skip-optional-pointer": true
+          },
+          "ServiceAccounts": {
+            "type": "object",
+            "additionalProperties": {
+              "type": "array",
+              "items": {
+                "$ref": "#/components/schemas/ServiceAccount"
+              }
+            },
+            "x-go-type-skip-optional-pointer": true
+          },
+          "Users": {
+            "type": "object",
+            "additionalProperties": {
+              "type": "array",
+              "items": {
+                "$ref": "#/components/schemas/User"
+              }
+            },
+            "x-go-type-skip-optional-pointer": true
+          }
+        }
+      },
       "ExtendedTag": {
         "type": "object",
         "properties": {
@@ -61691,6 +61784,9 @@
           },
           "Organization": {
             "$ref": "#/components/schemas/Organization"
+          },
+          "Permissions": {
+            "$ref": "#/components/schemas/ExtendedPermissions"
           },
           "Space": {
             "$ref": "#/components/schemas/Space"
@@ -61716,6 +61812,9 @@
           },
           "Organization": {
             "$ref": "#/components/schemas/Organization"
+          },
+          "Permissions": {
+            "$ref": "#/components/schemas/ExtendedPermissions"
           },
           "Space": {
             "$ref": "#/components/schemas/Space"
@@ -61760,6 +61859,9 @@
           },
           "Organization": {
             "$ref": "#/components/schemas/Organization"
+          },
+          "Permissions": {
+            "$ref": "#/components/schemas/ExtendedPermissions"
           },
           "Space": {
             "$ref": "#/components/schemas/Space"
@@ -61835,6 +61937,9 @@
               }
             ],
             "description": "The Organization the Unit belongs to."
+          },
+          "Permissions": {
+            "$ref": "#/components/schemas/ExtendedPermissions"
           },
           "Space": {
             "allOf": [
@@ -61939,6 +62044,9 @@
           },
           "Organization": {
             "$ref": "#/components/schemas/Organization"
+          },
+          "Permissions": {
+            "$ref": "#/components/schemas/ExtendedPermissions"
           },
           "Space": {
             "$ref": "#/components/schemas/Space"

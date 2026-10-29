@@ -293,7 +293,7 @@ func providedNamespaceEnricher(target api.ResourceType) yamlkit.AttributeEnriche
 
 // configMapEnricher populates ProvidedProperties and NeededRequired/NeededPreferred
 // for ConfigMap needs/provides matching. For provided ConfigMaps (metadata.name), it extracts
-// ResourceNameStableCore, ConfigMapFormat, Namespace, and data keys. For needed ConfigMap
+// ResourceNameStableCore (as Name and PlaceholderName), ConfigMapFormat, Namespace, and data keys. For needed ConfigMap
 // references, it extracts Namespace and envFrom format requirements.
 func configMapEnricher(doc *gaby.YamlDoc, attr *api.AttributeValue, isProvided bool) error {
 	// Only enrich ConfigMap resources (provided) or references to ConfigMaps (needed).
@@ -315,6 +315,10 @@ func configMapEnricher(doc *gaby.YamlDoc, attr *api.AttributeValue, isProvided b
 		stableCorePath := k8skit.K8sContextPath(constants.ResourceNameStableCoreKeySuffix)
 		if v, found, _ := yamlkit.YamlSafePathGetValue[string](doc, api.ResolvedPath(stableCorePath), true); found && v != "" {
 			attr.Details.ProvidedProperties["Name"] = v
+			// A reference to a ConfigMap whose name has a hash of its content in it can't be
+			// written with that name, which changes with the content. It is written as the named
+			// placeholder for the name without the hash instead, which every render offers.
+			attr.Details.ProvidedProperties[api.PropertyKeyPlaceholderName] = yamlkit.PlaceholderNameFor(v)
 		}
 		// A ConfigMap rendered from AppConfig says which way it is meant to be consumed, so
 		// that a Deployment linked to both renderings binds its envFrom to the key/value one and

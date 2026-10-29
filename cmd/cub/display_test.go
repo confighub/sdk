@@ -10,6 +10,7 @@ import (
 	"unicode/utf8"
 
 	goclientnew "github.com/confighub/sdk/core/openapi/goclient-new"
+	"github.com/google/uuid"
 	sigsyaml "sigs.k8s.io/yaml"
 )
 
@@ -214,5 +215,55 @@ func TestMapToLinesRow(t *testing.T) {
 		"Labels\n"
 	if out.String() != want {
 		t.Fatalf("table rendered as\n%q\nwant\n%q", out.String(), want)
+	}
+}
+
+// TestPermissionsToString checks that each action's subjects are named by what include=Permissions
+// expanded, a ServiceAccount in place of the User it acts as, and by UUID otherwise.
+func TestPermissionsToString(t *testing.T) {
+	const (
+		userID               = "11111111-1111-1111-1111-111111111111"
+		serviceAccountUserID = "22222222-2222-2222-2222-222222222222"
+		groupID              = "33333333-3333-3333-3333-333333333333"
+		missingUserID        = "44444444-4444-4444-4444-444444444444"
+	)
+	alice := goclientnew.User{UserID: uuid.MustParse(userID), Username: "alice"}
+	own := goclientnew.Permissions{
+		"Manage": {UserIDs: map[string]bool{userID: true}},
+		"View": {
+			UserIDs:  map[string]bool{userID: true, serviceAccountUserID: true, missingUserID: true},
+			GroupIDs: map[string]bool{groupID: true},
+		},
+	}
+	expanded := goclientnew.ExtendedPermissions{
+		Permissions: &own,
+		Subjects: &goclientnew.ExtendedSubjects{
+			Users: map[string][]goclientnew.User{
+				"Manage": {alice},
+				"View":   {alice, {UserID: uuid.MustParse(serviceAccountUserID), Username: "sa-user"}},
+			},
+			Groups: map[string][]goclientnew.Group{
+				"View": {{GroupID: uuid.MustParse(groupID), Slug: "platform"}},
+			},
+			ServiceAccounts: map[string][]goclientnew.ServiceAccount{
+				"View": {{UserID: uuid.MustParse(serviceAccountUserID), Slug: "ci-bot"}},
+			},
+		},
+	}
+
+	got := permissionsToString(&own, &expanded)
+	want := "Manage=[alice]\nView=[" + missingUserID + ", alice, ci-bot (service account), platform (group)]"
+	if got != want {
+		t.Fatalf("permissionsToString = %q, want %q", got, want)
+	}
+
+	got = permissionsToString(&own, nil)
+	want = "Manage=[" + userID + "]\nView=[" + userID + ", " + serviceAccountUserID + ", " + groupID + ", " + missingUserID + "]"
+	if got != want {
+		t.Fatalf("permissionsToString without expansion = %q, want %q", got, want)
+	}
+
+	if got := permissionsToString(nil, nil); got != "" {
+		t.Fatalf("permissionsToString(nil) = %q, want empty", got)
 	}
 }

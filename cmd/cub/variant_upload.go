@@ -110,7 +110,7 @@ to another source, or to no source, is never written or emptied — so one Space
 hold several sources and hand-written Units side by side.
 
 Rendered Secrets are never uploaded — apply them out-of-band. AppConfig ConfigMaps
-(carrying installer.confighub.com annotations) are expanded into an AppConfig data
+(carrying the confighub.com/toolchain annotation) are expanded into an AppConfig data
 Unit, a render-configmap Invocation, a placeholder Unit, and an Upsert link. A file
 holding application configuration rather than Kubernetes resources — a .properties,
 .env, .toml, or .ini file, or YAML or JSON with no apiVersion and kind — becomes one

@@ -141,12 +141,36 @@ func displayValidationResult(vr *api.ValidationResult) {
 	}
 }
 
+// invocationFailed reports whether an invocation failed on the Unit or Revision one response is
+// for. An Error alone is enough: a server could report Success for a Unit whose functions ran
+// but whose result was not saved, with the reason in Error.
+func invocationFailed(respMsg *goclientnew.FunctionInvocationsResponse) bool {
+	return !respMsg.Success || respMsg.Error != nil
+}
+
+// failedInvocationsError is the error a command returns when the invocation failed on some of
+// the Units or Revisions it reached, after their responses have been displayed. Nil when none
+// failed.
+func failedInvocationsError(respMsgs *[]goclientnew.FunctionInvocationsResponse) error {
+	failed := 0
+	for i := range *respMsgs {
+		if invocationFailed(&(*respMsgs)[i]) {
+			failed++
+		}
+	}
+	if failed == 0 {
+		return nil
+	}
+	return fmt.Errorf("function invocation failed on %d of %d units", failed, len(*respMsgs))
+}
+
 func outputFunctionInvocationResponse(respMsgs *[]goclientnew.FunctionInvocationsResponse) {
 	for i := range *respMsgs {
 		respMsg := &(*respMsgs)[i]
+		failed := invocationFailed(respMsg)
 		if !quiet && !outputOnly && !dataOnly && !outputValuesOnly && !outputRaw {
 			statusVerb := "failed"
-			if respMsg.Success {
+			if !failed {
 				statusVerb = "succeeded"
 			}
 			unitDisplay := unitDisplayName(respMsg)
@@ -155,11 +179,12 @@ func outputFunctionInvocationResponse(respMsgs *[]goclientnew.FunctionInvocation
 			} else {
 				tprint("Function(s) %s on unit %s", statusVerb, unitDisplay)
 			}
-			if !respMsg.Success && respMsg.Error != nil {
+			if respMsg.Error != nil {
 				displayResponseError(respMsg.Error)
 			}
 		}
-		if dataOnly || (!quiet && !outputOnly && !outputValuesOnly && !outputRaw) {
+		// A failed invocation changed nothing, whatever data its functions proposed.
+		if !failed && (dataOnly || (!quiet && !outputOnly && !outputValuesOnly && !outputRaw)) {
 			if dataOnly || len(respMsg.Mutators) > 0 {
 				// Don't use detailView to print the data because it pads the entire width with spaces.
 				if !dataOnly {

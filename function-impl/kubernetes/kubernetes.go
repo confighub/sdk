@@ -46,8 +46,8 @@ func attributeDescriptors() map[api.AttributeName]yamlkit.AttributeDescriptor {
 		// why its paths state their own role rather than taking the descriptor's.
 		attributeNameConfigMapHash: {DataType: api.DataTypeString},
 
-		// A hostname declares one path per type; the subdomain and the domain within it are
-		// registered at a suffix of it, through a regexp accessor that splits the value.
+		// A hostname is declared at each path holding one; the subdomain and the domain within
+		// it are registered at a suffix of that path, through a regexp accessor that splits the value.
 		api.AttributeNameHostname: {
 			DataType:         api.DataTypeString,
 			DescribePaths:    true,

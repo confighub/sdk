@@ -298,12 +298,9 @@ func ConfigurationResources(parsedData gaby.Container, resourceProvider Resource
 	return resources
 }
 
-// MatchResource finds the position in parsedData of the resource target identifies, among the
-// resources options select, as api.ResourceIndex finds one: by type in any API version, and by
-// name with its scope or, when that names one resource, without it. The match reports the names
-// a scopeless name was ambiguous between.
-func MatchResource(parsedData gaby.Container, resourceProvider ResourceProvider, options *api.FunctionOptions,
-	target api.ResourceInfo) (int, api.ResourceMatch, error) {
+// SelectedResources lists the resources in parsedData that options select, with the position of
+// each in parsedData, for indexing them (api.ResourceIndex) to find resources to change.
+func SelectedResources(parsedData gaby.Container, resourceProvider ResourceProvider, options *api.FunctionOptions) ([]api.ResourceInfo, []int, error) {
 	var resources []api.ResourceInfo
 	var positions []int
 	_, err := VisitResourcesFiltered(parsedData, nil, resourceProvider, options,
@@ -312,6 +309,19 @@ func MatchResource(parsedData gaby.Container, resourceProvider ResourceProvider,
 			positions = append(positions, position)
 			return output, nil
 		})
+	if err != nil {
+		return nil, nil, err
+	}
+	return resources, positions, nil
+}
+
+// MatchResource finds the position in parsedData of the resource target identifies, among the
+// resources options select, as api.ResourceIndex finds one: by type in any API version, and by
+// name with its scope or, when that names one resource, without it. The match reports the names
+// a scopeless name was ambiguous between.
+func MatchResource(parsedData gaby.Container, resourceProvider ResourceProvider, options *api.FunctionOptions,
+	target api.ResourceInfo) (int, api.ResourceMatch, error) {
+	resources, positions, err := SelectedResources(parsedData, resourceProvider, options)
 	if err != nil {
 		return -1, api.ResourceMatch{}, err
 	}

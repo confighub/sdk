@@ -812,6 +812,10 @@ func runFunctionInvocations(cmd *cobra.Command, args []string, mode FunctionKind
 		printAwaitingTriggers()
 		// Wait one at a time
 		for _, resp := range *resp {
+			// A Unit the invocation failed on has nothing of this invocation's to await.
+			if invocationFailed(&resp) {
+				continue
+			}
 			unitDetails, err := resolveUnit(resp.UnitID.String(), resp.SpaceID.String(), "*")
 			if err != nil {
 				return err
@@ -833,5 +837,5 @@ func runFunctionInvocations(cmd *cobra.Command, args []string, mode FunctionKind
 		displayDiffsFromFunctionResponse(resp, funcDesc)
 	}
 
-	return nil
+	return failedInvocationsError(resp)
 }

@@ -71,6 +71,22 @@ metadata:
 spec:
   endpoints:
   - dnsName: dns.example.com
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: web-alpha
+  namespace: prod
+  annotations:
+    external-dns.alpha.kubernetes.io/hostname: alpha.example.com
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: web-svc
+  namespace: prod
+  annotations:
+    external-dns.kubernetes.io/hostname: svc.example.com
 `
 
 // invokeHostnameGetter runs a no-argument hostname getter (get-hostname,
@@ -122,6 +138,8 @@ func TestHostname_GetAcrossResources(t *testing.T) {
 		{"prod/web-gw", "spec.listeners.0.hostname", "gw.example.com"},
 		{"prod/web-route", "spec.hostnames.0", "route.example.com"},
 		{"prod/web-dns", "spec.endpoints.0.dnsName", "dns.example.com"},
+		{"prod/web-alpha", "metadata.annotations.external-dns~1alpha~1kubernetes~1io/hostname", "alpha.example.com"},
+		{"prod/web-svc", "metadata.annotations.external-dns~1kubernetes~1io/hostname", "svc.example.com"},
 	}
 	for _, e := range expected {
 		assert.True(t, hasHostnameValue(list, e.resourceName, e.path, e.value),
@@ -198,4 +216,46 @@ spec:
 	assert.Contains(t, out, "gw.internal.test")
 	assert.False(t, strings.Contains(out, "example.com"),
 		"no original domain should remain after set-hostname-domain; got:\n%s", out)
+}
+
+// TestHostname_SetServiceAnnotations verifies set-hostname-domain rewrites whichever
+// external-dns annotation a Service carries, and adds neither prefix to a Service that
+// lacks it, since external-dns would act on the added one.
+func TestHostname_SetServiceAnnotations(t *testing.T) {
+	const input = `apiVersion: v1
+kind: Service
+metadata:
+  name: web-alpha
+  namespace: prod
+  annotations:
+    external-dns.alpha.kubernetes.io/hostname: alpha.example.com
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: web-svc
+  namespace: prod
+  annotations:
+    external-dns.kubernetes.io/hostname: svc.example.com
+`
+	req := &api.FunctionInvocationRequest{
+		ConfigData: input,
+		FunctionInvocations: []api.FunctionInvocation{
+			{
+				FunctionName: "set-hostname-domain",
+				Arguments:    []api.FunctionArgument{{ParameterName: "domain", Value: "internal.test"}},
+			},
+		},
+	}
+	resp, err := testFunctionHandler.InvokeCore(context.Background(), req)
+	require.NoError(t, err)
+	require.True(t, resp.Success, "set-hostname-domain should succeed; errors: %v", resp.ErrorMessages)
+
+	out := string(resp.ConfigData)
+	assert.Contains(t, out, "external-dns.alpha.kubernetes.io/hostname: alpha.internal.test")
+	assert.Contains(t, out, "external-dns.kubernetes.io/hostname: svc.internal.test")
+	assert.Equal(t, 1, strings.Count(out, "external-dns.alpha.kubernetes.io/hostname"),
+		"set-hostname-domain should not add the alpha annotation; got:\n%s", out)
+	assert.Equal(t, 1, strings.Count(out, "external-dns.kubernetes.io/hostname"),
+		"set-hostname-domain should not add the unprefixed annotation; got:\n%s", out)
 }

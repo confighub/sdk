@@ -109,6 +109,23 @@ func TestParseSubstitutedPrefix(t *testing.T) {
 	assert.Error(t, err)
 }
 
+// Permissions is a map access with or without the `*`, which there stands for any action, even when
+// it is among the included fields because its subjects are expanded.
+func TestParsePermissionsIsNotAPrefix(t *testing.T) {
+	table := cubkit.WhereAttributes()
+	parser := entityfilter.NewParser(table, "Space", []string{"Permissions"}, nil)
+	expressions, err := parser.Parse("Permissions.*.UserIDs ? '0b6e7d1c-7b7e-4e0b-9a39-6a8f6e1c2d3e' AND " +
+		"Permissions.Edit.GroupIDs ? '0b6e7d1c-7b7e-4e0b-9a39-6a8f6e1c2d3e'")
+	require.NoError(t, err)
+	require.Len(t, expressions, 2)
+	for _, expression := range expressions {
+		assert.Equal(t, "Permissions", expression.Path)
+		assert.Equal(t, "Space", expression.EntityPrefix)
+		assert.False(t, expression.IsExtendedTerm)
+		assert.False(t, expression.IsArrayElement)
+	}
+}
+
 func TestIsKeyedMap(t *testing.T) {
 	table := cubkit.WhereAttributes()
 	for _, name := range []string{"Labels", "Annotations", "ValidationErrors", "DeleteGates", "Permissions", "Tags"} {

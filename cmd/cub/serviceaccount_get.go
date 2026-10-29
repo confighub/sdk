@@ -245,10 +245,14 @@ func newestGrants(group []cubapi.Grant) ([]cubapi.Grant, int) {
 }
 
 func displayExtendedServiceAccountDetails(extendedServiceAccount *goclientnew.ExtendedServiceAccount) {
-	displayServiceAccountDetails(extendedServiceAccount.ServiceAccount)
+	renderServiceAccountDetails(extendedServiceAccount.ServiceAccount, extendedServiceAccount.Permissions)
 }
 
 func displayServiceAccountDetails(serviceAccount *goclientnew.ServiceAccount) {
+	renderServiceAccountDetails(serviceAccount, nil)
+}
+
+func renderServiceAccountDetails(serviceAccount *goclientnew.ServiceAccount, expanded *goclientnew.ExtendedPermissions) {
 	view := tableView()
 	view.Append([]string{"ID", serviceAccount.ServiceAccountID.String()})
 	view.Append([]string{"Name", serviceAccount.Slug})
@@ -260,7 +264,7 @@ func displayServiceAccountDetails(serviceAccount *goclientnew.ServiceAccount) {
 	view.Append([]string{"Labels", labelsToString(serviceAccount.Labels)})
 	view.Append([]string{"Delete Gates", deleteGatesToString(serviceAccount.DeleteGates)})
 	view.Append([]string{"Annotations", annotationsToString(serviceAccount.Annotations)})
-	view.Append([]string{"Permissions", permissionsToString(serviceAccount.Permissions)})
+	view.Append([]string{"Permissions", permissionsToString(serviceAccount.Permissions, expanded)})
 	view.Append([]string{"Organization ID", serviceAccount.OrganizationID.String()})
 	view.Render()
 }

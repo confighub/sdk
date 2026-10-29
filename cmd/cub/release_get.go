@@ -20,7 +20,7 @@ const releaseReferenceLatest = "latest"
 
 // releaseGetInclude expands every entity a Release references, so the details name each one
 // rather than giving its id.
-const releaseGetInclude = "SpaceID,TagID,ChangeOrderID,TargetID,UserID"
+const releaseGetInclude = "SpaceID,TagID,ChangeOrderID,TargetID,UserID,Permissions"
 
 var releaseGetCmd = &cobra.Command{
 	Use:   "get [release-num | release-id]",
@@ -318,7 +318,7 @@ func displayExtendedReleaseDetails(er *goclientnew.ExtendedRelease) {
 	view.Append([]string{"Labels", labelsToString(rel.Labels)})
 	view.Append([]string{"Delete Gates", deleteGatesToString(rel.DeleteGates)})
 	view.Append([]string{"Annotations", annotationsToString(rel.Annotations)})
-	view.Append([]string{"Permissions", permissionsToString(rel.Permissions)})
+	view.Append([]string{"Permissions", permissionsToString(rel.Permissions, er.Permissions)})
 	view.Render()
 }
 

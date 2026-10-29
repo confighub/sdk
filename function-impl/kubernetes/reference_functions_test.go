@@ -179,6 +179,74 @@ spec:
 		"what the bound value offered lives only in the stored record")
 }
 
+// A provided path is read from every resource of its type, whichever resource the stored record
+// names. An immutable ConfigMap that a newer render superseded is marked IgnoreProvided, and it
+// has to drop out here as it does from get-provided: left in, it ties with the newer one and keeps
+// the workloads that reference it.
+func TestGetPathsLeavesOutWithdrawnProvidedValues(t *testing.T) {
+	const renders = `apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: app-env-7e719321eb
+  namespace: myns
+  annotations:
+    confighub.com/ResourceNameStableCore: app-env
+    confighub.com/VisitorOptions: IgnoreProvided
+data:
+  GREETING: hello
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: app-env-e21e6fbc2f
+  namespace: myns
+  annotations:
+    confighub.com/ResourceNameStableCore: app-env
+    confighub.com/RenderRevision: Latest
+data:
+  GREETING: bye
+`
+	pathInfo := func(details api.AttributeNeedsProvidesDetails) api.AttributeInfo {
+		return api.AttributeInfo{
+			AttributeIdentifier: api.AttributeIdentifier{
+				ResourceInfo: api.ResourceInfo{ResourceName: "myns/app-env-e21e6fbc2f", ResourceType: "v1/ConfigMap"},
+				Path:         "metadata.name",
+			},
+			AttributeMetadata: api.AttributeMetadata{
+				AttributeName: api.AttributeNameResourceName,
+				DataType:      api.DataTypeString,
+				Details:       &api.AttributeDetails{AttributeNeedsProvidesDetails: details},
+			},
+		}
+	}
+	getPaths := func(t *testing.T, info api.AttributeInfo) []string {
+		t.Helper()
+		infoJSON, err := json.Marshal([]api.AttributeInfo{info})
+		require.NoError(t, err)
+		resp, err := testFunctionHandler.InvokeCore(context.Background(), &api.FunctionInvocationRequest{
+			ConfigData: renders,
+			FunctionInvocations: []api.FunctionInvocation{{
+				FunctionName: "get-paths",
+				Arguments:    []api.FunctionArgument{{Value: string(infoJSON)}},
+			}},
+		})
+		require.NoError(t, err)
+		require.True(t, resp.Success, "get-paths should succeed; errors: %v", resp.ErrorMessages)
+		var values api.AttributeValueList
+		require.NoError(t, json.Unmarshal(resp.Outputs[api.OutputTypeAttributeValueList], &values))
+		var got []string
+		for _, v := range values {
+			got = append(got, v.Value.(string))
+		}
+		return got
+	}
+
+	assert.Equal(t, []string{"app-env-e21e6fbc2f"}, getPaths(t, pathInfo(api.AttributeNeedsProvidesDetails{IsProvided: true})),
+		"a provided path should offer only the render that has not withdrawn its offer")
+	assert.Equal(t, []string{"app-env-7e719321eb", "app-env-e21e6fbc2f"}, getPaths(t, pathInfo(api.AttributeNeedsProvidesDetails{})),
+		"a path read for its value, as a ManualBinding's is, should still be read from both")
+}
+
 // A ClusterRoleBinding's subject names its ServiceAccount's namespace beside its name. The
 // reference requires that namespace, and a ServiceAccount's name offers its own, so matching can
 // tell two same-named ServiceAccounts apart and a cluster-scoped binding can match at all. A

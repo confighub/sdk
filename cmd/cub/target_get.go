@@ -100,7 +100,7 @@ func displayTargetDetails(extendedTarget *goclientnew.ExtendedTarget) {
 	view.Append([]string{"Annotations", annotationsToString(targetDetails.Annotations)})
 	view.Append([]string{"Facts", mapToLines(targetDetails.Facts)})
 	view.Append([]string{"Delete Gates", deleteGatesToString(targetDetails.DeleteGates)})
-	view.Append([]string{"Permissions", permissionsToString(targetDetails.Permissions)})
+	view.Append([]string{"Permissions", permissionsToString(targetDetails.Permissions, extendedTarget.Permissions)})
 
 	view.Append([]string{"Where Trigger", targetDetails.WhereTrigger})
 

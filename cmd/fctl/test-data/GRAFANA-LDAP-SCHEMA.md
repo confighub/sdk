@@ -19,6 +19,9 @@ The schema validates Grafana's LDAP authentication configuration, ensuring:
 
 The schema validates resources with `configSchema: GrafanaLDAP`.
 
+The `configHub` section names the configuration and its schema. vet-jsonschema uses it to find
+the schema and leaves it out of what it validates, so the schema does not declare it.
+
 ## Configuration Structure
 
 ### Top-Level Structure
@@ -57,20 +60,7 @@ servers:
 
 ## Required Sections
 
-### 1. `configHub` (Required)
-
-Metadata section for ConfigHub management.
-
-**Required Fields:**
-
-- `configSchema`: Must be `"GrafanaLDAP"`
-
-**Optional Fields:**
-
-- `configName`: Name of the configuration
-- `kubernetes.namespace`: Kubernetes namespace for deployment
-
-### 2. `servers` (Required)
+### 1. `servers` (Required)
 
 Array of LDAP servers. At least one server must be configured.
 
@@ -150,7 +140,7 @@ group_dn = *
 org_role = Viewer
 ```
 
-### 3. `auth.ldap` (Optional)
+### 2. `auth.ldap` (Optional)
 
 Main LDAP authentication settings for Grafana.
 

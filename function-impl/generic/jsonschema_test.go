@@ -9,8 +9,10 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
+	"github.com/confighub/sdk/configkit/envkit"
 	"github.com/confighub/sdk/core/function/api"
 	"github.com/confighub/sdk/core/third_party/gaby"
+	"github.com/confighub/sdk/core/workerapi"
 )
 
 // schemaMapWithRequired wraps a Deployment-shaped JSON Schema, keyed on the
@@ -118,4 +120,49 @@ func contains(haystack, needle string) bool {
 		}
 	}
 	return false
+}
+
+// envFixture is an AppConfig/Env Unit as envkit parses it: the configHub.* lines
+// become a configHub object beside the variables.
+const envFixture = `configHub:
+  configName: app-env
+  configSchema: App
+LOG_LEVEL: debug
+`
+
+// strictEnvSchemaMap allows only the application's variables.
+const strictEnvSchemaMap = `{
+	"App": {
+		"type": "object",
+		"additionalProperties": false,
+		"properties": {
+			"LOG_LEVEL": {"type": "string", "enum": ["debug", "info"]}
+		}
+	}
+}`
+
+func vetEnv(t *testing.T, fixture string, functionContext *api.FunctionContext) api.ValidationResult {
+	t.Helper()
+	docs, err := gaby.ParseAll([]byte(fixture))
+	require.NoError(t, err)
+	args := []api.FunctionArgument{{Value: strictEnvSchemaMap}}
+	_, output, err := GenericFnVetJSONSchema(envkit.NewEnvResourceProvider(), &api.FunctionOptions{}, functionContext, docs, args)
+	require.NoError(t, err)
+	vr, ok := output.(api.ValidationResult)
+	require.True(t, ok)
+	return vr
+}
+
+func TestVetJSONSchema_AppConfigMetadataIsNotValidated(t *testing.T) {
+	appConfigEnv := &api.FunctionContext{ToolchainType: workerapi.ToolchainAppConfigEnv}
+
+	vr := vetEnv(t, envFixture, appConfigEnv)
+	assert.True(t, vr.Passed, "the configHub metadata is not one of the schema's properties, and must not fail it; got: %v", vr.Details)
+
+	vr = vetEnv(t, envFixture+"LOG_LEVL: info\n", appConfigEnv)
+	assert.False(t, vr.Passed, "a property the schema doesn't allow still fails")
+
+	// Without an AppConfig toolchain, the metadata is validated like any other field.
+	vr = vetEnv(t, envFixture, nil)
+	assert.False(t, vr.Passed, "only an AppConfig toolchain leaves the metadata out")
 }

@@ -121,14 +121,14 @@ paths:
           The attribute names are case-sensitive, PascalCase, and
           expected in a comma-separated list format as in the JSON encoding.
 
-          Supported attributes for Component are OrganizationID.
+          Supported attributes for Component are OrganizationID, Permissions.
 
           The whole string must be query-encoded.
         in: query
         name: include
         required: false
         schema:
-          pattern: ^\s*(OrganizationID)\s*(?:,\s*(?:OrganizationID)\s*)*$
+          pattern: ^\s*(OrganizationID|Permissions)\s*(?:,\s*(?:OrganizationID|Permissions)\s*)*$
           type: string
       - description: Maximum number of Component entities to act on, in ID order.
           A request that names limit or continue also stops when it runs short of
@@ -343,14 +343,14 @@ paths:
           The attribute names are case-sensitive, PascalCase, and
           expected in a comma-separated list format as in the JSON encoding.
 
-          Supported attributes for Component are OrganizationID.
+          Supported attributes for Component are OrganizationID, Permissions.
 
           The whole string must be query-encoded.
         in: query
         name: include
         required: false
         schema:
-          pattern: ^\s*(OrganizationID)\s*(?:,\s*(?:OrganizationID)\s*)*$
+          pattern: ^\s*(OrganizationID|Permissions)\s*(?:,\s*(?:OrganizationID|Permissions)\s*)*$
           type: string
       - description: Maximum number of Component entities to act on, in ID order.
           A request that names limit or continue also stops when it runs short of
@@ -663,14 +663,14 @@ paths:
           The attribute names are case-sensitive, PascalCase, and
           expected in a comma-separated list format as in the JSON encoding.
 
-          Supported attributes for ServiceAccount are OrganizationID.
+          Supported attributes for ServiceAccount are OrganizationID, Permissions.
 
           The whole string must be query-encoded.
         in: query
         name: include
         required: false
         schema:
-          pattern: ^\s*(OrganizationID)\s*(?:,\s*(?:OrganizationID)\s*)*$
+          pattern: ^\s*(OrganizationID|Permissions)\s*(?:,\s*(?:OrganizationID|Permissions)\s*)*$
           type: string
       - description: Maximum number of ServiceAccount entities to act on, in ID order.
           A request that names limit or continue also stops when it runs short of
@@ -875,14 +875,14 @@ paths:
           The attribute names are case-sensitive, PascalCase, and
           expected in a comma-separated list format as in the JSON encoding.
 
-          Supported attributes for ServiceAccount are OrganizationID.
+          Supported attributes for ServiceAccount are OrganizationID, Permissions.
 
           The whole string must be query-encoded.
         in: query
         name: include
         required: false
         schema:
-          pattern: ^\s*(OrganizationID)\s*(?:,\s*(?:OrganizationID)\s*)*$
+          pattern: ^\s*(OrganizationID|Permissions)\s*(?:,\s*(?:OrganizationID|Permissions)\s*)*$
           type: string
       - description: Maximum number of ServiceAccount entities to act on, in ID order.
           A request that names limit or continue also stops when it runs short of
@@ -1156,14 +1156,14 @@ paths:
           The attribute names are case-sensitive, PascalCase, and
           expected in a comma-separated list format as in the JSON encoding.
 
-          Supported attributes for Space are AttributeFilterID, AttributeIDs, ComponentID, OrganizationID, ReleaseTargetID, TriggerFilterID, TriggerIDs.
+          Supported attributes for Space are AttributeFilterID, AttributeIDs, ComponentID, OrganizationID, Permissions, ReleaseTargetID, TriggerFilterID, TriggerIDs.
 
           The whole string must be query-encoded.
         in: query
         name: include
         required: false
         schema:
-          pattern: ^\s*(AttributeFilterID|AttributeIDs|ComponentID|OrganizationID|ReleaseTargetID|TriggerFilterID|TriggerIDs)\s*(?:,\s*(?:AttributeFilterID|AttributeIDs|ComponentID|OrganizationID|ReleaseTargetID|TriggerFilterID|TriggerIDs)\s*)*$
+          pattern: ^\s*(AttributeFilterID|AttributeIDs|ComponentID|OrganizationID|Permissions|ReleaseTargetID|TriggerFilterID|TriggerIDs)\s*(?:,\s*(?:AttributeFilterID|AttributeIDs|ComponentID|OrganizationID|Permissions|ReleaseTargetID|TriggerFilterID|TriggerIDs)\s*)*$
           type: string
       - description: Maximum number of Space entities to act on, in ID order. A request
           that names limit or continue also stops when it runs short of time, and
@@ -1402,14 +1402,14 @@ paths:
           The attribute names are case-sensitive, PascalCase, and
           expected in a comma-separated list format as in the JSON encoding.
 
-          Supported attributes for Space are AttributeFilterID, AttributeIDs, ComponentID, OrganizationID, ReleaseTargetID, TriggerFilterID, TriggerIDs.
+          Supported attributes for Space are AttributeFilterID, AttributeIDs, ComponentID, OrganizationID, Permissions, ReleaseTargetID, TriggerFilterID, TriggerIDs.
 
           The whole string must be query-encoded.
         in: query
         name: include
         required: false
         schema:
-          pattern: ^\s*(AttributeFilterID|AttributeIDs|ComponentID|OrganizationID|ReleaseTargetID|TriggerFilterID|TriggerIDs)\s*(?:,\s*(?:AttributeFilterID|AttributeIDs|ComponentID|OrganizationID|ReleaseTargetID|TriggerFilterID|TriggerIDs)\s*)*$
+          pattern: ^\s*(AttributeFilterID|AttributeIDs|ComponentID|OrganizationID|Permissions|ReleaseTargetID|TriggerFilterID|TriggerIDs)\s*(?:,\s*(?:AttributeFilterID|AttributeIDs|ComponentID|OrganizationID|Permissions|ReleaseTargetID|TriggerFilterID|TriggerIDs)\s*)*$
           type: string
       - description: Maximum number of Space entities to act on, in ID order. A request
           that names limit or continue also stops when it runs short of time, and
@@ -1745,14 +1745,14 @@ paths:
           The attribute names are case-sensitive, PascalCase, and
           expected in a comma-separated list format as in the JSON encoding.
 
-          Supported attributes for Space are AttributeFilterID, AttributeIDs, ComponentID, OrganizationID, ReleaseTargetID, TriggerFilterID, TriggerIDs.
+          Supported attributes for Space are AttributeFilterID, AttributeIDs, ComponentID, OrganizationID, Permissions, ReleaseTargetID, TriggerFilterID, TriggerIDs.
 
           The whole string must be query-encoded.
         in: query
         name: include
         required: false
         schema:
-          pattern: ^\s*(AttributeFilterID|AttributeIDs|ComponentID|OrganizationID|ReleaseTargetID|TriggerFilterID|TriggerIDs)\s*(?:,\s*(?:AttributeFilterID|AttributeIDs|ComponentID|OrganizationID|ReleaseTargetID|TriggerFilterID|TriggerIDs)\s*)*$
+          pattern: ^\s*(AttributeFilterID|AttributeIDs|ComponentID|OrganizationID|Permissions|ReleaseTargetID|TriggerFilterID|TriggerIDs)\s*(?:,\s*(?:AttributeFilterID|AttributeIDs|ComponentID|OrganizationID|Permissions|ReleaseTargetID|TriggerFilterID|TriggerIDs)\s*)*$
           type: string
       - description: Maximum number of Space entities to act on, in ID order. A request
           that names limit or continue also stops when it runs short of time, and
@@ -2242,14 +2242,14 @@ paths:
           The attribute names are case-sensitive, PascalCase, and
           expected in a comma-separated list format as in the JSON encoding.
 
-          Supported attributes for Attestation are OrganizationID, SpaceID.
+          Supported attributes for Attestation are OrganizationID, Permissions, SpaceID.
 
           The whole string must be query-encoded.
         in: query
         name: include
         required: false
         schema:
-          pattern: ^\s*(OrganizationID|SpaceID)\s*(?:,\s*(?:OrganizationID|SpaceID)\s*)*$
+          pattern: ^\s*(OrganizationID|Permissions|SpaceID)\s*(?:,\s*(?:OrganizationID|Permissions|SpaceID)\s*)*$
           type: string
       - description: |-
           Select clause for specifying which fields to include in the response for Attestation.
@@ -2508,14 +2508,14 @@ paths:
           The attribute names are case-sensitive, PascalCase, and
           expected in a comma-separated list format as in the JSON encoding.
 
-          Supported attributes for Attribute are OrganizationID, SpaceID.
+          Supported attributes for Attribute are OrganizationID, Permissions, SpaceID.
 
           The whole string must be query-encoded.
         in: query
         name: include
         required: false
         schema:
-          pattern: ^\s*(OrganizationID|SpaceID)\s*(?:,\s*(?:OrganizationID|SpaceID)\s*)*$
+          pattern: ^\s*(OrganizationID|Permissions|SpaceID)\s*(?:,\s*(?:OrganizationID|Permissions|SpaceID)\s*)*$
           type: string
       - description: Maximum number of Attribute entities to act on, in ID order.
           A request that names limit or continue also stops when it runs short of
@@ -2716,14 +2716,14 @@ paths:
           The attribute names are case-sensitive, PascalCase, and
           expected in a comma-separated list format as in the JSON encoding.
 
-          Supported attributes for Attribute are OrganizationID, SpaceID.
+          Supported attributes for Attribute are OrganizationID, Permissions, SpaceID.
 
           The whole string must be query-encoded.
         in: query
         name: include
         required: false
         schema:
-          pattern: ^\s*(OrganizationID|SpaceID)\s*(?:,\s*(?:OrganizationID|SpaceID)\s*)*$
+          pattern: ^\s*(OrganizationID|Permissions|SpaceID)\s*(?:,\s*(?:OrganizationID|Permissions|SpaceID)\s*)*$
           type: string
       - description: |-
           Select clause for specifying which fields to include in the response for Attribute.
@@ -2982,14 +2982,14 @@ paths:
           The attribute names are case-sensitive, PascalCase, and
           expected in a comma-separated list format as in the JSON encoding.
 
-          Supported attributes for Attribute are OrganizationID, SpaceID.
+          Supported attributes for Attribute are OrganizationID, Permissions, SpaceID.
 
           The whole string must be query-encoded.
         in: query
         name: include
         required: false
         schema:
-          pattern: ^\s*(OrganizationID|SpaceID)\s*(?:,\s*(?:OrganizationID|SpaceID)\s*)*$
+          pattern: ^\s*(OrganizationID|Permissions|SpaceID)\s*(?:,\s*(?:OrganizationID|Permissions|SpaceID)\s*)*$
           type: string
       - description: Maximum number of Attribute entities to act on, in ID order.
           A request that names limit or continue also stops when it runs short of
@@ -3308,14 +3308,14 @@ paths:
           The attribute names are case-sensitive, PascalCase, and
           expected in a comma-separated list format as in the JSON encoding.
 
-          Supported attributes for Attribute are OrganizationID, SpaceID.
+          Supported attributes for Attribute are OrganizationID, Permissions, SpaceID.
 
           The whole string must be query-encoded.
         in: query
         name: include
         required: false
         schema:
-          pattern: ^\s*(OrganizationID|SpaceID)\s*(?:,\s*(?:OrganizationID|SpaceID)\s*)*$
+          pattern: ^\s*(OrganizationID|Permissions|SpaceID)\s*(?:,\s*(?:OrganizationID|Permissions|SpaceID)\s*)*$
           type: string
       - description: Maximum number of Attribute entities to act on, in ID order.
           A request that names limit or continue also stops when it runs short of
@@ -3772,14 +3772,14 @@ paths:
           The attribute names are case-sensitive, PascalCase, and
           expected in a comma-separated list format as in the JSON encoding.
 
-          Supported attributes for Attribute are OrganizationID, SpaceID.
+          Supported attributes for Attribute are OrganizationID, Permissions, SpaceID.
 
           The whole string must be query-encoded.
         in: query
         name: include
         required: false
         schema:
-          pattern: ^\s*(OrganizationID|SpaceID)\s*(?:,\s*(?:OrganizationID|SpaceID)\s*)*$
+          pattern: ^\s*(OrganizationID|Permissions|SpaceID)\s*(?:,\s*(?:OrganizationID|Permissions|SpaceID)\s*)*$
           type: string
       - description: Report what the move would do, and what would stop it, without
           moving anything
@@ -3960,14 +3960,14 @@ paths:
           The attribute names are case-sensitive, PascalCase, and
           expected in a comma-separated list format as in the JSON encoding.
 
-          Supported attributes for BridgeWorker are OrganizationID, SpaceID.
+          Supported attributes for BridgeWorker are OrganizationID, Permissions, SpaceID.
 
           The whole string must be query-encoded.
         in: query
         name: include
         required: false
         schema:
-          pattern: ^\s*(OrganizationID|SpaceID)\s*(?:,\s*(?:OrganizationID|SpaceID)\s*)*$
+          pattern: ^\s*(OrganizationID|Permissions|SpaceID)\s*(?:,\s*(?:OrganizationID|Permissions|SpaceID)\s*)*$
           type: string
       - description: Maximum number of BridgeWorker entities to act on, in ID order.
           A request that names limit or continue also stops when it runs short of
@@ -4167,14 +4167,14 @@ paths:
           The attribute names are case-sensitive, PascalCase, and
           expected in a comma-separated list format as in the JSON encoding.
 
-          Supported attributes for BridgeWorker are OrganizationID, SpaceID.
+          Supported attributes for BridgeWorker are OrganizationID, Permissions, SpaceID.
 
           The whole string must be query-encoded.
         in: query
         name: include
         required: false
         schema:
-          pattern: ^\s*(OrganizationID|SpaceID)\s*(?:,\s*(?:OrganizationID|SpaceID)\s*)*$
+          pattern: ^\s*(OrganizationID|Permissions|SpaceID)\s*(?:,\s*(?:OrganizationID|Permissions|SpaceID)\s*)*$
           type: string
       - description: |-
           Select clause for specifying which fields to include in the response for BridgeWorker.
@@ -4447,14 +4447,14 @@ paths:
           The attribute names are case-sensitive, PascalCase, and
           expected in a comma-separated list format as in the JSON encoding.
 
-          Supported attributes for BridgeWorker are OrganizationID, SpaceID.
+          Supported attributes for BridgeWorker are OrganizationID, Permissions, SpaceID.
 
           The whole string must be query-encoded.
         in: query
         name: include
         required: false
         schema:
-          pattern: ^\s*(OrganizationID|SpaceID)\s*(?:,\s*(?:OrganizationID|SpaceID)\s*)*$
+          pattern: ^\s*(OrganizationID|Permissions|SpaceID)\s*(?:,\s*(?:OrganizationID|Permissions|SpaceID)\s*)*$
           type: string
       - description: Maximum number of BridgeWorker entities to act on, in ID order.
           A request that names limit or continue also stops when it runs short of
@@ -5078,14 +5078,14 @@ paths:
           The attribute names are case-sensitive, PascalCase, and
           expected in a comma-separated list format as in the JSON encoding.
 
-          Supported attributes for ChangeOrder are EndTagID, InvocationID, OrganizationID, ReleaseTagID, RestoreTagID, SpaceFilterID, SpaceID, StartTagID, UnitFilterID.
+          Supported attributes for ChangeOrder are EndTagID, InvocationID, OrganizationID, Permissions, ReleaseTagID, RestoreTagID, SpaceFilterID, SpaceID, StartTagID, UnitFilterID.
 
           The whole string must be query-encoded.
         in: query
         name: include
         required: false
         schema:
-          pattern: ^\s*(EndTagID|InvocationID|OrganizationID|ReleaseTagID|RestoreTagID|SpaceFilterID|SpaceID|StartTagID|UnitFilterID)\s*(?:,\s*(?:EndTagID|InvocationID|OrganizationID|ReleaseTagID|RestoreTagID|SpaceFilterID|SpaceID|StartTagID|UnitFilterID)\s*)*$
+          pattern: ^\s*(EndTagID|InvocationID|OrganizationID|Permissions|ReleaseTagID|RestoreTagID|SpaceFilterID|SpaceID|StartTagID|UnitFilterID)\s*(?:,\s*(?:EndTagID|InvocationID|OrganizationID|Permissions|ReleaseTagID|RestoreTagID|SpaceFilterID|SpaceID|StartTagID|UnitFilterID)\s*)*$
           type: string
       - description: Maximum number of ChangeOrder entities to act on, in ID order.
           A request that names limit or continue also stops when it runs short of
@@ -5285,14 +5285,14 @@ paths:
           The attribute names are case-sensitive, PascalCase, and
           expected in a comma-separated list format as in the JSON encoding.
 
-          Supported attributes for ChangeOrder are EndTagID, InvocationID, OrganizationID, ReleaseTagID, RestoreTagID, SpaceFilterID, SpaceID, StartTagID, UnitFilterID.
+          Supported attributes for ChangeOrder are EndTagID, InvocationID, OrganizationID, Permissions, ReleaseTagID, RestoreTagID, SpaceFilterID, SpaceID, StartTagID, UnitFilterID.
 
           The whole string must be query-encoded.
         in: query
         name: include
         required: false
         schema:
-          pattern: ^\s*(EndTagID|InvocationID|OrganizationID|ReleaseTagID|RestoreTagID|SpaceFilterID|SpaceID|StartTagID|UnitFilterID)\s*(?:,\s*(?:EndTagID|InvocationID|OrganizationID|ReleaseTagID|RestoreTagID|SpaceFilterID|SpaceID|StartTagID|UnitFilterID)\s*)*$
+          pattern: ^\s*(EndTagID|InvocationID|OrganizationID|Permissions|ReleaseTagID|RestoreTagID|SpaceFilterID|SpaceID|StartTagID|UnitFilterID)\s*(?:,\s*(?:EndTagID|InvocationID|OrganizationID|Permissions|ReleaseTagID|RestoreTagID|SpaceFilterID|SpaceID|StartTagID|UnitFilterID)\s*)*$
           type: string
       - description: |-
           Select clause for specifying which fields to include in the response for ChangeOrder.
@@ -5551,14 +5551,14 @@ paths:
           The attribute names are case-sensitive, PascalCase, and
           expected in a comma-separated list format as in the JSON encoding.
 
-          Supported attributes for ChangeOrder are EndTagID, InvocationID, OrganizationID, ReleaseTagID, RestoreTagID, SpaceFilterID, SpaceID, StartTagID, UnitFilterID.
+          Supported attributes for ChangeOrder are EndTagID, InvocationID, OrganizationID, Permissions, ReleaseTagID, RestoreTagID, SpaceFilterID, SpaceID, StartTagID, UnitFilterID.
 
           The whole string must be query-encoded.
         in: query
         name: include
         required: false
         schema:
-          pattern: ^\s*(EndTagID|InvocationID|OrganizationID|ReleaseTagID|RestoreTagID|SpaceFilterID|SpaceID|StartTagID|UnitFilterID)\s*(?:,\s*(?:EndTagID|InvocationID|OrganizationID|ReleaseTagID|RestoreTagID|SpaceFilterID|SpaceID|StartTagID|UnitFilterID)\s*)*$
+          pattern: ^\s*(EndTagID|InvocationID|OrganizationID|Permissions|ReleaseTagID|RestoreTagID|SpaceFilterID|SpaceID|StartTagID|UnitFilterID)\s*(?:,\s*(?:EndTagID|InvocationID|OrganizationID|Permissions|ReleaseTagID|RestoreTagID|SpaceFilterID|SpaceID|StartTagID|UnitFilterID)\s*)*$
           type: string
       - description: Maximum number of ChangeOrder entities to act on, in ID order.
           A request that names limit or continue also stops when it runs short of
@@ -5909,14 +5909,14 @@ paths:
           The attribute names are case-sensitive, PascalCase, and
           expected in a comma-separated list format as in the JSON encoding.
 
-          Supported attributes for ChangeOrder are EndTagID, InvocationID, OrganizationID, ReleaseTagID, RestoreTagID, SpaceFilterID, SpaceID, StartTagID, UnitFilterID.
+          Supported attributes for ChangeOrder are EndTagID, InvocationID, OrganizationID, Permissions, ReleaseTagID, RestoreTagID, SpaceFilterID, SpaceID, StartTagID, UnitFilterID.
 
           The whole string must be query-encoded.
         in: query
         name: include
         required: false
         schema:
-          pattern: ^\s*(EndTagID|InvocationID|OrganizationID|ReleaseTagID|RestoreTagID|SpaceFilterID|SpaceID|StartTagID|UnitFilterID)\s*(?:,\s*(?:EndTagID|InvocationID|OrganizationID|ReleaseTagID|RestoreTagID|SpaceFilterID|SpaceID|StartTagID|UnitFilterID)\s*)*$
+          pattern: ^\s*(EndTagID|InvocationID|OrganizationID|Permissions|ReleaseTagID|RestoreTagID|SpaceFilterID|SpaceID|StartTagID|UnitFilterID)\s*(?:,\s*(?:EndTagID|InvocationID|OrganizationID|Permissions|ReleaseTagID|RestoreTagID|SpaceFilterID|SpaceID|StartTagID|UnitFilterID)\s*)*$
           type: string
       - description: Maximum number of ChangeOrder entities to act on, in ID order.
           A request that names limit or continue also stops when it runs short of
@@ -6354,14 +6354,14 @@ paths:
           The attribute names are case-sensitive, PascalCase, and
           expected in a comma-separated list format as in the JSON encoding.
 
-          Supported attributes for ChangeOrder are EndTagID, InvocationID, OrganizationID, ReleaseTagID, RestoreTagID, SpaceFilterID, SpaceID, StartTagID, UnitFilterID.
+          Supported attributes for ChangeOrder are EndTagID, InvocationID, OrganizationID, Permissions, ReleaseTagID, RestoreTagID, SpaceFilterID, SpaceID, StartTagID, UnitFilterID.
 
           The whole string must be query-encoded.
         in: query
         name: include
         required: false
         schema:
-          pattern: ^\s*(EndTagID|InvocationID|OrganizationID|ReleaseTagID|RestoreTagID|SpaceFilterID|SpaceID|StartTagID|UnitFilterID)\s*(?:,\s*(?:EndTagID|InvocationID|OrganizationID|ReleaseTagID|RestoreTagID|SpaceFilterID|SpaceID|StartTagID|UnitFilterID)\s*)*$
+          pattern: ^\s*(EndTagID|InvocationID|OrganizationID|Permissions|ReleaseTagID|RestoreTagID|SpaceFilterID|SpaceID|StartTagID|UnitFilterID)\s*(?:,\s*(?:EndTagID|InvocationID|OrganizationID|Permissions|ReleaseTagID|RestoreTagID|SpaceFilterID|SpaceID|StartTagID|UnitFilterID)\s*)*$
           type: string
       - description: Maximum number of ChangeOrder entities to act on, in ID order.
           A request that names limit or continue also stops when it runs short of
@@ -6569,14 +6569,14 @@ paths:
           The attribute names are case-sensitive, PascalCase, and
           expected in a comma-separated list format as in the JSON encoding.
 
-          Supported attributes for ChangeSet are EndTagID, OrganizationID, SpaceID, StartTagID.
+          Supported attributes for ChangeSet are EndTagID, OrganizationID, Permissions, SpaceID, StartTagID.
 
           The whole string must be query-encoded.
         in: query
         name: include
         required: false
         schema:
-          pattern: ^\s*(EndTagID|OrganizationID|SpaceID|StartTagID)\s*(?:,\s*(?:EndTagID|OrganizationID|SpaceID|StartTagID)\s*)*$
+          pattern: ^\s*(EndTagID|OrganizationID|Permissions|SpaceID|StartTagID)\s*(?:,\s*(?:EndTagID|OrganizationID|Permissions|SpaceID|StartTagID)\s*)*$
           type: string
       - description: Maximum number of ChangeSet entities to act on, in ID order.
           A request that names limit or continue also stops when it runs short of
@@ -6776,14 +6776,14 @@ paths:
           The attribute names are case-sensitive, PascalCase, and
           expected in a comma-separated list format as in the JSON encoding.
 
-          Supported attributes for ChangeSet are EndTagID, OrganizationID, SpaceID, StartTagID.
+          Supported attributes for ChangeSet are EndTagID, OrganizationID, Permissions, SpaceID, StartTagID.
 
           The whole string must be query-encoded.
         in: query
         name: include
         required: false
         schema:
-          pattern: ^\s*(EndTagID|OrganizationID|SpaceID|StartTagID)\s*(?:,\s*(?:EndTagID|OrganizationID|SpaceID|StartTagID)\s*)*$
+          pattern: ^\s*(EndTagID|OrganizationID|Permissions|SpaceID|StartTagID)\s*(?:,\s*(?:EndTagID|OrganizationID|Permissions|SpaceID|StartTagID)\s*)*$
           type: string
       - description: |-
           Select clause for specifying which fields to include in the response for ChangeSet.
@@ -7042,14 +7042,14 @@ paths:
           The attribute names are case-sensitive, PascalCase, and
           expected in a comma-separated list format as in the JSON encoding.
 
-          Supported attributes for ChangeSet are EndTagID, OrganizationID, SpaceID, StartTagID.
+          Supported attributes for ChangeSet are EndTagID, OrganizationID, Permissions, SpaceID, StartTagID.
 
           The whole string must be query-encoded.
         in: query
         name: include
         required: false
         schema:
-          pattern: ^\s*(EndTagID|OrganizationID|SpaceID|StartTagID)\s*(?:,\s*(?:EndTagID|OrganizationID|SpaceID|StartTagID)\s*)*$
+          pattern: ^\s*(EndTagID|OrganizationID|Permissions|SpaceID|StartTagID)\s*(?:,\s*(?:EndTagID|OrganizationID|Permissions|SpaceID|StartTagID)\s*)*$
           type: string
       - description: Maximum number of ChangeSet entities to act on, in ID order.
           A request that names limit or continue also stops when it runs short of
@@ -7335,14 +7335,14 @@ paths:
           The attribute names are case-sensitive, PascalCase, and
           expected in a comma-separated list format as in the JSON encoding.
 
-          Supported attributes for ChangeSet are EndTagID, OrganizationID, SpaceID, StartTagID.
+          Supported attributes for ChangeSet are EndTagID, OrganizationID, Permissions, SpaceID, StartTagID.
 
           The whole string must be query-encoded.
         in: query
         name: include
         required: false
         schema:
-          pattern: ^\s*(EndTagID|OrganizationID|SpaceID|StartTagID)\s*(?:,\s*(?:EndTagID|OrganizationID|SpaceID|StartTagID)\s*)*$
+          pattern: ^\s*(EndTagID|OrganizationID|Permissions|SpaceID|StartTagID)\s*(?:,\s*(?:EndTagID|OrganizationID|Permissions|SpaceID|StartTagID)\s*)*$
           type: string
       - description: Maximum number of ChangeSet entities to act on, in ID order.
           A request that names limit or continue also stops when it runs short of
@@ -7723,14 +7723,14 @@ paths:
           The attribute names are case-sensitive, PascalCase, and
           expected in a comma-separated list format as in the JSON encoding.
 
-          Supported attributes for ChangeSet are EndTagID, OrganizationID, SpaceID, StartTagID.
+          Supported attributes for ChangeSet are EndTagID, OrganizationID, Permissions, SpaceID, StartTagID.
 
           The whole string must be query-encoded.
         in: query
         name: include
         required: false
         schema:
-          pattern: ^\s*(EndTagID|OrganizationID|SpaceID|StartTagID)\s*(?:,\s*(?:EndTagID|OrganizationID|SpaceID|StartTagID)\s*)*$
+          pattern: ^\s*(EndTagID|OrganizationID|Permissions|SpaceID|StartTagID)\s*(?:,\s*(?:EndTagID|OrganizationID|Permissions|SpaceID|StartTagID)\s*)*$
           type: string
       - description: Report what the move would do, and what would stop it, without
           moving anything
@@ -7911,14 +7911,14 @@ paths:
           The attribute names are case-sensitive, PascalCase, and
           expected in a comma-separated list format as in the JSON encoding.
 
-          Supported attributes for ChangeWorkflow are OrganizationID, SpaceID.
+          Supported attributes for ChangeWorkflow are OrganizationID, Permissions, SpaceID.
 
           The whole string must be query-encoded.
         in: query
         name: include
         required: false
         schema:
-          pattern: ^\s*(OrganizationID|SpaceID)\s*(?:,\s*(?:OrganizationID|SpaceID)\s*)*$
+          pattern: ^\s*(OrganizationID|Permissions|SpaceID)\s*(?:,\s*(?:OrganizationID|Permissions|SpaceID)\s*)*$
           type: string
       - description: Maximum number of ChangeWorkflow entities to act on, in ID order.
           A request that names limit or continue also stops when it runs short of
@@ -8120,14 +8120,14 @@ paths:
           The attribute names are case-sensitive, PascalCase, and
           expected in a comma-separated list format as in the JSON encoding.
 
-          Supported attributes for ChangeWorkflow are OrganizationID, SpaceID.
+          Supported attributes for ChangeWorkflow are OrganizationID, Permissions, SpaceID.
 
           The whole string must be query-encoded.
         in: query
         name: include
         required: false
         schema:
-          pattern: ^\s*(OrganizationID|SpaceID)\s*(?:,\s*(?:OrganizationID|SpaceID)\s*)*$
+          pattern: ^\s*(OrganizationID|Permissions|SpaceID)\s*(?:,\s*(?:OrganizationID|Permissions|SpaceID)\s*)*$
           type: string
       - description: |-
           Select clause for specifying which fields to include in the response for ChangeWorkflow.
@@ -8386,14 +8386,14 @@ paths:
           The attribute names are case-sensitive, PascalCase, and
           expected in a comma-separated list format as in the JSON encoding.
 
-          Supported attributes for ChangeWorkflow are OrganizationID, SpaceID.
+          Supported attributes for ChangeWorkflow are OrganizationID, Permissions, SpaceID.
 
           The whole string must be query-encoded.
         in: query
         name: include
         required: false
         schema:
-          pattern: ^\s*(OrganizationID|SpaceID)\s*(?:,\s*(?:OrganizationID|SpaceID)\s*)*$
+          pattern: ^\s*(OrganizationID|Permissions|SpaceID)\s*(?:,\s*(?:OrganizationID|Permissions|SpaceID)\s*)*$
           type: string
       - description: Maximum number of ChangeWorkflow entities to act on, in ID order.
           A request that names limit or continue also stops when it runs short of
@@ -8721,14 +8721,14 @@ paths:
           The attribute names are case-sensitive, PascalCase, and
           expected in a comma-separated list format as in the JSON encoding.
 
-          Supported attributes for ChangeWorkflow are OrganizationID, SpaceID.
+          Supported attributes for ChangeWorkflow are OrganizationID, Permissions, SpaceID.
 
           The whole string must be query-encoded.
         in: query
         name: include
         required: false
         schema:
-          pattern: ^\s*(OrganizationID|SpaceID)\s*(?:,\s*(?:OrganizationID|SpaceID)\s*)*$
+          pattern: ^\s*(OrganizationID|Permissions|SpaceID)\s*(?:,\s*(?:OrganizationID|Permissions|SpaceID)\s*)*$
           type: string
       - description: Maximum number of ChangeWorkflow entities to act on, in ID order.
           A request that names limit or continue also stops when it runs short of
@@ -9214,14 +9214,14 @@ paths:
           The attribute names are case-sensitive, PascalCase, and
           expected in a comma-separated list format as in the JSON encoding.
 
-          Supported attributes for ChangeWorkflow are OrganizationID, SpaceID.
+          Supported attributes for ChangeWorkflow are OrganizationID, Permissions, SpaceID.
 
           The whole string must be query-encoded.
         in: query
         name: include
         required: false
         schema:
-          pattern: ^\s*(OrganizationID|SpaceID)\s*(?:,\s*(?:OrganizationID|SpaceID)\s*)*$
+          pattern: ^\s*(OrganizationID|Permissions|SpaceID)\s*(?:,\s*(?:OrganizationID|Permissions|SpaceID)\s*)*$
           type: string
       - description: Report what the move would do, and what would stop it, without
           moving anything
@@ -9402,14 +9402,14 @@ paths:
           The attribute names are case-sensitive, PascalCase, and
           expected in a comma-separated list format as in the JSON encoding.
 
-          Supported attributes for Channel are OrganizationID, SpaceID.
+          Supported attributes for Channel are OrganizationID, Permissions, SpaceID.
 
           The whole string must be query-encoded.
         in: query
         name: include
         required: false
         schema:
-          pattern: ^\s*(OrganizationID|SpaceID)\s*(?:,\s*(?:OrganizationID|SpaceID)\s*)*$
+          pattern: ^\s*(OrganizationID|Permissions|SpaceID)\s*(?:,\s*(?:OrganizationID|Permissions|SpaceID)\s*)*$
           type: string
       - description: Maximum number of Channel entities to act on, in ID order. A
           request that names limit or continue also stops when it runs short of time,
@@ -9610,14 +9610,14 @@ paths:
           The attribute names are case-sensitive, PascalCase, and
           expected in a comma-separated list format as in the JSON encoding.
 
-          Supported attributes for Channel are OrganizationID, SpaceID.
+          Supported attributes for Channel are OrganizationID, Permissions, SpaceID.
 
           The whole string must be query-encoded.
         in: query
         name: include
         required: false
         schema:
-          pattern: ^\s*(OrganizationID|SpaceID)\s*(?:,\s*(?:OrganizationID|SpaceID)\s*)*$
+          pattern: ^\s*(OrganizationID|Permissions|SpaceID)\s*(?:,\s*(?:OrganizationID|Permissions|SpaceID)\s*)*$
           type: string
       - description: |-
           Select clause for specifying which fields to include in the response for Channel.
@@ -9876,14 +9876,14 @@ paths:
           The attribute names are case-sensitive, PascalCase, and
           expected in a comma-separated list format as in the JSON encoding.
 
-          Supported attributes for Channel are OrganizationID, SpaceID.
+          Supported attributes for Channel are OrganizationID, Permissions, SpaceID.
 
           The whole string must be query-encoded.
         in: query
         name: include
         required: false
         schema:
-          pattern: ^\s*(OrganizationID|SpaceID)\s*(?:,\s*(?:OrganizationID|SpaceID)\s*)*$
+          pattern: ^\s*(OrganizationID|Permissions|SpaceID)\s*(?:,\s*(?:OrganizationID|Permissions|SpaceID)\s*)*$
           type: string
       - description: Maximum number of Channel entities to act on, in ID order. A
           request that names limit or continue also stops when it runs short of time,
@@ -10194,14 +10194,14 @@ paths:
           The attribute names are case-sensitive, PascalCase, and
           expected in a comma-separated list format as in the JSON encoding.
 
-          Supported attributes for Channel are OrganizationID, SpaceID.
+          Supported attributes for Channel are OrganizationID, Permissions, SpaceID.
 
           The whole string must be query-encoded.
         in: query
         name: include
         required: false
         schema:
-          pattern: ^\s*(OrganizationID|SpaceID)\s*(?:,\s*(?:OrganizationID|SpaceID)\s*)*$
+          pattern: ^\s*(OrganizationID|Permissions|SpaceID)\s*(?:,\s*(?:OrganizationID|Permissions|SpaceID)\s*)*$
           type: string
       - description: Maximum number of Channel entities to act on, in ID order. A
           request that names limit or continue also stops when it runs short of time,
@@ -10670,14 +10670,14 @@ paths:
           The attribute names are case-sensitive, PascalCase, and
           expected in a comma-separated list format as in the JSON encoding.
 
-          Supported attributes for Channel are OrganizationID, SpaceID.
+          Supported attributes for Channel are OrganizationID, Permissions, SpaceID.
 
           The whole string must be query-encoded.
         in: query
         name: include
         required: false
         schema:
-          pattern: ^\s*(OrganizationID|SpaceID)\s*(?:,\s*(?:OrganizationID|SpaceID)\s*)*$
+          pattern: ^\s*(OrganizationID|Permissions|SpaceID)\s*(?:,\s*(?:OrganizationID|Permissions|SpaceID)\s*)*$
           type: string
       - description: Report what the move would do, and what would stop it, without
           moving anything
@@ -11157,14 +11157,14 @@ paths:
           The attribute names are case-sensitive, PascalCase, and
           expected in a comma-separated list format as in the JSON encoding.
 
-          Supported attributes for Component are OrganizationID.
+          Supported attributes for Component are OrganizationID, Permissions.
 
           The whole string must be query-encoded.
         in: query
         name: include
         required: false
         schema:
-          pattern: ^\s*(OrganizationID)\s*(?:,\s*(?:OrganizationID)\s*)*$
+          pattern: ^\s*(OrganizationID|Permissions)\s*(?:,\s*(?:OrganizationID|Permissions)\s*)*$
           type: string
       - description: |-
           Select clause for specifying which fields to include in the response for Component.
@@ -11496,14 +11496,14 @@ paths:
           The attribute names are case-sensitive, PascalCase, and
           expected in a comma-separated list format as in the JSON encoding.
 
-          Supported attributes for Component are OrganizationID.
+          Supported attributes for Component are OrganizationID, Permissions.
 
           The whole string must be query-encoded.
         in: query
         name: include
         required: false
         schema:
-          pattern: ^\s*(OrganizationID)\s*(?:,\s*(?:OrganizationID)\s*)*$
+          pattern: ^\s*(OrganizationID|Permissions)\s*(?:,\s*(?:OrganizationID|Permissions)\s*)*$
           type: string
       - description: |-
           Select clause for specifying which fields to include in the response for Component.
@@ -12233,14 +12233,14 @@ paths:
           The attribute names are case-sensitive, PascalCase, and
           expected in a comma-separated list format as in the JSON encoding.
 
-          Supported attributes for Filter are FromSpaceID, OrganizationID, SpaceID.
+          Supported attributes for Filter are FromSpaceID, OrganizationID, Permissions, SpaceID.
 
           The whole string must be query-encoded.
         in: query
         name: include
         required: false
         schema:
-          pattern: ^\s*(FromSpaceID|OrganizationID|SpaceID)\s*(?:,\s*(?:FromSpaceID|OrganizationID|SpaceID)\s*)*$
+          pattern: ^\s*(FromSpaceID|OrganizationID|Permissions|SpaceID)\s*(?:,\s*(?:FromSpaceID|OrganizationID|Permissions|SpaceID)\s*)*$
           type: string
       - description: Maximum number of Filter entities to act on, in ID order. A request
           that names limit or continue also stops when it runs short of time, and
@@ -12441,14 +12441,14 @@ paths:
           The attribute names are case-sensitive, PascalCase, and
           expected in a comma-separated list format as in the JSON encoding.
 
-          Supported attributes for Filter are FromSpaceID, OrganizationID, SpaceID.
+          Supported attributes for Filter are FromSpaceID, OrganizationID, Permissions, SpaceID.
 
           The whole string must be query-encoded.
         in: query
         name: include
         required: false
         schema:
-          pattern: ^\s*(FromSpaceID|OrganizationID|SpaceID)\s*(?:,\s*(?:FromSpaceID|OrganizationID|SpaceID)\s*)*$
+          pattern: ^\s*(FromSpaceID|OrganizationID|Permissions|SpaceID)\s*(?:,\s*(?:FromSpaceID|OrganizationID|Permissions|SpaceID)\s*)*$
           type: string
       - description: |-
           Select clause for specifying which fields to include in the response for Filter.
@@ -12720,14 +12720,14 @@ paths:
           The attribute names are case-sensitive, PascalCase, and
           expected in a comma-separated list format as in the JSON encoding.
 
-          Supported attributes for Filter are FromSpaceID, OrganizationID, SpaceID.
+          Supported attributes for Filter are FromSpaceID, OrganizationID, Permissions, SpaceID.
 
           The whole string must be query-encoded.
         in: query
         name: include
         required: false
         schema:
-          pattern: ^\s*(FromSpaceID|OrganizationID|SpaceID)\s*(?:,\s*(?:FromSpaceID|OrganizationID|SpaceID)\s*)*$
+          pattern: ^\s*(FromSpaceID|OrganizationID|Permissions|SpaceID)\s*(?:,\s*(?:FromSpaceID|OrganizationID|Permissions|SpaceID)\s*)*$
           type: string
       - description: Maximum number of Filter entities to act on, in ID order. A request
           that names limit or continue also stops when it runs short of time, and
@@ -13045,14 +13045,14 @@ paths:
           The attribute names are case-sensitive, PascalCase, and
           expected in a comma-separated list format as in the JSON encoding.
 
-          Supported attributes for Filter are FromSpaceID, OrganizationID, SpaceID.
+          Supported attributes for Filter are FromSpaceID, OrganizationID, Permissions, SpaceID.
 
           The whole string must be query-encoded.
         in: query
         name: include
         required: false
         schema:
-          pattern: ^\s*(FromSpaceID|OrganizationID|SpaceID)\s*(?:,\s*(?:FromSpaceID|OrganizationID|SpaceID)\s*)*$
+          pattern: ^\s*(FromSpaceID|OrganizationID|Permissions|SpaceID)\s*(?:,\s*(?:FromSpaceID|OrganizationID|Permissions|SpaceID)\s*)*$
           type: string
       - description: Maximum number of Filter entities to act on, in ID order. A request
           that names limit or continue also stops when it runs short of time, and
@@ -13527,14 +13527,14 @@ paths:
           The attribute names are case-sensitive, PascalCase, and
           expected in a comma-separated list format as in the JSON encoding.
 
-          Supported attributes for Filter are FromSpaceID, OrganizationID, SpaceID.
+          Supported attributes for Filter are FromSpaceID, OrganizationID, Permissions, SpaceID.
 
           The whole string must be query-encoded.
         in: query
         name: include
         required: false
         schema:
-          pattern: ^\s*(FromSpaceID|OrganizationID|SpaceID)\s*(?:,\s*(?:FromSpaceID|OrganizationID|SpaceID)\s*)*$
+          pattern: ^\s*(FromSpaceID|OrganizationID|Permissions|SpaceID)\s*(?:,\s*(?:FromSpaceID|OrganizationID|Permissions|SpaceID)\s*)*$
           type: string
       - description: Report what the move would do, and what would stop it, without
           moving anything
@@ -14654,14 +14654,14 @@ paths:
           The attribute names are case-sensitive, PascalCase, and
           expected in a comma-separated list format as in the JSON encoding.
 
-          Supported attributes for Invocation are BridgeWorkerID, ChannelID, OrganizationID, SpaceID.
+          Supported attributes for Invocation are BridgeWorkerID, ChannelID, OrganizationID, Permissions, SpaceID.
 
           The whole string must be query-encoded.
         in: query
         name: include
         required: false
         schema:
-          pattern: ^\s*(BridgeWorkerID|ChannelID|OrganizationID|SpaceID)\s*(?:,\s*(?:BridgeWorkerID|ChannelID|OrganizationID|SpaceID)\s*)*$
+          pattern: ^\s*(BridgeWorkerID|ChannelID|OrganizationID|Permissions|SpaceID)\s*(?:,\s*(?:BridgeWorkerID|ChannelID|OrganizationID|Permissions|SpaceID)\s*)*$
           type: string
       - description: Maximum number of Invocation entities to act on, in ID order.
           A request that names limit or continue also stops when it runs short of
@@ -14864,14 +14864,14 @@ paths:
           The attribute names are case-sensitive, PascalCase, and
           expected in a comma-separated list format as in the JSON encoding.
 
-          Supported attributes for Invocation are BridgeWorkerID, ChannelID, OrganizationID, SpaceID.
+          Supported attributes for Invocation are BridgeWorkerID, ChannelID, OrganizationID, Permissions, SpaceID.
 
           The whole string must be query-encoded.
         in: query
         name: include
         required: false
         schema:
-          pattern: ^\s*(BridgeWorkerID|ChannelID|OrganizationID|SpaceID)\s*(?:,\s*(?:BridgeWorkerID|ChannelID|OrganizationID|SpaceID)\s*)*$
+          pattern: ^\s*(BridgeWorkerID|ChannelID|OrganizationID|Permissions|SpaceID)\s*(?:,\s*(?:BridgeWorkerID|ChannelID|OrganizationID|Permissions|SpaceID)\s*)*$
           type: string
       - description: |-
           Select clause for specifying which fields to include in the response for Invocation.
@@ -15132,14 +15132,14 @@ paths:
           The attribute names are case-sensitive, PascalCase, and
           expected in a comma-separated list format as in the JSON encoding.
 
-          Supported attributes for Invocation are BridgeWorkerID, ChannelID, OrganizationID, SpaceID.
+          Supported attributes for Invocation are BridgeWorkerID, ChannelID, OrganizationID, Permissions, SpaceID.
 
           The whole string must be query-encoded.
         in: query
         name: include
         required: false
         schema:
-          pattern: ^\s*(BridgeWorkerID|ChannelID|OrganizationID|SpaceID)\s*(?:,\s*(?:BridgeWorkerID|ChannelID|OrganizationID|SpaceID)\s*)*$
+          pattern: ^\s*(BridgeWorkerID|ChannelID|OrganizationID|Permissions|SpaceID)\s*(?:,\s*(?:BridgeWorkerID|ChannelID|OrganizationID|Permissions|SpaceID)\s*)*$
           type: string
       - description: Maximum number of Invocation entities to act on, in ID order.
           A request that names limit or continue also stops when it runs short of
@@ -15462,14 +15462,14 @@ paths:
           The attribute names are case-sensitive, PascalCase, and
           expected in a comma-separated list format as in the JSON encoding.
 
-          Supported attributes for Invocation are BridgeWorkerID, ChannelID, OrganizationID, SpaceID.
+          Supported attributes for Invocation are BridgeWorkerID, ChannelID, OrganizationID, Permissions, SpaceID.
 
           The whole string must be query-encoded.
         in: query
         name: include
         required: false
         schema:
-          pattern: ^\s*(BridgeWorkerID|ChannelID|OrganizationID|SpaceID)\s*(?:,\s*(?:BridgeWorkerID|ChannelID|OrganizationID|SpaceID)\s*)*$
+          pattern: ^\s*(BridgeWorkerID|ChannelID|OrganizationID|Permissions|SpaceID)\s*(?:,\s*(?:BridgeWorkerID|ChannelID|OrganizationID|Permissions|SpaceID)\s*)*$
           type: string
       - description: Maximum number of Invocation entities to act on, in ID order.
           A request that names limit or continue also stops when it runs short of
@@ -15950,14 +15950,14 @@ paths:
           The attribute names are case-sensitive, PascalCase, and
           expected in a comma-separated list format as in the JSON encoding.
 
-          Supported attributes for Invocation are BridgeWorkerID, ChannelID, OrganizationID, SpaceID.
+          Supported attributes for Invocation are BridgeWorkerID, ChannelID, OrganizationID, Permissions, SpaceID.
 
           The whole string must be query-encoded.
         in: query
         name: include
         required: false
         schema:
-          pattern: ^\s*(BridgeWorkerID|ChannelID|OrganizationID|SpaceID)\s*(?:,\s*(?:BridgeWorkerID|ChannelID|OrganizationID|SpaceID)\s*)*$
+          pattern: ^\s*(BridgeWorkerID|ChannelID|OrganizationID|Permissions|SpaceID)\s*(?:,\s*(?:BridgeWorkerID|ChannelID|OrganizationID|Permissions|SpaceID)\s*)*$
           type: string
       - description: Report what the move would do, and what would stop it, without
           moving anything
@@ -16138,14 +16138,14 @@ paths:
           The attribute names are case-sensitive, PascalCase, and
           expected in a comma-separated list format as in the JSON encoding.
 
-          Supported attributes for Link are FromUnitID, OrganizationID, SpaceID, ToSpaceID, ToUnitID, TransformInvocationID.
+          Supported attributes for Link are FromUnitID, OrganizationID, Permissions, SpaceID, ToSpaceID, ToUnitID, TransformInvocationID.
 
           The whole string must be query-encoded.
         in: query
         name: include
         required: false
         schema:
-          pattern: ^\s*(FromUnitID|OrganizationID|SpaceID|ToSpaceID|ToUnitID|TransformInvocationID)\s*(?:,\s*(?:FromUnitID|OrganizationID|SpaceID|ToSpaceID|ToUnitID|TransformInvocationID)\s*)*$
+          pattern: ^\s*(FromUnitID|OrganizationID|Permissions|SpaceID|ToSpaceID|ToUnitID|TransformInvocationID)\s*(?:,\s*(?:FromUnitID|OrganizationID|Permissions|SpaceID|ToSpaceID|ToUnitID|TransformInvocationID)\s*)*$
           type: string
       - description: Maximum number of Link entities to act on, in ID order. A request
           that names limit or continue also stops when it runs short of time, and
@@ -16346,14 +16346,14 @@ paths:
           The attribute names are case-sensitive, PascalCase, and
           expected in a comma-separated list format as in the JSON encoding.
 
-          Supported attributes for Link are FromUnitID, OrganizationID, SpaceID, ToSpaceID, ToUnitID, TransformInvocationID.
+          Supported attributes for Link are FromUnitID, OrganizationID, Permissions, SpaceID, ToSpaceID, ToUnitID, TransformInvocationID.
 
           The whole string must be query-encoded.
         in: query
         name: include
         required: false
         schema:
-          pattern: ^\s*(FromUnitID|OrganizationID|SpaceID|ToSpaceID|ToUnitID|TransformInvocationID)\s*(?:,\s*(?:FromUnitID|OrganizationID|SpaceID|ToSpaceID|ToUnitID|TransformInvocationID)\s*)*$
+          pattern: ^\s*(FromUnitID|OrganizationID|Permissions|SpaceID|ToSpaceID|ToUnitID|TransformInvocationID)\s*(?:,\s*(?:FromUnitID|OrganizationID|Permissions|SpaceID|ToSpaceID|ToUnitID|TransformInvocationID)\s*)*$
           type: string
       - description: |-
           Select clause for specifying which fields to include in the response for Link.
@@ -16611,14 +16611,14 @@ paths:
           The attribute names are case-sensitive, PascalCase, and
           expected in a comma-separated list format as in the JSON encoding.
 
-          Supported attributes for Link are FromUnitID, OrganizationID, SpaceID, ToSpaceID, ToUnitID, TransformInvocationID.
+          Supported attributes for Link are FromUnitID, OrganizationID, Permissions, SpaceID, ToSpaceID, ToUnitID, TransformInvocationID.
 
           The whole string must be query-encoded.
         in: query
         name: include
         required: false
         schema:
-          pattern: ^\s*(FromUnitID|OrganizationID|SpaceID|ToSpaceID|ToUnitID|TransformInvocationID)\s*(?:,\s*(?:FromUnitID|OrganizationID|SpaceID|ToSpaceID|ToUnitID|TransformInvocationID)\s*)*$
+          pattern: ^\s*(FromUnitID|OrganizationID|Permissions|SpaceID|ToSpaceID|ToUnitID|TransformInvocationID)\s*(?:,\s*(?:FromUnitID|OrganizationID|Permissions|SpaceID|ToSpaceID|ToUnitID|TransformInvocationID)\s*)*$
           type: string
       - description: Maximum number of Link entities to act on, in ID order. A request
           that names limit or continue also stops when it runs short of time, and
@@ -17881,13 +17881,14 @@ paths:
           The attribute names are case-sensitive, PascalCase, and
           expected in a comma-separated list format as in the JSON encoding.
 
-          Supported attributes for Organization are .
+          Supported attributes for Organization are Permissions.
 
           The whole string must be query-encoded.
         in: query
         name: include
         required: false
         schema:
+          pattern: ^\s*(Permissions)\s*(?:,\s*(?:Permissions)\s*)*$
           type: string
       - description: |-
           Select clause for specifying which fields to include in the response for Organization.
@@ -18008,13 +18009,14 @@ paths:
           The attribute names are case-sensitive, PascalCase, and
           expected in a comma-separated list format as in the JSON encoding.
 
-          Supported attributes for Organization are .
+          Supported attributes for Organization are Permissions.
 
           The whole string must be query-encoded.
         in: query
         name: include
         required: false
         schema:
+          pattern: ^\s*(Permissions)\s*(?:,\s*(?:Permissions)\s*)*$
           type: string
       - description: |-
           Select clause for specifying which fields to include in the response for Organization.
@@ -18878,14 +18880,14 @@ paths:
           The attribute names are case-sensitive, PascalCase, and
           expected in a comma-separated list format as in the JSON encoding.
 
-          Supported attributes for Release are ChangeOrderID, OrganizationID, SpaceID, TagID, TargetID, UserID.
+          Supported attributes for Release are ChangeOrderID, OrganizationID, Permissions, SpaceID, TagID, TargetID, UserID.
 
           The whole string must be query-encoded.
         in: query
         name: include
         required: false
         schema:
-          pattern: ^\s*(ChangeOrderID|OrganizationID|SpaceID|TagID|TargetID|UserID)\s*(?:,\s*(?:ChangeOrderID|OrganizationID|SpaceID|TagID|TargetID|UserID)\s*)*$
+          pattern: ^\s*(ChangeOrderID|OrganizationID|Permissions|SpaceID|TagID|TargetID|UserID)\s*(?:,\s*(?:ChangeOrderID|OrganizationID|Permissions|SpaceID|TagID|TargetID|UserID)\s*)*$
           type: string
       - description: |-
           Select clause for specifying which fields to include in the response for Release.
@@ -20977,14 +20979,14 @@ paths:
           The attribute names are case-sensitive, PascalCase, and
           expected in a comma-separated list format as in the JSON encoding.
 
-          Supported attributes for ServiceAccount are OrganizationID.
+          Supported attributes for ServiceAccount are OrganizationID, Permissions.
 
           The whole string must be query-encoded.
         in: query
         name: include
         required: false
         schema:
-          pattern: ^\s*(OrganizationID)\s*(?:,\s*(?:OrganizationID)\s*)*$
+          pattern: ^\s*(OrganizationID|Permissions)\s*(?:,\s*(?:OrganizationID|Permissions)\s*)*$
           type: string
       - description: |-
           Select clause for specifying which fields to include in the response for ServiceAccount.
@@ -21302,14 +21304,14 @@ paths:
           The attribute names are case-sensitive, PascalCase, and
           expected in a comma-separated list format as in the JSON encoding.
 
-          Supported attributes for ServiceAccount are OrganizationID.
+          Supported attributes for ServiceAccount are OrganizationID, Permissions.
 
           The whole string must be query-encoded.
         in: query
         name: include
         required: false
         schema:
-          pattern: ^\s*(OrganizationID)\s*(?:,\s*(?:OrganizationID)\s*)*$
+          pattern: ^\s*(OrganizationID|Permissions)\s*(?:,\s*(?:OrganizationID|Permissions)\s*)*$
           type: string
       - description: |-
           Select clause for specifying which fields to include in the response for ServiceAccount.
@@ -22653,14 +22655,14 @@ paths:
           The attribute names are case-sensitive, PascalCase, and
           expected in a comma-separated list format as in the JSON encoding.
 
-          Supported attributes for Space are AttributeFilterID, AttributeIDs, ComponentID, OrganizationID, ReleaseTargetID, TriggerFilterID, TriggerIDs.
+          Supported attributes for Space are AttributeFilterID, AttributeIDs, ComponentID, OrganizationID, Permissions, ReleaseTargetID, TriggerFilterID, TriggerIDs.
 
           The whole string must be query-encoded.
         in: query
         name: include
         required: false
         schema:
-          pattern: ^\s*(AttributeFilterID|AttributeIDs|ComponentID|OrganizationID|ReleaseTargetID|TriggerFilterID|TriggerIDs)\s*(?:,\s*(?:AttributeFilterID|AttributeIDs|ComponentID|OrganizationID|ReleaseTargetID|TriggerFilterID|TriggerIDs)\s*)*$
+          pattern: ^\s*(AttributeFilterID|AttributeIDs|ComponentID|OrganizationID|Permissions|ReleaseTargetID|TriggerFilterID|TriggerIDs)\s*(?:,\s*(?:AttributeFilterID|AttributeIDs|ComponentID|OrganizationID|Permissions|ReleaseTargetID|TriggerFilterID|TriggerIDs)\s*)*$
           type: string
       - description: |-
           Select clause for specifying which fields to include in the response for Space.
@@ -23028,14 +23030,14 @@ paths:
           The attribute names are case-sensitive, PascalCase, and
           expected in a comma-separated list format as in the JSON encoding.
 
-          Supported attributes for Space are AttributeFilterID, AttributeIDs, ComponentID, OrganizationID, ReleaseTargetID, TriggerFilterID, TriggerIDs.
+          Supported attributes for Space are AttributeFilterID, AttributeIDs, ComponentID, OrganizationID, Permissions, ReleaseTargetID, TriggerFilterID, TriggerIDs.
 
           The whole string must be query-encoded.
         in: query
         name: include
         required: false
         schema:
-          pattern: ^\s*(AttributeFilterID|AttributeIDs|ComponentID|OrganizationID|ReleaseTargetID|TriggerFilterID|TriggerIDs)\s*(?:,\s*(?:AttributeFilterID|AttributeIDs|ComponentID|OrganizationID|ReleaseTargetID|TriggerFilterID|TriggerIDs)\s*)*$
+          pattern: ^\s*(AttributeFilterID|AttributeIDs|ComponentID|OrganizationID|Permissions|ReleaseTargetID|TriggerFilterID|TriggerIDs)\s*(?:,\s*(?:AttributeFilterID|AttributeIDs|ComponentID|OrganizationID|Permissions|ReleaseTargetID|TriggerFilterID|TriggerIDs)\s*)*$
           type: string
       - description: |-
           Select clause for specifying which fields to include in the response for Space.
@@ -23467,14 +23469,14 @@ paths:
           The attribute names are case-sensitive, PascalCase, and
           expected in a comma-separated list format as in the JSON encoding.
 
-          Supported attributes for Attestation are OrganizationID, SpaceID.
+          Supported attributes for Attestation are OrganizationID, Permissions, SpaceID.
 
           The whole string must be query-encoded.
         in: query
         name: include
         required: false
         schema:
-          pattern: ^\s*(OrganizationID|SpaceID)\s*(?:,\s*(?:OrganizationID|SpaceID)\s*)*$
+          pattern: ^\s*(OrganizationID|Permissions|SpaceID)\s*(?:,\s*(?:OrganizationID|Permissions|SpaceID)\s*)*$
           type: string
       - description: |-
           Select clause for specifying which fields to include in the response for Attestation.
@@ -23725,14 +23727,14 @@ paths:
           The attribute names are case-sensitive, PascalCase, and
           expected in a comma-separated list format as in the JSON encoding.
 
-          Supported attributes for Attestation are OrganizationID, SpaceID.
+          Supported attributes for Attestation are OrganizationID, Permissions, SpaceID.
 
           The whole string must be query-encoded.
         in: query
         name: include
         required: false
         schema:
-          pattern: ^\s*(OrganizationID|SpaceID)\s*(?:,\s*(?:OrganizationID|SpaceID)\s*)*$
+          pattern: ^\s*(OrganizationID|Permissions|SpaceID)\s*(?:,\s*(?:OrganizationID|Permissions|SpaceID)\s*)*$
           type: string
       - description: |-
           Select clause for specifying which fields to include in the response for Attestation.
@@ -23900,14 +23902,14 @@ paths:
           The attribute names are case-sensitive, PascalCase, and
           expected in a comma-separated list format as in the JSON encoding.
 
-          Supported attributes for Attribute are OrganizationID, SpaceID.
+          Supported attributes for Attribute are OrganizationID, Permissions, SpaceID.
 
           The whole string must be query-encoded.
         in: query
         name: include
         required: false
         schema:
-          pattern: ^\s*(OrganizationID|SpaceID)\s*(?:,\s*(?:OrganizationID|SpaceID)\s*)*$
+          pattern: ^\s*(OrganizationID|Permissions|SpaceID)\s*(?:,\s*(?:OrganizationID|Permissions|SpaceID)\s*)*$
           type: string
       - description: |-
           Select clause for specifying which fields to include in the response for Attribute.
@@ -24253,14 +24255,14 @@ paths:
           The attribute names are case-sensitive, PascalCase, and
           expected in a comma-separated list format as in the JSON encoding.
 
-          Supported attributes for Attribute are OrganizationID, SpaceID.
+          Supported attributes for Attribute are OrganizationID, Permissions, SpaceID.
 
           The whole string must be query-encoded.
         in: query
         name: include
         required: false
         schema:
-          pattern: ^\s*(OrganizationID|SpaceID)\s*(?:,\s*(?:OrganizationID|SpaceID)\s*)*$
+          pattern: ^\s*(OrganizationID|Permissions|SpaceID)\s*(?:,\s*(?:OrganizationID|Permissions|SpaceID)\s*)*$
           type: string
       - description: |-
           Select clause for specifying which fields to include in the response for Attribute.
@@ -24847,14 +24849,14 @@ paths:
           The attribute names are case-sensitive, PascalCase, and
           expected in a comma-separated list format as in the JSON encoding.
 
-          Supported attributes for BridgeWorker are OrganizationID, SpaceID.
+          Supported attributes for BridgeWorker are OrganizationID, Permissions, SpaceID.
 
           The whole string must be query-encoded.
         in: query
         name: include
         required: false
         schema:
-          pattern: ^\s*(OrganizationID|SpaceID)\s*(?:,\s*(?:OrganizationID|SpaceID)\s*)*$
+          pattern: ^\s*(OrganizationID|Permissions|SpaceID)\s*(?:,\s*(?:OrganizationID|Permissions|SpaceID)\s*)*$
           type: string
       - description: |-
           Select clause for specifying which fields to include in the response for BridgeWorker.
@@ -25213,14 +25215,14 @@ paths:
           The attribute names are case-sensitive, PascalCase, and
           expected in a comma-separated list format as in the JSON encoding.
 
-          Supported attributes for BridgeWorker are OrganizationID, SpaceID.
+          Supported attributes for BridgeWorker are OrganizationID, Permissions, SpaceID.
 
           The whole string must be query-encoded.
         in: query
         name: include
         required: false
         schema:
-          pattern: ^\s*(OrganizationID|SpaceID)\s*(?:,\s*(?:OrganizationID|SpaceID)\s*)*$
+          pattern: ^\s*(OrganizationID|Permissions|SpaceID)\s*(?:,\s*(?:OrganizationID|Permissions|SpaceID)\s*)*$
           type: string
       - description: |-
           Select clause for specifying which fields to include in the response for BridgeWorker.
@@ -25811,14 +25813,14 @@ paths:
           The attribute names are case-sensitive, PascalCase, and
           expected in a comma-separated list format as in the JSON encoding.
 
-          Supported attributes for ChangeOrder are EndTagID, InvocationID, OrganizationID, ReleaseTagID, RestoreTagID, SpaceFilterID, SpaceID, StartTagID, UnitFilterID.
+          Supported attributes for ChangeOrder are EndTagID, InvocationID, OrganizationID, Permissions, ReleaseTagID, RestoreTagID, SpaceFilterID, SpaceID, StartTagID, UnitFilterID.
 
           The whole string must be query-encoded.
         in: query
         name: include
         required: false
         schema:
-          pattern: ^\s*(EndTagID|InvocationID|OrganizationID|ReleaseTagID|RestoreTagID|SpaceFilterID|SpaceID|StartTagID|UnitFilterID)\s*(?:,\s*(?:EndTagID|InvocationID|OrganizationID|ReleaseTagID|RestoreTagID|SpaceFilterID|SpaceID|StartTagID|UnitFilterID)\s*)*$
+          pattern: ^\s*(EndTagID|InvocationID|OrganizationID|Permissions|ReleaseTagID|RestoreTagID|SpaceFilterID|SpaceID|StartTagID|UnitFilterID)\s*(?:,\s*(?:EndTagID|InvocationID|OrganizationID|Permissions|ReleaseTagID|RestoreTagID|SpaceFilterID|SpaceID|StartTagID|UnitFilterID)\s*)*$
           type: string
       - description: |-
           Select clause for specifying which fields to include in the response for ChangeOrder.
@@ -26161,14 +26163,14 @@ paths:
           The attribute names are case-sensitive, PascalCase, and
           expected in a comma-separated list format as in the JSON encoding.
 
-          Supported attributes for ChangeOrder are EndTagID, InvocationID, OrganizationID, ReleaseTagID, RestoreTagID, SpaceFilterID, SpaceID, StartTagID, UnitFilterID.
+          Supported attributes for ChangeOrder are EndTagID, InvocationID, OrganizationID, Permissions, ReleaseTagID, RestoreTagID, SpaceFilterID, SpaceID, StartTagID, UnitFilterID.
 
           The whole string must be query-encoded.
         in: query
         name: include
         required: false
         schema:
-          pattern: ^\s*(EndTagID|InvocationID|OrganizationID|ReleaseTagID|RestoreTagID|SpaceFilterID|SpaceID|StartTagID|UnitFilterID)\s*(?:,\s*(?:EndTagID|InvocationID|OrganizationID|ReleaseTagID|RestoreTagID|SpaceFilterID|SpaceID|StartTagID|UnitFilterID)\s*)*$
+          pattern: ^\s*(EndTagID|InvocationID|OrganizationID|Permissions|ReleaseTagID|RestoreTagID|SpaceFilterID|SpaceID|StartTagID|UnitFilterID)\s*(?:,\s*(?:EndTagID|InvocationID|OrganizationID|Permissions|ReleaseTagID|RestoreTagID|SpaceFilterID|SpaceID|StartTagID|UnitFilterID)\s*)*$
           type: string
       - description: |-
           Select clause for specifying which fields to include in the response for ChangeOrder.
@@ -26737,14 +26739,14 @@ paths:
           The attribute names are case-sensitive, PascalCase, and
           expected in a comma-separated list format as in the JSON encoding.
 
-          Supported attributes for ChangeSet are EndTagID, OrganizationID, SpaceID, StartTagID.
+          Supported attributes for ChangeSet are EndTagID, OrganizationID, Permissions, SpaceID, StartTagID.
 
           The whole string must be query-encoded.
         in: query
         name: include
         required: false
         schema:
-          pattern: ^\s*(EndTagID|OrganizationID|SpaceID|StartTagID)\s*(?:,\s*(?:EndTagID|OrganizationID|SpaceID|StartTagID)\s*)*$
+          pattern: ^\s*(EndTagID|OrganizationID|Permissions|SpaceID|StartTagID)\s*(?:,\s*(?:EndTagID|OrganizationID|Permissions|SpaceID|StartTagID)\s*)*$
           type: string
       - description: |-
           Select clause for specifying which fields to include in the response for ChangeSet.
@@ -27087,14 +27089,14 @@ paths:
           The attribute names are case-sensitive, PascalCase, and
           expected in a comma-separated list format as in the JSON encoding.
 
-          Supported attributes for ChangeSet are EndTagID, OrganizationID, SpaceID, StartTagID.
+          Supported attributes for ChangeSet are EndTagID, OrganizationID, Permissions, SpaceID, StartTagID.
 
           The whole string must be query-encoded.
         in: query
         name: include
         required: false
         schema:
-          pattern: ^\s*(EndTagID|OrganizationID|SpaceID|StartTagID)\s*(?:,\s*(?:EndTagID|OrganizationID|SpaceID|StartTagID)\s*)*$
+          pattern: ^\s*(EndTagID|OrganizationID|Permissions|SpaceID|StartTagID)\s*(?:,\s*(?:EndTagID|OrganizationID|Permissions|SpaceID|StartTagID)\s*)*$
           type: string
       - description: |-
           Select clause for specifying which fields to include in the response for ChangeSet.
@@ -27504,14 +27506,14 @@ paths:
           The attribute names are case-sensitive, PascalCase, and
           expected in a comma-separated list format as in the JSON encoding.
 
-          Supported attributes for ChangeWorkflow are OrganizationID, SpaceID.
+          Supported attributes for ChangeWorkflow are OrganizationID, Permissions, SpaceID.
 
           The whole string must be query-encoded.
         in: query
         name: include
         required: false
         schema:
-          pattern: ^\s*(OrganizationID|SpaceID)\s*(?:,\s*(?:OrganizationID|SpaceID)\s*)*$
+          pattern: ^\s*(OrganizationID|Permissions|SpaceID)\s*(?:,\s*(?:OrganizationID|Permissions|SpaceID)\s*)*$
           type: string
       - description: |-
           Select clause for specifying which fields to include in the response for ChangeWorkflow.
@@ -27855,14 +27857,14 @@ paths:
           The attribute names are case-sensitive, PascalCase, and
           expected in a comma-separated list format as in the JSON encoding.
 
-          Supported attributes for ChangeWorkflow are OrganizationID, SpaceID.
+          Supported attributes for ChangeWorkflow are OrganizationID, Permissions, SpaceID.
 
           The whole string must be query-encoded.
         in: query
         name: include
         required: false
         schema:
-          pattern: ^\s*(OrganizationID|SpaceID)\s*(?:,\s*(?:OrganizationID|SpaceID)\s*)*$
+          pattern: ^\s*(OrganizationID|Permissions|SpaceID)\s*(?:,\s*(?:OrganizationID|Permissions|SpaceID)\s*)*$
           type: string
       - description: |-
           Select clause for specifying which fields to include in the response for ChangeWorkflow.
@@ -28452,14 +28454,14 @@ paths:
           The attribute names are case-sensitive, PascalCase, and
           expected in a comma-separated list format as in the JSON encoding.
 
-          Supported attributes for Channel are OrganizationID, SpaceID.
+          Supported attributes for Channel are OrganizationID, Permissions, SpaceID.
 
           The whole string must be query-encoded.
         in: query
         name: include
         required: false
         schema:
-          pattern: ^\s*(OrganizationID|SpaceID)\s*(?:,\s*(?:OrganizationID|SpaceID)\s*)*$
+          pattern: ^\s*(OrganizationID|Permissions|SpaceID)\s*(?:,\s*(?:OrganizationID|Permissions|SpaceID)\s*)*$
           type: string
       - description: |-
           Select clause for specifying which fields to include in the response for Channel.
@@ -28807,14 +28809,14 @@ paths:
           The attribute names are case-sensitive, PascalCase, and
           expected in a comma-separated list format as in the JSON encoding.
 
-          Supported attributes for Channel are OrganizationID, SpaceID.
+          Supported attributes for Channel are OrganizationID, Permissions, SpaceID.
 
           The whole string must be query-encoded.
         in: query
         name: include
         required: false
         schema:
-          pattern: ^\s*(OrganizationID|SpaceID)\s*(?:,\s*(?:OrganizationID|SpaceID)\s*)*$
+          pattern: ^\s*(OrganizationID|Permissions|SpaceID)\s*(?:,\s*(?:OrganizationID|Permissions|SpaceID)\s*)*$
           type: string
       - description: |-
           Select clause for specifying which fields to include in the response for Channel.
@@ -30473,14 +30475,14 @@ paths:
           The attribute names are case-sensitive, PascalCase, and
           expected in a comma-separated list format as in the JSON encoding.
 
-          Supported attributes for Filter are FromSpaceID, OrganizationID, SpaceID.
+          Supported attributes for Filter are FromSpaceID, OrganizationID, Permissions, SpaceID.
 
           The whole string must be query-encoded.
         in: query
         name: include
         required: false
         schema:
-          pattern: ^\s*(FromSpaceID|OrganizationID|SpaceID)\s*(?:,\s*(?:FromSpaceID|OrganizationID|SpaceID)\s*)*$
+          pattern: ^\s*(FromSpaceID|OrganizationID|Permissions|SpaceID)\s*(?:,\s*(?:FromSpaceID|OrganizationID|Permissions|SpaceID)\s*)*$
           type: string
       - description: |-
           Select clause for specifying which fields to include in the response for Filter.
@@ -30836,14 +30838,14 @@ paths:
           The attribute names are case-sensitive, PascalCase, and
           expected in a comma-separated list format as in the JSON encoding.
 
-          Supported attributes for Filter are FromSpaceID, OrganizationID, SpaceID.
+          Supported attributes for Filter are FromSpaceID, OrganizationID, Permissions, SpaceID.
 
           The whole string must be query-encoded.
         in: query
         name: include
         required: false
         schema:
-          pattern: ^\s*(FromSpaceID|OrganizationID|SpaceID)\s*(?:,\s*(?:FromSpaceID|OrganizationID|SpaceID)\s*)*$
+          pattern: ^\s*(FromSpaceID|OrganizationID|Permissions|SpaceID)\s*(?:,\s*(?:FromSpaceID|OrganizationID|Permissions|SpaceID)\s*)*$
           type: string
       - description: |-
           Select clause for specifying which fields to include in the response for Filter.
@@ -31899,14 +31901,14 @@ paths:
           The attribute names are case-sensitive, PascalCase, and
           expected in a comma-separated list format as in the JSON encoding.
 
-          Supported attributes for Invocation are BridgeWorkerID, ChannelID, OrganizationID, SpaceID.
+          Supported attributes for Invocation are BridgeWorkerID, ChannelID, OrganizationID, Permissions, SpaceID.
 
           The whole string must be query-encoded.
         in: query
         name: include
         required: false
         schema:
-          pattern: ^\s*(BridgeWorkerID|ChannelID|OrganizationID|SpaceID)\s*(?:,\s*(?:BridgeWorkerID|ChannelID|OrganizationID|SpaceID)\s*)*$
+          pattern: ^\s*(BridgeWorkerID|ChannelID|OrganizationID|Permissions|SpaceID)\s*(?:,\s*(?:BridgeWorkerID|ChannelID|OrganizationID|Permissions|SpaceID)\s*)*$
           type: string
       - description: |-
           Select clause for specifying which fields to include in the response for Invocation.
@@ -32249,14 +32251,14 @@ paths:
           The attribute names are case-sensitive, PascalCase, and
           expected in a comma-separated list format as in the JSON encoding.
 
-          Supported attributes for Invocation are BridgeWorkerID, ChannelID, OrganizationID, SpaceID.
+          Supported attributes for Invocation are BridgeWorkerID, ChannelID, OrganizationID, Permissions, SpaceID.
 
           The whole string must be query-encoded.
         in: query
         name: include
         required: false
         schema:
-          pattern: ^\s*(BridgeWorkerID|ChannelID|OrganizationID|SpaceID)\s*(?:,\s*(?:BridgeWorkerID|ChannelID|OrganizationID|SpaceID)\s*)*$
+          pattern: ^\s*(BridgeWorkerID|ChannelID|OrganizationID|Permissions|SpaceID)\s*(?:,\s*(?:BridgeWorkerID|ChannelID|OrganizationID|Permissions|SpaceID)\s*)*$
           type: string
       - description: |-
           Select clause for specifying which fields to include in the response for Invocation.
@@ -32836,14 +32838,14 @@ paths:
           The attribute names are case-sensitive, PascalCase, and
           expected in a comma-separated list format as in the JSON encoding.
 
-          Supported attributes for Link are FromUnitID, OrganizationID, SpaceID, ToSpaceID, ToUnitID, TransformInvocationID.
+          Supported attributes for Link are FromUnitID, OrganizationID, Permissions, SpaceID, ToSpaceID, ToUnitID, TransformInvocationID.
 
           The whole string must be query-encoded.
         in: query
         name: include
         required: false
         schema:
-          pattern: ^\s*(FromUnitID|OrganizationID|SpaceID|ToSpaceID|ToUnitID|TransformInvocationID)\s*(?:,\s*(?:FromUnitID|OrganizationID|SpaceID|ToSpaceID|ToUnitID|TransformInvocationID)\s*)*$
+          pattern: ^\s*(FromUnitID|OrganizationID|Permissions|SpaceID|ToSpaceID|ToUnitID|TransformInvocationID)\s*(?:,\s*(?:FromUnitID|OrganizationID|Permissions|SpaceID|ToSpaceID|ToUnitID|TransformInvocationID)\s*)*$
           type: string
       - description: |-
           Select clause for specifying which fields to include in the response for Link.
@@ -33189,14 +33191,14 @@ paths:
           The attribute names are case-sensitive, PascalCase, and
           expected in a comma-separated list format as in the JSON encoding.
 
-          Supported attributes for Link are FromUnitID, OrganizationID, SpaceID, ToSpaceID, ToUnitID, TransformInvocationID.
+          Supported attributes for Link are FromUnitID, OrganizationID, Permissions, SpaceID, ToSpaceID, ToUnitID, TransformInvocationID.
 
           The whole string must be query-encoded.
         in: query
         name: include
         required: false
         schema:
-          pattern: ^\s*(FromUnitID|OrganizationID|SpaceID|ToSpaceID|ToUnitID|TransformInvocationID)\s*(?:,\s*(?:FromUnitID|OrganizationID|SpaceID|ToSpaceID|ToUnitID|TransformInvocationID)\s*)*$
+          pattern: ^\s*(FromUnitID|OrganizationID|Permissions|SpaceID|ToSpaceID|ToUnitID|TransformInvocationID)\s*(?:,\s*(?:FromUnitID|OrganizationID|Permissions|SpaceID|ToSpaceID|ToUnitID|TransformInvocationID)\s*)*$
           type: string
       - description: |-
           Select clause for specifying which fields to include in the response for Link.
@@ -33874,14 +33876,14 @@ paths:
           The attribute names are case-sensitive, PascalCase, and
           expected in a comma-separated list format as in the JSON encoding.
 
-          Supported attributes for Release are ChangeOrderID, OrganizationID, SpaceID, TagID, TargetID, UserID.
+          Supported attributes for Release are ChangeOrderID, OrganizationID, Permissions, SpaceID, TagID, TargetID, UserID.
 
           The whole string must be query-encoded.
         in: query
         name: include
         required: false
         schema:
-          pattern: ^\s*(ChangeOrderID|OrganizationID|SpaceID|TagID|TargetID|UserID)\s*(?:,\s*(?:ChangeOrderID|OrganizationID|SpaceID|TagID|TargetID|UserID)\s*)*$
+          pattern: ^\s*(ChangeOrderID|OrganizationID|Permissions|SpaceID|TagID|TargetID|UserID)\s*(?:,\s*(?:ChangeOrderID|OrganizationID|Permissions|SpaceID|TagID|TargetID|UserID)\s*)*$
           type: string
       - description: |-
           Select clause for specifying which fields to include in the response for Release.
@@ -34223,14 +34225,14 @@ paths:
           The attribute names are case-sensitive, PascalCase, and
           expected in a comma-separated list format as in the JSON encoding.
 
-          Supported attributes for Release are ChangeOrderID, OrganizationID, SpaceID, TagID, TargetID, UserID.
+          Supported attributes for Release are ChangeOrderID, OrganizationID, Permissions, SpaceID, TagID, TargetID, UserID.
 
           The whole string must be query-encoded.
         in: query
         name: include
         required: false
         schema:
-          pattern: ^\s*(ChangeOrderID|OrganizationID|SpaceID|TagID|TargetID|UserID)\s*(?:,\s*(?:ChangeOrderID|OrganizationID|SpaceID|TagID|TargetID|UserID)\s*)*$
+          pattern: ^\s*(ChangeOrderID|OrganizationID|Permissions|SpaceID|TagID|TargetID|UserID)\s*(?:,\s*(?:ChangeOrderID|OrganizationID|Permissions|SpaceID|TagID|TargetID|UserID)\s*)*$
           type: string
       - description: |-
           Select clause for specifying which fields to include in the response for Release.
@@ -34791,14 +34793,14 @@ paths:
           The attribute names are case-sensitive, PascalCase, and
           expected in a comma-separated list format as in the JSON encoding.
 
-          Supported attributes for Tag are ChangeSetID, OrganizationID, SpaceID.
+          Supported attributes for Tag are ChangeSetID, OrganizationID, Permissions, SpaceID.
 
           The whole string must be query-encoded.
         in: query
         name: include
         required: false
         schema:
-          pattern: ^\s*(ChangeSetID|OrganizationID|SpaceID)\s*(?:,\s*(?:ChangeSetID|OrganizationID|SpaceID)\s*)*$
+          pattern: ^\s*(ChangeSetID|OrganizationID|Permissions|SpaceID)\s*(?:,\s*(?:ChangeSetID|OrganizationID|Permissions|SpaceID)\s*)*$
           type: string
       - description: |-
           Select clause for specifying which fields to include in the response for Tag.
@@ -35142,14 +35144,14 @@ paths:
           The attribute names are case-sensitive, PascalCase, and
           expected in a comma-separated list format as in the JSON encoding.
 
-          Supported attributes for Tag are ChangeSetID, OrganizationID, SpaceID.
+          Supported attributes for Tag are ChangeSetID, OrganizationID, Permissions, SpaceID.
 
           The whole string must be query-encoded.
         in: query
         name: include
         required: false
         schema:
-          pattern: ^\s*(ChangeSetID|OrganizationID|SpaceID)\s*(?:,\s*(?:ChangeSetID|OrganizationID|SpaceID)\s*)*$
+          pattern: ^\s*(ChangeSetID|OrganizationID|Permissions|SpaceID)\s*(?:,\s*(?:ChangeSetID|OrganizationID|Permissions|SpaceID)\s*)*$
           type: string
       - description: |-
           Select clause for specifying which fields to include in the response for Tag.
@@ -35545,14 +35547,14 @@ paths:
           The attribute names are case-sensitive, PascalCase, and
           expected in a comma-separated list format as in the JSON encoding.
 
-          Supported attributes for Target are OrganizationID, SpaceID, TriggerFilterID, TriggerIDs.
+          Supported attributes for Target are OrganizationID, Permissions, SpaceID, TriggerFilterID, TriggerIDs.
 
           The whole string must be query-encoded.
         in: query
         name: include
         required: false
         schema:
-          pattern: ^\s*(OrganizationID|SpaceID|TriggerFilterID|TriggerIDs)\s*(?:,\s*(?:OrganizationID|SpaceID|TriggerFilterID|TriggerIDs)\s*)*$
+          pattern: ^\s*(OrganizationID|Permissions|SpaceID|TriggerFilterID|TriggerIDs)\s*(?:,\s*(?:OrganizationID|Permissions|SpaceID|TriggerFilterID|TriggerIDs)\s*)*$
           type: string
       - description: |-
           Select clause for specifying which fields to include in the response for Target.
@@ -35915,14 +35917,14 @@ paths:
           The attribute names are case-sensitive, PascalCase, and
           expected in a comma-separated list format as in the JSON encoding.
 
-          Supported attributes for Target are OrganizationID, SpaceID, TriggerFilterID, TriggerIDs.
+          Supported attributes for Target are OrganizationID, Permissions, SpaceID, TriggerFilterID, TriggerIDs.
 
           The whole string must be query-encoded.
         in: query
         name: include
         required: false
         schema:
-          pattern: ^\s*(OrganizationID|SpaceID|TriggerFilterID|TriggerIDs)\s*(?:,\s*(?:OrganizationID|SpaceID|TriggerFilterID|TriggerIDs)\s*)*$
+          pattern: ^\s*(OrganizationID|Permissions|SpaceID|TriggerFilterID|TriggerIDs)\s*(?:,\s*(?:OrganizationID|Permissions|SpaceID|TriggerFilterID|TriggerIDs)\s*)*$
           type: string
       - description: |-
           Select clause for specifying which fields to include in the response for Target.
@@ -36515,14 +36517,14 @@ paths:
           The attribute names are case-sensitive, PascalCase, and
           expected in a comma-separated list format as in the JSON encoding.
 
-          Supported attributes for Trigger are BridgeWorkerID, ChannelID, InvocationID, OrganizationID, SpaceID, UnitFilterID.
+          Supported attributes for Trigger are BridgeWorkerID, ChannelID, InvocationID, OrganizationID, Permissions, SpaceID, UnitFilterID.
 
           The whole string must be query-encoded.
         in: query
         name: include
         required: false
         schema:
-          pattern: ^\s*(BridgeWorkerID|ChannelID|InvocationID|OrganizationID|SpaceID|UnitFilterID)\s*(?:,\s*(?:BridgeWorkerID|ChannelID|InvocationID|OrganizationID|SpaceID|UnitFilterID)\s*)*$
+          pattern: ^\s*(BridgeWorkerID|ChannelID|InvocationID|OrganizationID|Permissions|SpaceID|UnitFilterID)\s*(?:,\s*(?:BridgeWorkerID|ChannelID|InvocationID|OrganizationID|Permissions|SpaceID|UnitFilterID)\s*)*$
           type: string
       - description: |-
           Select clause for specifying which fields to include in the response for Trigger.
@@ -36873,14 +36875,14 @@ paths:
           The attribute names are case-sensitive, PascalCase, and
           expected in a comma-separated list format as in the JSON encoding.
 
-          Supported attributes for Trigger are BridgeWorkerID, ChannelID, InvocationID, OrganizationID, SpaceID, UnitFilterID.
+          Supported attributes for Trigger are BridgeWorkerID, ChannelID, InvocationID, OrganizationID, Permissions, SpaceID, UnitFilterID.
 
           The whole string must be query-encoded.
         in: query
         name: include
         required: false
         schema:
-          pattern: ^\s*(BridgeWorkerID|ChannelID|InvocationID|OrganizationID|SpaceID|UnitFilterID)\s*(?:,\s*(?:BridgeWorkerID|ChannelID|InvocationID|OrganizationID|SpaceID|UnitFilterID)\s*)*$
+          pattern: ^\s*(BridgeWorkerID|ChannelID|InvocationID|OrganizationID|Permissions|SpaceID|UnitFilterID)\s*(?:,\s*(?:BridgeWorkerID|ChannelID|InvocationID|OrganizationID|Permissions|SpaceID|UnitFilterID)\s*)*$
           type: string
       - description: |-
           Select clause for specifying which fields to include in the response for Trigger.
@@ -37551,14 +37553,14 @@ paths:
           The attribute names are case-sensitive, PascalCase, and
           expected in a comma-separated list format as in the JSON encoding.
 
-          Supported attributes for Unit are ChangeSetID, FromLinkID, HeadMutationNum, HeadRevisionNum, LastReleasedRevisionNum, OrganizationID, SpaceID, TargetID, UnitEventID, UpstreamSpaceID, UpstreamUnitID.
+          Supported attributes for Unit are ChangeSetID, FromLinkID, HeadMutationNum, HeadRevisionNum, LastReleasedRevisionNum, OrganizationID, Permissions, SpaceID, TargetID, UnitEventID, UpstreamSpaceID, UpstreamUnitID.
 
           The whole string must be query-encoded.
         in: query
         name: include
         required: false
         schema:
-          pattern: ^\s*(ChangeSetID|FromLinkID|HeadMutationNum|HeadRevisionNum|LastReleasedRevisionNum|OrganizationID|SpaceID|TargetID|UnitEventID|UpstreamSpaceID|UpstreamUnitID)\s*(?:,\s*(?:ChangeSetID|FromLinkID|HeadMutationNum|HeadRevisionNum|LastReleasedRevisionNum|OrganizationID|SpaceID|TargetID|UnitEventID|UpstreamSpaceID|UpstreamUnitID)\s*)*$
+          pattern: ^\s*(ChangeSetID|FromLinkID|HeadMutationNum|HeadRevisionNum|LastReleasedRevisionNum|OrganizationID|Permissions|SpaceID|TargetID|UnitEventID|UpstreamSpaceID|UpstreamUnitID)\s*(?:,\s*(?:ChangeSetID|FromLinkID|HeadMutationNum|HeadRevisionNum|LastReleasedRevisionNum|OrganizationID|Permissions|SpaceID|TargetID|UnitEventID|UpstreamSpaceID|UpstreamUnitID)\s*)*$
           type: string
       - description: |-
           Select clause for specifying which fields to include in the response for Unit.
@@ -38053,14 +38055,14 @@ paths:
           The attribute names are case-sensitive, PascalCase, and
           expected in a comma-separated list format as in the JSON encoding.
 
-          Supported attributes for Unit are ChangeSetID, FromLinkID, HeadMutationNum, HeadRevisionNum, LastReleasedRevisionNum, OrganizationID, SpaceID, TargetID, UnitEventID, UpstreamSpaceID, UpstreamUnitID.
+          Supported attributes for Unit are ChangeSetID, FromLinkID, HeadMutationNum, HeadRevisionNum, LastReleasedRevisionNum, OrganizationID, Permissions, SpaceID, TargetID, UnitEventID, UpstreamSpaceID, UpstreamUnitID.
 
           The whole string must be query-encoded.
         in: query
         name: include
         required: false
         schema:
-          pattern: ^\s*(ChangeSetID|FromLinkID|HeadMutationNum|HeadRevisionNum|LastReleasedRevisionNum|OrganizationID|SpaceID|TargetID|UnitEventID|UpstreamSpaceID|UpstreamUnitID)\s*(?:,\s*(?:ChangeSetID|FromLinkID|HeadMutationNum|HeadRevisionNum|LastReleasedRevisionNum|OrganizationID|SpaceID|TargetID|UnitEventID|UpstreamSpaceID|UpstreamUnitID)\s*)*$
+          pattern: ^\s*(ChangeSetID|FromLinkID|HeadMutationNum|HeadRevisionNum|LastReleasedRevisionNum|OrganizationID|Permissions|SpaceID|TargetID|UnitEventID|UpstreamSpaceID|UpstreamUnitID)\s*(?:,\s*(?:ChangeSetID|FromLinkID|HeadMutationNum|HeadRevisionNum|LastReleasedRevisionNum|OrganizationID|Permissions|SpaceID|TargetID|UnitEventID|UpstreamSpaceID|UpstreamUnitID)\s*)*$
           type: string
       - description: |-
           Select clause for specifying which fields to include in the response for Unit.
@@ -42497,14 +42499,14 @@ paths:
           The attribute names are case-sensitive, PascalCase, and
           expected in a comma-separated list format as in the JSON encoding.
 
-          Supported attributes for View are FilterID, OrganizationID, SpaceID.
+          Supported attributes for View are FilterID, OrganizationID, Permissions, SpaceID.
 
           The whole string must be query-encoded.
         in: query
         name: include
         required: false
         schema:
-          pattern: ^\s*(FilterID|OrganizationID|SpaceID)\s*(?:,\s*(?:FilterID|OrganizationID|SpaceID)\s*)*$
+          pattern: ^\s*(FilterID|OrganizationID|Permissions|SpaceID)\s*(?:,\s*(?:FilterID|OrganizationID|Permissions|SpaceID)\s*)*$
           type: string
       - description: |-
           Select clause for specifying which fields to include in the response for View.
@@ -42846,14 +42848,14 @@ paths:
           The attribute names are case-sensitive, PascalCase, and
           expected in a comma-separated list format as in the JSON encoding.
 
-          Supported attributes for View are FilterID, OrganizationID, SpaceID.
+          Supported attributes for View are FilterID, OrganizationID, Permissions, SpaceID.
 
           The whole string must be query-encoded.
         in: query
         name: include
         required: false
         schema:
-          pattern: ^\s*(FilterID|OrganizationID|SpaceID)\s*(?:,\s*(?:FilterID|OrganizationID|SpaceID)\s*)*$
+          pattern: ^\s*(FilterID|OrganizationID|Permissions|SpaceID)\s*(?:,\s*(?:FilterID|OrganizationID|Permissions|SpaceID)\s*)*$
           type: string
       - description: |-
           Select clause for specifying which fields to include in the response for View.
@@ -43436,14 +43438,14 @@ paths:
           The attribute names are case-sensitive, PascalCase, and
           expected in a comma-separated list format as in the JSON encoding.
 
-          Supported attributes for Tag are ChangeSetID, OrganizationID, SpaceID.
+          Supported attributes for Tag are ChangeSetID, OrganizationID, Permissions, SpaceID.
 
           The whole string must be query-encoded.
         in: query
         name: include
         required: false
         schema:
-          pattern: ^\s*(ChangeSetID|OrganizationID|SpaceID)\s*(?:,\s*(?:ChangeSetID|OrganizationID|SpaceID)\s*)*$
+          pattern: ^\s*(ChangeSetID|OrganizationID|Permissions|SpaceID)\s*(?:,\s*(?:ChangeSetID|OrganizationID|Permissions|SpaceID)\s*)*$
           type: string
       - description: Maximum number of Tag entities to act on, in ID order. A request
           that names limit or continue also stops when it runs short of time, and
@@ -43643,14 +43645,14 @@ paths:
           The attribute names are case-sensitive, PascalCase, and
           expected in a comma-separated list format as in the JSON encoding.
 
-          Supported attributes for Tag are ChangeSetID, OrganizationID, SpaceID.
+          Supported attributes for Tag are ChangeSetID, OrganizationID, Permissions, SpaceID.
 
           The whole string must be query-encoded.
         in: query
         name: include
         required: false
         schema:
-          pattern: ^\s*(ChangeSetID|OrganizationID|SpaceID)\s*(?:,\s*(?:ChangeSetID|OrganizationID|SpaceID)\s*)*$
+          pattern: ^\s*(ChangeSetID|OrganizationID|Permissions|SpaceID)\s*(?:,\s*(?:ChangeSetID|OrganizationID|Permissions|SpaceID)\s*)*$
           type: string
       - description: |-
           Select clause for specifying which fields to include in the response for Tag.
@@ -43908,14 +43910,14 @@ paths:
           The attribute names are case-sensitive, PascalCase, and
           expected in a comma-separated list format as in the JSON encoding.
 
-          Supported attributes for Tag are ChangeSetID, OrganizationID, SpaceID.
+          Supported attributes for Tag are ChangeSetID, OrganizationID, Permissions, SpaceID.
 
           The whole string must be query-encoded.
         in: query
         name: include
         required: false
         schema:
-          pattern: ^\s*(ChangeSetID|OrganizationID|SpaceID)\s*(?:,\s*(?:ChangeSetID|OrganizationID|SpaceID)\s*)*$
+          pattern: ^\s*(ChangeSetID|OrganizationID|Permissions|SpaceID)\s*(?:,\s*(?:ChangeSetID|OrganizationID|Permissions|SpaceID)\s*)*$
           type: string
       - description: Maximum number of Tag entities to act on, in ID order. A request
           that names limit or continue also stops when it runs short of time, and
@@ -44185,14 +44187,14 @@ paths:
           The attribute names are case-sensitive, PascalCase, and
           expected in a comma-separated list format as in the JSON encoding.
 
-          Supported attributes for Tag are ChangeSetID, OrganizationID, SpaceID.
+          Supported attributes for Tag are ChangeSetID, OrganizationID, Permissions, SpaceID.
 
           The whole string must be query-encoded.
         in: query
         name: include
         required: false
         schema:
-          pattern: ^\s*(ChangeSetID|OrganizationID|SpaceID)\s*(?:,\s*(?:ChangeSetID|OrganizationID|SpaceID)\s*)*$
+          pattern: ^\s*(ChangeSetID|OrganizationID|Permissions|SpaceID)\s*(?:,\s*(?:ChangeSetID|OrganizationID|Permissions|SpaceID)\s*)*$
           type: string
       - description: Maximum number of Tag entities to act on, in ID order. A request
           that names limit or continue also stops when it runs short of time, and
@@ -44556,14 +44558,14 @@ paths:
           The attribute names are case-sensitive, PascalCase, and
           expected in a comma-separated list format as in the JSON encoding.
 
-          Supported attributes for Tag are ChangeSetID, OrganizationID, SpaceID.
+          Supported attributes for Tag are ChangeSetID, OrganizationID, Permissions, SpaceID.
 
           The whole string must be query-encoded.
         in: query
         name: include
         required: false
         schema:
-          pattern: ^\s*(ChangeSetID|OrganizationID|SpaceID)\s*(?:,\s*(?:ChangeSetID|OrganizationID|SpaceID)\s*)*$
+          pattern: ^\s*(ChangeSetID|OrganizationID|Permissions|SpaceID)\s*(?:,\s*(?:ChangeSetID|OrganizationID|Permissions|SpaceID)\s*)*$
           type: string
       - description: Report what the move would do, and what would stop it, without
           moving anything
@@ -44744,14 +44746,14 @@ paths:
           The attribute names are case-sensitive, PascalCase, and
           expected in a comma-separated list format as in the JSON encoding.
 
-          Supported attributes for Target are OrganizationID, SpaceID, TriggerFilterID, TriggerIDs.
+          Supported attributes for Target are OrganizationID, Permissions, SpaceID, TriggerFilterID, TriggerIDs.
 
           The whole string must be query-encoded.
         in: query
         name: include
         required: false
         schema:
-          pattern: ^\s*(OrganizationID|SpaceID|TriggerFilterID|TriggerIDs)\s*(?:,\s*(?:OrganizationID|SpaceID|TriggerFilterID|TriggerIDs)\s*)*$
+          pattern: ^\s*(OrganizationID|Permissions|SpaceID|TriggerFilterID|TriggerIDs)\s*(?:,\s*(?:OrganizationID|Permissions|SpaceID|TriggerFilterID|TriggerIDs)\s*)*$
           type: string
       - description: Maximum number of Target entities to act on, in ID order. A request
           that names limit or continue also stops when it runs short of time, and
@@ -44961,14 +44963,14 @@ paths:
           The attribute names are case-sensitive, PascalCase, and
           expected in a comma-separated list format as in the JSON encoding.
 
-          Supported attributes for Target are OrganizationID, SpaceID, TriggerFilterID, TriggerIDs.
+          Supported attributes for Target are OrganizationID, Permissions, SpaceID, TriggerFilterID, TriggerIDs.
 
           The whole string must be query-encoded.
         in: query
         name: include
         required: false
         schema:
-          pattern: ^\s*(OrganizationID|SpaceID|TriggerFilterID|TriggerIDs)\s*(?:,\s*(?:OrganizationID|SpaceID|TriggerFilterID|TriggerIDs)\s*)*$
+          pattern: ^\s*(OrganizationID|Permissions|SpaceID|TriggerFilterID|TriggerIDs)\s*(?:,\s*(?:OrganizationID|Permissions|SpaceID|TriggerFilterID|TriggerIDs)\s*)*$
           type: string
       - description: |-
           Select clause for specifying which fields to include in the response for Target.
@@ -45234,14 +45236,14 @@ paths:
           The attribute names are case-sensitive, PascalCase, and
           expected in a comma-separated list format as in the JSON encoding.
 
-          Supported attributes for Target are OrganizationID, SpaceID, TriggerFilterID, TriggerIDs.
+          Supported attributes for Target are OrganizationID, Permissions, SpaceID, TriggerFilterID, TriggerIDs.
 
           The whole string must be query-encoded.
         in: query
         name: include
         required: false
         schema:
-          pattern: ^\s*(OrganizationID|SpaceID|TriggerFilterID|TriggerIDs)\s*(?:,\s*(?:OrganizationID|SpaceID|TriggerFilterID|TriggerIDs)\s*)*$
+          pattern: ^\s*(OrganizationID|Permissions|SpaceID|TriggerFilterID|TriggerIDs)\s*(?:,\s*(?:OrganizationID|Permissions|SpaceID|TriggerFilterID|TriggerIDs)\s*)*$
           type: string
       - description: Maximum number of Target entities to act on, in ID order. A request
           that names limit or continue also stops when it runs short of time, and
@@ -45558,14 +45560,14 @@ paths:
           The attribute names are case-sensitive, PascalCase, and
           expected in a comma-separated list format as in the JSON encoding.
 
-          Supported attributes for Target are OrganizationID, SpaceID, TriggerFilterID, TriggerIDs.
+          Supported attributes for Target are OrganizationID, Permissions, SpaceID, TriggerFilterID, TriggerIDs.
 
           The whole string must be query-encoded.
         in: query
         name: include
         required: false
         schema:
-          pattern: ^\s*(OrganizationID|SpaceID|TriggerFilterID|TriggerIDs)\s*(?:,\s*(?:OrganizationID|SpaceID|TriggerFilterID|TriggerIDs)\s*)*$
+          pattern: ^\s*(OrganizationID|Permissions|SpaceID|TriggerFilterID|TriggerIDs)\s*(?:,\s*(?:OrganizationID|Permissions|SpaceID|TriggerFilterID|TriggerIDs)\s*)*$
           type: string
       - description: Maximum number of Target entities to act on, in ID order. A request
           that names limit or continue also stops when it runs short of time, and
@@ -46032,14 +46034,14 @@ paths:
           The attribute names are case-sensitive, PascalCase, and
           expected in a comma-separated list format as in the JSON encoding.
 
-          Supported attributes for Target are OrganizationID, SpaceID, TriggerFilterID, TriggerIDs.
+          Supported attributes for Target are OrganizationID, Permissions, SpaceID, TriggerFilterID, TriggerIDs.
 
           The whole string must be query-encoded.
         in: query
         name: include
         required: false
         schema:
-          pattern: ^\s*(OrganizationID|SpaceID|TriggerFilterID|TriggerIDs)\s*(?:,\s*(?:OrganizationID|SpaceID|TriggerFilterID|TriggerIDs)\s*)*$
+          pattern: ^\s*(OrganizationID|Permissions|SpaceID|TriggerFilterID|TriggerIDs)\s*(?:,\s*(?:OrganizationID|Permissions|SpaceID|TriggerFilterID|TriggerIDs)\s*)*$
           type: string
       - description: Report what the move would do, and what would stop it, without
           moving anything
@@ -46222,14 +46224,14 @@ paths:
           The attribute names are case-sensitive, PascalCase, and
           expected in a comma-separated list format as in the JSON encoding.
 
-          Supported attributes for Trigger are BridgeWorkerID, ChannelID, InvocationID, OrganizationID, SpaceID, UnitFilterID.
+          Supported attributes for Trigger are BridgeWorkerID, ChannelID, InvocationID, OrganizationID, Permissions, SpaceID, UnitFilterID.
 
           The whole string must be query-encoded.
         in: query
         name: include
         required: false
         schema:
-          pattern: ^\s*(BridgeWorkerID|ChannelID|InvocationID|OrganizationID|SpaceID|UnitFilterID)\s*(?:,\s*(?:BridgeWorkerID|ChannelID|InvocationID|OrganizationID|SpaceID|UnitFilterID)\s*)*$
+          pattern: ^\s*(BridgeWorkerID|ChannelID|InvocationID|OrganizationID|Permissions|SpaceID|UnitFilterID)\s*(?:,\s*(?:BridgeWorkerID|ChannelID|InvocationID|OrganizationID|Permissions|SpaceID|UnitFilterID)\s*)*$
           type: string
       - description: Maximum number of Trigger entities to act on, in ID order. A
           request that names limit or continue also stops when it runs short of time,
@@ -46432,14 +46434,14 @@ paths:
           The attribute names are case-sensitive, PascalCase, and
           expected in a comma-separated list format as in the JSON encoding.
 
-          Supported attributes for Trigger are BridgeWorkerID, ChannelID, InvocationID, OrganizationID, SpaceID, UnitFilterID.
+          Supported attributes for Trigger are BridgeWorkerID, ChannelID, InvocationID, OrganizationID, Permissions, SpaceID, UnitFilterID.
 
           The whole string must be query-encoded.
         in: query
         name: include
         required: false
         schema:
-          pattern: ^\s*(BridgeWorkerID|ChannelID|InvocationID|OrganizationID|SpaceID|UnitFilterID)\s*(?:,\s*(?:BridgeWorkerID|ChannelID|InvocationID|OrganizationID|SpaceID|UnitFilterID)\s*)*$
+          pattern: ^\s*(BridgeWorkerID|ChannelID|InvocationID|OrganizationID|Permissions|SpaceID|UnitFilterID)\s*(?:,\s*(?:BridgeWorkerID|ChannelID|InvocationID|OrganizationID|Permissions|SpaceID|UnitFilterID)\s*)*$
           type: string
       - description: |-
           Select clause for specifying which fields to include in the response for Trigger.
@@ -46699,14 +46701,14 @@ paths:
           The attribute names are case-sensitive, PascalCase, and
           expected in a comma-separated list format as in the JSON encoding.
 
-          Supported attributes for Trigger are BridgeWorkerID, ChannelID, InvocationID, OrganizationID, SpaceID, UnitFilterID.
+          Supported attributes for Trigger are BridgeWorkerID, ChannelID, InvocationID, OrganizationID, Permissions, SpaceID, UnitFilterID.
 
           The whole string must be query-encoded.
         in: query
         name: include
         required: false
         schema:
-          pattern: ^\s*(BridgeWorkerID|ChannelID|InvocationID|OrganizationID|SpaceID|UnitFilterID)\s*(?:,\s*(?:BridgeWorkerID|ChannelID|InvocationID|OrganizationID|SpaceID|UnitFilterID)\s*)*$
+          pattern: ^\s*(BridgeWorkerID|ChannelID|InvocationID|OrganizationID|Permissions|SpaceID|UnitFilterID)\s*(?:,\s*(?:BridgeWorkerID|ChannelID|InvocationID|OrganizationID|Permissions|SpaceID|UnitFilterID)\s*)*$
           type: string
       - description: Maximum number of Trigger entities to act on, in ID order. A
           request that names limit or continue also stops when it runs short of time,
@@ -47094,14 +47096,14 @@ paths:
           The attribute names are case-sensitive, PascalCase, and
           expected in a comma-separated list format as in the JSON encoding.
 
-          Supported attributes for Trigger are BridgeWorkerID, ChannelID, InvocationID, OrganizationID, SpaceID, UnitFilterID.
+          Supported attributes for Trigger are BridgeWorkerID, ChannelID, InvocationID, OrganizationID, Permissions, SpaceID, UnitFilterID.
 
           The whole string must be query-encoded.
         in: query
         name: include
         required: false
         schema:
-          pattern: ^\s*(BridgeWorkerID|ChannelID|InvocationID|OrganizationID|SpaceID|UnitFilterID)\s*(?:,\s*(?:BridgeWorkerID|ChannelID|InvocationID|OrganizationID|SpaceID|UnitFilterID)\s*)*$
+          pattern: ^\s*(BridgeWorkerID|ChannelID|InvocationID|OrganizationID|Permissions|SpaceID|UnitFilterID)\s*(?:,\s*(?:BridgeWorkerID|ChannelID|InvocationID|OrganizationID|Permissions|SpaceID|UnitFilterID)\s*)*$
           type: string
       - description: Maximum number of Trigger entities to act on, in ID order. A
           request that names limit or continue also stops when it runs short of time,
@@ -47649,14 +47651,14 @@ paths:
           The attribute names are case-sensitive, PascalCase, and
           expected in a comma-separated list format as in the JSON encoding.
 
-          Supported attributes for Trigger are BridgeWorkerID, ChannelID, InvocationID, OrganizationID, SpaceID, UnitFilterID.
+          Supported attributes for Trigger are BridgeWorkerID, ChannelID, InvocationID, OrganizationID, Permissions, SpaceID, UnitFilterID.
 
           The whole string must be query-encoded.
         in: query
         name: include
         required: false
         schema:
-          pattern: ^\s*(BridgeWorkerID|ChannelID|InvocationID|OrganizationID|SpaceID|UnitFilterID)\s*(?:,\s*(?:BridgeWorkerID|ChannelID|InvocationID|OrganizationID|SpaceID|UnitFilterID)\s*)*$
+          pattern: ^\s*(BridgeWorkerID|ChannelID|InvocationID|OrganizationID|Permissions|SpaceID|UnitFilterID)\s*(?:,\s*(?:BridgeWorkerID|ChannelID|InvocationID|OrganizationID|Permissions|SpaceID|UnitFilterID)\s*)*$
           type: string
       - description: Report what the move would do, and what would stop it, without
           moving anything
@@ -47839,14 +47841,14 @@ paths:
           The attribute names are case-sensitive, PascalCase, and
           expected in a comma-separated list format as in the JSON encoding.
 
-          Supported attributes for Unit are ChangeSetID, FromLinkID, HeadMutationNum, HeadRevisionNum, LastReleasedRevisionNum, OrganizationID, SpaceID, TargetID, UnitEventID, UpstreamSpaceID, UpstreamUnitID.
+          Supported attributes for Unit are ChangeSetID, FromLinkID, HeadMutationNum, HeadRevisionNum, LastReleasedRevisionNum, OrganizationID, Permissions, SpaceID, TargetID, UnitEventID, UpstreamSpaceID, UpstreamUnitID.
 
           The whole string must be query-encoded.
         in: query
         name: include
         required: false
         schema:
-          pattern: ^\s*(ChangeSetID|FromLinkID|HeadMutationNum|HeadRevisionNum|LastReleasedRevisionNum|OrganizationID|SpaceID|TargetID|UnitEventID|UpstreamSpaceID|UpstreamUnitID)\s*(?:,\s*(?:ChangeSetID|FromLinkID|HeadMutationNum|HeadRevisionNum|LastReleasedRevisionNum|OrganizationID|SpaceID|TargetID|UnitEventID|UpstreamSpaceID|UpstreamUnitID)\s*)*$
+          pattern: ^\s*(ChangeSetID|FromLinkID|HeadMutationNum|HeadRevisionNum|LastReleasedRevisionNum|OrganizationID|Permissions|SpaceID|TargetID|UnitEventID|UpstreamSpaceID|UpstreamUnitID)\s*(?:,\s*(?:ChangeSetID|FromLinkID|HeadMutationNum|HeadRevisionNum|LastReleasedRevisionNum|OrganizationID|Permissions|SpaceID|TargetID|UnitEventID|UpstreamSpaceID|UpstreamUnitID)\s*)*$
           type: string
       - description: Maximum number of Unit entities to act on, in ID order. A request
           that names limit or continue also stops when it runs short of time, and
@@ -48055,14 +48057,14 @@ paths:
           The attribute names are case-sensitive, PascalCase, and
           expected in a comma-separated list format as in the JSON encoding.
 
-          Supported attributes for Unit are ChangeSetID, FromLinkID, HeadMutationNum, HeadRevisionNum, LastReleasedRevisionNum, OrganizationID, SpaceID, TargetID, UnitEventID, UpstreamSpaceID, UpstreamUnitID.
+          Supported attributes for Unit are ChangeSetID, FromLinkID, HeadMutationNum, HeadRevisionNum, LastReleasedRevisionNum, OrganizationID, Permissions, SpaceID, TargetID, UnitEventID, UpstreamSpaceID, UpstreamUnitID.
 
           The whole string must be query-encoded.
         in: query
         name: include
         required: false
         schema:
-          pattern: ^\s*(ChangeSetID|FromLinkID|HeadMutationNum|HeadRevisionNum|LastReleasedRevisionNum|OrganizationID|SpaceID|TargetID|UnitEventID|UpstreamSpaceID|UpstreamUnitID)\s*(?:,\s*(?:ChangeSetID|FromLinkID|HeadMutationNum|HeadRevisionNum|LastReleasedRevisionNum|OrganizationID|SpaceID|TargetID|UnitEventID|UpstreamSpaceID|UpstreamUnitID)\s*)*$
+          pattern: ^\s*(ChangeSetID|FromLinkID|HeadMutationNum|HeadRevisionNum|LastReleasedRevisionNum|OrganizationID|Permissions|SpaceID|TargetID|UnitEventID|UpstreamSpaceID|UpstreamUnitID)\s*(?:,\s*(?:ChangeSetID|FromLinkID|HeadMutationNum|HeadRevisionNum|LastReleasedRevisionNum|OrganizationID|Permissions|SpaceID|TargetID|UnitEventID|UpstreamSpaceID|UpstreamUnitID)\s*)*$
           type: string
       - description: |-
           Select clause for specifying which fields to include in the response for Unit.
@@ -48399,18 +48401,18 @@ paths:
           The attribute names are case-sensitive, PascalCase, and
           expected in a comma-separated list format as in the JSON encoding.
 
-          Supported attributes for Unit are ChangeSetID, FromLinkID, HeadMutationNum, HeadRevisionNum, LastReleasedRevisionNum, OrganizationID, SpaceID, TargetID, UnitEventID, UpstreamSpaceID, UpstreamUnitID.
+          Supported attributes for Unit are ChangeSetID, FromLinkID, HeadMutationNum, HeadRevisionNum, LastReleasedRevisionNum, OrganizationID, Permissions, SpaceID, TargetID, UnitEventID, UpstreamSpaceID, UpstreamUnitID.
 
           A write also accepts the parts of its result: ConfigData for the configuration the operation produced, MutationSources for what set each value in it, and Diff for what the operation changed, path by path with the values on both sides. None is a field of a Unit, and each costs something to return, so they are returned only when named. A dry run stores nothing, so this is the only way to see what it would have produced.
 
-          Supported values: ChangeSetID, FromLinkID, HeadMutationNum, HeadRevisionNum, LastReleasedRevisionNum, OrganizationID, SpaceID, TargetID, UnitEventID, UpstreamSpaceID, UpstreamUnitID, ConfigData, MutationSources, Diff.
+          Supported values: ChangeSetID, FromLinkID, HeadMutationNum, HeadRevisionNum, LastReleasedRevisionNum, OrganizationID, Permissions, SpaceID, TargetID, UnitEventID, UpstreamSpaceID, UpstreamUnitID, ConfigData, MutationSources, Diff.
 
           The whole string must be query-encoded.
         in: query
         name: include
         required: false
         schema:
-          pattern: ^\s*(ChangeSetID|FromLinkID|HeadMutationNum|HeadRevisionNum|LastReleasedRevisionNum|OrganizationID|SpaceID|TargetID|UnitEventID|UpstreamSpaceID|UpstreamUnitID|ConfigData|MutationSources|Diff)\s*(?:,\s*(?:ChangeSetID|FromLinkID|HeadMutationNum|HeadRevisionNum|LastReleasedRevisionNum|OrganizationID|SpaceID|TargetID|UnitEventID|UpstreamSpaceID|UpstreamUnitID|ConfigData|MutationSources|Diff)\s*)*$
+          pattern: ^\s*(ChangeSetID|FromLinkID|HeadMutationNum|HeadRevisionNum|LastReleasedRevisionNum|OrganizationID|Permissions|SpaceID|TargetID|UnitEventID|UpstreamSpaceID|UpstreamUnitID|ConfigData|MutationSources|Diff)\s*(?:,\s*(?:ChangeSetID|FromLinkID|HeadMutationNum|HeadRevisionNum|LastReleasedRevisionNum|OrganizationID|Permissions|SpaceID|TargetID|UnitEventID|UpstreamSpaceID|UpstreamUnitID|ConfigData|MutationSources|Diff)\s*)*$
           type: string
       - description: Maximum number of Unit entities to act on, in ID order. A request
           that names limit or continue also stops when it runs short of time, and
@@ -49031,18 +49033,18 @@ paths:
           The attribute names are case-sensitive, PascalCase, and
           expected in a comma-separated list format as in the JSON encoding.
 
-          Supported attributes for Unit are ChangeSetID, FromLinkID, HeadMutationNum, HeadRevisionNum, LastReleasedRevisionNum, OrganizationID, SpaceID, TargetID, UnitEventID, UpstreamSpaceID, UpstreamUnitID.
+          Supported attributes for Unit are ChangeSetID, FromLinkID, HeadMutationNum, HeadRevisionNum, LastReleasedRevisionNum, OrganizationID, Permissions, SpaceID, TargetID, UnitEventID, UpstreamSpaceID, UpstreamUnitID.
 
           A write also accepts the parts of its result: ConfigData for the configuration the operation produced, MutationSources for what set each value in it, and Diff for what the operation changed, path by path with the values on both sides. None is a field of a Unit, and each costs something to return, so they are returned only when named. A dry run stores nothing, so this is the only way to see what it would have produced.
 
-          Supported values: ChangeSetID, FromLinkID, HeadMutationNum, HeadRevisionNum, LastReleasedRevisionNum, OrganizationID, SpaceID, TargetID, UnitEventID, UpstreamSpaceID, UpstreamUnitID, ConfigData, MutationSources, Diff.
+          Supported values: ChangeSetID, FromLinkID, HeadMutationNum, HeadRevisionNum, LastReleasedRevisionNum, OrganizationID, Permissions, SpaceID, TargetID, UnitEventID, UpstreamSpaceID, UpstreamUnitID, ConfigData, MutationSources, Diff.
 
           The whole string must be query-encoded.
         in: query
         name: include
         required: false
         schema:
-          pattern: ^\s*(ChangeSetID|FromLinkID|HeadMutationNum|HeadRevisionNum|LastReleasedRevisionNum|OrganizationID|SpaceID|TargetID|UnitEventID|UpstreamSpaceID|UpstreamUnitID|ConfigData|MutationSources|Diff)\s*(?:,\s*(?:ChangeSetID|FromLinkID|HeadMutationNum|HeadRevisionNum|LastReleasedRevisionNum|OrganizationID|SpaceID|TargetID|UnitEventID|UpstreamSpaceID|UpstreamUnitID|ConfigData|MutationSources|Diff)\s*)*$
+          pattern: ^\s*(ChangeSetID|FromLinkID|HeadMutationNum|HeadRevisionNum|LastReleasedRevisionNum|OrganizationID|Permissions|SpaceID|TargetID|UnitEventID|UpstreamSpaceID|UpstreamUnitID|ConfigData|MutationSources|Diff)\s*(?:,\s*(?:ChangeSetID|FromLinkID|HeadMutationNum|HeadRevisionNum|LastReleasedRevisionNum|OrganizationID|Permissions|SpaceID|TargetID|UnitEventID|UpstreamSpaceID|UpstreamUnitID|ConfigData|MutationSources|Diff)\s*)*$
           type: string
       - description: Maximum number of Unit entities to act on, in ID order. A request
           that names limit or continue also stops when it runs short of time, and
@@ -49527,14 +49529,14 @@ paths:
           The attribute names are case-sensitive, PascalCase, and
           expected in a comma-separated list format as in the JSON encoding.
 
-          Supported attributes for Unit are ChangeSetID, FromLinkID, HeadMutationNum, HeadRevisionNum, LastReleasedRevisionNum, OrganizationID, SpaceID, TargetID, UnitEventID, UpstreamSpaceID, UpstreamUnitID.
+          Supported attributes for Unit are ChangeSetID, FromLinkID, HeadMutationNum, HeadRevisionNum, LastReleasedRevisionNum, OrganizationID, Permissions, SpaceID, TargetID, UnitEventID, UpstreamSpaceID, UpstreamUnitID.
 
           The whole string must be query-encoded.
         in: query
         name: include
         required: false
         schema:
-          pattern: ^\s*(ChangeSetID|FromLinkID|HeadMutationNum|HeadRevisionNum|LastReleasedRevisionNum|OrganizationID|SpaceID|TargetID|UnitEventID|UpstreamSpaceID|UpstreamUnitID)\s*(?:,\s*(?:ChangeSetID|FromLinkID|HeadMutationNum|HeadRevisionNum|LastReleasedRevisionNum|OrganizationID|SpaceID|TargetID|UnitEventID|UpstreamSpaceID|UpstreamUnitID)\s*)*$
+          pattern: ^\s*(ChangeSetID|FromLinkID|HeadMutationNum|HeadRevisionNum|LastReleasedRevisionNum|OrganizationID|Permissions|SpaceID|TargetID|UnitEventID|UpstreamSpaceID|UpstreamUnitID)\s*(?:,\s*(?:ChangeSetID|FromLinkID|HeadMutationNum|HeadRevisionNum|LastReleasedRevisionNum|OrganizationID|Permissions|SpaceID|TargetID|UnitEventID|UpstreamSpaceID|UpstreamUnitID)\s*)*$
           type: string
       responses:
         "200":
@@ -49713,14 +49715,14 @@ paths:
           The attribute names are case-sensitive, PascalCase, and
           expected in a comma-separated list format as in the JSON encoding.
 
-          Supported attributes for Unit are ChangeSetID, FromLinkID, HeadMutationNum, HeadRevisionNum, LastReleasedRevisionNum, OrganizationID, SpaceID, TargetID, UnitEventID, UpstreamSpaceID, UpstreamUnitID.
+          Supported attributes for Unit are ChangeSetID, FromLinkID, HeadMutationNum, HeadRevisionNum, LastReleasedRevisionNum, OrganizationID, Permissions, SpaceID, TargetID, UnitEventID, UpstreamSpaceID, UpstreamUnitID.
 
           The whole string must be query-encoded.
         in: query
         name: include
         required: false
         schema:
-          pattern: ^\s*(ChangeSetID|FromLinkID|HeadMutationNum|HeadRevisionNum|LastReleasedRevisionNum|OrganizationID|SpaceID|TargetID|UnitEventID|UpstreamSpaceID|UpstreamUnitID)\s*(?:,\s*(?:ChangeSetID|FromLinkID|HeadMutationNum|HeadRevisionNum|LastReleasedRevisionNum|OrganizationID|SpaceID|TargetID|UnitEventID|UpstreamSpaceID|UpstreamUnitID)\s*)*$
+          pattern: ^\s*(ChangeSetID|FromLinkID|HeadMutationNum|HeadRevisionNum|LastReleasedRevisionNum|OrganizationID|Permissions|SpaceID|TargetID|UnitEventID|UpstreamSpaceID|UpstreamUnitID)\s*(?:,\s*(?:ChangeSetID|FromLinkID|HeadMutationNum|HeadRevisionNum|LastReleasedRevisionNum|OrganizationID|Permissions|SpaceID|TargetID|UnitEventID|UpstreamSpaceID|UpstreamUnitID)\s*)*$
           type: string
       - description: Report what the move would do, and what would stop it, without
           moving anything
@@ -49903,14 +49905,14 @@ paths:
           The attribute names are case-sensitive, PascalCase, and
           expected in a comma-separated list format as in the JSON encoding.
 
-          Supported attributes for Unit are ChangeSetID, FromLinkID, HeadMutationNum, HeadRevisionNum, LastReleasedRevisionNum, OrganizationID, SpaceID, TargetID, UnitEventID, UpstreamSpaceID, UpstreamUnitID.
+          Supported attributes for Unit are ChangeSetID, FromLinkID, HeadMutationNum, HeadRevisionNum, LastReleasedRevisionNum, OrganizationID, Permissions, SpaceID, TargetID, UnitEventID, UpstreamSpaceID, UpstreamUnitID.
 
           The whole string must be query-encoded.
         in: query
         name: include
         required: false
         schema:
-          pattern: ^\s*(ChangeSetID|FromLinkID|HeadMutationNum|HeadRevisionNum|LastReleasedRevisionNum|OrganizationID|SpaceID|TargetID|UnitEventID|UpstreamSpaceID|UpstreamUnitID)\s*(?:,\s*(?:ChangeSetID|FromLinkID|HeadMutationNum|HeadRevisionNum|LastReleasedRevisionNum|OrganizationID|SpaceID|TargetID|UnitEventID|UpstreamSpaceID|UpstreamUnitID)\s*)*$
+          pattern: ^\s*(ChangeSetID|FromLinkID|HeadMutationNum|HeadRevisionNum|LastReleasedRevisionNum|OrganizationID|Permissions|SpaceID|TargetID|UnitEventID|UpstreamSpaceID|UpstreamUnitID)\s*(?:,\s*(?:ChangeSetID|FromLinkID|HeadMutationNum|HeadRevisionNum|LastReleasedRevisionNum|OrganizationID|Permissions|SpaceID|TargetID|UnitEventID|UpstreamSpaceID|UpstreamUnitID)\s*)*$
           type: string
       requestBody:
         content:
@@ -50287,14 +50289,14 @@ paths:
           The attribute names are case-sensitive, PascalCase, and
           expected in a comma-separated list format as in the JSON encoding.
 
-          Supported attributes for Unit are ChangeSetID, FromLinkID, HeadMutationNum, HeadRevisionNum, LastReleasedRevisionNum, OrganizationID, SpaceID, TargetID, UnitEventID, UpstreamSpaceID, UpstreamUnitID.
+          Supported attributes for Unit are ChangeSetID, FromLinkID, HeadMutationNum, HeadRevisionNum, LastReleasedRevisionNum, OrganizationID, Permissions, SpaceID, TargetID, UnitEventID, UpstreamSpaceID, UpstreamUnitID.
 
           The whole string must be query-encoded.
         in: query
         name: include
         required: false
         schema:
-          pattern: ^\s*(ChangeSetID|FromLinkID|HeadMutationNum|HeadRevisionNum|LastReleasedRevisionNum|OrganizationID|SpaceID|TargetID|UnitEventID|UpstreamSpaceID|UpstreamUnitID)\s*(?:,\s*(?:ChangeSetID|FromLinkID|HeadMutationNum|HeadRevisionNum|LastReleasedRevisionNum|OrganizationID|SpaceID|TargetID|UnitEventID|UpstreamSpaceID|UpstreamUnitID)\s*)*$
+          pattern: ^\s*(ChangeSetID|FromLinkID|HeadMutationNum|HeadRevisionNum|LastReleasedRevisionNum|OrganizationID|Permissions|SpaceID|TargetID|UnitEventID|UpstreamSpaceID|UpstreamUnitID)\s*(?:,\s*(?:ChangeSetID|FromLinkID|HeadMutationNum|HeadRevisionNum|LastReleasedRevisionNum|OrganizationID|Permissions|SpaceID|TargetID|UnitEventID|UpstreamSpaceID|UpstreamUnitID)\s*)*$
           type: string
       - description: |-
           Select clause for specifying which fields to include in the response for Unit.
@@ -51197,14 +51199,14 @@ paths:
           The attribute names are case-sensitive, PascalCase, and
           expected in a comma-separated list format as in the JSON encoding.
 
-          Supported attributes for Unit are ChangeSetID, FromLinkID, HeadMutationNum, HeadRevisionNum, LastReleasedRevisionNum, OrganizationID, SpaceID, TargetID, UnitEventID, UpstreamSpaceID, UpstreamUnitID.
+          Supported attributes for Unit are ChangeSetID, FromLinkID, HeadMutationNum, HeadRevisionNum, LastReleasedRevisionNum, OrganizationID, Permissions, SpaceID, TargetID, UnitEventID, UpstreamSpaceID, UpstreamUnitID.
 
           The whole string must be query-encoded.
         in: query
         name: include
         required: false
         schema:
-          pattern: ^\s*(ChangeSetID|FromLinkID|HeadMutationNum|HeadRevisionNum|LastReleasedRevisionNum|OrganizationID|SpaceID|TargetID|UnitEventID|UpstreamSpaceID|UpstreamUnitID)\s*(?:,\s*(?:ChangeSetID|FromLinkID|HeadMutationNum|HeadRevisionNum|LastReleasedRevisionNum|OrganizationID|SpaceID|TargetID|UnitEventID|UpstreamSpaceID|UpstreamUnitID)\s*)*$
+          pattern: ^\s*(ChangeSetID|FromLinkID|HeadMutationNum|HeadRevisionNum|LastReleasedRevisionNum|OrganizationID|Permissions|SpaceID|TargetID|UnitEventID|UpstreamSpaceID|UpstreamUnitID)\s*(?:,\s*(?:ChangeSetID|FromLinkID|HeadMutationNum|HeadRevisionNum|LastReleasedRevisionNum|OrganizationID|Permissions|SpaceID|TargetID|UnitEventID|UpstreamSpaceID|UpstreamUnitID)\s*)*$
           type: string
       - description: |-
           Select clause for specifying which fields to include in the response for Unit.
@@ -52171,14 +52173,14 @@ paths:
           The attribute names are case-sensitive, PascalCase, and
           expected in a comma-separated list format as in the JSON encoding.
 
-          Supported attributes for View are FilterID, OrganizationID, SpaceID.
+          Supported attributes for View are FilterID, OrganizationID, Permissions, SpaceID.
 
           The whole string must be query-encoded.
         in: query
         name: include
         required: false
         schema:
-          pattern: ^\s*(FilterID|OrganizationID|SpaceID)\s*(?:,\s*(?:FilterID|OrganizationID|SpaceID)\s*)*$
+          pattern: ^\s*(FilterID|OrganizationID|Permissions|SpaceID)\s*(?:,\s*(?:FilterID|OrganizationID|Permissions|SpaceID)\s*)*$
           type: string
       - description: Maximum number of View entities to act on, in ID order. A request
           that names limit or continue also stops when it runs short of time, and
@@ -52379,14 +52381,14 @@ paths:
           The attribute names are case-sensitive, PascalCase, and
           expected in a comma-separated list format as in the JSON encoding.
 
-          Supported attributes for View are FilterID, OrganizationID, SpaceID.
+          Supported attributes for View are FilterID, OrganizationID, Permissions, SpaceID.
 
           The whole string must be query-encoded.
         in: query
         name: include
         required: false
         schema:
-          pattern: ^\s*(FilterID|OrganizationID|SpaceID)\s*(?:,\s*(?:FilterID|OrganizationID|SpaceID)\s*)*$
+          pattern: ^\s*(FilterID|OrganizationID|Permissions|SpaceID)\s*(?:,\s*(?:FilterID|OrganizationID|Permissions|SpaceID)\s*)*$
           type: string
       - description: |-
           Select clause for specifying which fields to include in the response for View.
@@ -52644,14 +52646,14 @@ paths:
           The attribute names are case-sensitive, PascalCase, and
           expected in a comma-separated list format as in the JSON encoding.
 
-          Supported attributes for View are FilterID, OrganizationID, SpaceID.
+          Supported attributes for View are FilterID, OrganizationID, Permissions, SpaceID.
 
           The whole string must be query-encoded.
         in: query
         name: include
         required: false
         schema:
-          pattern: ^\s*(FilterID|OrganizationID|SpaceID)\s*(?:,\s*(?:FilterID|OrganizationID|SpaceID)\s*)*$
+          pattern: ^\s*(FilterID|OrganizationID|Permissions|SpaceID)\s*(?:,\s*(?:FilterID|OrganizationID|Permissions|SpaceID)\s*)*$
           type: string
       - description: Maximum number of View entities to act on, in ID order. A request
           that names limit or continue also stops when it runs short of time, and
@@ -52972,14 +52974,14 @@ paths:
           The attribute names are case-sensitive, PascalCase, and
           expected in a comma-separated list format as in the JSON encoding.
 
-          Supported attributes for View are FilterID, OrganizationID, SpaceID.
+          Supported attributes for View are FilterID, OrganizationID, Permissions, SpaceID.
 
           The whole string must be query-encoded.
         in: query
         name: include
         required: false
         schema:
-          pattern: ^\s*(FilterID|OrganizationID|SpaceID)\s*(?:,\s*(?:FilterID|OrganizationID|SpaceID)\s*)*$
+          pattern: ^\s*(FilterID|OrganizationID|Permissions|SpaceID)\s*(?:,\s*(?:FilterID|OrganizationID|Permissions|SpaceID)\s*)*$
           type: string
       - description: Maximum number of View entities to act on, in ID order. A request
           that names limit or continue also stops when it runs short of time, and
@@ -53456,14 +53458,14 @@ paths:
           The attribute names are case-sensitive, PascalCase, and
           expected in a comma-separated list format as in the JSON encoding.
 
-          Supported attributes for View are FilterID, OrganizationID, SpaceID.
+          Supported attributes for View are FilterID, OrganizationID, Permissions, SpaceID.
 
           The whole string must be query-encoded.
         in: query
         name: include
         required: false
         schema:
-          pattern: ^\s*(FilterID|OrganizationID|SpaceID)\s*(?:,\s*(?:FilterID|OrganizationID|SpaceID)\s*)*$
+          pattern: ^\s*(FilterID|OrganizationID|Permissions|SpaceID)\s*(?:,\s*(?:FilterID|OrganizationID|Permissions|SpaceID)\s*)*$
           type: string
       - description: Report what the move would do, and what would stop it, without
           moving anything
@@ -57820,6 +57822,8 @@ components:
           description: The Attestation.
         Organization:
           $ref: '#/components/schemas/Organization'
+        Permissions:
+          $ref: '#/components/schemas/ExtendedPermissions'
         Space:
           allOf:
           - $ref: '#/components/schemas/Space'
@@ -57841,6 +57845,8 @@ components:
           $ref: '#/components/schemas/ResponseError'
         Organization:
           $ref: '#/components/schemas/Organization'
+        Permissions:
+          $ref: '#/components/schemas/ExtendedPermissions'
         Space:
           $ref: '#/components/schemas/Space'
         ViewColumns:
@@ -57860,6 +57866,8 @@ components:
           $ref: '#/components/schemas/ResponseError'
         Organization:
           $ref: '#/components/schemas/Organization'
+        Permissions:
+          $ref: '#/components/schemas/ExtendedPermissions'
         Space:
           $ref: '#/components/schemas/Space'
         ViewColumns:
@@ -57883,6 +57891,8 @@ components:
           $ref: '#/components/schemas/Invocation'
         Organization:
           $ref: '#/components/schemas/Organization'
+        Permissions:
+          $ref: '#/components/schemas/ExtendedPermissions'
         ReleaseTag:
           $ref: '#/components/schemas/Tag'
         RestoreTag:
@@ -57914,6 +57924,8 @@ components:
           $ref: '#/components/schemas/ResponseError'
         Organization:
           $ref: '#/components/schemas/Organization'
+        Permissions:
+          $ref: '#/components/schemas/ExtendedPermissions'
         Space:
           $ref: '#/components/schemas/Space'
         StartTag:
@@ -57935,6 +57947,8 @@ components:
           $ref: '#/components/schemas/ResponseError'
         Organization:
           $ref: '#/components/schemas/Organization'
+        Permissions:
+          $ref: '#/components/schemas/ExtendedPermissions'
         Space:
           $ref: '#/components/schemas/Space'
         ViewColumns:
@@ -57954,6 +57968,8 @@ components:
           $ref: '#/components/schemas/ResponseError'
         Organization:
           $ref: '#/components/schemas/Organization'
+        Permissions:
+          $ref: '#/components/schemas/ExtendedPermissions'
         Space:
           $ref: '#/components/schemas/Space'
         ViewColumns:
@@ -58000,6 +58016,8 @@ components:
           $ref: '#/components/schemas/ResponseError'
         Organization:
           $ref: '#/components/schemas/Organization'
+        Permissions:
+          $ref: '#/components/schemas/ExtendedPermissions'
         ViewColumns:
           description: The values of the columns of the View named by the view parameter,
             in the View's column order. A column that selects several values, such
@@ -58019,6 +58037,8 @@ components:
           $ref: '#/components/schemas/Space'
         Organization:
           $ref: '#/components/schemas/Organization'
+        Permissions:
+          $ref: '#/components/schemas/ExtendedPermissions'
         Space:
           $ref: '#/components/schemas/Space'
         ViewColumns:
@@ -58061,6 +58081,8 @@ components:
           $ref: '#/components/schemas/Invocation'
         Organization:
           $ref: '#/components/schemas/Organization'
+        Permissions:
+          $ref: '#/components/schemas/ExtendedPermissions'
         Space:
           $ref: '#/components/schemas/Space'
         ViewColumns:
@@ -58082,6 +58104,8 @@ components:
           $ref: '#/components/schemas/Link'
         Organization:
           $ref: '#/components/schemas/Organization'
+        Permissions:
+          $ref: '#/components/schemas/ExtendedPermissions'
         Space:
           $ref: '#/components/schemas/Space'
         ToSpace:
@@ -58136,6 +58160,8 @@ components:
           $ref: '#/components/schemas/ResponseError'
         Organization:
           $ref: '#/components/schemas/Organization'
+        Permissions:
+          $ref: '#/components/schemas/ExtendedPermissions'
         ViewColumns:
           description: The values of the columns of the View named by the view parameter,
             in the View's column order. A column that selects several values, such
@@ -58160,6 +58186,13 @@ components:
           type: array
           x-go-type-skip-optional-pointer: true
       type: object
+    ExtendedPermissions:
+      properties:
+        Permissions:
+          $ref: '#/components/schemas/Permissions'
+        Subjects:
+          $ref: '#/components/schemas/ExtendedSubjects'
+      type: object
     ExtendedRelease:
       description: Release with additional related entities expanded based on the
         request's include parameter.
@@ -58171,6 +58204,8 @@ components:
             when requested via the include parameter.
         Organization:
           $ref: '#/components/schemas/Organization'
+        Permissions:
+          $ref: '#/components/schemas/ExtendedPermissions'
         Release:
           allOf:
           - $ref: '#/components/schemas/Release'
@@ -58308,6 +58343,8 @@ components:
           $ref: '#/components/schemas/ResponseError'
         Organization:
           $ref: '#/components/schemas/Organization'
+        Permissions:
+          $ref: '#/components/schemas/ExtendedPermissions'
         ServiceAccount:
           $ref: '#/components/schemas/ServiceAccount'
         ViewColumns:
@@ -58338,6 +58375,8 @@ components:
           x-go-type-skip-optional-pointer: true
         Organization:
           $ref: '#/components/schemas/Organization'
+        Permissions:
+          $ref: '#/components/schemas/ExtendedPermissions'
         ReleaseTarget:
           $ref: '#/components/schemas/Target'
         Space:
@@ -58436,6 +58475,30 @@ components:
           type: integer
           x-go-type-skip-optional-pointer: true
       type: object
+    ExtendedSubjects:
+      properties:
+        Groups:
+          additionalProperties:
+            items:
+              $ref: '#/components/schemas/Group'
+            type: array
+          type: object
+          x-go-type-skip-optional-pointer: true
+        ServiceAccounts:
+          additionalProperties:
+            items:
+              $ref: '#/components/schemas/ServiceAccount'
+            type: array
+          type: object
+          x-go-type-skip-optional-pointer: true
+        Users:
+          additionalProperties:
+            items:
+              $ref: '#/components/schemas/User'
+            type: array
+          type: object
+          x-go-type-skip-optional-pointer: true
+      type: object
     ExtendedTag:
       properties:
         ChangeSet:
@@ -58444,6 +58507,8 @@ components:
           $ref: '#/components/schemas/ResponseError'
         Organization:
           $ref: '#/components/schemas/Organization'
+        Permissions:
+          $ref: '#/components/schemas/ExtendedPermissions'
         Space:
           $ref: '#/components/schemas/Space'
         Tag:
@@ -58463,6 +58528,8 @@ components:
           $ref: '#/components/schemas/ResponseError'
         Organization:
           $ref: '#/components/schemas/Organization'
+        Permissions:
+          $ref: '#/components/schemas/ExtendedPermissions'
         Space:
           $ref: '#/components/schemas/Space'
         Target:
@@ -58495,6 +58562,8 @@ components:
           $ref: '#/components/schemas/Invocation'
         Organization:
           $ref: '#/components/schemas/Organization'
+        Permissions:
+          $ref: '#/components/schemas/ExtendedPermissions'
         Space:
           $ref: '#/components/schemas/Space'
         Trigger:
@@ -58542,6 +58611,8 @@ components:
           allOf:
           - $ref: '#/components/schemas/Organization'
           description: The Organization the Unit belongs to.
+        Permissions:
+          $ref: '#/components/schemas/ExtendedPermissions'
         Space:
           allOf:
           - $ref: '#/components/schemas/Space'
@@ -58610,6 +58681,8 @@ components:
           $ref: '#/components/schemas/Filter'
         Organization:
           $ref: '#/components/schemas/Organization'
+        Permissions:
+          $ref: '#/components/schemas/ExtendedPermissions'
         Space:
           $ref: '#/components/schemas/Space'
         View:

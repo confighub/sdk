@@ -106,6 +106,14 @@ const PropertyKeyResourceType = "ResourceType"
 // that names one, so two same-named resources in different namespaces are not confused.
 const PropertyKeyNamespace = "Namespace"
 
+// PropertyKeyPlaceholderName is the needs/provides property naming which resource a value comes
+// from, in the form a named placeholder writes it. A needed value that is a named placeholder,
+// such as confighubplaceholderapp_env, prefers app_env. A provided value offers the name of the
+// resource it is read from when that name is generated and the resource says what it is without
+// the generated part, as each render of an immutable ConfigMap does: a resource whose name is
+// known can be referred to by it.
+const PropertyKeyPlaceholderName = "PlaceholderName"
+
 // PropertyValueSeparator joins the alternatives a needed property will accept. A reference
 // field that can point at several kinds -- an HPA's scaleTargetRef naming any workload
 // controller, a RoleBinding's roleRef naming a Role or a ClusterRole -- requires one of them,

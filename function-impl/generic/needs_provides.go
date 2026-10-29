@@ -130,7 +130,7 @@ func registerGetPaths(fh handler.FunctionRegistry, converter configkit.ConfigCon
 				{
 					ParameterName: "paths",
 					Required:      true,
-					Description:   "JSON-serialized list of AttributeInfo objects identifying the paths to fetch values for",
+					Description:   "JSON-serialized list of AttributeInfo objects identifying the paths to fetch values for. A needed path given as an AttributeValue, as stored NeededPaths are, prefers the provided value its Value names when that is a named placeholder",
 					DataType:      api.DataTypeAttributeInfoList,
 				},
 			},
@@ -169,8 +169,10 @@ func enrichMergeKeysFromPath(parsedData gaby.Container, resourceProvider yamlkit
 }
 
 func genericFnGetPaths(resourceProvider yamlkit.ResourceProvider, parsedData gaby.Container, args []api.FunctionArgument, options *api.FunctionOptions) (gaby.Container, any, error) {
+	// Stored NeededPaths are AttributeValues, whose Value is what the path held when it was
+	// found to be needed. ProvidedPaths are AttributeInfos, whose Value is nil.
 	attributeInfoJSON := args[0].Value.(string)
-	var attributeInfoList []api.AttributeInfo
+	var attributeInfoList []api.AttributeValue
 	if err := json.Unmarshal([]byte(attributeInfoJSON), &attributeInfoList); err != nil {
 		return parsedData, nil, err
 	}
@@ -185,14 +187,18 @@ func genericFnGetPaths(resourceProvider yamlkit.ResourceProvider, parsedData gab
 		if resourceType == "" {
 			resourceType = api.ResourceTypeAny
 		}
+		isNeeded := info.Details != nil && info.Details.IsNeeded
+		isProvided := info.Details != nil && info.Details.IsProvided
 		resourceTypeToPaths := yamlkit.GetVisitorMapForPath(resourceProvider, resourceType, api.UnresolvedPath(info.Path))
-		values, err := yamlkit.GetPathsAnyType(parsedData, resourceTypeToPaths, []any{}, resourceProvider, info.DataType, false, false, options)
+		// A provided path is read from every resource of its type, so a resource that has
+		// withdrawn its offer with IgnoreProvided -- an immutable ConfigMap a newer render
+		// superseded -- has to be left out here as get-provided leaves it out. Otherwise it
+		// stays a candidate, ties with its replacement, and keeps its consumers.
+		values, err := yamlkit.GetPathsAnyType(parsedData, resourceTypeToPaths, []any{}, resourceProvider, info.DataType, false, isProvided, options)
 		if err != nil {
 			return parsedData, nil, err
 		}
 		// Preserve the original AttributeInfo metadata on each returned value
-		isNeeded := info.Details != nil && info.Details.IsNeeded
-		isProvided := info.Details != nil && info.Details.IsProvided
 		for i := range values {
 			if values[i].AttributeName == api.AttributeNameNone || values[i].AttributeName == "" {
 				values[i].AttributeName = info.AttributeName
@@ -226,6 +232,7 @@ func genericFnGetPaths(resourceProvider yamlkit.ResourceProvider, parsedData gab
 			// For needed paths, extract merge keys as NeededPreferred properties.
 			if isNeeded {
 				enrichMergeKeysFromPath(parsedData, resourceProvider, &values[i])
+				yamlkit.PreferPlaceholderName(&values[i], info.Value)
 			}
 			// Invoke the Enricher from the PathVisitorInfo if the path is registered.
 			visitorInfo := yamlkit.GetPathVisitorInfo(resourceProvider, info.ResourceType, api.UnresolvedPath(info.Path))

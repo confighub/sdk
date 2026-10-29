@@ -604,6 +604,9 @@ func GetPathsAnyType(
 					_ = enricher(resourceDoc, &attributeValue, providedValuesOnly)
 				}
 			}
+			if neededValuesOnly {
+				PreferPlaceholderName(&attributeValue, currentValue)
+			}
 		} else {
 			// Don't include Details. Shallow copy, clear Details.
 			attributeValue = api.AttributeValue{AttributeInfo: attr, Value: currentValue, Comment: comment}

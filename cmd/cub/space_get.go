@@ -52,7 +52,7 @@ func spaceGetCmdRun(cmd *cobra.Command, args []string) error {
 	return nil
 }
 
-func displaySpaceDetailsInView(spaceDetails *goclientnew.Space, view *tablewriter.Table) {
+func displaySpaceDetailsInView(spaceDetails *goclientnew.Space, expanded *goclientnew.ExtendedPermissions, view *tablewriter.Table) {
 	view.Append([]string{"ID", spaceDetails.SpaceID.String()})
 	view.Append([]string{"Name", spaceDetails.Slug})
 	view.Append([]string{"Created At", spaceDetails.CreatedAt.String()})
@@ -61,7 +61,7 @@ func displaySpaceDetailsInView(spaceDetails *goclientnew.Space, view *tablewrite
 	appendBackingUnitRow(view, spaceDetails.BackingUnitID)
 	view.Append([]string{"Delete Gates", deleteGatesToString(spaceDetails.DeleteGates)})
 	view.Append([]string{"Annotations", annotationsToString(spaceDetails.Annotations)})
-	view.Append([]string{"Permissions", permissionsToString(spaceDetails.Permissions)})
+	view.Append([]string{"Permissions", permissionsToString(spaceDetails.Permissions, expanded)})
 	view.Append([]string{"Where Trigger", spaceDetails.WhereTrigger})
 	view.Append([]string{"OCI Repository", spaceDetails.OCIRepositoryURL})
 	view.Append([]string{"Organization ID", spaceDetails.OrganizationID.String()})
@@ -100,7 +100,7 @@ func triggerSliceSlugsToString(triggers []goclientnew.Trigger) string {
 
 func displayExtendedSpaceDetails(extendedSpace *goclientnew.ExtendedSpace) {
 	view := tableView()
-	displaySpaceDetailsInView(extendedSpace.Space, view)
+	displaySpaceDetailsInView(extendedSpace.Space, extendedSpace.Permissions, view)
 
 	// Display TriggerFilter - use Slug if expanded, otherwise UUID
 	if extendedSpace.TriggerFilter != nil {

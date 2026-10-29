@@ -236,9 +236,9 @@ func (r resolver[E]) notFound(ref Ref, spaceID goclientnew.UUID) error {
 // before resolution was shared, so that the slug and the UUID spelling of a
 // reference return the same envelope.
 const (
-	spaceGetInclude       = "TriggerFilterID,TriggerIDs"
+	spaceGetInclude       = "TriggerFilterID,TriggerIDs,Permissions"
 	unitGetInclude        = "UnitEventID,TargetID,UpstreamUnitID,SpaceID,FromLinkID,ChangeSetID,UpstreamSpaceID"
-	targetGetInclude      = "SpaceID,TriggerFilterID,TriggerIDs"
+	targetGetInclude      = "SpaceID,TriggerFilterID,TriggerIDs,Permissions"
 	triggerGetInclude     = "SpaceID,BridgeWorkerID,InvocationID,UnitFilterID"
 	filterGetInclude      = "SpaceID,FromSpaceID"
 	invocationGetInclude  = "SpaceID,BridgeWorkerID"
@@ -251,8 +251,8 @@ const (
 	viewGetInclude           = "SpaceID,FilterID"
 	attributeGetInclude      = "SpaceID"
 	linkGetInclude           = "SpaceID,ToSpaceID,FromUnitID,ToUnitID"
-	bridgeWorkerGetInclude   = "SpaceID"
-	channelGetInclude        = "SpaceID"
+	bridgeWorkerGetInclude   = "SpaceID,Permissions"
+	channelGetInclude        = "SpaceID,Permissions"
 	commandRunGetInclude     = "SpaceID,ChannelID"
 )
 
@@ -287,7 +287,7 @@ func ResolveSpace(ctx context.Context, c *Client, ref Ref, opts ResolveOpts,
 // organization-level, so ResolveOpts.Space is ignored.
 func ResolveComponent(ctx context.Context, c *Client, ref Ref, opts ResolveOpts) (*goclientnew.ExtendedComponent, error) {
 	r := resolver[goclientnew.ExtendedComponent]{
-		entity: "component", idField: "ComponentID", include: "", orgLevel: true,
+		entity: "component", idField: "ComponentID", include: "Permissions", orgLevel: true,
 		list: ListComponents,
 		slugOf: func(e *goclientnew.ExtendedComponent) string {
 			if e.Component == nil {
@@ -310,7 +310,7 @@ func ResolveComponent(ctx context.Context, c *Client, ref Ref, opts ResolveOpts)
 // organization-level, so ResolveOpts.Space is ignored.
 func ResolveServiceAccount(ctx context.Context, c *Client, ref Ref, opts ResolveOpts) (*goclientnew.ExtendedServiceAccount, error) {
 	r := resolver[goclientnew.ExtendedServiceAccount]{
-		entity: "service account", idField: "ServiceAccountID", include: "", orgLevel: true,
+		entity: "service account", idField: "ServiceAccountID", include: "Permissions", orgLevel: true,
 		list: ListServiceAccounts,
 		slugOf: func(e *goclientnew.ExtendedServiceAccount) string {
 			if e.ServiceAccount == nil {
@@ -334,7 +334,7 @@ func ResolveServiceAccount(ctx context.Context, c *Client, ref Ref, opts Resolve
 // ResolveOpts.Space is ignored.
 func ResolveOrganization(ctx context.Context, c *Client, ref Ref, opts ResolveOpts) (*goclientnew.ExtendedOrganization, error) {
 	r := resolver[goclientnew.ExtendedOrganization]{
-		entity: "organization", idField: "OrganizationID", include: "", orgLevel: true,
+		entity: "organization", idField: "OrganizationID", include: "Permissions", orgLevel: true,
 		list: ListOrganizations,
 		slugOf: func(e *goclientnew.ExtendedOrganization) string {
 			if e.Organization == nil {

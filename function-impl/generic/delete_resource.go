@@ -4,6 +4,7 @@
 package generic
 
 import (
+	"encoding/json"
 	"fmt"
 	"log/slog"
 
@@ -35,8 +36,8 @@ func registerDeleteResource(fh handler.FunctionRegistry, converter configkit.Con
 			Mutating:              true,
 			Validating:            false,
 			Hermetic:              true,
-			Idempotent:            false,
-			Description:           "Remove the specified resource from the configuration data",
+			Idempotent:            true,
+			Description:           "Remove the specified resource from the configuration data, if it is present",
 			FunctionType:          api.FunctionTypeCustom,
 			AffectedResourceTypes: []api.ResourceType{api.ResourceTypeAny},
 		},
@@ -49,33 +50,81 @@ func registerDeleteResource(fh handler.FunctionRegistry, converter configkit.Con
 }
 
 func genericFnDeleteResource(resourceProvider yamlkit.ResourceProvider, options *api.FunctionOptions, functionContext *api.FunctionContext, parsedData gaby.Container, args []api.FunctionArgument) (gaby.Container, any, error) {
-	targetResourceType := api.ResourceType(args[0].Value.(string))
-	targetResourceName := api.ResourceName(args[1].Value.(string))
+	return deleteResources(resourceProvider, options, parsedData, api.ResourceInfoList{{
+		ResourceType: api.ResourceType(args[0].Value.(string)),
+		ResourceName: api.ResourceName(args[1].Value.(string)),
+	}})
+}
 
-	// Find the resource: by its name, or by its name without its namespace when that names one
-	// resource, so that a stored invocation still finds a resource a clone has moved.
-	foundIndex, match, err := yamlkit.MatchResource(parsedData, resourceProvider, options,
-		api.ResourceInfo{ResourceType: targetResourceType, ResourceName: targetResourceName})
+func registerDeleteResources(fh handler.FunctionRegistry, converter configkit.ConfigConverter, resourceProvider yamlkit.ResourceProvider) {
+	if err := fh.RegisterFunction("delete-resources", &handler.FunctionRegistration{
+		FunctionSignature: api.FunctionSignature{
+			FunctionName: "delete-resources",
+			Parameters: []api.FunctionParameter{
+				{
+					ParameterName:    "resource-info-list",
+					Required:         true,
+					Description:      "ResourceInfoList naming the resources to delete",
+					DataType:         api.DataTypeResourceInfoList,
+					ValueConstraints: api.ValueConstraints{Schema: &api.ResourceInfoListSchema},
+				},
+			},
+			Mutating:              true,
+			Validating:            false,
+			Hermetic:              true,
+			Idempotent:            true,
+			Description:           "Remove the specified resources that are present from the configuration data",
+			FunctionType:          api.FunctionTypeCustom,
+			AffectedResourceTypes: []api.ResourceType{api.ResourceTypeAny},
+		},
+		Function: func(fArgs handler.FunctionImplementationArguments) (gaby.Container, any, error) {
+			var resourceInfoList api.ResourceInfoList
+			if err := json.Unmarshal([]byte(fArgs.Arguments[0].Value.(string)), &resourceInfoList); err != nil {
+				return fArgs.ParsedData, nil, fmt.Errorf("failed to unmarshal resource-info-list argument: %v", err)
+			}
+			return deleteResources(resourceProvider, fArgs.Options, fArgs.ParsedData, resourceInfoList)
+		},
+	}); err != nil {
+		slog.Error("failed to register function", "error", err)
+	}
+}
+
+// deleteResources removes each resource of resourceInfoList that parsedData has, among the
+// resources options select. A resource that is not there is already deleted, so it is not an
+// error, and deleting again changes nothing.
+//
+// A resource is found as upsertResources finds one: by name, or by name without its scope when
+// that names one resource both in parsedData and in the list, so that a stored invocation still
+// finds a resource a clone has moved.
+func deleteResources(resourceProvider yamlkit.ResourceProvider, options *api.FunctionOptions, parsedData gaby.Container,
+	resourceInfoList api.ResourceInfoList) (gaby.Container, any, error) {
+	resources, positions, err := yamlkit.SelectedResources(parsedData, resourceProvider, options)
 	if err != nil {
-		return parsedData, nil, fmt.Errorf("failed to search for resource to delete: %v", err)
+		return parsedData, nil, fmt.Errorf("failed to search for resources to delete: %v", err)
 	}
-	if len(match.Ambiguous) > 0 {
-		return parsedData, nil, fmt.Errorf("resource with type %s and name %s matches several resources in different scopes: %v",
-			targetResourceType, targetResourceName, match.Ambiguous)
+	index := api.NewResourceIndex(resourceProvider, resources)
+	index.Counterparts(resourceInfoList)
+
+	deleted := make(map[int]bool, len(resourceInfoList))
+	for i := range resourceInfoList {
+		match := index.Match(resourceInfoList[i])
+		if len(match.Ambiguous) > 0 {
+			return parsedData, nil, fmt.Errorf("resource with type %s and name %s matches several resources in different scopes: %v",
+				resourceInfoList[i].ResourceType, resourceInfoList[i].ResourceName, match.Ambiguous)
+		}
+		if match.Found {
+			deleted[positions[match.Position]] = true
+		}
+	}
+	if len(deleted) == 0 {
+		return parsedData, nil, nil
 	}
 
-	if foundIndex < 0 {
-		return parsedData, nil, fmt.Errorf("resource with type %s and name %s not found", targetResourceType, targetResourceName)
+	result := make(gaby.Container, 0, len(parsedData)-len(deleted))
+	for i := range parsedData {
+		if !deleted[i] {
+			result = append(result, parsedData[i])
+		}
 	}
-
-	// Remove the resource by creating a new slice without it
-	newParsedData := make(gaby.Container, len(parsedData)-1)
-	for i := 0; i < foundIndex; i++ {
-		newParsedData[i] = parsedData[i]
-	}
-	for i := foundIndex + 1; i < len(parsedData); i++ {
-		newParsedData[i-1] = parsedData[i]
-	}
-
-	return newParsedData, nil, nil
+	return result, nil, nil
 }

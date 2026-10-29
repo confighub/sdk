@@ -2494,7 +2494,8 @@ type ExtendedAttestation struct {
 	Attestation *Attestation `json:"Attestation,omitempty" yaml:"Attestation,omitempty"`
 
 	// Organization The top-level container for an organization using ConfigHub.
-	Organization *Organization `json:"Organization,omitempty" yaml:"Organization,omitempty"`
+	Organization *Organization        `json:"Organization,omitempty" yaml:"Organization,omitempty"`
+	Permissions  *ExtendedPermissions `json:"Permissions,omitempty" yaml:"Permissions,omitempty"`
 
 	// Space The Space the Attestation belongs to.
 	Space *Space `json:"Space,omitempty" yaml:"Space,omitempty"`
@@ -2513,7 +2514,8 @@ type ExtendedAttribute struct {
 	Error     *ResponseError `json:"Error,omitempty" yaml:"Error,omitempty"`
 
 	// Organization The top-level container for an organization using ConfigHub.
-	Organization *Organization `json:"Organization,omitempty" yaml:"Organization,omitempty"`
+	Organization *Organization        `json:"Organization,omitempty" yaml:"Organization,omitempty"`
+	Permissions  *ExtendedPermissions `json:"Permissions,omitempty" yaml:"Permissions,omitempty"`
 
 	// Space The logical container for most entities in ConfigHub. Namespaces triggers, units, targets, workers, and other entities.
 	Space *Space `json:"Space,omitempty" yaml:"Space,omitempty"`
@@ -2536,7 +2538,8 @@ type ExtendedBridgeWorker struct {
 	Error        *ResponseError `json:"Error,omitempty" yaml:"Error,omitempty"`
 
 	// Organization The top-level container for an organization using ConfigHub.
-	Organization *Organization `json:"Organization,omitempty" yaml:"Organization,omitempty"`
+	Organization *Organization        `json:"Organization,omitempty" yaml:"Organization,omitempty"`
+	Permissions  *ExtendedPermissions `json:"Permissions,omitempty" yaml:"Permissions,omitempty"`
 
 	// Space The logical container for most entities in ConfigHub. Namespaces triggers, units, targets, workers, and other entities.
 	Space *Space `json:"Space,omitempty" yaml:"Space,omitempty"`
@@ -2558,7 +2561,8 @@ type ExtendedChangeOrder struct {
 	Invocation *Invocation `json:"Invocation,omitempty" yaml:"Invocation,omitempty"`
 
 	// Organization The top-level container for an organization using ConfigHub.
-	Organization *Organization `json:"Organization,omitempty" yaml:"Organization,omitempty"`
+	Organization *Organization        `json:"Organization,omitempty" yaml:"Organization,omitempty"`
+	Permissions  *ExtendedPermissions `json:"Permissions,omitempty" yaml:"Permissions,omitempty"`
 
 	// ReleaseTag Defines a Tag that can be used to identify a set of Revisions across Units.
 	ReleaseTag *Tag `json:"ReleaseTag,omitempty" yaml:"ReleaseTag,omitempty"`
@@ -2592,7 +2596,8 @@ type ExtendedChangeSet struct {
 	Error  *ResponseError `json:"Error,omitempty" yaml:"Error,omitempty"`
 
 	// Organization The top-level container for an organization using ConfigHub.
-	Organization *Organization `json:"Organization,omitempty" yaml:"Organization,omitempty"`
+	Organization *Organization        `json:"Organization,omitempty" yaml:"Organization,omitempty"`
+	Permissions  *ExtendedPermissions `json:"Permissions,omitempty" yaml:"Permissions,omitempty"`
 
 	// Space The logical container for most entities in ConfigHub. Namespaces triggers, units, targets, workers, and other entities.
 	Space *Space `json:"Space,omitempty" yaml:"Space,omitempty"`
@@ -2611,7 +2616,8 @@ type ExtendedChangeWorkflow struct {
 	Error          *ResponseError  `json:"Error,omitempty" yaml:"Error,omitempty"`
 
 	// Organization The top-level container for an organization using ConfigHub.
-	Organization *Organization `json:"Organization,omitempty" yaml:"Organization,omitempty"`
+	Organization *Organization        `json:"Organization,omitempty" yaml:"Organization,omitempty"`
+	Permissions  *ExtendedPermissions `json:"Permissions,omitempty" yaml:"Permissions,omitempty"`
 
 	// Space The logical container for most entities in ConfigHub. Namespaces triggers, units, targets, workers, and other entities.
 	Space *Space `json:"Space,omitempty" yaml:"Space,omitempty"`
@@ -2627,7 +2633,8 @@ type ExtendedChannel struct {
 	Error   *ResponseError `json:"Error,omitempty" yaml:"Error,omitempty"`
 
 	// Organization The top-level container for an organization using ConfigHub.
-	Organization *Organization `json:"Organization,omitempty" yaml:"Organization,omitempty"`
+	Organization *Organization        `json:"Organization,omitempty" yaml:"Organization,omitempty"`
+	Permissions  *ExtendedPermissions `json:"Permissions,omitempty" yaml:"Permissions,omitempty"`
 
 	// Space The logical container for most entities in ConfigHub. Namespaces triggers, units, targets, workers, and other entities.
 	Space *Space `json:"Space,omitempty" yaml:"Space,omitempty"`
@@ -2661,7 +2668,8 @@ type ExtendedComponent struct {
 	Error     *ResponseError `json:"Error,omitempty" yaml:"Error,omitempty"`
 
 	// Organization The top-level container for an organization using ConfigHub.
-	Organization *Organization `json:"Organization,omitempty" yaml:"Organization,omitempty"`
+	Organization *Organization        `json:"Organization,omitempty" yaml:"Organization,omitempty"`
+	Permissions  *ExtendedPermissions `json:"Permissions,omitempty" yaml:"Permissions,omitempty"`
 
 	// ViewColumns The values of the columns of the View named by the view parameter, in the View's column order. A column that selects several values, such as one with a wildcard, has an entry for each, all with the column's Name.
 	ViewColumns []ViewColumn `json:"ViewColumns,omitempty" yaml:"ViewColumns,omitempty"`
@@ -2678,7 +2686,8 @@ type ExtendedFilter struct {
 	FromSpace *Space `json:"FromSpace,omitempty" yaml:"FromSpace,omitempty"`
 
 	// Organization The top-level container for an organization using ConfigHub.
-	Organization *Organization `json:"Organization,omitempty" yaml:"Organization,omitempty"`
+	Organization *Organization        `json:"Organization,omitempty" yaml:"Organization,omitempty"`
+	Permissions  *ExtendedPermissions `json:"Permissions,omitempty" yaml:"Permissions,omitempty"`
 
 	// Space The logical container for most entities in ConfigHub. Namespaces triggers, units, targets, workers, and other entities.
 	Space *Space `json:"Space,omitempty" yaml:"Space,omitempty"`
@@ -2718,7 +2727,8 @@ type ExtendedInvocation struct {
 	Invocation *Invocation `json:"Invocation,omitempty" yaml:"Invocation,omitempty"`
 
 	// Organization The top-level container for an organization using ConfigHub.
-	Organization *Organization `json:"Organization,omitempty" yaml:"Organization,omitempty"`
+	Organization *Organization        `json:"Organization,omitempty" yaml:"Organization,omitempty"`
+	Permissions  *ExtendedPermissions `json:"Permissions,omitempty" yaml:"Permissions,omitempty"`
 
 	// Space The logical container for most entities in ConfigHub. Namespaces triggers, units, targets, workers, and other entities.
 	Space *Space `json:"Space,omitempty" yaml:"Space,omitempty"`
@@ -2741,7 +2751,8 @@ type ExtendedLink struct {
 	Link *Link `json:"Link,omitempty" yaml:"Link,omitempty"`
 
 	// Organization The top-level container for an organization using ConfigHub.
-	Organization *Organization `json:"Organization,omitempty" yaml:"Organization,omitempty"`
+	Organization *Organization        `json:"Organization,omitempty" yaml:"Organization,omitempty"`
+	Permissions  *ExtendedPermissions `json:"Permissions,omitempty" yaml:"Permissions,omitempty"`
 
 	// Space The logical container for most entities in ConfigHub. Namespaces triggers, units, targets, workers, and other entities.
 	Space *Space `json:"Space,omitempty" yaml:"Space,omitempty"`
@@ -2810,7 +2821,8 @@ type ExtendedOrganization struct {
 	Error *ResponseError `json:"Error,omitempty" yaml:"Error,omitempty"`
 
 	// Organization The top-level container for an organization using ConfigHub.
-	Organization *Organization `json:"Organization,omitempty" yaml:"Organization,omitempty"`
+	Organization *Organization        `json:"Organization,omitempty" yaml:"Organization,omitempty"`
+	Permissions  *ExtendedPermissions `json:"Permissions,omitempty" yaml:"Permissions,omitempty"`
 
 	// ViewColumns The values of the columns of the View named by the view parameter, in the View's column order. A column that selects several values, such as one with a wildcard, has an entry for each, all with the column's Name.
 	ViewColumns []ViewColumn `json:"ViewColumns,omitempty" yaml:"ViewColumns,omitempty"`
@@ -2827,13 +2839,20 @@ type ExtendedOrganizationMember struct {
 	ViewColumns []ViewColumn `json:"ViewColumns,omitempty" yaml:"ViewColumns,omitempty"`
 }
 
+// ExtendedPermissions defines model for ExtendedPermissions.
+type ExtendedPermissions struct {
+	Permissions *Permissions      `json:"Permissions,omitempty" yaml:"Permissions,omitempty"`
+	Subjects    *ExtendedSubjects `json:"Subjects,omitempty" yaml:"Subjects,omitempty"`
+}
+
 // ExtendedRelease Release with additional related entities expanded based on the request's include parameter.
 type ExtendedRelease struct {
 	// ChangeOrder The ChangeOrder the Release was published for, if any. Expanded when requested via the include parameter.
 	ChangeOrder *ChangeOrder `json:"ChangeOrder,omitempty" yaml:"ChangeOrder,omitempty"`
 
 	// Organization The top-level container for an organization using ConfigHub.
-	Organization *Organization `json:"Organization,omitempty" yaml:"Organization,omitempty"`
+	Organization *Organization        `json:"Organization,omitempty" yaml:"Organization,omitempty"`
+	Permissions  *ExtendedPermissions `json:"Permissions,omitempty" yaml:"Permissions,omitempty"`
 
 	// Release The Release.
 	Release *Release `json:"Release,omitempty" yaml:"Release,omitempty"`
@@ -2940,7 +2959,8 @@ type ExtendedServiceAccount struct {
 	Error *ResponseError `json:"Error,omitempty" yaml:"Error,omitempty"`
 
 	// Organization The top-level container for an organization using ConfigHub.
-	Organization *Organization `json:"Organization,omitempty" yaml:"Organization,omitempty"`
+	Organization *Organization        `json:"Organization,omitempty" yaml:"Organization,omitempty"`
+	Permissions  *ExtendedPermissions `json:"Permissions,omitempty" yaml:"Permissions,omitempty"`
 
 	// ServiceAccount An identity of the organization that is not a person and does not log in through the identity provider, such as an automation or an agent. Each ServiceAccount is backed by a User, which is what other entities' Permissions and Groups name to grant it access. The ServiceAccount's own Permissions say who may manage it.
 	ServiceAccount *ServiceAccount `json:"ServiceAccount,omitempty" yaml:"ServiceAccount,omitempty"`
@@ -2961,7 +2981,8 @@ type ExtendedSpace struct {
 	GatedUnitCount int64          `json:"GatedUnitCount,omitempty" yaml:"GatedUnitCount,omitempty"`
 
 	// Organization The top-level container for an organization using ConfigHub.
-	Organization *Organization `json:"Organization,omitempty" yaml:"Organization,omitempty"`
+	Organization *Organization        `json:"Organization,omitempty" yaml:"Organization,omitempty"`
+	Permissions  *ExtendedPermissions `json:"Permissions,omitempty" yaml:"Permissions,omitempty"`
 
 	// ReleaseTarget Target represents a deployment target in ConfigHub: where configuration is destined. A Space's Releases are published for its release Target and pulled from ConfigHub's OCI registry by a GitOps tool such as Argo CD or Flux. Access to a Target, including a worker's, is granted through its Permissions.
 	ReleaseTarget *Target `json:"ReleaseTarget,omitempty" yaml:"ReleaseTarget,omitempty"`
@@ -2996,6 +3017,13 @@ type ExtendedSpace struct {
 	WarnedUnitCount int64        `json:"WarnedUnitCount,omitempty" yaml:"WarnedUnitCount,omitempty"`
 }
 
+// ExtendedSubjects defines model for ExtendedSubjects.
+type ExtendedSubjects struct {
+	Groups          map[string][]Group          `json:"Groups,omitempty" yaml:"Groups,omitempty"`
+	ServiceAccounts map[string][]ServiceAccount `json:"ServiceAccounts,omitempty" yaml:"ServiceAccounts,omitempty"`
+	Users           map[string][]User           `json:"Users,omitempty" yaml:"Users,omitempty"`
+}
+
 // ExtendedTag defines model for ExtendedTag.
 type ExtendedTag struct {
 	// ChangeSet Defines an entity changeset.
@@ -3003,7 +3031,8 @@ type ExtendedTag struct {
 	Error     *ResponseError `json:"Error,omitempty" yaml:"Error,omitempty"`
 
 	// Organization The top-level container for an organization using ConfigHub.
-	Organization *Organization `json:"Organization,omitempty" yaml:"Organization,omitempty"`
+	Organization *Organization        `json:"Organization,omitempty" yaml:"Organization,omitempty"`
+	Permissions  *ExtendedPermissions `json:"Permissions,omitempty" yaml:"Permissions,omitempty"`
 
 	// Space The logical container for most entities in ConfigHub. Namespaces triggers, units, targets, workers, and other entities.
 	Space *Space `json:"Space,omitempty" yaml:"Space,omitempty"`
@@ -3020,7 +3049,8 @@ type ExtendedTarget struct {
 	Error *ResponseError `json:"Error,omitempty" yaml:"Error,omitempty"`
 
 	// Organization The top-level container for an organization using ConfigHub.
-	Organization *Organization `json:"Organization,omitempty" yaml:"Organization,omitempty"`
+	Organization *Organization        `json:"Organization,omitempty" yaml:"Organization,omitempty"`
+	Permissions  *ExtendedPermissions `json:"Permissions,omitempty" yaml:"Permissions,omitempty"`
 
 	// Space The logical container for most entities in ConfigHub. Namespaces triggers, units, targets, workers, and other entities.
 	Space *Space `json:"Space,omitempty" yaml:"Space,omitempty"`
@@ -3056,7 +3086,8 @@ type ExtendedTrigger struct {
 	Invocation *Invocation `json:"Invocation,omitempty" yaml:"Invocation,omitempty"`
 
 	// Organization The top-level container for an organization using ConfigHub.
-	Organization *Organization `json:"Organization,omitempty" yaml:"Organization,omitempty"`
+	Organization *Organization        `json:"Organization,omitempty" yaml:"Organization,omitempty"`
+	Permissions  *ExtendedPermissions `json:"Permissions,omitempty" yaml:"Permissions,omitempty"`
 
 	// Space The logical container for most entities in ConfigHub. Namespaces triggers, units, targets, workers, and other entities.
 	Space *Space `json:"Space,omitempty" yaml:"Space,omitempty"`
@@ -3099,7 +3130,8 @@ type ExtendedUnit struct {
 	LatestUnitEvent *UnitEvent `json:"LatestUnitEvent,omitempty" yaml:"LatestUnitEvent,omitempty"`
 
 	// Organization The Organization the Unit belongs to.
-	Organization *Organization `json:"Organization,omitempty" yaml:"Organization,omitempty"`
+	Organization *Organization        `json:"Organization,omitempty" yaml:"Organization,omitempty"`
+	Permissions  *ExtendedPermissions `json:"Permissions,omitempty" yaml:"Permissions,omitempty"`
 
 	// Space The Space the Unit belongs to.
 	Space *Space `json:"Space,omitempty" yaml:"Space,omitempty"`
@@ -3153,7 +3185,8 @@ type ExtendedView struct {
 	Filter *Filter `json:"Filter,omitempty" yaml:"Filter,omitempty"`
 
 	// Organization The top-level container for an organization using ConfigHub.
-	Organization *Organization `json:"Organization,omitempty" yaml:"Organization,omitempty"`
+	Organization *Organization        `json:"Organization,omitempty" yaml:"Organization,omitempty"`
+	Permissions  *ExtendedPermissions `json:"Permissions,omitempty" yaml:"Permissions,omitempty"`
 
 	// Space The logical container for most entities in ConfigHub. Namespaces triggers, units, targets, workers, and other entities.
 	Space *Space `json:"Space,omitempty" yaml:"Space,omitempty"`
@@ -6724,7 +6757,7 @@ type BulkDeleteComponentsParams struct {
 	// The attribute names are case-sensitive, PascalCase, and
 	// expected in a comma-separated list format as in the JSON encoding.
 	//
-	// Supported attributes for Component are OrganizationID.
+	// Supported attributes for Component are OrganizationID, Permissions.
 	//
 	// The whole string must be query-encoded.
 	Include *string `form:"include,omitempty" json:"include,omitempty" yaml:"include,omitempty"`
@@ -6851,7 +6884,7 @@ type BulkPatchComponentsParams struct {
 	// The attribute names are case-sensitive, PascalCase, and
 	// expected in a comma-separated list format as in the JSON encoding.
 	//
-	// Supported attributes for Component are OrganizationID.
+	// Supported attributes for Component are OrganizationID, Permissions.
 	//
 	// The whole string must be query-encoded.
 	Include *string `form:"include,omitempty" json:"include,omitempty" yaml:"include,omitempty"`
@@ -6959,7 +6992,7 @@ type BulkDeleteServiceAccountsParams struct {
 	// The attribute names are case-sensitive, PascalCase, and
 	// expected in a comma-separated list format as in the JSON encoding.
 	//
-	// Supported attributes for ServiceAccount are OrganizationID.
+	// Supported attributes for ServiceAccount are OrganizationID, Permissions.
 	//
 	// The whole string must be query-encoded.
 	Include *string `form:"include,omitempty" json:"include,omitempty" yaml:"include,omitempty"`
@@ -7081,7 +7114,7 @@ type BulkPatchServiceAccountsParams struct {
 	// The attribute names are case-sensitive, PascalCase, and
 	// expected in a comma-separated list format as in the JSON encoding.
 	//
-	// Supported attributes for ServiceAccount are OrganizationID.
+	// Supported attributes for ServiceAccount are OrganizationID, Permissions.
 	//
 	// The whole string must be query-encoded.
 	Include *string `form:"include,omitempty" json:"include,omitempty" yaml:"include,omitempty"`
@@ -7180,7 +7213,7 @@ type BulkDeleteSpacesParams struct {
 	// The attribute names are case-sensitive, PascalCase, and
 	// expected in a comma-separated list format as in the JSON encoding.
 	//
-	// Supported attributes for Space are AttributeFilterID, AttributeIDs, ComponentID, OrganizationID, ReleaseTargetID, TriggerFilterID, TriggerIDs.
+	// Supported attributes for Space are AttributeFilterID, AttributeIDs, ComponentID, OrganizationID, Permissions, ReleaseTargetID, TriggerFilterID, TriggerIDs.
 	//
 	// The whole string must be query-encoded.
 	Include *string `form:"include,omitempty" json:"include,omitempty" yaml:"include,omitempty"`
@@ -7319,7 +7352,7 @@ type BulkPatchSpacesParams struct {
 	// The attribute names are case-sensitive, PascalCase, and
 	// expected in a comma-separated list format as in the JSON encoding.
 	//
-	// Supported attributes for Space are AttributeFilterID, AttributeIDs, ComponentID, OrganizationID, ReleaseTargetID, TriggerFilterID, TriggerIDs.
+	// Supported attributes for Space are AttributeFilterID, AttributeIDs, ComponentID, OrganizationID, Permissions, ReleaseTargetID, TriggerFilterID, TriggerIDs.
 	//
 	// The whole string must be query-encoded.
 	Include *string `form:"include,omitempty" json:"include,omitempty" yaml:"include,omitempty"`
@@ -7461,7 +7494,7 @@ type BulkCreateSpacesParams struct {
 	// The attribute names are case-sensitive, PascalCase, and
 	// expected in a comma-separated list format as in the JSON encoding.
 	//
-	// Supported attributes for Space are AttributeFilterID, AttributeIDs, ComponentID, OrganizationID, ReleaseTargetID, TriggerFilterID, TriggerIDs.
+	// Supported attributes for Space are AttributeFilterID, AttributeIDs, ComponentID, OrganizationID, Permissions, ReleaseTargetID, TriggerFilterID, TriggerIDs.
 	//
 	// The whole string must be query-encoded.
 	Include *string `form:"include,omitempty" json:"include,omitempty" yaml:"include,omitempty"`
@@ -7625,7 +7658,7 @@ type ListAllAttestationsParams struct {
 	// The attribute names are case-sensitive, PascalCase, and
 	// expected in a comma-separated list format as in the JSON encoding.
 	//
-	// Supported attributes for Attestation are OrganizationID, SpaceID.
+	// Supported attributes for Attestation are OrganizationID, Permissions, SpaceID.
 	//
 	// The whole string must be query-encoded.
 	Include *string `form:"include,omitempty" json:"include,omitempty" yaml:"include,omitempty"`
@@ -7776,7 +7809,7 @@ type BulkDeleteAttributesParams struct {
 	// The attribute names are case-sensitive, PascalCase, and
 	// expected in a comma-separated list format as in the JSON encoding.
 	//
-	// Supported attributes for Attribute are OrganizationID, SpaceID.
+	// Supported attributes for Attribute are OrganizationID, Permissions, SpaceID.
 	//
 	// The whole string must be query-encoded.
 	Include *string `form:"include,omitempty" json:"include,omitempty" yaml:"include,omitempty"`
@@ -7866,7 +7899,7 @@ type ListAllAttributesParams struct {
 	// The attribute names are case-sensitive, PascalCase, and
 	// expected in a comma-separated list format as in the JSON encoding.
 	//
-	// Supported attributes for Attribute are OrganizationID, SpaceID.
+	// Supported attributes for Attribute are OrganizationID, Permissions, SpaceID.
 	//
 	// The whole string must be query-encoded.
 	Include *string `form:"include,omitempty" json:"include,omitempty" yaml:"include,omitempty"`
@@ -8047,7 +8080,7 @@ type BulkPatchAttributesParams struct {
 	// The attribute names are case-sensitive, PascalCase, and
 	// expected in a comma-separated list format as in the JSON encoding.
 	//
-	// Supported attributes for Attribute are OrganizationID, SpaceID.
+	// Supported attributes for Attribute are OrganizationID, Permissions, SpaceID.
 	//
 	// The whole string must be query-encoded.
 	Include *string `form:"include,omitempty" json:"include,omitempty" yaml:"include,omitempty"`
@@ -8182,7 +8215,7 @@ type BulkCreateAttributesParams struct {
 	// The attribute names are case-sensitive, PascalCase, and
 	// expected in a comma-separated list format as in the JSON encoding.
 	//
-	// Supported attributes for Attribute are OrganizationID, SpaceID.
+	// Supported attributes for Attribute are OrganizationID, Permissions, SpaceID.
 	//
 	// The whole string must be query-encoded.
 	Include *string `form:"include,omitempty" json:"include,omitempty" yaml:"include,omitempty"`
@@ -8391,7 +8424,7 @@ type BulkMoveAttributesParams struct {
 	// The attribute names are case-sensitive, PascalCase, and
 	// expected in a comma-separated list format as in the JSON encoding.
 	//
-	// Supported attributes for Attribute are OrganizationID, SpaceID.
+	// Supported attributes for Attribute are OrganizationID, Permissions, SpaceID.
 	//
 	// The whole string must be query-encoded.
 	Include *string `form:"include,omitempty" json:"include,omitempty" yaml:"include,omitempty"`
@@ -8484,7 +8517,7 @@ type BulkDeleteBridgeWorkersParams struct {
 	// The attribute names are case-sensitive, PascalCase, and
 	// expected in a comma-separated list format as in the JSON encoding.
 	//
-	// Supported attributes for BridgeWorker are OrganizationID, SpaceID.
+	// Supported attributes for BridgeWorker are OrganizationID, Permissions, SpaceID.
 	//
 	// The whole string must be query-encoded.
 	Include *string `form:"include,omitempty" json:"include,omitempty" yaml:"include,omitempty"`
@@ -8574,7 +8607,7 @@ type ListAllBridgeWorkersParams struct {
 	// The attribute names are case-sensitive, PascalCase, and
 	// expected in a comma-separated list format as in the JSON encoding.
 	//
-	// Supported attributes for BridgeWorker are OrganizationID, SpaceID.
+	// Supported attributes for BridgeWorker are OrganizationID, Permissions, SpaceID.
 	//
 	// The whole string must be query-encoded.
 	Include *string `form:"include,omitempty" json:"include,omitempty" yaml:"include,omitempty"`
@@ -8755,7 +8788,7 @@ type BulkPatchBridgeWorkersParams struct {
 	// The attribute names are case-sensitive, PascalCase, and
 	// expected in a comma-separated list format as in the JSON encoding.
 	//
-	// Supported attributes for BridgeWorker are OrganizationID, SpaceID.
+	// Supported attributes for BridgeWorker are OrganizationID, Permissions, SpaceID.
 	//
 	// The whole string must be query-encoded.
 	Include *string `form:"include,omitempty" json:"include,omitempty" yaml:"include,omitempty"`
@@ -8959,7 +8992,7 @@ type BulkDeleteChangeOrdersParams struct {
 	// The attribute names are case-sensitive, PascalCase, and
 	// expected in a comma-separated list format as in the JSON encoding.
 	//
-	// Supported attributes for ChangeOrder are EndTagID, InvocationID, OrganizationID, ReleaseTagID, RestoreTagID, SpaceFilterID, SpaceID, StartTagID, UnitFilterID.
+	// Supported attributes for ChangeOrder are EndTagID, InvocationID, OrganizationID, Permissions, ReleaseTagID, RestoreTagID, SpaceFilterID, SpaceID, StartTagID, UnitFilterID.
 	//
 	// The whole string must be query-encoded.
 	Include *string `form:"include,omitempty" json:"include,omitempty" yaml:"include,omitempty"`
@@ -9049,7 +9082,7 @@ type ListAllChangeOrdersParams struct {
 	// The attribute names are case-sensitive, PascalCase, and
 	// expected in a comma-separated list format as in the JSON encoding.
 	//
-	// Supported attributes for ChangeOrder are EndTagID, InvocationID, OrganizationID, ReleaseTagID, RestoreTagID, SpaceFilterID, SpaceID, StartTagID, UnitFilterID.
+	// Supported attributes for ChangeOrder are EndTagID, InvocationID, OrganizationID, Permissions, ReleaseTagID, RestoreTagID, SpaceFilterID, SpaceID, StartTagID, UnitFilterID.
 	//
 	// The whole string must be query-encoded.
 	Include *string `form:"include,omitempty" json:"include,omitempty" yaml:"include,omitempty"`
@@ -9241,7 +9274,7 @@ type BulkPatchChangeOrdersParams struct {
 	// The attribute names are case-sensitive, PascalCase, and
 	// expected in a comma-separated list format as in the JSON encoding.
 	//
-	// Supported attributes for ChangeOrder are EndTagID, InvocationID, OrganizationID, ReleaseTagID, RestoreTagID, SpaceFilterID, SpaceID, StartTagID, UnitFilterID.
+	// Supported attributes for ChangeOrder are EndTagID, InvocationID, OrganizationID, Permissions, ReleaseTagID, RestoreTagID, SpaceFilterID, SpaceID, StartTagID, UnitFilterID.
 	//
 	// The whole string must be query-encoded.
 	Include *string `form:"include,omitempty" json:"include,omitempty" yaml:"include,omitempty"`
@@ -9384,7 +9417,7 @@ type BulkCreateChangeOrdersParams struct {
 	// The attribute names are case-sensitive, PascalCase, and
 	// expected in a comma-separated list format as in the JSON encoding.
 	//
-	// Supported attributes for ChangeOrder are EndTagID, InvocationID, OrganizationID, ReleaseTagID, RestoreTagID, SpaceFilterID, SpaceID, StartTagID, UnitFilterID.
+	// Supported attributes for ChangeOrder are EndTagID, InvocationID, OrganizationID, Permissions, ReleaseTagID, RestoreTagID, SpaceFilterID, SpaceID, StartTagID, UnitFilterID.
 	//
 	// The whole string must be query-encoded.
 	Include *string `form:"include,omitempty" json:"include,omitempty" yaml:"include,omitempty"`
@@ -9549,7 +9582,7 @@ type BulkRefreshChangeOrderStagesParams struct {
 	// The attribute names are case-sensitive, PascalCase, and
 	// expected in a comma-separated list format as in the JSON encoding.
 	//
-	// Supported attributes for ChangeOrder are EndTagID, InvocationID, OrganizationID, ReleaseTagID, RestoreTagID, SpaceFilterID, SpaceID, StartTagID, UnitFilterID.
+	// Supported attributes for ChangeOrder are EndTagID, InvocationID, OrganizationID, Permissions, ReleaseTagID, RestoreTagID, SpaceFilterID, SpaceID, StartTagID, UnitFilterID.
 	//
 	// The whole string must be query-encoded.
 	Include *string `form:"include,omitempty" json:"include,omitempty" yaml:"include,omitempty"`
@@ -9648,7 +9681,7 @@ type BulkDeleteChangeSetsParams struct {
 	// The attribute names are case-sensitive, PascalCase, and
 	// expected in a comma-separated list format as in the JSON encoding.
 	//
-	// Supported attributes for ChangeSet are EndTagID, OrganizationID, SpaceID, StartTagID.
+	// Supported attributes for ChangeSet are EndTagID, OrganizationID, Permissions, SpaceID, StartTagID.
 	//
 	// The whole string must be query-encoded.
 	Include *string `form:"include,omitempty" json:"include,omitempty" yaml:"include,omitempty"`
@@ -9738,7 +9771,7 @@ type ListAllChangeSetsParams struct {
 	// The attribute names are case-sensitive, PascalCase, and
 	// expected in a comma-separated list format as in the JSON encoding.
 	//
-	// Supported attributes for ChangeSet are EndTagID, OrganizationID, SpaceID, StartTagID.
+	// Supported attributes for ChangeSet are EndTagID, OrganizationID, Permissions, SpaceID, StartTagID.
 	//
 	// The whole string must be query-encoded.
 	Include *string `form:"include,omitempty" json:"include,omitempty" yaml:"include,omitempty"`
@@ -9917,7 +9950,7 @@ type BulkPatchChangeSetsParams struct {
 	// The attribute names are case-sensitive, PascalCase, and
 	// expected in a comma-separated list format as in the JSON encoding.
 	//
-	// Supported attributes for ChangeSet are EndTagID, OrganizationID, SpaceID, StartTagID.
+	// Supported attributes for ChangeSet are EndTagID, OrganizationID, Permissions, SpaceID, StartTagID.
 	//
 	// The whole string must be query-encoded.
 	Include *string `form:"include,omitempty" json:"include,omitempty" yaml:"include,omitempty"`
@@ -10044,7 +10077,7 @@ type BulkCreateChangeSetsParams struct {
 	// The attribute names are case-sensitive, PascalCase, and
 	// expected in a comma-separated list format as in the JSON encoding.
 	//
-	// Supported attributes for ChangeSet are EndTagID, OrganizationID, SpaceID, StartTagID.
+	// Supported attributes for ChangeSet are EndTagID, OrganizationID, Permissions, SpaceID, StartTagID.
 	//
 	// The whole string must be query-encoded.
 	Include *string `form:"include,omitempty" json:"include,omitempty" yaml:"include,omitempty"`
@@ -10209,7 +10242,7 @@ type BulkMoveChangeSetsParams struct {
 	// The attribute names are case-sensitive, PascalCase, and
 	// expected in a comma-separated list format as in the JSON encoding.
 	//
-	// Supported attributes for ChangeSet are EndTagID, OrganizationID, SpaceID, StartTagID.
+	// Supported attributes for ChangeSet are EndTagID, OrganizationID, Permissions, SpaceID, StartTagID.
 	//
 	// The whole string must be query-encoded.
 	Include *string `form:"include,omitempty" json:"include,omitempty" yaml:"include,omitempty"`
@@ -10302,7 +10335,7 @@ type BulkDeleteChangeWorkflowsParams struct {
 	// The attribute names are case-sensitive, PascalCase, and
 	// expected in a comma-separated list format as in the JSON encoding.
 	//
-	// Supported attributes for ChangeWorkflow are OrganizationID, SpaceID.
+	// Supported attributes for ChangeWorkflow are OrganizationID, Permissions, SpaceID.
 	//
 	// The whole string must be query-encoded.
 	Include *string `form:"include,omitempty" json:"include,omitempty" yaml:"include,omitempty"`
@@ -10392,7 +10425,7 @@ type ListAllChangeWorkflowsParams struct {
 	// The attribute names are case-sensitive, PascalCase, and
 	// expected in a comma-separated list format as in the JSON encoding.
 	//
-	// Supported attributes for ChangeWorkflow are OrganizationID, SpaceID.
+	// Supported attributes for ChangeWorkflow are OrganizationID, Permissions, SpaceID.
 	//
 	// The whole string must be query-encoded.
 	Include *string `form:"include,omitempty" json:"include,omitempty" yaml:"include,omitempty"`
@@ -10580,7 +10613,7 @@ type BulkPatchChangeWorkflowsParams struct {
 	// The attribute names are case-sensitive, PascalCase, and
 	// expected in a comma-separated list format as in the JSON encoding.
 	//
-	// Supported attributes for ChangeWorkflow are OrganizationID, SpaceID.
+	// Supported attributes for ChangeWorkflow are OrganizationID, Permissions, SpaceID.
 	//
 	// The whole string must be query-encoded.
 	Include *string `form:"include,omitempty" json:"include,omitempty" yaml:"include,omitempty"`
@@ -10722,7 +10755,7 @@ type BulkCreateChangeWorkflowsParams struct {
 	// The attribute names are case-sensitive, PascalCase, and
 	// expected in a comma-separated list format as in the JSON encoding.
 	//
-	// Supported attributes for ChangeWorkflow are OrganizationID, SpaceID.
+	// Supported attributes for ChangeWorkflow are OrganizationID, Permissions, SpaceID.
 	//
 	// The whole string must be query-encoded.
 	Include *string `form:"include,omitempty" json:"include,omitempty" yaml:"include,omitempty"`
@@ -10940,7 +10973,7 @@ type BulkMoveChangeWorkflowsParams struct {
 	// The attribute names are case-sensitive, PascalCase, and
 	// expected in a comma-separated list format as in the JSON encoding.
 	//
-	// Supported attributes for ChangeWorkflow are OrganizationID, SpaceID.
+	// Supported attributes for ChangeWorkflow are OrganizationID, Permissions, SpaceID.
 	//
 	// The whole string must be query-encoded.
 	Include *string `form:"include,omitempty" json:"include,omitempty" yaml:"include,omitempty"`
@@ -11033,7 +11066,7 @@ type BulkDeleteChannelsParams struct {
 	// The attribute names are case-sensitive, PascalCase, and
 	// expected in a comma-separated list format as in the JSON encoding.
 	//
-	// Supported attributes for Channel are OrganizationID, SpaceID.
+	// Supported attributes for Channel are OrganizationID, Permissions, SpaceID.
 	//
 	// The whole string must be query-encoded.
 	Include *string `form:"include,omitempty" json:"include,omitempty" yaml:"include,omitempty"`
@@ -11123,7 +11156,7 @@ type ListAllChannelsParams struct {
 	// The attribute names are case-sensitive, PascalCase, and
 	// expected in a comma-separated list format as in the JSON encoding.
 	//
-	// Supported attributes for Channel are OrganizationID, SpaceID.
+	// Supported attributes for Channel are OrganizationID, Permissions, SpaceID.
 	//
 	// The whole string must be query-encoded.
 	Include *string `form:"include,omitempty" json:"include,omitempty" yaml:"include,omitempty"`
@@ -11302,7 +11335,7 @@ type BulkPatchChannelsParams struct {
 	// The attribute names are case-sensitive, PascalCase, and
 	// expected in a comma-separated list format as in the JSON encoding.
 	//
-	// Supported attributes for Channel are OrganizationID, SpaceID.
+	// Supported attributes for Channel are OrganizationID, Permissions, SpaceID.
 	//
 	// The whole string must be query-encoded.
 	Include *string `form:"include,omitempty" json:"include,omitempty" yaml:"include,omitempty"`
@@ -11435,7 +11468,7 @@ type BulkCreateChannelsParams struct {
 	// The attribute names are case-sensitive, PascalCase, and
 	// expected in a comma-separated list format as in the JSON encoding.
 	//
-	// Supported attributes for Channel are OrganizationID, SpaceID.
+	// Supported attributes for Channel are OrganizationID, Permissions, SpaceID.
 	//
 	// The whole string must be query-encoded.
 	Include *string `form:"include,omitempty" json:"include,omitempty" yaml:"include,omitempty"`
@@ -11653,7 +11686,7 @@ type BulkMoveChannelsParams struct {
 	// The attribute names are case-sensitive, PascalCase, and
 	// expected in a comma-separated list format as in the JSON encoding.
 	//
-	// Supported attributes for Channel are OrganizationID, SpaceID.
+	// Supported attributes for Channel are OrganizationID, Permissions, SpaceID.
 	//
 	// The whole string must be query-encoded.
 	Include *string `form:"include,omitempty" json:"include,omitempty" yaml:"include,omitempty"`
@@ -11885,7 +11918,7 @@ type ListComponentsParams struct {
 	// The attribute names are case-sensitive, PascalCase, and
 	// expected in a comma-separated list format as in the JSON encoding.
 	//
-	// Supported attributes for Component are OrganizationID.
+	// Supported attributes for Component are OrganizationID, Permissions.
 	//
 	// The whole string must be query-encoded.
 	Include *string `form:"include,omitempty" json:"include,omitempty" yaml:"include,omitempty"`
@@ -11973,7 +12006,7 @@ type GetComponentParams struct {
 	// The attribute names are case-sensitive, PascalCase, and
 	// expected in a comma-separated list format as in the JSON encoding.
 	//
-	// Supported attributes for Component are OrganizationID.
+	// Supported attributes for Component are OrganizationID, Permissions.
 	//
 	// The whole string must be query-encoded.
 	Include *string `form:"include,omitempty" json:"include,omitempty" yaml:"include,omitempty"`
@@ -12141,7 +12174,7 @@ type BulkDeleteFiltersParams struct {
 	// The attribute names are case-sensitive, PascalCase, and
 	// expected in a comma-separated list format as in the JSON encoding.
 	//
-	// Supported attributes for Filter are FromSpaceID, OrganizationID, SpaceID.
+	// Supported attributes for Filter are FromSpaceID, OrganizationID, Permissions, SpaceID.
 	//
 	// The whole string must be query-encoded.
 	Include *string `form:"include,omitempty" json:"include,omitempty" yaml:"include,omitempty"`
@@ -12231,7 +12264,7 @@ type ListAllFiltersParams struct {
 	// The attribute names are case-sensitive, PascalCase, and
 	// expected in a comma-separated list format as in the JSON encoding.
 	//
-	// Supported attributes for Filter are FromSpaceID, OrganizationID, SpaceID.
+	// Supported attributes for Filter are FromSpaceID, OrganizationID, Permissions, SpaceID.
 	//
 	// The whole string must be query-encoded.
 	Include *string `form:"include,omitempty" json:"include,omitempty" yaml:"include,omitempty"`
@@ -12419,7 +12452,7 @@ type BulkPatchFiltersParams struct {
 	// The attribute names are case-sensitive, PascalCase, and
 	// expected in a comma-separated list format as in the JSON encoding.
 	//
-	// Supported attributes for Filter are FromSpaceID, OrganizationID, SpaceID.
+	// Supported attributes for Filter are FromSpaceID, OrganizationID, Permissions, SpaceID.
 	//
 	// The whole string must be query-encoded.
 	Include *string `form:"include,omitempty" json:"include,omitempty" yaml:"include,omitempty"`
@@ -12555,7 +12588,7 @@ type BulkCreateFiltersParams struct {
 	// The attribute names are case-sensitive, PascalCase, and
 	// expected in a comma-separated list format as in the JSON encoding.
 	//
-	// Supported attributes for Filter are FromSpaceID, OrganizationID, SpaceID.
+	// Supported attributes for Filter are FromSpaceID, OrganizationID, Permissions, SpaceID.
 	//
 	// The whole string must be query-encoded.
 	Include *string `form:"include,omitempty" json:"include,omitempty" yaml:"include,omitempty"`
@@ -12773,7 +12806,7 @@ type BulkMoveFiltersParams struct {
 	// The attribute names are case-sensitive, PascalCase, and
 	// expected in a comma-separated list format as in the JSON encoding.
 	//
-	// Supported attributes for Filter are FromSpaceID, OrganizationID, SpaceID.
+	// Supported attributes for Filter are FromSpaceID, OrganizationID, Permissions, SpaceID.
 	//
 	// The whole string must be query-encoded.
 	Include *string `form:"include,omitempty" json:"include,omitempty" yaml:"include,omitempty"`
@@ -13178,7 +13211,7 @@ type BulkDeleteInvocationsParams struct {
 	// The attribute names are case-sensitive, PascalCase, and
 	// expected in a comma-separated list format as in the JSON encoding.
 	//
-	// Supported attributes for Invocation are BridgeWorkerID, ChannelID, OrganizationID, SpaceID.
+	// Supported attributes for Invocation are BridgeWorkerID, ChannelID, OrganizationID, Permissions, SpaceID.
 	//
 	// The whole string must be query-encoded.
 	Include *string `form:"include,omitempty" json:"include,omitempty" yaml:"include,omitempty"`
@@ -13270,7 +13303,7 @@ type ListAllInvocationsParams struct {
 	// The attribute names are case-sensitive, PascalCase, and
 	// expected in a comma-separated list format as in the JSON encoding.
 	//
-	// Supported attributes for Invocation are BridgeWorkerID, ChannelID, OrganizationID, SpaceID.
+	// Supported attributes for Invocation are BridgeWorkerID, ChannelID, OrganizationID, Permissions, SpaceID.
 	//
 	// The whole string must be query-encoded.
 	Include *string `form:"include,omitempty" json:"include,omitempty" yaml:"include,omitempty"`
@@ -13453,7 +13486,7 @@ type BulkPatchInvocationsParams struct {
 	// The attribute names are case-sensitive, PascalCase, and
 	// expected in a comma-separated list format as in the JSON encoding.
 	//
-	// Supported attributes for Invocation are BridgeWorkerID, ChannelID, OrganizationID, SpaceID.
+	// Supported attributes for Invocation are BridgeWorkerID, ChannelID, OrganizationID, Permissions, SpaceID.
 	//
 	// The whole string must be query-encoded.
 	Include *string `form:"include,omitempty" json:"include,omitempty" yaml:"include,omitempty"`
@@ -13590,7 +13623,7 @@ type BulkCreateInvocationsParams struct {
 	// The attribute names are case-sensitive, PascalCase, and
 	// expected in a comma-separated list format as in the JSON encoding.
 	//
-	// Supported attributes for Invocation are BridgeWorkerID, ChannelID, OrganizationID, SpaceID.
+	// Supported attributes for Invocation are BridgeWorkerID, ChannelID, OrganizationID, Permissions, SpaceID.
 	//
 	// The whole string must be query-encoded.
 	Include *string `form:"include,omitempty" json:"include,omitempty" yaml:"include,omitempty"`
@@ -13808,7 +13841,7 @@ type BulkMoveInvocationsParams struct {
 	// The attribute names are case-sensitive, PascalCase, and
 	// expected in a comma-separated list format as in the JSON encoding.
 	//
-	// Supported attributes for Invocation are BridgeWorkerID, ChannelID, OrganizationID, SpaceID.
+	// Supported attributes for Invocation are BridgeWorkerID, ChannelID, OrganizationID, Permissions, SpaceID.
 	//
 	// The whole string must be query-encoded.
 	Include *string `form:"include,omitempty" json:"include,omitempty" yaml:"include,omitempty"`
@@ -13901,7 +13934,7 @@ type BulkDeleteLinksParams struct {
 	// The attribute names are case-sensitive, PascalCase, and
 	// expected in a comma-separated list format as in the JSON encoding.
 	//
-	// Supported attributes for Link are FromUnitID, OrganizationID, SpaceID, ToSpaceID, ToUnitID, TransformInvocationID.
+	// Supported attributes for Link are FromUnitID, OrganizationID, Permissions, SpaceID, ToSpaceID, ToUnitID, TransformInvocationID.
 	//
 	// The whole string must be query-encoded.
 	Include *string `form:"include,omitempty" json:"include,omitempty" yaml:"include,omitempty"`
@@ -13991,7 +14024,7 @@ type SearchListLinksParams struct {
 	// The attribute names are case-sensitive, PascalCase, and
 	// expected in a comma-separated list format as in the JSON encoding.
 	//
-	// Supported attributes for Link are FromUnitID, OrganizationID, SpaceID, ToSpaceID, ToUnitID, TransformInvocationID.
+	// Supported attributes for Link are FromUnitID, OrganizationID, Permissions, SpaceID, ToSpaceID, ToUnitID, TransformInvocationID.
 	//
 	// The whole string must be query-encoded.
 	Include *string `form:"include,omitempty" json:"include,omitempty" yaml:"include,omitempty"`
@@ -14189,7 +14222,7 @@ type BulkPatchLinksParams struct {
 	// The attribute names are case-sensitive, PascalCase, and
 	// expected in a comma-separated list format as in the JSON encoding.
 	//
-	// Supported attributes for Link are FromUnitID, OrganizationID, SpaceID, ToSpaceID, ToUnitID, TransformInvocationID.
+	// Supported attributes for Link are FromUnitID, OrganizationID, Permissions, SpaceID, ToSpaceID, ToUnitID, TransformInvocationID.
 	//
 	// The whole string must be query-encoded.
 	Include *string `form:"include,omitempty" json:"include,omitempty" yaml:"include,omitempty"`
@@ -14545,7 +14578,7 @@ type ListOrganizationsParams struct {
 	// The attribute names are case-sensitive, PascalCase, and
 	// expected in a comma-separated list format as in the JSON encoding.
 	//
-	// Supported attributes for Organization are .
+	// Supported attributes for Organization are Permissions.
 	//
 	// The whole string must be query-encoded.
 	Include *string `form:"include,omitempty" json:"include,omitempty" yaml:"include,omitempty"`
@@ -14595,7 +14628,7 @@ type GetOrganizationParams struct {
 	// The attribute names are case-sensitive, PascalCase, and
 	// expected in a comma-separated list format as in the JSON encoding.
 	//
-	// Supported attributes for Organization are .
+	// Supported attributes for Organization are Permissions.
 	//
 	// The whole string must be query-encoded.
 	Include *string `form:"include,omitempty" json:"include,omitempty" yaml:"include,omitempty"`
@@ -14826,7 +14859,7 @@ type ListAllReleasesParams struct {
 	// The attribute names are case-sensitive, PascalCase, and
 	// expected in a comma-separated list format as in the JSON encoding.
 	//
-	// Supported attributes for Release are ChangeOrderID, OrganizationID, SpaceID, TagID, TargetID, UserID.
+	// Supported attributes for Release are ChangeOrderID, OrganizationID, Permissions, SpaceID, TagID, TargetID, UserID.
 	//
 	// The whole string must be query-encoded.
 	Include *string `form:"include,omitempty" json:"include,omitempty" yaml:"include,omitempty"`
@@ -15947,7 +15980,7 @@ type ListServiceAccountsParams struct {
 	// The attribute names are case-sensitive, PascalCase, and
 	// expected in a comma-separated list format as in the JSON encoding.
 	//
-	// Supported attributes for ServiceAccount are OrganizationID.
+	// Supported attributes for ServiceAccount are OrganizationID, Permissions.
 	//
 	// The whole string must be query-encoded.
 	Include *string `form:"include,omitempty" json:"include,omitempty" yaml:"include,omitempty"`
@@ -16029,7 +16062,7 @@ type GetServiceAccountParams struct {
 	// The attribute names are case-sensitive, PascalCase, and
 	// expected in a comma-separated list format as in the JSON encoding.
 	//
-	// Supported attributes for ServiceAccount are OrganizationID.
+	// Supported attributes for ServiceAccount are OrganizationID, Permissions.
 	//
 	// The whole string must be query-encoded.
 	Include *string `form:"include,omitempty" json:"include,omitempty" yaml:"include,omitempty"`
@@ -16398,7 +16431,7 @@ type ListSpacesParams struct {
 	// The attribute names are case-sensitive, PascalCase, and
 	// expected in a comma-separated list format as in the JSON encoding.
 	//
-	// Supported attributes for Space are AttributeFilterID, AttributeIDs, ComponentID, OrganizationID, ReleaseTargetID, TriggerFilterID, TriggerIDs.
+	// Supported attributes for Space are AttributeFilterID, AttributeIDs, ComponentID, OrganizationID, Permissions, ReleaseTargetID, TriggerFilterID, TriggerIDs.
 	//
 	// The whole string must be query-encoded.
 	Include *string `form:"include,omitempty" json:"include,omitempty" yaml:"include,omitempty"`
@@ -16501,7 +16534,7 @@ type GetSpaceParams struct {
 	// The attribute names are case-sensitive, PascalCase, and
 	// expected in a comma-separated list format as in the JSON encoding.
 	//
-	// Supported attributes for Space are AttributeFilterID, AttributeIDs, ComponentID, OrganizationID, ReleaseTargetID, TriggerFilterID, TriggerIDs.
+	// Supported attributes for Space are AttributeFilterID, AttributeIDs, ComponentID, OrganizationID, Permissions, ReleaseTargetID, TriggerFilterID, TriggerIDs.
 	//
 	// The whole string must be query-encoded.
 	Include *string `form:"include,omitempty" json:"include,omitempty" yaml:"include,omitempty"`
@@ -16644,7 +16677,7 @@ type ListExtendedAttestationsParams struct {
 	// The attribute names are case-sensitive, PascalCase, and
 	// expected in a comma-separated list format as in the JSON encoding.
 	//
-	// Supported attributes for Attestation are OrganizationID, SpaceID.
+	// Supported attributes for Attestation are OrganizationID, Permissions, SpaceID.
 	//
 	// The whole string must be query-encoded.
 	Include *string `form:"include,omitempty" json:"include,omitempty" yaml:"include,omitempty"`
@@ -16723,7 +16756,7 @@ type GetExtendedAttestationParams struct {
 	// The attribute names are case-sensitive, PascalCase, and
 	// expected in a comma-separated list format as in the JSON encoding.
 	//
-	// Supported attributes for Attestation are OrganizationID, SpaceID.
+	// Supported attributes for Attestation are OrganizationID, Permissions, SpaceID.
 	//
 	// The whole string must be query-encoded.
 	Include *string `form:"include,omitempty" json:"include,omitempty" yaml:"include,omitempty"`
@@ -16814,7 +16847,7 @@ type ListAttributesParams struct {
 	// The attribute names are case-sensitive, PascalCase, and
 	// expected in a comma-separated list format as in the JSON encoding.
 	//
-	// Supported attributes for Attribute are OrganizationID, SpaceID.
+	// Supported attributes for Attribute are OrganizationID, Permissions, SpaceID.
 	//
 	// The whole string must be query-encoded.
 	Include *string `form:"include,omitempty" json:"include,omitempty" yaml:"include,omitempty"`
@@ -16899,7 +16932,7 @@ type GetAttributeParams struct {
 	// The attribute names are case-sensitive, PascalCase, and
 	// expected in a comma-separated list format as in the JSON encoding.
 	//
-	// Supported attributes for Attribute are OrganizationID, SpaceID.
+	// Supported attributes for Attribute are OrganizationID, Permissions, SpaceID.
 	//
 	// The whole string must be query-encoded.
 	Include *string `form:"include,omitempty" json:"include,omitempty" yaml:"include,omitempty"`
@@ -17038,7 +17071,7 @@ type ListBridgeWorkersParams struct {
 	// The attribute names are case-sensitive, PascalCase, and
 	// expected in a comma-separated list format as in the JSON encoding.
 	//
-	// Supported attributes for BridgeWorker are OrganizationID, SpaceID.
+	// Supported attributes for BridgeWorker are OrganizationID, Permissions, SpaceID.
 	//
 	// The whole string must be query-encoded.
 	Include *string `form:"include,omitempty" json:"include,omitempty" yaml:"include,omitempty"`
@@ -17126,7 +17159,7 @@ type GetBridgeWorkerParams struct {
 	// The attribute names are case-sensitive, PascalCase, and
 	// expected in a comma-separated list format as in the JSON encoding.
 	//
-	// Supported attributes for BridgeWorker are OrganizationID, SpaceID.
+	// Supported attributes for BridgeWorker are OrganizationID, Permissions, SpaceID.
 	//
 	// The whole string must be query-encoded.
 	Include *string `form:"include,omitempty" json:"include,omitempty" yaml:"include,omitempty"`
@@ -17256,7 +17289,7 @@ type ListChangeOrdersParams struct {
 	// The attribute names are case-sensitive, PascalCase, and
 	// expected in a comma-separated list format as in the JSON encoding.
 	//
-	// Supported attributes for ChangeOrder are EndTagID, InvocationID, OrganizationID, ReleaseTagID, RestoreTagID, SpaceFilterID, SpaceID, StartTagID, UnitFilterID.
+	// Supported attributes for ChangeOrder are EndTagID, InvocationID, OrganizationID, Permissions, ReleaseTagID, RestoreTagID, SpaceFilterID, SpaceID, StartTagID, UnitFilterID.
 	//
 	// The whole string must be query-encoded.
 	Include *string `form:"include,omitempty" json:"include,omitempty" yaml:"include,omitempty"`
@@ -17344,7 +17377,7 @@ type GetChangeOrderParams struct {
 	// The attribute names are case-sensitive, PascalCase, and
 	// expected in a comma-separated list format as in the JSON encoding.
 	//
-	// Supported attributes for ChangeOrder are EndTagID, InvocationID, OrganizationID, ReleaseTagID, RestoreTagID, SpaceFilterID, SpaceID, StartTagID, UnitFilterID.
+	// Supported attributes for ChangeOrder are EndTagID, InvocationID, OrganizationID, Permissions, ReleaseTagID, RestoreTagID, SpaceFilterID, SpaceID, StartTagID, UnitFilterID.
 	//
 	// The whole string must be query-encoded.
 	Include *string `form:"include,omitempty" json:"include,omitempty" yaml:"include,omitempty"`
@@ -17500,7 +17533,7 @@ type ListChangeSetsParams struct {
 	// The attribute names are case-sensitive, PascalCase, and
 	// expected in a comma-separated list format as in the JSON encoding.
 	//
-	// Supported attributes for ChangeSet are EndTagID, OrganizationID, SpaceID, StartTagID.
+	// Supported attributes for ChangeSet are EndTagID, OrganizationID, Permissions, SpaceID, StartTagID.
 	//
 	// The whole string must be query-encoded.
 	Include *string `form:"include,omitempty" json:"include,omitempty" yaml:"include,omitempty"`
@@ -17588,7 +17621,7 @@ type GetChangeSetParams struct {
 	// The attribute names are case-sensitive, PascalCase, and
 	// expected in a comma-separated list format as in the JSON encoding.
 	//
-	// Supported attributes for ChangeSet are EndTagID, OrganizationID, SpaceID, StartTagID.
+	// Supported attributes for ChangeSet are EndTagID, OrganizationID, Permissions, SpaceID, StartTagID.
 	//
 	// The whole string must be query-encoded.
 	Include *string `form:"include,omitempty" json:"include,omitempty" yaml:"include,omitempty"`
@@ -17719,7 +17752,7 @@ type ListChangeWorkflowsParams struct {
 	// The attribute names are case-sensitive, PascalCase, and
 	// expected in a comma-separated list format as in the JSON encoding.
 	//
-	// Supported attributes for ChangeWorkflow are OrganizationID, SpaceID.
+	// Supported attributes for ChangeWorkflow are OrganizationID, Permissions, SpaceID.
 	//
 	// The whole string must be query-encoded.
 	Include *string `form:"include,omitempty" json:"include,omitempty" yaml:"include,omitempty"`
@@ -17804,7 +17837,7 @@ type GetChangeWorkflowParams struct {
 	// The attribute names are case-sensitive, PascalCase, and
 	// expected in a comma-separated list format as in the JSON encoding.
 	//
-	// Supported attributes for ChangeWorkflow are OrganizationID, SpaceID.
+	// Supported attributes for ChangeWorkflow are OrganizationID, Permissions, SpaceID.
 	//
 	// The whole string must be query-encoded.
 	Include *string `form:"include,omitempty" json:"include,omitempty" yaml:"include,omitempty"`
@@ -17950,7 +17983,7 @@ type ListChannelsParams struct {
 	// The attribute names are case-sensitive, PascalCase, and
 	// expected in a comma-separated list format as in the JSON encoding.
 	//
-	// Supported attributes for Channel are OrganizationID, SpaceID.
+	// Supported attributes for Channel are OrganizationID, Permissions, SpaceID.
 	//
 	// The whole string must be query-encoded.
 	Include *string `form:"include,omitempty" json:"include,omitempty" yaml:"include,omitempty"`
@@ -18035,7 +18068,7 @@ type GetChannelParams struct {
 	// The attribute names are case-sensitive, PascalCase, and
 	// expected in a comma-separated list format as in the JSON encoding.
 	//
-	// Supported attributes for Channel are OrganizationID, SpaceID.
+	// Supported attributes for Channel are OrganizationID, Permissions, SpaceID.
 	//
 	// The whole string must be query-encoded.
 	Include *string `form:"include,omitempty" json:"include,omitempty" yaml:"include,omitempty"`
@@ -18363,7 +18396,7 @@ type ListFiltersParams struct {
 	// The attribute names are case-sensitive, PascalCase, and
 	// expected in a comma-separated list format as in the JSON encoding.
 	//
-	// Supported attributes for Filter are FromSpaceID, OrganizationID, SpaceID.
+	// Supported attributes for Filter are FromSpaceID, OrganizationID, Permissions, SpaceID.
 	//
 	// The whole string must be query-encoded.
 	Include *string `form:"include,omitempty" json:"include,omitempty" yaml:"include,omitempty"`
@@ -18454,7 +18487,7 @@ type GetFilterParams struct {
 	// The attribute names are case-sensitive, PascalCase, and
 	// expected in a comma-separated list format as in the JSON encoding.
 	//
-	// Supported attributes for Filter are FromSpaceID, OrganizationID, SpaceID.
+	// Supported attributes for Filter are FromSpaceID, OrganizationID, Permissions, SpaceID.
 	//
 	// The whole string must be query-encoded.
 	Include *string `form:"include,omitempty" json:"include,omitempty" yaml:"include,omitempty"`
@@ -18766,7 +18799,7 @@ type ListInvocationsParams struct {
 	// The attribute names are case-sensitive, PascalCase, and
 	// expected in a comma-separated list format as in the JSON encoding.
 	//
-	// Supported attributes for Invocation are BridgeWorkerID, ChannelID, OrganizationID, SpaceID.
+	// Supported attributes for Invocation are BridgeWorkerID, ChannelID, OrganizationID, Permissions, SpaceID.
 	//
 	// The whole string must be query-encoded.
 	Include *string `form:"include,omitempty" json:"include,omitempty" yaml:"include,omitempty"`
@@ -18851,7 +18884,7 @@ type GetInvocationParams struct {
 	// The attribute names are case-sensitive, PascalCase, and
 	// expected in a comma-separated list format as in the JSON encoding.
 	//
-	// Supported attributes for Invocation are BridgeWorkerID, ChannelID, OrganizationID, SpaceID.
+	// Supported attributes for Invocation are BridgeWorkerID, ChannelID, OrganizationID, Permissions, SpaceID.
 	//
 	// The whole string must be query-encoded.
 	Include *string `form:"include,omitempty" json:"include,omitempty" yaml:"include,omitempty"`
@@ -18990,7 +19023,7 @@ type ListLinksParams struct {
 	// The attribute names are case-sensitive, PascalCase, and
 	// expected in a comma-separated list format as in the JSON encoding.
 	//
-	// Supported attributes for Link are FromUnitID, OrganizationID, SpaceID, ToSpaceID, ToUnitID, TransformInvocationID.
+	// Supported attributes for Link are FromUnitID, OrganizationID, Permissions, SpaceID, ToSpaceID, ToUnitID, TransformInvocationID.
 	//
 	// The whole string must be query-encoded.
 	Include *string `form:"include,omitempty" json:"include,omitempty" yaml:"include,omitempty"`
@@ -19075,7 +19108,7 @@ type GetLinkParams struct {
 	// The attribute names are case-sensitive, PascalCase, and
 	// expected in a comma-separated list format as in the JSON encoding.
 	//
-	// Supported attributes for Link are FromUnitID, OrganizationID, SpaceID, ToSpaceID, ToUnitID, TransformInvocationID.
+	// Supported attributes for Link are FromUnitID, OrganizationID, Permissions, SpaceID, ToSpaceID, ToUnitID, TransformInvocationID.
 	//
 	// The whole string must be query-encoded.
 	Include *string `form:"include,omitempty" json:"include,omitempty" yaml:"include,omitempty"`
@@ -19234,7 +19267,7 @@ type ListExtendedReleasesParams struct {
 	// The attribute names are case-sensitive, PascalCase, and
 	// expected in a comma-separated list format as in the JSON encoding.
 	//
-	// Supported attributes for Release are ChangeOrderID, OrganizationID, SpaceID, TagID, TargetID, UserID.
+	// Supported attributes for Release are ChangeOrderID, OrganizationID, Permissions, SpaceID, TagID, TargetID, UserID.
 	//
 	// The whole string must be query-encoded.
 	Include *string `form:"include,omitempty" json:"include,omitempty" yaml:"include,omitempty"`
@@ -19313,7 +19346,7 @@ type GetExtendedReleaseParams struct {
 	// The attribute names are case-sensitive, PascalCase, and
 	// expected in a comma-separated list format as in the JSON encoding.
 	//
-	// Supported attributes for Release are ChangeOrderID, OrganizationID, SpaceID, TagID, TargetID, UserID.
+	// Supported attributes for Release are ChangeOrderID, OrganizationID, Permissions, SpaceID, TagID, TargetID, UserID.
 	//
 	// The whole string must be query-encoded.
 	Include *string `form:"include,omitempty" json:"include,omitempty" yaml:"include,omitempty"`
@@ -19436,7 +19469,7 @@ type ListTagsParams struct {
 	// The attribute names are case-sensitive, PascalCase, and
 	// expected in a comma-separated list format as in the JSON encoding.
 	//
-	// Supported attributes for Tag are ChangeSetID, OrganizationID, SpaceID.
+	// Supported attributes for Tag are ChangeSetID, OrganizationID, Permissions, SpaceID.
 	//
 	// The whole string must be query-encoded.
 	Include *string `form:"include,omitempty" json:"include,omitempty" yaml:"include,omitempty"`
@@ -19524,7 +19557,7 @@ type GetTagParams struct {
 	// The attribute names are case-sensitive, PascalCase, and
 	// expected in a comma-separated list format as in the JSON encoding.
 	//
-	// Supported attributes for Tag are ChangeSetID, OrganizationID, SpaceID.
+	// Supported attributes for Tag are ChangeSetID, OrganizationID, Permissions, SpaceID.
 	//
 	// The whole string must be query-encoded.
 	Include *string `form:"include,omitempty" json:"include,omitempty" yaml:"include,omitempty"`
@@ -19652,7 +19685,7 @@ type ListTargetsParams struct {
 	// The attribute names are case-sensitive, PascalCase, and
 	// expected in a comma-separated list format as in the JSON encoding.
 	//
-	// Supported attributes for Target are OrganizationID, SpaceID, TriggerFilterID, TriggerIDs.
+	// Supported attributes for Target are OrganizationID, Permissions, SpaceID, TriggerFilterID, TriggerIDs.
 	//
 	// The whole string must be query-encoded.
 	Include *string `form:"include,omitempty" json:"include,omitempty" yaml:"include,omitempty"`
@@ -19743,7 +19776,7 @@ type GetTargetParams struct {
 	// The attribute names are case-sensitive, PascalCase, and
 	// expected in a comma-separated list format as in the JSON encoding.
 	//
-	// Supported attributes for Target are OrganizationID, SpaceID, TriggerFilterID, TriggerIDs.
+	// Supported attributes for Target are OrganizationID, Permissions, SpaceID, TriggerFilterID, TriggerIDs.
 	//
 	// The whole string must be query-encoded.
 	Include *string `form:"include,omitempty" json:"include,omitempty" yaml:"include,omitempty"`
@@ -19888,7 +19921,7 @@ type ListTriggersParams struct {
 	// The attribute names are case-sensitive, PascalCase, and
 	// expected in a comma-separated list format as in the JSON encoding.
 	//
-	// Supported attributes for Trigger are BridgeWorkerID, ChannelID, InvocationID, OrganizationID, SpaceID, UnitFilterID.
+	// Supported attributes for Trigger are BridgeWorkerID, ChannelID, InvocationID, OrganizationID, Permissions, SpaceID, UnitFilterID.
 	//
 	// The whole string must be query-encoded.
 	Include *string `form:"include,omitempty" json:"include,omitempty" yaml:"include,omitempty"`
@@ -19973,7 +20006,7 @@ type GetTriggerParams struct {
 	// The attribute names are case-sensitive, PascalCase, and
 	// expected in a comma-separated list format as in the JSON encoding.
 	//
-	// Supported attributes for Trigger are BridgeWorkerID, ChannelID, InvocationID, OrganizationID, SpaceID, UnitFilterID.
+	// Supported attributes for Trigger are BridgeWorkerID, ChannelID, InvocationID, OrganizationID, Permissions, SpaceID, UnitFilterID.
 	//
 	// The whole string must be query-encoded.
 	Include *string `form:"include,omitempty" json:"include,omitempty" yaml:"include,omitempty"`
@@ -20135,7 +20168,7 @@ type ListUnitsParams struct {
 	// The attribute names are case-sensitive, PascalCase, and
 	// expected in a comma-separated list format as in the JSON encoding.
 	//
-	// Supported attributes for Unit are ChangeSetID, FromLinkID, HeadMutationNum, HeadRevisionNum, LastReleasedRevisionNum, OrganizationID, SpaceID, TargetID, UnitEventID, UpstreamSpaceID, UpstreamUnitID.
+	// Supported attributes for Unit are ChangeSetID, FromLinkID, HeadMutationNum, HeadRevisionNum, LastReleasedRevisionNum, OrganizationID, Permissions, SpaceID, TargetID, UnitEventID, UpstreamSpaceID, UpstreamUnitID.
 	//
 	// The whole string must be query-encoded.
 	Include *string `form:"include,omitempty" json:"include,omitempty" yaml:"include,omitempty"`
@@ -20261,7 +20294,7 @@ type GetUnitParams struct {
 	// The attribute names are case-sensitive, PascalCase, and
 	// expected in a comma-separated list format as in the JSON encoding.
 	//
-	// Supported attributes for Unit are ChangeSetID, FromLinkID, HeadMutationNum, HeadRevisionNum, LastReleasedRevisionNum, OrganizationID, SpaceID, TargetID, UnitEventID, UpstreamSpaceID, UpstreamUnitID.
+	// Supported attributes for Unit are ChangeSetID, FromLinkID, HeadMutationNum, HeadRevisionNum, LastReleasedRevisionNum, OrganizationID, Permissions, SpaceID, TargetID, UnitEventID, UpstreamSpaceID, UpstreamUnitID.
 	//
 	// The whole string must be query-encoded.
 	Include *string `form:"include,omitempty" json:"include,omitempty" yaml:"include,omitempty"`
@@ -21639,7 +21672,7 @@ type ListViewsParams struct {
 	// The attribute names are case-sensitive, PascalCase, and
 	// expected in a comma-separated list format as in the JSON encoding.
 	//
-	// Supported attributes for View are FilterID, OrganizationID, SpaceID.
+	// Supported attributes for View are FilterID, OrganizationID, Permissions, SpaceID.
 	//
 	// The whole string must be query-encoded.
 	Include *string `form:"include,omitempty" json:"include,omitempty" yaml:"include,omitempty"`
@@ -21724,7 +21757,7 @@ type GetViewParams struct {
 	// The attribute names are case-sensitive, PascalCase, and
 	// expected in a comma-separated list format as in the JSON encoding.
 	//
-	// Supported attributes for View are FilterID, OrganizationID, SpaceID.
+	// Supported attributes for View are FilterID, OrganizationID, Permissions, SpaceID.
 	//
 	// The whole string must be query-encoded.
 	Include *string `form:"include,omitempty" json:"include,omitempty" yaml:"include,omitempty"`
@@ -21873,7 +21906,7 @@ type BulkDeleteTagsParams struct {
 	// The attribute names are case-sensitive, PascalCase, and
 	// expected in a comma-separated list format as in the JSON encoding.
 	//
-	// Supported attributes for Tag are ChangeSetID, OrganizationID, SpaceID.
+	// Supported attributes for Tag are ChangeSetID, OrganizationID, Permissions, SpaceID.
 	//
 	// The whole string must be query-encoded.
 	Include *string `form:"include,omitempty" json:"include,omitempty" yaml:"include,omitempty"`
@@ -21963,7 +21996,7 @@ type ListAllTagsParams struct {
 	// The attribute names are case-sensitive, PascalCase, and
 	// expected in a comma-separated list format as in the JSON encoding.
 	//
-	// Supported attributes for Tag are ChangeSetID, OrganizationID, SpaceID.
+	// Supported attributes for Tag are ChangeSetID, OrganizationID, Permissions, SpaceID.
 	//
 	// The whole string must be query-encoded.
 	Include *string `form:"include,omitempty" json:"include,omitempty" yaml:"include,omitempty"`
@@ -22139,7 +22172,7 @@ type BulkPatchTagsParams struct {
 	// The attribute names are case-sensitive, PascalCase, and
 	// expected in a comma-separated list format as in the JSON encoding.
 	//
-	// Supported attributes for Tag are ChangeSetID, OrganizationID, SpaceID.
+	// Supported attributes for Tag are ChangeSetID, OrganizationID, Permissions, SpaceID.
 	//
 	// The whole string must be query-encoded.
 	Include *string `form:"include,omitempty" json:"include,omitempty" yaml:"include,omitempty"`
@@ -22263,7 +22296,7 @@ type BulkCreateTagsParams struct {
 	// The attribute names are case-sensitive, PascalCase, and
 	// expected in a comma-separated list format as in the JSON encoding.
 	//
-	// Supported attributes for Tag are ChangeSetID, OrganizationID, SpaceID.
+	// Supported attributes for Tag are ChangeSetID, OrganizationID, Permissions, SpaceID.
 	//
 	// The whole string must be query-encoded.
 	Include *string `form:"include,omitempty" json:"include,omitempty" yaml:"include,omitempty"`
@@ -22428,7 +22461,7 @@ type BulkMoveTagsParams struct {
 	// The attribute names are case-sensitive, PascalCase, and
 	// expected in a comma-separated list format as in the JSON encoding.
 	//
-	// Supported attributes for Tag are ChangeSetID, OrganizationID, SpaceID.
+	// Supported attributes for Tag are ChangeSetID, OrganizationID, Permissions, SpaceID.
 	//
 	// The whole string must be query-encoded.
 	Include *string `form:"include,omitempty" json:"include,omitempty" yaml:"include,omitempty"`
@@ -22521,7 +22554,7 @@ type BulkDeleteTargetsParams struct {
 	// The attribute names are case-sensitive, PascalCase, and
 	// expected in a comma-separated list format as in the JSON encoding.
 	//
-	// Supported attributes for Target are OrganizationID, SpaceID, TriggerFilterID, TriggerIDs.
+	// Supported attributes for Target are OrganizationID, Permissions, SpaceID, TriggerFilterID, TriggerIDs.
 	//
 	// The whole string must be query-encoded.
 	Include *string `form:"include,omitempty" json:"include,omitempty" yaml:"include,omitempty"`
@@ -22614,7 +22647,7 @@ type ListAllTargetsParams struct {
 	// The attribute names are case-sensitive, PascalCase, and
 	// expected in a comma-separated list format as in the JSON encoding.
 	//
-	// Supported attributes for Target are OrganizationID, SpaceID, TriggerFilterID, TriggerIDs.
+	// Supported attributes for Target are OrganizationID, Permissions, SpaceID, TriggerFilterID, TriggerIDs.
 	//
 	// The whole string must be query-encoded.
 	Include *string `form:"include,omitempty" json:"include,omitempty" yaml:"include,omitempty"`
@@ -22793,7 +22826,7 @@ type BulkPatchTargetsParams struct {
 	// The attribute names are case-sensitive, PascalCase, and
 	// expected in a comma-separated list format as in the JSON encoding.
 	//
-	// Supported attributes for Target are OrganizationID, SpaceID, TriggerFilterID, TriggerIDs.
+	// Supported attributes for Target are OrganizationID, Permissions, SpaceID, TriggerFilterID, TriggerIDs.
 	//
 	// The whole string must be query-encoded.
 	Include *string `form:"include,omitempty" json:"include,omitempty" yaml:"include,omitempty"`
@@ -22929,7 +22962,7 @@ type BulkCreateTargetsParams struct {
 	// The attribute names are case-sensitive, PascalCase, and
 	// expected in a comma-separated list format as in the JSON encoding.
 	//
-	// Supported attributes for Target are OrganizationID, SpaceID, TriggerFilterID, TriggerIDs.
+	// Supported attributes for Target are OrganizationID, Permissions, SpaceID, TriggerFilterID, TriggerIDs.
 	//
 	// The whole string must be query-encoded.
 	Include *string `form:"include,omitempty" json:"include,omitempty" yaml:"include,omitempty"`
@@ -23147,7 +23180,7 @@ type BulkMoveTargetsParams struct {
 	// The attribute names are case-sensitive, PascalCase, and
 	// expected in a comma-separated list format as in the JSON encoding.
 	//
-	// Supported attributes for Target are OrganizationID, SpaceID, TriggerFilterID, TriggerIDs.
+	// Supported attributes for Target are OrganizationID, Permissions, SpaceID, TriggerFilterID, TriggerIDs.
 	//
 	// The whole string must be query-encoded.
 	Include *string `form:"include,omitempty" json:"include,omitempty" yaml:"include,omitempty"`
@@ -23242,7 +23275,7 @@ type BulkDeleteTriggersParams struct {
 	// The attribute names are case-sensitive, PascalCase, and
 	// expected in a comma-separated list format as in the JSON encoding.
 	//
-	// Supported attributes for Trigger are BridgeWorkerID, ChannelID, InvocationID, OrganizationID, SpaceID, UnitFilterID.
+	// Supported attributes for Trigger are BridgeWorkerID, ChannelID, InvocationID, OrganizationID, Permissions, SpaceID, UnitFilterID.
 	//
 	// The whole string must be query-encoded.
 	Include *string `form:"include,omitempty" json:"include,omitempty" yaml:"include,omitempty"`
@@ -23334,7 +23367,7 @@ type ListAllTriggersParams struct {
 	// The attribute names are case-sensitive, PascalCase, and
 	// expected in a comma-separated list format as in the JSON encoding.
 	//
-	// Supported attributes for Trigger are BridgeWorkerID, ChannelID, InvocationID, OrganizationID, SpaceID, UnitFilterID.
+	// Supported attributes for Trigger are BridgeWorkerID, ChannelID, InvocationID, OrganizationID, Permissions, SpaceID, UnitFilterID.
 	//
 	// The whole string must be query-encoded.
 	Include *string `form:"include,omitempty" json:"include,omitempty" yaml:"include,omitempty"`
@@ -23538,7 +23571,7 @@ type BulkPatchTriggersParams struct {
 	// The attribute names are case-sensitive, PascalCase, and
 	// expected in a comma-separated list format as in the JSON encoding.
 	//
-	// Supported attributes for Trigger are BridgeWorkerID, ChannelID, InvocationID, OrganizationID, SpaceID, UnitFilterID.
+	// Supported attributes for Trigger are BridgeWorkerID, ChannelID, InvocationID, OrganizationID, Permissions, SpaceID, UnitFilterID.
 	//
 	// The whole string must be query-encoded.
 	Include *string `form:"include,omitempty" json:"include,omitempty" yaml:"include,omitempty"`
@@ -23696,7 +23729,7 @@ type BulkCreateTriggersParams struct {
 	// The attribute names are case-sensitive, PascalCase, and
 	// expected in a comma-separated list format as in the JSON encoding.
 	//
-	// Supported attributes for Trigger are BridgeWorkerID, ChannelID, InvocationID, OrganizationID, SpaceID, UnitFilterID.
+	// Supported attributes for Trigger are BridgeWorkerID, ChannelID, InvocationID, OrganizationID, Permissions, SpaceID, UnitFilterID.
 	//
 	// The whole string must be query-encoded.
 	Include *string `form:"include,omitempty" json:"include,omitempty" yaml:"include,omitempty"`
@@ -23914,7 +23947,7 @@ type BulkMoveTriggersParams struct {
 	// The attribute names are case-sensitive, PascalCase, and
 	// expected in a comma-separated list format as in the JSON encoding.
 	//
-	// Supported attributes for Trigger are BridgeWorkerID, ChannelID, InvocationID, OrganizationID, SpaceID, UnitFilterID.
+	// Supported attributes for Trigger are BridgeWorkerID, ChannelID, InvocationID, OrganizationID, Permissions, SpaceID, UnitFilterID.
 	//
 	// The whole string must be query-encoded.
 	Include *string `form:"include,omitempty" json:"include,omitempty" yaml:"include,omitempty"`
@@ -24009,7 +24042,7 @@ type BulkDeleteUnitsParams struct {
 	// The attribute names are case-sensitive, PascalCase, and
 	// expected in a comma-separated list format as in the JSON encoding.
 	//
-	// Supported attributes for Unit are ChangeSetID, FromLinkID, HeadMutationNum, HeadRevisionNum, LastReleasedRevisionNum, OrganizationID, SpaceID, TargetID, UnitEventID, UpstreamSpaceID, UpstreamUnitID.
+	// Supported attributes for Unit are ChangeSetID, FromLinkID, HeadMutationNum, HeadRevisionNum, LastReleasedRevisionNum, OrganizationID, Permissions, SpaceID, TargetID, UnitEventID, UpstreamSpaceID, UpstreamUnitID.
 	//
 	// The whole string must be query-encoded.
 	Include *string `form:"include,omitempty" json:"include,omitempty" yaml:"include,omitempty"`
@@ -24101,7 +24134,7 @@ type ListAllUnitsParams struct {
 	// The attribute names are case-sensitive, PascalCase, and
 	// expected in a comma-separated list format as in the JSON encoding.
 	//
-	// Supported attributes for Unit are ChangeSetID, FromLinkID, HeadMutationNum, HeadRevisionNum, LastReleasedRevisionNum, OrganizationID, SpaceID, TargetID, UnitEventID, UpstreamSpaceID, UpstreamUnitID.
+	// Supported attributes for Unit are ChangeSetID, FromLinkID, HeadMutationNum, HeadRevisionNum, LastReleasedRevisionNum, OrganizationID, Permissions, SpaceID, TargetID, UnitEventID, UpstreamSpaceID, UpstreamUnitID.
 	//
 	// The whole string must be query-encoded.
 	Include *string `form:"include,omitempty" json:"include,omitempty" yaml:"include,omitempty"`
@@ -24313,11 +24346,11 @@ type BulkPatchUnitsParams struct {
 	// The attribute names are case-sensitive, PascalCase, and
 	// expected in a comma-separated list format as in the JSON encoding.
 	//
-	// Supported attributes for Unit are ChangeSetID, FromLinkID, HeadMutationNum, HeadRevisionNum, LastReleasedRevisionNum, OrganizationID, SpaceID, TargetID, UnitEventID, UpstreamSpaceID, UpstreamUnitID.
+	// Supported attributes for Unit are ChangeSetID, FromLinkID, HeadMutationNum, HeadRevisionNum, LastReleasedRevisionNum, OrganizationID, Permissions, SpaceID, TargetID, UnitEventID, UpstreamSpaceID, UpstreamUnitID.
 	//
 	// A write also accepts the parts of its result: ConfigData for the configuration the operation produced, MutationSources for what set each value in it, and Diff for what the operation changed, path by path with the values on both sides. None is a field of a Unit, and each costs something to return, so they are returned only when named. A dry run stores nothing, so this is the only way to see what it would have produced.
 	//
-	// Supported values: ChangeSetID, FromLinkID, HeadMutationNum, HeadRevisionNum, LastReleasedRevisionNum, OrganizationID, SpaceID, TargetID, UnitEventID, UpstreamSpaceID, UpstreamUnitID, ConfigData, MutationSources, Diff.
+	// Supported values: ChangeSetID, FromLinkID, HeadMutationNum, HeadRevisionNum, LastReleasedRevisionNum, OrganizationID, Permissions, SpaceID, TargetID, UnitEventID, UpstreamSpaceID, UpstreamUnitID, ConfigData, MutationSources, Diff.
 	//
 	// The whole string must be query-encoded.
 	Include *string `form:"include,omitempty" json:"include,omitempty" yaml:"include,omitempty"`
@@ -24570,11 +24603,11 @@ type BulkCreateUnitsParams struct {
 	// The attribute names are case-sensitive, PascalCase, and
 	// expected in a comma-separated list format as in the JSON encoding.
 	//
-	// Supported attributes for Unit are ChangeSetID, FromLinkID, HeadMutationNum, HeadRevisionNum, LastReleasedRevisionNum, OrganizationID, SpaceID, TargetID, UnitEventID, UpstreamSpaceID, UpstreamUnitID.
+	// Supported attributes for Unit are ChangeSetID, FromLinkID, HeadMutationNum, HeadRevisionNum, LastReleasedRevisionNum, OrganizationID, Permissions, SpaceID, TargetID, UnitEventID, UpstreamSpaceID, UpstreamUnitID.
 	//
 	// A write also accepts the parts of its result: ConfigData for the configuration the operation produced, MutationSources for what set each value in it, and Diff for what the operation changed, path by path with the values on both sides. None is a field of a Unit, and each costs something to return, so they are returned only when named. A dry run stores nothing, so this is the only way to see what it would have produced.
 	//
-	// Supported values: ChangeSetID, FromLinkID, HeadMutationNum, HeadRevisionNum, LastReleasedRevisionNum, OrganizationID, SpaceID, TargetID, UnitEventID, UpstreamSpaceID, UpstreamUnitID, ConfigData, MutationSources, Diff.
+	// Supported values: ChangeSetID, FromLinkID, HeadMutationNum, HeadRevisionNum, LastReleasedRevisionNum, OrganizationID, Permissions, SpaceID, TargetID, UnitEventID, UpstreamSpaceID, UpstreamUnitID, ConfigData, MutationSources, Diff.
 	//
 	// The whole string must be query-encoded.
 	Include *string `form:"include,omitempty" json:"include,omitempty" yaml:"include,omitempty"`
@@ -24788,7 +24821,7 @@ type BulkCancelUnitsParams struct {
 	// The attribute names are case-sensitive, PascalCase, and
 	// expected in a comma-separated list format as in the JSON encoding.
 	//
-	// Supported attributes for Unit are ChangeSetID, FromLinkID, HeadMutationNum, HeadRevisionNum, LastReleasedRevisionNum, OrganizationID, SpaceID, TargetID, UnitEventID, UpstreamSpaceID, UpstreamUnitID.
+	// Supported attributes for Unit are ChangeSetID, FromLinkID, HeadMutationNum, HeadRevisionNum, LastReleasedRevisionNum, OrganizationID, Permissions, SpaceID, TargetID, UnitEventID, UpstreamSpaceID, UpstreamUnitID.
 	//
 	// The whole string must be query-encoded.
 	Include *string `form:"include,omitempty" json:"include,omitempty" yaml:"include,omitempty"`
@@ -24880,7 +24913,7 @@ type BulkMoveUnitsParams struct {
 	// The attribute names are case-sensitive, PascalCase, and
 	// expected in a comma-separated list format as in the JSON encoding.
 	//
-	// Supported attributes for Unit are ChangeSetID, FromLinkID, HeadMutationNum, HeadRevisionNum, LastReleasedRevisionNum, OrganizationID, SpaceID, TargetID, UnitEventID, UpstreamSpaceID, UpstreamUnitID.
+	// Supported attributes for Unit are ChangeSetID, FromLinkID, HeadMutationNum, HeadRevisionNum, LastReleasedRevisionNum, OrganizationID, Permissions, SpaceID, TargetID, UnitEventID, UpstreamSpaceID, UpstreamUnitID.
 	//
 	// The whole string must be query-encoded.
 	Include *string `form:"include,omitempty" json:"include,omitempty" yaml:"include,omitempty"`
@@ -24975,7 +25008,7 @@ type BulkTagUnitsParams struct {
 	// The attribute names are case-sensitive, PascalCase, and
 	// expected in a comma-separated list format as in the JSON encoding.
 	//
-	// Supported attributes for Unit are ChangeSetID, FromLinkID, HeadMutationNum, HeadRevisionNum, LastReleasedRevisionNum, OrganizationID, SpaceID, TargetID, UnitEventID, UpstreamSpaceID, UpstreamUnitID.
+	// Supported attributes for Unit are ChangeSetID, FromLinkID, HeadMutationNum, HeadRevisionNum, LastReleasedRevisionNum, OrganizationID, Permissions, SpaceID, TargetID, UnitEventID, UpstreamSpaceID, UpstreamUnitID.
 	//
 	// The whole string must be query-encoded.
 	Include *string `form:"include,omitempty" json:"include,omitempty" yaml:"include,omitempty"`
@@ -25163,7 +25196,7 @@ type SearchUnitDataParams struct {
 	// The attribute names are case-sensitive, PascalCase, and
 	// expected in a comma-separated list format as in the JSON encoding.
 	//
-	// Supported attributes for Unit are ChangeSetID, FromLinkID, HeadMutationNum, HeadRevisionNum, LastReleasedRevisionNum, OrganizationID, SpaceID, TargetID, UnitEventID, UpstreamSpaceID, UpstreamUnitID.
+	// Supported attributes for Unit are ChangeSetID, FromLinkID, HeadMutationNum, HeadRevisionNum, LastReleasedRevisionNum, OrganizationID, Permissions, SpaceID, TargetID, UnitEventID, UpstreamSpaceID, UpstreamUnitID.
 	//
 	// The whole string must be query-encoded.
 	Include *string `form:"include,omitempty" json:"include,omitempty" yaml:"include,omitempty"`
@@ -25599,7 +25632,7 @@ type SearchUnitMutationSourcesParams struct {
 	// The attribute names are case-sensitive, PascalCase, and
 	// expected in a comma-separated list format as in the JSON encoding.
 	//
-	// Supported attributes for Unit are ChangeSetID, FromLinkID, HeadMutationNum, HeadRevisionNum, LastReleasedRevisionNum, OrganizationID, SpaceID, TargetID, UnitEventID, UpstreamSpaceID, UpstreamUnitID.
+	// Supported attributes for Unit are ChangeSetID, FromLinkID, HeadMutationNum, HeadRevisionNum, LastReleasedRevisionNum, OrganizationID, Permissions, SpaceID, TargetID, UnitEventID, UpstreamSpaceID, UpstreamUnitID.
 	//
 	// The whole string must be query-encoded.
 	Include *string `form:"include,omitempty" json:"include,omitempty" yaml:"include,omitempty"`
@@ -25925,7 +25958,7 @@ type BulkDeleteViewsParams struct {
 	// The attribute names are case-sensitive, PascalCase, and
 	// expected in a comma-separated list format as in the JSON encoding.
 	//
-	// Supported attributes for View are FilterID, OrganizationID, SpaceID.
+	// Supported attributes for View are FilterID, OrganizationID, Permissions, SpaceID.
 	//
 	// The whole string must be query-encoded.
 	Include *string `form:"include,omitempty" json:"include,omitempty" yaml:"include,omitempty"`
@@ -26015,7 +26048,7 @@ type ListAllViewsParams struct {
 	// The attribute names are case-sensitive, PascalCase, and
 	// expected in a comma-separated list format as in the JSON encoding.
 	//
-	// Supported attributes for View are FilterID, OrganizationID, SpaceID.
+	// Supported attributes for View are FilterID, OrganizationID, Permissions, SpaceID.
 	//
 	// The whole string must be query-encoded.
 	Include *string `form:"include,omitempty" json:"include,omitempty" yaml:"include,omitempty"`
@@ -26197,7 +26230,7 @@ type BulkPatchViewsParams struct {
 	// The attribute names are case-sensitive, PascalCase, and
 	// expected in a comma-separated list format as in the JSON encoding.
 	//
-	// Supported attributes for View are FilterID, OrganizationID, SpaceID.
+	// Supported attributes for View are FilterID, OrganizationID, Permissions, SpaceID.
 	//
 	// The whole string must be query-encoded.
 	Include *string `form:"include,omitempty" json:"include,omitempty" yaml:"include,omitempty"`
@@ -26333,7 +26366,7 @@ type BulkCreateViewsParams struct {
 	// The attribute names are case-sensitive, PascalCase, and
 	// expected in a comma-separated list format as in the JSON encoding.
 	//
-	// Supported attributes for View are FilterID, OrganizationID, SpaceID.
+	// Supported attributes for View are FilterID, OrganizationID, Permissions, SpaceID.
 	//
 	// The whole string must be query-encoded.
 	Include *string `form:"include,omitempty" json:"include,omitempty" yaml:"include,omitempty"`
@@ -26551,7 +26584,7 @@ type BulkMoveViewsParams struct {
 	// The attribute names are case-sensitive, PascalCase, and
 	// expected in a comma-separated list format as in the JSON encoding.
 	//
-	// Supported attributes for View are FilterID, OrganizationID, SpaceID.
+	// Supported attributes for View are FilterID, OrganizationID, Permissions, SpaceID.
 	//
 	// The whole string must be query-encoded.
 	Include *string `form:"include,omitempty" json:"include,omitempty" yaml:"include,omitempty"`

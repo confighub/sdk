@@ -2,32 +2,8 @@
   "GrafanaLDAP": {
     "$schema": "http://json-schema.org/draft-07/schema#",
     "type": "object",
-    "required": ["configHub", "servers"],
+    "required": ["servers"],
     "properties": {
-      "configHub": {
-        "type": "object",
-        "required": ["configSchema"],
-        "properties": {
-          "configName": {
-            "type": "string",
-            "description": "Name of the configuration"
-          },
-          "configSchema": {
-            "type": "string",
-            "const": "GrafanaLDAP",
-            "description": "Must be 'GrafanaLDAP' for Grafana LDAP configurations"
-          },
-          "kubernetes": {
-            "type": "object",
-            "properties": {
-              "namespace": {
-                "type": "string",
-                "description": "Kubernetes namespace for deployment"
-              }
-            }
-          }
-        }
-      },
       "servers": {
         "type": "array",
         "minItems": 1,

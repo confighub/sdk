@@ -72,7 +72,7 @@ func displayExtendedChannelDetails(extendedChannel *goclientnew.ExtendedChannel)
 	view.Append([]string{"Labels", labelsToString(channel.Labels)})
 	view.Append([]string{"Delete Gates", deleteGatesToString(channel.DeleteGates)})
 	view.Append([]string{"Annotations", annotationsToString(channel.Annotations)})
-	view.Append([]string{"Permissions", permissionsToString(channel.Permissions)})
+	view.Append([]string{"Permissions", permissionsToString(channel.Permissions, extendedChannel.Permissions)})
 	appendBackingUnitRow(view, channel.BackingUnitID)
 	view.Render()
 }

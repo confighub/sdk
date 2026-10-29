@@ -61,7 +61,7 @@ func displayDiffsFromFunctionResponse(resp *[]goclientnew.FunctionInvocationsRes
 	}
 	for i := range *resp {
 		r := &(*resp)[i]
-		if !r.Success {
+		if invocationFailed(r) {
 			continue
 		}
 		label := r.UnitSlug
