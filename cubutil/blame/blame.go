@@ -132,7 +132,12 @@ type Field struct {
 	// resourceNameCore is the resource's name without its scope, which is how the
 	// upstream walk matches a resource a variant has renamed.
 	resourceNameCore string
-	Protected        bool
+	// Absent is true for a field the unit's configuration does not have, listed because a
+	// conflict names it: a merge could not find the path, or the resource, to make an upstream
+	// change to, and the conflict is still the unit's to deal with. It has no value and no
+	// history.
+	Absent    bool `json:",omitempty"`
+	Protected bool
 	// Guards are the reasons recorded for this field: its own, and every annotated ancestor's,
 	// which is what an operation writing here has to be cleared for.
 	Guards map[string]string `json:",omitempty"`
@@ -230,7 +235,149 @@ func (r *Resolver) UnitData(ctx context.Context, unit *goclientnew.Unit, mutatio
 		fields = append(fields, f)
 	}
 	r.nameBoundLinks(ctx, fields)
-	return fields, nil
+
+	absent := absentConflictFields(identifier, unit.Conflicts, fields)
+	for _, f := range absent {
+		f.SpaceSlug = spaceSlug
+		f.UnitSlug = unit.Slug
+		f.Flags = blameFlags(f, unit.LastReleasedRevisionNum, false)
+	}
+	// On their own, so that a conflict does not change the REF of a field the unit has.
+	assignBlameRefs(identifier, absent)
+	return insertAbsentFields(fields, absent), nil
+}
+
+// absentConflictFields returns a field for each place the unit's conflicts name that is not
+// one of its fields, with the conflicts about it. Such a conflict is about no field, so without
+// one of these it would be in no row, and the unit's blame would not show that its last merge
+// dropped anything. That is the merge that most needs looking at: an upgrade reports a path or
+// a resource it could not locate as an UnresolvedPath conflict, not as an error.
+//
+// A place on a resource the unit has is named as that resource is in the unit; one on a
+// resource it does not have is named as the conflict names it. A conflict about a whole
+// resource the unit does not have is on each of that resource's absent fields, and is a field
+// of its own, with no path, only when it is the resource's only conflict.
+func absentConflictFields(identifier api.ResourceIdentifier, conflicts *goclientnew.MutationConflictList,
+	fields []*Field) []*Field {
+	if conflicts == nil {
+		return nil
+	}
+	resources := make([]*goclientnew.ResourceInfo, len(fields))
+	for i, f := range fields {
+		resources[i] = &goclientnew.ResourceInfo{
+			ResourceType:             f.ResourceType,
+			ResourceName:             f.ResourceName,
+			ResourceNameWithoutScope: f.resourceNameCore,
+		}
+	}
+	var unplaced []goclientnew.MutationConflict
+	for _, conflict := range *conflicts {
+		if conflict.Resource != nil && !conflictIsOnAField(identifier, conflict, fields) {
+			unplaced = append(unplaced, conflict)
+		}
+	}
+
+	var absent []*Field
+	byPlace := map[string]*Field{}
+	place := func(conflict goclientnew.MutationConflict) *Field {
+		f := &Field{
+			ResourceType:     conflict.Resource.ResourceType,
+			ResourceName:     conflict.Resource.ResourceName,
+			resourceNameCore: conflict.Resource.ResourceNameWithoutScope,
+			Path:             AuthoredPath(conflict.Path),
+			storedPath:       conflict.Path,
+			Absent:           true,
+		}
+		if i, found := matchBlameResourceInfo(identifier, resources, f.ResourceType, f.ResourceName, f.resourceNameCore); found {
+			f.ResourceType, f.ResourceName, f.resourceNameCore = fields[i].ResourceType, fields[i].ResourceName, fields[i].resourceNameCore
+		}
+		key := f.ResourceType + "\x00" + f.ResourceName + "\x00" + f.Path
+		if existing, ok := byPlace[key]; ok {
+			return existing
+		}
+		byPlace[key] = f
+		absent = append(absent, f)
+		return f
+	}
+	for _, conflict := range unplaced {
+		if conflict.Path != "" {
+			place(conflict)
+		}
+	}
+	for _, conflict := range unplaced {
+		covered := false
+		for _, f := range absent {
+			if f.Path == "" || !blamePathCovers(conflict.Path, f.Path) {
+				continue
+			}
+			if _, found := matchBlameResourceInfo(identifier, []*goclientnew.ResourceInfo{conflict.Resource},
+				f.ResourceType, f.ResourceName, f.resourceNameCore); found {
+				f.Conflicts = append(f.Conflicts, conflict)
+				covered = true
+			}
+		}
+		if !covered {
+			f := place(conflict)
+			f.Conflicts = append(f.Conflicts, conflict)
+		}
+	}
+	return absent
+}
+
+// conflictIsOnAField reports whether a conflict is about one of the unit's fields: the one at
+// its path, one under it, or, for a conflict with no path, any of its resource's.
+func conflictIsOnAField(identifier api.ResourceIdentifier, conflict goclientnew.MutationConflict, fields []*Field) bool {
+	for _, f := range fields {
+		if !blamePathCovers(conflict.Path, f.Path) {
+			continue
+		}
+		if _, found := matchBlameResourceInfo(identifier, []*goclientnew.ResourceInfo{conflict.Resource},
+			f.ResourceType, f.ResourceName, f.resourceNameCore); found {
+			return true
+		}
+	}
+	return false
+}
+
+// insertAbsentFields places each absent field among the fields of its resource, in path order
+// as theirs are, so a resource is still one table; and the absent fields of a resource the unit
+// does not have after all of the unit's, together.
+func insertAbsentFields(fields, absent []*Field) []*Field {
+	if len(absent) == 0 {
+		return fields
+	}
+	resourceKey := func(f *Field) string { return f.ResourceType + "\x00" + f.ResourceName }
+	pending := map[string][]*Field{}
+	var order []string
+	for _, f := range absent {
+		key := resourceKey(f)
+		if _, ok := pending[key]; !ok {
+			order = append(order, key)
+		}
+		pending[key] = append(pending[key], f)
+	}
+	for _, key := range order {
+		sort.SliceStable(pending[key], func(a, b int) bool { return pending[key][a].Path < pending[key][b].Path })
+	}
+
+	merged := make([]*Field, 0, len(fields)+len(absent))
+	for i, f := range fields {
+		key := resourceKey(f)
+		for len(pending[key]) > 0 && pending[key][0].Path < f.Path {
+			merged = append(merged, pending[key][0])
+			pending[key] = pending[key][1:]
+		}
+		merged = append(merged, f)
+		if i+1 < len(fields) && resourceKey(fields[i+1]) == key {
+			continue
+		}
+		merged = append(merged, pending[key]...)
+		delete(pending, key)
+	}
+	for _, key := range order {
+		merged = append(merged, pending[key]...)
+	}
+	return merged
 }
 
 // flattenUnitFields turns the unit's configuration into one entry per field, with

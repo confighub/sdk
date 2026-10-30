@@ -27,7 +27,8 @@ line 'cub unit blame' has room for.
 Name the field by the REF 'cub unit blame' printed for it, or any unambiguous prefix of at
 least four characters of one, or by its path. A path that more than one resource has needs
 --resource. A path that holds other fields, such as a container, lists the fields under it
-with their REFs.
+with their REFs. A field the unit does not have, which blame lists with the A flag because a
+conflict names it, is reported with the conflicts about it.
 
 For each change it shows:
   - the mutation: the function and its arguments, the link with its update type and

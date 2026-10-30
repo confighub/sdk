@@ -127,15 +127,14 @@ func resolveContextOverride() (name, source string) {
 // is a hard error rather than a silent fallback, so commands never run against an
 // unexpected context.
 //
-// The override is also exported as $CUB_CONTEXT so that child cub processes
-// resolve the same context. Several commands delegate work by running cub again
-// (runCub: `cub variant upload`, `cub variant create`, `cub cluster up`), and a
-// child is a fresh process that re-resolves the context from scratch. --context
-// lives only in this process's memory, so without exporting it the child falls
-// back to the persisted current context and silently operates somewhere else —
-// which for a command that mixes delegated work with its own API calls means
-// writing to two contexts at once. Exporting mirrors what --debug already does
-// with $CONFIGHUB_DEBUG above, and covers plugins for free.
+// The override is also exported as $CUB_CONTEXT so that child processes that
+// run cub, such as plugins and the scripts they run, resolve the same context.
+// A child is a fresh process that re-resolves the context from scratch.
+// --context lives only in this process's memory, so without exporting it the
+// child falls back to the persisted current context and silently operates
+// somewhere else — which for a command that mixes a child's work with its own
+// API calls means writing to two contexts at once. Exporting mirrors what
+// --debug already does with $CONFIGHUB_DEBUG above.
 //
 // Only an actual override is exported. With none, parent and child both resolve
 // the persisted current context and already agree.

@@ -65,6 +65,9 @@ Flags:
   G  guarded: reasons are recorded for the value it holds, and an operation has to be
      cleared for them before it may overwrite it
   X  conflict: a merge or resolve dropped an upstream change to the field
+  A  absent: the unit does not have the field. It is listed because a conflict names it: a
+     merge could not find the path, or the resource, to make an upstream change to, such as
+     the UnresolvedPath conflicts an upgrade reports. It has no value and no history
   F  finding: a link's resolve could not do what it names here
   E  validation error: a validating trigger failed a check that names the field, which
      blocks a release
@@ -85,6 +88,7 @@ merge that brought it here rather than the change SET BY names. n and p are lowe
 because they are informational: they say what part the field plays in NeedsProvides links,
 not that anything is wrong or pending. --verbose prints the guard reasons, conflicts,
 findings, failed checks, and needed and provided attributes under each field.
+'cub unit conflicts' applies or dismisses the conflicts the X and A flags point to.
 
 Every toolchain is read: a Kubernetes manifest, and equally an AppConfig JSON, YAML,
 TOML, INI, Properties, or Env unit, or a ConfigHub one. The unit's data is read in its

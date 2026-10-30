@@ -183,3 +183,69 @@ func TestFindUnitPathField(t *testing.T) {
 		t.Error("a path the unit does not have should be an error")
 	}
 }
+
+// TestAbsentConflictFields: a conflict on a path the unit has is on that field, and on a
+// resource the unit has but a path it does not, or on a resource it does not have at all, is
+// on a field of its own, which is absent. A conflict about a whole resource the unit does not
+// have is on each of that resource's absent fields, and on a field with no path of its own only
+// when nothing else names the resource.
+func TestAbsentConflictFields(t *testing.T) {
+	identifier := mustBlameProvider(t, "Kubernetes/YAML")
+	fields := []*Field{
+		blameTestField("v1/Namespace", "/staging", "staging", "metadata.name"),
+		blameTestField("apps/v1/Deployment", "staging/web", "web", "metadata.name"),
+		blameTestField("apps/v1/Deployment", "staging/web", "web", "spec.replicas"),
+	}
+	placeholder := &goclientnew.ResourceInfo{ResourceType: "v1/Namespace", ResourceName: "/confighubplaceholder", ResourceNameWithoutScope: "confighubplaceholder"}
+	deployment := &goclientnew.ResourceInfo{ResourceType: "apps/v1/Deployment", ResourceName: "confighubplaceholder/web", ResourceNameWithoutScope: "web"}
+	service := &goclientnew.ResourceInfo{ResourceType: "v1/Service", ResourceName: "confighubplaceholder/web", ResourceNameWithoutScope: "web"}
+	conflicts := goclientnew.MutationConflictList{
+		{Resource: placeholder, Reason: "UnresolvedPath"},
+		{Resource: placeholder, Path: "metadata.labels.team", Reason: "UnresolvedPath"},
+		{Resource: placeholder, Path: "metadata.labels.tier", Reason: "UnresolvedPath"},
+		{Resource: deployment, Path: "spec.replicas", Reason: "Subtracted"},
+		{Resource: deployment, Path: "spec.paused", Reason: "UnresolvedPath"},
+		{Resource: service, Reason: "UnresolvedPath"},
+	}
+
+	absent := absentConflictFields(identifier, &conflicts, fields)
+	var got []string
+	for _, f := range absent {
+		if !f.Absent {
+			t.Errorf("%s %s is not marked absent", f.ResourceName, f.Path)
+		}
+		var reasons []string
+		for _, conflict := range f.Conflicts {
+			reasons = append(reasons, conflict.Reason)
+		}
+		got = append(got, f.ResourceType+" "+f.ResourceName+" "+f.Path+": "+strings.Join(reasons, ","))
+	}
+	want := []string{
+		"v1/Namespace /confighubplaceholder metadata.labels.team: UnresolvedPath,UnresolvedPath",
+		"v1/Namespace /confighubplaceholder metadata.labels.tier: UnresolvedPath,UnresolvedPath",
+		// Named as the unit names the resource, so it is listed with the resource's other fields.
+		"apps/v1/Deployment staging/web spec.paused: UnresolvedPath",
+		"v1/Service confighubplaceholder/web : UnresolvedPath",
+	}
+	if strings.Join(got, "\n") != strings.Join(want, "\n") {
+		t.Errorf("absent fields:\n%s\nwant:\n%s", strings.Join(got, "\n"), strings.Join(want, "\n"))
+	}
+
+	merged := insertAbsentFields(fields, absent)
+	var order []string
+	for _, f := range merged {
+		order = append(order, f.ResourceName+" "+f.Path)
+	}
+	wantOrder := []string{
+		"/staging metadata.name",
+		"staging/web metadata.name",
+		"staging/web spec.paused",
+		"staging/web spec.replicas",
+		"/confighubplaceholder metadata.labels.team",
+		"/confighubplaceholder metadata.labels.tier",
+		"confighubplaceholder/web ",
+	}
+	if strings.Join(order, "\n") != strings.Join(wantOrder, "\n") {
+		t.Errorf("fields in order:\n%s\nwant:\n%s", strings.Join(order, "\n"), strings.Join(wantOrder, "\n"))
+	}
+}

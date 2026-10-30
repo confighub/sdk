@@ -201,8 +201,7 @@ func listUnitConflicts(slug string) error {
 		}
 		return nil
 	}
-	if jsonOutput {
-		displayJSON(*configUnit.Unit.Conflicts)
+	if renderPayload(*configUnit.Unit.Conflicts) {
 		return nil
 	}
 	displayConflicts(*configUnit.Unit.Conflicts)

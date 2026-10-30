@@ -1,11 +1,9 @@
 module github.com/confighub/sdk/configkit/inikit
 
-go 1.25.0
-
-toolchain go1.25.11
+go 1.26.0
 
 require (
-	github.com/confighub/sdk/core v0.9.12
+	github.com/confighub/sdk/core v0.0.0
 	github.com/go-ini/ini v1.67.0
 	github.com/wk8/go-ordered-map/v2 v2.1.8
 )
@@ -36,8 +34,8 @@ require (
 	github.com/swaggest/jsonschema-go v0.3.78 // indirect
 	github.com/swaggest/refl v1.4.0 // indirect
 	github.com/xlab/treeprint v1.2.0 // indirect
-	golang.org/x/sys v0.46.0 // indirect
-	golang.org/x/text v0.38.0 // indirect
+	golang.org/x/sys v0.48.0 // indirect
+	golang.org/x/text v0.42.0 // indirect
 	google.golang.org/protobuf v1.36.8 // indirect
 	gopkg.in/yaml.v3 v3.0.1 // indirect
 	k8s.io/kube-openapi v0.0.0-20250318190949-c8a335a9a2ff // indirect
@@ -46,6 +44,7 @@ require (
 )
 
 replace (
+	github.com/confighub/sdk/core => ../../core/
 
 	// Fix CVE-2022-28948
 	gopkg.in/yaml.v3 => gopkg.in/yaml.v3 v3.0.1

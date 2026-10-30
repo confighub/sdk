@@ -1,14 +1,12 @@
 module github.com/confighub/sdk/configkit/k8skit
 
-go 1.25.0
-
-toolchain go1.25.11
+go 1.26.0
 
 require (
-	github.com/confighub/sdk/core v0.9.12
+	github.com/confighub/sdk/core v0.0.0
 	github.com/gosimple/slug v1.15.0
 	github.com/stretchr/testify v1.11.1
-	golang.org/x/text v0.38.0
+	golang.org/x/text v0.42.0
 	sigs.k8s.io/yaml v1.4.0
 )
 
@@ -41,10 +39,11 @@ require (
 	github.com/swaggest/refl v1.4.0 // indirect
 	github.com/wk8/go-ordered-map/v2 v2.1.8 // indirect
 	github.com/xlab/treeprint v1.2.0 // indirect
-	golang.org/x/sys v0.46.0 // indirect
+	golang.org/x/sys v0.48.0 // indirect
 	google.golang.org/protobuf v1.36.8 // indirect
 	gopkg.in/yaml.v3 v3.0.1 // indirect
 	k8s.io/kube-openapi v0.0.0-20250318190949-c8a335a9a2ff // indirect
 	sigs.k8s.io/kustomize/kyaml v0.19.0 // indirect
 )
 
+replace github.com/confighub/sdk/core => ../../core

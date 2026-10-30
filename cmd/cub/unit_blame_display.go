@@ -314,7 +314,10 @@ func displayBlameDetail(f *blame.Field) {
 			tprintRaw(fmt.Sprintf("%s  %s%q%s", indent, colorDim, origin.Description, colorReset))
 		}
 	}
-	if len(f.Chain) == 0 {
+	switch {
+	case f.Absent:
+		tprintRaw("    (not in the unit: the conflicts above are changes a merge could not make here)")
+	case len(f.Chain) == 0:
 		tprintRaw("    (no recorded change; the value has been there since the unit was created)")
 	}
 	tprintRaw("")
@@ -326,6 +329,8 @@ func formatBlameConflict(conflict goclientnew.MutationConflict, maxValueWidth in
 	text := conflict.Reason
 	if conflict.Path != "" {
 		text += " at " + blame.AuthoredPath(conflict.Path)
+	} else {
+		text += " on the whole resource"
 	}
 	if conflict.Source != nil && conflict.Source.Value != "" {
 		value := blameOneLine(conflict.Source.Value)

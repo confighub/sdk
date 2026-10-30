@@ -34,6 +34,7 @@ var FlagLegend = []Flag{
 	{"P", "protected: a local override a merge from upstream leaves alone"},
 	{"G", "guarded: reasons are recorded for this value, and an operation must be cleared for them to overwrite it"},
 	{"X", "conflict: an upstream change to this field was dropped by a merge or resolve"},
+	{"A", "absent: the unit does not have this field; a conflict names a change that could not be made to it"},
 	{"F", "finding: a Link's resolve could not do what it names here"},
 	{"E", "validation error: a validating Trigger's failed check names this field, which blocks a release"},
 	{"W", "validation warning: a validating Trigger with Warn set failed a check that names this field"},
@@ -64,6 +65,7 @@ func blameFlags(f *Field, lastReleasedRevisionNum int64, releasable bool) string
 	set("P", f.Protected)
 	set("G", len(f.Guards) > 0)
 	set("X", len(f.Conflicts) > 0)
+	set("A", f.Absent)
 	set("F", len(f.Findings) > 0)
 	set("E", hasValidation(f.Validation, false))
 	set("W", hasValidation(f.Validation, true))

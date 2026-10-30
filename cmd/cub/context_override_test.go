@@ -44,9 +44,9 @@ func setupContextOverrideTest(t *testing.T) *ContextManager {
 }
 
 // TestApplyContextOverrideExportsFlagToChildren is the regression test for
-// #4920. Commands that delegate work by running cub again (runCub) spawn a fresh
-// process that re-resolves the context from scratch, and --context lives only in
-// the parent's memory. Unless it is exported, the child falls back to the
+// #4920. A child process that runs cub, such as a plugin, is a fresh process that
+// re-resolves the context from scratch, and --context lives only in the
+// parent's memory. Unless it is exported, the child falls back to the
 // persisted current context and operates somewhere else entirely — silently,
 // when that context happens to be usable.
 func TestApplyContextOverrideExportsFlagToChildren(t *testing.T) {

@@ -17,8 +17,10 @@ import (
 	"strings"
 
 	"github.com/confighub/sdk/core/cubapi"
+	"github.com/confighub/sdk/core/function/api"
 	"github.com/confighub/sdk/core/ocibundle"
 	goclientnew "github.com/confighub/sdk/core/openapi/goclient-new"
+	"github.com/confighub/sdk/core/workerapi"
 	"github.com/google/uuid"
 	"golang.org/x/term"
 	"sigs.k8s.io/yaml"
@@ -31,11 +33,11 @@ import (
 // any other component: a shared base installed from the deployment its release
 // image carries, or with --k8sbot-installer from its installer package, and a
 // per-cluster downstream variant. The child Argo Application that
-// makes argobot live is created by `cub variant create --target` itself — the
-// cluster's OCI target carries the confighub.com/apps-space annotation, so
-// creating the argobot variant against it auto-creates the Application Unit in
-// the apps Space (see createVariantArgoApp). argobot is just the first user
-// of that path.
+// makes argobot live is created the way `cub variant create --target` creates
+// one — the cluster's OCI target carries the confighub.com/apps-space
+// annotation, so creating the argobot variant against it adds the Application
+// Unit to the apps Space (see createVariantClusterApp). argobot is just the
+// first user of that path.
 //
 // Everything argobot-specific lives in this file; the rest of the cluster
 // package is generic (kind, Argo CD, ConfigHub Spaces/Targets/ServiceAccounts).
@@ -506,21 +508,21 @@ func clusterArgobotManifestPath(controller string) string {
 // newest argobot release in repository, without running the image. The
 // deployment runs the release it ships in, from ghcr.io; it is returned running
 // it from repository.
-func clusterArgobotManifests(controller, repository string, out io.Writer) ([]byte, error) {
+func clusterArgobotManifests(controller, repository string, out io.Writer) (manifests []byte, ref string, err error) {
 	tag, err := ocibundle.NewestRelease(ctx, repository, clusterArgobotPullOptions())
 	if err != nil {
-		return nil, fmt.Errorf("find argobot's newest release: %w", err)
+		return nil, "", fmt.Errorf("find argobot's newest release: %w", err)
 	}
-	ref := repository + ":" + tag
+	ref = repository + ":" + tag
 	fmt.Fprintf(out, "Reading argobot's deployment from %s...\n", ref)
-	manifests, _, err := ocibundle.ReadImageFile(ctx, ref, clusterArgobotManifestPath(controller), clusterArgobotPullOptions())
+	manifests, _, err = ocibundle.ReadImageFile(ctx, ref, clusterArgobotManifestPath(controller), clusterArgobotPullOptions())
 	if err != nil {
-		return nil, fmt.Errorf("read argobot's deployment: %w", err)
+		return nil, "", fmt.Errorf("read argobot's deployment: %w", err)
 	}
 	if repository != clusterArgobotGHCR {
 		manifests = bytes.ReplaceAll(manifests, []byte("image: "+clusterArgobotGHCR+":"), []byte("image: "+repository+":"))
 	}
-	return manifests, nil
+	return manifests, ref, nil
 }
 
 // clusterFindInstaller finds ConfigHub's installer, installed as a cub plugin
@@ -620,7 +622,7 @@ type clusterArgobotOptions struct {
 //
 // It creates argobot's units and publishes argobot's own variant Release. The
 // child Argo Application Unit that makes argobot live is created in the apps
-// Space by `cub variant create --target` (step 2), auto-derived from the OCI
+// Space as `cub variant create --target` creates it (step 2), derived from the OCI
 // target's apps-space annotation — the same path any deployment variant
 // uses. The caller publishes the apps Space's Release once, after this
 // returns, so that the root app-of-apps' first sync already includes argobot.
@@ -653,11 +655,12 @@ func clusterInstallArgobot(out io.Writer, o clusterArgobotOptions) error {
 		// another cluster already installed changes only what differs. Either
 		// way the base is checked first for Units no upload owns that define
 		// argobot's resources, since a variant cloned from it would apply both.
-		manifests, err := clusterArgobotManifests(o.controller, o.repository, out)
+		manifests, ref, err := clusterArgobotManifests(o.controller, o.repository, out)
 		if err != nil {
 			return err
 		}
-		if err := clusterArgobotCheckBase(baseSpace, manifests); err != nil {
+		upload := clusterArgobotBaseUpload(baseVariant, baseSpace, manifests, ref)
+		if err := clusterArgobotCheckBase(baseSpace, upload); err != nil {
 			return err
 		}
 		if o.baseMode == clusterArgobotBaseClone {
@@ -665,17 +668,14 @@ func clusterInstallArgobot(out io.Writer, o clusterArgobotOptions) error {
 			break
 		}
 		fmt.Fprintln(out, "Installing argobot base component...")
-		if err := runCubStdin(manifests, "variant", "upload",
-			"--component", clusterArgobotComponent,
-			"--variant", baseVariant,
-			"-"); err != nil {
+		if err := clusterArgobotUploadBase(upload); err != nil {
 			return fmt.Errorf("install argobot base component: %w", err)
 		}
 	}
 
 	// 2. Per-cluster downstream variant, cloned from the base and bound to this
 	// cluster's OCI target (which also becomes the variant Space's release
-	// target). No --namespace: argobot's manifests already place resources in
+	// target). No namespace: argobot's manifests already place resources in
 	// the argobot and argocd namespaces, and run in them on every cluster.
 	//
 	// Because the OCI target carries the confighub.com/apps-space
@@ -683,20 +683,13 @@ func clusterInstallArgobot(out io.Writer, o clusterArgobotOptions) error {
 	// in the apps Space and republishes it — argobot rides the same path as
 	// any deployment variant instead of hand-rolling its own Application.
 	//
-	// No --allow-exists: `cub variant create` is fail-fast on a pre-existing
-	// variant, and the attachment's precondition check guarantees a fresh
-	// argobot Space, so a lingering argobot-<name> is surfaced rather than
-	// silently reused.
+	// Not AllowExists: the create is fail-fast on a pre-existing variant, and
+	// the attachment's precondition check guarantees a fresh argobot Space, so
+	// a lingering argobot-<name> is surfaced rather than silently reused.
 	fmt.Fprintf(out, "Creating per-cluster argobot variant %q...\n", argobotSpace)
-	if err := runCub("variant", "create",
-		"--target", o.ociTargetRef,
-		o.clusterName, baseSpace); err != nil {
-		return fmt.Errorf("create argobot variant: %w", err)
-	}
-
-	space, err := resolveSpace(argobotSpace, "SpaceID")
+	space, err := clusterCreateArgobotVariant(out, o, baseSpace)
 	if err != nil {
-		return fmt.Errorf("resolve argobot variant space %q: %w", argobotSpace, err)
+		return fmt.Errorf("create argobot variant: %w", err)
 	}
 
 	// 3. The Channel argobot listens on, beside the Target in the cluster Space:
@@ -714,7 +707,7 @@ func clusterInstallArgobot(out io.Writer, o clusterArgobotOptions) error {
 	// key stays a secretKeyRef to the Secret clusterBootstrapServiceAccount
 	// applied out of band.
 	fmt.Fprintln(out, "Configuring argobot (CONFIGHUB_URL, CONFIGHUB_CHANNEL, CONFIGHUB_TARGET)...")
-	if err := clusterConfigureArgobot(argobotSpace, o.installer != nil, map[string]string{
+	if err := clusterConfigureArgobot(space.SpaceID, o.installer != nil, map[string]string{
 		"CONFIGHUB_URL":     o.apiURLForContainer,
 		"CONFIGHUB_CHANNEL": channelRef,
 		"CONFIGHUB_TARGET":  o.ociTargetRef,
@@ -726,17 +719,17 @@ func clusterInstallArgobot(out io.Writer, o clusterArgobotOptions) error {
 	// Every Unit's triggers settle first, not only the Deployment's: from the
 	// installer package the edit also re-renders the argobot-env ConfigMap,
 	// whose placeholders the cluster's gate checks again.
-	units, err := apiListUnits(space.Space.SpaceID.String(), "", "UnitID")
+	units, err := apiListUnits(space.SpaceID.String(), "", "UnitID")
 	if err != nil {
 		return fmt.Errorf("list argobot's units: %w", err)
 	}
 	for _, unit := range units {
-		if err := clusterWaitUnitTriggers(space.Space.SpaceID, unit.UnitID); err != nil {
+		if err := clusterWaitUnitTriggers(space.SpaceID, unit.UnitID); err != nil {
 			return err
 		}
 	}
 	fmt.Fprintf(out, "Publishing argobot variant Release (%s)...\n", argobotSpace)
-	if err := clusterPublishRelease(space.Space.SpaceID); err != nil {
+	if err := clusterPublishRelease(space.SpaceID); err != nil {
 		return err
 	}
 
@@ -760,23 +753,39 @@ func clusterInstallArgobot(out io.Writer, o clusterArgobotOptions) error {
 // set-env upserts; from the installer package they are the argobot-env
 // AppConfig Unit, which ConfigHub renders into the ConfigMap the Deployment
 // reads.
-func clusterConfigureArgobot(argobotSpace string, fromInstaller bool, env map[string]string) error {
+//
+// The variables are set in one invocation, so the Unit gets one Revision for
+// all of them.
+func clusterConfigureArgobot(argobotSpaceID uuid.UUID, fromInstaller bool, env map[string]string) error {
 	names := slices.Sorted(maps.Keys(env))
-	if !fromInstaller {
-		args := []string{"function", "do", "--quiet",
-			"--space", argobotSpace, "--unit", clusterArgobotUnitSlug,
-			"set-env", clusterArgobotContainer}
+	unitSlug, toolchain := clusterArgobotUnitSlug, cubapi.DefaultToolchainType
+	var fns []api.FunctionInvocation
+	if fromInstaller {
+		unitSlug, toolchain = clusterArgobotEnvUnitSlug, string(workerapi.ToolchainAppConfigEnv)
 		for _, name := range names {
-			args = append(args, name+"="+env[name])
+			fns = append(fns, api.FunctionInvocation{FunctionName: "set-string-path", Arguments: []api.FunctionArgument{
+				{Value: clusterArgobotEnvConfigSchema}, {Value: name}, {Value: env[name]},
+			}})
 		}
-		return runCub(args...)
+	} else {
+		args := []api.FunctionArgument{{Value: clusterArgobotContainer}}
+		for _, name := range names {
+			args = append(args, api.FunctionArgument{Value: name + "=" + env[name]})
+		}
+		fns = append(fns, api.FunctionInvocation{FunctionName: "set-env", Arguments: args})
 	}
-	for _, name := range names {
-		if err := runCub("function", "do", "--quiet",
-			"--space", argobotSpace, "--unit", clusterArgobotEnvUnitSlug, "--toolchain", "AppConfig/Env",
-			"set-string-path", clusterArgobotEnvConfigSchema, name, env[name]); err != nil {
-			return err
-		}
+	result, err := cubapi.InvokeFunctions(ctx, cubClient, fns, cubapi.Selector{
+		Where:         fmt.Sprintf("SpaceID = '%s' AND Slug = '%s'", argobotSpaceID, unitSlug),
+		ToolchainType: toolchain,
+	}, cubapi.Change{Description: "Configure argobot for this cluster"})
+	if err != nil {
+		return err
+	}
+	if len(result.Outcomes) == 0 {
+		return fmt.Errorf("argobot's variant has no %s unit %q", toolchain, unitSlug)
+	}
+	if failed := result.Failed(); len(failed) > 0 {
+		return fmt.Errorf("unit %s: %s", unitSlug, failed[0].Error)
 	}
 	return nil
 }
@@ -920,12 +929,8 @@ func clusterArgobotImageIn(data string) string {
 // so it would sit beside the upload's own, and a variant cloned from the base
 // would apply both. The check is a dry run of the upload, whose plan reports
 // exactly those Units.
-func clusterArgobotCheckBase(baseSpace string, manifests []byte) error {
-	plan, err := cubapi.Upload(ctx, cubClient, goclientnew.UploadRequest{
-		Components: []goclientnew.UploadComponentRequest{{Name: clusterArgobotComponent, Space: baseSpace}},
-		Files:      []goclientnew.UploadRequestFile{{Path: "stdin.yaml", Content: string(manifests)}},
-		Source:     &goclientnew.UploadSourceInfo{Ref: "-", Client: "cub", ClientVersion: Version},
-	}, true)
+func clusterArgobotCheckBase(baseSpace string, upload goclientnew.UploadRequest) error {
+	plan, err := cubapi.Upload(ctx, cubClient, upload, true)
 	if err != nil {
 		return fmt.Errorf("check argobot base %q: %w", baseSpace, err)
 	}
@@ -958,4 +963,59 @@ func clusterArgobotCheckBase(baseSpace string, manifests []byte) error {
 		}
 	}
 	return fmt.Errorf("%s", b.String())
+}
+
+// clusterArgobotBaseUpload is the upload of argobot's deployment, read from
+// image ref, into its shared base Space, as `cub variant upload --component
+// argobot --variant <base>` makes it.
+func clusterArgobotBaseUpload(baseVariant, baseSpace string, manifests []byte, ref string) goclientnew.UploadRequest {
+	return goclientnew.UploadRequest{
+		Components:  []goclientnew.UploadComponentRequest{{Name: clusterArgobotComponent, Space: baseSpace}},
+		SpaceLabels: map[string]string{"Variant": baseVariant},
+		Files:       []goclientnew.UploadRequestFile{{Path: "stdin.yaml", Content: string(manifests)}},
+		Source:      &goclientnew.UploadSourceInfo{Ref: ref, Client: "cub", ClientVersion: Version},
+	}
+}
+
+// clusterArgobotUploadBase writes argobot's base. It empties, without asking,
+// the Units of resources argobot's release no longer has, as `cub variant
+// upload --yes` does: the base holds only argobot's own deployment, so what a
+// release dropped is meant to leave every cluster cloned from it.
+func clusterArgobotUploadBase(upload goclientnew.UploadRequest) error {
+	result, err := cubapi.Upload(ctx, cubClient, upload, false)
+	if err != nil {
+		return err
+	}
+	reportUploadResult(result)
+	reportUploadRevert(result)
+	return nil
+}
+
+// clusterCreateArgobotVariant clones argobot's base into the cluster's variant,
+// bound to the cluster's OCI target, and adds the Unit that deploys it to the
+// cluster's apps Space, as `cub variant create --target` does.
+func clusterCreateArgobotVariant(out io.Writer, o clusterArgobotOptions, baseSpace string) (*goclientnew.Space, error) {
+	upstream, err := resolveSpace(baseSpace, "SpaceID")
+	if err != nil {
+		return nil, err
+	}
+	target, err := resolveTargetCore(o.ociTargetRef, defaultSpaceID(), "*")
+	if err != nil {
+		return nil, err
+	}
+	result, err := cubapi.CreateVariant(ctx, cubClient, cubapi.VariantSpec{
+		Upstream: upstream.Space.SpaceID,
+		Name:     o.clusterName,
+		Target:   &target.TargetID,
+	})
+	if err != nil {
+		return nil, err
+	}
+	if errs := result.UnitErrors(); len(errs) > 0 {
+		return nil, fmt.Errorf("clone argobot's units into %s: %s", result.Space.Slug, strings.Join(errs, "; "))
+	}
+	if _, err := createVariantClusterApp(out, target, result.Space, target.TargetID, false); err != nil {
+		return nil, err
+	}
+	return result.Space, nil
 }

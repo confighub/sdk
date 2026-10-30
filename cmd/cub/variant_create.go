@@ -6,6 +6,7 @@ package main
 import (
 	"encoding/json"
 	"fmt"
+	"io"
 	"strings"
 
 	"github.com/confighub/sdk/core/cubapi"
@@ -352,22 +353,11 @@ func variantCreateCmdRun(cmd *cobra.Command, args []string) (retErr error) {
 	// about the deployment" step into this command. A no-op for ordinary
 	// targets; skip explicitly with --no-argo-app.
 	if target != nil && !variantCreateArgs.noArgoApp {
-		createdArgoApp, err := createVariantArgoApp(cmd.OutOrStdout(), target, newSpace, *targetID, variantCreateArgs.prune)
+		created, err := createVariantClusterApp(cmd.OutOrStdout(), target, newSpace, *targetID, variantCreateArgs.prune)
 		if err != nil {
 			return err
 		}
-		// The Sveltos counterpart: a target from `cub cluster up --controller
-		// sveltos` carries confighub.com/cluster-controller sveltos instead.
-		createdSveltosProfile, err := createVariantSveltosProfile(cmd.OutOrStdout(), target, newSpace, *targetID, variantCreateArgs.prune)
-		if err != nil {
-			return err
-		}
-		// And the Flux one: confighub.com/cluster-controller flux.
-		createdFluxApp, err := createVariantFluxApp(cmd.OutOrStdout(), target, newSpace, *targetID, variantCreateArgs.prune)
-		if err != nil {
-			return err
-		}
-		if variantCreateArgs.prune && !createdArgoApp && !createdSveltosProfile && !createdFluxApp && !jsonOutput {
+		if variantCreateArgs.prune && !created && !jsonOutput {
 			tprint("--prune had no effect: target %s is not a cub-cluster target", target.Slug)
 		}
 	}
@@ -386,6 +376,28 @@ func variantCreateCmdRun(cmd *cobra.Command, args []string) (retErr error) {
 	}
 
 	return handleBulkCreateOrUpdateResponse(&result.Units, result.UnitsStatus, "create", "")
+}
+
+// createVariantClusterApp adds the Unit that deploys variantSpace to its
+// cluster's apps Space when target is a cub-cluster target, by the cluster's
+// controller: an Argo CD Application (confighub.com/cluster-controller argo), a
+// Sveltos ClusterProfile (sveltos), or a Flux OCIRepository and Kustomization
+// (flux). It reports whether it created one; for an ordinary target it does
+// nothing.
+func createVariantClusterApp(out io.Writer, target *goclientnew.Target, variantSpace *goclientnew.Space, targetID uuid.UUID, prune bool) (bool, error) {
+	createdArgoApp, err := createVariantArgoApp(out, target, variantSpace, targetID, prune)
+	if err != nil {
+		return false, err
+	}
+	createdSveltosProfile, err := createVariantSveltosProfile(out, target, variantSpace, targetID, prune)
+	if err != nil {
+		return false, err
+	}
+	createdFluxApp, err := createVariantFluxApp(out, target, variantSpace, targetID, prune)
+	if err != nil {
+		return false, err
+	}
+	return createdArgoApp || createdSveltosProfile || createdFluxApp, nil
 }
 
 // checkVariantCreateOwner checks --owner against the Component the upstream space is in, before

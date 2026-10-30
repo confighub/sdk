@@ -438,13 +438,7 @@ func createUploadClusterApp(out io.Writer, result *goclientnew.UploadResult, tar
 				}
 			}
 			space := &goclientnew.Space{SpaceID: *s.SpaceID, Slug: s.SpaceSlug}
-			if _, err := createVariantArgoApp(out, target, space, targetID, false); err != nil {
-				return err
-			}
-			if _, err := createVariantSveltosProfile(out, target, space, targetID, false); err != nil {
-				return err
-			}
-			if _, err := createVariantFluxApp(out, target, space, targetID, false); err != nil {
+			if _, err := createVariantClusterApp(out, target, space, targetID, false); err != nil {
 				return err
 			}
 		}

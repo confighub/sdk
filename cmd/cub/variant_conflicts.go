@@ -233,8 +233,7 @@ func listVariantConflicts(variant string, conflicted []conflictedUnit) error {
 		}
 		return nil
 	}
-	if jsonOutput {
-		displayJSON(all)
+	if renderPayload(all) {
 		return nil
 	}
 	displayResourceConflicts(all)

@@ -1,32 +1,30 @@
 module github.com/confighub/sdk/function-impl
 
-go 1.25.0
-
-toolchain go1.25.11
+go 1.26.0
 
 require (
 	github.com/cockroachdb/errors v1.11.3
-	github.com/confighub/sdk/configkit/appyamlkit v0.9.12
-	github.com/confighub/sdk/configkit/envkit v0.9.12
-	github.com/confighub/sdk/configkit/inikit v0.9.12
-	github.com/confighub/sdk/configkit/jsonkit v0.9.12
-	github.com/confighub/sdk/configkit/k8skit v0.9.12
-	github.com/confighub/sdk/configkit/propkit v0.9.12
-	github.com/confighub/sdk/configkit/textkit v0.9.12
-	github.com/confighub/sdk/configkit/tomlkit v0.9.12
-	github.com/confighub/sdk/configkit/yqkit v0.9.12
-	github.com/confighub/sdk/core v0.9.12
+	github.com/confighub/sdk/configkit/appyamlkit v0.0.0-00010101000000-000000000000
+	github.com/confighub/sdk/configkit/envkit v0.0.0-00010101000000-000000000000
+	github.com/confighub/sdk/configkit/inikit v0.0.0-00010101000000-000000000000
+	github.com/confighub/sdk/configkit/jsonkit v0.0.0-00010101000000-000000000000
+	github.com/confighub/sdk/configkit/k8skit v0.0.0-00010101000000-000000000000
+	github.com/confighub/sdk/configkit/propkit v0.0.0-00010101000000-000000000000
+	github.com/confighub/sdk/configkit/textkit v0.0.0-00010101000000-000000000000
+	github.com/confighub/sdk/configkit/tomlkit v0.0.0-00010101000000-000000000000
+	github.com/confighub/sdk/configkit/yqkit v0.0.0-00010101000000-000000000000
+	github.com/confighub/sdk/core v0.0.0
 	github.com/google/cel-go v0.24.1
 	github.com/google/gnostic v0.7.0
 	github.com/google/uuid v1.6.0
-	github.com/labstack/echo/v4 v4.13.3
+	github.com/labstack/echo/v4 v4.16.1
 	github.com/stretchr/testify v1.11.1
 	github.com/swaggest/jsonschema-go v0.3.78
 	github.com/wk8/go-ordered-map/v2 v2.1.8
 	github.com/xeipuuv/gojsonschema v1.2.0
 	github.com/yannh/kubeconform v0.6.7
 	go.starlark.net v0.0.0-20260210143700-b62fd896b91b
-	golang.org/x/sync v0.21.0
+	golang.org/x/sync v0.23.0
 	k8s.io/api v0.33.1
 	k8s.io/apimachinery v0.33.1
 	k8s.io/apiserver v0.33.1
@@ -79,10 +77,10 @@ require (
 	github.com/json-iterator/go v1.1.12 // indirect
 	github.com/kr/pretty v0.3.1 // indirect
 	github.com/kr/text v0.2.0 // indirect
-	github.com/labstack/gommon v0.4.2 // indirect
+	github.com/labstack/gommon v0.5.0 // indirect
 	github.com/magiconair/properties v1.8.10 // indirect
 	github.com/mailru/easyjson v0.9.0 // indirect
-	github.com/mattn/go-colorable v0.1.14 // indirect
+	github.com/mattn/go-colorable v0.1.15 // indirect
 	github.com/mattn/go-isatty v0.0.22 // indirect
 	github.com/mikefarah/yq/v4 v4.53.2 // indirect
 	github.com/mitchellh/go-wordwrap v1.0.1 // indirect
@@ -114,16 +112,16 @@ require (
 	go.opentelemetry.io/otel v1.44.0 // indirect
 	go.opentelemetry.io/otel/trace v1.44.0 // indirect
 	go.yaml.in/yaml/v4 v4.0.0-rc.4 // indirect
-	golang.org/x/crypto v0.53.0 // indirect
+	golang.org/x/crypto v0.57.0 // indirect
 	golang.org/x/exp v0.0.0-20240719175910-8a7402abbf56 // indirect
-	golang.org/x/mod v0.36.0 // indirect
-	golang.org/x/net v0.56.0 // indirect
+	golang.org/x/mod v0.41.0 // indirect
+	golang.org/x/net v0.60.0 // indirect
 	golang.org/x/oauth2 v0.30.0 // indirect
-	golang.org/x/sys v0.46.0 // indirect
-	golang.org/x/term v0.44.0 // indirect
-	golang.org/x/text v0.38.0 // indirect
-	golang.org/x/time v0.11.0 // indirect
-	golang.org/x/tools v0.45.0 // indirect
+	golang.org/x/sys v0.48.0 // indirect
+	golang.org/x/term v0.46.0 // indirect
+	golang.org/x/text v0.42.0 // indirect
+	golang.org/x/time v0.15.0 // indirect
+	golang.org/x/tools v0.49.0 // indirect
 	google.golang.org/genproto/googleapis/api v0.0.0-20250825161204-c5933d9347a5 // indirect
 	google.golang.org/genproto/googleapis/rpc v0.0.0-20250825161204-c5933d9347a5 // indirect
 	google.golang.org/protobuf v1.36.8 // indirect
@@ -141,6 +139,16 @@ require (
 )
 
 replace (
+	github.com/confighub/sdk/configkit/appyamlkit => ../configkit/appyamlkit
+	github.com/confighub/sdk/configkit/envkit => ../configkit/envkit
+	github.com/confighub/sdk/configkit/inikit => ../configkit/inikit
+	github.com/confighub/sdk/configkit/jsonkit => ../configkit/jsonkit
+	github.com/confighub/sdk/configkit/k8skit => ../configkit/k8skit
+	github.com/confighub/sdk/configkit/propkit => ../configkit/propkit
+	github.com/confighub/sdk/configkit/textkit => ../configkit/textkit
+	github.com/confighub/sdk/configkit/tomlkit => ../configkit/tomlkit
+	github.com/confighub/sdk/configkit/yqkit => ../configkit/yqkit
+	github.com/confighub/sdk/core => ../core
 
 	// Fix CVE-2022-28948
 	gopkg.in/yaml.v3 => gopkg.in/yaml.v3 v3.0.1

@@ -26,6 +26,9 @@ func displayUnitPath(report *blame.PathReport, resolver *blame.Resolver) {
 	unitPathLine(0, "Path", wrapBlameText(f.Path, unitPathWrapWidth(0), ".,/", "-_"))
 	unitPathLine(0, "Ref", f.Ref)
 	unitPathLine(0, "Flags", f.Flags)
+	if f.Absent {
+		unitPathLine(0, "Value", "none: the unit does not have this field")
+	}
 	unitPathValue(0, "Value", f.Value)
 	unitPathLine(0, "Released", report.Released)
 	if f.Protected {
@@ -63,9 +66,13 @@ func displayUnitPath(report *blame.PathReport, resolver *blame.Resolver) {
 	}
 
 	tprintRaw("")
-	if len(report.Changes) == 0 {
+	switch {
+	case f.Absent:
+		tprintRaw("No recorded change: the unit does not have this field. Each conflict above is a change a")
+		tprintRaw("merge could not make to it; 'cub unit conflicts' applies or dismisses them.")
+	case len(report.Changes) == 0:
 		tprintRaw("No recorded change: the value has been there since the unit was created.")
-	} else {
+	default:
 		tprintRaw("Changes, from this unit out to where the value was set:")
 		for _, change := range report.Changes {
 			tprintRaw("")

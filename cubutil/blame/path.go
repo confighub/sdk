@@ -44,6 +44,10 @@ type PathChange struct {
 func (r *Resolver) Path(ctx context.Context, unit *goclientnew.Unit, f *Field, history bool) (*PathReport, error) {
 	identifier, _ := blameResourceProvider(unit.ToolchainType)
 	report := &PathReport{Field: f}
+	if f.Absent {
+		// A field the unit does not have has nothing to release and no record to read.
+		return report, nil
+	}
 	report.Released = unitPathReleased(f, unit, r.space(ctx, unit.SpaceID))
 	report.Annotations = unitPathAnnotations(identifier, unit, f)
 	for _, origin := range f.Chain {
