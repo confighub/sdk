@@ -5,9 +5,9 @@ go 1.25.0
 toolchain go1.25.11
 
 require (
-	github.com/confighub/sdk/cliutil v0.0.0
-	github.com/confighub/sdk/core v0.0.0
-	github.com/confighub/sdk/cubutil v0.0.0
+	github.com/confighub/sdk/cliutil v0.9.12
+	github.com/confighub/sdk/core v0.9.12
+	github.com/confighub/sdk/cubutil v0.9.12
 	github.com/google/uuid v1.6.0
 	github.com/spf13/cobra v1.10.2
 )
@@ -23,7 +23,7 @@ require (
 	github.com/cockroachdb/errors v1.11.3 // indirect
 	github.com/cockroachdb/logtags v0.0.0-20230118201751-21c54148d20b // indirect
 	github.com/cockroachdb/redact v1.1.5 // indirect
-	github.com/confighub/sdk/configkit/yqkit v0.0.0 // indirect
+	github.com/confighub/sdk/configkit/yqkit v0.9.12 // indirect
 	github.com/davecgh/go-spew v1.1.2-0.20180830191138-d8f796af33cc // indirect
 	github.com/dimchansky/utfbom v1.1.1 // indirect
 	github.com/elliotchance/orderedmap v1.8.0 // indirect
@@ -85,19 +85,6 @@ require (
 )
 
 replace (
-	github.com/confighub/sdk/cliutil => ../cliutil
-	github.com/confighub/sdk/configkit/appyamlkit => ../configkit/appyamlkit
-	github.com/confighub/sdk/configkit/envkit => ../configkit/envkit
-	github.com/confighub/sdk/configkit/inikit => ../configkit/inikit
-	github.com/confighub/sdk/configkit/jsonkit => ../configkit/jsonkit
-	github.com/confighub/sdk/configkit/k8skit => ../configkit/k8skit
-	github.com/confighub/sdk/configkit/propkit => ../configkit/propkit
-	github.com/confighub/sdk/configkit/textkit => ../configkit/textkit
-	github.com/confighub/sdk/configkit/tomlkit => ../configkit/tomlkit
-	github.com/confighub/sdk/configkit/yqkit => ../configkit/yqkit
-	github.com/confighub/sdk/core => ../core
-	github.com/confighub/sdk/cubutil => ../cubutil
-	github.com/confighub/sdk/function-impl => ../function-impl
 
 	// Fix CVE-2022-28948
 	gopkg.in/yaml.v3 => gopkg.in/yaml.v3 v3.0.1
