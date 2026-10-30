@@ -2010,6 +2010,9 @@
       "ProviderType": {
         "dataType": "string"
       },
+      "Releasable": {
+        "dataType": "bool"
+      },
       "Slug": {
         "dataType": "string"
       },

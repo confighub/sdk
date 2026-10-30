@@ -6,8 +6,11 @@ package main
 import (
 	"encoding/json"
 	"io"
+	"os"
+	"path/filepath"
 	"slices"
 	"strings"
+	"sync"
 	"testing"
 
 	"github.com/google/uuid"
@@ -100,12 +103,12 @@ spec:
 // ConfigHub, and anything else is refused.
 func TestClusterChooseArgobotBaseFlag(t *testing.T) {
 	for _, flag := range []string{clusterArgobotBaseUpdate, clusterArgobotBaseClone} {
-		got, err := clusterChooseArgobotBase(io.Discard, clusterControllerArgo, flag, clusterArgobotGHCR)
+		got, err := clusterChooseArgobotBase(io.Discard, clusterControllerArgo, flag)
 		if err != nil || got != flag {
 			t.Errorf("clusterChooseArgobotBase(%q) = %q, %v; want %q", flag, got, err, flag)
 		}
 	}
-	if _, err := clusterChooseArgobotBase(io.Discard, clusterControllerArgo, "replace", clusterArgobotGHCR); err == nil {
+	if _, err := clusterChooseArgobotBase(io.Discard, clusterControllerArgo, "replace"); err == nil {
 		t.Error("clusterChooseArgobotBase(\"replace\") succeeded; want an error")
 	}
 }
@@ -127,5 +130,48 @@ func TestClusterArgobotRepository(t *testing.T) {
 	}
 	if _, err := clusterArgobotRepository("quay"); err == nil {
 		t.Error("clusterArgobotRepository(\"quay\") succeeded; want an error")
+	}
+}
+
+// argobot's installer package sits beside its image, under packages/.
+func TestClusterArgobotPackageRepository(t *testing.T) {
+	for repository, want := range map[string]string{
+		clusterArgobotGHCR:                         "ghcr.io/confighub/packages/argobot",
+		clusterArgobotGCR:                          "gcr.io/confighubapp/packages/argobot",
+		"registry.example.com:5000/mirror/argobot": "registry.example.com:5000/mirror/packages/argobot",
+	} {
+		if got := clusterArgobotPackageRepository(repository); got != want {
+			t.Errorf("clusterArgobotPackageRepository(%q) = %q, want %q", repository, got, want)
+		}
+	}
+}
+
+// --k8sbot-installer runs the installer cub plugin's own entrypoint, never an
+// "installer" on PATH, such as the one macOS has in /usr/sbin.
+func TestClusterFindInstaller(t *testing.T) {
+	pluginsDir := setupPluginTest(t)
+	onPath := t.TempDir()
+	createExecutableFile(t, filepath.Join(onPath, "installer"), "#!/bin/sh\necho installer 0.3.0")
+	t.Setenv("PATH", onPath)
+	if _, err := clusterFindInstaller(); err == nil || !strings.Contains(err.Error(), "cub plugin install confighub/installer") {
+		t.Errorf("clusterFindInstaller() without the plugin: err = %v; want the plugin install command", err)
+	}
+
+	dir := filepath.Join(pluginsDir, "installer")
+	if err := os.MkdirAll(filepath.Join(dir, "bin"), 0o755); err != nil {
+		t.Fatal(err)
+	}
+	createExecutableFile(t, filepath.Join(dir, "bin", "installer"), "#!/bin/sh\necho installer 0.3.0")
+	if err := os.WriteFile(filepath.Join(dir, "cub-plugin.yaml"), []byte("entrypoint: bin/installer\n"), 0o644); err != nil {
+		t.Fatal(err)
+	}
+	pluginCache = nil
+	pluginCacheOnce = sync.Once{}
+	got, err := clusterFindInstaller()
+	if err != nil {
+		t.Fatal(err)
+	}
+	if got.Entrypoint != filepath.Join(dir, "bin", "installer") {
+		t.Errorf("entrypoint = %q, want the plugin's %s", got.Entrypoint, filepath.Join(dir, "bin", "installer"))
 	}
 }

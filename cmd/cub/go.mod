@@ -6,12 +6,12 @@ toolchain go1.25.11
 
 require (
 	github.com/cockroachdb/errors v1.11.3
-	github.com/confighub/sdk/configkit/k8skit v0.9.11
-	github.com/confighub/sdk/configkit/yqkit v0.9.11
-	github.com/confighub/sdk/core v0.9.11
-	github.com/confighub/sdk/cubutil v0.9.11
-	github.com/confighub/sdk/function-impl v0.9.11
-	github.com/confighub/sdk/k8sutil v0.9.11
+	github.com/confighub/sdk/configkit/k8skit v0.0.0
+	github.com/confighub/sdk/configkit/yqkit v0.0.0-00010101000000-000000000000
+	github.com/confighub/sdk/core v0.0.0
+	github.com/confighub/sdk/cubutil v0.0.0
+	github.com/confighub/sdk/function-impl v0.0.0
+	github.com/confighub/sdk/k8sutil v0.0.0-00010101000000-000000000000
 	github.com/fatih/color v1.19.0
 	github.com/google/uuid v1.6.0
 	github.com/itchyny/gojq v0.12.17
@@ -22,7 +22,6 @@ require (
 	github.com/skratchdot/open-golang v0.0.0-20200116055534-eef842397966
 	github.com/spf13/cobra v1.10.2
 	github.com/spf13/pflag v1.0.10
-	golang.org/x/crypto v0.53.0
 	golang.org/x/term v0.44.0
 	gopkg.in/yaml.v3 v3.0.1
 	k8s.io/apimachinery v0.35.1
@@ -46,13 +45,13 @@ require (
 	github.com/cespare/xxhash/v2 v2.3.0 // indirect
 	github.com/cockroachdb/logtags v0.0.0-20230118201751-21c54148d20b // indirect
 	github.com/cockroachdb/redact v1.1.5 // indirect
-	github.com/confighub/sdk/configkit/appyamlkit v0.9.11 // indirect
-	github.com/confighub/sdk/configkit/envkit v0.9.11 // indirect
-	github.com/confighub/sdk/configkit/inikit v0.9.11 // indirect
-	github.com/confighub/sdk/configkit/jsonkit v0.9.11 // indirect
-	github.com/confighub/sdk/configkit/propkit v0.9.11 // indirect
-	github.com/confighub/sdk/configkit/textkit v0.9.11 // indirect
-	github.com/confighub/sdk/configkit/tomlkit v0.9.11 // indirect
+	github.com/confighub/sdk/configkit/appyamlkit v0.0.0-00010101000000-000000000000 // indirect
+	github.com/confighub/sdk/configkit/envkit v0.0.0-00010101000000-000000000000 // indirect
+	github.com/confighub/sdk/configkit/inikit v0.0.0-00010101000000-000000000000 // indirect
+	github.com/confighub/sdk/configkit/jsonkit v0.0.0-00010101000000-000000000000 // indirect
+	github.com/confighub/sdk/configkit/propkit v0.0.0-00010101000000-000000000000 // indirect
+	github.com/confighub/sdk/configkit/textkit v0.0.0-00010101000000-000000000000 // indirect
+	github.com/confighub/sdk/configkit/tomlkit v0.0.0-00010101000000-000000000000 // indirect
 	github.com/cpuguy83/go-md2man/v2 v2.0.7 // indirect
 	github.com/davecgh/go-spew v1.1.2-0.20180830191138-d8f796af33cc // indirect
 	github.com/dimchansky/utfbom v1.1.1 // indirect
@@ -130,6 +129,7 @@ require (
 	go.yaml.in/yaml/v2 v2.4.3 // indirect
 	go.yaml.in/yaml/v3 v3.0.4 // indirect
 	go.yaml.in/yaml/v4 v4.0.0-rc.4 // indirect
+	golang.org/x/crypto v0.53.0 // indirect
 	golang.org/x/exp v0.0.0-20260410095643-746e56fc9e2f // indirect
 	golang.org/x/mod v0.36.0 // indirect
 	golang.org/x/net v0.56.0 // indirect
@@ -160,6 +160,19 @@ require (
 )
 
 replace (
+	github.com/confighub/sdk/configkit/appyamlkit => ../../configkit/appyamlkit
+	github.com/confighub/sdk/configkit/envkit => ../../configkit/envkit
+	github.com/confighub/sdk/configkit/inikit => ../../configkit/inikit
+	github.com/confighub/sdk/configkit/jsonkit => ../../configkit/jsonkit
+	github.com/confighub/sdk/configkit/k8skit => ../../configkit/k8skit
+	github.com/confighub/sdk/configkit/propkit => ../../configkit/propkit
+	github.com/confighub/sdk/configkit/textkit => ../../configkit/textkit
+	github.com/confighub/sdk/configkit/tomlkit => ../../configkit/tomlkit
+	github.com/confighub/sdk/configkit/yqkit => ../../configkit/yqkit
+	github.com/confighub/sdk/core => ../../core
+	github.com/confighub/sdk/cubutil => ../../cubutil
+	github.com/confighub/sdk/function-impl => ../../function-impl
+	github.com/confighub/sdk/k8sutil => ../../k8sutil
 
 	// Fix CVE-2022-28948
 	gopkg.in/yaml.v3 => gopkg.in/yaml.v3 v3.0.1

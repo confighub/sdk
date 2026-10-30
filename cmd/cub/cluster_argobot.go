@@ -9,12 +9,15 @@ import (
 	"encoding/json"
 	"fmt"
 	"io"
+	"maps"
 	"os"
+	"os/exec"
+	"path"
 	"slices"
 	"strings"
-	"time"
 
 	"github.com/confighub/sdk/core/cubapi"
+	"github.com/confighub/sdk/core/ocibundle"
 	goclientnew "github.com/confighub/sdk/core/openapi/goclient-new"
 	"github.com/google/uuid"
 	"golang.org/x/term"
@@ -25,8 +28,9 @@ import (
 // is a ConfigHub bot that listens on a Channel and force-syncs the
 // corresponding Argo CD Application the moment a deploy happens, closing Argo's
 // reconcile-interval gap. It is delivered like
-// any other component: a shared base installed from the manifests `argobot
-// install` prints, and a per-cluster downstream variant. The child Argo Application that
+// any other component: a shared base installed from the deployment its release
+// image carries, or with --k8sbot-installer from its installer package, and a
+// per-cluster downstream variant. The child Argo Application that
 // makes argobot live is created by `cub variant create --target` itself — the
 // cluster's OCI target carries the confighub.com/apps-space annotation, so
 // creating the argobot variant against it auto-creates the Application Unit in
@@ -39,9 +43,8 @@ import (
 // cluster k8sbot-install` runs and `cub cluster attach` runs inside
 // clusterBootstrapApps.
 
-// argobot install constants. argobot is installed as a ConfigHub component from
-// the manifests `argobot install` prints, then given a per-cluster downstream
-// variant.
+// argobot install constants. argobot is installed as a ConfigHub component,
+// then given a per-cluster downstream variant.
 const (
 	// clusterArgobotComponent is the well-known "Component" label value and the
 	// base Space is <component>-base.
@@ -60,10 +63,6 @@ const (
 	// its own.
 	clusterArgobotFluxBaseVariant = "flux-base"
 	clusterArgobotFluxBaseSpace   = "argobot-flux-base"
-	// clusterArgobotInstallPod is that one-off Pod. It runs in the default
-	// namespace, which every cluster has before argobot's own exists.
-	clusterArgobotInstallPod          = "argobot-install"
-	clusterArgobotInstallPodNamespace = "default"
 	// clusterArgobotNamespace is the namespace argobot's manifests deploy into.
 	clusterArgobotNamespace = "argobot"
 	// clusterArgobotUnitSlug is the Unit holding argobot's Deployment. The
@@ -71,6 +70,19 @@ const (
 	// Deployment named argobot lands in a Unit named argobot, while its
 	// ServiceAccount, RBAC and Namespace take slugs of their own.
 	clusterArgobotUnitSlug = "argobot"
+	// clusterArgobotEnvUnitSlug is the AppConfig Unit holding argobot's
+	// environment in an install from the installer package, which ConfigHub
+	// renders into the argobot-env ConfigMap.
+	clusterArgobotEnvUnitSlug = "argobot-env"
+	// clusterArgobotEnvConfigSchema is that environment's configSchema, which
+	// set-string-path names to edit it.
+	clusterArgobotEnvConfigSchema = "Argobot"
+	// clusterArgobotRecordUnitSlug is the hidden Unit an installer upload keeps
+	// its answers in. A base holding one was installed with the installer.
+	clusterArgobotRecordUnitSlug = "installer"
+	// clusterInstallerPlugin is the cub plugin command that runs ConfigHub's
+	// installer, as `cub installer`.
+	clusterInstallerPlugin = "installer"
 	// clusterArgobotContainer is the container name in argobot's Deployment.
 	clusterArgobotContainer = "argobot"
 	// clusterArgobotSecret is the out-of-band Secret argobot reads its service
@@ -82,10 +94,9 @@ const (
 )
 
 // What to do with a shared base Space that already exists (--k8sbot-base).
-// Update uploads the manifests `argobot install` prints over it before cloning,
-// so the cluster runs the release argobot's :latest image names; clone leaves it
-// as it is, so every cluster cloned from it runs the same argobot. A base that
-// does not exist yet is installed either way.
+// Update installs argobot's newest release over it before cloning; clone leaves
+// it as it is, so every cluster cloned from it runs the same argobot. A base
+// that does not exist yet is installed either way.
 const (
 	clusterArgobotBaseUpdate = "update"
 	clusterArgobotBaseClone  = "clone"
@@ -101,8 +112,8 @@ const (
 
 // clusterArgobotRepository reads --registry: "ghcr", "gcr", or the prefix of a
 // mirror holding argobot's image as <prefix>/argobot. Empty is ghcr. It returns
-// the image repository, without a tag: `argobot install` runs from its :latest
-// image, and the manifests it prints run argobot from the same repository.
+// the image repository, without a tag. argobot's deployment is read from the
+// newest release there, and runs argobot from the same repository.
 func clusterArgobotRepository(registry string) (string, error) {
 	switch registry {
 	case "", "ghcr", "ghcr.io":
@@ -119,7 +130,28 @@ func clusterArgobotRepository(registry string) (string, error) {
 
 // clusterRegistryFlagUsage is the --registry help of the commands that install
 // argobot.
-const clusterRegistryFlagUsage = "where to pull argobot's image from: ghcr, gcr, or a mirror prefix holding <prefix>/argobot (default ghcr)"
+const clusterRegistryFlagUsage = "where to pull argobot's image from: ghcr, gcr, or a mirror prefix holding <prefix>/argobot, and <prefix>/packages/argobot for --k8sbot-installer (default ghcr)"
+
+// clusterK8sbotInstallerFlagUsage is the --k8sbot-installer help of the
+// commands that install argobot.
+const clusterK8sbotInstallerFlagUsage = "install argobot's shared base Space with ConfigHub's installer, from its installer package, rather than from the deployment its image carries; needs the installer cub plugin (cub plugin install confighub/installer)"
+
+// clusterK8sbotBaseFlagUsage is the --k8sbot-base help of the commands that
+// install argobot.
+const clusterK8sbotBaseFlagUsage = "what to do with argobot's shared base Space when it already exists: update (install argobot's newest release over it, then clone it) or clone (clone it as it is); asked when stdin is a terminal, otherwise update"
+
+// clusterArgobotPackageRepository is the repository of argobot's installer
+// package, beside its image: <prefix>/packages/argobot.
+func clusterArgobotPackageRepository(repository string) string {
+	return path.Dir(repository) + "/packages/" + clusterArgobotComponent
+}
+
+// clusterArgobotPullOptions are the options argobot's image and package are
+// read with: anonymously, since both are public and an expired local login
+// would otherwise be refused, and over plain HTTP from a local registry.
+func clusterArgobotPullOptions() ocibundle.Options {
+	return ocibundle.Options{UserAgent: "cub/" + Version, PlainHTTPLoopback: true}
+}
 
 // The event type argobot reacts to: a Release published for the cluster's
 // Target. It is what argobot --print-subscriptions prints; named here so the
@@ -142,6 +174,9 @@ type clusterK8sbotSpec struct {
 	// argobotRepository is the image repository argobot is pulled from, as
 	// clusterArgobotRepository read --registry.
 	argobotRepository string
+	// argobotInstaller is the installer plugin that installs argobot's base, as
+	// clusterFindInstaller found it; nil installs it from argobot's image.
+	argobotInstaller *PluginCommand
 	// standalone is true for `cub cluster k8sbot-install` on a cluster attached
 	// already: its root runs, so the stage marks the target as argobot's,
 	// records the bot on the cluster Space, and republishes the apps Space
@@ -263,6 +298,7 @@ func clusterInstallK8sbot(out io.Writer, spec clusterK8sbotSpec, registerRollbac
 		kubeconfigPath:       spec.kubeconfigPath,
 		baseMode:             spec.argobotBase,
 		repository:           spec.argobotRepository,
+		installer:            spec.argobotInstaller,
 	}); err != nil {
 		return err
 	}
@@ -454,75 +490,107 @@ stringData:
 `, clusterArgobotNamespace, clusterArgobotSecret, clusterArgobotNamespace, bytes.TrimSpace(privateKey))
 }
 
-// clusterArgobotManifests runs `argobot install --controller <controller>` in
-// the cluster as a one-off Pod and returns what it printed: argobot's
-// manifests for that controller, with the image pinned to the release the
-// install image was built as, in the same repository. The Pod is deleted
-// afterwards, whether or not it succeeded.
-func clusterArgobotManifests(kubeconfigPath, controller, repository string, out io.Writer) ([]byte, error) {
-	deletePod := func(wait string) error {
-		return clusterKubectl(ctx, kubeconfigPath, nil, io.Discard,
-			"delete", "pod", clusterArgobotInstallPod, "-n", clusterArgobotInstallPodNamespace,
-			"--ignore-not-found", "--wait="+wait)
+// clusterArgobotManifestPath is where argobot's image carries its deployment
+// for a controller.
+func clusterArgobotManifestPath(controller string) string {
+	switch controller {
+	case clusterControllerSveltos:
+		return "/manifests/sveltos.yaml"
+	case clusterControllerFlux:
+		return "/manifests/flux.yaml"
 	}
-	// A Pod left by an interrupted earlier run would make `kubectl run` fail.
-	if err := deletePod("true"); err != nil {
-		return nil, err
-	}
-	image := repository + ":latest"
-	fmt.Fprintf(out, "Running `argobot install --controller %s` (%s) in the cluster...\n", controller, image)
-	// IfNotPresent: a :latest image otherwise defaults to Always, which would
-	// ignore an image loaded into the node with `kind load docker-image`.
-	if err := clusterKubectl(ctx, kubeconfigPath, nil, out,
-		"run", clusterArgobotInstallPod, "-n", clusterArgobotInstallPodNamespace,
-		"--image", image, "--image-pull-policy", "IfNotPresent", "--restart", "Never",
-		"--", "install", "--controller", controller, "--image", repository); err != nil {
-		return nil, fmt.Errorf("start argobot install: %w", err)
-	}
-	defer func() { _ = deletePod("false") }()
+	return "/manifests/argocd.yaml"
+}
 
-	if err := clusterArgobotWaitInstallPod(kubeconfigPath, 3*time.Minute); err != nil {
-		return nil, err
-	}
-	manifests, err := clusterKubectlOutput(ctx, kubeconfigPath,
-		"logs", "pod/"+clusterArgobotInstallPod, "-n", clusterArgobotInstallPodNamespace)
+// clusterArgobotManifests reads argobot's deployment for a controller from the
+// newest argobot release in repository, without running the image. The
+// deployment runs the release it ships in, from ghcr.io; it is returned running
+// it from repository.
+func clusterArgobotManifests(controller, repository string, out io.Writer) ([]byte, error) {
+	tag, err := ocibundle.NewestRelease(ctx, repository, clusterArgobotPullOptions())
 	if err != nil {
-		return nil, fmt.Errorf("read argobot install output: %w", err)
+		return nil, fmt.Errorf("find argobot's newest release: %w", err)
 	}
-	if len(bytes.TrimSpace(manifests)) == 0 {
-		return nil, fmt.Errorf("argobot install --controller %s printed nothing", controller)
+	ref := repository + ":" + tag
+	fmt.Fprintf(out, "Reading argobot's deployment from %s...\n", ref)
+	manifests, _, err := ocibundle.ReadImageFile(ctx, ref, clusterArgobotManifestPath(controller), clusterArgobotPullOptions())
+	if err != nil {
+		return nil, fmt.Errorf("read argobot's deployment: %w", err)
+	}
+	if repository != clusterArgobotGHCR {
+		manifests = bytes.ReplaceAll(manifests, []byte("image: "+clusterArgobotGHCR+":"), []byte("image: "+repository+":"))
 	}
 	return manifests, nil
 }
 
-// clusterArgobotWaitInstallPod polls the install Pod until it has run to
-// completion. A Failed Pod is terminal, and its logs carry argobot's error.
-func clusterArgobotWaitInstallPod(kubeconfigPath string, budget time.Duration) error {
-	deadline := time.Now().Add(budget)
-	for {
-		phase, err := clusterKubectlOutput(ctx, kubeconfigPath,
-			"get", "pod", clusterArgobotInstallPod, "-n", clusterArgobotInstallPodNamespace,
-			"-o", "jsonpath={.status.phase}")
-		if err != nil {
-			return fmt.Errorf("check argobot install: %w", err)
-		}
-		switch string(phase) {
-		case "Succeeded":
-			return nil
-		case "Failed":
-			logs, _ := clusterKubectlOutput(ctx, kubeconfigPath,
-				"logs", "pod/"+clusterArgobotInstallPod, "-n", clusterArgobotInstallPodNamespace)
-			return fmt.Errorf("argobot install failed: %s", bytes.TrimSpace(logs))
-		}
-		if time.Now().After(deadline) {
-			return fmt.Errorf("argobot install Pod still %q after %s", phase, budget)
-		}
-		select {
-		case <-ctx.Done():
-			return ctx.Err()
-		case <-time.After(2 * time.Second):
-		}
+// clusterFindInstaller finds ConfigHub's installer, installed as a cub plugin
+// (cub plugin install confighub/installer), for --k8sbot-installer. cub runs
+// the plugin's own entrypoint, never an "installer" found on PATH, which on
+// macOS is the system's package installer.
+func clusterFindInstaller() (*PluginCommand, error) {
+	installer, ok := resolvePluginCommand(clusterInstallerPlugin)
+	if !ok {
+		return nil, fmt.Errorf("--k8sbot-installer needs ConfigHub's installer as a cub plugin; install it with: cub plugin install confighub/installer")
 	}
+	return installer, nil
+}
+
+// clusterArgobotPackageComponent is the installer package's component for a
+// controller.
+func clusterArgobotPackageComponent(controller string) string {
+	if controller == clusterControllerArgo {
+		return "argocd"
+	}
+	return controller
+}
+
+// clusterArgobotInstallBase installs argobot's shared base Space with the
+// installer, from the newest release of argobot's installer package: no
+// Channel, Target or URL, which each cluster's variant sets. setup is given the
+// base Space, so it reads its earlier answers from that Space's installer
+// record, and never another install of argobot's; the upload creates the Space
+// when it doesn't exist yet.
+func clusterArgobotInstallBase(out io.Writer, installer *PluginCommand, controller, repository string) error {
+	baseVariant, baseSpace := clusterArgobotBase(controller)
+	packageRepository := clusterArgobotPackageRepository(repository)
+	version, err := ocibundle.NewestRelease(ctx, packageRepository, clusterArgobotPullOptions())
+	if err != nil {
+		return fmt.Errorf("find argobot's newest installer package: %w", err)
+	}
+	workDir, err := os.MkdirTemp("", "cub-argobot-base-*")
+	if err != nil {
+		return err
+	}
+	defer os.RemoveAll(workDir)
+
+	ref := ocibundle.Scheme + packageRepository + ":" + version
+	setup := []string{"setup", "--pull", ref, "--work-dir", workDir, "--space", baseSpace,
+		"--non-interactive", "--namespace", clusterArgobotNamespace,
+		"--select", clusterArgobotPackageComponent(controller)}
+	if repository != clusterArgobotGHCR {
+		// The package runs the argobot release of its own version.
+		setup = append(setup, "--set-image", clusterArgobotGHCR+"="+repository+":v"+version)
+	}
+	fmt.Fprintf(out, "Installing argobot base component from %s with the installer plugin...\n", ref)
+	if err := clusterRunInstaller(installer, setup...); err != nil {
+		return err
+	}
+	return clusterRunInstaller(installer, "upload", "--work-dir", workDir, "--space", baseSpace,
+		"--variant", baseVariant, "--yes")
+}
+
+// clusterRunInstaller runs the installer plugin as `cub installer` would,
+// streaming its output, with the environment a plugin gets: the cub context in
+// effect and its token.
+func clusterRunInstaller(installer *PluginCommand, args ...string) error {
+	c := exec.CommandContext(ctx, installer.Entrypoint, append(slices.Clone(installer.Args), args...)...)
+	c.Env = pluginEnv()
+	c.Stdout = os.Stdout
+	c.Stderr = os.Stderr
+	if err := c.Run(); err != nil {
+		return fmt.Errorf("installer %s: %w", strings.Join(args, " "), err)
+	}
+	return nil
 }
 
 // clusterArgobotOptions carries everything the argobot install needs from the
@@ -537,8 +605,9 @@ type clusterArgobotOptions struct {
 	serviceAccountUserID uuid.UUID // the cluster service account's user, granted Claim on the Channel
 	apiURLForContainer   string    // ConfigHub API URL as argobot (in-cluster) reaches it
 	kubeconfigPath       string
-	baseMode             string // clusterArgobotBaseUpdate or clusterArgobotBaseClone, from clusterChooseArgobotBase
-	repository           string // argobot's image repository, from clusterArgobotRepository
+	baseMode             string         // clusterArgobotBaseUpdate or clusterArgobotBaseClone, from clusterChooseArgobotBase
+	repository           string         // argobot's image repository, from clusterArgobotRepository
+	installer            *PluginCommand // the installer plugin that installs the base, from clusterFindInstaller; nil installs it from argobot's image
 }
 
 // clusterInstallArgobot installs argobot for a freshly attached cluster: argobot
@@ -559,23 +628,42 @@ func clusterInstallArgobot(out io.Writer, o clusterArgobotOptions) error {
 	argobotSpace := clusterArgobotComponent + "-" + o.clusterName
 	baseVariant, baseSpace := clusterArgobotBase(o.controller)
 
-	// 1. Ensure the shared base component exists, installed from the manifests
-	// `argobot install` prints for this controller. An upload is
-	// create-or-update, so updating a base another cluster already installed
-	// changes only what differs from the manifests. With --k8sbot-base clone an
-	// existing base is not updated. Either way the base is checked first for
-	// Units no upload owns that define argobot's resources, since a variant
-	// cloned from it would apply both.
-	manifests, err := clusterArgobotManifests(o.kubeconfigPath, o.controller, o.repository, out)
-	if err != nil {
-		return err
-	}
-	if err := clusterArgobotCheckBase(baseSpace, manifests); err != nil {
-		return err
-	}
-	if o.baseMode == clusterArgobotBaseClone {
-		fmt.Fprintf(out, "Cloning the existing argobot base %q as it is...\n", baseSpace)
-	} else {
+	// 1. Ensure the shared base component exists. With --k8sbot-base clone an
+	// existing base is not updated.
+	switch {
+	case o.installer != nil:
+		// The installer's upload is create-or-update, and reads the base's
+		// earlier answers from its installer record.
+		if o.baseMode == clusterArgobotBaseClone {
+			exists, err := clusterSpaceExists(baseSpace)
+			if err != nil {
+				return err
+			}
+			if exists {
+				fmt.Fprintf(out, "Cloning the existing argobot base %q as it is...\n", baseSpace)
+				break
+			}
+		}
+		if err := clusterArgobotInstallBase(out, o.installer, o.controller, o.repository); err != nil {
+			return fmt.Errorf("install argobot base component: %w", err)
+		}
+	default:
+		// Installed from the deployment argobot's newest release carries for
+		// this controller. An upload is create-or-update, so updating a base
+		// another cluster already installed changes only what differs. Either
+		// way the base is checked first for Units no upload owns that define
+		// argobot's resources, since a variant cloned from it would apply both.
+		manifests, err := clusterArgobotManifests(o.controller, o.repository, out)
+		if err != nil {
+			return err
+		}
+		if err := clusterArgobotCheckBase(baseSpace, manifests); err != nil {
+			return err
+		}
+		if o.baseMode == clusterArgobotBaseClone {
+			fmt.Fprintf(out, "Cloning the existing argobot base %q as it is...\n", baseSpace)
+			break
+		}
 		fmt.Fprintln(out, "Installing argobot base component...")
 		if err := runCubStdin(manifests, "variant", "upload",
 			"--component", clusterArgobotComponent,
@@ -622,26 +710,30 @@ func clusterInstallArgobot(out io.Writer, o clusterArgobotOptions) error {
 	}
 
 	// 4. Point argobot at this ConfigHub, its Channel, and the Target it
-	// stores the cluster's facts on. set-env upserts literal env vars; the key
-	// stays a secretKeyRef to the Secret clusterBootstrapServiceAccount applied
-	// out of band.
+	// stores the cluster's facts on, which the base leaves as placeholders. The
+	// key stays a secretKeyRef to the Secret clusterBootstrapServiceAccount
+	// applied out of band.
 	fmt.Fprintln(out, "Configuring argobot (CONFIGHUB_URL, CONFIGHUB_CHANNEL, CONFIGHUB_TARGET)...")
-	if err := runCub("function", "do", "--quiet",
-		"--space", argobotSpace, "--unit", clusterArgobotUnitSlug,
-		"set-env", clusterArgobotContainer,
-		"CONFIGHUB_URL="+o.apiURLForContainer,
-		"CONFIGHUB_CHANNEL="+channelRef,
-		"CONFIGHUB_TARGET="+o.ociTargetRef); err != nil {
+	if err := clusterConfigureArgobot(argobotSpace, o.installer != nil, map[string]string{
+		"CONFIGHUB_URL":     o.apiURLForContainer,
+		"CONFIGHUB_CHANNEL": channelRef,
+		"CONFIGHUB_TARGET":  o.ociTargetRef,
+	}); err != nil {
 		return fmt.Errorf("configure argobot env: %w", err)
 	}
 
 	// 5. Publish the variant's Release; Argo pulls argobot's workload from here.
-	unit, err := resolveUnit(clusterArgobotUnitSlug, space.Space.SpaceID.String(), "UnitID")
+	// Every Unit's triggers settle first, not only the Deployment's: from the
+	// installer package the edit also re-renders the argobot-env ConfigMap,
+	// whose placeholders the cluster's gate checks again.
+	units, err := apiListUnits(space.Space.SpaceID.String(), "", "UnitID")
 	if err != nil {
-		return fmt.Errorf("resolve argobot unit: %w", err)
+		return fmt.Errorf("list argobot's units: %w", err)
 	}
-	if err := clusterWaitUnitTriggers(space.Space.SpaceID, unit.Unit.UnitID); err != nil {
-		return err
+	for _, unit := range units {
+		if err := clusterWaitUnitTriggers(space.Space.SpaceID, unit.UnitID); err != nil {
+			return err
+		}
 	}
 	fmt.Fprintf(out, "Publishing argobot variant Release (%s)...\n", argobotSpace)
 	if err := clusterPublishRelease(space.Space.SpaceID); err != nil {
@@ -663,6 +755,32 @@ func clusterInstallArgobot(out io.Writer, o clusterArgobotOptions) error {
 	return nil
 }
 
+// clusterConfigureArgobot sets variables of argobot's environment in its
+// variant. From the image's deployment they are the Deployment's env, which
+// set-env upserts; from the installer package they are the argobot-env
+// AppConfig Unit, which ConfigHub renders into the ConfigMap the Deployment
+// reads.
+func clusterConfigureArgobot(argobotSpace string, fromInstaller bool, env map[string]string) error {
+	names := slices.Sorted(maps.Keys(env))
+	if !fromInstaller {
+		args := []string{"function", "do", "--quiet",
+			"--space", argobotSpace, "--unit", clusterArgobotUnitSlug,
+			"set-env", clusterArgobotContainer}
+		for _, name := range names {
+			args = append(args, name+"="+env[name])
+		}
+		return runCub(args...)
+	}
+	for _, name := range names {
+		if err := runCub("function", "do", "--quiet",
+			"--space", argobotSpace, "--unit", clusterArgobotEnvUnitSlug, "--toolchain", "AppConfig/Env",
+			"set-string-path", clusterArgobotEnvConfigSchema, name, env[name]); err != nil {
+			return err
+		}
+	}
+	return nil
+}
+
 // clusterArgobotBase returns the Variant label and slug of the shared base Space
 // for a controller.
 func clusterArgobotBase(controller string) (variant, space string) {
@@ -681,7 +799,7 @@ func clusterArgobotBase(controller string) (variant, space string) {
 // preconditions, before anything is created, so the question is never asked
 // halfway through. Without a terminal it is update, which is what every run did
 // before the question existed.
-func clusterChooseArgobotBase(out io.Writer, controller, flag, repository string) (string, error) {
+func clusterChooseArgobotBase(out io.Writer, controller, flag string) (string, error) {
 	switch flag {
 	case clusterArgobotBaseUpdate, clusterArgobotBaseClone:
 		return flag, nil
@@ -703,7 +821,7 @@ func clusterChooseArgobotBase(out io.Writer, controller, flag, repository string
 		current = "unknown"
 	}
 	fmt.Fprintf(out, "The shared argobot base %q already exists; it runs %s.\n", baseSpace, current)
-	fmt.Fprintf(out, "  [u] update it to what %s installs, then clone it (default)\n", repository+":latest")
+	fmt.Fprintln(out, "  [u] update it to argobot's newest release, then clone it (default)")
 	fmt.Fprintln(out, "  [c] clone it as it is")
 	fmt.Fprint(out, "Update or clone? [U/c]: ")
 	answer, err := bufio.NewReader(os.Stdin).ReadString('\n')
@@ -718,6 +836,35 @@ func clusterChooseArgobotBase(out io.Writer, controller, flag, repository string
 	default:
 		return "", fmt.Errorf("cancelled: answer u or c, or pass --k8sbot-base %s|%s", clusterArgobotBaseUpdate, clusterArgobotBaseClone)
 	}
+}
+
+// clusterArgobotCheckBaseKind refuses an existing base installed the other way
+// than this install: with the installer, which leaves its hidden installer
+// record in the base, or from argobot's image, which leaves argobot's
+// Deployment Unit and no record. The two installs write different Units, so
+// one over the other would leave both. It runs with the other preconditions.
+func clusterArgobotCheckBaseKind(controller string, withInstaller bool) error {
+	_, baseSpace := clusterArgobotBase(controller)
+	exists, err := clusterSpaceExists(baseSpace)
+	if err != nil || !exists {
+		return err
+	}
+	space, err := resolveSpace(baseSpace, "SpaceID")
+	if err != nil {
+		return err
+	}
+	spaceID := space.Space.SpaceID.String()
+	_, err = resolveUnit(clusterArgobotRecordUnitSlug, spaceID, "UnitID")
+	hasRecord := err == nil
+	switch {
+	case withInstaller && !hasRecord:
+		if _, err := resolveUnit(clusterArgobotUnitSlug, spaceID, "UnitID"); err == nil {
+			return fmt.Errorf("argobot base %q was installed from argobot's image, not with the installer; install without --k8sbot-installer, or delete the base (cub space delete --recursive %s) to install it with the installer", baseSpace, baseSpace)
+		}
+	case !withInstaller && hasRecord:
+		return fmt.Errorf("argobot base %q was installed with the installer; install with --k8sbot-installer, or delete the base (cub space delete --recursive %s) to install it from argobot's image", baseSpace, baseSpace)
+	}
+	return nil
 }
 
 // clusterArgobotBaseImage is the image argobot's Deployment names in the base

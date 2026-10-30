@@ -45,6 +45,15 @@ Examples:
   # List units with any validation errors
   cub unit list --space my-space --where "LEN(ValidationErrors) > 0"
 
+  # List the units a Release of a variant's space publishes
+  cub unit list --variant my-app/prod
+
+  # List every unit of a variant, including those no Release publishes
+  cub unit list --variant my-app/prod --include-unreleasable
+
+  # List the units a Release publishes, in every space
+  cub unit list --where "Releasable = TRUE"
+
   # List units with upstream revisions
   cub unit list --space my-space --where "UpstreamRevisionNum > 0"
 
@@ -69,7 +78,7 @@ Available columns (prefixed with Unit.):
   - Basic: Slug (or Name), DataBytes, HeadRevisionNum, HeadMutationNum
   - Metadata: CreatedAt, UpdatedAt, SpaceID, OrganizationID, UnitID
   - Status: ValidationErrors, LastChangeDescription
-  - Relationships: TargetID, ToolchainType
+  - Relationships: TargetID, ToolchainType, ProviderType, Releasable
   - Revisions: LastReleasedRevisionNum
   - Dynamic: Labels.<key>, Annotations.<key>
 
@@ -87,6 +96,7 @@ Agent discovery workflow:
 Key filtering patterns for agents:
 
 Configuration state:
+- Find the units a Release publishes: --where 'Releasable = TRUE'. With --variant, that is the default; pass --include-unreleasable for the rest
 - Find units with unreleased changes: --where 'HeadRevisionNum > LastReleasedRevisionNum AND TargetID IS NOT NULL'
 - Find never-released units: --where 'LastReleasedRevisionNum = 0'
 - Find units with placeholders: Use 'function get get-placeholders' instead
@@ -116,6 +126,7 @@ var columns []string
 var whereTrigger string
 var triggerFilter string
 var triggersPassed bool
+var includeUnreleasable bool
 
 // Default columns to display when --columns is not specified
 // var defaultUnitColumns = []string{"Name", "Space", "Target", "Status", "LastAction", "DataBytes", "HeadRevisionNum", "HeadMutationNum", "ValidationErrors", "LastChangeDescription"}
@@ -200,6 +211,7 @@ func init() {
 	unitListCmd.Flags().StringVar(&whereTrigger, "where-trigger", "", "where expression to match triggers for validation filtering")
 	unitListCmd.Flags().StringVar(&triggerFilter, "trigger-filter", "", "Filter UUID (with From=Trigger) for trigger validation filtering")
 	unitListCmd.Flags().BoolVar(&triggersPassed, "triggers-passed", false, "return units passing trigger validation (default: return failing units)")
+	unitListCmd.Flags().BoolVar(&includeUnreleasable, "include-unreleasable", false, "with --variant, also list the units a Release of the variant's space does not publish, such as AppConfig units and those bound to no Target")
 	enableViewFlag(unitListCmd)
 	unitCmd.AddCommand(unitListCmd)
 }
@@ -207,6 +219,13 @@ func init() {
 func unitListCmdRun(cmd *cobra.Command, args []string) error {
 	var err error
 	viewID := listViewFor("cub unit list")
+
+	// A variant is what a Release of its space publishes, so that is what --variant lists.
+	if variantFlag != "" && !includeUnreleasable {
+		where = cubapi.NewWhere(where).And("Releasable = TRUE").String()
+	} else if includeUnreleasable && variantFlag == "" {
+		return fmt.Errorf("--include-unreleasable applies to --variant: without it, every unit is listed")
+	}
 
 	// Promote to org-level search when data/trigger/view filters are used with a specific space
 	if whereData != "" || whereTrigger != "" || triggerFilter != "" || viewID != "" {

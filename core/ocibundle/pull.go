@@ -91,29 +91,9 @@ type Bundle struct {
 // bundle a GitOps toolchain can consume works here. A non-empty digest pulls that
 // manifest instead of the one the reference's tag names now.
 func Pull(ctx context.Context, rawRef, digest string, opts Options) (*Bundle, error) {
-	repo, err := remote.NewRepository(strings.TrimPrefix(rawRef, Scheme))
+	repo, err := newRepository(rawRef, opts)
 	if err != nil {
-		return nil, fmt.Errorf("invalid OCI reference %q: %w", rawRef, err)
-	}
-	client := &auth.Client{
-		Client: opts.HTTPClient,
-		Cache:  auth.NewCache(),
-	}
-	if client.Client == nil {
-		client.Client = retry.DefaultClient
-	}
-	if opts.UserAgent != "" {
-		client.SetUserAgent(opts.UserAgent)
-	}
-	if opts.Credentials != nil {
-		client.Credential = auth.StaticCredential(repo.Reference.Registry, auth.Credential{
-			Username: opts.Credentials.Username,
-			Password: opts.Credentials.Password,
-		})
-	}
-	repo.Client = client
-	if opts.PlainHTTPLoopback && isLoopbackRegistry(repo.Reference.Registry) {
-		repo.PlainHTTP = true
+		return nil, err
 	}
 	reference := repo.Reference.Reference
 	if digest != "" {
@@ -160,6 +140,36 @@ func Pull(ctx context.Context, rawRef, digest string, opts Options) (*Bundle, er
 		return nil, fmt.Errorf("no configuration files found in OCI artifact %q", rawRef)
 	}
 	return &Bundle{Digest: manifestDesc.Digest.String(), Files: x.files}, nil
+}
+
+// newRepository returns the repository a reference names, with a client set up
+// as opts says.
+func newRepository(rawRef string, opts Options) (*remote.Repository, error) {
+	repo, err := remote.NewRepository(strings.TrimPrefix(rawRef, Scheme))
+	if err != nil {
+		return nil, fmt.Errorf("invalid OCI reference %q: %w", rawRef, err)
+	}
+	client := &auth.Client{
+		Client: opts.HTTPClient,
+		Cache:  auth.NewCache(),
+	}
+	if client.Client == nil {
+		client.Client = retry.DefaultClient
+	}
+	if opts.UserAgent != "" {
+		client.SetUserAgent(opts.UserAgent)
+	}
+	if opts.Credentials != nil {
+		client.Credential = auth.StaticCredential(repo.Reference.Registry, auth.Credential{
+			Username: opts.Credentials.Username,
+			Password: opts.Credentials.Password,
+		})
+	}
+	repo.Client = client
+	if opts.PlainHTTPLoopback && isLoopbackRegistry(repo.Reference.Registry) {
+		repo.PlainHTTP = true
+	}
+	return repo, nil
 }
 
 // extractor accumulates the files of every layer against the pull's limits.

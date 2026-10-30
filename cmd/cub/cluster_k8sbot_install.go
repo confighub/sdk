@@ -13,8 +13,9 @@ import (
 )
 
 var clusterK8sbotInstallArgs struct {
-	argobotBase string
-	registry    string
+	argobotBase     string
+	registry        string
+	k8sbotInstaller bool
 }
 
 var clusterK8sbotInstallCmd = &cobra.Command{
@@ -33,8 +34,10 @@ Release's live status, and stores facts about the cluster on its target.
 
 In ConfigHub:
 
-  argobot-base        argobot's shared base Space, installed from the manifests
-                      the argobot image prints for the controller
+  argobot-base        argobot's shared base Space, installed from the deployment
+                      for the controller that argobot's newest release image
+                      carries, or with --k8sbot-installer, with ConfigHub's
+                      installer from argobot's installer package
                       ("argobot-sveltos-base" and "argobot-flux-base" for
                       Sveltos and Flux). When it exists already, --k8sbot-base
                       says whether to update it first or clone it as it is.
@@ -62,20 +65,29 @@ argobot. Deployments that already exist keep polling every minute.
 }
 
 func init() {
-	clusterK8sbotInstallCmd.Flags().StringVar(&clusterK8sbotInstallArgs.argobotBase, "k8sbot-base", "", "what to do with argobot's shared base Space when it already exists: update (upload what argobot:latest installs over it, then clone it) or clone (clone it as it is); asked when stdin is a terminal, otherwise update")
+	clusterK8sbotInstallCmd.Flags().StringVar(&clusterK8sbotInstallArgs.argobotBase, "k8sbot-base", "", clusterK8sbotBaseFlagUsage)
 	clusterK8sbotInstallCmd.Flags().StringVar(&clusterK8sbotInstallArgs.registry, "registry", "", clusterRegistryFlagUsage)
+	clusterK8sbotInstallCmd.Flags().BoolVar(&clusterK8sbotInstallArgs.k8sbotInstaller, "k8sbot-installer", false, clusterK8sbotInstallerFlagUsage)
 	clusterCmd.AddCommand(clusterK8sbotInstallCmd)
 }
 
 func clusterK8sbotInstallCmdRun(cmd *cobra.Command, args []string) error {
-	return clusterK8sbotInstallRun(cmd.OutOrStdout(), args[0], clusterK8sbotInstallArgs.argobotBase, clusterK8sbotInstallArgs.registry)
+	a := clusterK8sbotInstallArgs
+	return clusterK8sbotInstallRun(cmd.OutOrStdout(), args[0], a.argobotBase, a.registry, a.k8sbotInstaller)
 }
 
 // clusterK8sbotInstallRun installs argobot in a cluster attached without it.
-func clusterK8sbotInstallRun(out io.Writer, name, argobotBase, registry string) error {
+// withInstaller installs its base with ConfigHub's installer.
+func clusterK8sbotInstallRun(out io.Writer, name, argobotBase, registry string, withInstaller bool) error {
 	repository, err := clusterArgobotRepository(registry)
 	if err != nil {
 		return err
+	}
+	var installer *PluginCommand
+	if withInstaller {
+		if installer, err = clusterFindInstaller(); err != nil {
+			return err
+		}
 	}
 	if _, err := exec.LookPath("kubectl"); err != nil {
 		return fmt.Errorf("kubectl not found on PATH")
@@ -114,7 +126,10 @@ func clusterK8sbotInstallRun(out io.Writer, name, argobotBase, registry string) 
 	if err != nil {
 		return fmt.Errorf("cluster space %q: find its OCI target %q: %w", space.SpaceSlug, clusterTargetSlug, err)
 	}
-	mode, err := clusterChooseArgobotBase(out, space.Controller, argobotBase, repository)
+	if err := clusterArgobotCheckBaseKind(space.Controller, installer != nil); err != nil {
+		return err
+	}
+	mode, err := clusterChooseArgobotBase(out, space.Controller, argobotBase)
 	if err != nil {
 		return err
 	}
@@ -138,6 +153,7 @@ func clusterK8sbotInstallRun(out io.Writer, name, argobotBase, registry string) 
 		targetID:          target.TargetID,
 		argobotBase:       mode,
 		argobotRepository: repository,
+		argobotInstaller:  installer,
 		standalone:        true,
 	}, func(f func()) { rollback = append(rollback, f) }); err != nil {
 		return err
