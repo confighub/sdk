@@ -18,6 +18,9 @@ var spaceGetCmd = &cobra.Command{
 	Args:  cobra.ExactArgs(1),
 	Long: getCommandHelp(`Get detailed information about a space including its ID, name, and organization details.
 
+The Release Target row is the target the space's units are released to, named as
+<space>/<target> when the target is in another space.
+
 For a space with a release target, the OCI Repository row is where its releases are published:
 the oci:// URL to give Argo CD as an Application's repoURL, or Flux as an OCIRepository's url,
 with the tag latest to follow the newest release or a release's manifest digest to pin it.
@@ -52,9 +55,13 @@ func spaceGetCmdRun(cmd *cobra.Command, args []string) error {
 	return nil
 }
 
-func displaySpaceDetailsInView(spaceDetails *goclientnew.Space, expanded *goclientnew.ExtendedPermissions, view *tablewriter.Table) {
+func displaySpaceDetailsInView(spaceDetails *goclientnew.Space, expanded *goclientnew.ExtendedPermissions,
+	component *goclientnew.Component, releaseTarget *goclientnew.Target, view *tablewriter.Table) {
 	view.Append([]string{"ID", spaceDetails.SpaceID.String()})
 	view.Append([]string{"Name", spaceDetails.Slug})
+	if spaceDetails.ComponentID != nil {
+		view.Append([]string{"Component", componentName(spaceDetails, component)})
+	}
 	view.Append([]string{"Created At", spaceDetails.CreatedAt.String()})
 	view.Append([]string{"Updated At", spaceDetails.UpdatedAt.String()})
 	view.Append([]string{"Labels", labelsToString(spaceDetails.Labels)})
@@ -63,8 +70,37 @@ func displaySpaceDetailsInView(spaceDetails *goclientnew.Space, expanded *goclie
 	view.Append([]string{"Annotations", annotationsToString(spaceDetails.Annotations)})
 	view.Append([]string{"Permissions", permissionsToString(spaceDetails.Permissions, expanded)})
 	view.Append([]string{"Where Trigger", spaceDetails.WhereTrigger})
+	view.Append([]string{"Release Target", releaseTargetName(spaceDetails, releaseTarget)})
 	view.Append([]string{"OCI Repository", spaceDetails.OCIRepositoryURL})
 	view.Append([]string{"Organization ID", spaceDetails.OrganizationID.String()})
+}
+
+// releaseTargetName names a space's release target as the CLI takes it: its slug, qualified with
+// its space's slug when it is in another space, as release targets often are. A target that was
+// not expanded, as when --select leaves it out, is named by its ID.
+func releaseTargetName(space *goclientnew.Space, target *goclientnew.Target) string {
+	if space.ReleaseTargetID == nil {
+		return ""
+	}
+	if target == nil {
+		return space.ReleaseTargetID.String()
+	}
+	if target.SpaceID != space.SpaceID && target.SpaceSlug != "" {
+		return target.SpaceSlug + "/" + target.Slug
+	}
+	return target.Slug
+}
+
+// componentName names the Component a space is a Variant of by its slug, or by its ID when it
+// was not expanded, as when --select leaves it out.
+func componentName(space *goclientnew.Space, component *goclientnew.Component) string {
+	if space.ComponentID == nil {
+		return ""
+	}
+	if component == nil || component.Slug == "" {
+		return space.ComponentID.String()
+	}
+	return component.Slug
 }
 
 func displaySpaceDetails(spaceDetails *goclientnew.Space) {
@@ -100,7 +136,8 @@ func triggerSliceSlugsToString(triggers []goclientnew.Trigger) string {
 
 func displayExtendedSpaceDetails(extendedSpace *goclientnew.ExtendedSpace) {
 	view := tableView()
-	displaySpaceDetailsInView(extendedSpace.Space, extendedSpace.Permissions, view)
+	displaySpaceDetailsInView(extendedSpace.Space, extendedSpace.Permissions, extendedSpace.Component,
+		extendedSpace.ReleaseTarget, view)
 
 	// Display TriggerFilter - use Slug if expanded, otherwise UUID
 	if extendedSpace.TriggerFilter != nil {

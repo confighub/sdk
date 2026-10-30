@@ -227,13 +227,17 @@ func cloneVariantUnits(ctx context.Context, c *Client, spec VariantSpec, upstrea
 
 // setVariantNamespace runs set-namespace over the variant's units. The clones joined the
 // ChangeSet, if any, and a change to a unit in an open ChangeSet has to name it.
+//
+// The namespace is the variant's own value, so the paths it writes are protected: a merge from
+// the upstream does not write the upstream's value back over them.
 func setVariantNamespace(ctx context.Context, c *Client, spec VariantSpec, space *goclientnew.Space, upstreamNamespace string) error {
 	args := []api.FunctionArgument{{Value: spec.Namespace}}
 	if upstreamNamespace != "" {
 		args = append(args, api.FunctionArgument{ParameterName: "old-namespace", Value: upstreamNamespace})
 	}
 	where := NewWhere("").SpaceID(space.SpaceID).String()
-	params := &goclientnew.InvokeFunctionsOnOrgParams{Where: &where, ChangeSetId: spec.ChangeSetID}
+	protect := true
+	params := &goclientnew.InvokeFunctionsOnOrgParams{Where: &where, ChangeSetId: spec.ChangeSetID, Protect: &protect}
 	if spec.DryRun {
 		value := "true"
 		params.DryRun = &value

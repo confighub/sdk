@@ -236,7 +236,7 @@ func (r resolver[E]) notFound(ref Ref, spaceID goclientnew.UUID) error {
 // before resolution was shared, so that the slug and the UUID spelling of a
 // reference return the same envelope.
 const (
-	spaceGetInclude       = "TriggerFilterID,TriggerIDs,Permissions"
+	spaceGetInclude       = "TriggerFilterID,TriggerIDs,Permissions,ReleaseTargetID,ComponentID"
 	unitGetInclude        = "UnitEventID,TargetID,UpstreamUnitID,SpaceID,FromLinkID,ChangeSetID,UpstreamSpaceID"
 	targetGetInclude      = "SpaceID,TriggerFilterID,TriggerIDs,Permissions"
 	triggerGetInclude     = "SpaceID,BridgeWorkerID,InvocationID,UnitFilterID"
