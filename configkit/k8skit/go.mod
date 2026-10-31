@@ -3,7 +3,7 @@ module github.com/confighub/sdk/configkit/k8skit
 go 1.26.0
 
 require (
-	github.com/confighub/sdk/core v0.0.0
+	github.com/confighub/sdk/core v0.9.16
 	github.com/gosimple/slug v1.15.0
 	github.com/stretchr/testify v1.11.1
 	golang.org/x/text v0.42.0
@@ -46,4 +46,3 @@ require (
 	sigs.k8s.io/kustomize/kyaml v0.19.0 // indirect
 )
 
-replace github.com/confighub/sdk/core => ../../core
