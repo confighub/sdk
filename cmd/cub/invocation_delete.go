@@ -105,7 +105,7 @@ func runBulkInvocationDelete() error {
 	effectiveWhere = addSpaceIDToWhereClause(effectiveWhere, selectedSpaceID)
 
 	// Build bulk delete parameters
-	include := "SpaceID,BridgeWorkerID"
+	include := "SpaceID"
 	params := &goclientnew.BulkDeleteInvocationsParams{
 		Where:   &effectiveWhere,
 		Include: &include,

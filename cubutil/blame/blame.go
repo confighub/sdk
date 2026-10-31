@@ -49,6 +49,7 @@ import (
 	"github.com/confighub/sdk/core/cubapi"
 	"github.com/confighub/sdk/core/function/api"
 	goclientnew "github.com/confighub/sdk/core/openapi/goclient-new"
+	"github.com/confighub/sdk/core/third_party/gaby"
 	"github.com/confighub/sdk/core/workerapi"
 )
 
@@ -138,6 +139,9 @@ type Field struct {
 	// history.
 	Absent    bool `json:",omitempty"`
 	Protected bool
+	// ResourceProtected is true when the field is protected because its resource is, as a
+	// whole: a merge then leaves every field of the resource alone, whatever its own entry says.
+	ResourceProtected bool `json:",omitempty"`
 	// Guards are the reasons recorded for this field: its own, and every annotated ancestor's,
 	// which is what an operation writing here has to be cleared for.
 	Guards map[string]string `json:",omitempty"`
@@ -191,10 +195,13 @@ func (r *Resolver) UnitData(ctx context.Context, unit *goclientnew.Unit, mutatio
 	if len(mutationSources) == 0 {
 		return nil, nil
 	}
-	flattened, err := flattenUnitFields(data, unit.ToolchainType)
+	flattened, docs, err := flattenUnitFields(data, unit.ToolchainType)
 	if err != nil {
 		return nil, err
 	}
+	// The record, and everything else the unit says about its fields, as paths into this data.
+	mutationSources = resolveRecordAnchors(docs, mutationSources, r.mutationChange(ctx, unit))
+	unit = resolveUnitAnchors(docs, unit)
 	space := r.space(ctx, unit.SpaceID)
 	spaceSlug, releasable := space.slug, space.releasable
 
@@ -216,6 +223,7 @@ func (r *Resolver) UnitData(ctx context.Context, unit *goclientnew.Unit, mutatio
 		f.UnitSlug = unit.Slug
 		info, protected := creditPath(identifier, mutationSources, f.ResourceType, f.ResourceName, f.resourceNameCore, f.storedPath)
 		f.Protected = protected
+		f.ResourceProtected = resourceProtected(identifier, mutationSources, f.ResourceType, f.ResourceName, f.resourceNameCore)
 		// Keyed by the authored path, which is the form the annotation table stores: its
 		// paths are canonical, so they carry no anchor to strip.
 		f.Guards = blameGuardsForPath(identifier, annotations, f.ResourceType, f.ResourceName, f.resourceNameCore, f.Path)
@@ -381,7 +389,8 @@ func insertAbsentFields(fields, absent []*Field) []*Field {
 }
 
 // flattenUnitFields turns the unit's configuration into one entry per field, with
-// its current value.
+// its current value, and returns the configuration as one YAML document per resource, which
+// is what a stored path is resolved against.
 //
 // The flattening is compute-mutations run locally against a skeleton of each
 // resource's identity: identical identity means the resources match, so the diff is
@@ -390,13 +399,13 @@ func insertAbsentFields(fields, absent []*Field) []*Field {
 // paths identical to the ones MutationSources, functions, and links use -- including
 // the associative segments ("?name=server") that a naive walk would render as
 // indices.
-func flattenUnitFields(data, toolchainType string) ([]*Field, error) {
+func flattenUnitFields(data, toolchainType string) ([]*Field, *resourceDocs, error) {
 	if toolchainType == "" {
-		return nil, errors.New("unit has no toolchain type, so its data cannot be read")
+		return nil, nil, errors.New("unit has no toolchain type, so its data cannot be read")
 	}
 	provider, err := blameResourceProvider(toolchainType)
 	if err != nil {
-		return nil, err
+		return nil, nil, err
 	}
 
 	// Empty "previous" data: nothing pairs with it, so every resource comes back as
@@ -426,29 +435,38 @@ func flattenUnitFields(data, toolchainType string) ([]*Field, error) {
 	})
 	restore()
 	if err != nil {
-		return nil, errors.Wrap(err, "failed to flatten the unit's fields")
+		return nil, nil, errors.Wrap(err, "failed to flatten the unit's fields")
 	}
 	if resp == nil || !resp.Success {
 		message := "compute-mutations reported no result"
 		if resp != nil && len(resp.ErrorMessages) > 0 {
 			message = strings.Join(resp.ErrorMessages, "; ")
 		}
-		return nil, errors.New(message)
+		return nil, nil, errors.New(message)
 	}
 
 	raw, ok := resp.Outputs[api.OutputTypeResourceMutationList]
 	if !ok || len(raw) == 0 {
-		return nil, nil
+		return nil, nil, nil
 	}
 	var mutations api.ResourceMutationList
 	if err := json.Unmarshal(raw, &mutations); err != nil {
-		return nil, errors.Wrap(err, "failed to read the flattened fields")
+		return nil, nil, errors.Wrap(err, "failed to read the flattened fields")
 	}
 
 	fields := make([]*Field, 0)
+	docs := &resourceDocs{identifier: provider}
 	for i := range mutations {
 		rm := &mutations[i]
 		resourceType := string(rm.Resource.ResourceType)
+		if doc, err := gaby.ParseYAML([]byte(rm.ResourceMutationInfo.Value)); err == nil && doc != nil {
+			docs.resources = append(docs.resources, &goclientnew.ResourceInfo{
+				ResourceType:             resourceType,
+				ResourceName:             string(rm.Resource.ResourceName),
+				ResourceNameWithoutScope: string(rm.Resource.ResourceNameWithoutScope),
+			})
+			docs.docs = append(docs.docs, doc)
+		}
 		leaves := expandBlameValue(provider, resourceType, "", rm.ResourceMutationInfo.Value)
 
 		// A path entry, where one exists, is the newer word on that field than the
@@ -470,7 +488,7 @@ func flattenUnitFields(data, toolchainType string) ([]*Field, error) {
 			})
 		}
 	}
-	return fields, nil
+	return fields, docs, nil
 }
 
 // overlayBlameLeaves replaces the leaves a newer value covers, keyed by authored
@@ -501,7 +519,9 @@ func quietSlog() func() {
 }
 
 // creditPath finds the MutationSources entry that wrote a path: its own, the closest
-// ancestor's, or the resource-level entry covering everything the resource arrived with.
+// ancestor's, or the resource-level entry covering everything the resource arrived with. The
+// path is protected when its entry says so, or when its resource is protected as a whole,
+// since a merge then withholds every change to the resource before it looks at any path.
 //
 // The ancestor is what credits a value that arrived inside a larger one. A change that
 // adds an array element or a map records one entry for the whole of it, not one per leaf,
@@ -509,19 +529,28 @@ func quietSlog() func() {
 // falls through to the resource and reads as having arrived when the Unit was created.
 func creditPath(identifier api.ResourceIdentifier, mutationSources goclientnew.ResourceMutationList, resourceType, resourceName, resourceNameCore, path string) (*goclientnew.MutationInfo, bool) {
 	rm := matchBlameResource(identifier, mutationSources, resourceType, resourceName, resourceNameCore)
-	if rm != nil {
-		if info := lookupPathMutation(rm.PathMutationMap, path); info != nil {
-			return info, info.Protected
-		}
-		if info := lookupAncestorMutation(rm.PathMutationMap, path); info != nil {
-			return info, info.Protected
-		}
-		if rm.ResourceMutationInfo != nil && rm.ResourceMutationInfo.MutationType != nil &&
-			*rm.ResourceMutationInfo.MutationType != goclientnew.None {
-			return rm.ResourceMutationInfo, rm.ResourceMutationInfo.Protected
-		}
+	if rm == nil {
+		return nil, false
 	}
-	return nil, false
+	wholeResource := rm.ResourceMutationInfo != nil && rm.ResourceMutationInfo.Protected
+	if info := lookupPathMutation(rm.PathMutationMap, path); info != nil {
+		return info, info.Protected || wholeResource
+	}
+	if info := lookupAncestorMutation(rm.PathMutationMap, path); info != nil {
+		return info, info.Protected || wholeResource
+	}
+	if rm.ResourceMutationInfo != nil && rm.ResourceMutationInfo.MutationType != nil &&
+		*rm.ResourceMutationInfo.MutationType != goclientnew.None {
+		return rm.ResourceMutationInfo, wholeResource
+	}
+	return nil, wholeResource
+}
+
+// resourceProtected reports whether a resource is protected as a whole.
+func resourceProtected(identifier api.ResourceIdentifier, mutationSources goclientnew.ResourceMutationList,
+	resourceType, resourceName, resourceNameCore string) bool {
+	rm := matchBlameResource(identifier, mutationSources, resourceType, resourceName, resourceNameCore)
+	return rm != nil && rm.ResourceMutationInfo != nil && rm.ResourceMutationInfo.Protected
 }
 
 // lookupPathMutation finds a path's entry, by the key as given and then by authored

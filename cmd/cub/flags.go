@@ -82,7 +82,7 @@ func dryRunParam() *bool {
 }
 
 // permissionFlag is --permission for the commands that declare no flag of their own for it;
-// space, component, target and worker do.
+// space, component and target do.
 var permissionFlag []string
 var displayNameFlag string
 var hiddenReasonFlag string

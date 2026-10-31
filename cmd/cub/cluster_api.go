@@ -715,7 +715,7 @@ func clusterDependentSpaceSlugs(clusterSpaceID uuid.UUID) ([]string, error) {
 }
 
 // clusterDeleteSpace deletes a space by slug. If recursive is true, the server
-// cascades deletion to units, targets, and workers within the space (subject
+// cascades deletion to units, targets, and the other entities in the space (subject
 // to delete gates).
 func clusterDeleteSpace(slug string, recursive bool) error {
 	space, err := resolveSpace(slug, "SpaceID")

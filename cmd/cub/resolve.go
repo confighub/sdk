@@ -168,10 +168,6 @@ func resolveChannel(ref string, spaceID string, selectParam string) (*goclientne
 	return cubapi.ResolveChannel(ctx, cubClient, cubapi.ParseRef(ref), resolveOpts(spaceID, selectParam))
 }
 
-func resolveWorker(ref string, spaceID string, selectParam string) (*goclientnew.ExtendedBridgeWorker, error) {
-	return cubapi.ResolveBridgeWorker(ctx, cubClient, cubapi.ParseRef(ref), resolveOpts(spaceID, selectParam))
-}
-
 // The resolve*ID helpers answer the common question -- "which entity does this
 // name?" -- for a caller that needs only the id, and that looks the entity up
 // in the space the command selected. They ask for the id and the slug alone,
@@ -312,13 +308,6 @@ func resolveAttributeID(ref string) (uuid.UUID, error) {
 	return attribute.Attribute.AttributeID, nil
 }
 
-func resolveWorkerID(ref string) (uuid.UUID, error) {
-	worker, err := resolveWorker(ref, defaultSpaceID(), idSelect("BridgeWorkerID"))
-	if err != nil {
-		return uuid.Nil, err
-	}
-	return worker.BridgeWorker.BridgeWorkerID, nil
-}
 
 // The plural helpers resolve a list of references, which is what the flags that
 // accept several of them (--trigger, --invocation, cub k8s --target) need.

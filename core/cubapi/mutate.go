@@ -63,7 +63,7 @@ type Selector struct {
 	WhereResource string // filter on resources within the config data
 	ResourceType  string // e.g. "apps/v1/Deployment"
 	ToolchainType string // defaults to DefaultToolchainType
-	ExecutorSpace string // optional space whose worker/context executes functions
+	ExecutorSpace string // optional space whose executor runs builtin functions
 	IncludeHidden string // also select hidden units: these HiddenReasons, comma-separated, or "*"
 }
 

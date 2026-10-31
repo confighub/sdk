@@ -407,7 +407,7 @@ var referenceResolvers = map[string]func(ref string) (uuid.UUID, error){
 	"Target":         resolveTargetID,
 	"Component":      resolveComponentID,
 	"Invocation":     resolveInvocationID,
-	"BridgeWorker":   resolveWorkerID,
+	"Channel":        resolveChannelID,
 	"ChangeWorkflow": resolveChangeWorkflowID,
 	"Unit":           resolveUnitID,
 	"Space": func(ref string) (uuid.UUID, error) {

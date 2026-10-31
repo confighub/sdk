@@ -41,7 +41,7 @@ The output includes a ready-to-use command template showing required and optiona
 
 Important flags:
 - --toolchain: Specify function toolchain (defaults to "Kubernetes/YAML")
-- Use the same --channel or --worker flag as 'function list' if needed`
+- Use the same --channel flag as 'function list' if needed`
 
 	return getCommandHelp(baseHelp, agentContext)
 }
@@ -52,9 +52,7 @@ var functionExplainCmdArgs struct {
 }
 
 func init() {
-	functionExplainCmd.Flags().StringVar(&functionExplainCmdArgs.host.worker, "worker", "", "Worker slug to explain a function for")
 	functionExplainCmd.Flags().StringVar(&functionExplainCmdArgs.host.channel, "channel", "", "Channel whose served function to explain")
-	functionExplainCmd.MarkFlagsMutuallyExclusive("worker", "channel")
 	functionExplainCmd.Flags().StringVar(&functionExplainCmdArgs.toolchainType, "toolchain", "Kubernetes/YAML", "Toolchain type to explain a function for")
 	addStandardDisplayFlags(functionExplainCmd)
 	functionCmd.AddCommand(functionExplainCmd)

@@ -206,20 +206,19 @@ func parseFilterFlag(filterValue string) (string, error) {
 
 // Entity type constants for consistent naming across the codebase
 const (
-	EntityTypeSpace        = "Space"
-	EntityTypeFilter       = "Filter"
-	EntityTypeView         = "View"
-	EntityTypeInvocation   = "Invocation"
-	EntityTypeTrigger      = "Trigger"
-	EntityTypeTag          = "Tag"
-	EntityTypeChangeSet    = "ChangeSet"
-	EntityTypeChangeOrder  = "ChangeOrder"
-	EntityTypeTarget       = "Target"
-	EntityTypeBridgeWorker = "BridgeWorker"
-	EntityTypeUnit         = "Unit"
-	EntityTypeLink         = "Link"
-	EntityTypeSet          = "Set"
-	EntityTypeAttribute    = "Attribute"
+	EntityTypeSpace       = "Space"
+	EntityTypeFilter      = "Filter"
+	EntityTypeView        = "View"
+	EntityTypeInvocation  = "Invocation"
+	EntityTypeTrigger     = "Trigger"
+	EntityTypeTag         = "Tag"
+	EntityTypeChangeSet   = "ChangeSet"
+	EntityTypeChangeOrder = "ChangeOrder"
+	EntityTypeTarget      = "Target"
+	EntityTypeUnit        = "Unit"
+	EntityTypeLink        = "Link"
+	EntityTypeSet         = "Set"
+	EntityTypeAttribute   = "Attribute"
 )
 
 // entityUUIDs extracts the UUID of each entity using the supplied ID getter.

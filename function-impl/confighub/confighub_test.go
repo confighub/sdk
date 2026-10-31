@@ -48,7 +48,7 @@ Event: Mutation
 ToolchainType: Kubernetes/YAML
 FunctionName: vet-schemas
 UnitFilter: all-k8s-units
-BridgeWorker: default/server-worker
+Channel: default/vet-channel
 Labels:
   Purpose: validation
 ---
@@ -72,9 +72,9 @@ func TestGetReferences(t *testing.T) {
 			value.Details.NeededRequired[api.PropertyKeyResourceType]
 	}
 	assert.Equal(t, map[string]string{
-		"Trigger UnitFilter = all-k8s-units":           "Filter",
-		"Trigger BridgeWorker = default/server-worker": "BridgeWorker",
-		"Space TriggerFilter = platform/triggers":      "Filter",
+		"Trigger UnitFilter = all-k8s-units":      "Filter",
+		"Trigger Channel = default/vet-channel":   "Channel",
+		"Space TriggerFilter = platform/triggers": "Filter",
 	}, references)
 }
 

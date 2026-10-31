@@ -464,9 +464,6 @@ type ModelConstraint interface {
 		goclientnew.ExtendedUser |
 		goclientnew.Group |
 		goclientnew.ExtendedGroup |
-		goclientnew.ExtendedBridgeWorker |
-		goclientnew.BridgeWorker |
-		goclientnew.BridgeWorkerStatus |
 		goclientnew.Revision |
 		goclientnew.ExtendedRevision |
 		goclientnew.Mutation |
@@ -497,7 +494,6 @@ type ModelConstraint interface {
 		goclientnew.ExtendedChangeWorkflow |
 		goclientnew.Unit |
 		goclientnew.UnitEvent |
-		goclientnew.UnitAction |
 		goclientnew.ExtendedUnit |
 		goclientnew.Attribute |
 		goclientnew.ExtendedAttribute |
@@ -526,7 +522,6 @@ type ModelConstraint interface {
 
 type DeleteConstraint interface {
 	goclientnew.DeleteResponse |
-		goclientnew.DeleteBridgeWorkerResponse |
 		goclientnew.DeleteChangeSetResponse |
 		goclientnew.DeleteFilterResponse |
 		goclientnew.DeleteInvocationResponse |
@@ -820,87 +815,3 @@ func actionStatus(status *goclientnew.ActionStatusType) goclientnew.ActionStatus
 	return *status
 }
 
-// handleBulkUnitActionResponse handles responses from bulk unit action operations.
-func handleBulkUnitActionResponse(results *[]goclientnew.UnitActionResponse, action string, isDryRun bool) error {
-	if results == nil || len(*results) == 0 {
-		if !quiet && !isAlternativeOutput() {
-			tprint("No units found matching the filter")
-		}
-		renderPayload(results)
-		return nil
-	}
-
-	// Count successes and failures
-	var successCount, failureCount int
-	var hasErrors bool
-
-	for _, result := range *results {
-		if result.Error != nil {
-			failureCount++
-			hasErrors = true
-			if !quiet {
-				// Display error for this unit
-				if result.Error.ErrorMetadata != nil && result.Error.ErrorMetadata.EntityID != "" {
-					if result.Error.ErrorMetadata.EntitySlug != "" {
-						tprint(
-							"Failed to %s unit %s (%s): %s",
-							action,
-							result.Error.ErrorMetadata.EntitySlug,
-							result.Error.ErrorMetadata.EntityID,
-							result.Error.Message,
-						)
-					} else {
-						tprint("Failed to %s unit %s: %s", action, result.Error.ErrorMetadata.EntityID, result.Error.Message)
-					}
-				} else {
-					tprint("Failed: %s", result.Error.Message)
-				}
-			}
-		} else if result.Action != nil {
-			successCount++
-			if !quiet {
-				// Fetch unit details to get the slug
-				unitDetails, err := resolveUnit(result.Action.UnitID.String(), result.Action.SpaceID.String(), "Slug")
-				unitSlug := result.Action.UnitID.String()
-				if err == nil && unitDetails != nil && unitDetails.Unit.Slug != "" {
-					unitSlug = unitDetails.Unit.Slug
-				}
-				tprint("%s queued for %s (operation: %s)",
-					strings.Title(action), unitSlug, result.Action.QueuedOperationID)
-			}
-		}
-	}
-
-	// Display results in alternative formats
-	renderPayload(results)
-
-	// Display summary
-	if !quiet && !isAlternativeOutput() {
-		if isDryRun {
-			tprint("") // blank line before summary
-			tprint("Dry run completed (no changes made)")
-			if successCount > 0 {
-				tprint("Units that would be %sed: %d", action, successCount)
-			}
-			if failureCount > 0 {
-				tprint("Units that would fail: %d", failureCount)
-			}
-			tprint("Total units processed: %d", successCount+failureCount)
-		} else {
-			// Operations are queued; nothing waits on them.
-			if successCount > 0 && failureCount > 0 {
-				tprint("Bulk %s queued with partial success: %d queued, %d failed to queue", action, successCount, failureCount)
-			} else if successCount > 0 {
-				tprint("Bulk %s queued successfully: %d units", action, successCount)
-			} else if failureCount > 0 {
-				tprint("Bulk %s failed to queue: %d units", action, failureCount)
-			}
-		}
-	}
-
-	if hasErrors {
-		return fmt.Errorf("bulk %s had failures", action)
-	}
-
-	return nil
-}

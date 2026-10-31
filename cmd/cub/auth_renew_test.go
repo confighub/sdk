@@ -32,13 +32,13 @@ func testJWT(name string, exp time.Time) string {
 }
 
 // fakeHub is a server that accepts one access token at a time on /api/me and
-// renews sessions on /auth/refresh and /auth/worker.
+// renews sessions on /auth/refresh and /auth/token.
 type fakeHub struct {
 	mu           sync.Mutex
 	valid        string // the access token /api/me accepts
 	refreshToken string // the refresh token /auth/refresh accepts
 	orgID        string // the organization the server mints for
-	user         string // the user /auth/worker answers with
+	user         string // the user /auth/token answers with
 	refreshes    []map[string]string
 	keyLogins    int
 	meTokens     []string
@@ -75,11 +75,9 @@ func (h *fakeHub) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 			"refresh_token":   h.refreshToken,
 			"organization_id": h.orgID,
 		})
-	case "/auth/worker":
+	case "/auth/token":
 		h.keyLogins++
-		var body map[string]string
-		_ = json.NewDecoder(r.Body).Decode(&body)
-		if body["client_assertion"] == "" {
+		if r.FormValue("grant_type") != "urn:ietf:params:oauth:grant-type:jwt-bearer" || r.FormValue("assertion") == "" {
 			w.WriteHeader(http.StatusUnauthorized)
 			return
 		}
@@ -242,7 +240,7 @@ func TestContextWithoutSessionIsNotRenewed(t *testing.T) {
 }
 
 // writeTestKey writes an Ed25519 private JWK for the identity, as
-// `cub user key add --generate` does, and returns its path.
+// `cub serviceaccount key add --generate` does, and returns its path.
 func writeTestKey(t *testing.T, externalID string) string {
 	t.Helper()
 	pub, priv, err := ed25519.GenerateKey(rand.Reader)

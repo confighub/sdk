@@ -239,9 +239,9 @@ const (
 	spaceGetInclude       = "TriggerFilterID,TriggerIDs,Permissions,ReleaseTargetID,ComponentID"
 	unitGetInclude        = "UnitEventID,TargetID,UpstreamUnitID,SpaceID,FromLinkID,ChangeSetID,UpstreamSpaceID"
 	targetGetInclude      = "SpaceID,TriggerFilterID,TriggerIDs,Permissions"
-	triggerGetInclude     = "SpaceID,BridgeWorkerID,InvocationID,UnitFilterID"
+	triggerGetInclude     = "SpaceID,InvocationID,UnitFilterID"
 	filterGetInclude      = "SpaceID,FromSpaceID"
-	invocationGetInclude  = "SpaceID,BridgeWorkerID"
+	invocationGetInclude  = "SpaceID"
 	changeSetGetInclude   = "SpaceID,StartTagID,EndTagID"
 	changeOrderGetInclude = "SpaceID,StartTagID,EndTagID,RestoreTagID,InvocationID,UnitFilterID"
 	// A ChangeWorkflow references nothing but its Space: its stages select Spaces by expression
@@ -251,7 +251,6 @@ const (
 	viewGetInclude           = "SpaceID,FilterID"
 	attributeGetInclude      = "SpaceID"
 	linkGetInclude           = "SpaceID,ToSpaceID,FromUnitID,ToUnitID"
-	bridgeWorkerGetInclude   = "SpaceID,Permissions"
 	channelGetInclude        = "SpaceID,Permissions"
 	commandRunGetInclude     = "SpaceID,ChannelID"
 )
@@ -381,7 +380,7 @@ func ResolveOrganizationMember(ctx context.Context, c *Client, organizationID go
 }
 
 // ResolveUser looks up one user by username or UUID, among the users in the
-// caller's organization and the bot users of its workers. A user resides in no
+// caller's organization and the Users of its ServiceAccounts. A user resides in no
 // space, so ResolveOpts.Space is ignored, as is Include: see [ListUsers].
 func ResolveUser(ctx context.Context, c *Client, ref Ref, opts ResolveOpts) (*goclientnew.ExtendedUser, error) {
 	r := resolver[goclientnew.ExtendedUser]{
@@ -707,28 +706,6 @@ func ResolveChannel(ctx context.Context, c *Client, ref Ref, opts ResolveOpts) (
 				return goclientnew.UUID{}
 			}
 			return e.Channel.ChannelID
-		},
-	}.resolve(ctx, c, ref, opts)
-}
-
-// ResolveBridgeWorker looks up one bridge worker by slug, space/slug, or UUID.
-func ResolveBridgeWorker(ctx context.Context, c *Client, ref Ref, opts ResolveOpts) (*goclientnew.ExtendedBridgeWorker, error) {
-	return resolver[goclientnew.ExtendedBridgeWorker]{
-		entity: "worker", idField: "BridgeWorkerID", include: bridgeWorkerGetInclude,
-		list: func(ctx context.Context, c *Client, w Where, o ListOpts) ([]*goclientnew.ExtendedBridgeWorker, error) {
-			return ListBridgeWorkers(ctx, c, w, o)
-		},
-		slugOf: func(e *goclientnew.ExtendedBridgeWorker) string {
-			if e.BridgeWorker == nil {
-				return ""
-			}
-			return e.BridgeWorker.Slug
-		},
-		idOf: func(e *goclientnew.ExtendedBridgeWorker) goclientnew.UUID {
-			if e.BridgeWorker == nil {
-				return goclientnew.UUID{}
-			}
-			return e.BridgeWorker.BridgeWorkerID
 		},
 	}.resolve(ctx, c, ref, opts)
 }

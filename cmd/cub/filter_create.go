@@ -39,7 +39,6 @@ From Types: the entity type the filter selects, such as
   - Trigger: Filter triggers
   - Target: Filter targets
   - ChangeSet, ChangeOrder: Filter change sets and change orders
-  - BridgeWorker: Filter workers
 
 Most other entity types are accepted too, named as in the API, such as Link, Tag, Invocation,
 Mutation, ReviewComment, Resource, ServiceAccount and Release.

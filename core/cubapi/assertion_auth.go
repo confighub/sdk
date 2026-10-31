@@ -15,18 +15,15 @@ import (
 )
 
 // PerformAssertionAuth authenticates by signing a short-lived assertion and
-// exchanging it for a session, the asymmetric counterpart to
-// PerformWorkerAuth.
+// exchanging it for a session.
 //
 // Nothing secret crosses the wire: the assertion is a signature over claims the
 // server can verify with the public key it already holds, and it expires in
-// minutes. That is the whole point of the exchange -- PerformWorkerAuth sends a
-// credential ConfigHub stored and can replay, this one sends proof of a
-// credential ConfigHub has never seen.
+// minutes. It is proof of a credential ConfigHub has never seen.
 //
 // The identity is carried inside the assertion (its iss and sub, and the kid in
-// its header), so unlike PerformWorkerAuth nothing else needs naming here. The
-// server resolves the credential from the kid alone.
+// its header), so nothing else needs naming here. The server resolves the
+// credential from the kid alone.
 func PerformAssertionAuth(serverURL string, signer *AssertionSigner) (*AuthSession, error) {
 	return PerformAssertionAuthContext(context.Background(), nil, serverURL, signer)
 }
@@ -43,8 +40,7 @@ func PerformAssertionAuthContext(ctx context.Context, httpClient *http.Client, s
 	}
 
 	// The JWT-bearer grant (RFC 7523 §2.1) at the OAuth token endpoint. The assertion names
-	// the endpoint in aud, as RFC 7523 §3 has it, and also the audience a server older than
-	// the grant pins, so the one assertion serves the fallback below too.
+	// the endpoint in aud, as RFC 7523 §3 has it.
 	tokenEndpoint := strings.TrimRight(serverURL, "/") + "/auth/token"
 	assertion, err := signer.SignFor(tokenEndpoint)
 	if err != nil {
@@ -56,31 +52,15 @@ func PerformAssertionAuthContext(ctx context.Context, httpClient *http.Client, s
 		return nil, err
 	}
 
-	// A server older than the grant answers without an RFC 6749 error: 404 with no
-	// identity provider, or its device exchange's own refusal. It takes the assertion at
-	// /auth/worker, as JSON with RFC 7523 §2.2's field names.
-	var tokenErr struct {
-		Error       string `json:"error"`
-		Description string `json:"error_description"`
-	}
-	if status != http.StatusOK && (json.Unmarshal(body, &tokenErr) != nil || tokenErr.Error == "") {
-		legacy, err := json.Marshal(map[string]string{
-			"client_assertion_type": ClientAssertionTypeJWTBearer,
-			"client_assertion":      assertion,
-		})
-		if err != nil {
-			return nil, fmt.Errorf("failed to marshal request body: %w", err)
-		}
-		status, body, err = postForSession(ctx, httpClient, strings.TrimRight(serverURL, "/")+"/auth/worker", "application/json", legacy)
-		if err != nil {
-			return nil, err
-		}
-	}
-
 	if status != http.StatusOK {
+		var tokenErr struct {
+			Error       string `json:"error"`
+			Description string `json:"error_description"`
+		}
+		_ = json.Unmarshal(body, &tokenErr)
 		// Every refusal of the assertion is the same by design, so the kid is worth
 		// printing: it is the only thing that distinguishes "this key is not registered"
-		// from "this key signed something invalid", and it is what `cub user key list` shows.
+		// from "this key signed something invalid", and it is what `cub serviceaccount key list` shows.
 		reason := strings.TrimSpace(string(body))
 		if tokenErr.Error != "" {
 			reason = tokenErr.Error

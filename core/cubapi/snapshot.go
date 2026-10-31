@@ -25,10 +25,10 @@ import (
 const ClusterNone = "None"
 
 // snapshotUnitInclude expands the two related entities a snapshot cannot read off
-// the unit row. Space is included for its Labels, which mark a canonical
-// base/policy space -- not for its slug, which the unit carries as SpaceSlug.
-// Target is included for its slug, the cluster key, which the unit has no field
-// for.
+// the unit row. Space is included for its ReleaseTargetID, which says whether the
+// space deploys anywhere, and its Labels -- not for its slug, which the unit
+// carries as SpaceSlug. Target is included for its slug, the cluster key, which the
+// unit has no field for.
 //
 // Fetching spaces and targets separately instead was measured and is slower at
 // this shape: two more round trips cost more than the joins do over hundreds of
@@ -62,8 +62,8 @@ type Origin struct {
 	UnitSlug     string
 	ResourceName string
 	ResourceType string
-	// Canonical marks a definition in a base or policy space: shown in
-	// inventories, kept out of cluster analysis.
+	// Canonical marks a definition in a space that deploys nowhere, such as a
+	// base: shown in inventories, kept out of cluster analysis.
 	Canonical bool
 }
 
@@ -86,6 +86,10 @@ type UnitMeta struct {
 	LastReleasedRevisionNum int64             `json:"lastReleasedRevisionNum,omitempty"`
 	UpstreamRevisionNum     int64             `json:"upstreamRevisionNum,omitempty"`
 	LastChangeDescription   string            `json:"lastChangeDescription,omitempty"`
+
+	// SpaceReleaseTargetID is the release target of the unit's space, empty when
+	// the space has none and so deploys nowhere.
+	SpaceReleaseTargetID string `json:"spaceReleaseTargetId,omitempty"`
 }
 
 // Gated reports whether the unit has any ValidationErrors attached.
@@ -112,9 +116,19 @@ type Snapshot[R any] struct {
 	Filter string `json:"filter,omitempty"`
 }
 
-// IsCanonicalSpace reports whether a space holds definitions rather than
-// deployed configuration. The standard Variant=base label marks a base or
-// template space; a `role` label of base or policy is treated the same way.
+// IsCanonicalUnit reports whether a unit's space holds definitions rather than
+// deployed configuration: it has no release target, so nothing in it is
+// delivered anywhere. That is the space's own record of being a base, and needs
+// no label to be set on it.
+func IsCanonicalUnit(meta UnitMeta) bool {
+	return meta.SpaceReleaseTargetID == ""
+}
+
+// IsCanonicalSpace reports whether a space is labeled as holding definitions
+// rather than deployed configuration: the standard Variant=base label marks a
+// base or template space, and a `role` label of base or policy is treated the
+// same way. It is for a [SnapshotLoader.Canonical] that goes by labels, where a
+// fleet's bases have release targets of their own.
 func IsCanonicalSpace(labels map[string]string) bool {
 	switch labels["Variant"] {
 	case "base":
@@ -168,7 +182,8 @@ type SnapshotLoader[R any] struct {
 	ClusterKey func(UnitMeta) string
 
 	// Canonical reports whether a space holds definitions rather than deployed
-	// configuration. Defaults to [IsCanonicalSpace].
+	// configuration, from its labels. When it is nil, [IsCanonicalUnit] decides,
+	// by whether the space has a release target.
 	Canonical func(spaceLabels map[string]string) bool
 
 	// Keep, when set, decides whether a resource that came back is kept. Use it
@@ -197,11 +212,11 @@ func (l SnapshotLoader[R]) clusterKey(meta UnitMeta) string {
 	return DefaultClusterKey(meta)
 }
 
-func (l SnapshotLoader[R]) canonical(labels map[string]string) bool {
+func (l SnapshotLoader[R]) canonical(meta UnitMeta) bool {
 	if l.Canonical != nil {
-		return l.Canonical(labels)
+		return l.Canonical(meta.SpaceLabels)
 	}
-	return IsCanonicalSpace(labels)
+	return IsCanonicalUnit(meta)
 }
 
 // resourceWhere is the clause selecting the resource types to read. A type name
@@ -285,7 +300,7 @@ func (l SnapshotLoader[R]) Load(ctx context.Context, c *Client, where string) (*
 			UnitSlug:     firstNonEmpty(r.UnitSlug, meta.Slug),
 			ResourceName: r.ResourceName,
 			ResourceType: r.ResourceType,
-			Canonical:    l.canonical(meta.SpaceLabels),
+			Canonical:    l.canonical(meta),
 		}
 		if l.Keep != nil && !l.Keep(origin) {
 			continue
@@ -350,6 +365,9 @@ func newUnitMeta(eu *goclientnew.ExtendedUnit) UnitMeta {
 	}
 	if eu.Space != nil {
 		meta.SpaceLabels = eu.Space.Labels
+		if eu.Space.ReleaseTargetID != nil {
+			meta.SpaceReleaseTargetID = eu.Space.ReleaseTargetID.String()
+		}
 	}
 	if eu.Target != nil {
 		meta.TargetSlug = eu.Target.Slug

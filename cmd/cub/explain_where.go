@@ -14,24 +14,10 @@ import (
 	"github.com/confighub/sdk/core/openapi"
 )
 
-// whereEntityTypes names the entity type a where expression selects for an explain schema whose
-// name differs from it. The API renamed QueuedOperation to UnitAction, while the filter, and the
-// attribute table the spec publishes, kept the model's name.
-var whereEntityTypes = map[string]string{"UnitAction": "QueuedOperation"}
-
-// whereEntityType returns the entity type of the where attribute table that a where expression
-// over schemaName's entities names attributes of.
-func whereEntityType(schemaName string) string {
-	if entityType, ok := whereEntityTypes[schemaName]; ok {
-		return entityType
-	}
-	return schemaName
-}
-
 // whereAttributesFor returns what a where expression over schemaName's entities can name, from the
 // table the API's OpenAPI spec publishes, which is the one the server checks expressions against.
 func whereAttributesFor(schemaName string) (map[string]entityfilter.Attribute, error) {
-	attributes, ok := cubkit.WhereAttributes()[whereEntityType(schemaName)]
+	attributes, ok := cubkit.WhereAttributes()[schemaName]
 	if !ok || len(attributes) == 0 {
 		return nil, fmt.Errorf("%s entities are not selected by where expressions", schemaName)
 	}
@@ -75,11 +61,6 @@ func whereAttributeForms(name string, attribute entityfilter.Attribute) []string
 // whereReferenceExplain returns the command that lists the attributes of the entity type a
 // reference names, or "" when no explain command describes it.
 func whereReferenceExplain(entityType string) string {
-	for schemaName, whereType := range whereEntityTypes {
-		if whereType == entityType {
-			entityType = schemaName
-		}
-	}
 	command, ok := explainCommandFor(entityType)
 	if !ok {
 		return ""

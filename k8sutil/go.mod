@@ -3,8 +3,8 @@ module github.com/confighub/sdk/k8sutil
 go 1.26.0
 
 require (
-	github.com/confighub/sdk/configkit/k8skit v0.9.15
-	github.com/confighub/sdk/core v0.9.15
+	github.com/confighub/sdk/configkit/k8skit v0.0.0
+	github.com/confighub/sdk/core v0.0.0
 	github.com/stretchr/testify v1.11.1
 	k8s.io/apimachinery v0.35.1
 	k8s.io/client-go v0.35.1
@@ -43,7 +43,7 @@ require (
 	github.com/modern-go/reflect2 v1.0.3-0.20250322232337-35a7c28c31ee // indirect
 	github.com/monochromegane/go-gitignore v0.0.0-20200626010858-205db1a8cc00 // indirect
 	github.com/munnerz/goautoneg v0.0.0-20191010083416-a7dc8b61c822 // indirect
-	github.com/oapi-codegen/runtime v1.1.1 // indirect
+	github.com/oapi-codegen/runtime v1.8.0 // indirect
 	github.com/pkg/errors v0.9.1 // indirect
 	github.com/pmezard/go-difflib v1.0.1-0.20181226105442-5d4384ee4fb2 // indirect
 	github.com/rogpeppe/go-internal v1.14.1 // indirect
@@ -76,6 +76,9 @@ require (
 )
 
 replace (
+	github.com/confighub/sdk/configkit/k8skit => ../configkit/k8skit
+	github.com/confighub/sdk/configkit/yqkit => ../configkit/yqkit
+	github.com/confighub/sdk/core => ../core
 
 	// Fix CVE-2022-28948
 	gopkg.in/yaml.v3 => gopkg.in/yaml.v3 v3.0.1

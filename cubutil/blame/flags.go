@@ -31,7 +31,7 @@ type Flag struct {
 // NeedsProvides Links: they are about the field too, but nothing is wrong or pending because
 // of either, so they come last and in lowercase.
 var FlagLegend = []Flag{
-	{"P", "protected: a local override a merge from upstream leaves alone"},
+	{"P", "protected: a local override a merge from upstream leaves alone, by itself or as part of a resource protected as a whole"},
 	{"G", "guarded: reasons are recorded for this value, and an operation must be cleared for them to overwrite it"},
 	{"X", "conflict: an upstream change to this field was dropped by a merge or resolve"},
 	{"A", "absent: the unit does not have this field; a conflict names a change that could not be made to it"},

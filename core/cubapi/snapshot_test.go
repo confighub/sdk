@@ -6,6 +6,10 @@ package cubapi
 import (
 	"strings"
 	"testing"
+
+	"github.com/google/uuid"
+
+	goclientnew "github.com/confighub/sdk/core/openapi/goclient-new"
 )
 
 func TestSnapshotResourceWhere(t *testing.T) {
@@ -119,5 +123,39 @@ func TestSnapshotUnitSelectCoversUnitMeta(t *testing.T) {
 		if !strings.Contains(snapshotUnitSelect, field) {
 			t.Errorf("%s is read into UnitMeta but not selected", field)
 		}
+	}
+}
+
+// A space with no release target deploys nowhere, so its units hold definitions, whatever its
+// labels say: ConfigHub's own bases are labeled Stage=base, which the label rule did not know.
+func TestSnapshotCanonicalByReleaseTarget(t *testing.T) {
+	releaseTargetID := uuid.New()
+	base := newUnitMeta(&goclientnew.ExtendedUnit{
+		Unit:  &goclientnew.Unit{UnitID: uuid.New(), SpaceID: uuid.New()},
+		Space: &goclientnew.Space{Labels: map[string]string{"Stage": "base"}},
+	})
+	deployed := newUnitMeta(&goclientnew.ExtendedUnit{
+		Unit:  &goclientnew.Unit{UnitID: uuid.New(), SpaceID: uuid.New()},
+		Space: &goclientnew.Space{Labels: map[string]string{"Variant": "base"}, ReleaseTargetID: &releaseTargetID},
+	})
+	if deployed.SpaceReleaseTargetID != releaseTargetID.String() {
+		t.Fatalf("SpaceReleaseTargetID = %q, want %q", deployed.SpaceReleaseTargetID, releaseTargetID)
+	}
+
+	var loader SnapshotLoader[string]
+	if !loader.canonical(base) {
+		t.Error("a unit in a space with no release target should be canonical")
+	}
+	if loader.canonical(deployed) {
+		t.Error("a unit in a space with a release target should not be canonical, whatever its labels")
+	}
+
+	// A caller's own rule still decides, from the labels.
+	loader.Canonical = IsCanonicalSpace
+	if loader.canonical(base) {
+		t.Error("the label rule does not know Stage=base")
+	}
+	if !loader.canonical(deployed) {
+		t.Error("the label rule should mark Variant=base canonical")
 	}
 }

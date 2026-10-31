@@ -61,7 +61,8 @@ upgrade or the link that resolved it; and CHANGE ORDER, the ChangeOrder that mad
 in this unit.
 
 Flags:
-  P  protected: a local override, which a merge from upstream leaves alone
+  P  protected: a local override, which a merge from upstream leaves alone. Every field of a
+     resource protected as a whole is (cub unit set-protection RESOURCE_TYPE:RESOURCE_NAME)
   G  guarded: reasons are recorded for the value it holds, and an operation has to be
      cleared for them before it may overwrite it
   X  conflict: a merge or resolve dropped an upstream change to the field

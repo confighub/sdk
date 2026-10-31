@@ -33,12 +33,12 @@ clean:
 
 # Sibling modules that contain tests
 CORE_MODULES = ./core 
-LIB_MODULES = ./function-impl ./worker-function-impl \
+LIB_MODULES = ./function-impl \
 	./configkit/yqkit ./configkit/tomlkit ./configkit/inikit \
 	./configkit/k8skit ./configkit/propkit ./configkit/appyamlkit \
 	./configkit/jsonkit ./configkit/envkit ./configkit/textkit \
 	./cliutil ./k8sutil ./cubutil ./managerkit
-CMD_MODULES = ./cmd/cub ./cmd/cub-worker ./cmd/functionsrv ./cmd/fctl ./cmd/k8s-mf
+CMD_MODULES = ./cmd/cub ./cmd/functionsrv ./cmd/fctl ./cmd/k8s-mf
 # All sibling modules that need prep (mod download/tidy)
 SIBLING_MODULES = $(LIB_MODULES) $(CMD_MODULES)
 
@@ -52,7 +52,7 @@ all-prep:
 	@for mod in $(SIBLING_MODULES); do echo "=== Prep $$mod ===" && (cd $$mod && go mod download && go mod tidy) ; done
 
 .PHONY: all-local
-all-local: all-prep build-modules build-cli build-funcexec build-worker build-k8s-mf ## Builds all the things locally (no docker) without tests or lints
+all-local: all-prep build-modules build-cli build-funcexec build-k8s-mf ## Builds all the things locally (no docker) without tests or lints
 
 .PHONY: all
 all: all-local ## Builds all the things, without tests or lints
@@ -107,10 +107,6 @@ cover: test ## Generate coverage profile and display it in a web browser
 ifndef CI
 	open ./test/results/public-cover.html
 endif
-
-.PHONY: build-worker
-build-worker: ## Build the worker
-	$(MAKE) -C ./cmd/cub-worker BINARY_DIR=../../bin all
 
 .PHONY: build-modules
 build-modules: ## Build modules

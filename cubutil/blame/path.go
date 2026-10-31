@@ -177,7 +177,8 @@ func (r *Resolver) history(ctx context.Context, identifier api.ResourceIdentifie
 	for _, revision := range revisions {
 		var info *goclientnew.MutationInfo
 		if revision.MutationSources != nil {
-			if rm := matchBlameResource(identifier, *revision.MutationSources, f.ResourceType, f.ResourceName, f.resourceNameCore); rm != nil {
+			sources := r.revisionRecord(ctx, unit, revision.RevisionID, *revision.MutationSources)
+			if rm := matchBlameResource(identifier, sources, f.ResourceType, f.ResourceName, f.resourceNameCore); rm != nil {
 				info = lookupPathMutation(rm.PathMutationMap, f.storedPath)
 				if info == nil {
 					info = lookupAncestorMutation(rm.PathMutationMap, f.storedPath)

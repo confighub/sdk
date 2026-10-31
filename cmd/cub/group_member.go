@@ -121,3 +121,27 @@ func changeGroupMember(args []string, change func(context.Context, uuid.UUID, uu
 	displayGetResults(user, displayBotUserGroups)
 	return nil
 }
+func displayBotUserGroups(user *goclientnew.User) {
+	view := tableView()
+	view.Append([]string{"User ID", user.UserID.String()})
+	view.Append([]string{"Display Name", user.DisplayName})
+	groupIDs := make([]string, 0, len(user.GroupIDs))
+	for _, groupID := range user.GroupIDs {
+		groupIDs = append(groupIDs, groupID.String())
+	}
+	view.Append([]string{"Group IDs", strings.Join(groupIDs, ", ")})
+	view.Render()
+}
+
+// groupIDForMembership takes a group ID as it is and resolves anything else as a slug. A slug
+// resolves only for a member of the group, but an admin or manager need not be one.
+func groupIDForMembership(ref string) (uuid.UUID, error) {
+	if groupID, err := uuid.Parse(ref); err == nil {
+		return groupID, nil
+	}
+	group, err := resolveGroup(ref, "GroupID")
+	if err != nil {
+		return uuid.Nil, err
+	}
+	return group.Group.GroupID, nil
+}

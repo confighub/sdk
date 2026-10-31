@@ -178,6 +178,7 @@ func TestGenerateEd25519KeyPublicHalfCarriesNoPrivateMembers(t *testing.T) {
 // so without cleanup the alias is poisoned and the retry fails on a file the
 // caller never knowingly created.
 func TestWritePrivateKeyRefusesToOverwrite(t *testing.T) {
+	newKeyTestContextManager(t)
 	path := filepath.Join(t.TempDir(), "ci.jwk")
 	if err := writePrivateKey(path, json.RawMessage(`{"kty":"OKP"}`)); err != nil {
 		t.Fatalf("first write: %v", err)
@@ -204,6 +205,7 @@ func TestWritePrivateKeyRefusesToOverwrite(t *testing.T) {
 // The key is owner-only. Anything that can read it can authenticate as the
 // identity it belongs to.
 func TestWritePrivateKeyIsOwnerOnly(t *testing.T) {
+	newKeyTestContextManager(t)
 	path := filepath.Join(t.TempDir(), "sub", "ci.jwk")
 	if err := writePrivateKey(path, json.RawMessage(`{"kty":"OKP"}`)); err != nil {
 		t.Fatalf("write: %v", err)

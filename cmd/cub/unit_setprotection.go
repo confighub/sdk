@@ -14,7 +14,7 @@ import (
 
 var unitSetProtectionCmd = &cobra.Command{
 	Use:   "set-protection <unit-slug> [--unprotect-all] [--protect <spec> ...] [--unprotect <spec> ...]",
-	Short: "Protect paths of a unit from being overwritten by a merge",
+	Short: "Protect paths or resources of a unit from being overwritten by a merge",
 	Long: getCommandHelp(`Set the Protected flags stored on a unit's MutationSources.
 
 A protected path is a local override a merge must not overwrite. An unprotected
@@ -30,14 +30,23 @@ Each --protect and --unprotect takes RESOURCE_TYPE:RESOURCE_NAME:PATH, where
 RESOURCE_TYPE and RESOURCE_NAME identify the resource (e.g. apps/v1/Deployment
 and default/myapp) and PATH is a resolved path within that resource. Repeat
 either flag to set several paths or resources at once, and combine them to
-protect some paths and re-open others in one revision. A path that is not
+protect some paths and re-open others in one revision.
+
+Leave out PATH, as RESOURCE_TYPE:RESOURCE_NAME, to protect or re-open the
+resource as a whole. A merge withholds every change to a resource protected as
+a whole -- deleting it and replacing it included -- whatever its paths say,
+and its paths' own protection takes effect again once it is re-opened. That is
+how to protect a resource a change added whole, such as a ServiceAccount a
+variant added, since such a resource has no paths of its own to protect. A
+resource the unit deleted can be protected as a whole too, which keeps a merge
+from adding it back. A path that is not
 already present inherits the closest ancestor mutation's provenance. Protecting
 a path does not protect a path beneath it that a change of its own wrote, such
 as an env entry's value set after the entry was added: name that path too, and
 check the result with 'cub unit blame', which marks a protected field P.
 
---unprotect-all clears every protected path of the unit, so a future merge may
-overwrite all of them. Combined with --protect, it clears the rest first, and
+--unprotect-all clears every protected path and resource of the unit, so a
+future merge may overwrite all of them. Combined with --protect, it clears the rest first, and
 the paths named are the only ones protected afterwards.
 
 Setting protection creates a new revision only if it changes.
@@ -54,6 +63,10 @@ Examples:
   # Re-open a path so a future merge may overwrite it again
   cub unit set-protection my-unit \
     --unprotect "apps/v1/Deployment:default/myapp:spec.replicas"
+
+  # Keep a ServiceAccount the variant added from being replaced by upgrades
+  cub unit set-protection my-unit \
+    --protect "v1/ServiceAccount:default/myapp"
 
   # Re-open every protected path of the unit
   cub unit set-protection my-unit --unprotect-all
@@ -75,9 +88,9 @@ var (
 
 func init() {
 	unitSetProtectionCmd.Flags().StringArrayVar(&protectSpecs, "protect", nil,
-		"path to protect from merges, as RESOURCE_TYPE:RESOURCE_NAME:PATH (repeatable)")
+		"path to protect from merges, as RESOURCE_TYPE:RESOURCE_NAME:PATH, or a whole resource as RESOURCE_TYPE:RESOURCE_NAME (repeatable)")
 	unitSetProtectionCmd.Flags().StringArrayVar(&unprotectSpecs, "unprotect", nil,
-		"path to re-open to merges, as RESOURCE_TYPE:RESOURCE_NAME:PATH (repeatable)")
+		"path to re-open to merges, as RESOURCE_TYPE:RESOURCE_NAME:PATH, or a whole resource as RESOURCE_TYPE:RESOURCE_NAME (repeatable)")
 	unitSetProtectionCmd.Flags().BoolVar(&unprotectAll, "unprotect-all", false,
 		"re-open every protected path of the unit to merges, before applying --protect and --unprotect")
 	addStandardDisplayFlags(unitSetProtectionCmd)
@@ -87,11 +100,16 @@ func init() {
 
 // parseProtectionSpec parses a "RESOURCE_TYPE:RESOURCE_NAME:PATH" spec. The path may
 // itself contain ':' and '=' (associative segments such as ?name=app;@0), so only the
-// first two ':' separate the resource from the path.
+// first two ':' separate the resource from the path. A spec with no path, or an empty one
+// as set-guard spells it, names the resource as a whole, which the API addresses by the
+// empty path.
 func parseProtectionSpec(flag, spec string) (resourceType, resourceName, path string, err error) {
 	parts := strings.SplitN(spec, ":", 3)
-	if len(parts) != 3 || parts[0] == "" || parts[1] == "" || parts[2] == "" {
-		return "", "", "", fmt.Errorf("--%s %q must be RESOURCE_TYPE:RESOURCE_NAME:PATH", flag, spec)
+	if len(parts) < 2 || parts[0] == "" || parts[1] == "" {
+		return "", "", "", fmt.Errorf("--%s %q must be RESOURCE_TYPE:RESOURCE_NAME:PATH, or RESOURCE_TYPE:RESOURCE_NAME for the whole resource", flag, spec)
+	}
+	if len(parts) == 2 {
+		return parts[0], parts[1], "", nil
 	}
 	return parts[0], parts[1], parts[2], nil
 }

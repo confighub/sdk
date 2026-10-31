@@ -154,7 +154,7 @@ func registerSetProtection(fh handler.FunctionRegistry, converter configkit.Conf
 				{
 					ParameterName: "resource-protection",
 					Required:      true,
-					Description:   "JSON-encoded list of per-resource path Protected values to set ([]api.ResourceProtection)",
+					Description:   "JSON-encoded list of per-resource path Protected values to set ([]api.ResourceProtection); the empty path addresses a resource as a whole",
 					DataType:      api.DataTypeString,
 				},
 			},
@@ -168,7 +168,7 @@ func registerSetProtection(fh handler.FunctionRegistry, converter configkit.Conf
 			Validating:            false,
 			Hermetic:              true,
 			Idempotent:            true,
-			Description:           "Set Protected values on a unit's MutationSources for the given resource paths, marking them local overrides a merge must not overwrite. Fails if any path does not exist in the unit's data.",
+			Description:           "Set Protected values on a unit's MutationSources for the given resource paths, or for a resource as a whole, marking them local overrides a merge must not overwrite. Fails if any path does not exist in the unit's data.",
 			FunctionType:          api.FunctionTypeCustom,
 			AffectedResourceTypes: []api.ResourceType{api.ResourceTypeAny},
 		},

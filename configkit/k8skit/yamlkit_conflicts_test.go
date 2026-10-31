@@ -414,7 +414,7 @@ spec:
 	assert.Equal(t, api.MutationTypeDelete, c.Target.MutationType)
 }
 
-func TestSubtractMutations_ResourceLevel_DeleteVsDeleteEmitsSubtracted(t *testing.T) {
+func TestSubtractMutations_ResourceLevel_DeleteVsDeleteIsNotAConflict(t *testing.T) {
 	provider := k8skit.NewK8sResourceProvider()
 	base := `apiVersion: apps/v1
 kind: Deployment
@@ -433,9 +433,58 @@ spec:
 	tgtMut, err := yamlkit.ComputeMutations(baseP, emptyP, 2, provider)
 	require.NoError(t, err)
 
-	_, conflicts := yamlkit.SubtractMutations(k8skit.NewK8sResourceProvider(), srcMut, tgtMut)
-	require.Len(t, conflicts, 1)
-	assert.Equal(t, api.ConflictReasonSubtracted, conflicts[0].Reason)
+	// The target already has what the source wants, so nothing was withheld.
+	result, conflicts := yamlkit.SubtractMutations(k8skit.NewK8sResourceProvider(), srcMut, tgtMut)
+	assert.Empty(t, conflicts)
+	assert.Empty(t, result)
+}
+
+func TestSubtractMutations_PathLevel_SameChangeIsNotAConflict(t *testing.T) {
+	provider := k8skit.NewK8sResourceProvider()
+	base := `apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: app
+  namespace: default
+spec:
+  replicas: 1
+  paused: true
+`
+	both := `apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: app
+  namespace: default
+spec:
+  replicas: 5
+`
+	target := `apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: app
+  namespace: default
+spec:
+  replicas: 7
+`
+	baseP, _ := gaby.ParseAll([]byte(base))
+	bothP, _ := gaby.ParseAll([]byte(both))
+	tgtP, _ := gaby.ParseAll([]byte(target))
+
+	srcMut, err := yamlkit.ComputeMutations(baseP, bothP, 1, provider)
+	require.NoError(t, err)
+	// Both sides removed spec.paused; only the source set replicas to 5.
+	tgtMut, err := yamlkit.ComputeMutations(baseP, tgtP, 2, provider)
+	require.NoError(t, err)
+	_, conflicts := yamlkit.SubtractMutations(provider, srcMut, tgtMut)
+	got := reasonsByPath(conflicts)
+	assert.Equal(t, api.ConflictReasonSubtracted, got["spec.replicas"])
+	assert.NotContains(t, got, "spec.paused", "both sides removed it")
+
+	// Both sides set replicas to 5.
+	sameMut, err := yamlkit.ComputeMutations(baseP, bothP, 2, provider)
+	require.NoError(t, err)
+	_, conflicts = yamlkit.SubtractMutations(provider, srcMut, sameMut)
+	assert.Empty(t, conflicts)
 }
 
 // ---------------------------------------------------------------------------
@@ -539,6 +588,120 @@ func TestPatch_ProtectedPathAtPath(t *testing.T) {
 	assert.Equal(t, api.ConflictReasonProtectedPath, c.Reason)
 	require.NotNil(t, c.Target)
 	assert.True(t, c.Target.Protected)
+}
+
+// TestPatch_ProtectedPathHoldingTheValueIsNotAConflict -- a protected path that already holds
+// what the patch would write withholds nothing, so it is not reported. The path beside it, which
+// differs, still is.
+func TestPatch_ProtectedPathHoldingTheValueIsNotAConflict(t *testing.T) {
+	provider := k8skit.NewK8sResourceProvider()
+	parsed, _ := gaby.ParseAll([]byte(conflictTestBase))
+	protection := api.ResourceMutationList{{
+		Resource: api.ResourceInfo{
+			ResourceType:             "apps/v1/Deployment",
+			ResourceName:             "default/app",
+			ResourceNameWithoutScope: "app",
+			ResourceCategory:         "Kubernetes",
+		},
+		ResourceMutationInfo: api.MutationInfo{MutationType: api.MutationTypeUpdate},
+		PathMutationMap: api.MutationMap{
+			"spec.replicas": api.MutationInfo{Protected: true},
+			"spec.template.spec.containers.?name=app;@0.image": api.MutationInfo{Protected: true},
+		},
+	}}
+	_, conflicts, err := yamlkit.PatchMutations(parsed, protection, deploymentPatchUpdate("1\n", "nginx:1.20\n"), nil, provider, nil)
+	require.NoError(t, err)
+	got := reasonsByPath(conflicts)
+	assert.NotContains(t, got, "spec.replicas", "the target already holds 1")
+	assert.Equal(t, api.ConflictReasonProtectedPath, got["spec.template.spec.containers.?name=app;@0.image"])
+}
+
+// TestPatch_ProtectedResourceHoldingThePatchIsNotAConflict -- the same for a resource protected
+// as a whole.
+func TestPatch_ProtectedResourceHoldingThePatchIsNotAConflict(t *testing.T) {
+	provider := k8skit.NewK8sResourceProvider()
+	parsed, _ := gaby.ParseAll([]byte(conflictTestBase))
+	protection := api.ResourceMutationList{{
+		Resource: api.ResourceInfo{
+			ResourceType:             "apps/v1/Deployment",
+			ResourceName:             "default/app",
+			ResourceNameWithoutScope: "app",
+			ResourceCategory:         "Kubernetes",
+		},
+		ResourceMutationInfo: api.MutationInfo{MutationType: api.MutationTypeUpdate, Protected: true},
+	}}
+	_, conflicts, err := yamlkit.PatchMutations(parsed, protection, deploymentPatchUpdate("1\n", "nginx:1.19\n"), nil, provider, nil)
+	require.NoError(t, err)
+	assert.Empty(t, conflicts)
+}
+
+// TestPatch_ResourceAddKeepsProtectedPaths -- a whole-resource Add onto a resource the target
+// already has, which is how every resource arrives in a range that starts before the source had
+// content, does not replace it over a protected path. The unprotected paths take the patch's
+// values, and the protected one keeps the target's and is reported.
+func TestPatch_ResourceAddKeepsProtectedPaths(t *testing.T) {
+	provider := k8skit.NewK8sResourceProvider()
+	target := `apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: app
+  namespace: default
+spec:
+  replicas: 10
+  template:
+    spec:
+      containers:
+      - name: app
+        image: nginx:1.19
+`
+	source := `apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: app
+  namespace: default
+spec:
+  replicas: 3
+  template:
+    spec:
+      containers:
+      - name: app
+        image: nginx:1.25
+`
+	emptyP, _ := gaby.ParseAll([]byte(""))
+	sourceP, _ := gaby.ParseAll([]byte(source))
+	patch, err := yamlkit.ComputeMutations(emptyP, sourceP, 2, provider)
+	require.NoError(t, err)
+	require.Len(t, patch, 1)
+	require.Equal(t, api.MutationTypeAdd, patch[0].ResourceMutationInfo.MutationType)
+
+	protection := api.ResourceMutationList{{
+		Resource: api.ResourceInfo{
+			ResourceType:             "apps/v1/Deployment",
+			ResourceName:             "default/app",
+			ResourceNameWithoutScope: "app",
+			ResourceCategory:         "Kubernetes",
+		},
+		ResourceMutationInfo: api.MutationInfo{MutationType: api.MutationTypeAdd},
+		PathMutationMap: api.MutationMap{
+			"spec.replicas": api.MutationInfo{MutationType: api.MutationTypeUpdate, Value: "10", Protected: true},
+		},
+	}}
+
+	targetP, _ := gaby.ParseAll([]byte(target))
+	merged, conflicts, err := yamlkit.PatchMutations(targetP, protection, patch, nil, provider, nil)
+	require.NoError(t, err)
+	require.Len(t, merged, 1)
+	assert.Equal(t, 10, merged[0].Path("spec.replicas").Data())
+	assert.Equal(t, "nginx:1.25", merged[0].Path("spec.template.spec.containers.0.image").Data())
+	got := reasonsByPath(conflicts)
+	assert.Equal(t, map[string]api.ConflictReason{"spec.replicas": api.ConflictReasonProtectedPath}, got)
+
+	// Nothing protected: the Add replaces the resource, as it always has.
+	targetP, _ = gaby.ParseAll([]byte(target))
+	merged, conflicts, err = yamlkit.PatchMutations(targetP, nil, patch, nil, provider, nil)
+	require.NoError(t, err)
+	assert.Empty(t, conflicts)
+	assert.Equal(t, 3, merged[0].Path("spec.replicas").Data())
 }
 
 // TestPatch_ProtectedAncestorEmitsConflictForChild — when a parent

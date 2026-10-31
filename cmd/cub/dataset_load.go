@@ -50,11 +50,6 @@ func datasetLoadCmdRun(cmd *cobra.Command, args []string) error {
 	if err != nil {
 		return err
 	}
-	tprint("Creating workers...")
-	err = CreateWorkers(dir)
-	if err != nil {
-		return err
-	}
 	tprint("Creating targets...")
 	err = CreateTargets(dir)
 	if err != nil {
@@ -86,21 +81,6 @@ func CreateSpaces(dir string) error {
 			Slug:        record[0],
 			DisplayName: record[0],
 		})
-	}
-	return nil
-}
-
-func CreateWorkers(dir string) error {
-	abspath := filepath.Join(dir, "workers.csv")
-	records, err := ReadCSV(abspath)
-	if err != nil {
-		return err
-	}
-	for i, record := range records {
-		_, err = confighubApi.CreateWorker(record[0], record[1])
-		if err != nil {
-			tprint("Line %d: Error creating worker: %v", i+1, err)
-		}
 	}
 	return nil
 }
@@ -209,7 +189,6 @@ func ReadCSV(fileName string) ([][]string, error) {
 
 type ConfighubApi struct {
 	spaces  map[string]*goclientnew.Space
-	workers map[string]*goclientnew.BridgeWorker
 	targets map[string]*goclientnew.Target
 	units   map[string]*goclientnew.Unit
 	links   map[string]*goclientnew.Link
@@ -218,7 +197,6 @@ type ConfighubApi struct {
 func NewConfighubApi() (*ConfighubApi, error) {
 	c := &ConfighubApi{
 		spaces:  make(map[string]*goclientnew.Space),
-		workers: make(map[string]*goclientnew.BridgeWorker),
 		targets: make(map[string]*goclientnew.Target),
 		units:   make(map[string]*goclientnew.Unit),
 		links:   make(map[string]*goclientnew.Link),
@@ -232,14 +210,6 @@ func NewConfighubApi() (*ConfighubApi, error) {
 	for _, space := range spaces {
 		c.spaces[space.Slug] = space
 		spaceid := space.SpaceID.String()
-		workers, err := apiListBridgeworkers(spaceid, "", "*", "")
-		if err != nil {
-			return nil, err
-		}
-		tprint("Fetched %d workers in space %s", len(workers), space.Slug)
-		for _, worker := range workers {
-			c.workers[space.Slug+"/"+worker.BridgeWorker.Slug] = worker.BridgeWorker
-		}
 		targets, err := apiListTargets(spaceid, "", "*", "")
 		if err != nil {
 			return nil, err
@@ -272,10 +242,6 @@ func (c *ConfighubApi) GetSpace(slug string) (*goclientnew.Space, bool) {
 	space, ok := c.spaces[slug]
 	return space, ok
 }
-func (c *ConfighubApi) GetWorker(spaceSlug, slug string) (*goclientnew.BridgeWorker, bool) {
-	worker, ok := c.workers[spaceSlug+"/"+slug]
-	return worker, ok
-}
 func (c *ConfighubApi) GetTarget(spaceSlug, slug string) (*goclientnew.Target, bool) {
 	target, ok := c.targets[spaceSlug+"/"+slug]
 	return target, ok
@@ -297,24 +263,6 @@ func (c *ConfighubApi) CreateSpace(spaceDetails goclientnew.Space) (*goclientnew
 	}
 	c.spaces[spaceDetails.Slug] = spaceRes.JSON200
 	return spaceRes.JSON200, nil
-}
-
-func (c *ConfighubApi) CreateWorker(slug, spaceSlug string) (*goclientnew.BridgeWorker, error) {
-	space, ok := c.GetSpace(spaceSlug)
-	if !ok {
-		return nil, fmt.Errorf("space %s not found", spaceSlug)
-	}
-	workerDetails := goclientnew.BridgeWorker{
-		Slug:        slug,
-		DisplayName: slug,
-		SpaceID:     space.SpaceID,
-	}
-	worker, err := apiCreateWorker(&workerDetails, space.SpaceID)
-	if err != nil {
-		return nil, err
-	}
-	c.workers[spaceSlug+"/"+workerDetails.Slug] = worker
-	return worker, nil
 }
 
 func (c *ConfighubApi) CreateTarget(slug, spaceSlug string) (*goclientnew.Target, error) {

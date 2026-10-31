@@ -166,7 +166,7 @@ func TestLoadPrivateKeyEnvStillWorksWhenItIsTheOnlySource(t *testing.T) {
 	}
 }
 
-// keyAlias exists so `cub user key add --generate` can print something the user
+// keyAlias exists so `cub serviceaccount key add --generate` can print something the user
 // can pass back to `--private-key`. A key written outside the key directory has
 // no alias, and claiming one would print a login line that does not work.
 func TestKeyAliasOnlyForKeysInTheKeyDir(t *testing.T) {

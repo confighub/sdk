@@ -460,7 +460,7 @@ func runSameSpaceLinkPatchReverse(linkIDs []uuid.UUID, patchJSON []byte) error {
 func runCrossSpaceLinkReverse(linkIDs []uuid.UUID, patchJSON []byte) error {
 	csWhere := buildLinkIDsWhere(linkIDs)
 
-	createRes, err := callBulkCreateLinks(csWhere, "", patchJSON, true, "", "", false)
+	createRes, err := callBulkCreateLinks(csWhere, "", patchJSON, true, "", "", "", "", false)
 	if err != nil {
 		return err
 	}

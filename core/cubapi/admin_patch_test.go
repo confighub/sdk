@@ -65,7 +65,7 @@ func TestMergePatchAlwaysAssertsRequiredFields(t *testing.T) {
 		t.Fatalf("mergePatch: %v", err)
 	}
 	m := patchMap(t, b)
-	for _, required := range []string{"Slug", "Event", "ToolchainType", "FailOpenAfter"} {
+	for _, required := range []string{"Slug", "Event", "ToolchainType"} {
 		if _, ok := m[required]; !ok {
 			t.Errorf("patch omits required %q, so a create built from the same description would fail", required)
 		}

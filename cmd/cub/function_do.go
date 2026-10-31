@@ -195,9 +195,7 @@ var parameterizedInvocationIdentifier string
 var parameterizedInvocationParams map[string]any
 
 func init() {
-	functionDoCmd.Flags().StringVar(&workerSlug, "worker", "", "worker to execute the function")
 	functionDoCmd.Flags().StringVar(&functionChannel, "channel", "", channelFlagUsage)
-	functionDoCmd.MarkFlagsMutuallyExclusive("worker", "channel")
 	enableShowFlag(functionDoCmd)
 	functionDoCmd.Flags().BoolVar(&outputOnly, "output-only", false, "show output without other response details")
 	_ = functionDoCmd.Flags().MarkDeprecated("output-only", "use --show output")
@@ -230,7 +228,7 @@ func init() {
 	addStandardDisplayFlags(functionDoCmd)
 	enableWaitFlag(functionDoCmd)
 	enableDisplayMutationsFlag(functionDoCmd)
-	functionDoCmd.Flags().StringVar(&resourceType, "resource-type", "", "resource-type filter")
+	functionDoCmd.Flags().StringVar(&resourceType, "resource-type", "", invokeResourceTypeFlagUsage)
 	functionDoCmd.Flags().StringVar(&whereData, "where-data", "", "where data filter")
 	functionDoCmd.Flags().StringVar(&whereResource, "where-resource", "", "filter which resources the function operates on")
 	addResourceFlag(functionDoCmd)
@@ -251,6 +249,11 @@ var (
 
 const channelFlagUsage = "channel whose client executes the function, as a run of the command the channel declares for it"
 
+// invokeResourceTypeFlagUsage is the help for --resource-type on the commands that invoke
+// functions, where it selects units, like --where-data, and does not narrow what the function
+// operates on within them.
+const invokeResourceTypeFlagUsage = "select only the units that contain a resource of this type, such as apps/v1/Deployment (with --where-data, one that matches it); it does not narrow which resources the function operates on, so a function such as set-label still changes every resource of each unit selected: use --where-resource for that"
+
 func newFunctionInvocationsRequest() *goclientnew.FunctionInvocationsRequest {
 	req := &goclientnew.FunctionInvocationsRequest{}
 	req.NumFilters = 0
@@ -261,14 +264,6 @@ func newFunctionInvocationsRequest() *goclientnew.FunctionInvocationsRequest {
 	req.IncludeConflicts = functionIncludeConflicts
 	req.IncludeLinkFindings = functionIncludeLinkFindings
 	req.ToolchainType = functionToolchainType
-	if workerSlug != "" {
-		workerUUID, err := resolveWorkerID(workerSlug)
-		if err != nil {
-			failOnError(err)
-		}
-		workerID := goclientnew.UUID(workerUUID)
-		req.BridgeWorkerID = &workerID
-	}
 	if functionChannel != "" {
 		channel, err := resolveChannel(functionChannel, selectedSpaceID, idSelect("ChannelID"))
 		if err != nil {
@@ -745,7 +740,7 @@ func runFunctionInvocations(cmd *cobra.Command, args []string, mode FunctionKind
 	}
 
 	// Functions operate on lists of units. That makes it harder to know what ToolchainType(s)
-	// are having functions invoked on them and what workers the functions might be running in.
+	// are having functions invoked on them and what executors the functions might be running in.
 	// There could be multiple of each.
 
 	// That makes it more difficult to look up the FunctionSignature in order to validate arguments,

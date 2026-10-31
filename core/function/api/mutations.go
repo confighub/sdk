@@ -45,13 +45,19 @@ type ResourceMutationList []ResourceMutation
 
 type MutationMap map[ResolvedPath]MutationInfo
 
-// ResourceProtection specifies Protected values to set on the path-level mutations of one
-// resource in a MutationSources list. Each entry in Protected maps a resolved path to its new
-// value: true marks the path a local override a merge must not overwrite, false re-opens it.
+// ResourceProtection specifies Protected values to set on the mutations of one resource in a
+// MutationSources list. Each entry in Protected maps a resolved path to its new value: true
+// marks the path a local override a merge must not overwrite, false re-opens it.
+//
+// The empty ResolvedPath addresses the resource as a whole, as it does in ResourceGuards. A
+// merge withholds every change to a resource protected as a whole -- its deletion and its
+// replacement included -- whatever its path entries say, which is the only way to protect a
+// resource a change added whole, since that has no path entries of its own.
+//
 // Consumed by the set-protection function via yamlkit.SetProtection.
 type ResourceProtection struct {
-	Resource  ResourceInfo          `description:"Identifies the resource within the unit whose path protection is being set"`
-	Protected map[ResolvedPath]bool `description:"Map of resolved path to its new Protected value: true = a local override a merge must not overwrite, false = the merge's to update"`
+	Resource  ResourceInfo          `description:"Identifies the resource within the unit whose protection is being set"`
+	Protected map[ResolvedPath]bool `description:"Map of resolved path to its new Protected value: true = a local override a merge must not overwrite, false = the merge's to update. The empty path addresses the resource as a whole: a merge withholds every change to a resource protected as a whole, including its deletion and replacement, whatever its paths' values are"`
 }
 
 // ArrayOrderMap records, for each merge-keyed array path whose element set or

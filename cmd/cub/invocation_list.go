@@ -13,7 +13,7 @@ import (
 var invocationListCmd = &cobra.Command{
 	Use:   "list",
 	Short: "List invocations",
-	Long: getCommandHelp(`List invocations you have access to in a space or across all spaces. The output includes slugs, worker slugs, toolchain types, function names, and the number of arguments.
+	Long: getCommandHelp(`List invocations you have access to in a space or across all spaces. The output includes slugs, channel slugs, toolchain types, function names, and the number of arguments.
 
 Examples:
 `+"```"+`
@@ -51,11 +51,11 @@ Examples:
 }
 
 // Default columns to display when no custom columns are specified
-var defaultInvocationColumns = []string{"Invocation.Slug", "Space.Slug", "BridgeWorker.Slug", "Channel.Slug", "Invocation.ToolchainType", "Invocation.FunctionInvocations"}
+var defaultInvocationColumns = []string{"Invocation.Slug", "Space.Slug", "Channel.Slug", "Invocation.ToolchainType", "Invocation.FunctionInvocations"}
 
 // invocationListInclude is the Include parameter for invocation list queries (the
 // related entities expanded into each ExtendedInvocation).
-const invocationListInclude = "SpaceID,BridgeWorkerID,ChannelID"
+const invocationListInclude = "SpaceID,ChannelID"
 
 // invocationBaseSelectFields are the fields always returned by invocation list
 // queries, regardless of the requested columns.
@@ -107,14 +107,10 @@ func displayInvocationList(invocations []*goclientnew.ExtendedInvocation) {
 	}
 	table := tableView()
 	if !noheader {
-		table.SetHeader([]string{"Name", "Space", "Worker", "Channel", "Toolchain-Type", "Functions"})
+		table.SetHeader([]string{"Name", "Space", "Channel", "Toolchain-Type", "Functions"})
 	}
 	for _, i := range invocations {
 		invocation := i.Invocation
-		workerSlug := ""
-		if i.BridgeWorker != nil {
-			workerSlug = i.BridgeWorker.Slug
-		}
 		channelSlug := ""
 		if i.Channel != nil {
 			channelSlug = i.Channel.Slug
@@ -128,7 +124,6 @@ func displayInvocationList(invocations []*goclientnew.ExtendedInvocation) {
 		table.Append([]string{
 			invocation.Slug,
 			spaceSlug,
-			workerSlug,
 			channelSlug,
 			invocation.ToolchainType,
 			functionInvocationsSummary(invocation.FunctionInvocations),

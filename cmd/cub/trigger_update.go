@@ -6,7 +6,6 @@ package main
 import (
 	"bytes"
 	"fmt"
-	"time"
 
 	"github.com/cockroachdb/errors"
 	"github.com/confighub/sdk/core/cubapi"
@@ -48,8 +47,8 @@ Examples:
   # Enable all disabled triggers
   cub trigger update --space my-space --patch --where "Disabled = true" --enable
 
-  # Point the triggers that run an external function at another worker serving it
-  cub trigger update --space my-space --patch --where "FunctionName = 'vet-team-policy'" --worker new-worker
+  # Point the triggers that run an external function at another Channel serving it
+  cub trigger update --space my-space --patch --where "FunctionName = 'vet-team-policy'" --channel new-channel
 
   # Mark triggers as warn mode
   cub trigger update --space my-space --patch --where "Event = 'Mutation'" --warn
@@ -70,7 +69,6 @@ var (
 	unwarnTrigger          bool
 	protectTrigger         bool
 	unprotectTrigger       bool
-	workerSlug             string
 	triggerPatch           bool
 	triggerIdentifiers     []string
 	invocationSlug         string
@@ -78,7 +76,6 @@ var (
 	triggerWhereUnit       string
 	triggerUnitFilter      string
 	triggerWhereResource   string
-	triggerFailOpenAfter   string
 	triggerOtherDataSource string
 )
 
@@ -94,9 +91,7 @@ func init() {
 	addTriggerGuardFlag(triggerUpdateCmd)
 	triggerUpdateCmd.Flags().BoolVar(&protectTrigger, "protect", false, "record the paths this trigger's function writes as protected local overrides, so a later merge from upstream does not overwrite them; for a trigger that decides a value the unit then owns, such as a PostClone trigger customizing a variant")
 	triggerUpdateCmd.Flags().BoolVar(&unprotectTrigger, "unprotect", false, "return this trigger to the default: it claims nothing it writes")
-	triggerUpdateCmd.Flags().StringVar(&workerSlug, "worker", "", "worker to execute the trigger function")
 	triggerUpdateCmd.Flags().StringVar(&functionChannel, "channel", "", "channel whose client executes the trigger function")
-	triggerUpdateCmd.MarkFlagsMutuallyExclusive("worker", "channel")
 	triggerUpdateCmd.Flags().BoolVar(&triggerPatch, "patch", false, "use patch API for individual or bulk operations")
 	enableWhereFlag(triggerUpdateCmd)
 	enableFilterFlag(triggerUpdateCmd)
@@ -106,7 +101,6 @@ func init() {
 	triggerUpdateCmd.Flags().StringVar(&triggerWhereUnit, "where-unit-field", "", "filter expression to restrict which Units this trigger applies to (its WhereUnit). It takes what --where does on unit list, attributes of what a unit refers to included, as in \"Space.Labels.Environment = 'prod'\"")
 	triggerUpdateCmd.Flags().StringVar(&triggerUnitFilter, "unit-filter", "", "filter entity (slug or UUID) to restrict which Units this trigger applies to")
 	triggerUpdateCmd.Flags().StringVar(&triggerWhereResource, "where-resource", "", "metadata path expression to restrict which resources the trigger operates on")
-	triggerUpdateCmd.Flags().StringVar(&triggerFailOpenAfter, "fail-open-after", "", "duration after which disconnected worker triggers fail open (e.g., 6h, 30m); triggers on a channel fail closed")
 	triggerUpdateCmd.Flags().StringVar(&triggerOtherDataSource, "other-data-source", "", "source of additional data to pass to the function (e.g., LastReleasedRevisionNum); defaults to the sources the function expects")
 	addBackingUnitFlags(triggerUpdateCmd, "Trigger", false, false)
 	addFromBackingUnitsFlags(triggerUpdateCmd, "Trigger", false)
@@ -344,22 +338,12 @@ func triggerUpdateCmdRun(cmd *cobra.Command, args []string) error {
 	if fullGuards != nil {
 		currentTrigger.Trigger.Guards = &fullGuards
 	}
-	if workerSlug != "" {
-		workerUUID, err := resolveWorkerID(workerSlug)
-		if err != nil {
-			return err
-		}
-		workerID := goclientnew.UUID(workerUUID)
-		currentTrigger.Trigger.BridgeWorkerID = &workerID
-		currentTrigger.Trigger.ChannelID = nil
-	}
 	if functionChannel != "" {
 		channelID, err := resolveChannelID(functionChannel)
 		if err != nil {
 			return err
 		}
 		currentTrigger.Trigger.ChannelID = &channelID
-		currentTrigger.Trigger.BridgeWorkerID = nil
 	}
 
 	// TODO: update with overriden string type TriggerEvent
@@ -404,13 +388,6 @@ func triggerUpdateCmdRun(cmd *cobra.Command, args []string) error {
 	if triggerOtherDataSource != "" {
 		currentTrigger.Trigger.OtherDataSource = triggerOtherDataSource
 	}
-	if triggerFailOpenAfter != "" {
-		duration, err := time.ParseDuration(triggerFailOpenAfter)
-		if err != nil {
-			return fmt.Errorf("invalid --fail-open-after duration: %w", err)
-		}
-		currentTrigger.Trigger.FailOpenAfter = int(duration)
-	}
 	if err := applyFieldEdits("Trigger", currentTrigger.Trigger); err != nil {
 		return err
 	}
@@ -447,14 +424,6 @@ func checkSingleTriggerUpdateArgs(args []string) error {
 // for a patch of one trigger and a bulk patch alike. It resolves and parses the flags first, so
 // that a flag naming nothing, or a malformed one, is refused rather than left out of the patch.
 func triggerPatchEnhancer() (PatchEnhancer, error) {
-	var workerID *uuid.UUID
-	if workerSlug != "" {
-		id, err := resolveWorkerID(workerSlug)
-		if err != nil {
-			return nil, err
-		}
-		workerID = &id
-	}
 	var channelID *uuid.UUID
 	if functionChannel != "" {
 		id, err := resolveChannelID(functionChannel)
@@ -478,14 +447,6 @@ func triggerPatchEnhancer() (PatchEnhancer, error) {
 			return nil, err
 		}
 		unitFilterID = &id
-	}
-	var failOpenAfter *time.Duration
-	if triggerFailOpenAfter != "" {
-		duration, err := time.ParseDuration(triggerFailOpenAfter)
-		if err != nil {
-			return nil, fmt.Errorf("invalid --fail-open-after duration: %w", err)
-		}
-		failOpenAfter = &duration
 	}
 	parsedClearance, parsedGuards, err := parseTriggerPolicyFlags()
 	if err != nil {
@@ -514,14 +475,8 @@ func triggerPatchEnhancer() (PatchEnhancer, error) {
 		} else if unprotectTrigger {
 			patchMap["Protect"] = false
 		}
-		// One executor at a time: naming one clears the other.
-		if workerID != nil {
-			patchMap["BridgeWorkerID"] = workerID.String()
-			patchMap["ChannelID"] = nil
-		}
 		if channelID != nil {
 			patchMap["ChannelID"] = channelID.String()
-			patchMap["BridgeWorkerID"] = nil
 		}
 		if invocationID != nil {
 			patchMap["InvocationID"] = invocationID.String()
@@ -545,9 +500,6 @@ func triggerPatchEnhancer() (PatchEnhancer, error) {
 		}
 		if triggerOtherDataSource != "" {
 			patchMap["OtherDataSource"] = triggerOtherDataSource
-		}
-		if failOpenAfter != nil {
-			patchMap["FailOpenAfter"] = int(*failOpenAfter)
 		}
 	}, nil
 }

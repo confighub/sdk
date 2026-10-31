@@ -25,12 +25,6 @@ import (
 // JOSE dependency in an SDK module is a cost paid by everyone who imports it.
 
 const (
-	// DefaultAssertionAudience must match the server's default. The audience
-	// pins an assertion to one token endpoint, so a mismatch is a uniform 401
-	// with nothing to distinguish it from a bad key. Deployments that set
-	// CONFIGHUB_ASSERTION_AUDIENCE on the server must set it here too.
-	DefaultAssertionAudience = "confighub-auth"
-
 	// assertionLifetime is how long a signed assertion is valid. The server
 	// bounds this at five minutes; two is comfortably inside that and long
 	// enough to survive a slow round trip. Nothing is gained by asking for
@@ -56,7 +50,8 @@ type AssertionSigner struct {
 // what `cub user key add --generate` writes. An explicit subject wins, so a key
 // generated elsewhere can still be used by naming the identity separately.
 //
-// audience may be empty for DefaultAssertionAudience.
+// audience is what Sign names in aud. It may be empty for a signer used only with SignFor, which
+// names the token endpoint instead.
 func NewAssertionSigner(privateJWK []byte, subject, audience string) (*AssertionSigner, error) {
 	var key struct {
 		Kty        string `json:"kty"`
@@ -95,10 +90,6 @@ func NewAssertionSigner(privateJWK []byte, subject, audience string) (*Assertion
 	if subject == "" {
 		return nil, fmt.Errorf("no ConfigHub identity for this key: the JWK has no %q member and none was configured", jwk.UserExternalIDMember)
 	}
-	if audience == "" {
-		audience = DefaultAssertionAudience
-	}
-
 	kid, err := ed25519JWKThumbprint(key.X)
 	if err != nil {
 		return nil, err
@@ -125,14 +116,16 @@ func (s *AssertionSigner) Kid() string { return s.kid }
 // identity that owns the key, so an assertion signed with a real key cannot claim
 // to be about somebody else.
 func (s *AssertionSigner) Sign() (string, error) {
+	if s.audience == "" {
+		return "", fmt.Errorf("no audience configured for this signer")
+	}
 	return s.sign(s.audience)
 }
 
 // SignFor produces an assertion valid from now whose aud names the given token endpoint, as
-// RFC 7523 §3 has it, and the signer's audience, which servers older than the endpoint's
-// JWT-bearer grant require.
+// RFC 7523 §3 has it.
 func (s *AssertionSigner) SignFor(tokenEndpoint string) (string, error) {
-	return s.sign([]string{tokenEndpoint, s.audience})
+	return s.sign(tokenEndpoint)
 }
 
 func (s *AssertionSigner) sign(audience any) (string, error) {

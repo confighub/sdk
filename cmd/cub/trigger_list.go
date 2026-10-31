@@ -16,7 +16,7 @@ import (
 var triggerListCmd = &cobra.Command{
 	Use:   "list",
 	Short: "List triggers",
-	Long: getCommandHelp(`List triggers you have access to in a space or across all spaces. The output includes slugs, worker slugs, events, whether each validates, is disabled, or only warns, toolchain types, function names, and the number of arguments.
+	Long: getCommandHelp(`List triggers you have access to in a space or across all spaces. The output includes slugs, channel slugs, events, whether each validates, is disabled, or only warns, toolchain types, function names, and the number of arguments.
 
 Examples:
 `+"```"+`
@@ -69,11 +69,11 @@ Examples:
 }
 
 // Default columns to display when no custom columns are specified
-var defaultTriggerColumns = []string{"Trigger.Slug", "Space.Slug", "BridgeWorker.Slug", "Channel.Slug", "Trigger.Event", "Trigger.Validating", "Trigger.Disabled", "Trigger.Warn", "Trigger.ToolchainType", "Trigger.FunctionName", "Trigger.Arguments", "Invocation.Slug"}
+var defaultTriggerColumns = []string{"Trigger.Slug", "Space.Slug", "Channel.Slug", "Trigger.Event", "Trigger.Validating", "Trigger.Disabled", "Trigger.Warn", "Trigger.ToolchainType", "Trigger.FunctionName", "Trigger.Arguments", "Invocation.Slug"}
 
 // triggerListInclude is the Include parameter for trigger list queries (the
 // related entities expanded into each ExtendedTrigger).
-const triggerListInclude = "SpaceID,BridgeWorkerID,ChannelID,InvocationID"
+const triggerListInclude = "SpaceID,ChannelID,InvocationID"
 
 // triggerBaseSelectFields are the fields always returned by trigger list queries,
 // regardless of the requested columns.
@@ -125,14 +125,10 @@ func displayTriggerList(triggers []*goclientnew.ExtendedTrigger) {
 	}
 	table := tableView()
 	if !noheader {
-		table.SetHeader([]string{"Name", "Space", "Worker", "Channel", "Event", "Validating", "Disabled", "Warn", "Toolchain-Type", "Function-Name", "Num-Args", "Invocation"})
+		table.SetHeader([]string{"Name", "Space", "Channel", "Event", "Validating", "Disabled", "Warn", "Toolchain-Type", "Function-Name", "Num-Args", "Invocation"})
 	}
 	for _, t := range triggers {
 		trigger := t.Trigger
-		workerSlug := ""
-		if t.BridgeWorker != nil {
-			workerSlug = t.BridgeWorker.Slug
-		}
 		channelSlug := ""
 		if t.Channel != nil {
 			channelSlug = t.Channel.Slug
@@ -150,7 +146,6 @@ func displayTriggerList(triggers []*goclientnew.ExtendedTrigger) {
 		table.Append([]string{
 			trigger.Slug,
 			spaceSlug,
-			workerSlug,
 			channelSlug,
 			trigger.Event,
 			strconv.FormatBool(trigger.Validating),

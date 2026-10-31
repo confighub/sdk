@@ -48,7 +48,7 @@ func (m FunctionKindMode) verb() string {
 //
 // Signatures are sourced from the on-disk cache of builtin functions populated by
 // listAndMaybeSaveFunctions. If the initial lookup misses, the functions are
-// listed once more (for --worker or --channel too, when set) before giving up.
+// listed once more (for --channel too, when set) before giving up.
 // When neither form resolves, the original name is returned so the downstream
 // kind-validation error message refers to what the user actually typed.
 func resolveFunctionNameForVerb(mode FunctionKindMode, name string) string {
@@ -75,7 +75,7 @@ func resolveFunctionNameForVerb(mode FunctionKindMode, name string) string {
 	if resolved, ok := lookup(); ok {
 		return resolved
 	}
-	// Cache miss: best-effort refresh, then retry once. Pass --worker or --channel
+	// Cache miss: best-effort refresh, then retry once. Pass --channel
 	// through so the functions they serve participate in the convenience.
 	// Such a listing is not cached, so its signatures are merged from the
 	// response rather than re-read from the cache.
@@ -87,7 +87,7 @@ func resolveFunctionNameForVerb(mode FunctionKindMode, name string) string {
 	}
 	if !currentFunctionHost().isBuiltin() {
 		// Also refresh the builtin entity so verb-prefix resolution against
-		// builtin functions still works when --worker or --channel is set but
+		// builtin functions still works when --channel is set but
 		// the short name refers to a builtin.
 		if _, funcs, err := listAndMaybeSaveFunctions(functionHost{}, ""); err == nil {
 			addFunctionSignatures(sigs, funcs)
@@ -153,7 +153,7 @@ func validateFunctionKinds(mode FunctionKindMode, body *goclientnew.FunctionInvo
 		}
 	}
 	if missing {
-		// Best-effort refresh. Include --worker or --channel if set so the
+		// Best-effort refresh. Include --channel if set so the
 		// functions they serve are validated against their own catalog. Such a
 		// listing is not cached, so its signatures are merged from the response.
 		if _, funcs, err := listAndMaybeSaveFunctions(currentFunctionHost(), ""); err == nil {
@@ -243,9 +243,7 @@ func registerFunctionVerbFlags(cmd *cobra.Command) {
 	// functionDoCmd.Flags() directly because flag values are shared globals;
 	// registering the same flag twice on different commands is fine since
 	// spf13/cobra namespaces per-command by pointer.
-	cmd.Flags().StringVar(&workerSlug, "worker", "", "worker to execute the function")
 	cmd.Flags().StringVar(&functionChannel, "channel", "", channelFlagUsage)
-	cmd.MarkFlagsMutuallyExclusive("worker", "channel")
 	enableShowFlag(cmd)
 	cmd.Flags().StringVar(&changeDescription, "change-desc", "", "change description")
 	cmd.Flags().StringVar(&functionChangesetSlug, "changeset", "", "changeset to associate units with")
@@ -268,7 +266,7 @@ func registerFunctionVerbFlags(cmd *cobra.Command) {
 	addStandardDisplayFlags(cmd)
 	enableWaitFlag(cmd)
 	enableDisplayMutationsFlag(cmd)
-	cmd.Flags().StringVar(&resourceType, "resource-type", "", "resource-type filter")
+	cmd.Flags().StringVar(&resourceType, "resource-type", "", invokeResourceTypeFlagUsage)
 	cmd.Flags().StringVar(&whereData, "where-data", "", "where data filter")
 	cmd.Flags().StringVar(&whereResource, "where-resource", "", "filter which resources the function operates on")
 	addResourceFlag(cmd)

@@ -48,8 +48,7 @@ func TestListColumnsForNamesItsOwnCommand(t *testing.T) {
 // columnsHandledElsewhere names the file that renders a list whose display function is
 // shared with other commands and so lives outside the list file.
 var columnsHandledElsewhere = map[string]string{
-	"user_key_list.go":      "user_key.go",
-	"serviceaccount_key.go": "user_key.go",
+	"serviceaccount_key.go": "key.go",
 }
 
 // TestColumnsFlagIsNeverIgnored checks that every command file registering --columns
@@ -95,14 +94,13 @@ func TestListColumnsForOnlyServesTheRunningCommand(t *testing.T) {
 	}
 }
 
-// A BridgeWorkerStatus is not wrapped in an envelope, so "BridgeWorkerStatus.Status" has no
-// BridgeWorkerStatus field to step into.
+// A UserKey is not wrapped in an envelope, so "UserKey.Kid" has no UserKey field to step into.
 func TestGetValueEntityPrefixOnPlainStruct(t *testing.T) {
-	status := &goclientnew.BridgeWorkerStatus{Status: "Connected"}
-	provider := NewDynamicColumnProvider(new(goclientnew.BridgeWorkerStatus))
-	for _, col := range []string{"Status", "BridgeWorkerStatus.Status"} {
-		if got := provider.GetValue(status, col); got != "Connected" {
-			t.Errorf("GetValue(%q) = %q, want %q", col, got, "Connected")
+	key := &goclientnew.UserKey{Kid: "abc"}
+	provider := NewDynamicColumnProvider(new(goclientnew.UserKey))
+	for _, col := range []string{"Kid", "UserKey.Kid"} {
+		if got := provider.GetValue(key, col); got != "abc" {
+			t.Errorf("GetValue(%q) = %q, want %q", col, got, "abc")
 		}
 	}
 }

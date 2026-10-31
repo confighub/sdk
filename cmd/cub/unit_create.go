@@ -16,7 +16,6 @@ import (
 	"github.com/confighub/sdk/core/cubapi"
 	goclientnew "github.com/confighub/sdk/core/openapi/goclient-new"
 	"github.com/confighub/sdk/core/third_party/gaby"
-	"github.com/confighub/sdk/core/worker/api"
 	"github.com/confighub/sdk/core/workerapi"
 	funcimpl "github.com/confighub/sdk/function-impl"
 )
@@ -273,7 +272,7 @@ func checkUnitCreateConflictingArgs(args []string) (bool, error) {
 		}
 	}
 
-	if unitCreateArgs.providerType == string(api.ProviderNone) && unitCreateArgs.targetSlug != "" {
+	if unitCreateArgs.providerType == string(workerapi.ProviderNone) && unitCreateArgs.targetSlug != "" {
 		return isBulkCreateMode, errors.New("cannot use '--provider None' and '--target' together")
 	}
 

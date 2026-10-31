@@ -172,11 +172,8 @@ func displayExtendedMutationDetails(extendedMutationDetails *goclientnew.Extende
 	}
 
 	// Which executor ran the function. Nil means the builtin one, which is the common case and
-	// says nothing worth a row; a worker or channel is what makes the Mutation's replay depend on
-	// that client.
-	if isSetUUID(mutationDetails.BridgeWorkerID) {
-		view.Append([]string{"Bridge Worker", resolveBridgeWorkerName(*mutationDetails.BridgeWorkerID, mutationDetails.SpaceSlug)})
-	}
+	// says nothing worth a row; a channel is what makes the Mutation's replay depend on that
+	// client.
 	if isSetUUID(mutationDetails.ChannelID) {
 		view.Append([]string{"Channel", resolveChannelName(*mutationDetails.ChannelID, mutationDetails.SpaceSlug)})
 	}
@@ -219,21 +216,6 @@ func displayExtendedMutationDetails(extendedMutationDetails *goclientnew.Extende
 		}
 		displayExtendedInvocationDetails(extendedInvocation)
 	}
-}
-
-// resolveBridgeWorkerName names a worker recorded as provenance on a Mutation. The worker may
-// have been deleted, or live in another Space, since the id is a record of what ran rather than
-// a live pointer; the id itself is the answer when it cannot be resolved.
-func resolveBridgeWorkerName(workerID uuid.UUID, mutationSpaceSlug string) string {
-	workers, err := apiListAllBridgeWorkers(cubapi.NewWhere("BridgeWorkerID = '"+workerID.String()+"'"), "*", "")
-	if err != nil || len(workers) == 0 || workers[0].BridgeWorker == nil || workers[0].BridgeWorker.Slug == "" {
-		return workerID.String()
-	}
-	workerSpace := ""
-	if workers[0].Space != nil {
-		workerSpace = workers[0].Space.Slug
-	}
-	return qualifySlug(workers[0].BridgeWorker.Slug, workerSpace, mutationSpaceSlug)
 }
 
 func resolveChannelName(channelID uuid.UUID, mutationSpaceSlug string) string {

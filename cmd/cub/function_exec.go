@@ -65,9 +65,7 @@ vet-cel "r.kind != 'Deployment' || r.spec.replicas > 1"
 }
 
 func init() {
-	functionExecCmd.Flags().StringVar(&workerSlug, "worker", "", "worker to execute the function")
 	functionExecCmd.Flags().StringVar(&functionChannel, "channel", "", channelFlagUsage)
-	functionExecCmd.MarkFlagsMutuallyExclusive("worker", "channel")
 	enableShowFlag(functionExecCmd)
 	functionExecCmd.Flags().BoolVar(&outputOnly, "output-only", false, "show output without other response details")
 	_ = functionExecCmd.Flags().MarkDeprecated("output-only", "use --show output")
@@ -93,7 +91,7 @@ func init() {
 	addStandardDisplayFlags(functionExecCmd)
 	enableWaitFlag(functionExecCmd)
 	enableDisplayMutationsFlag(functionExecCmd)
-	functionExecCmd.Flags().StringVar(&resourceType, "resource-type", "", "resource-type filter")
+	functionExecCmd.Flags().StringVar(&resourceType, "resource-type", "", invokeResourceTypeFlagUsage)
 	functionExecCmd.Flags().StringVar(&whereData, "where-data", "", "where data filter")
 	functionExecCmd.Flags().StringVar(&whereResource, "where-resource", "", "filter which resources the function operates on")
 	addResourceFlag(functionExecCmd)

@@ -212,16 +212,6 @@ var (
 			}
 			return e.Link.Slug
 		})}
-	kindWorker = &refKind{name: "worker", slugs: slugLister(
-		func(ctx context.Context, c *cubapi.Client, w cubapi.Where, o cubapi.ListOpts) ([]*goclientnew.ExtendedBridgeWorker, error) {
-			return cubapi.ListBridgeWorkers(ctx, c, w, o)
-		},
-		func(e *goclientnew.ExtendedBridgeWorker) string {
-			if e.BridgeWorker == nil {
-				return ""
-			}
-			return e.BridgeWorker.Slug
-		})}
 )
 
 // refArgKinds says which kind of reference each positional argument of a
@@ -243,7 +233,6 @@ var refArgKinds = map[string][]*refKind{
 	"component get": {kindComponent}, "component update": {kindComponent}, "component delete": {kindComponent},
 	"component open": {kindComponent}, "component tree": {kindComponent},
 	"filter get": {kindFilter}, "filter update": {kindFilter}, "filter delete": {kindFilter},
-	"group add-worker": {nil, kindWorker}, "group remove-worker": {nil, kindWorker},
 	"invocation get": {kindInvocation}, "invocation update": {kindInvocation}, "invocation delete": {kindInvocation},
 	"invocation invoke get": {kindInvocation}, "invocation invoke set": {kindInvocation}, "invocation invoke vet": {kindInvocation},
 	"serviceaccount get": {kindServiceAccount}, "serviceaccount update": {kindServiceAccount}, "serviceaccount delete": {kindServiceAccount},
@@ -265,31 +254,24 @@ var refArgKinds = map[string][]*refKind{
 	"space get":       {kindSpace}, "space update": {kindSpace}, "space delete": {kindSpace}, "space open": {kindSpace},
 	"tag get": {kindTag}, "tag update": {kindTag}, "tag delete": {kindTag},
 	"target get": {kindTarget}, "target update": {kindTarget}, "target delete": {kindTarget},
-	"target create": {nil, nil, kindWorker},
-	"trigger get":   {kindTrigger}, "trigger update": {kindTrigger}, "trigger delete": {kindTrigger},
+	"trigger get": {kindTrigger}, "trigger update": {kindTrigger}, "trigger delete": {kindTrigger},
 	"unit get": {kindUnit}, "unit update": {kindUnit}, "unit delete": {kindUnit}, "unit open": {kindUnit},
-	"unit blame": {kindUnit}, "unit cancel": {kindUnit}, "unit conflicts": {kindUnit},
+	"unit blame": {kindUnit}, "unit conflicts": {kindUnit},
 	"unit data": {kindUnit}, "unit diff": {kindUnit}, "unit data-edit": {kindUnit}, "unit mutation-sources": {kindUnit},
 	"unit path":      {kindUnit},
 	"unit set-guard": {kindUnit}, "unit set-protection": {kindUnit},
-	"unit set-target":  {kindUnit, kindTarget},
-	"unit tag":         {kindTag},
-	"unit-action get":  {kindUnit},
-	"unit-action data": {kindUnit},
-	"unit-event get":   {kindUnit},
-	"variant approve":  {kindVariantOrSpace}, "variant demote": {kindVariantOrSpace}, "variant diff": {kindVariantOrSpace}, "variant promote": {kindVariantOrSpace},
+	"unit set-target": {kindUnit, kindTarget},
+	"unit tag":        {kindTag},
+	"unit-event get":  {kindUnit},
+	"variant approve": {kindVariantOrSpace}, "variant demote": {kindVariantOrSpace}, "variant diff": {kindVariantOrSpace}, "variant promote": {kindVariantOrSpace},
 	"variant blame": {kindVariantOrSpace}, "variant conflicts": {kindVariantOrSpace}, "variant delete": {kindVariantOrSpace},
 	"variant create": {nil, kindVariantOrSpace},
 	"view get":       {kindView}, "view update": {kindView}, "view delete": {kindView},
-	"worker get": {kindWorker}, "worker update": {kindWorker}, "worker delete": {kindWorker},
-	"worker get-envs": {kindWorker}, "worker get-secret": {kindWorker},
-	"worker list-function": {kindWorker}, "worker list-status": {kindWorker},
-	"worker key add": {kindWorker}, "worker key list": {kindWorker}, "worker key delete": {kindWorker},
 	"changeorder rename": {kindChangeOrder, nil}, "changeset rename": {kindChangeSet, nil},
 	"changeworkflow rename": {kindChangeWorkflow, nil}, "channel rename": {kindChannel, nil}, "filter rename": {kindFilter, nil},
 	"invocation rename": {kindInvocation, nil}, "link rename": {kindLink, nil}, "space rename": {kindSpace, nil},
 	"tag rename": {kindTag, nil}, "target rename": {kindTarget, nil}, "trigger rename": {kindTrigger, nil},
-	"unit rename": {kindUnit, nil}, "view rename": {kindView, nil}, "worker rename": {kindWorker, nil},
+	"unit rename": {kindUnit, nil}, "view rename": {kindView, nil},
 	"serviceaccount rename": {kindServiceAccount, nil},
 }
 
@@ -313,7 +295,6 @@ var refFlagKinds = map[string]*refKind{
 	"tag":            kindTag,
 	"view":           kindView,
 	"channel":        kindChannel,
-	"worker":         kindWorker,
 }
 
 // installReferenceCompletions attaches the completers to the command tree. It

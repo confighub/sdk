@@ -58,7 +58,7 @@ The entities are:
 - `changeset`, `changeorder`, `changeworkflow`, `attestation`, `review-comment`
 - `target`, `release`, `resource`
 - `serviceaccount`, `channel`, `command`, `commandrun`
-- `worker`, `unit-action`, `unit-event`, which are for external functions
+- `unit-event`, the history of operations on units
 
 Other functional areas include:
 
@@ -81,7 +81,7 @@ The standard entity verbs are:
 - `explain`, which describes the entity's fields from the API's schema
 - `rename`, `move` (to another space), `edit` (in an editor, as a YAML document) and `open` (in the web UI), where they apply
 
-Some entities, such as `user`, `revision`, `mutation`, `unit-action`, and `unit-event`, are read-only apart from `user key`, and support `list`, `get` and `explain`, and `data` for revisions and unit actions.
+Some entities, such as `user`, `revision`, `mutation`, and `unit-event`, are read-only, and support `list`, `get` and `explain`, and `data` for revisions.
 
 ### Flags
 
@@ -135,7 +135,6 @@ The following flags are deprecated in favor of `-o` / `--show` / the new subcomm
 | On `function do` / `exec` / `run`: `--data-only`          | `--show data`                          |
 | On `cub unit get`: `--data-only`                          | `cub unit data <unit>`                 |
 | On `cub revision get`: `--data-only`                      | `cub revision data <unit> <rev>`       |
-| On `cub unit-action get`: `--data`                        | `cub unit-action data <unit> <action>` |
 
 #### Other common flags
 
@@ -435,11 +434,11 @@ can then be used in `where` queries and parameter expansion.
 
 ### Raw payload subcommands
 
-The configuration of a unit, a revision, or a unit-action is read with its own subcommand, which
+The configuration of a unit or a revision is read with its own subcommand, which
 prints the data as stored:
 
 - `cub unit data <unit>`, which writes to a file with `-O <file>`
-- `cub unit-action data <unit> <id-or-num>` and `cub revision data <unit> <revision-num>`, which write to a file with `--filename <file>`
+- `cub revision data <unit> <revision-num>`, which writes to a file with `--filename <file>`
 
 ## Where expressions
 

@@ -425,7 +425,7 @@ func ListOrganizationMembers(ctx context.Context, c *Client, organizationID gocl
 }
 
 // ListUsers returns the users in the caller's organization matching where,
-// including the bot users of its workers. Results are ExtendedUser envelopes;
+// including the Users of its ServiceAccounts. Results are ExtendedUser envelopes;
 // the core record is in each element's .User field. A user references no other
 // entity, so [ListOpts.Include] has no effect.
 func ListUsers(ctx context.Context, c *Client, where Where, opts ListOpts) ([]*goclientnew.ExtendedUser, error) {
@@ -946,37 +946,6 @@ func ListDeclaredCommands(ctx context.Context, c *Client, spaceID *goclientnew.U
 		commands = append(commands, &(*listed)[i])
 	}
 	return commands, nil
-}
-
-// ListBridgeWorkers returns bridge workers across the organization matching
-// where. Bridge-worker-specific options (Summary) are set via the with mutators,
-// which run after the common where/opts are applied.
-func ListBridgeWorkers(ctx context.Context, c *Client, where Where, opts ListOpts, with ...func(*goclientnew.ListAllBridgeWorkersParams)) ([]*goclientnew.ExtendedBridgeWorker, error) {
-	if err := where.Err(); err != nil {
-		return nil, err
-	}
-	params := &goclientnew.ListAllBridgeWorkersParams{
-		Where:           ptrIf(where.String()),
-		Select:          ptrIf(opts.Select),
-		WherePermission: enumIf[goclientnew.ListAllBridgeWorkersParamsWherePermission](opts.WherePermission),
-		Include:         ptrIf(opts.Include),
-		Filter:          ptrIf(opts.Filter),
-		Contains:        ptrIf(opts.Contains),
-		IncludeHidden:   ptrIf(opts.IncludeHidden),
-		OrderBy:         ptrIf(opts.OrderBy),
-		View:            ptrIf(opts.View),
-	}
-	for _, fn := range with {
-		fn(params)
-	}
-	return ReadPages(opts, func(limit *int, token *string) (*http.Response, *[]goclientnew.ExtendedBridgeWorker, error) {
-		params.Limit, params.Continue = limit, token
-		res, err := c.API.ListAllBridgeWorkersWithResponse(ctx, params)
-		if IsAPIError(err, res) {
-			return nil, nil, InterpretErrorGeneric(err, res)
-		}
-		return res.HTTPResponse, res.JSON200, nil
-	})
 }
 
 // ListMarkedUnits returns the units a trigger has marked -- ValidationWarnings from an

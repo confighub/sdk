@@ -243,30 +243,30 @@ func TestListChangeSets(t *testing.T) {
 	}
 }
 
-func TestListBridgeWorkersMutatorAndFilter(t *testing.T) {
+func TestListSpacesMutatorAndFilter(t *testing.T) {
 	var gotSummary, gotFilter string
 	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		gotSummary = r.URL.Query().Get("summary")
 		gotFilter = r.URL.Query().Get("filter")
 		w.Header().Set("Content-Type", "application/json")
 		w.WriteHeader(http.StatusOK)
-		_, _ = w.Write([]byte(`[{"BridgeWorker":{"Slug":"w1"}}]`))
+		_, _ = w.Write([]byte(`[{"Space":{"Slug":"s1"}}]`))
 	}))
 	t.Cleanup(srv.Close)
 	c, err := NewClient(ClientOptions{ServerURL: srv.URL, Token: "t"})
 	if err != nil {
 		t.Fatalf("client: %v", err)
 	}
-	workers, err := ListBridgeWorkers(context.Background(), c, Where{}, ListOpts{Filter: "space/my-filter"},
-		func(p *goclientnew.ListAllBridgeWorkersParams) {
+	spaces, err := ListSpaces(context.Background(), c, Where{}, ListOpts{Filter: "space/my-filter"},
+		func(p *goclientnew.ListSpacesParams) {
 			summary := true
 			p.Summary = &summary
 		})
 	if err != nil {
-		t.Fatalf("ListBridgeWorkers: %v", err)
+		t.Fatalf("ListSpaces: %v", err)
 	}
-	if len(workers) != 1 || workers[0].BridgeWorker.Slug != "w1" {
-		t.Fatalf("workers = %+v", workers)
+	if len(spaces) != 1 || spaces[0].Space.Slug != "s1" {
+		t.Fatalf("spaces = %+v", spaces)
 	}
 	if gotSummary != "true" {
 		t.Fatalf("summary = %q, want true", gotSummary)

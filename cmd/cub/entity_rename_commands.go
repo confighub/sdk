@@ -259,21 +259,4 @@ func init() {
 			return patchChangeWorkflow(e.spaceID, e.id, patch)
 		},
 	})
-	addEntityRenameCommand(entityRename{
-		parent: workerCmd,
-		entity: "worker",
-		about:  "A running worker identifies itself by its ID, so it keeps working.",
-		resolve: func(ref string) (*renamedEntity, error) {
-			d, err := resolveWorker(ref, selectedSpaceID, "BridgeWorkerID,Slug,DisplayName,SpaceID")
-			if err != nil {
-				return nil, err
-			}
-			return &renamedEntity{spaceID: d.BridgeWorker.SpaceID, id: d.BridgeWorker.BridgeWorkerID, slug: d.BridgeWorker.Slug, displayName: d.BridgeWorker.DisplayName}, nil
-		},
-		patch: func(e *renamedEntity, patch []byte) (any, error) {
-			res, err := cubClientNew.PatchBridgeWorkerWithBodyWithResponse(ctx, e.spaceID, e.id,
-				&goclientnew.PatchBridgeWorkerParams{DryRun: dryRunParam()}, mergePatchContentType, bytes.NewReader(patch))
-			return patchedEntity(res, err, func(r *goclientnew.PatchBridgeWorkerResponse) *goclientnew.BridgeWorker { return r.JSON200 })
-		},
-	})
 }

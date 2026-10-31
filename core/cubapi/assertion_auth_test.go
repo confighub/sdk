@@ -48,13 +48,9 @@ func TestPerformAssertionAuthEndpoint(t *testing.T) {
 		wantCalled []string
 		wantErr    string
 	}{
-		{"current server", session, []string{"/auth/token"}, ""},
-		{"server older than the grant, no identity provider", http.NotFound, []string{"/auth/token", "/auth/worker"}, ""},
-		{"server older than the grant, with an identity provider", func(w http.ResponseWriter, r *http.Request) {
-			w.WriteHeader(http.StatusBadRequest)
-			_, _ = w.Write([]byte(`{"message":"device_code is required"}`))
-		}, []string{"/auth/token", "/auth/worker"}, ""},
-		{"current server refuses the assertion", func(w http.ResponseWriter, r *http.Request) {
+		{"the server accepts the assertion", session, []string{"/auth/token"}, ""},
+		{"a server without the grant", http.NotFound, []string{"/auth/token"}, "404 page not found"},
+		{"the server refuses the assertion", func(w http.ResponseWriter, r *http.Request) {
 			w.WriteHeader(http.StatusBadRequest)
 			_, _ = w.Write([]byte(`{"error":"invalid_grant","error_description":"Invalid credentials"}`))
 		}, []string{"/auth/token"}, "invalid_grant: Invalid credentials"},
@@ -97,16 +93,15 @@ func TestPerformAssertionAuthEndpoint(t *testing.T) {
 			if form.Get("grant_type") != GrantTypeJWTBearer {
 				t.Errorf("grant_type %q", form.Get("grant_type"))
 			}
-			aud := assertionAudience(t, form.Get("assertion"))
-			if len(aud) != 2 || aud[0] != server.URL+"/auth/token" || aud[1] != DefaultAssertionAudience {
-				t.Errorf("aud %v, want the token endpoint and %q", aud, DefaultAssertionAudience)
+			if aud := assertionAudience(t, form.Get("assertion")); aud != server.URL+"/auth/token" {
+				t.Errorf("aud %q, want the token endpoint", aud)
 			}
 		})
 	}
 }
 
 // assertionAudience reads aud from an assertion without verifying it.
-func assertionAudience(t *testing.T, assertion string) []string {
+func assertionAudience(t *testing.T, assertion string) string {
 	t.Helper()
 	parts := strings.Split(assertion, ".")
 	if len(parts) != 3 {
@@ -117,7 +112,7 @@ func assertionAudience(t *testing.T, assertion string) []string {
 		t.Fatal(err)
 	}
 	var claims struct {
-		Aud []string `json:"aud"`
+		Aud string `json:"aud"`
 	}
 	if err := json.Unmarshal(payload, &claims); err != nil {
 		t.Fatal(err)

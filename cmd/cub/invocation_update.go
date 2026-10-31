@@ -46,14 +46,14 @@ Update multiple invocations at once based on search criteria. Requires --patch f
 
 Examples:
 `+"```"+`
-  # Point the invocations that run an external function at another worker serving it
-  cub invocation update --space my-space --patch --where "FunctionInvocations.*.FunctionName = 'vet-team-policy'" --worker new-worker
+  # Point the invocations that run an external function at another Channel serving it
+  cub invocation update --space my-space --patch --where "FunctionInvocations.*.FunctionName = 'vet-team-policy'" --channel new-channel
 
   # Repoint every invocation still on a deprecated function to its replacement
   echo '{"FunctionInvocations": [{"FunctionName": "vet-cel"}]}' | cub invocation update --patch --where "FunctionInvocations.*.FunctionName = 'cel-validate'" --from-stdin
 
   # Update specific invocations by slug
-  cub invocation update --space my-space --patch --invocation my-invocation,another-invocation --worker new-worker
+  cub invocation update --space my-space --patch --invocation my-invocation,another-invocation --channel new-channel
 `+"```"+`
 `, ""),
 	Args:        cobra.MinimumNArgs(0), // Allow 0 args for bulk mode
@@ -71,9 +71,7 @@ func init() {
 	addFieldEditFlags(invocationUpdateCmd, "Invocation")
 	addInvocationFunctionFlag(invocationUpdateCmd)
 	enableUpdatePermissionFlag(invocationUpdateCmd)
-	invocationUpdateCmd.Flags().StringVar(&workerSlug, "worker", "", "worker to execute the invocation function")
 	invocationUpdateCmd.Flags().StringVar(&functionChannel, "channel", "", "channel whose client executes the invocation's functions")
-	invocationUpdateCmd.MarkFlagsMutuallyExclusive("worker", "channel")
 	invocationUpdateCmd.Flags().StringArrayVar(&invocationDeclaredParameterFlags, "parameter", nil, "replace the declared parameters with the ones given, each as name[:datatype[:required]] (datatype defaults to string, required defaults to true; can be repeated). Reference declared parameters from templated argument values via {{ .Params.<name> }}.")
 	invocationUpdateCmd.Flags().BoolVar(&invocationPatch, "patch", false, "use patch API for individual or bulk operations")
 	enableWhereFlag(invocationUpdateCmd)
@@ -143,15 +141,6 @@ func runBulkInvocationUpdate() error {
 	// Add space constraint to the where clause only if not org level
 	effectiveWhere = addSpaceIDToWhereClause(effectiveWhere, selectedSpaceID)
 
-	// Validate and resolve worker early if specified
-	var workerUUID *uuid.UUID
-	if workerSlug != "" {
-		workerID, err := resolveWorkerID(workerSlug)
-		if err != nil {
-			return err
-		}
-		workerUUID = &workerID
-	}
 	var channelUUID *uuid.UUID
 	if functionChannel != "" {
 		channelID, err := resolveChannelID(functionChannel)
@@ -168,14 +157,8 @@ func runBulkInvocationUpdate() error {
 
 	// Create enhancer function for invocation-specific fields
 	enhancer := func(patchMap map[string]interface{}) {
-		// One executor at a time: naming one clears the other.
-		if workerUUID != nil {
-			patchMap["BridgeWorkerID"] = workerUUID.String()
-			patchMap["ChannelID"] = nil
-		}
 		if channelUUID != nil {
 			patchMap["ChannelID"] = channelUUID.String()
-			patchMap["BridgeWorkerID"] = nil
 		}
 		if len(declaredParams) > 0 {
 			patchMap["Parameters"] = declaredParams
@@ -222,7 +205,7 @@ func runBulkInvocationUpdate() error {
 // them alone.
 func invocationUpdateMinArgs() int {
 	if flagPopulateModelFromStdin || flagFilename != "" || len(invocationFunctionLines) > 0 ||
-		len(invocationDeclaredParameterFlags) > 0 || workerSlug != "" || functionChannel != "" || hasMetadataFlags() ||
+		len(invocationDeclaredParameterFlags) > 0 || functionChannel != "" || hasMetadataFlags() ||
 		len(label) > 0 || len(deleteGate) > 0 || len(permissionFlag) > 0 {
 		return 2
 	}
@@ -258,15 +241,6 @@ func invocationUpdateCmdRun(cmd *cobra.Command, args []string) error {
 		// Single invocation patch mode
 
 		// Handle error-prone operations before enhancer
-		var workerID *goclientnew.UUID
-		if workerSlug != "" {
-			workerUUID, err := resolveWorkerID(workerSlug)
-			if err != nil {
-				return err
-			}
-			workerUUIDConverted := goclientnew.UUID(workerUUID)
-			workerID = &workerUUIDConverted
-		}
 		var channelID *uuid.UUID
 		if functionChannel != "" {
 			id, err := resolveChannelID(functionChannel)
@@ -284,13 +258,8 @@ func invocationUpdateCmdRun(cmd *cobra.Command, args []string) error {
 		// Build patch data using BuildPatchData with invocation enhancer
 		invocationEnhancer := func(patchData map[string]interface{}) {
 			// Add invocation-specific fields
-			if workerID != nil {
-				patchData["BridgeWorkerID"] = *workerID
-				patchData["ChannelID"] = nil
-			}
 			if channelID != nil {
 				patchData["ChannelID"] = channelID.String()
-				patchData["BridgeWorkerID"] = nil
 			}
 			if len(declaredParams) > 0 {
 				patchData["Parameters"] = declaredParams
@@ -359,22 +328,12 @@ func invocationUpdateCmdRun(cmd *cobra.Command, args []string) error {
 
 	// If this was set from stdin, it will be overridden
 	currentInvocation.SpaceID = spaceID
-	if workerSlug != "" {
-		workerUUID, err := resolveWorkerID(workerSlug)
-		if err != nil {
-			return err
-		}
-		workerID := goclientnew.UUID(workerUUID)
-		currentInvocation.BridgeWorkerID = &workerID
-		currentInvocation.ChannelID = nil
-	}
 	if functionChannel != "" {
 		channelID, err := resolveChannelID(functionChannel)
 		if err != nil {
 			return err
 		}
 		currentInvocation.ChannelID = &channelID
-		currentInvocation.BridgeWorkerID = nil
 	}
 
 	currentInvocation.ToolchainType = args[1]

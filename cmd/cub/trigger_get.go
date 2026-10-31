@@ -6,7 +6,6 @@ package main
 import (
 	"fmt"
 	"strconv"
-	"time"
 
 	goclientnew "github.com/confighub/sdk/core/openapi/goclient-new"
 	"github.com/google/uuid"
@@ -95,12 +94,6 @@ func displayExtendedTriggerDetails(extendedTrigger *goclientnew.ExtendedTrigger)
 	view.Append([]string{"Annotations", annotationsToString(trigger.Annotations)})
 	view.Append([]string{"Organization ID", trigger.OrganizationID.String()})
 
-	// Show BridgeWorker slug instead of BridgeWorkerID when available
-	if extendedTrigger.BridgeWorker != nil {
-		view.Append([]string{"Worker", extendedTrigger.BridgeWorker.Slug})
-	} else if trigger.BridgeWorkerID != nil && *trigger.BridgeWorkerID != uuid.Nil {
-		view.Append([]string{"Worker ID", trigger.BridgeWorkerID.String()})
-	}
 	if extendedTrigger.Channel != nil {
 		view.Append([]string{"Channel", extendedTrigger.Channel.Slug})
 	} else if trigger.ChannelID != nil && *trigger.ChannelID != uuid.Nil {
@@ -156,9 +149,6 @@ func displayExtendedTriggerDetails(extendedTrigger *goclientnew.ExtendedTrigger)
 	if trigger.OtherDataSource != "" {
 		view.Append([]string{"Other Data Source", trigger.OtherDataSource})
 	}
-	if trigger.FailOpenAfter != 0 {
-		view.Append([]string{"Fail Open After", time.Duration(trigger.FailOpenAfter).String()})
-	}
 	view.Render()
 }
 
@@ -175,9 +165,6 @@ func displayTriggerDetails(trigger *goclientnew.Trigger) {
 	view.Append([]string{"Annotations", annotationsToString(trigger.Annotations)})
 	view.Append([]string{"Organization ID", trigger.OrganizationID.String()})
 
-	if trigger.BridgeWorkerID != nil && *trigger.BridgeWorkerID != uuid.Nil {
-		view.Append([]string{"Worker ID", trigger.BridgeWorkerID.String()})
-	}
 	if trigger.ChannelID != nil && *trigger.ChannelID != uuid.Nil {
 		view.Append([]string{"Channel ID", trigger.ChannelID.String()})
 	}
@@ -225,9 +212,6 @@ func displayTriggerDetails(trigger *goclientnew.Trigger) {
 	}
 	if trigger.OtherDataSource != "" {
 		view.Append([]string{"Other Data Source", trigger.OtherDataSource})
-	}
-	if trigger.FailOpenAfter != 0 {
-		view.Append([]string{"Fail Open After", time.Duration(trigger.FailOpenAfter).String()})
 	}
 	view.Render()
 }

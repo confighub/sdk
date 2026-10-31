@@ -101,10 +101,5 @@ func displayUnitEvent(event *goclientnew.UnitEvent) {
 	table.Append([]string{"Terminated At", event.TerminatedAt.String()})
 	table.Append([]string{"Message", event.Message})
 
-	// Display BridgeWorkerID if present
-	if event.BridgeWorkerID != nil {
-		table.Append([]string{"Bridge Worker ID", event.BridgeWorkerID.String()})
-	}
-
 	table.Render()
 }

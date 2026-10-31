@@ -624,9 +624,9 @@ func unitUpdateCmdRun(cmd *cobra.Command, args []string) error {
 			return err
 		}
 		if restoreIsUUID {
-			// It's a revision ID - set RevisionId parameter
+			// It's a revision ID - set RevisionID parameter
 			revisionUUID, _ := uuid.Parse(restoreFormatted)
-			newParams.RevisionId = &revisionUUID
+			newParams.RevisionID = &revisionUUID
 		} else {
 			// It's a formatted restore specification
 			newParams.Restore = &restoreFormatted

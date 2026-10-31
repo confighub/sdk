@@ -202,7 +202,7 @@ func validateEntityParameters() error {
 	}
 
 	if entityType != "" {
-		supportedTypes := []string{"Space", "Component", "ServiceAccount", "Filter", "View", "Invocation", "Trigger", "Tag", "ChangeSet", "ChangeOrder", "ChangeWorkflow", "Target", "BridgeWorker", "Unit", "Link", "Attribute", "Channel", "CommandRun"}
+		supportedTypes := []string{"Space", "Component", "ServiceAccount", "Filter", "View", "Invocation", "Trigger", "Tag", "ChangeSet", "ChangeOrder", "ChangeWorkflow", "Target", "Unit", "Link", "Attribute", "Channel", "CommandRun"}
 		found := false
 		for _, supported := range supportedTypes {
 			if entityType == supported {
@@ -313,13 +313,6 @@ func parseEntityIdentifierForFilter(
 			return "", "", fmt.Errorf("failed to resolve Target %s: %w", identifier, err)
 		}
 		return entityType, targetUUID.String(), nil
-
-	case "BridgeWorker":
-		bridgeWorkerUUID, err := resolveWorkerID(identifier)
-		if err != nil {
-			return "", "", fmt.Errorf("failed to resolve BridgeWorker %s: %w", identifier, err)
-		}
-		return entityType, bridgeWorkerUUID.String(), nil
 
 	case "Unit":
 		unitUUID, err := resolveUnitID(identifier)

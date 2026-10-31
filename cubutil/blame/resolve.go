@@ -48,6 +48,9 @@ type Resolver struct {
 	// sources maps an upstream (unit, revision) to that revision's MutationSources,
 	// which is where the walk looks the path up next.
 	sources map[string]goclientnew.ResourceMutationList
+	// docs maps a Revision to its configuration, read only for a record with a path that has
+	// to be resolved against it; nil for one that cannot be read.
+	docs map[uuid.UUID]*resourceDocs
 	// spaces caches what a row needs of a Space: its slug, and whether it has anything to
 	// release.
 	spaces map[uuid.UUID]spaceInfo
@@ -79,6 +82,7 @@ func NewResolver(client *cubapi.Client, opts Options) *Resolver {
 		mutations:  map[uuid.UUID]map[int64]*goclientnew.ExtendedMutation{},
 		revisions:  map[uuid.UUID]map[int64]*goclientnew.ExtendedRevision{},
 		sources:    map[string]goclientnew.ResourceMutationList{},
+		docs:       map[uuid.UUID]*resourceDocs{},
 
 		revisionSources: map[uuid.UUID][]*goclientnew.RevisionMutationSources{},
 		units:           map[uuid.UUID]*goclientnew.Unit{},
@@ -165,7 +169,7 @@ func (r *Resolver) upstreamCredit(ctx context.Context, origin *Origin, resourceT
 		if err != nil {
 			return nil, err
 		}
-		sources = fetched
+		sources = r.revisionRecord(ctx, upstream, revision.RevisionID, fetched)
 		r.sources[key] = sources
 	}
 	identifier, _ := blameResourceProvider(upstream.ToolchainType)
@@ -455,7 +459,8 @@ func (r *Resolver) unrecordedCredit(ctx context.Context, unit *goclientnew.Unit,
 		}
 		var entry *goclientnew.MutationInfo
 		if revision.MutationSources != nil {
-			entry, _ = creditPath(identifier, *revision.MutationSources, resourceType, resourceName, resourceNameCore, path)
+			sources := r.revisionRecord(ctx, unit, revision.RevisionID, *revision.MutationSources)
+			entry, _ = creditPath(identifier, sources, resourceType, resourceName, resourceNameCore, path)
 		}
 		switch {
 		case entry == nil:

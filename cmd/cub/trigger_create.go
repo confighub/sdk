@@ -5,9 +5,7 @@ package main
 
 import (
 	"bytes"
-	"fmt"
 	"strings"
-	"time"
 
 	"github.com/cockroachdb/errors"
 	"github.com/confighub/sdk/core/cubapi"
@@ -149,9 +147,7 @@ func init() {
 	addTriggerClearanceFlag(triggerCreateCmd)
 	addTriggerGuardFlag(triggerCreateCmd)
 	triggerCreateCmd.Flags().BoolVar(&protectTrigger, "protect", false, "record the paths this trigger's function writes as protected local overrides, so a later merge from upstream does not overwrite them; for a trigger that decides a value the unit then owns, such as a PostClone trigger customizing a variant")
-	triggerCreateCmd.Flags().StringVar(&workerSlug, "worker", "", "worker to execute the trigger function")
 	triggerCreateCmd.Flags().StringVar(&functionChannel, "channel", "", "channel whose client executes the trigger function; a trigger that runs an invocation runs it where the invocation says")
-	triggerCreateCmd.MarkFlagsMutuallyExclusive("worker", "channel")
 	enableWhereFlag(triggerCreateCmd)
 	enableFilterFlag(triggerCreateCmd)
 
@@ -168,7 +164,6 @@ func init() {
 	triggerCreateCmd.Flags().StringVar(&triggerWhereUnit, "where-unit-field", "", "filter expression to restrict which Units this trigger applies to (its WhereUnit). It takes what --where does on unit list, attributes of what a unit refers to included, as in \"Space.Labels.Environment = 'prod'\"")
 	triggerCreateCmd.Flags().StringVar(&triggerUnitFilter, "unit-filter", "", "filter entity (slug or UUID) to restrict which Units this trigger applies to")
 	triggerCreateCmd.Flags().StringVar(&triggerWhereResource, "where-resource", "", "metadata path expression to restrict which resources the trigger operates on")
-	triggerCreateCmd.Flags().StringVar(&triggerFailOpenAfter, "fail-open-after", "", "duration after which disconnected worker triggers fail open (e.g., 6h, 30m); triggers on a channel fail closed")
 	triggerCreateCmd.Flags().StringVar(&triggerOtherDataSource, "other-data-source", "", "source of additional data to pass to the function (e.g., LastReleasedRevisionNum); defaults to the sources the function expects")
 
 	addBackingUnitFlags(triggerCreateCmd, "Trigger", false, true)
@@ -310,14 +305,6 @@ func runSingleTriggerCreate(args []string) error {
 		}
 		newBody.Guards = &guards
 	}
-	if workerSlug != "" {
-		workerUUID, err := resolveWorkerID(workerSlug)
-		if err != nil {
-			return err
-		}
-		workerID := goclientnew.UUID(workerUUID)
-		newBody.BridgeWorkerID = &workerID
-	}
 	if functionChannel != "" {
 		channelID, err := resolveChannelID(functionChannel)
 		if err != nil {
@@ -345,13 +332,6 @@ func runSingleTriggerCreate(args []string) error {
 	}
 	if triggerOtherDataSource != "" {
 		newBody.OtherDataSource = triggerOtherDataSource
-	}
-	if triggerFailOpenAfter != "" {
-		duration, err := time.ParseDuration(triggerFailOpenAfter)
-		if err != nil {
-			return fmt.Errorf("invalid --fail-open-after duration: %w", err)
-		}
-		newBody.FailOpenAfter = int(duration)
 	}
 
 	// TODO: update with overriden string type TriggerEvent

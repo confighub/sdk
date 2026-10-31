@@ -3,7 +3,7 @@ module github.com/confighub/sdk/cmd/fctl
 go 1.26.0
 
 require (
-	github.com/confighub/sdk/core v0.9.15
+	github.com/confighub/sdk/core v0.0.0
 	github.com/fatih/color v1.18.0
 	github.com/google/uuid v1.6.0
 	github.com/olekukonko/tablewriter v0.0.5
@@ -18,7 +18,6 @@ require (
 	github.com/cockroachdb/redact v1.1.5 // indirect
 	github.com/getsentry/sentry-go v0.27.0 // indirect
 	github.com/gogo/protobuf v1.3.2 // indirect
-	github.com/google/go-cmp v0.6.0 // indirect
 	github.com/inconshreveable/mousetrap v1.1.0 // indirect
 	github.com/kr/pretty v0.3.1 // indirect
 	github.com/kr/text v0.2.0 // indirect
@@ -34,3 +33,4 @@ require (
 	golang.org/x/text v0.42.0 // indirect
 )
 
+replace github.com/confighub/sdk/core => ../../core

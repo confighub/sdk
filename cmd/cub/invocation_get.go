@@ -52,7 +52,7 @@ func displayInvocationDetails(invocationDetails *goclientnew.Invocation) {
 	// Create an ExtendedInvocation wrapper with just the Invocation set
 	extendedInvocation := &goclientnew.ExtendedInvocation{
 		Invocation: invocationDetails,
-		// All other fields (Space, BridgeWorker, etc.) will be nil, causing Extended display to show IDs
+		// All other fields (Space, Channel, etc.) will be nil, causing Extended display to show IDs
 	}
 	displayExtendedInvocationDetails(extendedInvocation)
 }
@@ -77,12 +77,6 @@ func displayExtendedInvocationDetails(extendedInvocation *goclientnew.ExtendedIn
 	view.Append([]string{"Annotations", annotationsToString(invocationDetails.Annotations)})
 	view.Append([]string{"Organization ID", invocationDetails.OrganizationID.String()})
 
-	// Show BridgeWorker slug instead of BridgeWorkerID when available
-	if extendedInvocation.BridgeWorker != nil {
-		view.Append([]string{"Worker", extendedInvocation.BridgeWorker.Slug})
-	} else if invocationDetails.BridgeWorkerID != nil && *invocationDetails.BridgeWorkerID != uuid.Nil {
-		view.Append([]string{"Worker ID", invocationDetails.BridgeWorkerID.String()})
-	}
 	if extendedInvocation.Channel != nil {
 		view.Append([]string{"Channel", extendedInvocation.Channel.Slug})
 	} else if invocationDetails.ChannelID != nil && *invocationDetails.ChannelID != uuid.Nil {

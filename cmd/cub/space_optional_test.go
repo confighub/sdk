@@ -17,25 +17,22 @@ import (
 // the entity they resolved, never the selected one, which is what lets a
 // qualified reference reach another space than --space or the default.
 //
-// The revision, mutation, unit-action, unit-event, release and attestation commands
+// The revision, mutation, unit-event, release and attestation commands
 // have no resolver of their own: they resolve the unit (or, for a release or an
 // attestation, locate it by UUID organization-wide) and read through its space.
 var referenceOperandCommands = []string{
 	"attribute get", "changeset get", "changeorder get", "changeworkflow get", "filter get",
 	"invocation get", "link get", "tag get", "target get", "trigger get",
-	"unit get", "view get", "worker get", "channel get",
+	"unit get", "view get", "channel get",
 	"unit blame", "unit conflicts", "unit data", "unit diff", "unit data-edit", "unit mutation-sources", "unit path",
 	"unit set-guard", "unit set-protection",
 	"revision get", "revision data", "mutation get", "mutation list", "release get",
 	"review-comment get", "review-comment list", "review-comment create",
 	"attestation get", "attestation revoke",
-	"unit-action get", "unit-action data", "unit-event get",
+	"unit-event get",
 	"k8s collect",
-	"worker get-envs", "worker get-secret", "worker list-function", "worker list-status",
-	"worker key add", "worker key list", "worker key delete",
-	"user key add", "user key list", "user key delete",
 	"changeorder rename", "changeset rename", "changeworkflow rename", "filter rename", "invocation rename",
-	"link rename", "tag rename", "target rename", "trigger rename", "unit rename", "view rename", "worker rename",
+	"link rename", "tag rename", "target rename", "trigger rename", "unit rename", "view rename",
 }
 
 func findCommand(t *testing.T, path string) *cobra.Command {
@@ -89,7 +86,7 @@ var resolverBackedWrites = []string{
 	"invocation delete", "invocation update", "link delete", "link update",
 	"tag delete", "tag update", "target delete", "target update",
 	"trigger delete", "trigger update", "unit delete", "unit update",
-	"view delete", "view update", "worker delete", "worker update", "channel delete", "channel update",
+	"view delete", "view update", "channel delete", "channel update",
 	"commandrun cancel",
 }
 

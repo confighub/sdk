@@ -49,11 +49,6 @@ func GetTargetListURL(serverURL string) string {
 	return fmt.Sprintf("%s/targets", cleanServerURL(serverURL))
 }
 
-// GetWorkerListURL returns the web UI URL for the bridge workers list page
-func GetWorkerListURL(serverURL string) string {
-	return fmt.Sprintf("%s/bridge-workers", cleanServerURL(serverURL))
-}
-
 // GetComponentListURL returns the web UI URL for the component view with no
 // component selected, i.e. the component overview.
 func GetComponentListURL(serverURL string) string {

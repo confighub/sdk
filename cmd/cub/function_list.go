@@ -38,7 +38,6 @@ Filter options:
 - --where: SQL-inspired filter over FunctionSignature attributes. Supported attributes: ToolchainType, FunctionName, Description, RequiredParameters, VarArgs, Mutating, Validating, Hermetic, Idempotent, Replayable, FunctionType, AttributeName, and OutputInfo.OutputType / OutputInfo.ResultName / OutputInfo.Description. Example: --where "ToolchainType = 'Kubernetes/YAML' AND FunctionName LIKE '%image%'"
 - --toolchain: Shortcut that is AND'd into --where as ToolchainType = '<toolchain>'
 - --channel: Show functions the client of a channel serves
-- --worker: Show functions available on a specific worker
 
 Function types:
 - Mutating: false = Read-only inspection functions (safe to run repeatedly)
@@ -58,9 +57,7 @@ var functionListCmdArgs struct {
 }
 
 func init() {
-	functionListCmd.Flags().StringVar(&functionListCmdArgs.host.worker, "worker", "", "Worker slug to list functions for")
 	functionListCmd.Flags().StringVar(&functionListCmdArgs.host.channel, "channel", "", "Channel whose served functions to list")
-	functionListCmd.MarkFlagsMutuallyExclusive("worker", "channel")
 	functionListCmd.Flags().StringVar(&functionListCmdArgs.toolchainType, "toolchain", "", "Toolchain type to list functions for (AND'd into --where as ToolchainType = '<toolchain>')")
 	enableWhereFlag(functionListCmd)
 	addStandardListDisplayFlags(functionListCmd)
@@ -72,21 +69,20 @@ type functionsByEntity map[string]functionsByToolchain
 
 const builtinFunctionKey = "builtin"
 
-// functionHost names where functions run other than the builtin executor: a worker or the
-// client of a channel. The zero value is the builtin executor.
+// functionHost names where functions run other than the builtin executor: the client of a
+// channel. The zero value is the builtin executor.
 type functionHost struct {
-	worker  string
 	channel string
 }
 
 func (h functionHost) isBuiltin() bool {
-	return h.worker == "" && h.channel == ""
+	return h.channel == ""
 }
 
-// currentFunctionHost is the host named by the --worker and --channel flags that function
-// do, exec, run and the vet/get/set verbs share.
+// currentFunctionHost is the host named by the --channel flag that function do, exec, run and
+// the vet/get/set verbs share.
 func currentFunctionHost() functionHost {
-	return functionHost{worker: workerSlug, channel: functionChannel}
+	return functionHost{channel: functionChannel}
 }
 
 func listFunctions(host functionHost, whereClause string) (string, functionsByToolchain, error) {
@@ -97,23 +93,9 @@ func listFunctions(host functionHost, whereClause string) (string, functionsByTo
 		params.Where = &whereClause
 	}
 
-	// A worker or channel is listed through a space-scoped route, so it needs a space.
-	if selectedSpaceID == "*" && host.worker != "" {
-		return entity, funcs, fmt.Errorf("--worker needs --space, the space the worker is in")
-	}
+	// A channel is listed through a space-scoped route, so it needs a space.
 	if selectedSpaceID == "*" && host.channel != "" {
 		return entity, funcs, fmt.Errorf("--channel needs --space, the space the channel is in")
-	}
-	if host.worker != "" {
-		workerDetails, err := resolveWorker(host.worker, selectedSpaceID, "") // default select is fine
-		if err != nil {
-			return entity, funcs, fmt.Errorf("failed to get worker '%s': %w", host.worker, err)
-		}
-		entityType := "worker"
-		params.Entity = &entityType
-		workerIDStr := workerDetails.BridgeWorker.BridgeWorkerID.String()
-		params.Id = &workerIDStr
-		entity = workerIDStr
 	}
 	if host.channel != "" {
 		channel, err := resolveChannel(host.channel, selectedSpaceID, idSelect("ChannelID"))
@@ -206,8 +188,8 @@ func removeFunctions() error {
 
 // listAndMaybeSaveFunctions fetches functions and caches them locally only when the
 // result is the full builtin listing: no --where / --toolchain filtering and no
-// --worker or --channel. Only the builtin entry is read back to register function commands,
-// and per-host listings would accumulate one entry per worker or channel ever listed;
+// --channel. Only the builtin entry is read back to register function commands,
+// and per-host listings would accumulate one entry per channel ever listed;
 // every cub invocation parses the cache at startup, so its size is paid on every
 // command. Saving replaces the whole cache.
 func listAndMaybeSaveFunctions(host functionHost, whereClause string) (string, functionsByToolchain, error) {

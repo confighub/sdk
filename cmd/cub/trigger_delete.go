@@ -105,7 +105,7 @@ func runBulkTriggerDelete() error {
 	effectiveWhere = addSpaceIDToWhereClause(effectiveWhere, selectedSpaceID)
 
 	// Build bulk delete parameters
-	include := "SpaceID,BridgeWorkerID"
+	include := "SpaceID"
 	params := &goclientnew.BulkDeleteTriggersParams{
 		Where:   &effectiveWhere,
 		Include: &include,

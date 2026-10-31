@@ -24,7 +24,6 @@ import (
 )
 
 var (
-	asWorker               bool
 	privateKeyRef          string
 	newContext             bool
 	serverURL              string
@@ -78,8 +77,6 @@ Examples:
 }
 
 func init() {
-	authLoginCmd.Flags().BoolVar(&asWorker, "as-worker", false, "Authenticate as a worker using CONFIGHUB_WORKER_ID and CONFIGHUB_WORKER_SECRET environment variables")
-	_ = authLoginCmd.Flags().MarkDeprecated("as-worker", "workers are being removed; log in as a service account with --private-key")
 	authLoginCmd.Flags().StringVar(&privateKeyRef, "private-key", "",
 		"Authenticate by signing with a private key: an alias under ~/.confighub/keys, a path, or empty to use CONFIGHUB_AUTH_PRIVATE_KEY")
 	// The flag is usable with no value, so `--private-key` alone falls back to
@@ -121,10 +118,6 @@ func authLoginCmdRun(cmd *cobra.Command, args []string) error {
 		coordinate.ServerURL = contextManager.ActiveContext().Coordinate.ServerURL
 	}
 
-	if asWorker && privateKeyRef != "" {
-		return fmt.Errorf("cannot use both --as-worker and --private-key: they are alternative credentials, not layers")
-	}
-
 	// A context that authenticated with a key can do so again without being
 	// told which one. Tokens expire daily; asking for the same flag every
 	// morning is a worse tax than the first setup ever was.
@@ -132,7 +125,7 @@ func authLoginCmdRun(cmd *cobra.Command, args []string) error {
 	// An explicit flag still wins, so naming a different key switches the
 	// context to it rather than being ignored.
 	rememberedKey := ""
-	if privateKeyRef == "" && !asWorker {
+	if privateKeyRef == "" {
 		if active := contextManager.ActiveContext(); active != nil &&
 			cubapi.SameServer(active.Coordinate.ServerURL, coordinate.ServerURL) {
 			rememberedKey = active.Metadata.PrivateKey
@@ -150,9 +143,6 @@ func authLoginCmdRun(cmd *cobra.Command, args []string) error {
 			tprint("Reusing the key this context last authenticated with (%s).", rememberedKey)
 		}
 		session, err = performPrivateKeyAuth(coordinate, privateKeyRef)
-	case asWorker:
-		// Handle worker authentication
-		session, err = performWorkerAuth(coordinate)
 	default:
 		session, err = performUserAuth(coordinate, noBrowser)
 	}
@@ -164,8 +154,7 @@ func authLoginCmdRun(cmd *cobra.Command, args []string) error {
 	if err := updateContextFromSession(coordinate, session); err != nil {
 		return fmt.Errorf("failed to update context: %w", err)
 	}
-	// A worker opens no browser, so it is not told when there is no UI to open.
-	noteWebUILocation(asWorker)
+	noteWebUILocation(false)
 
 	if organizationSearchTerm != "" {
 		switchToOrganization(organizationSearchTerm)
@@ -243,22 +232,6 @@ func performUserAuth(coordinate Coordinate, noBrowser bool) (*cubapi.AuthSession
 	return session, nil
 }
 
-// performWorkerAuth handles worker authentication
-func performWorkerAuth(coordinate Coordinate) (*cubapi.AuthSession, error) {
-	workerID := os.Getenv("CONFIGHUB_WORKER_ID")
-	workerSecret := os.Getenv("CONFIGHUB_WORKER_SECRET")
-	if workerID == "" || workerSecret == "" {
-		return nil, fmt.Errorf("CONFIGHUB_WORKER_ID and CONFIGHUB_WORKER_SECRET environment variables must be set")
-	}
-
-	session, err := cubapi.PerformWorkerAuth(coordinate.ServerURL, workerID, workerSecret)
-	if err != nil {
-		return nil, err
-	}
-	tprint("Successfully logged in as worker %s (Organization: %s)", workerID, session.OrganizationID)
-	return session, nil
-}
-
 // authLoginArgs rejects positional arguments, and catches the one mistake this
 // command invites.
 //
@@ -285,8 +258,6 @@ const privateKeyFromEnv = "-"
 
 // privateKeyEnvVar holds either an Ed25519 private JWK or a path to one.
 //
-// Named for authentication rather than for workers: a key authenticates an
-// identity, and the identity does not have to be a worker.
 const privateKeyEnvVar = "CONFIGHUB_AUTH_PRIVATE_KEY"
 
 // performPrivateKeyAuth authenticates by signing an assertion with a local
@@ -318,7 +289,7 @@ func privateKeyAuth(coordinate Coordinate, ref string) (*cubapi.AuthSession, *cu
 	// The audience must match the server's. An assertion minted for the wrong
 	// audience is refused with the same uniform 401 as an unregistered key, so
 	// a mismatch is worth being able to fix without guessing.
-	signer, err := cubapi.NewAssertionSigner(privateJWK, "", os.Getenv("CONFIGHUB_ASSERTION_AUDIENCE"))
+	signer, err := cubapi.NewAssertionSigner(privateJWK, "", "")
 	if err != nil {
 		return nil, nil, fmt.Errorf("%s: %w", source, err)
 	}

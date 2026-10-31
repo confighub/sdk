@@ -46,9 +46,7 @@ func init() {
 	runCmd.Flags().BoolVar(&reset, "reset", false, "Reset the function list")
 
 	addSpaceFlags(runCmd)
-	runCmd.PersistentFlags().StringVar(&workerSlug, "worker", "", "worker to execute the function")
 	runCmd.PersistentFlags().StringVar(&functionChannel, "channel", "", channelFlagUsage)
-	runCmd.MarkFlagsMutuallyExclusive("worker", "channel")
 	runCmd.PersistentFlags().StringVar(&showSection, "show", "",
 		"Select which part of the function response to display. One of: output, values, data")
 	runCmd.PersistentFlags().BoolVar(&outputOnly, "output-only", false, "show output without other response details")
@@ -57,7 +55,7 @@ func init() {
 	_ = runCmd.PersistentFlags().MarkDeprecated("data-only", "use --show data")
 	runCmd.PersistentFlags().StringVar(&where, "where", "", "where filter")
 	runCmd.PersistentFlags().StringVar(&filter, "filter", "", "filter to apply (slug, space/filter, or UUID)")
-	runCmd.PersistentFlags().StringVar(&resourceType, "resource-type", "", "resource-type filter")
+	runCmd.PersistentFlags().StringVar(&resourceType, "resource-type", "", invokeResourceTypeFlagUsage)
 	runCmd.PersistentFlags().StringVar(&whereData, "where-data", "", "where data filter")
 	runCmd.PersistentFlags().StringVar(&whereResource, "where-resource", "", "filter which resources the function operates on")
 	runCmd.PersistentFlags().StringSliceVar(&unitIdentifiers, "unit", []string{}, "target specific units by slug or UUID (can be repeated or comma-separated)")

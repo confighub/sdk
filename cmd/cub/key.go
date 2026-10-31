@@ -3,6 +3,8 @@
 
 package main
 
+// Keys registered against an identity, which `cub serviceaccount key` manages.
+
 import (
 	"encoding/json"
 	"fmt"
@@ -10,76 +12,18 @@ import (
 	"os"
 	"path/filepath"
 	"strings"
+	"time"
 
-	"github.com/confighub/sdk/core/cubapi"
 	goclientnew "github.com/confighub/sdk/core/openapi/goclient-new"
-	"github.com/google/uuid"
-	"github.com/spf13/cobra"
+
+	"github.com/confighub/sdk/core/jwk"
 )
-
-var userKeyAddCmd = &cobra.Command{
-	Use:   "add",
-	Short: "Register a public key for an identity",
-	Long: getCommandHelp(`Register a public key against an identity.
-
-Either generate a keypair here with --generate, which stores the private key
-locally and registers the public half, or register a public key you already have
-with --public-key.
-
---generate takes an alias or a path. A bare name is an alias stored under
-~/.confighub/keys, which is what "cub auth login --private-key=<alias>" looks
-up; anything containing a path separator is written there instead and has no
-alias.
-
-The private key never reaches ConfigHub in either case. --generate creates it
-locally and only the public half is sent.
-
-Examples:
-`+"```"+`
-  # Generate a keypair, storing it under ~/.confighub/keys as the alias "deploy-bot"
-  cub user key add --user deploy-bot --generate deploy-bot
-
-  # ...then authenticate with it
-  cub auth login --private-key=deploy-bot
-
-  # Generate to an explicit path instead of an alias
-  cub user key add --user deploy-bot --generate ./deploy-bot.jwk
-
-  # Register a public key you already have
-  cub user key add --user deploy-bot --public-key ./deploy-bot.pub.jwk
-
-  # Register a public key from stdin, with a note about who holds it
-  cat deploy-bot.pub.jwk | cub user key add --user deploy-bot --public-key - \
-      --description "CI runner, us-east"
-`+"```"+`
-`, ""),
-	Args: cobra.NoArgs,
-	RunE: userKeyAddCmdRun,
-}
 
 var (
 	userKeyPublicKey   string
 	userKeyGenerate    string
 	userKeyDescription string
 )
-
-func init() {
-	userKeyAddCmd.Flags().StringVar(&userKeyPublicKey, "public-key", "",
-		"file holding the public key as a JWK, or - for stdin")
-	userKeyAddCmd.Flags().StringVar(&userKeyGenerate, "generate", "",
-		"generate an Ed25519 keypair, store the private key under this alias (or path), and register the public half")
-	userKeyAddCmd.Flags().StringVar(&userKeyDescription, "description", "",
-		"note recording which host or pipeline holds the private key")
-	enableDryRunFlag(userKeyAddCmd)
-	enableOptionalSpace(userKeyAddCmd)
-	userKeyCmd.AddCommand(userKeyAddCmd)
-}
-
-func userKeyAddCmdRun(cmd *cobra.Command, args []string) error {
-	return addKey(resolveKeyTargetUser, func(target *goclientnew.User, publicJWK json.RawMessage, description string) (*goclientnew.UserKey, error) {
-		return apiCreateUserKey(target.UserID, publicJWK, description)
-	})
-}
 
 // addKey registers the key --public-key or --generate names for the identity resolve finds,
 // with register, which calls whichever API the identity's keys are managed through.
@@ -110,7 +54,7 @@ func addKey(resolve func() (*goclientnew.User, error),
 
 	if userKeyGenerate != "" {
 		// Generated after resolution because the identity is written into the
-		// private key, which is what lets a worker be configured with the key
+		// private key, which is what lets a bot be configured with the key
 		// alone.
 		// The external id, not the uuid: it is what the assertion will carry as
 		// iss and sub, and what a minted session names as its subject.
@@ -236,22 +180,6 @@ func writePrivateKey(path string, privateJWK json.RawMessage) error {
 	return err
 }
 
-func apiCreateUserKey(userID uuid.UUID, publicJWK json.RawMessage, description string) (*goclientnew.UserKey, error) {
-	var jwk any
-	if err := json.Unmarshal(publicJWK, &jwk); err != nil {
-		return nil, fmt.Errorf("public key must be a JWK (JSON): %w", err)
-	}
-	body := goclientnew.CreateUserKeyJSONRequestBody{
-		PublicJWK:   jwk,
-		Description: description,
-	}
-	credentialRes, err := cubClientNew.CreateUserKeyWithResponse(ctx, userID.String(), &goclientnew.CreateUserKeyParams{DryRun: dryRunParam()}, body)
-	if cubapi.IsAPIError(err, credentialRes) {
-		return nil, cubapi.InterpretErrorGeneric(err, credentialRes)
-	}
-	return credentialRes.JSON200, nil
-}
-
 func displayKeyDetails(key *goclientnew.UserKey) {
 	view := tableView()
 	view.Append([]string{"Kid", key.Kid})
@@ -260,4 +188,52 @@ func displayKeyDetails(key *goclientnew.UserKey) {
 	view.Append([]string{"Created At", key.CreatedAt.String()})
 	view.Append([]string{"Last Used At", formatLastUsed(key.LastUsedAt)})
 	view.Render()
+}
+
+// generatedKey is a new keypair: the private half to be written somewhere the
+// operator controls, the public half to be registered, and the name the server
+// will know it by.
+//
+// Construction and naming both come from sdk/core/jwk, so the name computed here
+// is the one the server stores the key under.
+type generatedKey = jwk.Pair
+
+func generateEd25519Key(userID string) (*generatedKey, error) {
+	return jwk.GenerateEd25519(userID)
+}
+
+func jwkThumbprint(publicJWK json.RawMessage) (string, error) {
+	return jwk.Thumbprint(publicJWK)
+}
+
+// displayKeyList renders keys as a table. PublicJWK is not a column: it is
+// several hundred characters and the kid identifies the key. `-o json` returns
+// it in full, which is the point of not redacting it server-side.
+func displayKeyList(credentials []*goclientnew.UserKey) {
+	if displayRequestedColumns(credentials, nil, nil) {
+		return
+	}
+	table := tableView()
+	if !noheader {
+		table.SetHeader([]string{"Kid", "Description", "Created", "Last-Used"})
+	}
+	for _, credential := range credentials {
+		table.Append([]string{
+			credential.Kid,
+			credential.Description,
+			credential.CreatedAt.Format("2006-01-02"),
+			formatLastUsed(credential.LastUsedAt),
+		})
+	}
+	table.Render()
+}
+
+// formatLastUsed renders the zero time as "never" rather than as year 1. A key
+// nothing has used is a key nothing depends on, which is the fact this column
+// exists to report, so it must not read as a date.
+func formatLastUsed(lastUsed time.Time) string {
+	if lastUsed.IsZero() {
+		return "never"
+	}
+	return lastUsed.Format("2006-01-02 15:04")
 }

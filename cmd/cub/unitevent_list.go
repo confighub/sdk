@@ -19,7 +19,7 @@ import (
 var unitEventListCmd = &cobra.Command{
 	Use:   "list [unit-slug]",
 	Short: "List unit events",
-	Long: getCommandHelp(`List unit events for a specific unit, or across all units when no unit is specified. A unit event is the result a worker reported for a unit action. Omit --space to search across all spaces in the organization.
+	Long: getCommandHelp(`List unit events for a specific unit, or across all units when no unit is specified. A unit event is a historical record of the outcome of an operation on a unit; none are written any more. Omit --space to search across all spaces in the organization.
 
 Examples:
 `+"```"+`

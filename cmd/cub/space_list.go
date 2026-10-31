@@ -81,7 +81,7 @@ Key information provided:
 
 Important flags for agents:
 - -o name: Get just space identifiers for automation
-- -o wide: Show all summary counts (links, tags, changesets, changeorders, changeworkflows, filters, views, invocations, triggers, workers, targets, attributes, channels)
+- -o wide: Show all summary counts (links, tags, changesets, changeorders, changeworkflows, filters, views, invocations, triggers, targets, attributes, channels)
 - -o jq=<expr>: Extract specific fields for further processing
 - -o json: Full JSON payload
 - --where: Filter spaces by display name or other attributes
@@ -97,7 +97,7 @@ Next steps after listing spaces:
 }
 
 // Default columns to display when no custom columns are specified
-var defaultSpaceColumns = []string{"Space.Slug", "Space.ComponentID", "Space.Labels", "Space.WhereTrigger", "TotalUnitCount", "TotalLinkCount", "TotalFilterCount", "TotalViewCount", "TotalTagCount", "TotalChangeSetCount", "TotalChangeOrderCount", "TotalChangeWorkflowCount", "TotalInvocationCount", "TriggerCountByEventType", "TotalBridgeWorkerCount", "TotalTargetCount", "TotalAttributeCount", "TotalChannelCount"}
+var defaultSpaceColumns = []string{"Space.Slug", "Space.ComponentID", "Space.Labels", "Space.WhereTrigger", "TotalUnitCount", "TotalLinkCount", "TotalFilterCount", "TotalViewCount", "TotalTagCount", "TotalChangeSetCount", "TotalChangeOrderCount", "TotalChangeWorkflowCount", "TotalInvocationCount", "TriggerCountByEventType", "TotalTargetCount", "TotalAttributeCount", "TotalChannelCount"}
 
 // spaceBaseSelectFields are the fields always returned by space list queries,
 // regardless of the requested columns.
@@ -209,7 +209,7 @@ func spaceComponentSlug(extendedSpace *goclientnew.ExtendedSpace) string {
 
 // wideSpaceCountColumns are the count columns shown only with --output=wide.
 // #Units is always shown, so it isn't listed here.
-var wideSpaceCountColumns = []string{"#Links", "#Tags", "#ChangeSets", "#ChangeOrders", "#ChangeWorkflows", "#Filters", "#Views", "#Invocations", "#Triggers", "#Workers", "#Targets", "#Attributes", "#Channels"}
+var wideSpaceCountColumns = []string{"#Links", "#Tags", "#ChangeSets", "#ChangeOrders", "#ChangeWorkflows", "#Filters", "#Views", "#Invocations", "#Triggers", "#Targets", "#Attributes", "#Channels"}
 
 func wideSpaceCounts(extendedSpace *goclientnew.ExtendedSpace) []string {
 	return []string{
@@ -222,7 +222,6 @@ func wideSpaceCounts(extendedSpace *goclientnew.ExtendedSpace) []string {
 		fmt.Sprintf("%d", extendedSpace.TotalViewCount),
 		fmt.Sprintf("%d", extendedSpace.TotalInvocationCount),
 		fmt.Sprintf("%d", totalCountMap(extendedSpace.TriggerCountByEventType)),
-		fmt.Sprintf("%d", extendedSpace.TotalBridgeWorkerCount),
 		fmt.Sprintf("%d", extendedSpace.TotalTargetCount),
 		fmt.Sprintf("%d", extendedSpace.TotalAttributeCount),
 		fmt.Sprintf("%d", extendedSpace.TotalChannelCount),

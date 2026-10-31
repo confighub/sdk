@@ -2,7 +2,7 @@
 // SPDX-License-Identifier: MIT
 
 // Entity provisioning (admin.go) reconciles ConfigHub control-plane objects —
-// Spaces, Filters, Triggers, Invocations, Targets, Workers and Attributes — from
+// Spaces, Filters, Triggers, Invocations, Targets and Attributes — from
 // a description in code. Each Ensure* helper creates the entity if it is not
 // there and patches it towards the description if it is, so a tool that declares
 // its policy or its profile library once can re-run and have the server agree
@@ -211,28 +211,6 @@ func EnsureTarget(ctx context.Context, c *Client, target goclientnew.Target) (*g
 		return nil, err
 	}
 	res, err := c.API.PatchTargetWithBodyWithResponse(ctx, target.SpaceID, existing.Target.TargetID, &goclientnew.PatchTargetParams{},
-		mergePatchContentType, bytes.NewReader(patch))
-	if IsAPIError(err, res) {
-		return nil, InterpretErrorGeneric(err, res)
-	}
-	return res.JSON200, nil
-}
-
-// EnsureBridgeWorker creates a worker in worker.SpaceID or patches an existing one.
-func EnsureBridgeWorker(ctx context.Context, c *Client, worker goclientnew.BridgeWorker) (*goclientnew.BridgeWorker, error) {
-	existing, err := ResolveBridgeWorker(ctx, c, NewRef("", worker.Slug), ResolveOpts{Space: worker.SpaceID, Select: "BridgeWorkerID,Slug,SpaceID"})
-	if err != nil {
-		res, err := c.API.CreateBridgeWorkerWithResponse(ctx, worker.SpaceID, &goclientnew.CreateBridgeWorkerParams{AllowExists: allowExists()}, worker)
-		if IsAPIError(err, res) {
-			return nil, InterpretErrorGeneric(err, res)
-		}
-		return res.JSON200, nil
-	}
-	patch, err := mergePatch[goclientnew.PatchBridgeWorkerApplicationMergePatchPlusJSONBody](worker)
-	if err != nil {
-		return nil, err
-	}
-	res, err := c.API.PatchBridgeWorkerWithBodyWithResponse(ctx, worker.SpaceID, existing.BridgeWorker.BridgeWorkerID, &goclientnew.PatchBridgeWorkerParams{},
 		mergePatchContentType, bytes.NewReader(patch))
 	if IsAPIError(err, res) {
 		return nil, InterpretErrorGeneric(err, res)

@@ -30,3 +30,16 @@ func UnitData(ctx context.Context, c *Client, spaceID, unitID goclientnew.UUID) 
 	}
 	return string(res.Body), nil
 }
+
+// RevisionData returns a Unit's configuration data as of one Revision. Its endpoint serves the
+// configuration itself, as UnitData's does.
+func RevisionData(ctx context.Context, c *Client, spaceID, unitID, revisionID goclientnew.UUID) (string, error) {
+	res, err := c.API.DownloadRevisionDataWithResponse(ctx, spaceID, unitID, revisionID)
+	if err != nil {
+		return "", err
+	}
+	if res.StatusCode() != http.StatusOK {
+		return "", InterpretErrorGeneric(nil, res)
+	}
+	return string(res.Body), nil
+}

@@ -36,7 +36,7 @@ const (
 	// Kustomizations and their registry credentials live.
 	clusterFluxNamespace = "flux-system"
 
-	// clusterFluxCredsSecret holds the worker credentials every OCIRepository's
+	// clusterFluxCredsSecret holds the registry credentials every OCIRepository's
 	// secretRef names.
 	clusterFluxCredsSecret = "confighub-oci"
 
