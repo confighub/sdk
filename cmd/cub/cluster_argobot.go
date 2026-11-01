@@ -73,8 +73,8 @@ const (
 	// ServiceAccount, RBAC and Namespace take slugs of their own.
 	clusterArgobotUnitSlug = "argobot"
 	// clusterArgobotEnvUnitSlug is the AppConfig Unit holding argobot's
-	// environment in an install from the installer package, which ConfigHub
-	// renders into the argobot-env ConfigMap.
+	// environment in an install from its installer package through 0.2.8,
+	// which ConfigHub renders into the argobot-env ConfigMap.
 	clusterArgobotEnvUnitSlug = "argobot-env"
 	// clusterArgobotEnvConfigSchema is that environment's configSchema, which
 	// set-string-path names to edit it.
@@ -716,9 +716,10 @@ func clusterInstallArgobot(out io.Writer, o clusterArgobotOptions) error {
 	}
 
 	// 5. Publish the variant's Release; Argo pulls argobot's workload from here.
-	// Every Unit's triggers settle first, not only the Deployment's: from the
-	// installer package the edit also re-renders the argobot-env ConfigMap,
-	// whose placeholders the cluster's gate checks again.
+	// Every Unit's triggers settle first, not only the Deployment's: from an
+	// installer package with the argobot-env AppConfig Unit the edit also
+	// re-renders that ConfigMap, whose placeholders the cluster's gate checks
+	// again.
 	units, err := apiListUnits(space.SpaceID.String(), "", "UnitID")
 	if err != nil {
 		return fmt.Errorf("list argobot's units: %w", err)
@@ -749,45 +750,59 @@ func clusterInstallArgobot(out io.Writer, o clusterArgobotOptions) error {
 }
 
 // clusterConfigureArgobot sets variables of argobot's environment in its
-// variant. From the image's deployment they are the Deployment's env, which
-// set-env upserts; from the installer package they are the argobot-env
-// AppConfig Unit, which ConfigHub renders into the ConfigMap the Deployment
-// reads.
+// variant: the Deployment's env, which set-env upserts. argobot's installer
+// package through 0.2.8 kept them in the argobot-env AppConfig Unit instead,
+// which ConfigHub renders into the ConfigMap the Deployment reads, so from the
+// installer they are set there when the variant has that Unit.
 //
 // The variables are set in one invocation, so the Unit gets one Revision for
 // all of them.
 func clusterConfigureArgobot(argobotSpaceID uuid.UUID, fromInstaller bool, env map[string]string) error {
 	names := slices.Sorted(maps.Keys(env))
-	unitSlug, toolchain := clusterArgobotUnitSlug, cubapi.DefaultToolchainType
-	var fns []api.FunctionInvocation
 	if fromInstaller {
-		unitSlug, toolchain = clusterArgobotEnvUnitSlug, string(workerapi.ToolchainAppConfigEnv)
+		var fns []api.FunctionInvocation
 		for _, name := range names {
 			fns = append(fns, api.FunctionInvocation{FunctionName: "set-string-path", Arguments: []api.FunctionArgument{
 				{Value: clusterArgobotEnvConfigSchema}, {Value: name}, {Value: env[name]},
 			}})
 		}
-	} else {
-		args := []api.FunctionArgument{{Value: clusterArgobotContainer}}
-		for _, name := range names {
-			args = append(args, api.FunctionArgument{Value: name + "=" + env[name]})
+		found, err := clusterInvokeArgobotUnit(argobotSpaceID, clusterArgobotEnvUnitSlug, string(workerapi.ToolchainAppConfigEnv), fns)
+		if err != nil || found {
+			return err
 		}
-		fns = append(fns, api.FunctionInvocation{FunctionName: "set-env", Arguments: args})
 	}
+	args := []api.FunctionArgument{{Value: clusterArgobotContainer}}
+	for _, name := range names {
+		args = append(args, api.FunctionArgument{Value: name + "=" + env[name]})
+	}
+	found, err := clusterInvokeArgobotUnit(argobotSpaceID, clusterArgobotUnitSlug, cubapi.DefaultToolchainType,
+		[]api.FunctionInvocation{{FunctionName: "set-env", Arguments: args}})
+	if err != nil {
+		return err
+	}
+	if !found {
+		return fmt.Errorf("argobot's variant has no unit %q", clusterArgobotUnitSlug)
+	}
+	return nil
+}
+
+// clusterInvokeArgobotUnit runs fns on the Unit of argobot's variant with that
+// slug and toolchain, and reports whether there is one.
+func clusterInvokeArgobotUnit(argobotSpaceID uuid.UUID, unitSlug, toolchain string, fns []api.FunctionInvocation) (bool, error) {
 	result, err := cubapi.InvokeFunctions(ctx, cubClient, fns, cubapi.Selector{
 		Where:         fmt.Sprintf("SpaceID = '%s' AND Slug = '%s'", argobotSpaceID, unitSlug),
 		ToolchainType: toolchain,
 	}, cubapi.Change{Description: "Configure argobot for this cluster"})
 	if err != nil {
-		return err
+		return false, err
 	}
 	if len(result.Outcomes) == 0 {
-		return fmt.Errorf("argobot's variant has no %s unit %q", toolchain, unitSlug)
+		return false, nil
 	}
 	if failed := result.Failed(); len(failed) > 0 {
-		return fmt.Errorf("unit %s: %s", unitSlug, failed[0].Error)
+		return true, fmt.Errorf("unit %s: %s", unitSlug, failed[0].Error)
 	}
-	return nil
+	return true, nil
 }
 
 // clusterArgobotBase returns the Variant label and slug of the shared base Space
