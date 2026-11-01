@@ -33,11 +33,11 @@ func FromArgoCD(syncStatus, healthStatus, operationPhase string) goclientnew.Rel
 func argoCDSync(status string) goclientnew.ReleaseLiveStatusSync {
 	switch status {
 	case "Synced":
-		return goclientnew.Synced
+		return goclientnew.ReleaseLiveStatusSyncSynced
 	case "OutOfSync":
-		return goclientnew.OutOfSync
+		return goclientnew.ReleaseLiveStatusSyncOutOfSync
 	}
-	return goclientnew.Unknown
+	return goclientnew.ReleaseLiveStatusSyncUnknown
 }
 
 func argoCDHealth(status string) goclientnew.ReleaseLiveStatusHealth {
@@ -62,11 +62,11 @@ func argoCDHealth(status string) goclientnew.ReleaseLiveStatusHealth {
 func argoCDOperation(phase string) goclientnew.ReleaseLiveStatusOperation {
 	switch phase {
 	case "Running", "Terminating":
-		return goclientnew.ReleaseLiveStatusOperationRunning
+		return goclientnew.Running
 	case "Succeeded":
-		return goclientnew.ReleaseLiveStatusOperationSucceeded
+		return goclientnew.Succeeded
 	case "Failed", "Error":
-		return goclientnew.ReleaseLiveStatusOperationFailed
+		return goclientnew.Failed
 	}
 	return ""
 }

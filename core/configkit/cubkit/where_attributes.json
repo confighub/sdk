@@ -128,102 +128,6 @@
         "references": "Attribute"
       }
     },
-    "BridgeWorker": {
-      "Annotations": {
-        "dataType": "map[string]string"
-      },
-      "BridgeWorkerID": {
-        "dataType": "uuid"
-      },
-      "Condition": {
-        "dataType": "string"
-      },
-      "CreatedAt": {
-        "dataType": "time"
-      },
-      "DisplayName": {
-        "dataType": "string"
-      },
-      "HiddenReason": {
-        "dataType": "string"
-      },
-      "IPAddress": {
-        "dataType": "string"
-      },
-      "Labels": {
-        "dataType": "map[string]string"
-      },
-      "LastMessage": {
-        "dataType": "string"
-      },
-      "LastSeenAt": {
-        "dataType": "time"
-      },
-      "OrgRole": {
-        "dataType": "string"
-      },
-      "OrganizationID": {
-        "dataType": "uuid",
-        "references": "Organization",
-        "expandable": true
-      },
-      "Permissions": {
-        "dataType": "map[string]map[string]map[uuid]bool"
-      },
-      "ProvidedInfo": {
-        "dataType": "JSON"
-      },
-      "Slug": {
-        "dataType": "string"
-      },
-      "SpaceID": {
-        "dataType": "uuid",
-        "references": "Space",
-        "expandable": true
-      },
-      "UpdatedAt": {
-        "dataType": "time"
-      },
-      "UserID": {
-        "dataType": "uuid",
-        "references": "User"
-      }
-    },
-    "BridgeWorkerStatus": {
-      "BridgeWorkerID": {
-        "dataType": "uuid",
-        "references": "BridgeWorker"
-      },
-      "BridgeWorkerSlug": {
-        "dataType": "string"
-      },
-      "BridgeWorkerStatusID": {
-        "dataType": "uuid"
-      },
-      "CreatedAt": {
-        "dataType": "time"
-      },
-      "Labels": {
-        "dataType": "map[string]string"
-      },
-      "OrganizationID": {
-        "dataType": "uuid",
-        "references": "Organization"
-      },
-      "SeenAt": {
-        "dataType": "time"
-      },
-      "SpaceID": {
-        "dataType": "uuid",
-        "references": "Space"
-      },
-      "Status": {
-        "dataType": "string"
-      },
-      "UpdatedAt": {
-        "dataType": "time"
-      }
-    },
     "ChangeOrder": {
       "AbortedReason": {
         "dataType": "string"
@@ -855,11 +759,6 @@
         "dataType": "uuid",
         "references": "Unit"
       },
-      "BridgeWorkerID": {
-        "dataType": "uuid",
-        "references": "BridgeWorker",
-        "expandable": true
-      },
       "ChannelID": {
         "dataType": "uuid",
         "references": "Channel",
@@ -1045,10 +944,6 @@
       }
     },
     "Mutation": {
-      "BridgeWorkerID": {
-        "dataType": "uuid",
-        "references": "BridgeWorker"
-      },
       "ChannelID": {
         "dataType": "uuid",
         "references": "Channel"
@@ -1208,49 +1103,6 @@
       },
       "Username": {
         "dataType": "string"
-      }
-    },
-    "QueuedOperation": {
-      "Action": {
-        "dataType": "string"
-      },
-      "BridgeWorkerID": {
-        "dataType": "uuid",
-        "references": "BridgeWorker"
-      },
-      "CreatedAt": {
-        "dataType": "time"
-      },
-      "DryRun": {
-        "dataType": "bool"
-      },
-      "OrganizationID": {
-        "dataType": "uuid",
-        "references": "Organization"
-      },
-      "QueuedOperationID": {
-        "dataType": "uuid"
-      },
-      "RevisionNum": {
-        "dataType": "int"
-      },
-      "SpaceID": {
-        "dataType": "uuid",
-        "references": "Space"
-      },
-      "Status": {
-        "dataType": "string"
-      },
-      "TargetID": {
-        "dataType": "uuid",
-        "references": "Target"
-      },
-      "UnitActionNum": {
-        "dataType": "int"
-      },
-      "UnitID": {
-        "dataType": "uuid",
-        "references": "Unit"
       }
     },
     "Release": {
@@ -1818,11 +1670,6 @@
         "dataType": "uuid",
         "references": "Unit"
       },
-      "BridgeWorkerID": {
-        "dataType": "uuid",
-        "references": "BridgeWorker",
-        "expandable": true
-      },
       "ChannelID": {
         "dataType": "uuid",
         "references": "Channel",
@@ -1970,9 +1817,6 @@
         "references": "Revision",
         "expandable": true
       },
-      "HeadUnitActionNum": {
-        "dataType": "int"
-      },
       "HeadUnitEventNum": {
         "dataType": "int"
       },
@@ -2007,12 +1851,6 @@
       "ProvidedPaths": {
         "dataType": "JSON"
       },
-      "ProviderType": {
-        "dataType": "string"
-      },
-      "Releasable": {
-        "dataType": "bool"
-      },
       "Slug": {
         "dataType": "string"
       },
@@ -2031,6 +1869,9 @@
       },
       "UnitID": {
         "dataType": "uuid"
+      },
+      "Unreleasable": {
+        "dataType": "bool"
       },
       "UpdatedAt": {
         "dataType": "time"
@@ -2072,10 +1913,6 @@
       "Action": {
         "dataType": "string"
       },
-      "BridgeWorkerID": {
-        "dataType": "uuid",
-        "references": "BridgeWorker"
-      },
       "CreatedAt": {
         "dataType": "time"
       },
@@ -2085,10 +1922,6 @@
       "OrganizationID": {
         "dataType": "uuid",
         "references": "Organization"
-      },
-      "QueuedOperationID": {
-        "dataType": "uuid",
-        "references": "QueuedOperation"
       },
       "Result": {
         "dataType": "string"

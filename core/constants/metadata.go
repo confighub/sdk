@@ -26,6 +26,14 @@ const (
 	VisitorOptionsKeySuffix  = "VisitorOptions"
 )
 
+// RenderRevision annotation values. render-configmap marks every ConfigMap it renders Latest;
+// prune-configmaps marks the older renderings it retains Superseded rather than removing the
+// annotation, so that its presence still says the ConfigMap was rendered.
+const (
+	RenderRevisionLatest     = "Latest"
+	RenderRevisionSuperseded = "Superseded"
+)
+
 const (
 	VisitorOptionIgnoreNeeded   = "IgnoreNeeded"
 	VisitorOptionIgnoreProvided = "IgnoreProvided"

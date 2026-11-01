@@ -1004,9 +1004,9 @@ func clusterCreateArgobotVariant(out io.Writer, o clusterArgobotOptions, baseSpa
 		return nil, err
 	}
 	result, err := cubapi.CreateVariant(ctx, cubClient, cubapi.VariantSpec{
-		Upstream: upstream.Space.SpaceID,
-		Name:     o.clusterName,
-		Target:   &target.TargetID,
+		Upstream:      upstream.Space.SpaceID,
+		Name:          o.clusterName,
+		ReleaseTarget: &target.TargetID,
 	})
 	if err != nil {
 		return nil, err

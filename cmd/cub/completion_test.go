@@ -36,7 +36,7 @@ func TestReferenceFlagsRegistered(t *testing.T) {
 	for _, tc := range []struct{ path, flag string }{
 		{"unit get", "space"},
 		{"unit list", "filter"},
-		{"unit create", "target"},
+		{"variant create", "target"},
 		{"unit diff", "with-unit"},
 		{"function do", "unit"},
 		{"unit list", "variant"},

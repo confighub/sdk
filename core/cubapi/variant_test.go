@@ -88,7 +88,7 @@ func TestCreateVariantMakesTheCallsVariantCreateMakes(t *testing.T) {
 		SpacePattern:      "template:pr-7",
 		SpacePatch:        json.RawMessage(`{"Labels":{"PR":"7"},"Annotations":{"team":"a"}}`),
 		UnitPatch:         json.RawMessage(`{"DeleteGates":{"critical":true}}`),
-		Target:            &target,
+		ReleaseTarget:     &target,
 		Namespace:         "pr-7",
 		ChangeSetID:       &changeset,
 		ChangeDescription: "preview pr-7: clone of base",
@@ -118,24 +118,24 @@ func TestCreateVariantMakesTheCallsVariantCreateMakes(t *testing.T) {
 		t.Errorf("space patch = %s", spaceCreate.body)
 	}
 
-	// The release target, defaulted from Target.
+	// The release target.
 	patch := findCall(*calls, "PATCH", "/api/space/"+testNewID)
 	if patch == nil || !strings.Contains(patch.body, testTargetID) {
 		t.Errorf("release target patch = %+v", patch)
 	}
 
-	// The units: from the base into the new Space, the caller's patch with the target, the
-	// description and the changeset layered in.
+	// The units: from the base into the new Space, the caller's patch with the description and
+	// the changeset layered in. The units take the Space's release target from the Space.
 	unitCreate := findCall(*calls, "POST", "/api/unit")
 	if unitCreate == nil || !strings.Contains(unitCreate.query.Get("where"), testBaseID) || !strings.Contains(unitCreate.query.Get("where_space"), testNewID) {
 		t.Fatalf("unit clone = %+v", unitCreate)
 	}
 	var unitPatch struct {
-		TargetID, LastChangeDescription, ChangeSetID string
-		DeleteGates                                  map[string]bool
+		LastChangeDescription, ChangeSetID string
+		DeleteGates                        map[string]bool
 	}
 	_ = json.Unmarshal([]byte(unitCreate.body), &unitPatch)
-	if unitPatch.TargetID != testTargetID || unitPatch.LastChangeDescription != "preview pr-7: clone of base" ||
+	if strings.Contains(unitCreate.body, "TargetID") || unitPatch.LastChangeDescription != "preview pr-7: clone of base" ||
 		unitPatch.ChangeSetID != changeset.String() || !unitPatch.DeleteGates["critical"] {
 		t.Errorf("unit patch = %s", unitCreate.body)
 	}

@@ -17,24 +17,22 @@ import (
 // The FunctionContext contains metadata about the configuration Unit provided as input to a
 // function invocation sequence.
 type FunctionContext struct {
-	ToolchainType     workerapi.ToolchainType `description:"ToolchainType of the configuration data and function handlers"`
-	UnitSlug          string                  `description:"Slug of the configuration Unit"`
-	UnitID            uuid.UUID               `json:",omitempty,omitzero" description:"Unique ID of the configuration Unit"`
-	UnitLabels        map[string]string       `description:"Labels of the configuration Unit"`
-	UnitAnnotations   map[string]string       `description:"Annotations of the configuration Unit"`
-	SpaceID           uuid.UUID               `json:",omitempty,omitzero" description:"ID of the Space of the configuration Unit"`
-	SpaceSlug         string                  `description:"Slug of the Space of the configuration Unit"`
-	SpaceLabels       map[string]string       `description:"Labels of the Space of the configuration Unit"`
-	SpaceAnnotations  map[string]string       `description:"Annotations of the Space of the configuration Unit"`
-	OrganizationID    uuid.UUID               `json:",omitempty,omitzero" description:"ID of the Organization of the configuration Unit"`
-	TargetID          uuid.UUID               `json:",omitempty,omitzero" description:"ID of the Unit's Target; optional"`
-	BridgeWorkerID    uuid.UUID               `json:",omitempty,omitzero" description:"ID of the BridgeWorker that executes the function; optional; if not present, the function is executed by the Internal Function Executor"`
-	TargetFacts       map[string]string       `json:",omitempty" description:"Facts of the Target where the function is executed; only populated when the Unit has a Target with non-empty Facts; optional"`
-	RevisionID        uuid.UUID               `json:",omitempty,omitzero" description:"Unique ID of the configuration Revision"`
-	RevisionNum       int64                   `description:"Current/previous HeadRevisionNum of the configuration Unit"`
-	QueuedOperationID uuid.UUID               `json:",omitempty,omitzero" description:"Unique ID of the operation this function is executed under"`
-	NotLive           bool                    `description:"True if the configuration has never been applied or has been destroyed; not set for Revision invocations"`
-	PreviousDataHash  DataHash                `json:",omitempty" description:"SHA256 hash of the previous copy of the data, for determining whether it has been changed since it was last written"`
+	ToolchainType    workerapi.ToolchainType `description:"ToolchainType of the configuration data and function handlers"`
+	UnitSlug         string                  `description:"Slug of the configuration Unit"`
+	UnitID           uuid.UUID               `json:",omitempty,omitzero" description:"Unique ID of the configuration Unit"`
+	UnitLabels       map[string]string       `description:"Labels of the configuration Unit"`
+	UnitAnnotations  map[string]string       `description:"Annotations of the configuration Unit"`
+	SpaceID          uuid.UUID               `json:",omitempty,omitzero" description:"ID of the Space of the configuration Unit"`
+	SpaceSlug        string                  `description:"Slug of the Space of the configuration Unit"`
+	SpaceLabels      map[string]string       `description:"Labels of the Space of the configuration Unit"`
+	SpaceAnnotations map[string]string       `description:"Annotations of the Space of the configuration Unit"`
+	OrganizationID   uuid.UUID               `json:",omitempty,omitzero" description:"ID of the Organization of the configuration Unit"`
+	TargetID         uuid.UUID               `json:",omitempty,omitzero" description:"ID of the Unit's Target; optional"`
+	TargetFacts      map[string]string       `json:",omitempty" description:"Facts of the Target where the function is executed; only populated when the Unit has a Target with non-empty Facts; optional"`
+	RevisionID       uuid.UUID               `json:",omitempty,omitzero" description:"Unique ID of the configuration Revision"`
+	RevisionNum      int64                   `description:"Current/previous HeadRevisionNum of the configuration Unit"`
+	NotLive          bool                    `description:"True if the configuration has never been applied or has been destroyed; not set for Revision invocations"`
+	PreviousDataHash DataHash                `json:",omitempty" description:"SHA256 hash of the previous copy of the data, for determining whether it has been changed since it was last written"`
 
 	// Conflicts are the Unit's outstanding merge conflicts — the parts of a merge's patch
 	// that were not applied. Populated only when the invocation asks for them with

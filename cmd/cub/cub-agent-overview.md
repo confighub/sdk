@@ -66,7 +66,7 @@ instead: a service account, which logs in with a key and renews from it without 
   comments on one. A **Tag** marks a set of Revisions; ChangeSets and ChangeOrders record their
   boundaries as Tags.
 - **Delivery.** A **Target** is where a Space's configuration is delivered. **`cub release publish`**
-  bundles the Units of a Space that are assigned to its release Target as a **Release**, which the
+  bundles the Units of a Space that are not `Unreleasable` for its release Target as a **Release**, which the
   controller pulls from the Space's OCI repository, which `cub space get` shows. A Release's live
   status reports what the controller did with it, when something reports it.
 - **Identity and automation.** A **ServiceAccount** is an identity for something that is not a

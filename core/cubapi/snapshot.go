@@ -240,7 +240,7 @@ func (l SnapshotLoader[R]) resourceWhere() (Where, error) {
 // Where it applies it is worth knowing when a scope can be written more than one
 // way. A term naming the unit's own columns -- Slug, Labels, ToolchainType,
 // SpaceID -- is compiled into the SQL query. A term prefixed with another entity
-// -- Space.Labels.Environment, Target.ProviderType -- cannot be, so the server
+// -- Space.Labels.Environment, Target.Slug -- cannot be, so the server
 // expands that entity for every row the SQL query returned and evaluates the
 // term afterwards. Both answer the same question; only the first narrows the
 // read. Prefer a unit-level term where the caller has the choice.

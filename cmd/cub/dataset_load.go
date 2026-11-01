@@ -289,12 +289,18 @@ func (c *ConfighubApi) CreateUnit(slug, spaceSlug, targetSlug, upstream string, 
 		return nil, fmt.Errorf("space %s not found", spaceSlug)
 	}
 	unitDetails.SpaceID = space.SpaceID
+	// A Unit is released to its Space's release Target, so a Unit's target sets the Space's.
 	if targetSlug != "" {
 		target, ok := c.GetTarget(spaceSlug, targetSlug)
 		if !ok {
 			return nil, fmt.Errorf("target %s not found", targetSlug)
 		}
-		unitDetails.TargetID = &target.TargetID
+		if space.ReleaseTargetID == nil || *space.ReleaseTargetID != target.TargetID {
+			if err := clusterSetReleaseTarget(space.SpaceID, target.TargetID); err != nil {
+				return nil, err
+			}
+			space.ReleaseTargetID = &target.TargetID
+		}
 	}
 	unitParams := &goclientnew.CreateUnitParams{}
 	if upstream != "" {

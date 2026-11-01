@@ -142,7 +142,7 @@ func registerStandardFunctions(fh handler.FunctionRegistry, rp *k8skit.K8sResour
 }
 
 const attributeNameAppLabel = api.AttributeName("app-label")
-const attributeNameConfigMapHash = api.AttributeName("configmap-hash")
+const attributeNameConfigMapHash = k8skit.AttributeNameConfigMapHash
 
 var resourceTypeToLabelPrefixPaths = map[api.ResourceType][]string{
 	api.ResourceType("apps/v1/Deployment"):  {"metadata.labels.", "spec.selector.matchLabels.", "spec.template.metadata.labels."},

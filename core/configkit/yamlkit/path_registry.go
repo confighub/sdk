@@ -430,6 +430,38 @@ func GetPathVisitorInfo(resourceProvider ResourceProvider, resourceType api.Reso
 			}
 		}
 	}
+	if result == nil {
+		return keyPrefixPathVisitorInfo(pathRegistry, resourceType, path)
+	}
+	return result
+}
+
+// keyPrefixPathVisitorInfo finds the registration of a path naming a map key that a registered
+// key-prefix path matches, such as metadata.annotations.hash~1confighub~1com/app-config for
+// metadata.annotations.hash~1confighub~1com/*. The exact lookup misses it, because what is
+// stored and looked up is the key, and the registration is under the prefix. Registrations
+// like that are few, so a scan when the exact lookup misses costs little.
+func keyPrefixPathVisitorInfo(pathRegistry api.AttributeNameToResourceTypeToPathToVisitorInfoType, resourceType api.ResourceType, path api.UnresolvedPath) *api.PathVisitorInfo {
+	var result *api.PathVisitorInfo
+	for _, rt := range []api.ResourceType{resourceType, api.ResourceTypeAny} {
+		for _, resourceTypeToPathToVisitorInfo := range pathRegistry {
+			for _, visitorInfo := range resourceTypeToPathToVisitorInfo[rt] {
+				if !matchesKeyPrefixPath(visitorInfo.Path, path) {
+					continue
+				}
+				if result == nil {
+					resultCopy := *visitorInfo
+					resultCopy.Details = api.DeepCopyAttributeDetails(visitorInfo.Details)
+					result = &resultCopy
+				} else {
+					mergeDetails(result, visitorInfo)
+					if result.Enricher == nil && visitorInfo.Enricher != nil {
+						result.Enricher = visitorInfo.Enricher
+					}
+				}
+			}
+		}
+	}
 	return result
 }
 

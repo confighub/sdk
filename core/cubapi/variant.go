@@ -43,9 +43,8 @@ type VariantSpec struct {
 	// every cloned unit. Nil for none.
 	SpacePatch json.RawMessage
 	UnitPatch  json.RawMessage
-	// Target is every cloned unit's Target, and the Space's release target unless
-	// ReleaseTarget names another.
-	Target        *goclientnew.UUID
+	// ReleaseTarget is the Space's release target, which a release of the Space
+	// publishes its releasable units for.
 	ReleaseTarget *goclientnew.UUID
 	// Namespace, when given, runs set-namespace over the clones, so the variant lands in a
 	// namespace of its own, and records it as the Space's Namespace label. When the upstream
@@ -108,12 +107,8 @@ func CreateVariant(ctx context.Context, c *Client, spec VariantSpec) (*VariantRe
 	}
 	space := result.Space
 
-	releaseTarget := spec.ReleaseTarget
-	if releaseTarget == nil {
-		releaseTarget = spec.Target
-	}
-	if releaseTarget != nil {
-		if err := patchSpace(ctx, c, space.SpaceID, map[string]any{"ReleaseTargetID": releaseTarget.String()}, spec.DryRun); err != nil {
+	if spec.ReleaseTarget != nil {
+		if err := patchSpace(ctx, c, space.SpaceID, map[string]any{"ReleaseTargetID": spec.ReleaseTarget.String()}, spec.DryRun); err != nil {
 			return result, fmt.Errorf("setting the release target of %s: %w", space.Slug, err)
 		}
 	}
@@ -199,9 +194,6 @@ func cloneVariantUnits(ctx context.Context, c *Client, spec VariantSpec, upstrea
 		params.IncludeOutgoingLinksWhere = &spec.IncludeOutgoingLinksWhere
 	}
 	set := map[string]any{}
-	if spec.Target != nil {
-		set["TargetID"] = spec.Target.String()
-	}
 	if spec.ChangeDescription != "" {
 		set["LastChangeDescription"] = spec.ChangeDescription
 	}

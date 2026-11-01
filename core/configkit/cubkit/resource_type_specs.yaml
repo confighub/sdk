@@ -140,9 +140,6 @@ resourceTypes:
     - path: ToolchainType
     resource-name:
     - optional: true
-      path: BridgeWorker
-      target: BridgeWorker
-    - optional: true
       path: Channel
       target: Channel
   listTypes:
@@ -291,9 +288,6 @@ resourceTypes:
     - optional: true
       path: Invocation
       target: Invocation
-    - optional: true
-      path: BridgeWorker
-      target: BridgeWorker
     - optional: true
       path: Channel
       target: Channel

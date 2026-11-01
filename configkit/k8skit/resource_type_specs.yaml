@@ -264,9 +264,13 @@ shapes:
         - {path: metadata.labels}
       # The hash of a ConfigMap this workload mounts, propagated here so that a change to the
       # ConfigMap's content rolls the pods it produces. Declared on the shape, so every type
-      # carrying a pod template wants it at the right depth.
+      # carrying a pod template wants it at the right depth. confighub.com/Hash holds one;
+      # a workload using several ConfigMaps gives each an annotation of its own under
+      # hash.confighub.com/, whose value names the ConfigMap, as
+      # confighubplaceholder<configmap name>, for matching to tell them apart.
       configmap-hash:
         - {path: metadata.annotations.confighub~1com/Hash, needed: true}
+        - {path: metadata.annotations.hash~1confighub~1com/*, needed: true}
 
 resourceTypes:
   # ---------------------------------------------------------------------------------------

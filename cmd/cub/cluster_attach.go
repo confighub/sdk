@@ -1211,7 +1211,7 @@ func clusterBootstrapApps(out io.Writer, spec clusterAttachSpec, inst clusterIns
 	if rootName != "" {
 		rootAnnotations = clusterUnitTargetUIAnnotations(targetAnnotations, rootName)
 	}
-	rootUnitID, err := clusterCreateK8sYAMLUnit(appsSpaceID, targetID, clusterRootUnitSlug, clusterRootUnitSlug, rootAnnotations, rootManifest)
+	rootUnitID, err := clusterCreateK8sYAMLUnit(appsSpaceID, clusterRootUnitSlug, clusterRootUnitSlug, rootAnnotations, rootManifest)
 	if err != nil {
 		return result, err
 	}

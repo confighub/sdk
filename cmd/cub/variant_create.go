@@ -101,8 +101,9 @@ Metadata flags are split by what they target, space vs. unit, as on "cub variant
                                              protect a prod variant's units.
   --permission                               add to, or with a leading "-" remove from, the
                                              permissions copied from the upstream space.
-  --release-target                           the new space's release Target, which its units take;
-                                             --target sets it too, so use one or the other.
+  --release-target                           the new space's release Target, which its releases
+                                             publish its releasable units for; --target sets it
+                                             too, so use one or the other.
   --change-desc / --changeset                describe the clones' first revision and put the clones
                                              in a changeset (<space>/<slug> names one in another
                                              space).
@@ -206,8 +207,8 @@ func init() {
 	addStandardDisplayFlags(variantCreateCmd)
 	enableAllowExistsFlag(variantCreateCmd)
 	variantCreateCmd.Flags().StringVar(&variantCreateArgs.spacePattern, "space-pattern", "", "a pattern string for the new space's slug, prefix 'template:' to use a Go template with .SourceEntitySlug for the upstream slug, .Component for the cloned space's Component, and .Labels for the cloned space's labels; defaults to 'template:{{.Component.Slug}}-{{.Labels.Variant}}' when the cloned space has a Component")
-	variantCreateCmd.Flags().StringVar(&variantCreateArgs.target, "target", "", "target for the cloned units, in <target-slug> or <space-slug>/<target-slug> form; also sets the TargetID annotation on the new space, and for an OCI target the new space's ReleaseTargetID (required by 'cub release publish')")
-	variantCreateCmd.Flags().StringVar(&variantCreateArgs.releaseTarget, "release-target", "", "Target to use as the new space's release Target, addressed as <target-space>/<target-slug> (a bare <target-slug> resolves in --space; a Target ID is also accepted). The cloned units that are released through a Target take it as theirs. --target sets the same Target on the space and the units and also records it in the space's TargetID annotation, so the two flags cannot be combined")
+	variantCreateCmd.Flags().StringVar(&variantCreateArgs.target, "target", "", "the new space's release Target (required by 'cub release publish'), in <target-slug> or <space-slug>/<target-slug> form; also records it in the new space's TargetID annotation, and adds the cluster app for a cub-cluster target")
+	variantCreateCmd.Flags().StringVar(&variantCreateArgs.releaseTarget, "release-target", "", "Target to use as the new space's release Target, addressed as <target-space>/<target-slug> (a bare <target-slug> resolves in --space; a Target ID is also accepted). A release of the space publishes every cloned unit that is not Unreleasable for it. --target sets the same Target and also records it in the space's TargetID annotation, so the two flags cannot be combined")
 	variantCreateCmd.MarkFlagsMutuallyExclusive("target", "release-target")
 	variantCreateCmd.Flags().StringSliceVar(&variantCreateArgs.permissions, "permission", []string{}, "permission on the new space in format Action:UserIDOrUsername, Action:group:GroupSlugOrID or Action:serviceaccount:ServiceAccountSlugOrID to add to those copied from the upstream space, or the same prefixed with - to remove one of them (e.g., Manage:user@example.com, View:group:platform, View:serviceaccount:deploy-bot, -View:user@example.com, can be repeated)")
 	variantCreateCmd.Flags().StringVar(&variantCreateArgs.stage, "stage", "", "set the \"Stage\" label on the new space (example: \"Canary\")")
@@ -266,11 +267,11 @@ func variantCreateCmdRun(cmd *cobra.Command, args []string) (retErr error) {
 		changesetID = &id
 	}
 
-	// The target names each clone's Target and the space's release target: releases are
-	// published per space ("cub release publish <space>"), and publish requires one.
-	// --release-target sets only the space's, and leaves the units to the server, which gives a
-	// space's release Target to the units released through one. Resolved, like the patches,
-	// before anything is created, so a bad flag leaves nothing behind.
+	// The target is the space's release target: releases are published per space ("cub release
+	// publish <space>") for it, with every unit that is not Unreleasable. --target also records
+	// it in the space's TargetID annotation and adds a cub-cluster target's app; --release-target
+	// only sets it. Resolved, like the patches, before anything is created, so a bad flag leaves
+	// nothing behind.
 	var targetID *uuid.UUID
 	var target *goclientnew.Target
 	if variantCreateArgs.target != "" {
@@ -287,6 +288,9 @@ func variantCreateCmdRun(cmd *cobra.Command, args []string) (retErr error) {
 			return err
 		}
 		releaseTargetID = &id
+	}
+	if releaseTargetID == nil {
+		releaseTargetID = targetID
 	}
 	spacePatch, err := variantSpacePatch()
 	if err != nil {
@@ -320,7 +324,6 @@ func variantCreateCmdRun(cmd *cobra.Command, args []string) (retErr error) {
 		SpacePattern:              variantCreateArgs.spacePattern,
 		SpacePatch:                spacePatch,
 		UnitPatch:                 unitPatch,
-		Target:                    targetID,
 		ReleaseTarget:             releaseTargetID,
 		Namespace:                 variantCreateArgs.namespace,
 		ChangeSetID:               changesetID,

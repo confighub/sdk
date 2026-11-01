@@ -13,17 +13,15 @@ import (
 	"github.com/confighub/sdk/core/configkit/yamlkit"
 	funcapi "github.com/confighub/sdk/core/function/api"
 	"github.com/confighub/sdk/core/function/handler"
-	bwapi "github.com/confighub/sdk/core/worker/api"
 	"github.com/confighub/sdk/core/workerapi"
 )
 
-// FunctionExecutor is the interface that function executors must implement to be
-// used with the worker connector. This avoids importing the concrete function
-// package (which pulls in all built-in handler implementations and their dependencies).
+// FunctionExecutor is the interface that function executors implement. It avoids importing the
+// concrete function package (which pulls in all built-in handler implementations and their
+// dependencies).
 type FunctionExecutor interface {
 	RegisteredFunctions() map[workerapi.ToolchainType]map[string]funcapi.FunctionSignature
 	Invoke(ctx context.Context, functionInvocation *funcapi.FunctionInvocationRequest) (*funcapi.FunctionInvocationResponse, error)
-	Info() bwapi.FunctionWorkerInfo
 }
 
 // ConcreteFunctionExecutor is the concrete implementation of FunctionExecutor.
@@ -111,18 +109,6 @@ func (e *ConcreteFunctionExecutor) RegisterFunction(toolchain workerapi.Toolchai
 // RegisteredFunctions returns the signature registry.
 func (e *ConcreteFunctionExecutor) RegisteredFunctions() map[workerapi.ToolchainType]map[string]funcapi.FunctionSignature {
 	return e.signatureRegistry
-}
-
-// Info builds a FunctionWorkerInfo from the registered functions.
-func (e *ConcreteFunctionExecutor) Info() bwapi.FunctionWorkerInfo {
-	toolchainTypes := make([]workerapi.ToolchainType, 0, len(e.signatureRegistry))
-	for tt := range e.signatureRegistry {
-		toolchainTypes = append(toolchainTypes, tt)
-	}
-	return bwapi.FunctionWorkerInfo{
-		ToolchainTypes:     toolchainTypes,
-		SupportedFunctions: e.signatureRegistry,
-	}
 }
 
 // Invoke routes a function invocation to the appropriate handler.

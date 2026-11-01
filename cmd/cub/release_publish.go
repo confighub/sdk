@@ -18,7 +18,7 @@ var releasePublishCmd = &cobra.Command{
 	Short:       "Publish a release",
 	Args:        cobra.ExactArgs(1),
 	Annotations: map[string]string{"OrgLevel": ""},
-	Long: getCommandHelp(`Publish a Release for the Space's release Target, bundling the Units in <variant> that are assigned to that Target.
+	Long: getCommandHelp(`Publish a Release for the Space's release Target, bundling the Units in <variant> that are not Unreleasable.
 
 <variant> is the Space whose Units are bundled (and becomes the Release's
 Space), named as <component>/<variant>, or by the Space's slug or ID. The

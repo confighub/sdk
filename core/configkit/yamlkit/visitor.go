@@ -598,14 +598,16 @@ func GetPathsAnyType(
 			// 	EnrichMergeKeysFromDoc(resourceDoc, resourceProvider, &attributeValue)
 			// }
 
+			// Before the Enricher, as get-paths does, so that an Enricher can read the
+			// placeholder name a needed value prefers.
+			if neededValuesOnly {
+				PreferPlaceholderName(&attributeValue, currentValue)
+			}
 			// Invoke the Enricher function if registered for this path
 			if context.PathVisitorInfo != nil {
 				if enricher, ok := context.PathVisitorInfo.Enricher.(AttributeEnricher); ok && enricher != nil {
 					_ = enricher(resourceDoc, &attributeValue, providedValuesOnly)
 				}
-			}
-			if neededValuesOnly {
-				PreferPlaceholderName(&attributeValue, currentValue)
 			}
 		} else {
 			// Don't include Details. Shallow copy, clear Details.

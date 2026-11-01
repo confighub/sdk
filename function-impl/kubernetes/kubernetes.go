@@ -44,7 +44,7 @@ func attributeDescriptors() map[api.AttributeName]yamlkit.AttributeDescriptor {
 
 		// Provided at a ConfigMap's own annotation and needed at a pod template's, which is
 		// why its paths state their own role rather than taking the descriptor's.
-		attributeNameConfigMapHash: {DataType: api.DataTypeString},
+		attributeNameConfigMapHash: {DataType: api.DataTypeString, Enricher: configMapHashEnricher},
 
 		// A hostname is declared at each path holding one; the subdomain and the domain within
 		// it are registered at a suffix of that path, through a regexp accessor that splits the value.
@@ -146,5 +146,6 @@ func RegisterFunctions(rp *k8skit.K8sResourceProviderType, fh handler.FunctionRe
 	registerDefaultingFunctions(fh, rp)
 	registerK8sCELFunctions(fh, rp)
 	registerPruneConfigMaps(fh, rp)
+	registerConfigMapHashAnnotations(fh, rp)
 	registerPodSecurityFunctions(fh, rp)
 }

@@ -126,8 +126,11 @@ Patch Mode Examples:
   # Bulk restore with change description
   cub unit update --space my-space --patch --where "Slug IN ('unit1', 'unit2')" --restore LastReleasedRevisionNum --change-desc "Restored to last released revision"
 
-  # Bulk patch with data from stdin plus metadata (just an example; use cub unit set-target for this case)
-  echo '{"TargetID": null}' | cub unit update --patch --unit unit1,unit2,unit3 --from-stdin --change-desc "Cleared targets"
+  # Leave units out of their space's releases
+  cub unit update --space my-space --patch --where "Labels.Tier = 'scratch'" --unreleasable
+
+  # Bulk patch with data from stdin plus metadata (just an example; use --unreleasable for this case)
+  echo '{"Unreleasable": false}' | cub unit update --patch --unit unit1,unit2,unit3 --from-stdin --change-desc "Released again"
 ` + "```" + `
 `
 
@@ -192,6 +195,9 @@ Important: Only one of config-file, --restore, --upgrade, or --merge-source (wit
 	return getCommandHelp(baseHelp, agentContext)
 }
 
+// unitUpdateUnreleasableSet says whether --unreleasable was given, as true or false.
+var unitUpdateUnreleasableSet bool
+
 var (
 	changeDescription       string
 	restore                 string
@@ -200,7 +206,7 @@ var (
 	isPatch                 bool
 	changesetSlug           string
 	changeorderSlug         string
-	providerType            string
+	unitUpdateUnreleasable  bool
 	unitUpdateToolchainType string
 	mergeSource             string
 	mergeBase               string
@@ -227,7 +233,7 @@ func init() {
 	unitUpdateCmd.Flags().StringVar(&changeorderSlug, "change-order", "", "change order to promote, with --upgrade or --resolve: it supplies both ends of the range, so --merge-end is not accepted alongside it; units its source doesn't cover are passed over, a unit that has merged past where it starts is an error, and one short of it is handled as --prior-revisions says. With --restore Before:ChangeOrder:<slug> it is the change order being undone instead: it must have an AbortedReason, the restore must name the same change order, the revisions restored are marked with the change order's restore tag, a unit already carrying that tag is passed over, and the merge pointers of the links that follow each restored unit are advanced onto the restored revision. \"cub variant demote\" is that over a whole space")
 	unitUpdateCmd.Flags().StringVar(&priorRevisions, "prior-revisions", "", "with --change-order and --upgrade or --resolve, what to do for a unit that has not merged as far as the change order's start on its source -- typically because a link in the source's space, such as a TransformPaths link, wrote revisions after the unit last merged: Include (the default) merges those revisions first, as revisions that do not carry the change order, and puts the start tag after them; Skip merges only the change order's range, as though the unit had already merged as far as its start, and those revisions do not arrive later; Error refuses, naming the unit, the link, and the revisions; All merges them as Include does. Defaults to the change order's PriorRevisions")
 	unitUpdateCmd.Flags().StringVarP(&unitUpdateToolchainType, "toolchain", "t", "", "toolchain type to change the unit to, for a unit created with the wrong one; the unit's data is not converted")
-	unitUpdateCmd.Flags().StringVar(&providerType, "provider", "", "provider type for the unit; None marks the unit as not applied and not included in releases")
+	unitUpdateCmd.Flags().BoolVar(&unitUpdateUnreleasable, "unreleasable", false, "leave the unit out of its space's releases, so it is delivered to no target; --unreleasable=false releases it again")
 	unitUpdateCmd.Flags().StringVar(&restore, "restore", "", "restore to a revision: a tag slug, Tag:slug, ChangeSet:slug, ChangeOrder:slug, Release:number, Revision:uuid, an integer (revision number), a negative delta from head, or one of HeadRevisionNum/LastReleasedRevisionNum, optionally prefixed with Before:")
 	unitUpdateCmd.Flags().StringVar(&resolve, "resolve", "", "resolve links from this unit: Link:* for every link that can resolve, Link:<uuid> or Link:<slug> for one, just <slug> (e.g. space/link-name), or Link:<where expression> to select among them (e.g. \"Link:UpdateType = 'MergeUnits'\") -- the form to use in a bulk operation, where a uuid cannot be. An AutoUpdate link can be resolved by hand and does nothing when it is already level with its source")
 	unitUpdateCmd.Flags().BoolVar(&isUpgrade, "upgrade", false, "upgrade the unit to the latest version of its upstream unit")
@@ -329,8 +335,8 @@ func checkConflictingArgs(args []string) bool {
 			failOnError(fmt.Errorf("--filter, --where, or --unit can only be specified with --patch and no unit positional argument"))
 		}
 
-		if isPatch && !flagPopulateModelFromStdin && flagFilename == "" && restore == "" && resolve == "" && !isUpgrade && mergeSource == "" && mergeExternalSource == "" && len(label) == 0 && len(deleteGate) == 0 && len(destroyGate) == 0 && len(permissionFlag) == 0 && changesetSlug == "" && providerType == "" && unitUpdateToolchainType == "" && !hasMetadataFlags() {
-			failOnError(fmt.Errorf("--patch requires one of: --from-stdin, --filename, --restore, --resolve, --upgrade, --merge-source, --merge-external-source, --label, --annotation, --display-name, --hidden-reason, --delete-gate, --destroy-gate, --permission, --changeset, --provider, or --toolchain"))
+		if isPatch && !flagPopulateModelFromStdin && flagFilename == "" && restore == "" && resolve == "" && !isUpgrade && mergeSource == "" && mergeExternalSource == "" && len(label) == 0 && len(deleteGate) == 0 && len(destroyGate) == 0 && len(permissionFlag) == 0 && changesetSlug == "" && !unitUpdateUnreleasableSet && unitUpdateToolchainType == "" && !hasMetadataFlags() {
+			failOnError(fmt.Errorf("--patch requires one of: --from-stdin, --filename, --restore, --resolve, --upgrade, --merge-source, --merge-external-source, --label, --annotation, --display-name, --hidden-reason, --delete-gate, --destroy-gate, --permission, --changeset, --unreleasable, or --toolchain"))
 		}
 	}
 
@@ -444,6 +450,7 @@ func checkConflictingArgs(args []string) bool {
 }
 
 func unitUpdateCmdRun(cmd *cobra.Command, args []string) error {
+	unitUpdateUnreleasableSet = cmd.Flags().Changed("unreleasable")
 	isBulkPatchMode := checkConflictingArgs(args)
 
 	if isBulkPatchMode {
@@ -483,8 +490,8 @@ func unitUpdateCmdRun(cmd *cobra.Command, args []string) error {
 			if unitUpdateToolchainType != "" {
 				patchMap["ToolchainType"] = unitUpdateToolchainType
 			}
-			if providerType != "" {
-				patchMap["ProviderType"] = providerType
+			if unitUpdateUnreleasableSet {
+				patchMap["Unreleasable"] = unitUpdateUnreleasable
 			}
 			if changeDescription != "" {
 				patchMap["LastChangeDescription"] = changeDescription
@@ -553,8 +560,8 @@ func unitUpdateCmdRun(cmd *cobra.Command, args []string) error {
 		if unitUpdateToolchainType != "" {
 			currentUnit.ToolchainType = unitUpdateToolchainType
 		}
-		if providerType != "" {
-			currentUnit.ProviderType = providerType
+		if unitUpdateUnreleasableSet {
+			currentUnit.Unreleasable = unitUpdateUnreleasable
 		}
 		// For non-patch operations, handle change description in the traditional way
 		if changeDescription != "" {
@@ -898,8 +905,8 @@ func runBulkUnitUpdate() error {
 		if unitUpdateToolchainType != "" {
 			patchMap["ToolchainType"] = unitUpdateToolchainType
 		}
-		if providerType != "" {
-			patchMap["ProviderType"] = providerType
+		if unitUpdateUnreleasableSet {
+			patchMap["Unreleasable"] = unitUpdateUnreleasable
 		}
 		if changeDescription != "" {
 			patchMap["LastChangeDescription"] = changeDescription

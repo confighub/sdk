@@ -89,8 +89,11 @@ Bulk Create Examples:
   # Clone units using a where expression for destination spaces
   cub unit create --where "Slug LIKE 'app-%'" --where-space "Labels.Environment IN ('dev', 'staging')"
 
-  # Clone units with target assignment and labels
-  cub unit create --where "Labels.Tier = 'backend'" --name-prefix canary- --target my-target --label "Rollout=canary"
+  # Clone units with labels
+  cub unit create --where "Labels.Tier = 'backend'" --name-prefix canary- --label "Rollout=canary"
+
+  # Create a Kubernetes unit that releases of its space leave out
+  cub unit create --space my-space notes notes.yaml --unreleasable
 
   # Clone units with JSON patch modifications
   echo '{"DisplayName": "Updated Name"}' | cub unit create --where "Slug = 'myapp'" --name-prefix v2- --from-stdin
@@ -149,8 +152,8 @@ var unitCreateArgs struct {
 	upstreamRevision    string
 	importUnitSlug      string
 	toolchainType       string
-	providerType        string
-	targetSlug          string
+	unreleasable        bool
+	unreleasableSet     bool // --unreleasable was given, as true or false
 	changesetSlug       string
 	changeDescription   string
 	mergeExternalSource string
@@ -174,7 +177,7 @@ func init() {
 	enableDestroyGateFlag(unitCreateCmd)
 
 	// Single unit create flags
-	unitCreateCmd.Flags().StringVar(&unitCreateArgs.targetSlug, "target", "", "target for the unit")
+	unitCreateCmd.Flags().BoolVar(&unitCreateArgs.unreleasable, "unreleasable", false, "leave the unit out of its space's releases, so it is delivered to no target. Units of toolchains other than Kubernetes/YAML are unreleasable by default; with bulk create, --unreleasable=false makes the clones releasable")
 	unitCreateCmd.Flags().StringVar(&unitCreateArgs.changesetSlug, "changeset", "", "changeset to associate the unit with")
 	unitCreateCmd.Flags().StringVar(&unitCreateArgs.upstreamUnitSlug, "upstream-unit", "", "upstream unit to clone: a slug, <space>/<slug>, or UUID (single mode only)")
 	unitCreateCmd.Flags().StringVar(&unitCreateArgs.upstreamSpaceSlug, "upstream-space", "", "space a bare --upstream-unit slug is looked up in; defaults to --space (single mode only)")
@@ -182,7 +185,6 @@ func init() {
 	unitCreateCmd.Flags().StringVar(&unitCreateArgs.importUnitSlug, "import", "", "source unit slug (single mode only)")
 	// default to ToolchainKubernetesYAML
 	unitCreateCmd.Flags().StringVarP(&unitCreateArgs.toolchainType, "toolchain", "t", string(workerapi.ToolchainKubernetesYAML), "toolchain type (single mode only)")
-	unitCreateCmd.Flags().StringVar(&unitCreateArgs.providerType, "provider", "", "provider type for the unit; None marks the unit as not applied and not included in releases")
 	unitCreateCmd.Flags().StringVar(&unitCreateArgs.changeDescription, "change-desc", "", "change description")
 	unitCreateCmd.Flags().StringVar(&unitCreateArgs.mergeExternalSource, "merge-external-source", "", "external source identifier (sets source type to MergeExternal)")
 	unitCreateCmd.Flags().BoolVar(&unitCreateArgs.syncback, "syncback", false, "also link each clone back to the unit it was cloned from, with a MergeUnits link in the upstream unit's space, so changes made in the clone can be merged home with \"cub unit update --patch --resolve\"; requires cloning (--upstream-unit in single mode)")
@@ -272,10 +274,6 @@ func checkUnitCreateConflictingArgs(args []string) (bool, error) {
 		}
 	}
 
-	if unitCreateArgs.providerType == string(workerapi.ProviderNone) && unitCreateArgs.targetSlug != "" {
-		return isBulkCreateMode, errors.New("cannot use '--provider None' and '--target' together")
-	}
-
 	if err := validateSpaceFlag(isBulkCreateMode); err != nil {
 		return isBulkCreateMode, err
 	}
@@ -301,6 +299,7 @@ func checkUnitCreateConflictingArgs(args []string) (bool, error) {
 }
 
 func unitCreateCmdRun(cmd *cobra.Command, args []string) error {
+	unitCreateArgs.unreleasableSet = cmd.Flags().Changed("unreleasable")
 	isBulkCreateMode, err := checkUnitCreateConflictingArgs(args)
 	if err != nil {
 		return err
@@ -407,18 +406,6 @@ func runSingleUnitCreate(args []string) error {
 	if err != nil {
 		return err
 	}
-	if unitCreateArgs.targetSlug != "" {
-		if unitCreateArgs.targetSlug == "-" {
-			newUnit.TargetID = &uuid.Nil
-		} else {
-			// Use parseEntityIdentifierSingle to support cross-space target lookup
-			id, err := resolveTargetID(unitCreateArgs.targetSlug)
-			if err != nil {
-				return err
-			}
-			newUnit.TargetID = &id
-		}
-	}
 	if unitCreateArgs.changesetSlug != "" {
 		if unitCreateArgs.changesetSlug == "-" {
 			newUnit.ChangeSetID = &uuid.Nil
@@ -438,8 +425,8 @@ func runSingleUnitCreate(args []string) error {
 	newUnit.SpaceID = spaceID
 	newUnit.Slug = makeSlug(args[0])
 	newUnit.ToolchainType = unitCreateArgs.toolchainType
-	if unitCreateArgs.providerType != "" {
-		newUnit.ProviderType = unitCreateArgs.providerType
+	if unitCreateArgs.unreleasableSet {
+		newUnit.Unreleasable = unitCreateArgs.unreleasable
 	}
 
 	if unitCreateArgs.upstreamUnitSlug != "" {
@@ -523,26 +510,8 @@ func createBulkCreatePatch() ([]byte, error) {
 		if err != nil {
 			failOnError(err)
 		}
-		// Add provider type if specified
-		if unitCreateArgs.providerType != "" {
-			patchMap["ProviderType"] = unitCreateArgs.providerType
-		}
-		// Add target if specified
-		if unitCreateArgs.targetSlug != "" {
-			var targetID uuid.UUID
-			if unitCreateArgs.targetSlug == "-" {
-				targetID = uuid.Nil
-			} else {
-				// Use parseEntityIdentifierSingle to support cross-space target lookup
-				id, err := resolveTargetID(unitCreateArgs.targetSlug)
-				if err != nil {
-					// Can't return error from enhancer, so log it
-					fmt.Fprintf(os.Stderr, "Failed to get target: %v\n", err)
-					return
-				}
-				targetID = id
-			}
-			patchMap["TargetID"] = targetID
+		if unitCreateArgs.unreleasableSet {
+			patchMap["Unreleasable"] = unitCreateArgs.unreleasable
 		}
 
 		// Add change description if specified

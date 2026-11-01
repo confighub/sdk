@@ -12,8 +12,8 @@ var releaseCmd = &cobra.Command{
 	Short: "Release commands",
 	Long: getCommandHelp(`The release subcommands publish, list, get, update, withdraw, and delete releases.
 
-A release bundles the configuration of the Units in a Space that are assigned to a
-given Target, captured at a point in time, and serves it as an OCI bundle. Releases
+A release bundles the configuration of the Units in a Space that are not Unreleasable,
+for the Space's release Target, captured at a point in time, and serves it as an OCI bundle. Releases
 are created with `+"`cub release publish`"+`, taken out of service with
 `+"`cub release withdraw`"+`, and removed with `+"`cub release delete`"+`;
 their bundled content is read-only throughout. `+"`cub release update`"+` changes

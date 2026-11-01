@@ -4,10 +4,15 @@
 package k8skit
 
 import (
+	"crypto/sha256"
 	_ "embed"
+	"encoding/hex"
+	"slices"
+	"strings"
 
 	"github.com/confighub/sdk/core/configkit/yamlkit"
 	"github.com/confighub/sdk/core/function/api"
+	"github.com/confighub/sdk/core/third_party/gaby"
 	"github.com/confighub/sdk/core/workerapi"
 )
 
@@ -70,6 +75,20 @@ func PodTemplatePaths(resourceType api.ResourceType) []string {
 	return compiledK8sSpecs.ShapePaths(workerapi.ToolchainKubernetesYAML, resourceType, ShapePodTemplate)
 }
 
+// PodTemplateContaining returns the pod template of a resource of the given type that path is
+// inside, and whether it is inside one. path may be resolved or not: it is compared segment by
+// segment with the template paths, which hold no wildcards.
+func PodTemplateContaining(resourceType api.ResourceType, path string) (string, bool) {
+	pathSegments := gaby.DotPathToSlice(path)
+	for _, template := range PodTemplatePaths(resourceType) {
+		templateSegments := gaby.DotPathToSlice(template)
+		if len(templateSegments) < len(pathSegments) && slices.Equal(templateSegments, pathSegments[:len(templateSegments)]) {
+			return template, true
+		}
+	}
+	return "", false
+}
+
 // ContainerArrayPaths returns a resource type's container arrays -- containers, initContainers
 // and ephemeralContainers under each PodSpec it carries -- or nil if it has none.
 func ContainerArrayPaths(resourceType api.ResourceType) []string {
@@ -79,6 +98,11 @@ func ContainerArrayPaths(resourceType api.ResourceType) []string {
 // PodSpecResourceTypes returns every resource type carrying a PodSpec, sorted.
 func PodSpecResourceTypes() []api.ResourceType {
 	return compiledK8sSpecs.ResourceTypesEmbeddingShape(workerapi.ToolchainKubernetesYAML, ShapePodSpec)
+}
+
+// PodTemplateResourceTypes returns every resource type carrying a pod template, sorted.
+func PodTemplateResourceTypes() []api.ResourceType {
+	return compiledK8sSpecs.ResourceTypesEmbeddingShape(workerapi.ToolchainKubernetesYAML, ShapePodTemplate)
 }
 
 // ContainerResourceTypes returns every resource type carrying containers, sorted.
@@ -181,7 +205,34 @@ const (
 	// get/set-workload-labels read them together while they stay distinguishable when written:
 	// a selector is immutable on most workloads and the template labels are not.
 	AttributeNameWorkloadLabels = api.AttributeName("workload-labels")
+
+	// AttributeNameConfigMapHash is the attribute carrying a hash of a ConfigMap's content:
+	// provided at the ConfigMap's confighub.com/Hash annotation, and needed at the hash
+	// annotations of the pod templates using it, so a change to the ConfigMap rolls their pods.
+	AttributeNameConfigMapHash = api.AttributeName("configmap-hash")
 )
+
+// ConfigMapHashAnnotationPrefix starts the pod-template annotation carrying the hash of one
+// ConfigMap the pod template uses. Its value is the named placeholder for the ConfigMap's
+// name, which Needs/Provides fills with that ConfigMap's hash and no other's.
+const ConfigMapHashAnnotationPrefix = "hash.confighub.com/"
+
+// maxAnnotationNameLength is the most an annotation key may hold after its prefix.
+const maxAnnotationNameLength = 63
+
+// ConfigMapHashAnnotation is the pod-template annotation key for the hash of the ConfigMap
+// called configMapName. The key only has to be distinct and valid, since matching reads the
+// ConfigMap from the annotation's value: a name too long for an annotation key is cut short
+// and followed by a hash of the whole name.
+func ConfigMapHashAnnotation(configMapName string) string {
+	if len(configMapName) <= maxAnnotationNameLength {
+		return ConfigMapHashAnnotationPrefix + configMapName
+	}
+	sum := sha256.Sum256([]byte(configMapName))
+	const hashLength = 10
+	cut := strings.TrimRight(configMapName[:maxAnnotationNameLength-hashLength-1], "-.")
+	return ConfigMapHashAnnotationPrefix + cut + "-" + hex.EncodeToString(sum[:])[:hashLength]
+}
 
 // RegisterWorkloadLabelsGroup declares workload-labels as the union of the two attributes that
 // carry pod labels, so a caller can read both through one name.

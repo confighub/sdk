@@ -169,7 +169,7 @@ func displayExtendedUnitDetails(unitDetails *goclientnew.ExtendedUnit) {
 		if unitDetails.Unit.HiddenReason != "" {
 			view.Append([]string{"Hidden Reason", unitDetails.Unit.HiddenReason})
 		}
-		view.Append([]string{"Provider Type", unitDetails.Unit.ProviderType})
+		view.Append([]string{"Unreleasable", fmt.Sprintf("%v", unitDetails.Unit.Unreleasable)})
 
 		// Not implemented yet
 		// Show Set name if available

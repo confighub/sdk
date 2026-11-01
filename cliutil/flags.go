@@ -77,7 +77,7 @@ func (q *QueryFlags) Bind(cmd *cobra.Command) {
 // not let the caller choose the fields or apply a stored Filter.
 func (q *QueryFlags) BindWhere(cmd *cobra.Command) {
 	cmd.Flags().StringVar(&q.Where, "where", "",
-		"SQL-inspired filter expression (ANDed clauses); may reference Slug, Labels.*, Space.*, Target.* (e.g. \"Target.ProviderType = 'OCI'\")")
+		"SQL-inspired filter expression (ANDed clauses); may reference Slug, Labels.*, Space.*, Target.* (e.g. \"Unreleasable = false\")")
 }
 
 // BindStored registers --filter and --contains.

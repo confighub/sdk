@@ -125,7 +125,7 @@ func createVariantArgoApp(out io.Writer, target *goclientnew.Target, variantSpac
 		fmt.Fprintf(out, "Creating Argo CD Application Unit %q in apps space %q%s...\n", variantSpace.Slug, appsSpaceSlug, pruneNote)
 	}
 	manifest := variantArgoAppManifest(variantSpace.Slug, repoURL, prune)
-	unitID, err := clusterCreateK8sYAMLUnit(appsSpace.Space.SpaceID, targetID, variantSpace.Slug, variantSpace.Slug,
+	unitID, err := clusterCreateK8sYAMLUnit(appsSpace.Space.SpaceID, variantSpace.Slug, variantSpace.Slug,
 		clusterUnitTargetUIAnnotations(target.Annotations, variantSpace.Slug), manifest)
 	if err != nil {
 		return false, fmt.Errorf("create Argo Application unit: %w", err)

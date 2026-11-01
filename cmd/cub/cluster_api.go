@@ -560,17 +560,15 @@ func clusterUnitTargetUIAnnotations(targetAnnotations map[string]string, name st
 }
 
 // clusterCreateK8sYAMLUnit creates a Kubernetes/YAML Unit with the given
-// manifest bytes, bound to the OCI target. Used for the root app-of-apps Unit
-// and for each child Argo Application Unit in the apps Space; the target it
-// binds to lives in the cluster (target-prefix) Space, so the binding is
-// cross-Space. annotations (may be nil) are attached to the Unit.
-func clusterCreateK8sYAMLUnit(spaceID, targetID uuid.UUID, slug, displayName string, annotations map[string]string, manifest []byte) (uuid.UUID, error) {
+// manifest bytes in a Space whose release Target is the OCI target, which the
+// Space's Releases publish it for. Used for the root app-of-apps Unit in the
+// apps Space. annotations (may be nil) are attached to the Unit.
+func clusterCreateK8sYAMLUnit(spaceID uuid.UUID, slug, displayName string, annotations map[string]string, manifest []byte) (uuid.UUID, error) {
 	body := goclientnew.Unit{
 		SpaceID:       spaceID,
 		Slug:          slug,
 		DisplayName:   displayName,
 		ToolchainType: "Kubernetes/YAML",
-		TargetID:      &targetID,
 		Annotations:   annotations,
 	}
 	res, err := cubClientNew.CreateUnitWithResponse(ctx, spaceID, &goclientnew.CreateUnitParams{}, body)
@@ -678,7 +676,7 @@ func clusterWaitUnitTriggers(spaceID, unitID uuid.UUID) error {
 }
 
 // clusterPublishRelease publishes a Release for the Space: an immutable bundle
-// of the Space's Units that are assigned to its release Target, served to Argo
+// of the Space's Units that are not Unreleasable, for its release Target, served to Argo
 // at /space/<slug> with tag "latest".
 func clusterPublishRelease(spaceID uuid.UUID) error {
 	res, err := cubClientNew.PublishReleaseWithResponse(ctx, spaceID, goclientnew.PublishReleaseJSONRequestBody{})

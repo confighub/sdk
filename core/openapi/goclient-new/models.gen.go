@@ -227,48 +227,6 @@ func (e PromoteRequestPriorRevisions) Valid() bool {
 	}
 }
 
-// Defines values for QueuedOperationStatus.
-const (
-	QueuedOperationStatusAborted      QueuedOperationStatus = "Aborted"
-	QueuedOperationStatusCanceled     QueuedOperationStatus = "Canceled"
-	QueuedOperationStatusCompleted    QueuedOperationStatus = "Completed"
-	QueuedOperationStatusDelivered    QueuedOperationStatus = "Delivered"
-	QueuedOperationStatusDelivered1   QueuedOperationStatus = "delivered"
-	QueuedOperationStatusFailed       QueuedOperationStatus = "Failed"
-	QueuedOperationStatusInitializing QueuedOperationStatus = "Initializing"
-	QueuedOperationStatusPending      QueuedOperationStatus = "Pending"
-	QueuedOperationStatusPending1     QueuedOperationStatus = "pending"
-	QueuedOperationStatusProgressing  QueuedOperationStatus = "Progressing"
-)
-
-// Valid indicates whether the value is a known member of the QueuedOperationStatus enum.
-func (e QueuedOperationStatus) Valid() bool {
-	switch e {
-	case QueuedOperationStatusAborted:
-		return true
-	case QueuedOperationStatusCanceled:
-		return true
-	case QueuedOperationStatusCompleted:
-		return true
-	case QueuedOperationStatusDelivered:
-		return true
-	case QueuedOperationStatusDelivered1:
-		return true
-	case QueuedOperationStatusFailed:
-		return true
-	case QueuedOperationStatusInitializing:
-		return true
-	case QueuedOperationStatusPending:
-		return true
-	case QueuedOperationStatusPending1:
-		return true
-	case QueuedOperationStatusProgressing:
-		return true
-	default:
-		return false
-	}
-}
-
 // Defines values for ReleaseLiveStatusHealth.
 const (
 	ReleaseLiveStatusHealthDegraded    ReleaseLiveStatusHealth = "Degraded"
@@ -301,19 +259,19 @@ func (e ReleaseLiveStatusHealth) Valid() bool {
 
 // Defines values for ReleaseLiveStatusOperation.
 const (
-	ReleaseLiveStatusOperationFailed    ReleaseLiveStatusOperation = "Failed"
-	ReleaseLiveStatusOperationRunning   ReleaseLiveStatusOperation = "Running"
-	ReleaseLiveStatusOperationSucceeded ReleaseLiveStatusOperation = "Succeeded"
+	Failed    ReleaseLiveStatusOperation = "Failed"
+	Running   ReleaseLiveStatusOperation = "Running"
+	Succeeded ReleaseLiveStatusOperation = "Succeeded"
 )
 
 // Valid indicates whether the value is a known member of the ReleaseLiveStatusOperation enum.
 func (e ReleaseLiveStatusOperation) Valid() bool {
 	switch e {
-	case ReleaseLiveStatusOperationFailed:
+	case Failed:
 		return true
-	case ReleaseLiveStatusOperationRunning:
+	case Running:
 		return true
-	case ReleaseLiveStatusOperationSucceeded:
+	case Succeeded:
 		return true
 	default:
 		return false
@@ -322,19 +280,19 @@ func (e ReleaseLiveStatusOperation) Valid() bool {
 
 // Defines values for ReleaseLiveStatusSync.
 const (
-	OutOfSync ReleaseLiveStatusSync = "OutOfSync"
-	Synced    ReleaseLiveStatusSync = "Synced"
-	Unknown   ReleaseLiveStatusSync = "Unknown"
+	ReleaseLiveStatusSyncOutOfSync ReleaseLiveStatusSync = "OutOfSync"
+	ReleaseLiveStatusSyncSynced    ReleaseLiveStatusSync = "Synced"
+	ReleaseLiveStatusSyncUnknown   ReleaseLiveStatusSync = "Unknown"
 )
 
 // Valid indicates whether the value is a known member of the ReleaseLiveStatusSync enum.
 func (e ReleaseLiveStatusSync) Valid() bool {
 	switch e {
-	case OutOfSync:
+	case ReleaseLiveStatusSyncOutOfSync:
 		return true
-	case Synced:
+	case ReleaseLiveStatusSyncSynced:
 		return true
-	case Unknown:
+	case ReleaseLiveStatusSyncUnknown:
 		return true
 	default:
 		return false
@@ -353,48 +311,6 @@ func (e ReleasePublishRequestPriorRevisions) Valid() bool {
 	case ReleasePublishRequestPriorRevisionsError:
 		return true
 	case ReleasePublishRequestPriorRevisionsInclude:
-		return true
-	default:
-		return false
-	}
-}
-
-// Defines values for UnitActionStatus.
-const (
-	UnitActionStatusAborted      UnitActionStatus = "Aborted"
-	UnitActionStatusCanceled     UnitActionStatus = "Canceled"
-	UnitActionStatusCompleted    UnitActionStatus = "Completed"
-	UnitActionStatusDelivered    UnitActionStatus = "Delivered"
-	UnitActionStatusDelivered1   UnitActionStatus = "delivered"
-	UnitActionStatusFailed       UnitActionStatus = "Failed"
-	UnitActionStatusInitializing UnitActionStatus = "Initializing"
-	UnitActionStatusPending      UnitActionStatus = "Pending"
-	UnitActionStatusPending1     UnitActionStatus = "pending"
-	UnitActionStatusProgressing  UnitActionStatus = "Progressing"
-)
-
-// Valid indicates whether the value is a known member of the UnitActionStatus enum.
-func (e UnitActionStatus) Valid() bool {
-	switch e {
-	case UnitActionStatusAborted:
-		return true
-	case UnitActionStatusCanceled:
-		return true
-	case UnitActionStatusCompleted:
-		return true
-	case UnitActionStatusDelivered:
-		return true
-	case UnitActionStatusDelivered1:
-		return true
-	case UnitActionStatusFailed:
-		return true
-	case UnitActionStatusInitializing:
-		return true
-	case UnitActionStatusPending:
-		return true
-	case UnitActionStatusPending1:
-		return true
-	case UnitActionStatusProgressing:
 		return true
 	default:
 		return false
@@ -443,78 +359,6 @@ func (e ListAllAttributesParamsWherePermission) Valid() bool {
 	case ListAllAttributesParamsWherePermissionUse:
 		return true
 	case ListAllAttributesParamsWherePermissionView:
-		return true
-	default:
-		return false
-	}
-}
-
-// Defines values for ListAllBridgeWorkersParamsWherePermission.
-const (
-	ListAllBridgeWorkersParamsWherePermissionApproveChildren    ListAllBridgeWorkersParamsWherePermission = "ApproveChildren"
-	ListAllBridgeWorkersParamsWherePermissionCreateChildren     ListAllBridgeWorkersParamsWherePermission = "CreateChildren"
-	ListAllBridgeWorkersParamsWherePermissionEdit               ListAllBridgeWorkersParamsWherePermission = "Edit"
-	ListAllBridgeWorkersParamsWherePermissionEditChildren       ListAllBridgeWorkersParamsWherePermission = "EditChildren"
-	ListAllBridgeWorkersParamsWherePermissionManage             ListAllBridgeWorkersParamsWherePermission = "Manage"
-	ListAllBridgeWorkersParamsWherePermissionManageChildren     ListAllBridgeWorkersParamsWherePermission = "ManageChildren"
-	ListAllBridgeWorkersParamsWherePermissionTargetEditChildren ListAllBridgeWorkersParamsWherePermission = "TargetEditChildren"
-	ListAllBridgeWorkersParamsWherePermissionTargetViewChildren ListAllBridgeWorkersParamsWherePermission = "TargetViewChildren"
-	ListAllBridgeWorkersParamsWherePermissionUse                ListAllBridgeWorkersParamsWherePermission = "Use"
-	ListAllBridgeWorkersParamsWherePermissionUseChildren        ListAllBridgeWorkersParamsWherePermission = "UseChildren"
-	ListAllBridgeWorkersParamsWherePermissionView               ListAllBridgeWorkersParamsWherePermission = "View"
-	ListAllBridgeWorkersParamsWherePermissionViewChildren       ListAllBridgeWorkersParamsWherePermission = "ViewChildren"
-)
-
-// Valid indicates whether the value is a known member of the ListAllBridgeWorkersParamsWherePermission enum.
-func (e ListAllBridgeWorkersParamsWherePermission) Valid() bool {
-	switch e {
-	case ListAllBridgeWorkersParamsWherePermissionApproveChildren:
-		return true
-	case ListAllBridgeWorkersParamsWherePermissionCreateChildren:
-		return true
-	case ListAllBridgeWorkersParamsWherePermissionEdit:
-		return true
-	case ListAllBridgeWorkersParamsWherePermissionEditChildren:
-		return true
-	case ListAllBridgeWorkersParamsWherePermissionManage:
-		return true
-	case ListAllBridgeWorkersParamsWherePermissionManageChildren:
-		return true
-	case ListAllBridgeWorkersParamsWherePermissionTargetEditChildren:
-		return true
-	case ListAllBridgeWorkersParamsWherePermissionTargetViewChildren:
-		return true
-	case ListAllBridgeWorkersParamsWherePermissionUse:
-		return true
-	case ListAllBridgeWorkersParamsWherePermissionUseChildren:
-		return true
-	case ListAllBridgeWorkersParamsWherePermissionView:
-		return true
-	case ListAllBridgeWorkersParamsWherePermissionViewChildren:
-		return true
-	default:
-		return false
-	}
-}
-
-// Defines values for ListQueuedOperationsParamsWherePermission.
-const (
-	ListQueuedOperationsParamsWherePermissionEdit   ListQueuedOperationsParamsWherePermission = "Edit"
-	ListQueuedOperationsParamsWherePermissionManage ListQueuedOperationsParamsWherePermission = "Manage"
-	ListQueuedOperationsParamsWherePermissionUse    ListQueuedOperationsParamsWherePermission = "Use"
-	ListQueuedOperationsParamsWherePermissionView   ListQueuedOperationsParamsWherePermission = "View"
-)
-
-// Valid indicates whether the value is a known member of the ListQueuedOperationsParamsWherePermission enum.
-func (e ListQueuedOperationsParamsWherePermission) Valid() bool {
-	switch e {
-	case ListQueuedOperationsParamsWherePermissionEdit:
-		return true
-	case ListQueuedOperationsParamsWherePermissionManage:
-		return true
-	case ListQueuedOperationsParamsWherePermissionUse:
-		return true
-	case ListQueuedOperationsParamsWherePermissionView:
 		return true
 	default:
 		return false
@@ -1166,54 +1010,6 @@ func (e ListAttributesParamsWherePermission) Valid() bool {
 	}
 }
 
-// Defines values for ListBridgeWorkersParamsWherePermission.
-const (
-	ListBridgeWorkersParamsWherePermissionApproveChildren    ListBridgeWorkersParamsWherePermission = "ApproveChildren"
-	ListBridgeWorkersParamsWherePermissionCreateChildren     ListBridgeWorkersParamsWherePermission = "CreateChildren"
-	ListBridgeWorkersParamsWherePermissionEdit               ListBridgeWorkersParamsWherePermission = "Edit"
-	ListBridgeWorkersParamsWherePermissionEditChildren       ListBridgeWorkersParamsWherePermission = "EditChildren"
-	ListBridgeWorkersParamsWherePermissionManage             ListBridgeWorkersParamsWherePermission = "Manage"
-	ListBridgeWorkersParamsWherePermissionManageChildren     ListBridgeWorkersParamsWherePermission = "ManageChildren"
-	ListBridgeWorkersParamsWherePermissionTargetEditChildren ListBridgeWorkersParamsWherePermission = "TargetEditChildren"
-	ListBridgeWorkersParamsWherePermissionTargetViewChildren ListBridgeWorkersParamsWherePermission = "TargetViewChildren"
-	ListBridgeWorkersParamsWherePermissionUse                ListBridgeWorkersParamsWherePermission = "Use"
-	ListBridgeWorkersParamsWherePermissionUseChildren        ListBridgeWorkersParamsWherePermission = "UseChildren"
-	ListBridgeWorkersParamsWherePermissionView               ListBridgeWorkersParamsWherePermission = "View"
-	ListBridgeWorkersParamsWherePermissionViewChildren       ListBridgeWorkersParamsWherePermission = "ViewChildren"
-)
-
-// Valid indicates whether the value is a known member of the ListBridgeWorkersParamsWherePermission enum.
-func (e ListBridgeWorkersParamsWherePermission) Valid() bool {
-	switch e {
-	case ListBridgeWorkersParamsWherePermissionApproveChildren:
-		return true
-	case ListBridgeWorkersParamsWherePermissionCreateChildren:
-		return true
-	case ListBridgeWorkersParamsWherePermissionEdit:
-		return true
-	case ListBridgeWorkersParamsWherePermissionEditChildren:
-		return true
-	case ListBridgeWorkersParamsWherePermissionManage:
-		return true
-	case ListBridgeWorkersParamsWherePermissionManageChildren:
-		return true
-	case ListBridgeWorkersParamsWherePermissionTargetEditChildren:
-		return true
-	case ListBridgeWorkersParamsWherePermissionTargetViewChildren:
-		return true
-	case ListBridgeWorkersParamsWherePermissionUse:
-		return true
-	case ListBridgeWorkersParamsWherePermissionUseChildren:
-		return true
-	case ListBridgeWorkersParamsWherePermissionView:
-		return true
-	case ListBridgeWorkersParamsWherePermissionViewChildren:
-		return true
-	default:
-		return false
-	}
-}
-
 // Defines values for ListChangeOrdersParamsWherePermission.
 const (
 	ListChangeOrdersParamsWherePermissionEdit   ListChangeOrdersParamsWherePermission = "Edit"
@@ -1658,30 +1454,6 @@ func (e ListExtendedRevisionsParamsWherePermission) Valid() bool {
 	}
 }
 
-// Defines values for ListUnitActionsParamsWherePermission.
-const (
-	ListUnitActionsParamsWherePermissionEdit   ListUnitActionsParamsWherePermission = "Edit"
-	ListUnitActionsParamsWherePermissionManage ListUnitActionsParamsWherePermission = "Manage"
-	ListUnitActionsParamsWherePermissionUse    ListUnitActionsParamsWherePermission = "Use"
-	ListUnitActionsParamsWherePermissionView   ListUnitActionsParamsWherePermission = "View"
-)
-
-// Valid indicates whether the value is a known member of the ListUnitActionsParamsWherePermission enum.
-func (e ListUnitActionsParamsWherePermission) Valid() bool {
-	switch e {
-	case ListUnitActionsParamsWherePermissionEdit:
-		return true
-	case ListUnitActionsParamsWherePermissionManage:
-		return true
-	case ListUnitActionsParamsWherePermissionUse:
-		return true
-	case ListUnitActionsParamsWherePermissionView:
-		return true
-	default:
-		return false
-	}
-}
-
 // Defines values for ListUnitEventsParamsWherePermission.
 const (
 	ListUnitEventsParamsWherePermissionEdit   ListUnitEventsParamsWherePermission = "Edit"
@@ -1853,30 +1625,6 @@ func (e ListAllUnitsParamsWherePermission) Valid() bool {
 	case ListAllUnitsParamsWherePermissionUse:
 		return true
 	case ListAllUnitsParamsWherePermissionView:
-		return true
-	default:
-		return false
-	}
-}
-
-// Defines values for ListAllUnitActionsParamsWherePermission.
-const (
-	ListAllUnitActionsParamsWherePermissionEdit   ListAllUnitActionsParamsWherePermission = "Edit"
-	ListAllUnitActionsParamsWherePermissionManage ListAllUnitActionsParamsWherePermission = "Manage"
-	ListAllUnitActionsParamsWherePermissionUse    ListAllUnitActionsParamsWherePermission = "Use"
-	ListAllUnitActionsParamsWherePermissionView   ListAllUnitActionsParamsWherePermission = "View"
-)
-
-// Valid indicates whether the value is a known member of the ListAllUnitActionsParamsWherePermission enum.
-func (e ListAllUnitActionsParamsWherePermission) Valid() bool {
-	switch e {
-	case ListAllUnitActionsParamsWherePermissionEdit:
-		return true
-	case ListAllUnitActionsParamsWherePermissionManage:
-		return true
-	case ListAllUnitActionsParamsWherePermissionUse:
-		return true
-	case ListAllUnitActionsParamsWherePermissionView:
 		return true
 	default:
 		return false
@@ -2072,40 +1820,6 @@ func (e ListAllViewsParamsWherePermission) Valid() bool {
 	}
 }
 
-// ActionResult defines model for ActionResult.
-type ActionResult struct {
-	Action *ActionType `json:"Action,omitempty" yaml:"Action,omitempty"`
-
-	// Data Updated configuration Data of the Unit (for refresh and import)
-	Data string `json:"Data,omitempty" yaml:"Data,omitempty"`
-
-	// ErrorMessages Warning or error messages to surface to the user
-	ErrorMessages []string `json:"ErrorMessages,omitempty" yaml:"ErrorMessages,omitempty"`
-	Message       string   `json:"Message,omitempty" yaml:"Message,omitempty"`
-
-	// QueuedOperationID UUID of the operation corresponding to the action request
-	//
-	// Example: 248df4b7-aa70-47b8-a036-33ac447e668d
-	QueuedOperationID openapi_types.UUID `json:"QueuedOperationID,omitempty,omitzero" yaml:"QueuedOperationID,omitempty"`
-	Result            *ActionResultType  `json:"Result,omitempty" yaml:"Result,omitempty"`
-	RevisionNum       int64              `json:"RevisionNum,omitempty" yaml:"RevisionNum,omitempty"`
-
-	// SpaceID UUID of the Space of the Unit on which the action is performed
-	//
-	// Example: 248df4b7-aa70-47b8-a036-33ac447e668d
-	SpaceID openapi_types.UUID `json:"SpaceID,omitempty,omitzero" yaml:"SpaceID,omitempty"`
-
-	// StartedAt Example: 2006-01-02T15:04:05Z07:00
-	StartedAt    time.Time         `json:"StartedAt,omitempty" yaml:"StartedAt,omitempty"`
-	Status       *ActionStatusType `json:"Status,omitempty" yaml:"Status,omitempty"`
-	TerminatedAt time.Time         `json:"TerminatedAt,omitempty" yaml:"TerminatedAt,omitempty"`
-
-	// UnitID UUID of the Unit on which the action is performed
-	//
-	// Example: 248df4b7-aa70-47b8-a036-33ac447e668d
-	UnitID openapi_types.UUID `json:"UnitID,omitempty,omitzero" yaml:"UnitID,omitempty"`
-}
-
 // ActionResultType defines model for ActionResultType.
 type ActionResultType string
 
@@ -2143,9 +1857,6 @@ type ApiInfo struct {
 
 	// Version Version of the server, either a release (e.g. v1.2.3) or a build from a working tree (e.g. v1.2-dev). Its first two numbers are the API version: pre-1.0, a change in the second is not backward compatible. Also sent on every response in the ConfigHub-Version header.
 	Version string `json:"Version,omitempty" yaml:"Version,omitempty"`
-
-	// WorkerPort Deprecated and always empty. Workers connect over long polling on the main API port; there is no separate worker port.
-	WorkerPort string `json:"WorkerPort,omitempty" yaml:"WorkerPort,omitempty"`
 }
 
 // ArrayElementAliasMap defines model for ArrayElementAliasMap.
@@ -2676,164 +2387,6 @@ type Binding struct {
 // BindingList defines model for BindingList.
 type BindingList = []Binding
 
-// BridgeWorker BridgeWorker represents a worker in ConfigHub: an identity, with a secret,
-// for a program that connects to ConfigHub to serve external functions. Workers are deprecated
-// for anything else: a ServiceAccount is the identity for automation, including a GitOps tool
-// pulling Releases, and a Channel carries events and commands. Configuration reaches clusters
-// only through Releases, so a worker does not apply it to targets.
-// When starting a bridge worker program, both the BridgeWorkerID and Secret are
-// required for authentication with the ConfigHub server. These credentials allow the
-// bridge worker to establish a secure connection and receive function invocations.
-type BridgeWorker struct {
-	// Annotations An optional map of Annotation key/value pairs for tools to attach information to entities.
-	Annotations map[string]string `json:"Annotations,omitempty" yaml:"Annotations,omitempty"`
-
-	// BridgeWorkerID Unique identifier for a Bridge Worker.
-	//
-	// Example: 248df4b7-aa70-47b8-a036-33ac447e668d
-	BridgeWorkerID  openapi_types.UUID `json:"BridgeWorkerID,omitempty,omitzero" yaml:"BridgeWorkerID,omitempty"`
-	ClaimTTLSeconds int                `json:"ClaimTTLSeconds,omitempty" yaml:"ClaimTTLSeconds,omitempty"`
-
-	// ClaimToken Example: 248df4b7-aa70-47b8-a036-33ac447e668d
-	ClaimToken *openapi_types.UUID `json:"ClaimToken,omitempty" yaml:"ClaimToken,omitempty"`
-
-	// Condition Condition represents the worker's readiness state (Ready, NotReady, Unresponsive, Disconnected).
-	Condition string `json:"Condition,omitempty" yaml:"Condition,omitempty"`
-
-	// CreatedAt The timestamp when the entity was created in "2023-01-01T12:00:00Z" format.
-	//
-	// Example: 2025-04-04T11:50:02.95102-07:00
-	CreatedAt time.Time `json:"CreatedAt,omitempty,omitzero" yaml:"CreatedAt,omitempty"`
-
-	// DeleteGates An optional set of gates that, if any is present, will block deletion.
-	DeleteGates map[string]bool `json:"DeleteGates,omitempty" yaml:"DeleteGates,omitempty"`
-
-	// DisplayName Friendly name for the entity.
-	DisplayName string `json:"DisplayName,omitempty" yaml:"DisplayName,omitempty"`
-
-	// EntityType The type of entity.
-	EntityType string `json:"EntityType,omitempty" yaml:"EntityType,omitempty"`
-
-	// HiddenReason The reason the entity is hidden, if it is. A hidden entity is left out of List and Search results, and of what bulk operations act on, unless the include_hidden parameter names its reason or is *, or the where parameter names the entity by Slug or ID. ConfigHub/YAML Units are created hidden with the reason BackingUnit unless given another.
-	HiddenReason string `json:"HiddenReason,omitempty" yaml:"HiddenReason,omitempty"`
-
-	// IPAddress IPAddress is the IP address from which the worker last connected.
-	IPAddress string `json:"IPAddress,omitempty" yaml:"IPAddress,omitempty"`
-
-	// Labels An optional map of Label key/value pairs to specify identifying attributes of entities for the purpose of grouping and filtering them.
-	Labels map[string]string `json:"Labels,omitempty" yaml:"Labels,omitempty"`
-
-	// LastMessage LastMessage contains the last message from the worker (heartbeat message or other status).
-	LastMessage string `json:"LastMessage,omitempty" yaml:"LastMessage,omitempty"`
-
-	// LastSeenAt LastSeenAt is the time the worker was last seen (heartbeat, connection, or any event).
-	//
-	// Example: 2006-01-02T15:04:05Z07:00
-	LastSeenAt time.Time `json:"LastSeenAt,omitempty,omitzero" yaml:"LastSeenAt,omitempty"`
-
-	// OrgRole Organization-level role of the BridgeWorker User. Defaults to none, which leaves the User with only the permissions granted to it.
-	OrgRole string `json:"OrgRole,omitempty" yaml:"OrgRole,omitempty"`
-
-	// OrganizationID Unique identifier for an organization.
-	//
-	// Example: 248df4b7-aa70-47b8-a036-33ac447e668d
-	OrganizationID openapi_types.UUID `json:"OrganizationID,omitempty,omitzero" yaml:"OrganizationID,omitempty"`
-
-	// Permissions Permissions to access this bridge worker.
-	Permissions *Permissions `json:"Permissions,omitempty" yaml:"Permissions,omitempty"`
-
-	// ProvidedInfo ProvidedInfo contains information about the bridge worker in JSON format.
-	// It is sent by the bridge worker program to the ConfigHub server when it first connects.
-	// It can also be set before the bridge worker connects, but it is not recommended to change
-	// it while a worker is connected.
-	// This can include details about the capabilities, and targets supported by the bridge worker.
-	ProvidedInfo *WorkerInfo `json:"ProvidedInfo,omitempty" yaml:"ProvidedInfo,omitempty"`
-
-	// Secret Secret is a unique secret token for the bridge worker.
-	// It's auto-generated when the BridgeWorker entity is created and cannot be modified.
-	// This field is output-only and used for authentication.
-	// This secret is required when starting the bridge worker program.
-	Secret string `json:"Secret,omitempty" yaml:"Secret,omitempty"`
-
-	// Slug Unique URL-safe identifier for the entity.
-	Slug string `json:"Slug" yaml:"Slug"`
-
-	// SpaceID Unique identifier for a space.
-	//
-	// Example: 248df4b7-aa70-47b8-a036-33ac447e668d
-	SpaceID openapi_types.UUID `json:"SpaceID,omitempty,omitzero" yaml:"SpaceID,omitempty"`
-
-	// SpaceSlug Slug of the Space this entity belongs to. (readonly)
-	SpaceSlug string `json:"SpaceSlug,omitempty" yaml:"SpaceSlug,omitempty"`
-
-	// UpdatedAt The timestamp when the entity was last updated in "2023-01-01T12:00:00Z" format.
-	//
-	// Example: 2025-04-04T11:50:02.95102-07:00
-	UpdatedAt time.Time `json:"UpdatedAt,omitempty,omitzero" yaml:"UpdatedAt,omitempty"`
-
-	// UserID UserID is the ID of the bot user associated with this bridge worker.
-	// This user is created when the bridge worker is created and is used for
-	// audit trails and permissions.
-	// For legacy workers, this field may be nil (zero UUID).
-	//
-	// Example: 248df4b7-aa70-47b8-a036-33ac447e668d
-	UserID *openapi_types.UUID `json:"UserID,omitempty" yaml:"UserID,omitempty"`
-
-	// Version An entity-specific sequence number used for optimistic concurrency control. The value read must be sent in calls to Update.
-	Version int64 `json:"Version,omitempty" yaml:"Version,omitempty"`
-}
-
-// BridgeWorkerCreateOrUpdateResponse defines model for BridgeWorkerCreateOrUpdateResponse.
-type BridgeWorkerCreateOrUpdateResponse struct {
-	// BridgeWorker BridgeWorker represents a worker in ConfigHub: an identity, with a secret,
-	// for a program that connects to ConfigHub to serve external functions. Workers are deprecated
-	// for anything else: a ServiceAccount is the identity for automation, including a GitOps tool
-	// pulling Releases, and a Channel carries events and commands. Configuration reaches clusters
-	// only through Releases, so a worker does not apply it to targets.
-	// When starting a bridge worker program, both the BridgeWorkerID and Secret are
-	// required for authentication with the ConfigHub server. These credentials allow the
-	// bridge worker to establish a secure connection and receive function invocations.
-	BridgeWorker *BridgeWorker  `json:"BridgeWorker,omitempty" yaml:"BridgeWorker,omitempty"`
-	Error        *ResponseError `json:"Error,omitempty" yaml:"Error,omitempty"`
-}
-
-// BridgeWorkerStatus BridgeWorkerStatus represents the status information of a bridge worker within the system.
-type BridgeWorkerStatus struct {
-	// BridgeWorkerID Unique identifier for the Bridge Worker.
-	//
-	// Example: 248df4b7-aa70-47b8-a036-33ac447e668d
-	BridgeWorkerID openapi_types.UUID `json:"BridgeWorkerID,omitempty,omitzero" yaml:"BridgeWorkerID,omitempty"`
-
-	// BridgeWorkerSlug Slug for the Bridge Worker.
-	BridgeWorkerSlug string `json:"BridgeWorkerSlug,omitempty" yaml:"BridgeWorkerSlug,omitempty"`
-
-	// BridgeWorkerStatusID BridgeWorkerStatusID is the unique identifier for the bridge worker status entry.
-	//
-	// Example: 248df4b7-aa70-47b8-a036-33ac447e668d
-	BridgeWorkerStatusID openapi_types.UUID `json:"BridgeWorkerStatusID,omitempty,omitzero" yaml:"BridgeWorkerStatusID,omitempty"`
-
-	// IPAddress IPAddress is the IP address from which the bridge worker is connecting.
-	IPAddress string `json:"IPAddress,omitempty" yaml:"IPAddress,omitempty"`
-
-	// OrganizationID OrganizationID is the unique identifier of the organization the bridge worker belongs to.
-	//
-	// Example: 248df4b7-aa70-47b8-a036-33ac447e668d
-	OrganizationID openapi_types.UUID `json:"OrganizationID,omitempty,omitzero" yaml:"OrganizationID,omitempty"`
-
-	// SeenAt The timestamp when the bridge worker last responded in "2023-01-01T12:00:00Z" format.
-	//
-	// Example: 2006-01-02T15:04:05Z07:00
-	SeenAt time.Time `json:"SeenAt,omitempty,omitzero" yaml:"SeenAt,omitempty"`
-
-	// SpaceID SpaceID is the unique identifier of the space the bridge worker belongs to.
-	//
-	// Example: 248df4b7-aa70-47b8-a036-33ac447e668d
-	SpaceID openapi_types.UUID `json:"SpaceID,omitempty,omitzero" yaml:"SpaceID,omitempty"`
-
-	// Status Status indicates the current status of the bridge worker. Possible values include Connected, Disconnected, ActionSent, ActionResultReceived.
-	Status string `json:"Status,omitempty" yaml:"Status,omitempty"`
-}
-
 // BrowserSessionResponse defines model for BrowserSessionResponse.
 type BrowserSessionResponse struct {
 	ExpiresIn int    `json:"ExpiresIn,omitempty" yaml:"ExpiresIn,omitempty"`
@@ -2929,7 +2482,7 @@ type ChangeOrder struct {
 	// ReleasePriorRevisions What a Release of the ChangeOrder does with a bundled Unit's Revisions from before the change: those after its LastReleasedRevisionNum, up to the one the start Tag marks. Include (the default) releases them; Error refuses the publish, naming them and the ChangeOrders they belong to. A publish's PriorRevisions overrides it.
 	ReleasePriorRevisions ChangeOrderReleasePriorRevisions `json:"ReleasePriorRevisions,omitempty" yaml:"ReleasePriorRevisions,omitempty"`
 
-	// ReleaseTagID ReleaseTagID is the Tag a Release of the ChangeOrder is published at. It marks one Revision of each releasable Unit (ProviderType empty or OCI) in every Space the change is in: the Revision the end Tag marks, or the head where the Unit does not carry it. It follows Revisions the resolve processor makes after the promotion, and can be moved with a tag move, until a Release in the Space has been published at it. Empty on ChangeOrders created before it existed.
+	// ReleaseTagID ReleaseTagID is the Tag a Release of the ChangeOrder is published at. It marks one Revision of each Unit that is not Unreleasable in every Space the change is in: the Revision the end Tag marks, or the head where the Unit does not carry it. It follows Revisions the resolve processor makes after the promotion, and can be moved with a tag move, until a Release in the Space has been published at it. Empty on ChangeOrders created before it existed.
 	//
 	// Example: 248df4b7-aa70-47b8-a036-33ac447e668d
 	ReleaseTagID openapi_types.UUID `json:"ReleaseTagID,omitempty,omitzero" yaml:"ReleaseTagID,omitempty"`
@@ -4184,31 +3737,7 @@ type ExtendedAttribute struct {
 	Organization *Organization        `json:"Organization,omitempty" yaml:"Organization,omitempty"`
 	Permissions  *ExtendedPermissions `json:"Permissions,omitempty" yaml:"Permissions,omitempty"`
 
-	// Space The logical container for most entities in ConfigHub. Namespaces triggers, units, targets, workers, and other entities.
-	Space *Space `json:"Space,omitempty" yaml:"Space,omitempty"`
-
-	// ViewColumns The values of the columns of the View named by the view parameter, in the View's column order. A column that selects several values, such as one with a wildcard, has an entry for each, all with the column's Name.
-	ViewColumns []ViewColumn `json:"ViewColumns,omitempty" yaml:"ViewColumns,omitempty"`
-}
-
-// ExtendedBridgeWorker defines model for ExtendedBridgeWorker.
-type ExtendedBridgeWorker struct {
-	// BridgeWorker BridgeWorker represents a worker in ConfigHub: an identity, with a secret,
-	// for a program that connects to ConfigHub to serve external functions. Workers are deprecated
-	// for anything else: a ServiceAccount is the identity for automation, including a GitOps tool
-	// pulling Releases, and a Channel carries events and commands. Configuration reaches clusters
-	// only through Releases, so a worker does not apply it to targets.
-	// When starting a bridge worker program, both the BridgeWorkerID and Secret are
-	// required for authentication with the ConfigHub server. These credentials allow the
-	// bridge worker to establish a secure connection and receive function invocations.
-	BridgeWorker *BridgeWorker  `json:"BridgeWorker,omitempty" yaml:"BridgeWorker,omitempty"`
-	Error        *ResponseError `json:"Error,omitempty" yaml:"Error,omitempty"`
-
-	// Organization The top-level container for an organization using ConfigHub.
-	Organization *Organization        `json:"Organization,omitempty" yaml:"Organization,omitempty"`
-	Permissions  *ExtendedPermissions `json:"Permissions,omitempty" yaml:"Permissions,omitempty"`
-
-	// Space The logical container for most entities in ConfigHub. Namespaces triggers, units, targets, workers, and other entities.
+	// Space The logical container for most entities in ConfigHub. Namespaces triggers, units, targets, and other entities.
 	Space *Space `json:"Space,omitempty" yaml:"Space,omitempty"`
 
 	// ViewColumns The values of the columns of the View named by the view parameter, in the View's column order. A column that selects several values, such as one with a wildcard, has an entry for each, all with the column's Name.
@@ -4237,7 +3766,7 @@ type ExtendedChangeOrder struct {
 	// RestoreTag Defines a Tag that can be used to identify a set of Revisions across Units.
 	RestoreTag *Tag `json:"RestoreTag,omitempty" yaml:"RestoreTag,omitempty"`
 
-	// Space The logical container for most entities in ConfigHub. Namespaces triggers, units, targets, workers, and other entities.
+	// Space The logical container for most entities in ConfigHub. Namespaces triggers, units, targets, and other entities.
 	Space *Space `json:"Space,omitempty" yaml:"Space,omitempty"`
 
 	// SpaceFilter Defines an entity filter.
@@ -4266,7 +3795,7 @@ type ExtendedChangeSet struct {
 	Organization *Organization        `json:"Organization,omitempty" yaml:"Organization,omitempty"`
 	Permissions  *ExtendedPermissions `json:"Permissions,omitempty" yaml:"Permissions,omitempty"`
 
-	// Space The logical container for most entities in ConfigHub. Namespaces triggers, units, targets, workers, and other entities.
+	// Space The logical container for most entities in ConfigHub. Namespaces triggers, units, targets, and other entities.
 	Space *Space `json:"Space,omitempty" yaml:"Space,omitempty"`
 
 	// StartTag Defines a Tag that can be used to identify a set of Revisions across Units.
@@ -4286,7 +3815,7 @@ type ExtendedChangeWorkflow struct {
 	Organization *Organization        `json:"Organization,omitempty" yaml:"Organization,omitempty"`
 	Permissions  *ExtendedPermissions `json:"Permissions,omitempty" yaml:"Permissions,omitempty"`
 
-	// Space The logical container for most entities in ConfigHub. Namespaces triggers, units, targets, workers, and other entities.
+	// Space The logical container for most entities in ConfigHub. Namespaces triggers, units, targets, and other entities.
 	Space *Space `json:"Space,omitempty" yaml:"Space,omitempty"`
 
 	// ViewColumns The values of the columns of the View named by the view parameter, in the View's column order. A column that selects several values, such as one with a wildcard, has an entry for each, all with the column's Name.
@@ -4303,7 +3832,7 @@ type ExtendedChannel struct {
 	Organization *Organization        `json:"Organization,omitempty" yaml:"Organization,omitempty"`
 	Permissions  *ExtendedPermissions `json:"Permissions,omitempty" yaml:"Permissions,omitempty"`
 
-	// Space The logical container for most entities in ConfigHub. Namespaces triggers, units, targets, workers, and other entities.
+	// Space The logical container for most entities in ConfigHub. Namespaces triggers, units, targets, and other entities.
 	Space *Space `json:"Space,omitempty" yaml:"Space,omitempty"`
 
 	// ViewColumns The values of the columns of the View named by the view parameter, in the View's column order. A column that selects several values, such as one with a wildcard, has an entry for each, all with the column's Name.
@@ -4349,14 +3878,14 @@ type ExtendedFilter struct {
 	// Filter Defines an entity filter.
 	Filter *Filter `json:"Filter,omitempty" yaml:"Filter,omitempty"`
 
-	// FromSpace The logical container for most entities in ConfigHub. Namespaces triggers, units, targets, workers, and other entities.
+	// FromSpace The logical container for most entities in ConfigHub. Namespaces triggers, units, targets, and other entities.
 	FromSpace *Space `json:"FromSpace,omitempty" yaml:"FromSpace,omitempty"`
 
 	// Organization The top-level container for an organization using ConfigHub.
 	Organization *Organization        `json:"Organization,omitempty" yaml:"Organization,omitempty"`
 	Permissions  *ExtendedPermissions `json:"Permissions,omitempty" yaml:"Permissions,omitempty"`
 
-	// Space The logical container for most entities in ConfigHub. Namespaces triggers, units, targets, workers, and other entities.
+	// Space The logical container for most entities in ConfigHub. Namespaces triggers, units, targets, and other entities.
 	Space *Space `json:"Space,omitempty" yaml:"Space,omitempty"`
 
 	// ViewColumns The values of the columns of the View named by the view parameter, in the View's column order. A column that selects several values, such as one with a wildcard, has an entry for each, all with the column's Name.
@@ -4376,16 +3905,6 @@ type ExtendedGroup struct {
 
 // ExtendedInvocation defines model for ExtendedInvocation.
 type ExtendedInvocation struct {
-	// BridgeWorker BridgeWorker represents a worker in ConfigHub: an identity, with a secret,
-	// for a program that connects to ConfigHub to serve external functions. Workers are deprecated
-	// for anything else: a ServiceAccount is the identity for automation, including a GitOps tool
-	// pulling Releases, and a Channel carries events and commands. Configuration reaches clusters
-	// only through Releases, so a worker does not apply it to targets.
-	// When starting a bridge worker program, both the BridgeWorkerID and Secret are
-	// required for authentication with the ConfigHub server. These credentials allow the
-	// bridge worker to establish a secure connection and receive function invocations.
-	BridgeWorker *BridgeWorker `json:"BridgeWorker,omitempty" yaml:"BridgeWorker,omitempty"`
-
 	// Channel A Channel is a mailbox between ConfigHub and one bot. A client claims it and polls it; callers run the commands it declares on it, each as a CommandRun; it subscribes to events and bookmarks how far it has read. It owns no identity: a ServiceAccount claims it by holding Claim on it. Its Commands and Subscriptions are set by whoever manages it, not by the client.
 	Channel *Channel       `json:"Channel,omitempty" yaml:"Channel,omitempty"`
 	Error   *ResponseError `json:"Error,omitempty" yaml:"Error,omitempty"`
@@ -4397,7 +3916,7 @@ type ExtendedInvocation struct {
 	Organization *Organization        `json:"Organization,omitempty" yaml:"Organization,omitempty"`
 	Permissions  *ExtendedPermissions `json:"Permissions,omitempty" yaml:"Permissions,omitempty"`
 
-	// Space The logical container for most entities in ConfigHub. Namespaces triggers, units, targets, workers, and other entities.
+	// Space The logical container for most entities in ConfigHub. Namespaces triggers, units, targets, and other entities.
 	Space *Space `json:"Space,omitempty" yaml:"Space,omitempty"`
 
 	// ViewColumns The values of the columns of the View named by the view parameter, in the View's column order. A column that selects several values, such as one with a wildcard, has an entry for each, all with the column's Name.
@@ -4421,10 +3940,10 @@ type ExtendedLink struct {
 	Organization *Organization        `json:"Organization,omitempty" yaml:"Organization,omitempty"`
 	Permissions  *ExtendedPermissions `json:"Permissions,omitempty" yaml:"Permissions,omitempty"`
 
-	// Space The logical container for most entities in ConfigHub. Namespaces triggers, units, targets, workers, and other entities.
+	// Space The logical container for most entities in ConfigHub. Namespaces triggers, units, targets, and other entities.
 	Space *Space `json:"Space,omitempty" yaml:"Space,omitempty"`
 
-	// ToSpace The logical container for most entities in ConfigHub. Namespaces triggers, units, targets, workers, and other entities.
+	// ToSpace The logical container for most entities in ConfigHub. Namespaces triggers, units, targets, and other entities.
 	ToSpace *Space `json:"ToSpace,omitempty" yaml:"ToSpace,omitempty"`
 
 	// ToUnit Unit is the core unit of operation in ConfigHub. It contains a blob of configuration Data of a single supported Config Type (configuration format). This blob is typically a text document that contains a collection of Kubernetes or infrastructure resources, or an application configuration file. Applying / deploying or destroying the configuration happens as a single *transaction* from ConfigHub's perspective. In reality, it is most often a multi-step workflow performed by the underlying configuration / deployment tool. The resources must belong to a single infrastructure provider and the actuation mechanism must be able to resolve references and ordering dependencies among the resources within the document. For example, if one resource needs to be fully provisioned to provide input to another resource, then the actuation code is responsible for handling this. Revisions store historical copies of the configuration data. Configuration data can be restored from prior Revisions. Units can also be cloned to create new variants of a configuration.
@@ -4462,7 +3981,7 @@ type ExtendedMutation struct {
 	// Revision Revision is a historial view of a Config Unit.
 	Revision *Revision `json:"Revision,omitempty" yaml:"Revision,omitempty"`
 
-	// Space The logical container for most entities in ConfigHub. Namespaces triggers, units, targets, workers, and other entities.
+	// Space The logical container for most entities in ConfigHub. Namespaces triggers, units, targets, and other entities.
 	Space *Space `json:"Space,omitempty" yaml:"Space,omitempty"`
 
 	// Trigger Defines an automated function invocation that executes in response to specific
@@ -4553,10 +4072,10 @@ type ExtendedResource struct {
 	// Resource Resource is a configuration element extracted from a Unit's configuration data. Resources are maintained automatically as Units change and are read-only.
 	Resource *Resource `json:"Resource,omitempty" yaml:"Resource,omitempty"`
 
-	// Space The logical container for most entities in ConfigHub. Namespaces triggers, units, targets, workers, and other entities.
+	// Space The logical container for most entities in ConfigHub. Namespaces triggers, units, targets, and other entities.
 	Space *Space `json:"Space,omitempty" yaml:"Space,omitempty"`
 
-	// Target Target represents a deployment target in ConfigHub: where configuration is destined. A Space's Releases are published for its release Target and pulled from ConfigHub's OCI registry by a GitOps tool such as Argo CD or Flux. Access to a Target, including a worker's, is granted through its Permissions.
+	// Target Target represents a deployment target in ConfigHub: where configuration is destined. A Space's Releases are published for its release Target and pulled from ConfigHub's OCI registry by a GitOps tool such as Argo CD or Flux. Access to a Target is granted through its Permissions.
 	Target *Target `json:"Target,omitempty" yaml:"Target,omitempty"`
 
 	// Unit Unit is the core unit of operation in ConfigHub. It contains a blob of configuration Data of a single supported Config Type (configuration format). This blob is typically a text document that contains a collection of Kubernetes or infrastructure resources, or an application configuration file. Applying / deploying or destroying the configuration happens as a single *transaction* from ConfigHub's perspective. In reality, it is most often a multi-step workflow performed by the underlying configuration / deployment tool. The resources must belong to a single infrastructure provider and the actuation mechanism must be able to resolve references and ordering dependencies among the resources within the document. For example, if one resource needs to be fully provisioned to provide input to another resource, then the actuation code is responsible for handling this. Revisions store historical copies of the configuration data. Configuration data can be restored from prior Revisions. Units can also be cloned to create new variants of a configuration.
@@ -4581,7 +4100,7 @@ type ExtendedReviewComment struct {
 	// Revision Revision is a historial view of a Config Unit.
 	Revision *Revision `json:"Revision,omitempty" yaml:"Revision,omitempty"`
 
-	// Space The logical container for most entities in ConfigHub. Namespaces triggers, units, targets, workers, and other entities.
+	// Space The logical container for most entities in ConfigHub. Namespaces triggers, units, targets, and other entities.
 	Space *Space `json:"Space,omitempty" yaml:"Space,omitempty"`
 
 	// Unit Unit is the core unit of operation in ConfigHub. It contains a blob of configuration Data of a single supported Config Type (configuration format). This blob is typically a text document that contains a collection of Kubernetes or infrastructure resources, or an application configuration file. Applying / deploying or destroying the configuration happens as a single *transaction* from ConfigHub's perspective. In reality, it is most often a multi-step workflow performed by the underlying configuration / deployment tool. The resources must belong to a single infrastructure provider and the actuation mechanism must be able to resolve references and ordering dependencies among the resources within the document. For example, if one resource needs to be fully provisioned to provide input to another resource, then the actuation code is responsible for handling this. Revisions store historical copies of the configuration data. Configuration data can be restored from prior Revisions. Units can also be cloned to create new variants of a configuration.
@@ -4607,7 +4126,7 @@ type ExtendedRevision struct {
 	// Revision Revision is a historial view of a Config Unit.
 	Revision *Revision `json:"Revision,omitempty" yaml:"Revision,omitempty"`
 
-	// Space The logical container for most entities in ConfigHub. Namespaces triggers, units, targets, workers, and other entities.
+	// Space The logical container for most entities in ConfigHub. Namespaces triggers, units, targets, and other entities.
 	Space *Space `json:"Space,omitempty" yaml:"Space,omitempty"`
 	Tags  []Tag  `json:"Tags,omitempty" yaml:"Tags,omitempty"`
 
@@ -4651,13 +4170,12 @@ type ExtendedSpace struct {
 	Organization *Organization        `json:"Organization,omitempty" yaml:"Organization,omitempty"`
 	Permissions  *ExtendedPermissions `json:"Permissions,omitempty" yaml:"Permissions,omitempty"`
 
-	// ReleaseTarget Target represents a deployment target in ConfigHub: where configuration is destined. A Space's Releases are published for its release Target and pulled from ConfigHub's OCI registry by a GitOps tool such as Argo CD or Flux. Access to a Target, including a worker's, is granted through its Permissions.
+	// ReleaseTarget Target represents a deployment target in ConfigHub: where configuration is destined. A Space's Releases are published for its release Target and pulled from ConfigHub's OCI registry by a GitOps tool such as Argo CD or Flux. Access to a Target is granted through its Permissions.
 	ReleaseTarget *Target `json:"ReleaseTarget,omitempty" yaml:"ReleaseTarget,omitempty"`
 
-	// Space The logical container for most entities in ConfigHub. Namespaces triggers, units, targets, workers, and other entities.
+	// Space The logical container for most entities in ConfigHub. Namespaces triggers, units, targets, and other entities.
 	Space                    *Space         `json:"Space,omitempty" yaml:"Space,omitempty"`
 	TotalAttributeCount      int64          `json:"TotalAttributeCount,omitempty" yaml:"TotalAttributeCount,omitempty"`
-	TotalBridgeWorkerCount   int64          `json:"TotalBridgeWorkerCount,omitempty" yaml:"TotalBridgeWorkerCount,omitempty"`
 	TotalChangeOrderCount    int64          `json:"TotalChangeOrderCount,omitempty" yaml:"TotalChangeOrderCount,omitempty"`
 	TotalChangeSetCount      int64          `json:"TotalChangeSetCount,omitempty" yaml:"TotalChangeSetCount,omitempty"`
 	TotalChangeWorkflowCount int64          `json:"TotalChangeWorkflowCount,omitempty" yaml:"TotalChangeWorkflowCount,omitempty"`
@@ -4701,7 +4219,7 @@ type ExtendedTag struct {
 	Organization *Organization        `json:"Organization,omitempty" yaml:"Organization,omitempty"`
 	Permissions  *ExtendedPermissions `json:"Permissions,omitempty" yaml:"Permissions,omitempty"`
 
-	// Space The logical container for most entities in ConfigHub. Namespaces triggers, units, targets, workers, and other entities.
+	// Space The logical container for most entities in ConfigHub. Namespaces triggers, units, targets, and other entities.
 	Space *Space `json:"Space,omitempty" yaml:"Space,omitempty"`
 
 	// Tag Defines a Tag that can be used to identify a set of Revisions across Units.
@@ -4719,10 +4237,10 @@ type ExtendedTarget struct {
 	Organization *Organization        `json:"Organization,omitempty" yaml:"Organization,omitempty"`
 	Permissions  *ExtendedPermissions `json:"Permissions,omitempty" yaml:"Permissions,omitempty"`
 
-	// Space The logical container for most entities in ConfigHub. Namespaces triggers, units, targets, workers, and other entities.
+	// Space The logical container for most entities in ConfigHub. Namespaces triggers, units, targets, and other entities.
 	Space *Space `json:"Space,omitempty" yaml:"Space,omitempty"`
 
-	// Target Target represents a deployment target in ConfigHub: where configuration is destined. A Space's Releases are published for its release Target and pulled from ConfigHub's OCI registry by a GitOps tool such as Argo CD or Flux. Access to a Target, including a worker's, is granted through its Permissions.
+	// Target Target represents a deployment target in ConfigHub: where configuration is destined. A Space's Releases are published for its release Target and pulled from ConfigHub's OCI registry by a GitOps tool such as Argo CD or Flux. Access to a Target is granted through its Permissions.
 	Target *Target `json:"Target,omitempty" yaml:"Target,omitempty"`
 
 	// TriggerFilter Defines an entity filter.
@@ -4735,16 +4253,6 @@ type ExtendedTarget struct {
 
 // ExtendedTrigger defines model for ExtendedTrigger.
 type ExtendedTrigger struct {
-	// BridgeWorker BridgeWorker represents a worker in ConfigHub: an identity, with a secret,
-	// for a program that connects to ConfigHub to serve external functions. Workers are deprecated
-	// for anything else: a ServiceAccount is the identity for automation, including a GitOps tool
-	// pulling Releases, and a Channel carries events and commands. Configuration reaches clusters
-	// only through Releases, so a worker does not apply it to targets.
-	// When starting a bridge worker program, both the BridgeWorkerID and Secret are
-	// required for authentication with the ConfigHub server. These credentials allow the
-	// bridge worker to establish a secure connection and receive function invocations.
-	BridgeWorker *BridgeWorker `json:"BridgeWorker,omitempty" yaml:"BridgeWorker,omitempty"`
-
 	// Channel A Channel is a mailbox between ConfigHub and one bot. A client claims it and polls it; callers run the commands it declares on it, each as a CommandRun; it subscribes to events and bookmarks how far it has read. It owns no identity: a ServiceAccount claims it by holding Claim on it. Its Commands and Subscriptions are set by whoever manages it, not by the client.
 	Channel *Channel       `json:"Channel,omitempty" yaml:"Channel,omitempty"`
 	Error   *ResponseError `json:"Error,omitempty" yaml:"Error,omitempty"`
@@ -4756,7 +4264,7 @@ type ExtendedTrigger struct {
 	Organization *Organization        `json:"Organization,omitempty" yaml:"Organization,omitempty"`
 	Permissions  *ExtendedPermissions `json:"Permissions,omitempty" yaml:"Permissions,omitempty"`
 
-	// Space The logical container for most entities in ConfigHub. Namespaces triggers, units, targets, workers, and other entities.
+	// Space The logical container for most entities in ConfigHub. Namespaces triggers, units, targets, and other entities.
 	Space *Space `json:"Space,omitempty" yaml:"Space,omitempty"`
 
 	// Trigger Defines an automated function invocation that executes in response to specific
@@ -4803,7 +4311,7 @@ type ExtendedUnit struct {
 	// Space The Space the Unit belongs to.
 	Space *Space `json:"Space,omitempty" yaml:"Space,omitempty"`
 
-	// Target The Target the Unit has been configured to operate with.
+	// Target The Target a Release of the Unit's Space publishes the Unit for: the Space's release Target, unless the Unit is Unreleasable. Use include=TargetID to expand it.
 	Target *Target `json:"Target,omitempty" yaml:"Target,omitempty"`
 
 	// Unit The requested Unit of the operation.
@@ -4855,7 +4363,7 @@ type ExtendedView struct {
 	Organization *Organization        `json:"Organization,omitempty" yaml:"Organization,omitempty"`
 	Permissions  *ExtendedPermissions `json:"Permissions,omitempty" yaml:"Permissions,omitempty"`
 
-	// Space The logical container for most entities in ConfigHub. Namespaces triggers, units, targets, workers, and other entities.
+	// Space The logical container for most entities in ConfigHub. Namespaces triggers, units, targets, and other entities.
 	Space *Space `json:"Space,omitempty" yaml:"Space,omitempty"`
 
 	// View Defines an entity view.
@@ -5005,11 +4513,6 @@ type FunctionInvocationList = []FunctionInvocation
 
 // FunctionInvocationsRequest FunctionInvocationsRequest represents a request to invoke a list of functions on the configuration data of the matching Units or Revision.
 type FunctionInvocationsRequest struct {
-	// BridgeWorkerID BridgeWorkerID is the identifier of the associated worker that will execute these functions.
-	//
-	// Example: 248df4b7-aa70-47b8-a036-33ac447e668d
-	BridgeWorkerID *openapi_types.UUID `json:"BridgeWorkerID,omitempty" yaml:"BridgeWorkerID,omitempty"`
-
 	// ChangeDescription ChangeDescription is a description of the change being made, if any.
 	ChangeDescription string `json:"ChangeDescription,omitempty" yaml:"ChangeDescription,omitempty"`
 
@@ -5023,7 +4526,7 @@ type FunctionInvocationsRequest struct {
 	// IncludeLinkFindings Put what the resolves of the Unit's Links could not do in the FunctionContext, for functions that reason about it. A request that runs Triggers gets them regardless
 	IncludeLinkFindings bool `json:"IncludeLinkFindings,omitempty" yaml:"IncludeLinkFindings,omitempty"`
 
-	// Invocations Invocations is a list of Invocation IDs to execute. The invocations must be within the same Organization. Invocations will be executed after the FunctionInvocations list. Functions are grouped by executor (built-in vs bridge worker) and executed in phases: general mutating functions first, then final mutating functions (like ensure-context), then validating functions. Functions that don't match the unit's toolchain type are ignored.
+	// Invocations Invocations is a list of Invocation IDs to execute. The invocations must be within the same Organization. Invocations will be executed after the FunctionInvocations list. Functions are grouped by executor (built-in or Channel) and executed in phases: general mutating functions first, then final mutating functions (like ensure-context), then validating functions. Functions that don't match the unit's toolchain type are ignored.
 	Invocations []UUID `json:"Invocations,omitempty" yaml:"Invocations,omitempty"`
 
 	// NumFilters NumFilters is the number of validating functions from the FunctionInvocations to treat as filters for the remaining functions in the list. In the case that the validation function does not pass, stop and don't execute the remaining functions, but don't report an error.
@@ -5036,7 +4539,7 @@ type FunctionInvocationsRequest struct {
 	// ToolchainType ToolchainType specifies the type of toolchain for these function invocations. This determines which configuration formats the functions can process. It must match the ToolchainType of the Units.
 	ToolchainType string `json:"ToolchainType,omitempty" yaml:"ToolchainType,omitempty"`
 
-	// Triggers Triggers is a list of Trigger IDs to execute. The triggers must be within the same Organization. Triggers will be executed after the FunctionInvocations list. Functions are grouped by executor (built-in vs bridge worker) and executed in phases: general mutating functions first, then final mutating functions (like ensure-context), then validating functions. Functions that don't match the unit's toolchain type are ignored.
+	// Triggers Triggers is a list of Trigger IDs to execute. The triggers must be within the same Organization. Triggers will be executed after the FunctionInvocations list. Functions are grouped by executor (built-in or Channel) and executed in phases: general mutating functions first, then final mutating functions (like ensure-context), then validating functions. Functions that don't match the unit's toolchain type are ignored.
 	Triggers []UUID `json:"Triggers,omitempty" yaml:"Triggers,omitempty"`
 
 	// UpdateApplyGates Deprecated: use UpdateValidationResults, which this means the same thing as. Setting either has the same effect.
@@ -5213,15 +4716,6 @@ type FunctionSignature struct {
 	VarArgs bool `json:"VarArgs,omitempty" yaml:"VarArgs,omitempty"`
 }
 
-// FunctionWorkerInfo defines model for FunctionWorkerInfo.
-type FunctionWorkerInfo struct {
-	// SupportedFunctions Signatures of supported functions by ToolchainType
-	SupportedFunctions map[string]map[string]FunctionSignature `json:"SupportedFunctions,omitempty" yaml:"SupportedFunctions,omitempty"`
-
-	// ToolchainTypes Supported ToolchainTypes
-	ToolchainTypes []string `json:"ToolchainTypes,omitempty" yaml:"ToolchainTypes,omitempty"`
-}
-
 // Group A Group of Users, a subject in an entity's Permissions. Groups and their membership are managed in the identity provider, and like Users are not scoped to an Organization; a Group is provisioned when a User in it logs in. Bot Users are the exception: they are added to a Group through the API.
 type Group struct {
 	// CreatedAt The timestamp when the entity was created in "2023-01-01T12:00:00Z" format.
@@ -5281,12 +4775,7 @@ type Invocation struct {
 	// BackingUnitID Example: 248df4b7-aa70-47b8-a036-33ac447e668d
 	BackingUnitID *openapi_types.UUID `json:"BackingUnitID,omitempty" yaml:"BackingUnitID,omitempty"`
 
-	// BridgeWorkerID Unique identifier for a Bridge Worker to execute the functions specified by the Invocation. If neither it nor ChannelID is specified, use the builtin function executor.
-	//
-	// Example: 248df4b7-aa70-47b8-a036-33ac447e668d
-	BridgeWorkerID *openapi_types.UUID `json:"BridgeWorkerID,omitempty" yaml:"BridgeWorkerID,omitempty"`
-
-	// ChannelID Unique identifier for a Channel whose client executes the functions specified by the Invocation. At most one of BridgeWorkerID and ChannelID is set.
+	// ChannelID Unique identifier for a Channel whose client executes the functions specified by the Invocation. If it is not specified, the builtin function executor is used.
 	//
 	// Example: 248df4b7-aa70-47b8-a036-33ac447e668d
 	ChannelID *openapi_types.UUID `json:"ChannelID,omitempty" yaml:"ChannelID,omitempty"`
@@ -5418,7 +4907,7 @@ type Link struct {
 	// DownstreamPaths Values to write to the downstream Unit when resolving a TransformPaths Link. Each entry evaluates Expression (a Go template or CEL expression, per Evaluator) with the named upstream values (UpstreamPaths and UpstreamGetters) and Space/Unit metadata in scope, coerces the result to DataType, and writes it via set-attributes. Only valid when UpdateType is TransformPaths.
 	DownstreamPaths []PathExpression `json:"DownstreamPaths,omitempty" yaml:"DownstreamPaths,omitempty"`
 
-	// DownstreamSetters Mutating function invocations to run on the downstream Unit. String arguments are template-expanded using the upstream values listed in Parameters (plus Space/Unit metadata) in scope. Each function must be mutating. Worker functions are not supported. Only valid when UpdateType is TransformPaths.
+	// DownstreamSetters Mutating function invocations to run on the downstream Unit. String arguments are template-expanded using the upstream values listed in Parameters (plus Space/Unit metadata) in scope. Each function must be mutating. Functions served on a Channel are not supported. Only valid when UpdateType is TransformPaths.
 	DownstreamSetters []ParameterizedFunction `json:"DownstreamSetters,omitempty" yaml:"DownstreamSetters,omitempty"`
 
 	// EntityType The type of entity.
@@ -5503,7 +4992,7 @@ type Link struct {
 	// Example: 2025-04-04T11:50:02.95102-07:00
 	UpdatedAt time.Time `json:"UpdatedAt,omitempty,omitzero" yaml:"UpdatedAt,omitempty"`
 
-	// UpstreamGetters Getter function invocations whose first AttributeValue Value is exposed to DownstreamPaths expressions and DownstreamSetters argument templates by Name, alongside UpstreamPaths. Each function must be non-mutating and produce OutputTypeAttributeValueList. Worker functions are not supported. Only valid when UpdateType is TransformPaths.
+	// UpstreamGetters Getter function invocations whose first AttributeValue Value is exposed to DownstreamPaths expressions and DownstreamSetters argument templates by Name, alongside UpstreamPaths. Each function must be non-mutating and produce OutputTypeAttributeValueList. Functions served on a Channel are not supported. Only valid when UpdateType is TransformPaths.
 	UpstreamGetters []NamedFunctionResult `json:"UpstreamGetters,omitempty" yaml:"UpstreamGetters,omitempty"`
 
 	// UpstreamLastMergedRevisionNum The RevisionNum of the last merged upstream revision.
@@ -5602,9 +5091,6 @@ type MoveResponse struct {
 
 // Mutation Mutation is a single source of mutation for a Revision.
 type Mutation struct {
-	// BridgeWorkerID Example: 248df4b7-aa70-47b8-a036-33ac447e668d
-	BridgeWorkerID *openapi_types.UUID `json:"BridgeWorkerID,omitempty" yaml:"BridgeWorkerID,omitempty"`
-
 	// ChannelID Example: 248df4b7-aa70-47b8-a036-33ac447e668d
 	ChannelID *openapi_types.UUID `json:"ChannelID,omitempty" yaml:"ChannelID,omitempty"`
 
@@ -5776,7 +5262,7 @@ type MutationType string
 
 // NamedFunctionResult defines model for NamedFunctionResult.
 type NamedFunctionResult struct {
-	// FunctionInvocation Non-mutating function invocation that produces OutputTypeAttributeValueList. The Value of the first returned AttributeValue is bound to Name. Worker functions are not supported.
+	// FunctionInvocation Non-mutating function invocation that produces OutputTypeAttributeValueList. The Value of the first returned AttributeValue is bound to Name. Functions served on a Channel are not supported.
 	FunctionInvocation *FunctionInvocation `json:"FunctionInvocation,omitempty" yaml:"FunctionInvocation,omitempty"`
 
 	// Name Identifier used to reference the value; must be a legal Go and CEL identifier and unique across UpstreamPaths and UpstreamGetters
@@ -5897,7 +5383,7 @@ type OrganizationMember struct {
 
 // ParameterizedFunction defines model for ParameterizedFunction.
 type ParameterizedFunction struct {
-	// FunctionInvocation Mutating function invocation to run on the downstream Unit. Worker functions are not supported.
+	// FunctionInvocation Mutating function invocation to run on the downstream Unit. Functions served on a Channel are not supported.
 	FunctionInvocation *FunctionInvocation `json:"FunctionInvocation,omitempty" yaml:"FunctionInvocation,omitempty"`
 
 	// Key Identifies the entry within DownstreamSetters, so that a merge of two versions of the Link matches entries by Key rather than by position. Optional, and unique within the list when present. Letters, digits, '-' and '_', starting with a letter or digit; at most 128 characters.
@@ -6245,93 +5731,7 @@ type PromoteUnitResult struct {
 	UpstreamUnitID *openapi_types.UUID `json:"UpstreamUnitID,omitempty" yaml:"UpstreamUnitID,omitempty"`
 }
 
-// QueuedOperation UnitAction is a record of an operation queued for a Worker, such as a function invocation on a unit. Operations are delivered to the worker in creation order; if the worker is disconnected, pending operations are delivered when it reconnects. One or more UnitEvents will correspond to each UnitAction.
-type QueuedOperation struct {
-	// Action Action is the type of action to be performed by the worker, such as InvokeFunctions or Cancel. UnitActions queued for bridge workers, which have been removed, can carry the actions they performed, such as Apply.
-	Action *ActionType `json:"Action,omitempty" yaml:"Action,omitempty"`
-
-	// BridgeWorkerID BridgeWorkerID is the unique identifier of the worker that will process this operation.
-	//
-	// Example: 248df4b7-aa70-47b8-a036-33ac447e668d
-	BridgeWorkerID openapi_types.UUID `json:"BridgeWorkerID,omitempty,omitzero" yaml:"BridgeWorkerID,omitempty"`
-
-	// CreatedAt The timestamp when the entity was created in "2023-01-01T12:00:00Z" format.
-	//
-	// Example: 2006-01-02T15:04:05Z07:00
-	CreatedAt time.Time `json:"CreatedAt,omitempty,omitzero" yaml:"CreatedAt,omitempty"`
-
-	// Data Data is the result the worker reported for a finished function invocation: its FunctionInvocationResponse, as JSON.
-	Data string `json:"Data,omitempty" yaml:"Data,omitempty"`
-
-	// Dependencies Unused. No longer populated or consulted for delivery; retained for schema compatibility and scheduled for removal.
-	Dependencies []UUID `json:"Dependencies,omitempty" yaml:"Dependencies,omitempty"`
-
-	// DryRun DryRun indicates whether the action is a dry run.
-	DryRun bool `json:"DryRun,omitempty" yaml:"DryRun,omitempty"`
-
-	// ErrorDetails Error details returned by the worker.
-	ErrorDetails []ErrorItem `json:"ErrorDetails,omitempty" yaml:"ErrorDetails,omitempty"`
-
-	// ExtraParams ExtraParams contains additional parameters for the operation in string format.
-	ExtraParams string `json:"ExtraParams,omitempty" yaml:"ExtraParams,omitempty"`
-
-	// OrganizationID OrganizationID is the unique identifier of the organization this operation belongs to.
-	//
-	// Example: 248df4b7-aa70-47b8-a036-33ac447e668d
-	OrganizationID openapi_types.UUID `json:"OrganizationID,omitempty,omitzero" yaml:"OrganizationID,omitempty"`
-
-	// QueuedOperationID QueuedOperationID is the unique identifier for the queued unit action.
-	//
-	// Example: 248df4b7-aa70-47b8-a036-33ac447e668d
-	QueuedOperationID openapi_types.UUID `json:"QueuedOperationID,omitempty,omitzero" yaml:"QueuedOperationID,omitempty"`
-
-	// RevisionNum RevisionNum is the revision number this operation was performed on.
-	RevisionNum int64 `json:"RevisionNum,omitempty" yaml:"RevisionNum,omitempty"`
-
-	// SpaceID SpaceID is the unique identifier of the space of the unit this operation is performed on.
-	//
-	// Example: 248df4b7-aa70-47b8-a036-33ac447e668d
-	SpaceID openapi_types.UUID `json:"SpaceID,omitempty,omitzero" yaml:"SpaceID,omitempty"`
-
-	// Status Status indicates the current status of the unit action. v2 statuses: Initializing (being set up), Pending (waiting), Delivered (sent to worker), Progressing (being processed), Completed (success), Failed (error). v1 compatibility: 'pending' = Pending, 'delivered' = Completed (legacy 'delivered' meant work done).
-	Status QueuedOperationStatus `json:"Status,omitempty" yaml:"Status,omitempty"`
-
-	// TargetID TargetID is the unique identifier of the target this operation is directed to.
-	//
-	// Example: 248df4b7-aa70-47b8-a036-33ac447e668d
-	TargetID openapi_types.UUID `json:"TargetID,omitempty,omitzero" yaml:"TargetID,omitempty"`
-
-	// UnitActionNum UnitActionNum is the sequence number of this unit action.
-	UnitActionNum int64 `json:"UnitActionNum,omitempty" yaml:"UnitActionNum,omitempty"`
-
-	// UnitID UnitID is the unique identifier of the unit this operation is performed on.
-	//
-	// Example: 248df4b7-aa70-47b8-a036-33ac447e668d
-	UnitID openapi_types.UUID `json:"UnitID,omitempty,omitzero" yaml:"UnitID,omitempty"`
-
-	// UserAgent User-Agent string of the API call.
-	UserAgent string `json:"UserAgent,omitempty" yaml:"UserAgent,omitempty"`
-
-	// UserID UserID of the user the action was performed by.
-	//
-	// Example: 248df4b7-aa70-47b8-a036-33ac447e668d
-	UserID openapi_types.UUID `json:"UserID,omitempty,omitzero" yaml:"UserID,omitempty"`
-
-	// UserIsBot Whether the user who requested the action is a bot user.
-	UserIsBot bool `json:"UserIsBot,omitempty" yaml:"UserIsBot,omitempty"`
-
-	// UserRole Organization-level role of the user who requested the action.
-	UserRole string `json:"UserRole,omitempty" yaml:"UserRole,omitempty"`
-
-	// Version An entity-specific sequence number used for optimistic concurrency control.
-	// The value read must be sent in calls to Update.
-	Version int64 `json:"Version,omitempty" yaml:"Version,omitempty"`
-}
-
-// QueuedOperationStatus Status indicates the current status of the unit action. v2 statuses: Initializing (being set up), Pending (waiting), Delivered (sent to worker), Progressing (being processed), Completed (success), Failed (error). v1 compatibility: 'pending' = Pending, 'delivered' = Completed (legacy 'delivered' meant work done).
-type QueuedOperationStatus string
-
-// Release Release is a published bundle of the configuration of the Units in a Space that are assigned to a Target. It is created by publishing, taken out of service by withdrawing, and removed by deleting; its bundled content is never updated, though its Labels, Annotations, DeleteGates, and LiveStatus can be. The bundle is stored as an OCI image (a tar.gz layer plus manifest) so it can be served to and consumed by the Target.
+// Release Release is a published bundle of the configuration of the Units in a Space that are not Unreleasable, for the Space's release Target. It is created by publishing, taken out of service by withdrawing, and removed by deleting; its bundled content is never updated, though its Labels, Annotations, DeleteGates, and LiveStatus can be. The bundle is stored as an OCI image (a tar.gz layer plus manifest) so it can be served to and consumed by the Target.
 type Release struct {
 	// Annotations An optional map of Annotation key/value pairs for tools to attach information to entities.
 	Annotations map[string]string `json:"Annotations,omitempty" yaml:"Annotations,omitempty"`
@@ -6391,7 +5791,7 @@ type Release struct {
 	// ReleaseNum Monotonically increasing sequence number of the Release within its Target, assigned at publish time. The highest ReleaseNum is the latest Release for the Target.
 	ReleaseNum int64 `json:"ReleaseNum,omitempty" yaml:"ReleaseNum,omitempty"`
 
-	// SkippedUnits SkippedUnits names the Units assigned to the Release's Target that the Release does not bundle, mapped to the reason as a code. NotMarked: publishing with a TagID leaves out a Unit that has never been released and that the Tag marks no Revision of; a Unit that has been released must be marked. (readonly)
+	// SkippedUnits SkippedUnits names the Units released to the Release's Target that the Release does not bundle, mapped to the reason as a code. NotMarked: publishing with a TagID leaves out a Unit that has never been released and that the Tag marks no Revision of; a Unit that has been released must be marked. (readonly)
 	SkippedUnits map[string]string `json:"SkippedUnits,omitempty" yaml:"SkippedUnits,omitempty"`
 
 	// SpaceID Example: 248df4b7-aa70-47b8-a036-33ac447e668d
@@ -6497,7 +5897,7 @@ type ReleasePublishRequest struct {
 	// PriorRevisions For a Release of a ChangeOrder, what to do with a bundled Unit's Revisions from before the change: those after its LastReleasedRevisionNum up to the one the ChangeOrder's start Tag marks. Include releases them; Error refuses the publish, naming them and the ChangeOrders they belong to. Defaults to the ChangeOrder's ReleasePriorRevisions, or Include.
 	PriorRevisions ReleasePublishRequestPriorRevisions `json:"PriorRevisions,omitempty" yaml:"PriorRevisions,omitempty"`
 
-	// TagID Optional Tag ID identifying the tagged Revision to bundle. For each Unit assigned to the Space's ReleaseTarget, the highest-numbered Revision carrying this Tag is bundled at that Revision instead of the Unit's head Revision. A Unit with no matching tagged Revision is left out of the bundle and listed in the Release's SkippedUnits when it has never been released, and refuses the publish when it has. When omitted, each Unit is bundled at its head Revision and publishing creates a Tag named release-<ReleaseNum>, applies it to each bundled Revision, and sets it as the Release's TagID.
+	// TagID Optional Tag ID identifying the tagged Revision to bundle. For each Unit of the Space that is not Unreleasable, the highest-numbered Revision carrying this Tag is bundled at that Revision instead of the Unit's head Revision. A Unit with no matching tagged Revision is left out of the bundle and listed in the Release's SkippedUnits when it has never been released, and refuses the publish when it has. When omitted, each Unit is bundled at its head Revision and publishing creates a Tag named release-<ReleaseNum>, applies it to each bundled Revision, and sets it as the Release's TagID.
 	//
 	// Example: 248df4b7-aa70-47b8-a036-33ac447e668d
 	TagID *openapi_types.UUID `json:"TagID,omitempty" yaml:"TagID,omitempty"`
@@ -6564,7 +5964,7 @@ type Resource struct {
 	// SpaceSlug Slug of the Space this entity belongs to. (readonly)
 	SpaceSlug string `json:"SpaceSlug,omitempty" yaml:"SpaceSlug,omitempty"`
 
-	// TargetID Identifier of the Target the Unit containing this resource is associated with, which defines where the configuration will be applied. Mirrors the Unit's TargetID. (optional)
+	// TargetID Identifier of the Target a Release of the Unit's Space publishes the resource for, which defines where the configuration will be applied: the Unit's TargetID, which is the Space's ReleaseTargetID unless the Unit is Unreleasable. Read from the Space and the Unit. (readonly)
 	//
 	// Example: 248df4b7-aa70-47b8-a036-33ac447e668d
 	TargetID *openapi_types.UUID `json:"TargetID,omitempty" yaml:"TargetID,omitempty"`
@@ -7104,7 +6504,7 @@ type ServiceAccountCreateOrUpdateResponse struct {
 	ServiceAccount *ServiceAccount `json:"ServiceAccount,omitempty" yaml:"ServiceAccount,omitempty"`
 }
 
-// Space The logical container for most entities in ConfigHub. Namespaces triggers, units, targets, workers, and other entities.
+// Space The logical container for most entities in ConfigHub. Namespaces triggers, units, targets, and other entities.
 type Space struct {
 	// Annotations An optional map of Annotation key/value pairs for tools to attach information to entities.
 	Annotations map[string]string `json:"Annotations,omitempty" yaml:"Annotations,omitempty"`
@@ -7265,7 +6665,7 @@ type Space struct {
 	// An example conjunction is:
 	// `CreatedAt >= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.
 	//
-	// Supported attributes for filtering on Trigger: Annotations, Arguments, BackingUnitID, BridgeWorkerID, ChannelID, Clearance, CreatedAt, DeleteGates, Description, Disabled, DisplayName, Event, FunctionName, Guards, Hash, HiddenReason, InvocationID, Labels, OrganizationID, OtherDataSource, Permissions, Protect, Slug, SpaceID, ToolchainType, TriggerID, UnitFilterID, UpdatedAt, UpstreamTriggerID, Validating, Warn, WhereResource, WhereUnit.
+	// Supported attributes for filtering on Trigger: Annotations, Arguments, BackingUnitID, ChannelID, Clearance, CreatedAt, DeleteGates, Description, Disabled, DisplayName, Event, FunctionName, Guards, Hash, HiddenReason, InvocationID, Labels, OrganizationID, OtherDataSource, Permissions, Protect, Slug, SpaceID, ToolchainType, TriggerID, UnitFilterID, UpdatedAt, UpstreamTriggerID, Validating, Warn, WhereResource, WhereUnit.
 	//
 	// The whole string must be query-encoded.
 	WhereTrigger string `json:"WhereTrigger,omitempty" yaml:"WhereTrigger,omitempty"`
@@ -7275,7 +6675,7 @@ type Space struct {
 type SpaceCreateOrUpdateResponse struct {
 	Error *ResponseError `json:"Error,omitempty" yaml:"Error,omitempty"`
 
-	// Space The logical container for most entities in ConfigHub. Namespaces triggers, units, targets, workers, and other entities.
+	// Space The logical container for most entities in ConfigHub. Namespaces triggers, units, targets, and other entities.
 	Space *Space `json:"Space,omitempty" yaml:"Space,omitempty"`
 }
 
@@ -7375,7 +6775,7 @@ type TagCreateOrUpdateResponse struct {
 	Tag *Tag `json:"Tag,omitempty" yaml:"Tag,omitempty"`
 }
 
-// Target Target represents a deployment target in ConfigHub: where configuration is destined. A Space's Releases are published for its release Target and pulled from ConfigHub's OCI registry by a GitOps tool such as Argo CD or Flux. Access to a Target, including a worker's, is granted through its Permissions.
+// Target Target represents a deployment target in ConfigHub: where configuration is destined. A Space's Releases are published for its release Target and pulled from ConfigHub's OCI registry by a GitOps tool such as Argo CD or Flux. Access to a Target is granted through its Permissions.
 type Target struct {
 	// Annotations An optional map of Annotation key/value pairs for tools to attach information to entities.
 	Annotations map[string]string `json:"Annotations,omitempty" yaml:"Annotations,omitempty"`
@@ -7484,7 +6884,7 @@ type Target struct {
 	// An example conjunction is:
 	// `CreatedAt >= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.
 	//
-	// Supported attributes for filtering on Trigger: Annotations, Arguments, BackingUnitID, BridgeWorkerID, ChannelID, Clearance, CreatedAt, DeleteGates, Description, Disabled, DisplayName, Event, FunctionName, Guards, Hash, HiddenReason, InvocationID, Labels, OrganizationID, OtherDataSource, Permissions, Protect, Slug, SpaceID, ToolchainType, TriggerID, UnitFilterID, UpdatedAt, UpstreamTriggerID, Validating, Warn, WhereResource, WhereUnit.
+	// Supported attributes for filtering on Trigger: Annotations, Arguments, BackingUnitID, ChannelID, Clearance, CreatedAt, DeleteGates, Description, Disabled, DisplayName, Event, FunctionName, Guards, Hash, HiddenReason, InvocationID, Labels, OrganizationID, OtherDataSource, Permissions, Protect, Slug, SpaceID, ToolchainType, TriggerID, UnitFilterID, UpdatedAt, UpstreamTriggerID, Validating, Warn, WhereResource, WhereUnit.
 	//
 	// The whole string must be query-encoded.
 	WhereTrigger string `json:"WhereTrigger,omitempty" yaml:"WhereTrigger,omitempty"`
@@ -7494,7 +6894,7 @@ type Target struct {
 type TargetCreateOrUpdateResponse struct {
 	Error *ResponseError `json:"Error,omitempty" yaml:"Error,omitempty"`
 
-	// Target Target represents a deployment target in ConfigHub: where configuration is destined. A Space's Releases are published for its release Target and pulled from ConfigHub's OCI registry by a GitOps tool such as Argo CD or Flux. Access to a Target, including a worker's, is granted through its Permissions.
+	// Target Target represents a deployment target in ConfigHub: where configuration is destined. A Space's Releases are published for its release Target and pulled from ConfigHub's OCI registry by a GitOps tool such as Argo CD or Flux. Access to a Target is granted through its Permissions.
 	Target *Target `json:"Target,omitempty" yaml:"Target,omitempty"`
 }
 
@@ -7517,12 +6917,7 @@ type Trigger struct {
 	// BackingUnitID Example: 248df4b7-aa70-47b8-a036-33ac447e668d
 	BackingUnitID *openapi_types.UUID `json:"BackingUnitID,omitempty" yaml:"BackingUnitID,omitempty"`
 
-	// BridgeWorkerID Unique identifier for a Bridge Worker to execute the function specified by the Trigger. If neither it nor ChannelID is specified, use the builtin function executor.
-	//
-	// Example: 248df4b7-aa70-47b8-a036-33ac447e668d
-	BridgeWorkerID *openapi_types.UUID `json:"BridgeWorkerID,omitempty" yaml:"BridgeWorkerID,omitempty"`
-
-	// ChannelID Unique identifier for a Channel whose client executes the function specified by the Trigger. At most one of BridgeWorkerID and ChannelID is set. A Trigger that references an Invocation takes the Invocation's.
+	// ChannelID Unique identifier for a Channel whose client executes the function specified by the Trigger. If it is not specified, the builtin function executor is used. A Trigger that references an Invocation takes the Invocation's.
 	//
 	// Example: 248df4b7-aa70-47b8-a036-33ac447e668d
 	ChannelID *openapi_types.UUID `json:"ChannelID,omitempty" yaml:"ChannelID,omitempty"`
@@ -7553,9 +6948,6 @@ type Trigger struct {
 
 	// Event Event specifies the type of event that will activate this trigger. Valid values are Mutation and PostClone
 	Event string `json:"Event" yaml:"Event"`
-
-	// FailOpenAfter Duration after which a disconnected BridgeWorker's triggers are treated as fail-open. Can only be set when BridgeWorkerID is set. A Trigger on a Channel fails closed instead: it waits for the Channel's client.
-	FailOpenAfter int `json:"FailOpenAfter,omitempty" yaml:"FailOpenAfter,omitempty"`
 
 	// FunctionName Function name
 	FunctionName string `json:"FunctionName,omitempty" yaml:"FunctionName,omitempty"`
@@ -7726,9 +7118,6 @@ type Unit struct {
 	// HeadRevisionNum Sequence number the head Revision.
 	HeadRevisionNum int64 `json:"HeadRevisionNum,omitempty,omitzero" yaml:"HeadRevisionNum,omitempty"`
 
-	// HeadUnitActionNum Sequence number of the head unit action (queued operation).
-	HeadUnitActionNum int64 `json:"HeadUnitActionNum,omitempty,omitzero" yaml:"HeadUnitActionNum,omitempty"`
-
 	// HeadUnitEventNum Sequence number of the head unit event.
 	HeadUnitEventNum int64 `json:"HeadUnitEventNum,omitempty,omitzero" yaml:"HeadUnitEventNum,omitempty"`
 
@@ -7762,12 +7151,6 @@ type Unit struct {
 	// ProvidedPaths Attribute paths that this Unit provides to downstream Units via NeedsProvides Links. Computed from get-provided and stored on data updates.
 	ProvidedPaths []AttributeInfo `json:"ProvidedPaths,omitempty" yaml:"ProvidedPaths,omitempty"`
 
-	// ProviderType ProviderType says whether and how the Unit is delivered. None keeps it off every Target and out of Releases, ConfigHub marks configuration ConfigHub applies to itself, and OCI or empty means it is published in its Space's Releases.
-	ProviderType string `json:"ProviderType,omitempty" yaml:"ProviderType,omitempty"`
-
-	// Releasable Whether a Release of the Unit's Space publishes the Unit. In a Space with a ReleaseTargetID, a Unit is releasable when its TargetID is that Target. In a Space without one, it is releasable when its ProviderType is OCI or empty, the Units that would be given the Space's ReleaseTargetID when it is set. Derived when the Unit is read. (readonly)
-	Releasable bool `json:"Releasable,omitempty" yaml:"Releasable,omitempty"`
-
 	// Slug Unique URL-safe identifier for the entity.
 	Slug string `json:"Slug" yaml:"Slug"`
 
@@ -7779,7 +7162,7 @@ type Unit struct {
 	// SpaceSlug Slug of the Space this entity belongs to. (readonly)
 	SpaceSlug string `json:"SpaceSlug,omitempty" yaml:"SpaceSlug,omitempty"`
 
-	// TargetID TargetID is the identifier of the target this unit is associated with. This defines where the configuration will be applied. It must be set to a valid Target before the Unit can be Applied, Destroyed, Imported, or Refreshed.
+	// TargetID The Target a Release of the Unit's Space publishes the Unit for: the Space's ReleaseTargetID, or none when the Unit is Unreleasable or the Space has no release Target. Read from the Space; set the Space's ReleaseTargetID or the Unit's Unreleasable to change it. (readonly)
 	//
 	// Example: 248df4b7-aa70-47b8-a036-33ac447e668d
 	TargetID *openapi_types.UUID `json:"TargetID,omitempty" yaml:"TargetID,omitempty"`
@@ -7791,6 +7174,9 @@ type Unit struct {
 	//
 	// Example: 248df4b7-aa70-47b8-a036-33ac447e668d
 	UnitID openapi_types.UUID `json:"UnitID,omitempty,omitzero" yaml:"UnitID,omitempty"`
+
+	// Unreleasable Leaves the Unit out of its Space's Releases, so that it is delivered to no Target. A Unit that is not Unreleasable is published for its Space's release Target, its TargetID. Defaults to false for Kubernetes/YAML Units and to true for Units of every other toolchain, whose configuration is consumed within ConfigHub.
+	Unreleasable bool `json:"Unreleasable,omitempty" yaml:"Unreleasable,omitempty"`
 
 	// UpdatedAt The timestamp when the entity was last updated in "2023-01-01T12:00:00Z" format.
 	//
@@ -7830,99 +7216,6 @@ type Unit struct {
 
 	// Version An entity-specific sequence number used for optimistic concurrency control. The value read must be sent in calls to Update.
 	Version int64 `json:"Version,omitempty" yaml:"Version,omitempty"`
-}
-
-// UnitAction UnitAction is a record of an operation queued for a Worker, such as a function invocation on a unit. Operations are delivered to the worker in creation order; if the worker is disconnected, pending operations are delivered when it reconnects. One or more UnitEvents will correspond to each UnitAction.
-type UnitAction struct {
-	// Action Action is the type of action to be performed by the worker, such as InvokeFunctions or Cancel. UnitActions queued for bridge workers, which have been removed, can carry the actions they performed, such as Apply.
-	Action *ActionType `json:"Action,omitempty" yaml:"Action,omitempty"`
-
-	// BridgeWorkerID BridgeWorkerID is the unique identifier of the worker that will process this operation.
-	//
-	// Example: 248df4b7-aa70-47b8-a036-33ac447e668d
-	BridgeWorkerID openapi_types.UUID `json:"BridgeWorkerID,omitempty,omitzero" yaml:"BridgeWorkerID,omitempty"`
-
-	// CreatedAt The timestamp when the entity was created in "2023-01-01T12:00:00Z" format.
-	//
-	// Example: 2006-01-02T15:04:05Z07:00
-	CreatedAt time.Time `json:"CreatedAt,omitempty,omitzero" yaml:"CreatedAt,omitempty"`
-
-	// Data Data is the result the worker reported for a finished function invocation: its FunctionInvocationResponse, as JSON.
-	Data string `json:"Data,omitempty" yaml:"Data,omitempty"`
-
-	// Dependencies Unused. No longer populated or consulted for delivery; retained for schema compatibility and scheduled for removal.
-	Dependencies []UUID `json:"Dependencies,omitempty" yaml:"Dependencies,omitempty"`
-
-	// DryRun DryRun indicates whether the action is a dry run.
-	DryRun bool `json:"DryRun,omitempty" yaml:"DryRun,omitempty"`
-
-	// ErrorDetails Error details returned by the worker.
-	ErrorDetails []ErrorItem `json:"ErrorDetails,omitempty" yaml:"ErrorDetails,omitempty"`
-
-	// ExtraParams ExtraParams contains additional parameters for the operation in string format.
-	ExtraParams string `json:"ExtraParams,omitempty" yaml:"ExtraParams,omitempty"`
-
-	// OrganizationID OrganizationID is the unique identifier of the organization this operation belongs to.
-	//
-	// Example: 248df4b7-aa70-47b8-a036-33ac447e668d
-	OrganizationID openapi_types.UUID `json:"OrganizationID,omitempty,omitzero" yaml:"OrganizationID,omitempty"`
-
-	// QueuedOperationID QueuedOperationID is the unique identifier for the queued unit action.
-	//
-	// Example: 248df4b7-aa70-47b8-a036-33ac447e668d
-	QueuedOperationID openapi_types.UUID `json:"QueuedOperationID,omitempty,omitzero" yaml:"QueuedOperationID,omitempty"`
-
-	// RevisionNum RevisionNum is the revision number this operation was performed on.
-	RevisionNum int64 `json:"RevisionNum,omitempty" yaml:"RevisionNum,omitempty"`
-
-	// SpaceID SpaceID is the unique identifier of the space of the unit this operation is performed on.
-	//
-	// Example: 248df4b7-aa70-47b8-a036-33ac447e668d
-	SpaceID openapi_types.UUID `json:"SpaceID,omitempty,omitzero" yaml:"SpaceID,omitempty"`
-
-	// Status Status indicates the current status of the unit action. v2 statuses: Initializing (being set up), Pending (waiting), Delivered (sent to worker), Progressing (being processed), Completed (success), Failed (error). v1 compatibility: 'pending' = Pending, 'delivered' = Completed (legacy 'delivered' meant work done).
-	Status UnitActionStatus `json:"Status,omitempty" yaml:"Status,omitempty"`
-
-	// TargetID TargetID is the unique identifier of the target this operation is directed to.
-	//
-	// Example: 248df4b7-aa70-47b8-a036-33ac447e668d
-	TargetID openapi_types.UUID `json:"TargetID,omitempty,omitzero" yaml:"TargetID,omitempty"`
-
-	// UnitActionNum UnitActionNum is the sequence number of this unit action.
-	UnitActionNum int64 `json:"UnitActionNum,omitempty" yaml:"UnitActionNum,omitempty"`
-
-	// UnitID UnitID is the unique identifier of the unit this operation is performed on.
-	//
-	// Example: 248df4b7-aa70-47b8-a036-33ac447e668d
-	UnitID openapi_types.UUID `json:"UnitID,omitempty,omitzero" yaml:"UnitID,omitempty"`
-
-	// UserAgent User-Agent string of the API call.
-	UserAgent string `json:"UserAgent,omitempty" yaml:"UserAgent,omitempty"`
-
-	// UserID UserID of the user the action was performed by.
-	//
-	// Example: 248df4b7-aa70-47b8-a036-33ac447e668d
-	UserID openapi_types.UUID `json:"UserID,omitempty,omitzero" yaml:"UserID,omitempty"`
-
-	// UserIsBot Whether the user who requested the action is a bot user.
-	UserIsBot bool `json:"UserIsBot,omitempty" yaml:"UserIsBot,omitempty"`
-
-	// UserRole Organization-level role of the user who requested the action.
-	UserRole string `json:"UserRole,omitempty" yaml:"UserRole,omitempty"`
-
-	// Version An entity-specific sequence number used for optimistic concurrency control.
-	// The value read must be sent in calls to Update.
-	Version int64 `json:"Version,omitempty" yaml:"Version,omitempty"`
-}
-
-// UnitActionStatus Status indicates the current status of the unit action. v2 statuses: Initializing (being set up), Pending (waiting), Delivered (sent to worker), Progressing (being processed), Completed (success), Failed (error). v1 compatibility: 'pending' = Pending, 'delivered' = Completed (legacy 'delivered' meant work done).
-type UnitActionStatus string
-
-// UnitActionResponse defines model for UnitActionResponse.
-type UnitActionResponse struct {
-	// Action UnitAction is a record of an operation queued for a Worker, such as a function invocation on a unit. Operations are delivered to the worker in creation order; if the worker is disconnected, pending operations are delivered when it reconnects. One or more UnitEvents will correspond to each UnitAction.
-	Action *QueuedOperation `json:"Action,omitempty" yaml:"Action,omitempty"`
-	Error  *ResponseError   `json:"Error,omitempty" yaml:"Error,omitempty"`
 }
 
 // UnitConflictSelector defines model for UnitConflictSelector.
@@ -8040,24 +7333,16 @@ type UnitDiff struct {
 	UnitID openapi_types.UUID `json:"UnitID,omitempty,omitzero" yaml:"UnitID,omitempty"`
 }
 
-// UnitEvent UnitEvent records the outcome of a UnitAction on a Unit: the result a worker reported for an
-// operation queued for it, such as a function invocation on the Unit completing or failing, or a
-// cancellation being acknowledged, and the failure of an operation that could not be delivered to
-// its worker. Each event records the action, its result and status, any message, and when the
-// operation started and ended. UnitEvents are numbered per Unit by UnitEventNum.
+// UnitEvent UnitEvent is a historical record of the outcome of an operation on a
+// Unit, such as a function invocation completing or failing, or a cancellation being acknowledged.
+// Each event records the action, its result and status, any message, and when the operation started
+// and ended. UnitEvents are numbered per Unit by UnitEventNum.
 //
-// UnitEvents do not report on live systems. Configuration reaches live systems through Releases,
-// which GitOps tools such as Argo CD and Flux pull. Events written by bridge workers, which applied,
-// destroyed, and refreshed Units in live systems and have been removed, can remain in a Unit's
-// history, but are no longer written.
+// The workers that performed these operations have been removed, so no new UnitEvents are written;
+// existing ones remain in a Unit's history.
 type UnitEvent struct {
-	// Action Action is the action of the UnitAction this event reports on, such as InvokeFunctions or Cancel. Events written by bridge workers, which have been removed, can carry the actions they performed, such as Apply.
+	// Action Action is the operation the event reports on, such as InvokeFunctions, Cancel, or Apply.
 	Action *ActionType `json:"Action,omitempty" yaml:"Action,omitempty"`
-
-	// BridgeWorkerID BridgeWorkerID is the ID of the worker the UnitAction was queued for: the worker that reported the result.
-	//
-	// Example: 248df4b7-aa70-47b8-a036-33ac447e668d
-	BridgeWorkerID *openapi_types.UUID `json:"BridgeWorkerID,omitempty" yaml:"BridgeWorkerID,omitempty"`
 
 	// CreatedAt The timestamp when the entity was created in "2023-01-01T12:00:00Z" format.
 	//
@@ -8070,7 +7355,7 @@ type UnitEvent struct {
 	// HiddenReason The reason the entity is hidden, if it is. A hidden entity is left out of List and Search results, and of what bulk operations act on, unless the include_hidden parameter names its reason or is *, or the where parameter names the entity by Slug or ID. ConfigHub/YAML Units are created hidden with the reason BackingUnit unless given another.
 	HiddenReason string `json:"HiddenReason,omitempty" yaml:"HiddenReason,omitempty"`
 
-	// Message Message is the message reported with the result, by the worker or, for an operation that failed before reaching it, by ConfigHub.
+	// Message Message is the message reported with the result.
 	Message string `json:"Message,omitempty" yaml:"Message,omitempty"`
 
 	// OrganizationID Unique identifier for an Organization.
@@ -8078,12 +7363,7 @@ type UnitEvent struct {
 	// Example: 248df4b7-aa70-47b8-a036-33ac447e668d
 	OrganizationID openapi_types.UUID `json:"OrganizationID,omitempty,omitzero" yaml:"OrganizationID,omitempty"`
 
-	// QueuedOperationID QueuedOperationID is the unique identifier of the UnitAction this event reports on.
-	//
-	// Example: 248df4b7-aa70-47b8-a036-33ac447e668d
-	QueuedOperationID openapi_types.UUID `json:"QueuedOperationID,omitempty,omitzero" yaml:"QueuedOperationID,omitempty"`
-
-	// Result Result is what the action produced: FunctionInvocationCompleted or FunctionInvocationFailed for a function invocation, and None otherwise. Events written by bridge workers, which have been removed, can carry the results they reported.
+	// Result Result is what the operation produced: FunctionInvocationCompleted or FunctionInvocationFailed for a function invocation, and None otherwise.
 	Result *ActionResultType `json:"Result,omitempty" yaml:"Result,omitempty"`
 
 	// RevisionNum RevisionNum is the number of the Unit's Revision the action was performed on.
@@ -8274,7 +7554,7 @@ type UploadComponentRequest struct {
 	// SpaceLabels Merged over UploadRequest.SpaceLabels.
 	SpaceLabels map[string]string `json:"SpaceLabels,omitempty" yaml:"SpaceLabels,omitempty"`
 
-	// TargetID Applies to the component's Spaces. New Units are created on it, except AppConfig Units.
+	// TargetID Becomes the release Target of the component's Spaces, to which a Release of each Space publishes its Units that are not Unreleasable.
 	//
 	// Example: 248df4b7-aa70-47b8-a036-33ac447e668d
 	TargetID        *openapi_types.UUID `json:"TargetID,omitempty" yaml:"TargetID,omitempty"`
@@ -8478,7 +7758,31 @@ type UploadSpaceResult struct {
 	// Example: 248df4b7-aa70-47b8-a036-33ac447e668d
 	SpaceID   *openapi_types.UUID `json:"SpaceID,omitempty" yaml:"SpaceID,omitempty"`
 	SpaceSlug string              `json:"SpaceSlug,omitempty" yaml:"SpaceSlug,omitempty"`
-	Units     []UploadUnitResult  `json:"Units,omitempty" yaml:"Units,omitempty"`
+
+	// Triggers The Triggers the uploaded configuration needs: one keeping a hash of each ConfigMap that pod templates carry hash annotations for, and one pruning the immutable ConfigMaps it renders.
+	Triggers []UploadTriggerResult `json:"Triggers,omitempty" yaml:"Triggers,omitempty"`
+	Units    []UploadUnitResult    `json:"Units,omitempty" yaml:"Units,omitempty"`
+}
+
+// UploadTriggerResult defines model for UploadTriggerResult.
+type UploadTriggerResult struct {
+	// Action Create (in the Space, which runs the Triggers defined in it), Unchanged (the Space already runs a Mutation Trigger with the function, or one with the slug is in the Space), or Missing (the Space selects its Triggers from elsewhere, and none it selects runs the function).
+	Action string         `json:"Action,omitempty" yaml:"Action,omitempty"`
+	Error  *ResponseError `json:"Error,omitempty" yaml:"Error,omitempty"`
+
+	// Function The function the Trigger runs.
+	Function string `json:"Function,omitempty" yaml:"Function,omitempty"`
+
+	// Slug The Trigger's slug: the one upload creates, or, when the Space already runs a Trigger with the function, that Trigger's.
+	Slug string `json:"Slug,omitempty" yaml:"Slug,omitempty"`
+
+	// SpaceSlug The Space the Trigger is in. Absent when Missing.
+	SpaceSlug string `json:"SpaceSlug,omitempty" yaml:"SpaceSlug,omitempty"`
+
+	// TriggerID Absent for a Trigger a dry run would create, or a Missing one.
+	//
+	// Example: 248df4b7-aa70-47b8-a036-33ac447e668d
+	TriggerID *openapi_types.UUID `json:"TriggerID,omitempty" yaml:"TriggerID,omitempty"`
 }
 
 // UploadUnitRef defines model for UploadUnitRef.
@@ -8820,15 +8124,6 @@ type WithheldGuard struct {
 
 	// Value The guard value
 	Value string `json:"Value,omitempty" yaml:"Value,omitempty"`
-}
-
-// WorkerInfo defines model for WorkerInfo.
-type WorkerInfo struct {
-	// FunctionWorkerInfo FunctionWorker capabilities
-	FunctionWorkerInfo *FunctionWorkerInfo `json:"FunctionWorkerInfo,omitempty" yaml:"FunctionWorkerInfo,omitempty"`
-
-	// IsServerWorker If true, this is a server-hosted worker: an identity that no worker process connects as, and that runs no functions. It cannot be changed after the worker is created.
-	IsServerWorker bool `json:"IsServerWorker,omitempty" yaml:"IsServerWorker,omitempty"`
 }
 
 // BulkDeleteComponentsParams defines parameters for BulkDeleteComponents.
@@ -9718,7 +9013,7 @@ type BulkCreateSpacesParams struct {
 	// An example conjunction is:
 	// `CreatedAt >= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.
 	//
-	// Supported attributes for filtering on Unit: Annotations, ApplyGates, ApplyWarnings, ChangeSetID, Conflicts, CreatedAt, DataHash, DeleteGates, DestroyGates, DisplayName, FromLinkID, HeadRevisionID, HeadRevisionNum, HeadUnitActionNum, HeadUnitEventNum, HiddenReason, Labels, LastChangeDescription, LastReleasedRevisionNum, LinkFindings, NeededPaths, OrganizationID, Permissions, ProvidedPaths, ProviderType, Releasable, Slug, SpaceID, TargetID, ToolchainType, UnitID, UpdatedAt, UpstreamRevisionNum, UpstreamSpaceID, UpstreamUnitID, ValidationErrors, ValidationResults, ValidationTriggerIDs, ValidationWarnings, ValueTriggerIDs, Values.
+	// Supported attributes for filtering on Unit: Annotations, ApplyGates, ApplyWarnings, ChangeSetID, Conflicts, CreatedAt, DataHash, DeleteGates, DestroyGates, DisplayName, FromLinkID, HeadRevisionID, HeadRevisionNum, HeadUnitEventNum, HiddenReason, Labels, LastChangeDescription, LastReleasedRevisionNum, LinkFindings, NeededPaths, OrganizationID, Permissions, ProvidedPaths, Slug, SpaceID, TargetID, ToolchainType, UnitID, Unreleasable, UpdatedAt, UpstreamRevisionNum, UpstreamSpaceID, UpstreamUnitID, ValidationErrors, ValidationResults, ValidationTriggerIDs, ValidationWarnings, ValueTriggerIDs, Values.
 	//
 	// The Units to create entities from, with from_backing_units.
 	//
@@ -10481,7 +9776,7 @@ type BulkCreateAttributesParams struct {
 	// An example conjunction is:
 	// `CreatedAt >= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.
 	//
-	// Supported attributes for filtering on Unit: Annotations, ApplyGates, ApplyWarnings, ChangeSetID, Conflicts, CreatedAt, DataHash, DeleteGates, DestroyGates, DisplayName, FromLinkID, HeadRevisionID, HeadRevisionNum, HeadUnitActionNum, HeadUnitEventNum, HiddenReason, Labels, LastChangeDescription, LastReleasedRevisionNum, LinkFindings, NeededPaths, OrganizationID, Permissions, ProvidedPaths, ProviderType, Releasable, Slug, SpaceID, TargetID, ToolchainType, UnitID, UpdatedAt, UpstreamRevisionNum, UpstreamSpaceID, UpstreamUnitID, ValidationErrors, ValidationResults, ValidationTriggerIDs, ValidationWarnings, ValueTriggerIDs, Values.
+	// Supported attributes for filtering on Unit: Annotations, ApplyGates, ApplyWarnings, ChangeSetID, Conflicts, CreatedAt, DataHash, DeleteGates, DestroyGates, DisplayName, FromLinkID, HeadRevisionID, HeadRevisionNum, HeadUnitEventNum, HiddenReason, Labels, LastChangeDescription, LastReleasedRevisionNum, LinkFindings, NeededPaths, OrganizationID, Permissions, ProvidedPaths, Slug, SpaceID, TargetID, ToolchainType, UnitID, Unreleasable, UpdatedAt, UpstreamRevisionNum, UpstreamSpaceID, UpstreamUnitID, ValidationErrors, ValidationResults, ValidationTriggerIDs, ValidationWarnings, ValueTriggerIDs, Values.
 	//
 	// The Units to create entities from, with from_backing_units.
 	//
@@ -10590,481 +9885,6 @@ type BulkMoveAttributesParams struct {
 	// DryRun Report what the move would do, and what would stop it, without moving anything
 	DryRun *bool `form:"dry_run,omitempty" json:"dry_run,omitempty" yaml:"dry_run,omitempty"`
 }
-
-// BulkDeleteBridgeWorkersParams defines parameters for BulkDeleteBridgeWorkers.
-type BulkDeleteBridgeWorkersParams struct {
-	// Where The specified string is an expression for the purpose of filtering
-	// the list of BridgeWorkers returned. The expression syntax was inspired by SQL.
-	// It supports conjunctions using `AND` of relational expressions of the form *attribute*
-	// *operator* *attribute_or_literal*. The attribute names are case-sensitive and PascalCase,
-	// as in the JSON encoding.
-	// Strings support the following operators: `<`, `>`, `<=`, `>=`, `=`, `!=`, `LIKE`, `NOT LIKE`, `ILIKE`, `~~`, `!~~`, `~`, `~*`, `!~`, `!~*`, `IN`, `NOT IN`.
-	// String pattern operators: `LIKE` and `~~` for pattern matching with `%` and `_` wildcards,
-	// `ILIKE` for case-insensitive pattern matching, `NOT LIKE` and `!~~` for negated pattern matching.
-	// String regex operators: `~` for regex matching, `~*` for case-insensitive regex,
-	// `!~` and `!~*` for regex not matching (case-sensitive and insensitive).
-	// Integers support the following operators: `<`, `>`, `<=`, `>=`, `=`, `!=`, `IN`, `NOT IN`.
-	// UUIDs and boolean attributes support equality and inequality only.
-	// UUID and time literals must be quoted as string literals.
-	// String literals are quoted with single quotes, such as `'string'`.
-	// Time literals use the same form as when serialized as JSON,
-	// such as: `CreatedAt > '2025-02-18T23:16:34'`.
-	// Integer and boolean literals are also supported for attributes of those types.
-	// Arrays support the `?` operator to to match any element of the array,
-	// as in `FromLinkID ? '7c61626f-ddbe-41af-93f6-b69f4ab6d308'`.
-	// Arrays can perform LEN() to check for length, as in `LEN(FromLinkID) > 0`.
-	// An attribute naming a list of other entities can be filtered on their attributes with a `*` segment,
-	// as in `FromLink.*.Slug = 'upgrade-app'`, which holds when any element satisfies it.
-	// Without the `*` such a reference is an error, since it names no single value to compare.
-	// Map support the dot notation to specify a particular map key, as in `Labels.tier = 'Backend'`.
-	// Maps support `IS NULL` and `IS NOT NULL` with dot notation to check for key absence or presence,
-	// as in `Labels.tier IS NULL` (key doesn't exist) or `Labels.tier IS NOT NULL` (key exists).
-	// Comparison results can be tested with `IS TRUE`, `IS FALSE`, `IS NOT TRUE`, and `IS NOT FALSE`.
-	// These are useful for nullable columns: `MergeSourceID = '<uuid>' IS NOT FALSE` matches rows where MergeSourceID equals the value OR is NULL.
-	// The `IN` and `NOT IN` operators accept a comma-separated list of values in parentheses,
-	// such as `Slug IN ('slugone', 'slugtwo')` or `Labels.environment IN ('prod', 'staging')`.
-	// Conjunctions are supported using the `AND` operator.
-	// An example conjunction is:
-	// `CreatedAt >= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.
-	//
-	// Supported attributes for filtering on BridgeWorker: Annotations, BridgeWorkerID, Condition, CreatedAt, DisplayName, HiddenReason, IPAddress, Labels, LastMessage, LastSeenAt, OrgRole, OrganizationID, Permissions, ProvidedInfo, Slug, SpaceID, UpdatedAt, UserID.
-	//
-	// The whole string must be query-encoded.
-	Where *string `form:"where,omitempty" json:"where,omitempty" yaml:"where,omitempty"`
-
-	// Filter UUID of a Filter entity to apply to the BridgeWorker list.
-	//
-	// The Filter must be in the same Organization as the user credentials.
-	//
-	// The Filter's From field must match the entity type being filtered (BridgeWorker).
-	//
-	// For Space-resident entities, if the Filter has a FromSpaceID, it must match the operation's SpaceID.
-	//
-	// The Filter's Where clause will be combined with any explicit 'where' parameter using AND logic.
-	//
-	// If both 'filter' and 'where' parameters are specified, they are combined with AND logic.
-	Filter *string `form:"filter,omitempty" json:"filter,omitempty" yaml:"filter,omitempty"`
-
-	// Contains Free text search that approximately matches the specified string against string fields and map keys/values.
-	//
-	// The search is case-insensitive and uses pattern matching to find entities containing the text.
-	//
-	// Searchable string fields include attributes like Slug, DisplayName, and string-typed custom fields.
-	//
-	// For map fields (like Labels and Annotations), the search matches both map keys and values.
-	//
-	// The search uses OR logic across all searchable fields, so matching any field will return the entity.
-	//
-	// If both 'where' and 'contains' parameters are specified, they are combined with AND logic.
-	//
-	// Searchable fields for BridgeWorker include string and map-type attributes from the queryable attributes list.
-	//
-	// The whole string must be query-encoded.
-	Contains *string `form:"contains,omitempty" json:"contains,omitempty" yaml:"contains,omitempty"`
-
-	// IncludeHidden Hidden BridgeWorker entities, those with a HiddenReason, are left out of the results, or of what a bulk operation acts on, unless this names their HiddenReason.
-	//
-	// It is a comma-separated list of HiddenReasons, or `*` for all of them.
-	//
-	// A where clause naming the entities, by their Slug or ID with `=` or `IN`, or naming HiddenReason at all, also returns hidden entities it selects.
-	//
-	// ConfigHub/YAML Units, which hold the configuration of entities, are hidden with the HiddenReason `BackingUnit`.
-	IncludeHidden *string `form:"include_hidden,omitempty" json:"include_hidden,omitempty" yaml:"include_hidden,omitempty"`
-
-	// Include Include clause for expanding related entities in the response for BridgeWorker.
-	// The attribute names are case-sensitive, PascalCase, and
-	// expected in a comma-separated list format as in the JSON encoding.
-	//
-	// Supported attributes for BridgeWorker are OrganizationID, Permissions, SpaceID.
-	//
-	// The whole string must be query-encoded.
-	Include *string `form:"include,omitempty" json:"include,omitempty" yaml:"include,omitempty"`
-
-	// Limit Maximum number of BridgeWorker entities to act on, in ID order. A request that names limit or continue also stops when it runs short of time, and returns a ConfigHub-Continue header to pass as the continue parameter of the next request; keep sending requests until a response has none. If neither is specified, the request acts on every selected entity.
-	Limit *int `form:"limit,omitempty" json:"limit,omitempty" yaml:"limit,omitempty"`
-
-	// Continue The token from the ConfigHub-Continue header of the previous request, to act on the BridgeWorker entities after the last one it acted on. The request's other parameters, except limit, must be the same as those of the request that returned the token.
-	Continue *string `form:"continue,omitempty" json:"continue,omitempty" yaml:"continue,omitempty"`
-
-	// Detach If true, remove the references to the deleted entities from entities the request does not delete, instead of refusing the delete while any remain. References that cannot be removed still refuse it. For a Space, applies to everything the recursive delete removes.
-	Detach *bool `form:"detach,omitempty" json:"detach,omitempty" yaml:"detach,omitempty"`
-}
-
-// ListAllBridgeWorkersParams defines parameters for ListAllBridgeWorkers.
-type ListAllBridgeWorkersParams struct {
-	// Where The specified string is an expression for the purpose of filtering
-	// the list of BridgeWorkers returned. The expression syntax was inspired by SQL.
-	// It supports conjunctions using `AND` of relational expressions of the form *attribute*
-	// *operator* *attribute_or_literal*. The attribute names are case-sensitive and PascalCase,
-	// as in the JSON encoding.
-	// Strings support the following operators: `<`, `>`, `<=`, `>=`, `=`, `!=`, `LIKE`, `NOT LIKE`, `ILIKE`, `~~`, `!~~`, `~`, `~*`, `!~`, `!~*`, `IN`, `NOT IN`.
-	// String pattern operators: `LIKE` and `~~` for pattern matching with `%` and `_` wildcards,
-	// `ILIKE` for case-insensitive pattern matching, `NOT LIKE` and `!~~` for negated pattern matching.
-	// String regex operators: `~` for regex matching, `~*` for case-insensitive regex,
-	// `!~` and `!~*` for regex not matching (case-sensitive and insensitive).
-	// Integers support the following operators: `<`, `>`, `<=`, `>=`, `=`, `!=`, `IN`, `NOT IN`.
-	// UUIDs and boolean attributes support equality and inequality only.
-	// UUID and time literals must be quoted as string literals.
-	// String literals are quoted with single quotes, such as `'string'`.
-	// Time literals use the same form as when serialized as JSON,
-	// such as: `CreatedAt > '2025-02-18T23:16:34'`.
-	// Integer and boolean literals are also supported for attributes of those types.
-	// Arrays support the `?` operator to to match any element of the array,
-	// as in `FromLinkID ? '7c61626f-ddbe-41af-93f6-b69f4ab6d308'`.
-	// Arrays can perform LEN() to check for length, as in `LEN(FromLinkID) > 0`.
-	// An attribute naming a list of other entities can be filtered on their attributes with a `*` segment,
-	// as in `FromLink.*.Slug = 'upgrade-app'`, which holds when any element satisfies it.
-	// Without the `*` such a reference is an error, since it names no single value to compare.
-	// Map support the dot notation to specify a particular map key, as in `Labels.tier = 'Backend'`.
-	// Maps support `IS NULL` and `IS NOT NULL` with dot notation to check for key absence or presence,
-	// as in `Labels.tier IS NULL` (key doesn't exist) or `Labels.tier IS NOT NULL` (key exists).
-	// Comparison results can be tested with `IS TRUE`, `IS FALSE`, `IS NOT TRUE`, and `IS NOT FALSE`.
-	// These are useful for nullable columns: `MergeSourceID = '<uuid>' IS NOT FALSE` matches rows where MergeSourceID equals the value OR is NULL.
-	// The `IN` and `NOT IN` operators accept a comma-separated list of values in parentheses,
-	// such as `Slug IN ('slugone', 'slugtwo')` or `Labels.environment IN ('prod', 'staging')`.
-	// Conjunctions are supported using the `AND` operator.
-	// An example conjunction is:
-	// `CreatedAt >= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.
-	//
-	// Supported attributes for filtering on BridgeWorker: Annotations, BridgeWorkerID, Condition, CreatedAt, DisplayName, HiddenReason, IPAddress, Labels, LastMessage, LastSeenAt, OrgRole, OrganizationID, Permissions, ProvidedInfo, Slug, SpaceID, UpdatedAt, UserID.
-	//
-	// The whole string must be query-encoded.
-	Where *string `form:"where,omitempty" json:"where,omitempty" yaml:"where,omitempty"`
-
-	// Filter UUID of a Filter entity to apply to the BridgeWorker list.
-	//
-	// The Filter must be in the same Organization as the user credentials.
-	//
-	// The Filter's From field must match the entity type being filtered (BridgeWorker).
-	//
-	// For Space-resident entities, if the Filter has a FromSpaceID, it must match the operation's SpaceID.
-	//
-	// The Filter's Where clause will be combined with any explicit 'where' parameter using AND logic.
-	//
-	// If both 'filter' and 'where' parameters are specified, they are combined with AND logic.
-	Filter *string `form:"filter,omitempty" json:"filter,omitempty" yaml:"filter,omitempty"`
-
-	// Contains Free text search that approximately matches the specified string against string fields and map keys/values.
-	//
-	// The search is case-insensitive and uses pattern matching to find entities containing the text.
-	//
-	// Searchable string fields include attributes like Slug, DisplayName, and string-typed custom fields.
-	//
-	// For map fields (like Labels and Annotations), the search matches both map keys and values.
-	//
-	// The search uses OR logic across all searchable fields, so matching any field will return the entity.
-	//
-	// If both 'where' and 'contains' parameters are specified, they are combined with AND logic.
-	//
-	// Searchable fields for BridgeWorker include string and map-type attributes from the queryable attributes list.
-	//
-	// The whole string must be query-encoded.
-	Contains *string `form:"contains,omitempty" json:"contains,omitempty" yaml:"contains,omitempty"`
-
-	// Include Include clause for expanding related entities in the response for BridgeWorker.
-	// The attribute names are case-sensitive, PascalCase, and
-	// expected in a comma-separated list format as in the JSON encoding.
-	//
-	// Supported attributes for BridgeWorker are OrganizationID, Permissions, SpaceID.
-	//
-	// The whole string must be query-encoded.
-	Include *string `form:"include,omitempty" json:"include,omitempty" yaml:"include,omitempty"`
-
-	// Select Select clause for specifying which fields to include in the response for BridgeWorker.
-	// The attribute names are case-sensitive, PascalCase, and
-	// expected in a comma-separated list format as in the JSON encoding.
-	// If not specified, all fields are returned.
-	// Entity and parent IDs (like OrganizationID, SpaceID, BridgeWorkerID) and Slug are always returned regardless of the select parameter.
-	// Fields used in where and contains filters, fields named by order_by, and fields read by the columns of the View named by view are also automatically included.
-	// Example: 'DisplayName,CreatedAt,Labels' will return only those fields plus the required ID and Slug fields.
-	// The whole string must be query-encoded.
-	Select *string `form:"select,omitempty" json:"select,omitempty" yaml:"select,omitempty"`
-
-	// WherePermission Only return BridgeWorker entities on which the caller has this permission, as well as View, which every entity listed needs.
-	//
-	// A list made to choose an entity to act on can name the permission the action needs, such as Edit to change it or Use to refer to it from another entity, so that it leaves out the entities the action would be refused on.
-	//
-	// Supported values: Manage, Edit, Use, View, ManageChildren, EditChildren, UseChildren, ViewChildren, CreateChildren, ApproveChildren, TargetEditChildren, TargetViewChildren.
-	WherePermission *ListAllBridgeWorkersParamsWherePermission `form:"where_permission,omitempty" json:"where_permission,omitempty" yaml:"where_permission,omitempty"`
-
-	// IncludeHidden Hidden BridgeWorker entities, those with a HiddenReason, are left out of the results, or of what a bulk operation acts on, unless this names their HiddenReason.
-	//
-	// It is a comma-separated list of HiddenReasons, or `*` for all of them.
-	//
-	// A where clause naming the entities, by their Slug or ID with `=` or `IN`, or naming HiddenReason at all, also returns hidden entities it selects.
-	//
-	// ConfigHub/YAML Units, which hold the configuration of entities, are hidden with the HiddenReason `BackingUnit`.
-	IncludeHidden *string `form:"include_hidden,omitempty" json:"include_hidden,omitempty" yaml:"include_hidden,omitempty"`
-
-	// View UUID of a View whose columns to compute for each BridgeWorker, returned as ViewColumns.
-	//
-	// The View must be in the same Organization as the user credentials, and be a View of BridgeWorker: its Of, or the From of its Filter, must be BridgeWorker.
-	//
-	// If the View has a Filter, the Filter selects the entities as the filter parameter does, so the two may not both be specified.
-	//
-	// The related entities and fields the View's columns read are included and selected automatically, so neither include nor select has to name them.
-	View *string `form:"view,omitempty" json:"view,omitempty" yaml:"view,omitempty"`
-
-	// Limit Maximum number of BridgeWorker entities to return. If not specified, all matching entities are returned. Values greater than 1000 are rejected with 400. When there may be more entities, the response has a ConfigHub-Continue header to pass as the continue parameter of the next request.
-	Limit *int `form:"limit,omitempty" json:"limit,omitempty" yaml:"limit,omitempty"`
-
-	// OrderBy Comma-separated list of fields to sort BridgeWorker results by, each in the form 'ASC|DESC:FieldName' or just 'FieldName'.
-	//
-	// Field names are case-sensitive and PascalCase, as in the JSON encoding. Sort direction defaults to ASC when the 'DIRECTION:' prefix is omitted.
-	//
-	// Supported attributes for ordering BridgeWorker: BridgeWorkerID, Condition, CreatedAt, DisplayName, HiddenReason, IPAddress, LastMessage, LastSeenAt, OrgRole, OrganizationID, Slug, SpaceID, UpdatedAt, UserID.
-	//
-	// Example: 'DESC:CreatedAt' or 'DisplayName,DESC:CreatedAt'.
-	//
-	// Results are ordered by the BridgeWorker's ID after the fields named, and by the ID alone if none are.
-	//
-	// The whole string must be query-encoded.
-	OrderBy *string `form:"order_by,omitempty" json:"order_by,omitempty" yaml:"order_by,omitempty"`
-
-	// Continue The token from the ConfigHub-Continue header of the previous page, to return the BridgeWorker entities after it.
-	//
-	// The request's other parameters, except limit, must be the same as those of the request that returned the token.
-	//
-	// Keep reading until a response has no such header: a page can hold fewer entities than the limit, or none, and still be followed by more.
-	Continue *string `form:"continue,omitempty" json:"continue,omitempty" yaml:"continue,omitempty"`
-
-	// Summary Include summary information in the response
-	Summary *bool `form:"summary,omitempty" json:"summary,omitempty" yaml:"summary,omitempty"`
-}
-
-// ListAllBridgeWorkersParamsWherePermission defines parameters for ListAllBridgeWorkers.
-type ListAllBridgeWorkersParamsWherePermission string
-
-// BulkPatchBridgeWorkersApplicationMergePatchPlusJSONBody defines parameters for BulkPatchBridgeWorkers.
-type BulkPatchBridgeWorkersApplicationMergePatchPlusJSONBody struct {
-	// Annotations An optional map of Annotation key/value pairs for tools to attach information to entities.
-	Annotations *map[string]*string `json:"Annotations,omitempty" yaml:"Annotations,omitempty"`
-
-	// DeleteGates An optional set of gates that, if any is present, will block deletion
-	DeleteGates *map[string]*bool `json:"DeleteGates,omitempty" yaml:"DeleteGates,omitempty"`
-
-	// DisplayName Friendly name for the entity.
-	DisplayName *string `json:"DisplayName,omitempty" yaml:"DisplayName,omitempty"`
-
-	// HiddenReason The reason the entity is hidden, if it is. A hidden entity is left out of List and Search results, and of what bulk operations act on, unless the include_hidden parameter names its reason or is *, or the where parameter names the entity by Slug or ID. ConfigHub/YAML Units are created hidden with the reason BackingUnit unless given another.
-	HiddenReason *string `json:"HiddenReason,omitempty" yaml:"HiddenReason,omitempty"`
-
-	// Labels An optional map of Label key/value pairs to specify identifying attributes of entities for the purpose of grouping and filtering them.
-	Labels       *map[string]*string                 `json:"Labels,omitempty" yaml:"Labels,omitempty"`
-	OrgRole      *string                             `json:"OrgRole,omitempty" yaml:"OrgRole,omitempty"`
-	Permissions  *map[string]*map[string]interface{} `json:"Permissions,omitempty" yaml:"Permissions,omitempty"`
-	ProvidedInfo *map[string]interface{}             `json:"ProvidedInfo,omitempty" yaml:"ProvidedInfo,omitempty"`
-
-	// Slug Unique URL-safe identifier for the entity.
-	Slug *string `json:"Slug,omitempty" yaml:"Slug,omitempty"`
-
-	// Version An entity-specific sequence number used for optimistic concurrency control. The value read must be sent in calls to Update.
-	Version *int `json:"Version,omitempty" yaml:"Version,omitempty"`
-}
-
-// BulkPatchBridgeWorkersParams defines parameters for BulkPatchBridgeWorkers.
-type BulkPatchBridgeWorkersParams struct {
-	// Where The specified string is an expression for the purpose of filtering
-	// the list of BridgeWorkers returned. The expression syntax was inspired by SQL.
-	// It supports conjunctions using `AND` of relational expressions of the form *attribute*
-	// *operator* *attribute_or_literal*. The attribute names are case-sensitive and PascalCase,
-	// as in the JSON encoding.
-	// Strings support the following operators: `<`, `>`, `<=`, `>=`, `=`, `!=`, `LIKE`, `NOT LIKE`, `ILIKE`, `~~`, `!~~`, `~`, `~*`, `!~`, `!~*`, `IN`, `NOT IN`.
-	// String pattern operators: `LIKE` and `~~` for pattern matching with `%` and `_` wildcards,
-	// `ILIKE` for case-insensitive pattern matching, `NOT LIKE` and `!~~` for negated pattern matching.
-	// String regex operators: `~` for regex matching, `~*` for case-insensitive regex,
-	// `!~` and `!~*` for regex not matching (case-sensitive and insensitive).
-	// Integers support the following operators: `<`, `>`, `<=`, `>=`, `=`, `!=`, `IN`, `NOT IN`.
-	// UUIDs and boolean attributes support equality and inequality only.
-	// UUID and time literals must be quoted as string literals.
-	// String literals are quoted with single quotes, such as `'string'`.
-	// Time literals use the same form as when serialized as JSON,
-	// such as: `CreatedAt > '2025-02-18T23:16:34'`.
-	// Integer and boolean literals are also supported for attributes of those types.
-	// Arrays support the `?` operator to to match any element of the array,
-	// as in `FromLinkID ? '7c61626f-ddbe-41af-93f6-b69f4ab6d308'`.
-	// Arrays can perform LEN() to check for length, as in `LEN(FromLinkID) > 0`.
-	// An attribute naming a list of other entities can be filtered on their attributes with a `*` segment,
-	// as in `FromLink.*.Slug = 'upgrade-app'`, which holds when any element satisfies it.
-	// Without the `*` such a reference is an error, since it names no single value to compare.
-	// Map support the dot notation to specify a particular map key, as in `Labels.tier = 'Backend'`.
-	// Maps support `IS NULL` and `IS NOT NULL` with dot notation to check for key absence or presence,
-	// as in `Labels.tier IS NULL` (key doesn't exist) or `Labels.tier IS NOT NULL` (key exists).
-	// Comparison results can be tested with `IS TRUE`, `IS FALSE`, `IS NOT TRUE`, and `IS NOT FALSE`.
-	// These are useful for nullable columns: `MergeSourceID = '<uuid>' IS NOT FALSE` matches rows where MergeSourceID equals the value OR is NULL.
-	// The `IN` and `NOT IN` operators accept a comma-separated list of values in parentheses,
-	// such as `Slug IN ('slugone', 'slugtwo')` or `Labels.environment IN ('prod', 'staging')`.
-	// Conjunctions are supported using the `AND` operator.
-	// An example conjunction is:
-	// `CreatedAt >= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.
-	//
-	// Supported attributes for filtering on BridgeWorker: Annotations, BridgeWorkerID, Condition, CreatedAt, DisplayName, HiddenReason, IPAddress, Labels, LastMessage, LastSeenAt, OrgRole, OrganizationID, Permissions, ProvidedInfo, Slug, SpaceID, UpdatedAt, UserID.
-	//
-	// The whole string must be query-encoded.
-	Where *string `form:"where,omitempty" json:"where,omitempty" yaml:"where,omitempty"`
-
-	// Filter UUID of a Filter entity to apply to the BridgeWorker list.
-	//
-	// The Filter must be in the same Organization as the user credentials.
-	//
-	// The Filter's From field must match the entity type being filtered (BridgeWorker).
-	//
-	// For Space-resident entities, if the Filter has a FromSpaceID, it must match the operation's SpaceID.
-	//
-	// The Filter's Where clause will be combined with any explicit 'where' parameter using AND logic.
-	//
-	// If both 'filter' and 'where' parameters are specified, they are combined with AND logic.
-	Filter *string `form:"filter,omitempty" json:"filter,omitempty" yaml:"filter,omitempty"`
-
-	// Contains Free text search that approximately matches the specified string against string fields and map keys/values.
-	//
-	// The search is case-insensitive and uses pattern matching to find entities containing the text.
-	//
-	// Searchable string fields include attributes like Slug, DisplayName, and string-typed custom fields.
-	//
-	// For map fields (like Labels and Annotations), the search matches both map keys and values.
-	//
-	// The search uses OR logic across all searchable fields, so matching any field will return the entity.
-	//
-	// If both 'where' and 'contains' parameters are specified, they are combined with AND logic.
-	//
-	// Searchable fields for BridgeWorker include string and map-type attributes from the queryable attributes list.
-	//
-	// The whole string must be query-encoded.
-	Contains *string `form:"contains,omitempty" json:"contains,omitempty" yaml:"contains,omitempty"`
-
-	// IncludeHidden Hidden BridgeWorker entities, those with a HiddenReason, are left out of the results, or of what a bulk operation acts on, unless this names their HiddenReason.
-	//
-	// It is a comma-separated list of HiddenReasons, or `*` for all of them.
-	//
-	// A where clause naming the entities, by their Slug or ID with `=` or `IN`, or naming HiddenReason at all, also returns hidden entities it selects.
-	//
-	// ConfigHub/YAML Units, which hold the configuration of entities, are hidden with the HiddenReason `BackingUnit`.
-	IncludeHidden *string `form:"include_hidden,omitempty" json:"include_hidden,omitempty" yaml:"include_hidden,omitempty"`
-
-	// Include Include clause for expanding related entities in the response for BridgeWorker.
-	// The attribute names are case-sensitive, PascalCase, and
-	// expected in a comma-separated list format as in the JSON encoding.
-	//
-	// Supported attributes for BridgeWorker are OrganizationID, Permissions, SpaceID.
-	//
-	// The whole string must be query-encoded.
-	Include *string `form:"include,omitempty" json:"include,omitempty" yaml:"include,omitempty"`
-
-	// Limit Maximum number of BridgeWorker entities to act on, in ID order. A request that names limit or continue also stops when it runs short of time, and returns a ConfigHub-Continue header to pass as the continue parameter of the next request; keep sending requests until a response has none. If neither is specified, the request acts on every selected entity.
-	Limit *int `form:"limit,omitempty" json:"limit,omitempty" yaml:"limit,omitempty"`
-
-	// Continue The token from the ConfigHub-Continue header of the previous request, to act on the BridgeWorker entities after the last one it acted on. The request's other parameters, except limit, must be the same as those of the request that returned the token.
-	Continue *string `form:"continue,omitempty" json:"continue,omitempty" yaml:"continue,omitempty"`
-
-	// DryRun If true, report what the write would do without doing it: the write runs, including every check it makes, and is then rolled back. The response is the one the write would return, with the entities as they would be written. An entity a dry run creates is given an ID that the real create will not reuse.
-	DryRun *bool `form:"dry_run,omitempty" json:"dry_run,omitempty" yaml:"dry_run,omitempty"`
-}
-
-// ListQueuedOperationsParams defines parameters for ListQueuedOperations.
-type ListQueuedOperationsParams struct {
-	// Where The specified string is an expression for the purpose of filtering
-	// the list of QueuedOperations returned. The expression syntax was inspired by SQL.
-	// It supports conjunctions using `AND` of relational expressions of the form *attribute*
-	// *operator* *attribute_or_literal*. The attribute names are case-sensitive and PascalCase,
-	// as in the JSON encoding.
-	// Strings support the following operators: `<`, `>`, `<=`, `>=`, `=`, `!=`, `LIKE`, `NOT LIKE`, `ILIKE`, `~~`, `!~~`, `~`, `~*`, `!~`, `!~*`, `IN`, `NOT IN`.
-	// String pattern operators: `LIKE` and `~~` for pattern matching with `%` and `_` wildcards,
-	// `ILIKE` for case-insensitive pattern matching, `NOT LIKE` and `!~~` for negated pattern matching.
-	// String regex operators: `~` for regex matching, `~*` for case-insensitive regex,
-	// `!~` and `!~*` for regex not matching (case-sensitive and insensitive).
-	// Integers support the following operators: `<`, `>`, `<=`, `>=`, `=`, `!=`, `IN`, `NOT IN`.
-	// UUIDs and boolean attributes support equality and inequality only.
-	// UUID and time literals must be quoted as string literals.
-	// String literals are quoted with single quotes, such as `'string'`.
-	// Time literals use the same form as when serialized as JSON,
-	// such as: `CreatedAt > '2025-02-18T23:16:34'`.
-	// Integer and boolean literals are also supported for attributes of those types.
-	// Arrays support the `?` operator to to match any element of the array,
-	// as in `FromLinkID ? '7c61626f-ddbe-41af-93f6-b69f4ab6d308'`.
-	// Arrays can perform LEN() to check for length, as in `LEN(FromLinkID) > 0`.
-	// An attribute naming a list of other entities can be filtered on their attributes with a `*` segment,
-	// as in `FromLink.*.Slug = 'upgrade-app'`, which holds when any element satisfies it.
-	// Without the `*` such a reference is an error, since it names no single value to compare.
-	// Map support the dot notation to specify a particular map key, as in `Labels.tier = 'Backend'`.
-	// Maps support `IS NULL` and `IS NOT NULL` with dot notation to check for key absence or presence,
-	// as in `Labels.tier IS NULL` (key doesn't exist) or `Labels.tier IS NOT NULL` (key exists).
-	// Comparison results can be tested with `IS TRUE`, `IS FALSE`, `IS NOT TRUE`, and `IS NOT FALSE`.
-	// These are useful for nullable columns: `MergeSourceID = '<uuid>' IS NOT FALSE` matches rows where MergeSourceID equals the value OR is NULL.
-	// The `IN` and `NOT IN` operators accept a comma-separated list of values in parentheses,
-	// such as `Slug IN ('slugone', 'slugtwo')` or `Labels.environment IN ('prod', 'staging')`.
-	// Conjunctions are supported using the `AND` operator.
-	// An example conjunction is:
-	// `CreatedAt >= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.
-	//
-	// Supported attributes for filtering on QueuedOperation: Action, BridgeWorkerID, CreatedAt, DryRun, OrganizationID, QueuedOperationID, RevisionNum, SpaceID, Status, TargetID, UnitActionNum, UnitID.
-	//
-	// The whole string must be query-encoded.
-	Where *string `form:"where,omitempty" json:"where,omitempty" yaml:"where,omitempty"`
-
-	// Filter UUID of a Filter entity to apply to the QueuedOperation list.
-	//
-	// The Filter must be in the same Organization as the user credentials.
-	//
-	// The Filter's From field must match the entity type being filtered (QueuedOperation).
-	//
-	// For Space-resident entities, if the Filter has a FromSpaceID, it must match the operation's SpaceID.
-	//
-	// The Filter's Where clause will be combined with any explicit 'where' parameter using AND logic.
-	//
-	// If both 'filter' and 'where' parameters are specified, they are combined with AND logic.
-	Filter *string `form:"filter,omitempty" json:"filter,omitempty" yaml:"filter,omitempty"`
-
-	// Contains Free text search that approximately matches the specified string against string fields and map keys/values.
-	//
-	// The search is case-insensitive and uses pattern matching to find entities containing the text.
-	//
-	// Searchable string fields include attributes like Slug, DisplayName, and string-typed custom fields.
-	//
-	// For map fields (like Labels and Annotations), the search matches both map keys and values.
-	//
-	// The search uses OR logic across all searchable fields, so matching any field will return the entity.
-	//
-	// If both 'where' and 'contains' parameters are specified, they are combined with AND logic.
-	//
-	// Searchable fields for QueuedOperation include string and map-type attributes from the queryable attributes list.
-	//
-	// The whole string must be query-encoded.
-	Contains *string `form:"contains,omitempty" json:"contains,omitempty" yaml:"contains,omitempty"`
-
-	// WherePermission Only return QueuedOperation entities on which the caller has this permission, as well as View, which every entity listed needs.
-	//
-	// A list made to choose an entity to act on can name the permission the action needs, such as Edit to change it or Use to refer to it from another entity, so that it leaves out the entities the action would be refused on.
-	//
-	// Supported values: Manage, Edit, Use, View.
-	WherePermission *ListQueuedOperationsParamsWherePermission `form:"where_permission,omitempty" json:"where_permission,omitempty" yaml:"where_permission,omitempty"`
-
-	// Limit Maximum number of QueuedOperation entities to return. If not specified, all matching entities are returned. Values greater than 1000 are rejected with 400. When there may be more entities, the response has a ConfigHub-Continue header to pass as the continue parameter of the next request.
-	Limit *int `form:"limit,omitempty" json:"limit,omitempty" yaml:"limit,omitempty"`
-
-	// OrderBy Comma-separated list of fields to sort QueuedOperation results by, each in the form 'ASC|DESC:FieldName' or just 'FieldName'.
-	//
-	// Field names are case-sensitive and PascalCase, as in the JSON encoding. Sort direction defaults to ASC when the 'DIRECTION:' prefix is omitted.
-	//
-	// Supported attributes for ordering QueuedOperation: Action, BridgeWorkerID, CreatedAt, DryRun, OrganizationID, QueuedOperationID, RevisionNum, Status, TargetID, UnitActionNum, UnitID.
-	//
-	// Example: 'DESC:CreatedAt' or 'DisplayName,DESC:CreatedAt'.
-	//
-	// Results are ordered by the QueuedOperation's ID after the fields named, and by the ID alone if none are.
-	//
-	// The whole string must be query-encoded.
-	OrderBy *string `form:"order_by,omitempty" json:"order_by,omitempty" yaml:"order_by,omitempty"`
-
-	// Continue The token from the ConfigHub-Continue header of the previous page, to return the QueuedOperation entities after it.
-	//
-	// The request's other parameters, except limit, must be the same as those of the request that returned the token.
-	//
-	// Keep reading until a response has no such header: a page can hold fewer entities than the limit, or none, and still be followed by more.
-	Continue *string `form:"continue,omitempty" json:"continue,omitempty" yaml:"continue,omitempty"`
-}
-
-// ListQueuedOperationsParamsWherePermission defines parameters for ListQueuedOperations.
-type ListQueuedOperationsParamsWherePermission string
 
 // BulkDeleteChangeOrdersParams defines parameters for BulkDeleteChangeOrders.
 type BulkDeleteChangeOrdersParams struct {
@@ -13030,7 +11850,7 @@ type BulkCreateChangeWorkflowsParams struct {
 	// An example conjunction is:
 	// `CreatedAt >= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.
 	//
-	// Supported attributes for filtering on Unit: Annotations, ApplyGates, ApplyWarnings, ChangeSetID, Conflicts, CreatedAt, DataHash, DeleteGates, DestroyGates, DisplayName, FromLinkID, HeadRevisionID, HeadRevisionNum, HeadUnitActionNum, HeadUnitEventNum, HiddenReason, Labels, LastChangeDescription, LastReleasedRevisionNum, LinkFindings, NeededPaths, OrganizationID, Permissions, ProvidedPaths, ProviderType, Releasable, Slug, SpaceID, TargetID, ToolchainType, UnitID, UpdatedAt, UpstreamRevisionNum, UpstreamSpaceID, UpstreamUnitID, ValidationErrors, ValidationResults, ValidationTriggerIDs, ValidationWarnings, ValueTriggerIDs, Values.
+	// Supported attributes for filtering on Unit: Annotations, ApplyGates, ApplyWarnings, ChangeSetID, Conflicts, CreatedAt, DataHash, DeleteGates, DestroyGates, DisplayName, FromLinkID, HeadRevisionID, HeadRevisionNum, HeadUnitEventNum, HiddenReason, Labels, LastChangeDescription, LastReleasedRevisionNum, LinkFindings, NeededPaths, OrganizationID, Permissions, ProvidedPaths, Slug, SpaceID, TargetID, ToolchainType, UnitID, Unreleasable, UpdatedAt, UpstreamRevisionNum, UpstreamSpaceID, UpstreamUnitID, ValidationErrors, ValidationResults, ValidationTriggerIDs, ValidationWarnings, ValueTriggerIDs, Values.
 	//
 	// The Units to create entities from, with from_backing_units.
 	//
@@ -13743,7 +12563,7 @@ type BulkCreateChannelsParams struct {
 	// An example conjunction is:
 	// `CreatedAt >= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.
 	//
-	// Supported attributes for filtering on Unit: Annotations, ApplyGates, ApplyWarnings, ChangeSetID, Conflicts, CreatedAt, DataHash, DeleteGates, DestroyGates, DisplayName, FromLinkID, HeadRevisionID, HeadRevisionNum, HeadUnitActionNum, HeadUnitEventNum, HiddenReason, Labels, LastChangeDescription, LastReleasedRevisionNum, LinkFindings, NeededPaths, OrganizationID, Permissions, ProvidedPaths, ProviderType, Releasable, Slug, SpaceID, TargetID, ToolchainType, UnitID, UpdatedAt, UpstreamRevisionNum, UpstreamSpaceID, UpstreamUnitID, ValidationErrors, ValidationResults, ValidationTriggerIDs, ValidationWarnings, ValueTriggerIDs, Values.
+	// Supported attributes for filtering on Unit: Annotations, ApplyGates, ApplyWarnings, ChangeSetID, Conflicts, CreatedAt, DataHash, DeleteGates, DestroyGates, DisplayName, FromLinkID, HeadRevisionID, HeadRevisionNum, HeadUnitEventNum, HiddenReason, Labels, LastChangeDescription, LastReleasedRevisionNum, LinkFindings, NeededPaths, OrganizationID, Permissions, ProvidedPaths, Slug, SpaceID, TargetID, ToolchainType, UnitID, Unreleasable, UpdatedAt, UpstreamRevisionNum, UpstreamSpaceID, UpstreamUnitID, ValidationErrors, ValidationResults, ValidationTriggerIDs, ValidationWarnings, ValueTriggerIDs, Values.
 	//
 	// The Units to create entities from, with from_backing_units.
 	//
@@ -14863,7 +13683,7 @@ type BulkCreateFiltersParams struct {
 	// An example conjunction is:
 	// `CreatedAt >= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.
 	//
-	// Supported attributes for filtering on Unit: Annotations, ApplyGates, ApplyWarnings, ChangeSetID, Conflicts, CreatedAt, DataHash, DeleteGates, DestroyGates, DisplayName, FromLinkID, HeadRevisionID, HeadRevisionNum, HeadUnitActionNum, HeadUnitEventNum, HiddenReason, Labels, LastChangeDescription, LastReleasedRevisionNum, LinkFindings, NeededPaths, OrganizationID, Permissions, ProvidedPaths, ProviderType, Releasable, Slug, SpaceID, TargetID, ToolchainType, UnitID, UpdatedAt, UpstreamRevisionNum, UpstreamSpaceID, UpstreamUnitID, ValidationErrors, ValidationResults, ValidationTriggerIDs, ValidationWarnings, ValueTriggerIDs, Values.
+	// Supported attributes for filtering on Unit: Annotations, ApplyGates, ApplyWarnings, ChangeSetID, Conflicts, CreatedAt, DataHash, DeleteGates, DestroyGates, DisplayName, FromLinkID, HeadRevisionID, HeadRevisionNum, HeadUnitEventNum, HiddenReason, Labels, LastChangeDescription, LastReleasedRevisionNum, LinkFindings, NeededPaths, OrganizationID, Permissions, ProvidedPaths, Slug, SpaceID, TargetID, ToolchainType, UnitID, Unreleasable, UpdatedAt, UpstreamRevisionNum, UpstreamSpaceID, UpstreamUnitID, ValidationErrors, ValidationResults, ValidationTriggerIDs, ValidationWarnings, ValueTriggerIDs, Values.
 	//
 	// The Units to create entities from, with from_backing_units.
 	//
@@ -15081,9 +13901,9 @@ type InvokeFunctionsOnOrgParams struct {
 	// An example conjunction is:
 	// `CreatedAt >= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.
 	//
-	// Supported attributes for filtering on Unit: Annotations, ApplyGates, ApplyWarnings, ChangeSetID, Conflicts, CreatedAt, DataHash, DeleteGates, DestroyGates, DisplayName, FromLinkID, HeadRevisionID, HeadRevisionNum, HeadUnitActionNum, HeadUnitEventNum, HiddenReason, Labels, LastChangeDescription, LastReleasedRevisionNum, LinkFindings, NeededPaths, OrganizationID, Permissions, ProvidedPaths, ProviderType, Releasable, Slug, SpaceID, TargetID, ToolchainType, UnitID, UpdatedAt, UpstreamRevisionNum, UpstreamSpaceID, UpstreamUnitID, ValidationErrors, ValidationResults, ValidationTriggerIDs, ValidationWarnings, ValueTriggerIDs, Values.
+	// Supported attributes for filtering on Unit: Annotations, ApplyGates, ApplyWarnings, ChangeSetID, Conflicts, CreatedAt, DataHash, DeleteGates, DestroyGates, DisplayName, FromLinkID, HeadRevisionID, HeadRevisionNum, HeadUnitEventNum, HiddenReason, Labels, LastChangeDescription, LastReleasedRevisionNum, LinkFindings, NeededPaths, OrganizationID, Permissions, ProvidedPaths, Slug, SpaceID, TargetID, ToolchainType, UnitID, Unreleasable, UpdatedAt, UpstreamRevisionNum, UpstreamSpaceID, UpstreamUnitID, ValidationErrors, ValidationResults, ValidationTriggerIDs, ValidationWarnings, ValueTriggerIDs, Values.
 	//
-	// Finding all units created by cloning can be done using the expression `UpstreamRevisionNum > 0`. Clones of a specific unit can be found by additionally filtering based on `UpstreamUnitID`. Units never released can be found using `LastReleasedRevisionNum = 0`. Units with unreleased changes can be found with `HeadRevisionNum > LastReleasedRevisionNum AND TargetID IS NOT NULL`.
+	// Finding all units created by cloning can be done using the expression `UpstreamRevisionNum > 0`. Clones of a specific unit can be found by additionally filtering based on `UpstreamUnitID`. Units never released can be found using `LastReleasedRevisionNum = 0`. Units with unreleased changes can be found with `HeadRevisionNum > LastReleasedRevisionNum AND ReleaseTargetID IS NOT NULL AND Unreleasable = false`.
 	//
 	// The whole string must be query-encoded.
 	Where *string `form:"where,omitempty" json:"where,omitempty" yaml:"where,omitempty"`
@@ -15319,7 +14139,7 @@ type BulkDeleteInvocationsParams struct {
 	// An example conjunction is:
 	// `CreatedAt >= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.
 	//
-	// Supported attributes for filtering on Invocation: Annotations, BackingUnitID, BridgeWorkerID, ChannelID, CreatedAt, DeleteGates, DisplayName, FunctionInvocations, Hash, HiddenReason, InvocationID, Labels, OrganizationID, Parameters, Permissions, Slug, SpaceID, ToolchainType, UpdatedAt, UpstreamInvocationID.
+	// Supported attributes for filtering on Invocation: Annotations, BackingUnitID, ChannelID, CreatedAt, DeleteGates, DisplayName, FunctionInvocations, Hash, HiddenReason, InvocationID, Labels, OrganizationID, Parameters, Permissions, Slug, SpaceID, ToolchainType, UpdatedAt, UpstreamInvocationID.
 	//
 	// The functions an Invocation calls are addressed with dot notation into `FunctionInvocations`: `FunctionInvocations.*.FunctionName = 'set-image'` matches an Invocation that calls set-image anywhere in its list, and `FunctionInvocations.0.FunctionName` addresses the first function it calls.
 	//
@@ -15369,7 +14189,7 @@ type BulkDeleteInvocationsParams struct {
 	// The attribute names are case-sensitive, PascalCase, and
 	// expected in a comma-separated list format as in the JSON encoding.
 	//
-	// Supported attributes for Invocation are BridgeWorkerID, ChannelID, OrganizationID, Permissions, SpaceID.
+	// Supported attributes for Invocation are ChannelID, OrganizationID, Permissions, SpaceID.
 	//
 	// The whole string must be query-encoded.
 	Include *string `form:"include,omitempty" json:"include,omitempty" yaml:"include,omitempty"`
@@ -15420,7 +14240,7 @@ type ListAllInvocationsParams struct {
 	// An example conjunction is:
 	// `CreatedAt >= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.
 	//
-	// Supported attributes for filtering on Invocation: Annotations, BackingUnitID, BridgeWorkerID, ChannelID, CreatedAt, DeleteGates, DisplayName, FunctionInvocations, Hash, HiddenReason, InvocationID, Labels, OrganizationID, Parameters, Permissions, Slug, SpaceID, ToolchainType, UpdatedAt, UpstreamInvocationID.
+	// Supported attributes for filtering on Invocation: Annotations, BackingUnitID, ChannelID, CreatedAt, DeleteGates, DisplayName, FunctionInvocations, Hash, HiddenReason, InvocationID, Labels, OrganizationID, Parameters, Permissions, Slug, SpaceID, ToolchainType, UpdatedAt, UpstreamInvocationID.
 	//
 	// The functions an Invocation calls are addressed with dot notation into `FunctionInvocations`: `FunctionInvocations.*.FunctionName = 'set-image'` matches an Invocation that calls set-image anywhere in its list, and `FunctionInvocations.0.FunctionName` addresses the first function it calls.
 	//
@@ -15461,7 +14281,7 @@ type ListAllInvocationsParams struct {
 	// The attribute names are case-sensitive, PascalCase, and
 	// expected in a comma-separated list format as in the JSON encoding.
 	//
-	// Supported attributes for Invocation are BridgeWorkerID, ChannelID, OrganizationID, Permissions, SpaceID.
+	// Supported attributes for Invocation are ChannelID, OrganizationID, Permissions, SpaceID.
 	//
 	// The whole string must be query-encoded.
 	Include *string `form:"include,omitempty" json:"include,omitempty" yaml:"include,omitempty"`
@@ -15508,7 +14328,7 @@ type ListAllInvocationsParams struct {
 	//
 	// Field names are case-sensitive and PascalCase, as in the JSON encoding. Sort direction defaults to ASC when the 'DIRECTION:' prefix is omitted.
 	//
-	// Supported attributes for ordering Invocation: BackingUnitID, BridgeWorkerID, ChannelID, CreatedAt, DisplayName, Hash, HiddenReason, InvocationID, OrganizationID, Slug, SpaceID, ToolchainType, UpdatedAt, UpstreamInvocationID.
+	// Supported attributes for ordering Invocation: BackingUnitID, ChannelID, CreatedAt, DisplayName, Hash, HiddenReason, InvocationID, OrganizationID, Slug, SpaceID, ToolchainType, UpdatedAt, UpstreamInvocationID.
 	//
 	// Example: 'DESC:CreatedAt' or 'DisplayName,DESC:CreatedAt'.
 	//
@@ -15531,9 +14351,8 @@ type ListAllInvocationsParamsWherePermission string
 // BulkPatchInvocationsApplicationMergePatchPlusJSONBody defines parameters for BulkPatchInvocations.
 type BulkPatchInvocationsApplicationMergePatchPlusJSONBody struct {
 	// Annotations An optional map of Annotation key/value pairs for tools to attach information to entities.
-	Annotations    *map[string]*string `json:"Annotations,omitempty" yaml:"Annotations,omitempty"`
-	BridgeWorkerID *openapi_types.UUID `json:"BridgeWorkerID,omitempty" yaml:"BridgeWorkerID,omitempty"`
-	ChannelID      *openapi_types.UUID `json:"ChannelID,omitempty" yaml:"ChannelID,omitempty"`
+	Annotations *map[string]*string `json:"Annotations,omitempty" yaml:"Annotations,omitempty"`
+	ChannelID   *openapi_types.UUID `json:"ChannelID,omitempty" yaml:"ChannelID,omitempty"`
 
 	// DeleteGates An optional set of gates that, if any is present, will block deletion
 	DeleteGates *map[string]*bool `json:"DeleteGates,omitempty" yaml:"DeleteGates,omitempty"`
@@ -15594,7 +14413,7 @@ type BulkPatchInvocationsParams struct {
 	// An example conjunction is:
 	// `CreatedAt >= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.
 	//
-	// Supported attributes for filtering on Invocation: Annotations, BackingUnitID, BridgeWorkerID, ChannelID, CreatedAt, DeleteGates, DisplayName, FunctionInvocations, Hash, HiddenReason, InvocationID, Labels, OrganizationID, Parameters, Permissions, Slug, SpaceID, ToolchainType, UpdatedAt, UpstreamInvocationID.
+	// Supported attributes for filtering on Invocation: Annotations, BackingUnitID, ChannelID, CreatedAt, DeleteGates, DisplayName, FunctionInvocations, Hash, HiddenReason, InvocationID, Labels, OrganizationID, Parameters, Permissions, Slug, SpaceID, ToolchainType, UpdatedAt, UpstreamInvocationID.
 	//
 	// The functions an Invocation calls are addressed with dot notation into `FunctionInvocations`: `FunctionInvocations.*.FunctionName = 'set-image'` matches an Invocation that calls set-image anywhere in its list, and `FunctionInvocations.0.FunctionName` addresses the first function it calls.
 	//
@@ -15644,7 +14463,7 @@ type BulkPatchInvocationsParams struct {
 	// The attribute names are case-sensitive, PascalCase, and
 	// expected in a comma-separated list format as in the JSON encoding.
 	//
-	// Supported attributes for Invocation are BridgeWorkerID, ChannelID, OrganizationID, Permissions, SpaceID.
+	// Supported attributes for Invocation are ChannelID, OrganizationID, Permissions, SpaceID.
 	//
 	// The whole string must be query-encoded.
 	Include *string `form:"include,omitempty" json:"include,omitempty" yaml:"include,omitempty"`
@@ -15668,9 +14487,8 @@ type BulkPatchInvocationsParams struct {
 // BulkCreateInvocationsApplicationMergePatchPlusJSONBody defines parameters for BulkCreateInvocations.
 type BulkCreateInvocationsApplicationMergePatchPlusJSONBody struct {
 	// Annotations An optional map of Annotation key/value pairs for tools to attach information to entities.
-	Annotations    *map[string]*string `json:"Annotations,omitempty" yaml:"Annotations,omitempty"`
-	BridgeWorkerID *openapi_types.UUID `json:"BridgeWorkerID,omitempty" yaml:"BridgeWorkerID,omitempty"`
-	ChannelID      *openapi_types.UUID `json:"ChannelID,omitempty" yaml:"ChannelID,omitempty"`
+	Annotations *map[string]*string `json:"Annotations,omitempty" yaml:"Annotations,omitempty"`
+	ChannelID   *openapi_types.UUID `json:"ChannelID,omitempty" yaml:"ChannelID,omitempty"`
 
 	// DeleteGates An optional set of gates that, if any is present, will block deletion
 	DeleteGates *map[string]*bool `json:"DeleteGates,omitempty" yaml:"DeleteGates,omitempty"`
@@ -15731,7 +14549,7 @@ type BulkCreateInvocationsParams struct {
 	// An example conjunction is:
 	// `CreatedAt >= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.
 	//
-	// Supported attributes for filtering on Invocation: Annotations, BackingUnitID, BridgeWorkerID, ChannelID, CreatedAt, DeleteGates, DisplayName, FunctionInvocations, Hash, HiddenReason, InvocationID, Labels, OrganizationID, Parameters, Permissions, Slug, SpaceID, ToolchainType, UpdatedAt, UpstreamInvocationID.
+	// Supported attributes for filtering on Invocation: Annotations, BackingUnitID, ChannelID, CreatedAt, DeleteGates, DisplayName, FunctionInvocations, Hash, HiddenReason, InvocationID, Labels, OrganizationID, Parameters, Permissions, Slug, SpaceID, ToolchainType, UpdatedAt, UpstreamInvocationID.
 	//
 	// The functions an Invocation calls are addressed with dot notation into `FunctionInvocations`: `FunctionInvocations.*.FunctionName = 'set-image'` matches an Invocation that calls set-image anywhere in its list, and `FunctionInvocations.0.FunctionName` addresses the first function it calls.
 	//
@@ -15781,7 +14599,7 @@ type BulkCreateInvocationsParams struct {
 	// The attribute names are case-sensitive, PascalCase, and
 	// expected in a comma-separated list format as in the JSON encoding.
 	//
-	// Supported attributes for Invocation are BridgeWorkerID, ChannelID, OrganizationID, Permissions, SpaceID.
+	// Supported attributes for Invocation are ChannelID, OrganizationID, Permissions, SpaceID.
 	//
 	// The whole string must be query-encoded.
 	Include *string `form:"include,omitempty" json:"include,omitempty" yaml:"include,omitempty"`
@@ -15898,7 +14716,7 @@ type BulkCreateInvocationsParams struct {
 	// An example conjunction is:
 	// `CreatedAt >= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.
 	//
-	// Supported attributes for filtering on Unit: Annotations, ApplyGates, ApplyWarnings, ChangeSetID, Conflicts, CreatedAt, DataHash, DeleteGates, DestroyGates, DisplayName, FromLinkID, HeadRevisionID, HeadRevisionNum, HeadUnitActionNum, HeadUnitEventNum, HiddenReason, Labels, LastChangeDescription, LastReleasedRevisionNum, LinkFindings, NeededPaths, OrganizationID, Permissions, ProvidedPaths, ProviderType, Releasable, Slug, SpaceID, TargetID, ToolchainType, UnitID, UpdatedAt, UpstreamRevisionNum, UpstreamSpaceID, UpstreamUnitID, ValidationErrors, ValidationResults, ValidationTriggerIDs, ValidationWarnings, ValueTriggerIDs, Values.
+	// Supported attributes for filtering on Unit: Annotations, ApplyGates, ApplyWarnings, ChangeSetID, Conflicts, CreatedAt, DataHash, DeleteGates, DestroyGates, DisplayName, FromLinkID, HeadRevisionID, HeadRevisionNum, HeadUnitEventNum, HiddenReason, Labels, LastChangeDescription, LastReleasedRevisionNum, LinkFindings, NeededPaths, OrganizationID, Permissions, ProvidedPaths, Slug, SpaceID, TargetID, ToolchainType, UnitID, Unreleasable, UpdatedAt, UpstreamRevisionNum, UpstreamSpaceID, UpstreamUnitID, ValidationErrors, ValidationResults, ValidationTriggerIDs, ValidationWarnings, ValueTriggerIDs, Values.
 	//
 	// The Units to create entities from, with from_backing_units.
 	//
@@ -15951,7 +14769,7 @@ type BulkMoveInvocationsParams struct {
 	// An example conjunction is:
 	// `CreatedAt >= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.
 	//
-	// Supported attributes for filtering on Invocation: Annotations, BackingUnitID, BridgeWorkerID, ChannelID, CreatedAt, DeleteGates, DisplayName, FunctionInvocations, Hash, HiddenReason, InvocationID, Labels, OrganizationID, Parameters, Permissions, Slug, SpaceID, ToolchainType, UpdatedAt, UpstreamInvocationID.
+	// Supported attributes for filtering on Invocation: Annotations, BackingUnitID, ChannelID, CreatedAt, DeleteGates, DisplayName, FunctionInvocations, Hash, HiddenReason, InvocationID, Labels, OrganizationID, Parameters, Permissions, Slug, SpaceID, ToolchainType, UpdatedAt, UpstreamInvocationID.
 	//
 	// The whole string must be query-encoded.
 	Where *string `form:"where,omitempty" json:"where,omitempty" yaml:"where,omitempty"`
@@ -15999,7 +14817,7 @@ type BulkMoveInvocationsParams struct {
 	// The attribute names are case-sensitive, PascalCase, and
 	// expected in a comma-separated list format as in the JSON encoding.
 	//
-	// Supported attributes for Invocation are BridgeWorkerID, ChannelID, OrganizationID, Permissions, SpaceID.
+	// Supported attributes for Invocation are ChannelID, OrganizationID, Permissions, SpaceID.
 	//
 	// The whole string must be query-encoded.
 	Include *string `form:"include,omitempty" json:"include,omitempty" yaml:"include,omitempty"`
@@ -16698,7 +15516,7 @@ type BulkCreateLinksParams struct {
 	// An example conjunction is:
 	// `CreatedAt >= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.
 	//
-	// Supported attributes for filtering on Unit: Annotations, ApplyGates, ApplyWarnings, ChangeSetID, Conflicts, CreatedAt, DataHash, DeleteGates, DestroyGates, DisplayName, FromLinkID, HeadRevisionID, HeadRevisionNum, HeadUnitActionNum, HeadUnitEventNum, HiddenReason, Labels, LastChangeDescription, LastReleasedRevisionNum, LinkFindings, NeededPaths, OrganizationID, Permissions, ProvidedPaths, ProviderType, Releasable, Slug, SpaceID, TargetID, ToolchainType, UnitID, UpdatedAt, UpstreamRevisionNum, UpstreamSpaceID, UpstreamUnitID, ValidationErrors, ValidationResults, ValidationTriggerIDs, ValidationWarnings, ValueTriggerIDs, Values.
+	// Supported attributes for filtering on Unit: Annotations, ApplyGates, ApplyWarnings, ChangeSetID, Conflicts, CreatedAt, DataHash, DeleteGates, DestroyGates, DisplayName, FromLinkID, HeadRevisionID, HeadRevisionNum, HeadUnitEventNum, HiddenReason, Labels, LastChangeDescription, LastReleasedRevisionNum, LinkFindings, NeededPaths, OrganizationID, Permissions, ProvidedPaths, Slug, SpaceID, TargetID, ToolchainType, UnitID, Unreleasable, UpdatedAt, UpstreamRevisionNum, UpstreamSpaceID, UpstreamUnitID, ValidationErrors, ValidationResults, ValidationTriggerIDs, ValidationWarnings, ValueTriggerIDs, Values.
 	//
 	// The Units to create entities from, with from_backing_units.
 	//
@@ -17275,7 +16093,7 @@ type ListAllResourcesParams struct {
 	//
 	// Field names are case-sensitive and PascalCase, as in the JSON encoding. Sort direction defaults to ASC when the 'DIRECTION:' prefix is omitted.
 	//
-	// Supported attributes for ordering Resource: CreatedAt, HiddenReason, OrganizationID, ResourceID, ResourceIndex, ResourceName, ResourceType, SpaceID, TargetID, ToolchainType, UnitID, UpdatedAt.
+	// Supported attributes for ordering Resource: CreatedAt, HiddenReason, OrganizationID, ResourceID, ResourceIndex, ResourceName, ResourceType, SpaceID, ToolchainType, UnitID, UpdatedAt.
 	//
 	// Example: 'DESC:CreatedAt' or 'DisplayName,DESC:CreatedAt'.
 	//
@@ -19213,224 +18031,6 @@ type UpdateAttributeDocumentParams struct {
 	DryRun *bool `form:"dry_run,omitempty" json:"dry_run,omitempty" yaml:"dry_run,omitempty"`
 }
 
-// ListBridgeWorkersParams defines parameters for ListBridgeWorkers.
-type ListBridgeWorkersParams struct {
-	// Where The specified string is an expression for the purpose of filtering
-	// the list of BridgeWorkers returned. The expression syntax was inspired by SQL.
-	// It supports conjunctions using `AND` of relational expressions of the form *attribute*
-	// *operator* *attribute_or_literal*. The attribute names are case-sensitive and PascalCase,
-	// as in the JSON encoding.
-	// Strings support the following operators: `<`, `>`, `<=`, `>=`, `=`, `!=`, `LIKE`, `NOT LIKE`, `ILIKE`, `~~`, `!~~`, `~`, `~*`, `!~`, `!~*`, `IN`, `NOT IN`.
-	// String pattern operators: `LIKE` and `~~` for pattern matching with `%` and `_` wildcards,
-	// `ILIKE` for case-insensitive pattern matching, `NOT LIKE` and `!~~` for negated pattern matching.
-	// String regex operators: `~` for regex matching, `~*` for case-insensitive regex,
-	// `!~` and `!~*` for regex not matching (case-sensitive and insensitive).
-	// Integers support the following operators: `<`, `>`, `<=`, `>=`, `=`, `!=`, `IN`, `NOT IN`.
-	// UUIDs and boolean attributes support equality and inequality only.
-	// UUID and time literals must be quoted as string literals.
-	// String literals are quoted with single quotes, such as `'string'`.
-	// Time literals use the same form as when serialized as JSON,
-	// such as: `CreatedAt > '2025-02-18T23:16:34'`.
-	// Integer and boolean literals are also supported for attributes of those types.
-	// Arrays support the `?` operator to to match any element of the array,
-	// as in `FromLinkID ? '7c61626f-ddbe-41af-93f6-b69f4ab6d308'`.
-	// Arrays can perform LEN() to check for length, as in `LEN(FromLinkID) > 0`.
-	// An attribute naming a list of other entities can be filtered on their attributes with a `*` segment,
-	// as in `FromLink.*.Slug = 'upgrade-app'`, which holds when any element satisfies it.
-	// Without the `*` such a reference is an error, since it names no single value to compare.
-	// Map support the dot notation to specify a particular map key, as in `Labels.tier = 'Backend'`.
-	// Maps support `IS NULL` and `IS NOT NULL` with dot notation to check for key absence or presence,
-	// as in `Labels.tier IS NULL` (key doesn't exist) or `Labels.tier IS NOT NULL` (key exists).
-	// Comparison results can be tested with `IS TRUE`, `IS FALSE`, `IS NOT TRUE`, and `IS NOT FALSE`.
-	// These are useful for nullable columns: `MergeSourceID = '<uuid>' IS NOT FALSE` matches rows where MergeSourceID equals the value OR is NULL.
-	// The `IN` and `NOT IN` operators accept a comma-separated list of values in parentheses,
-	// such as `Slug IN ('slugone', 'slugtwo')` or `Labels.environment IN ('prod', 'staging')`.
-	// Conjunctions are supported using the `AND` operator.
-	// An example conjunction is:
-	// `CreatedAt >= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.
-	//
-	// Supported attributes for filtering on BridgeWorker: Annotations, BridgeWorkerID, Condition, CreatedAt, DisplayName, HiddenReason, IPAddress, Labels, LastMessage, LastSeenAt, OrgRole, OrganizationID, Permissions, ProvidedInfo, Slug, SpaceID, UpdatedAt, UserID.
-	//
-	// The whole string must be query-encoded.
-	Where *string `form:"where,omitempty" json:"where,omitempty" yaml:"where,omitempty"`
-
-	// Filter UUID of a Filter entity to apply to the BridgeWorker list.
-	//
-	// The Filter must be in the same Organization as the user credentials.
-	//
-	// The Filter's From field must match the entity type being filtered (BridgeWorker).
-	//
-	// For Space-resident entities, if the Filter has a FromSpaceID, it must match the operation's SpaceID.
-	//
-	// The Filter's Where clause will be combined with any explicit 'where' parameter using AND logic.
-	//
-	// If both 'filter' and 'where' parameters are specified, they are combined with AND logic.
-	Filter *string `form:"filter,omitempty" json:"filter,omitempty" yaml:"filter,omitempty"`
-
-	// Contains Free text search that approximately matches the specified string against string fields and map keys/values.
-	//
-	// The search is case-insensitive and uses pattern matching to find entities containing the text.
-	//
-	// Searchable string fields include attributes like Slug, DisplayName, and string-typed custom fields.
-	//
-	// For map fields (like Labels and Annotations), the search matches both map keys and values.
-	//
-	// The search uses OR logic across all searchable fields, so matching any field will return the entity.
-	//
-	// If both 'where' and 'contains' parameters are specified, they are combined with AND logic.
-	//
-	// Searchable fields for BridgeWorker include string and map-type attributes from the queryable attributes list.
-	//
-	// The whole string must be query-encoded.
-	Contains *string `form:"contains,omitempty" json:"contains,omitempty" yaml:"contains,omitempty"`
-
-	// Include Include clause for expanding related entities in the response for BridgeWorker.
-	// The attribute names are case-sensitive, PascalCase, and
-	// expected in a comma-separated list format as in the JSON encoding.
-	//
-	// Supported attributes for BridgeWorker are OrganizationID, Permissions, SpaceID.
-	//
-	// The whole string must be query-encoded.
-	Include *string `form:"include,omitempty" json:"include,omitempty" yaml:"include,omitempty"`
-
-	// Select Select clause for specifying which fields to include in the response for BridgeWorker.
-	// The attribute names are case-sensitive, PascalCase, and
-	// expected in a comma-separated list format as in the JSON encoding.
-	// If not specified, all fields are returned.
-	// Entity and parent IDs (like OrganizationID, SpaceID, BridgeWorkerID) and Slug are always returned regardless of the select parameter.
-	// Fields used in where and contains filters, fields named by order_by, and fields read by the columns of the View named by view are also automatically included.
-	// Example: 'DisplayName,CreatedAt,Labels' will return only those fields plus the required ID and Slug fields.
-	// The whole string must be query-encoded.
-	Select *string `form:"select,omitempty" json:"select,omitempty" yaml:"select,omitempty"`
-
-	// WherePermission Only return BridgeWorker entities on which the caller has this permission, as well as View, which every entity listed needs.
-	//
-	// A list made to choose an entity to act on can name the permission the action needs, such as Edit to change it or Use to refer to it from another entity, so that it leaves out the entities the action would be refused on.
-	//
-	// Supported values: Manage, Edit, Use, View, ManageChildren, EditChildren, UseChildren, ViewChildren, CreateChildren, ApproveChildren, TargetEditChildren, TargetViewChildren.
-	WherePermission *ListBridgeWorkersParamsWherePermission `form:"where_permission,omitempty" json:"where_permission,omitempty" yaml:"where_permission,omitempty"`
-
-	// IncludeHidden Hidden BridgeWorker entities, those with a HiddenReason, are left out of the results, or of what a bulk operation acts on, unless this names their HiddenReason.
-	//
-	// It is a comma-separated list of HiddenReasons, or `*` for all of them.
-	//
-	// A where clause naming the entities, by their Slug or ID with `=` or `IN`, or naming HiddenReason at all, also returns hidden entities it selects.
-	//
-	// ConfigHub/YAML Units, which hold the configuration of entities, are hidden with the HiddenReason `BackingUnit`.
-	IncludeHidden *string `form:"include_hidden,omitempty" json:"include_hidden,omitempty" yaml:"include_hidden,omitempty"`
-
-	// View UUID of a View whose columns to compute for each BridgeWorker, returned as ViewColumns.
-	//
-	// The View must be in the same Organization as the user credentials, and be a View of BridgeWorker: its Of, or the From of its Filter, must be BridgeWorker.
-	//
-	// If the View has a Filter, the Filter selects the entities as the filter parameter does, so the two may not both be specified.
-	//
-	// The related entities and fields the View's columns read are included and selected automatically, so neither include nor select has to name them.
-	View *string `form:"view,omitempty" json:"view,omitempty" yaml:"view,omitempty"`
-
-	// Limit Maximum number of BridgeWorker entities to return. If not specified, all matching entities are returned. Values greater than 1000 are rejected with 400. When there may be more entities, the response has a ConfigHub-Continue header to pass as the continue parameter of the next request.
-	Limit *int `form:"limit,omitempty" json:"limit,omitempty" yaml:"limit,omitempty"`
-
-	// OrderBy Comma-separated list of fields to sort BridgeWorker results by, each in the form 'ASC|DESC:FieldName' or just 'FieldName'.
-	//
-	// Field names are case-sensitive and PascalCase, as in the JSON encoding. Sort direction defaults to ASC when the 'DIRECTION:' prefix is omitted.
-	//
-	// Supported attributes for ordering BridgeWorker: BridgeWorkerID, Condition, CreatedAt, DisplayName, HiddenReason, IPAddress, LastMessage, LastSeenAt, OrgRole, OrganizationID, Slug, SpaceID, UpdatedAt, UserID.
-	//
-	// Example: 'DESC:CreatedAt' or 'DisplayName,DESC:CreatedAt'.
-	//
-	// Results are ordered by the BridgeWorker's ID after the fields named, and by the ID alone if none are.
-	//
-	// The whole string must be query-encoded.
-	OrderBy *string `form:"order_by,omitempty" json:"order_by,omitempty" yaml:"order_by,omitempty"`
-
-	// Continue The token from the ConfigHub-Continue header of the previous page, to return the BridgeWorker entities after it.
-	//
-	// The request's other parameters, except limit, must be the same as those of the request that returned the token.
-	//
-	// Keep reading until a response has no such header: a page can hold fewer entities than the limit, or none, and still be followed by more.
-	Continue *string `form:"continue,omitempty" json:"continue,omitempty" yaml:"continue,omitempty"`
-}
-
-// ListBridgeWorkersParamsWherePermission defines parameters for ListBridgeWorkers.
-type ListBridgeWorkersParamsWherePermission string
-
-// CreateBridgeWorkerParams defines parameters for CreateBridgeWorker.
-type CreateBridgeWorkerParams struct {
-	// AllowExists Allowed values are true and false. Default is false. When true, reports success when an entity already exists and returns the existing entity
-	AllowExists *string `form:"allow_exists,omitempty" json:"allow_exists,omitempty" yaml:"allow_exists,omitempty"`
-
-	// DryRun If true, report what the write would do without doing it: the write runs, including every check it makes, and is then rolled back. The response is the one the write would return, with the entities as they would be written. An entity a dry run creates is given an ID that the real create will not reuse.
-	DryRun *bool `form:"dry_run,omitempty" json:"dry_run,omitempty" yaml:"dry_run,omitempty"`
-}
-
-// DeleteBridgeWorkerParams defines parameters for DeleteBridgeWorker.
-type DeleteBridgeWorkerParams struct {
-	// Detach If true, remove the references to the deleted entities from entities the request does not delete, instead of refusing the delete while any remain. References that cannot be removed still refuse it. For a Space, applies to everything the recursive delete removes.
-	Detach *bool `form:"detach,omitempty" json:"detach,omitempty" yaml:"detach,omitempty"`
-}
-
-// GetBridgeWorkerParams defines parameters for GetBridgeWorker.
-type GetBridgeWorkerParams struct {
-	// Include Include clause for expanding related entities in the response for BridgeWorker.
-	// The attribute names are case-sensitive, PascalCase, and
-	// expected in a comma-separated list format as in the JSON encoding.
-	//
-	// Supported attributes for BridgeWorker are OrganizationID, Permissions, SpaceID.
-	//
-	// The whole string must be query-encoded.
-	Include *string `form:"include,omitempty" json:"include,omitempty" yaml:"include,omitempty"`
-
-	// Select Select clause for specifying which fields to include in the response for BridgeWorker.
-	// The attribute names are case-sensitive, PascalCase, and
-	// expected in a comma-separated list format as in the JSON encoding.
-	// If not specified, all fields are returned.
-	// Entity and parent IDs (like OrganizationID, SpaceID, BridgeWorkerID) and Slug are always returned regardless of the select parameter.
-	// Fields used in where and contains filters, fields named by order_by, and fields read by the columns of the View named by view are also automatically included.
-	// Example: 'DisplayName,CreatedAt,Labels' will return only those fields plus the required ID and Slug fields.
-	// The whole string must be query-encoded.
-	Select *string `form:"select,omitempty" json:"select,omitempty" yaml:"select,omitempty"`
-}
-
-// PatchBridgeWorkerApplicationMergePatchPlusJSONBody defines parameters for PatchBridgeWorker.
-type PatchBridgeWorkerApplicationMergePatchPlusJSONBody struct {
-	// Annotations An optional map of Annotation key/value pairs for tools to attach information to entities.
-	Annotations *map[string]*string `json:"Annotations,omitempty" yaml:"Annotations,omitempty"`
-
-	// DeleteGates An optional set of gates that, if any is present, will block deletion
-	DeleteGates *map[string]*bool `json:"DeleteGates,omitempty" yaml:"DeleteGates,omitempty"`
-
-	// DisplayName Friendly name for the entity.
-	DisplayName *string `json:"DisplayName,omitempty" yaml:"DisplayName,omitempty"`
-
-	// HiddenReason The reason the entity is hidden, if it is. A hidden entity is left out of List and Search results, and of what bulk operations act on, unless the include_hidden parameter names its reason or is *, or the where parameter names the entity by Slug or ID. ConfigHub/YAML Units are created hidden with the reason BackingUnit unless given another.
-	HiddenReason *string `json:"HiddenReason,omitempty" yaml:"HiddenReason,omitempty"`
-
-	// Labels An optional map of Label key/value pairs to specify identifying attributes of entities for the purpose of grouping and filtering them.
-	Labels       *map[string]*string                 `json:"Labels,omitempty" yaml:"Labels,omitempty"`
-	OrgRole      *string                             `json:"OrgRole,omitempty" yaml:"OrgRole,omitempty"`
-	Permissions  *map[string]*map[string]interface{} `json:"Permissions,omitempty" yaml:"Permissions,omitempty"`
-	ProvidedInfo *map[string]interface{}             `json:"ProvidedInfo,omitempty" yaml:"ProvidedInfo,omitempty"`
-
-	// Slug Unique URL-safe identifier for the entity.
-	Slug *string `json:"Slug,omitempty" yaml:"Slug,omitempty"`
-
-	// Version An entity-specific sequence number used for optimistic concurrency control. The value read must be sent in calls to Update.
-	Version *int `json:"Version,omitempty" yaml:"Version,omitempty"`
-}
-
-// PatchBridgeWorkerParams defines parameters for PatchBridgeWorker.
-type PatchBridgeWorkerParams struct {
-	// DryRun If true, report what the write would do without doing it: the write runs, including every check it makes, and is then rolled back. The response is the one the write would return, with the entities as they would be written. An entity a dry run creates is given an ID that the real create will not reuse.
-	DryRun *bool `form:"dry_run,omitempty" json:"dry_run,omitempty" yaml:"dry_run,omitempty"`
-}
-
-// UpdateBridgeWorkerParams defines parameters for UpdateBridgeWorker.
-type UpdateBridgeWorkerParams struct {
-	// DryRun If true, report what the write would do without doing it: the write runs, including every check it makes, and is then rolled back. The response is the one the write would return, with the entities as they would be written. An entity a dry run creates is given an ID that the real create will not reuse.
-	DryRun *bool `form:"dry_run,omitempty" json:"dry_run,omitempty" yaml:"dry_run,omitempty"`
-}
-
 // ListChangeOrdersParams defines parameters for ListChangeOrders.
 type ListChangeOrdersParams struct {
 	// Where The specified string is an expression for the purpose of filtering
@@ -20771,10 +19371,10 @@ type UpdateFilterDocumentParams struct {
 
 // ListFunctionsParams defines parameters for ListFunctions.
 type ListFunctionsParams struct {
-	// Entity Type of entity whose functions should be listed: worker or channel
+	// Entity Type of entity whose functions should be listed: channel
 	Entity *string `form:"entity,omitempty" json:"entity,omitempty" yaml:"entity,omitempty"`
 
-	// Id ID of the worker or channel whose functions should be listed
+	// Id ID of the channel whose functions should be listed
 	Id *string `form:"id,omitempty" json:"id,omitempty" yaml:"id,omitempty"`
 
 	// Where The specified string is an expression for the purpose of filtering
@@ -20883,9 +19483,9 @@ type InvokeFunctionsParams struct {
 	// An example conjunction is:
 	// `CreatedAt >= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.
 	//
-	// Supported attributes for filtering on Unit: Annotations, ApplyGates, ApplyWarnings, ChangeSetID, Conflicts, CreatedAt, DataHash, DeleteGates, DestroyGates, DisplayName, FromLinkID, HeadRevisionID, HeadRevisionNum, HeadUnitActionNum, HeadUnitEventNum, HiddenReason, Labels, LastChangeDescription, LastReleasedRevisionNum, LinkFindings, NeededPaths, OrganizationID, Permissions, ProvidedPaths, ProviderType, Releasable, Slug, SpaceID, TargetID, ToolchainType, UnitID, UpdatedAt, UpstreamRevisionNum, UpstreamSpaceID, UpstreamUnitID, ValidationErrors, ValidationResults, ValidationTriggerIDs, ValidationWarnings, ValueTriggerIDs, Values.
+	// Supported attributes for filtering on Unit: Annotations, ApplyGates, ApplyWarnings, ChangeSetID, Conflicts, CreatedAt, DataHash, DeleteGates, DestroyGates, DisplayName, FromLinkID, HeadRevisionID, HeadRevisionNum, HeadUnitEventNum, HiddenReason, Labels, LastChangeDescription, LastReleasedRevisionNum, LinkFindings, NeededPaths, OrganizationID, Permissions, ProvidedPaths, Slug, SpaceID, TargetID, ToolchainType, UnitID, Unreleasable, UpdatedAt, UpstreamRevisionNum, UpstreamSpaceID, UpstreamUnitID, ValidationErrors, ValidationResults, ValidationTriggerIDs, ValidationWarnings, ValueTriggerIDs, Values.
 	//
-	// Finding all units created by cloning can be done using the expression `UpstreamRevisionNum > 0`. Clones of a specific unit can be found by additionally filtering based on `UpstreamUnitID`. Units never released can be found using `LastReleasedRevisionNum = 0`. Units with unreleased changes can be found with `HeadRevisionNum > LastReleasedRevisionNum AND TargetID IS NOT NULL`.
+	// Finding all units created by cloning can be done using the expression `UpstreamRevisionNum > 0`. Clones of a specific unit can be found by additionally filtering based on `UpstreamUnitID`. Units never released can be found using `LastReleasedRevisionNum = 0`. Units with unreleased changes can be found with `HeadRevisionNum > LastReleasedRevisionNum AND ReleaseTargetID IS NOT NULL AND Unreleasable = false`.
 	//
 	// The whole string must be query-encoded.
 	Where *string `form:"where,omitempty" json:"where,omitempty" yaml:"where,omitempty"`
@@ -20975,7 +19575,7 @@ type ListInvocationsParams struct {
 	// An example conjunction is:
 	// `CreatedAt >= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.
 	//
-	// Supported attributes for filtering on Invocation: Annotations, BackingUnitID, BridgeWorkerID, ChannelID, CreatedAt, DeleteGates, DisplayName, FunctionInvocations, Hash, HiddenReason, InvocationID, Labels, OrganizationID, Parameters, Permissions, Slug, SpaceID, ToolchainType, UpdatedAt, UpstreamInvocationID.
+	// Supported attributes for filtering on Invocation: Annotations, BackingUnitID, ChannelID, CreatedAt, DeleteGates, DisplayName, FunctionInvocations, Hash, HiddenReason, InvocationID, Labels, OrganizationID, Parameters, Permissions, Slug, SpaceID, ToolchainType, UpdatedAt, UpstreamInvocationID.
 	//
 	// The functions an Invocation calls are addressed with dot notation into `FunctionInvocations`: `FunctionInvocations.*.FunctionName = 'set-image'` matches an Invocation that calls set-image anywhere in its list, and `FunctionInvocations.0.FunctionName` addresses the first function it calls.
 	//
@@ -21016,7 +19616,7 @@ type ListInvocationsParams struct {
 	// The attribute names are case-sensitive, PascalCase, and
 	// expected in a comma-separated list format as in the JSON encoding.
 	//
-	// Supported attributes for Invocation are BridgeWorkerID, ChannelID, OrganizationID, Permissions, SpaceID.
+	// Supported attributes for Invocation are ChannelID, OrganizationID, Permissions, SpaceID.
 	//
 	// The whole string must be query-encoded.
 	Include *string `form:"include,omitempty" json:"include,omitempty" yaml:"include,omitempty"`
@@ -21063,7 +19663,7 @@ type ListInvocationsParams struct {
 	//
 	// Field names are case-sensitive and PascalCase, as in the JSON encoding. Sort direction defaults to ASC when the 'DIRECTION:' prefix is omitted.
 	//
-	// Supported attributes for ordering Invocation: BackingUnitID, BridgeWorkerID, ChannelID, CreatedAt, DisplayName, Hash, HiddenReason, InvocationID, OrganizationID, Slug, SpaceID, ToolchainType, UpdatedAt, UpstreamInvocationID.
+	// Supported attributes for ordering Invocation: BackingUnitID, ChannelID, CreatedAt, DisplayName, Hash, HiddenReason, InvocationID, OrganizationID, Slug, SpaceID, ToolchainType, UpdatedAt, UpstreamInvocationID.
 	//
 	// Example: 'DESC:CreatedAt' or 'DisplayName,DESC:CreatedAt'.
 	//
@@ -21101,7 +19701,7 @@ type GetInvocationParams struct {
 	// The attribute names are case-sensitive, PascalCase, and
 	// expected in a comma-separated list format as in the JSON encoding.
 	//
-	// Supported attributes for Invocation are BridgeWorkerID, ChannelID, OrganizationID, Permissions, SpaceID.
+	// Supported attributes for Invocation are ChannelID, OrganizationID, Permissions, SpaceID.
 	//
 	// The whole string must be query-encoded.
 	Include *string `form:"include,omitempty" json:"include,omitempty" yaml:"include,omitempty"`
@@ -21120,9 +19720,8 @@ type GetInvocationParams struct {
 // PatchInvocationApplicationMergePatchPlusJSONBody defines parameters for PatchInvocation.
 type PatchInvocationApplicationMergePatchPlusJSONBody struct {
 	// Annotations An optional map of Annotation key/value pairs for tools to attach information to entities.
-	Annotations    *map[string]*string `json:"Annotations,omitempty" yaml:"Annotations,omitempty"`
-	BridgeWorkerID *openapi_types.UUID `json:"BridgeWorkerID,omitempty" yaml:"BridgeWorkerID,omitempty"`
-	ChannelID      *openapi_types.UUID `json:"ChannelID,omitempty" yaml:"ChannelID,omitempty"`
+	Annotations *map[string]*string `json:"Annotations,omitempty" yaml:"Annotations,omitempty"`
+	ChannelID   *openapi_types.UUID `json:"ChannelID,omitempty" yaml:"ChannelID,omitempty"`
 
 	// DeleteGates An optional set of gates that, if any is present, will block deletion
 	DeleteGates *map[string]*bool `json:"DeleteGates,omitempty" yaml:"DeleteGates,omitempty"`
@@ -22097,7 +20696,7 @@ type ListTriggersParams struct {
 	// An example conjunction is:
 	// `CreatedAt >= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.
 	//
-	// Supported attributes for filtering on Trigger: Annotations, Arguments, BackingUnitID, BridgeWorkerID, ChannelID, Clearance, CreatedAt, DeleteGates, Description, Disabled, DisplayName, Event, FunctionName, Guards, Hash, HiddenReason, InvocationID, Labels, OrganizationID, OtherDataSource, Permissions, Protect, Slug, SpaceID, ToolchainType, TriggerID, UnitFilterID, UpdatedAt, UpstreamTriggerID, Validating, Warn, WhereResource, WhereUnit.
+	// Supported attributes for filtering on Trigger: Annotations, Arguments, BackingUnitID, ChannelID, Clearance, CreatedAt, DeleteGates, Description, Disabled, DisplayName, Event, FunctionName, Guards, Hash, HiddenReason, InvocationID, Labels, OrganizationID, OtherDataSource, Permissions, Protect, Slug, SpaceID, ToolchainType, TriggerID, UnitFilterID, UpdatedAt, UpstreamTriggerID, Validating, Warn, WhereResource, WhereUnit.
 	//
 	// A Trigger returns the function it invokes inline rather than in a FunctionInvocation object, so `where` names FunctionName and Arguments directly. The arguments are addressed with dot notation into `Arguments`, which is a list: `Arguments.?ParameterName=attribute-name.Value = 'owner'` reads the argument bound to a named parameter, `Arguments.*.Value` matches any argument's value, and `Arguments.0.Value` addresses the first argument. Arguments passed positionally have no ParameterName.
 	//
@@ -22138,7 +20737,7 @@ type ListTriggersParams struct {
 	// The attribute names are case-sensitive, PascalCase, and
 	// expected in a comma-separated list format as in the JSON encoding.
 	//
-	// Supported attributes for Trigger are BridgeWorkerID, ChannelID, InvocationID, OrganizationID, Permissions, SpaceID, UnitFilterID.
+	// Supported attributes for Trigger are ChannelID, InvocationID, OrganizationID, Permissions, SpaceID, UnitFilterID.
 	//
 	// The whole string must be query-encoded.
 	Include *string `form:"include,omitempty" json:"include,omitempty" yaml:"include,omitempty"`
@@ -22185,7 +20784,7 @@ type ListTriggersParams struct {
 	//
 	// Field names are case-sensitive and PascalCase, as in the JSON encoding. Sort direction defaults to ASC when the 'DIRECTION:' prefix is omitted.
 	//
-	// Supported attributes for ordering Trigger: BackingUnitID, BridgeWorkerID, ChannelID, CreatedAt, Description, Disabled, DisplayName, Event, FunctionName, Hash, HiddenReason, InvocationID, OrganizationID, OtherDataSource, Protect, Slug, SpaceID, ToolchainType, TriggerID, UnitFilterID, UpdatedAt, UpstreamTriggerID, Validating, Warn, WhereResource, WhereUnit.
+	// Supported attributes for ordering Trigger: BackingUnitID, ChannelID, CreatedAt, Description, Disabled, DisplayName, Event, FunctionName, Hash, HiddenReason, InvocationID, OrganizationID, OtherDataSource, Protect, Slug, SpaceID, ToolchainType, TriggerID, UnitFilterID, UpdatedAt, UpstreamTriggerID, Validating, Warn, WhereResource, WhereUnit.
 	//
 	// Example: 'DESC:CreatedAt' or 'DisplayName,DESC:CreatedAt'.
 	//
@@ -22223,7 +20822,7 @@ type GetTriggerParams struct {
 	// The attribute names are case-sensitive, PascalCase, and
 	// expected in a comma-separated list format as in the JSON encoding.
 	//
-	// Supported attributes for Trigger are BridgeWorkerID, ChannelID, InvocationID, OrganizationID, Permissions, SpaceID, UnitFilterID.
+	// Supported attributes for Trigger are ChannelID, InvocationID, OrganizationID, Permissions, SpaceID, UnitFilterID.
 	//
 	// The whole string must be query-encoded.
 	Include *string `form:"include,omitempty" json:"include,omitempty" yaml:"include,omitempty"`
@@ -22245,10 +20844,9 @@ type PatchTriggerApplicationMergePatchPlusJSONBody struct {
 	Annotations *map[string]*string `json:"Annotations,omitempty" yaml:"Annotations,omitempty"`
 
 	// Arguments Function arguments
-	Arguments      *[]*map[string]interface{} `json:"Arguments,omitempty" yaml:"Arguments,omitempty"`
-	BridgeWorkerID *openapi_types.UUID        `json:"BridgeWorkerID,omitempty" yaml:"BridgeWorkerID,omitempty"`
-	ChannelID      *openapi_types.UUID        `json:"ChannelID,omitempty" yaml:"ChannelID,omitempty"`
-	Clearance      *[]*map[string]interface{} `json:"Clearance,omitempty" yaml:"Clearance,omitempty"`
+	Arguments *[]*map[string]interface{} `json:"Arguments,omitempty" yaml:"Arguments,omitempty"`
+	ChannelID *openapi_types.UUID        `json:"ChannelID,omitempty" yaml:"ChannelID,omitempty"`
+	Clearance *[]*map[string]interface{} `json:"Clearance,omitempty" yaml:"Clearance,omitempty"`
 
 	// DeleteGates An optional set of gates that, if any is present, will block deletion
 	DeleteGates *map[string]*bool `json:"DeleteGates,omitempty" yaml:"DeleteGates,omitempty"`
@@ -22256,9 +20854,8 @@ type PatchTriggerApplicationMergePatchPlusJSONBody struct {
 	Disabled    *bool             `json:"Disabled,omitempty" yaml:"Disabled,omitempty"`
 
 	// DisplayName Friendly name for the entity.
-	DisplayName   *string `json:"DisplayName,omitempty" yaml:"DisplayName,omitempty"`
-	Event         *string `json:"Event,omitempty" yaml:"Event,omitempty"`
-	FailOpenAfter *int    `json:"FailOpenAfter,omitempty" yaml:"FailOpenAfter,omitempty"`
+	DisplayName *string `json:"DisplayName,omitempty" yaml:"DisplayName,omitempty"`
+	Event       *string `json:"Event,omitempty" yaml:"Event,omitempty"`
 
 	// FunctionName Function name
 	FunctionName *string `json:"FunctionName,omitempty" yaml:"FunctionName,omitempty"`
@@ -22344,9 +20941,9 @@ type ListUnitsParams struct {
 	// An example conjunction is:
 	// `CreatedAt >= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.
 	//
-	// Supported attributes for filtering on Unit: Annotations, ApplyGates, ApplyWarnings, ChangeSetID, Conflicts, CreatedAt, DataHash, DeleteGates, DestroyGates, DisplayName, FromLinkID, HeadRevisionID, HeadRevisionNum, HeadUnitActionNum, HeadUnitEventNum, HiddenReason, Labels, LastChangeDescription, LastReleasedRevisionNum, LinkFindings, NeededPaths, OrganizationID, Permissions, ProvidedPaths, ProviderType, Releasable, Slug, SpaceID, TargetID, ToolchainType, UnitID, UpdatedAt, UpstreamRevisionNum, UpstreamSpaceID, UpstreamUnitID, ValidationErrors, ValidationResults, ValidationTriggerIDs, ValidationWarnings, ValueTriggerIDs, Values.
+	// Supported attributes for filtering on Unit: Annotations, ApplyGates, ApplyWarnings, ChangeSetID, Conflicts, CreatedAt, DataHash, DeleteGates, DestroyGates, DisplayName, FromLinkID, HeadRevisionID, HeadRevisionNum, HeadUnitEventNum, HiddenReason, Labels, LastChangeDescription, LastReleasedRevisionNum, LinkFindings, NeededPaths, OrganizationID, Permissions, ProvidedPaths, Slug, SpaceID, TargetID, ToolchainType, UnitID, Unreleasable, UpdatedAt, UpstreamRevisionNum, UpstreamSpaceID, UpstreamUnitID, ValidationErrors, ValidationResults, ValidationTriggerIDs, ValidationWarnings, ValueTriggerIDs, Values.
 	//
-	// Finding all units created by cloning can be done using the expression `UpstreamRevisionNum > 0`. Clones of a specific unit can be found by additionally filtering based on `UpstreamUnitID`. Units never released can be found using `LastReleasedRevisionNum = 0`. Units with unreleased changes can be found with `HeadRevisionNum > LastReleasedRevisionNum AND TargetID IS NOT NULL`.
+	// Finding all units created by cloning can be done using the expression `UpstreamRevisionNum > 0`. Clones of a specific unit can be found by additionally filtering based on `UpstreamUnitID`. Units never released can be found using `LastReleasedRevisionNum = 0`. Units with unreleased changes can be found with `HeadRevisionNum > LastReleasedRevisionNum AND ReleaseTargetID IS NOT NULL AND Unreleasable = false`.
 	//
 	// The whole string must be query-encoded.
 	Where *string `form:"where,omitempty" json:"where,omitempty" yaml:"where,omitempty"`
@@ -22432,7 +21029,7 @@ type ListUnitsParams struct {
 	//
 	// Field names are case-sensitive and PascalCase, as in the JSON encoding. Sort direction defaults to ASC when the 'DIRECTION:' prefix is omitted.
 	//
-	// Supported attributes for ordering Unit: ChangeSetID, CreatedAt, DataHash, DisplayName, HeadRevisionID, HeadRevisionNum, HeadUnitActionNum, HeadUnitEventNum, HiddenReason, LastChangeDescription, LastReleasedRevisionNum, OrganizationID, ProviderType, Slug, SpaceID, TargetID, ToolchainType, UnitID, UpdatedAt, UpstreamRevisionNum, UpstreamUnitID.
+	// Supported attributes for ordering Unit: ChangeSetID, CreatedAt, DataHash, DisplayName, HeadRevisionID, HeadRevisionNum, HeadUnitEventNum, HiddenReason, LastChangeDescription, LastReleasedRevisionNum, OrganizationID, Slug, SpaceID, ToolchainType, UnitID, Unreleasable, UpdatedAt, UpstreamRevisionNum, UpstreamUnitID.
 	//
 	// Example: 'DESC:CreatedAt' or 'DisplayName,DESC:CreatedAt'.
 	//
@@ -22553,16 +21150,13 @@ type PatchUnitApplicationMergePatchPlusJSONBody struct {
 	// LastChangeDescription LastChangeDescription is a human-readable description of the last change. This description is copied to the new Revision when the Data is changed.
 	LastChangeDescription *string                             `json:"LastChangeDescription,omitempty" yaml:"LastChangeDescription,omitempty"`
 	Permissions           *map[string]*map[string]interface{} `json:"Permissions,omitempty" yaml:"Permissions,omitempty"`
-	ProviderType          *string                             `json:"ProviderType,omitempty" yaml:"ProviderType,omitempty"`
 
 	// Slug Unique URL-safe identifier for the entity.
 	Slug *string `json:"Slug,omitempty" yaml:"Slug,omitempty"`
 
-	// TargetID TargetID is the identifier of the target this unit is associated with. This defines where the configuration will be applied. It must be set to a valid Target before the Unit can be Applied, Destroyed, Imported, or Refreshed.
-	TargetID *openapi_types.UUID `json:"TargetID,omitempty" yaml:"TargetID,omitempty"`
-
 	// ToolchainType ToolchainType specifies the type of toolchain for this unit. Possible values include "Kubernetes/YAML", "AppConfig/Properties", "AppConfig/YAML", "AppConfig/TOML", "AppConfig/INI", "AppConfig/JSON", "AppConfig/Env", "AppConfig/Text", "ConfigHub/YAML".
 	ToolchainType *string `json:"ToolchainType,omitempty" yaml:"ToolchainType,omitempty"`
+	Unreleasable  *bool   `json:"Unreleasable,omitempty" yaml:"Unreleasable,omitempty"`
 
 	// Version An entity-specific sequence number used for optimistic concurrency control. The value read must be sent in calls to Update.
 	Version *int `json:"Version,omitempty" yaml:"Version,omitempty"`
@@ -22646,7 +21240,7 @@ type PatchUnitParams struct {
 	// An example conjunction is:
 	// `CreatedAt >= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.
 	//
-	// Supported attributes for filtering on Mutation: BridgeWorkerID, ChannelID, CreatedAt, FunctionInvocation.Arguments, FunctionInvocation.Clearance, FunctionInvocation.FunctionName, FunctionInvocation.Guards, FunctionInvocation.WhereResource, FunctionName, HiddenReason, InvocationID, InvocationParams, LinkID, MergeBaseRevisionNum, MergeEndRevisionNum, MergeSourceID, MutationID, MutationNum, OrganizationID, ReplayOutcome, ReplayReason, RestoredRevisionNum, RevisionID, RevisionNum, SpaceID, Subgroup, TriggerID, UnitID, UpdatedAt.
+	// Supported attributes for filtering on Mutation: ChannelID, CreatedAt, FunctionInvocation.Arguments, FunctionInvocation.Clearance, FunctionInvocation.FunctionName, FunctionInvocation.Guards, FunctionInvocation.WhereResource, FunctionName, HiddenReason, InvocationID, InvocationParams, LinkID, MergeBaseRevisionNum, MergeEndRevisionNum, MergeSourceID, MutationID, MutationNum, OrganizationID, ReplayOutcome, ReplayReason, RestoredRevisionNum, RevisionID, RevisionNum, SpaceID, Subgroup, TriggerID, UnitID, UpdatedAt.
 	//
 	// Selects Mutations of this Unit whose paths the merge must not overwrite, unioned with the Protected values stored on the Unit's MutationSources.
 	//
@@ -22771,7 +21365,7 @@ type UpdateUnitParams struct {
 	// An example conjunction is:
 	// `CreatedAt >= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.
 	//
-	// Supported attributes for filtering on Mutation: BridgeWorkerID, ChannelID, CreatedAt, FunctionInvocation.Arguments, FunctionInvocation.Clearance, FunctionInvocation.FunctionName, FunctionInvocation.Guards, FunctionInvocation.WhereResource, FunctionName, HiddenReason, InvocationID, InvocationParams, LinkID, MergeBaseRevisionNum, MergeEndRevisionNum, MergeSourceID, MutationID, MutationNum, OrganizationID, ReplayOutcome, ReplayReason, RestoredRevisionNum, RevisionID, RevisionNum, SpaceID, Subgroup, TriggerID, UnitID, UpdatedAt.
+	// Supported attributes for filtering on Mutation: ChannelID, CreatedAt, FunctionInvocation.Arguments, FunctionInvocation.Clearance, FunctionInvocation.FunctionName, FunctionInvocation.Guards, FunctionInvocation.WhereResource, FunctionName, HiddenReason, InvocationID, InvocationParams, LinkID, MergeBaseRevisionNum, MergeEndRevisionNum, MergeSourceID, MutationID, MutationNum, OrganizationID, ReplayOutcome, ReplayReason, RestoredRevisionNum, RevisionID, RevisionNum, SpaceID, Subgroup, TriggerID, UnitID, UpdatedAt.
 	//
 	// Selects Mutations of this Unit whose paths the merge must not overwrite, unioned with the Protected values stored on the Unit's MutationSources.
 	//
@@ -22915,7 +21509,7 @@ type ListExtendedMutationsParams struct {
 	// An example conjunction is:
 	// `CreatedAt >= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.
 	//
-	// Supported attributes for filtering on Mutation: BridgeWorkerID, ChannelID, CreatedAt, FunctionInvocation.Arguments, FunctionInvocation.Clearance, FunctionInvocation.FunctionName, FunctionInvocation.Guards, FunctionInvocation.WhereResource, FunctionName, HiddenReason, InvocationID, InvocationParams, LinkID, MergeBaseRevisionNum, MergeEndRevisionNum, MergeSourceID, MutationID, MutationNum, OrganizationID, ReplayOutcome, ReplayReason, RestoredRevisionNum, RevisionID, RevisionNum, SpaceID, Subgroup, TriggerID, UnitID, UpdatedAt.
+	// Supported attributes for filtering on Mutation: ChannelID, CreatedAt, FunctionInvocation.Arguments, FunctionInvocation.Clearance, FunctionInvocation.FunctionName, FunctionInvocation.Guards, FunctionInvocation.WhereResource, FunctionName, HiddenReason, InvocationID, InvocationParams, LinkID, MergeBaseRevisionNum, MergeEndRevisionNum, MergeSourceID, MutationID, MutationNum, OrganizationID, ReplayOutcome, ReplayReason, RestoredRevisionNum, RevisionID, RevisionNum, SpaceID, Subgroup, TriggerID, UnitID, UpdatedAt.
 	//
 	// The function invoked is returned as a FunctionInvocation object, and `where` names its fields the same way: `FunctionInvocation.FunctionName`, `FunctionInvocation.Guards.<reason>`, and `FunctionInvocation.Arguments`, which is a list addressed with dot notation. `FunctionInvocation.Arguments.?ParameterName=container-image.Value LIKE 'nginx%'` reads the argument bound to a named parameter, `FunctionInvocation.Arguments.*.Value` matches any argument's value, and `FunctionInvocation.Arguments.0.Value` addresses the first argument. Arguments passed positionally have no ParameterName.
 	//
@@ -23003,7 +21597,7 @@ type ListExtendedMutationsParams struct {
 	//
 	// Field names are case-sensitive and PascalCase, as in the JSON encoding. Sort direction defaults to ASC when the 'DIRECTION:' prefix is omitted.
 	//
-	// Supported attributes for ordering Mutation: BridgeWorkerID, ChannelID, CreatedAt, FunctionName, HiddenReason, InvocationID, LinkID, MergeBaseRevisionNum, MergeEndRevisionNum, MergeSourceID, MutationID, MutationNum, OrganizationID, ReplayOutcome, ReplayReason, RestoredRevisionNum, RevisionID, RevisionNum, Subgroup, TriggerID, UnitID, UpdatedAt.
+	// Supported attributes for ordering Mutation: ChannelID, CreatedAt, FunctionName, HiddenReason, InvocationID, LinkID, MergeBaseRevisionNum, MergeEndRevisionNum, MergeSourceID, MutationID, MutationNum, OrganizationID, ReplayOutcome, ReplayReason, RestoredRevisionNum, RevisionID, RevisionNum, Subgroup, TriggerID, UnitID, UpdatedAt.
 	//
 	// Example: 'DESC:CreatedAt' or 'DisplayName,DESC:CreatedAt'.
 	//
@@ -23169,7 +21763,7 @@ type ListExtendedResourcesParams struct {
 	//
 	// Field names are case-sensitive and PascalCase, as in the JSON encoding. Sort direction defaults to ASC when the 'DIRECTION:' prefix is omitted.
 	//
-	// Supported attributes for ordering Resource: CreatedAt, HiddenReason, OrganizationID, ResourceID, ResourceIndex, ResourceName, ResourceType, SpaceID, TargetID, ToolchainType, UnitID, UpdatedAt.
+	// Supported attributes for ordering Resource: CreatedAt, HiddenReason, OrganizationID, ResourceID, ResourceIndex, ResourceName, ResourceType, SpaceID, ToolchainType, UnitID, UpdatedAt.
 	//
 	// Example: 'DESC:CreatedAt' or 'DisplayName,DESC:CreatedAt'.
 	//
@@ -23594,111 +22188,6 @@ type GetExtendedRevisionParams struct {
 	Select *string `form:"select,omitempty" json:"select,omitempty" yaml:"select,omitempty"`
 }
 
-// ListUnitActionsParams defines parameters for ListUnitActions.
-type ListUnitActionsParams struct {
-	// Where The specified string is an expression for the purpose of filtering
-	// the list of QueuedOperations returned. The expression syntax was inspired by SQL.
-	// It supports conjunctions using `AND` of relational expressions of the form *attribute*
-	// *operator* *attribute_or_literal*. The attribute names are case-sensitive and PascalCase,
-	// as in the JSON encoding.
-	// Strings support the following operators: `<`, `>`, `<=`, `>=`, `=`, `!=`, `LIKE`, `NOT LIKE`, `ILIKE`, `~~`, `!~~`, `~`, `~*`, `!~`, `!~*`, `IN`, `NOT IN`.
-	// String pattern operators: `LIKE` and `~~` for pattern matching with `%` and `_` wildcards,
-	// `ILIKE` for case-insensitive pattern matching, `NOT LIKE` and `!~~` for negated pattern matching.
-	// String regex operators: `~` for regex matching, `~*` for case-insensitive regex,
-	// `!~` and `!~*` for regex not matching (case-sensitive and insensitive).
-	// Integers support the following operators: `<`, `>`, `<=`, `>=`, `=`, `!=`, `IN`, `NOT IN`.
-	// UUIDs and boolean attributes support equality and inequality only.
-	// UUID and time literals must be quoted as string literals.
-	// String literals are quoted with single quotes, such as `'string'`.
-	// Time literals use the same form as when serialized as JSON,
-	// such as: `CreatedAt > '2025-02-18T23:16:34'`.
-	// Integer and boolean literals are also supported for attributes of those types.
-	// Arrays support the `?` operator to to match any element of the array,
-	// as in `FromLinkID ? '7c61626f-ddbe-41af-93f6-b69f4ab6d308'`.
-	// Arrays can perform LEN() to check for length, as in `LEN(FromLinkID) > 0`.
-	// An attribute naming a list of other entities can be filtered on their attributes with a `*` segment,
-	// as in `FromLink.*.Slug = 'upgrade-app'`, which holds when any element satisfies it.
-	// Without the `*` such a reference is an error, since it names no single value to compare.
-	// Map support the dot notation to specify a particular map key, as in `Labels.tier = 'Backend'`.
-	// Maps support `IS NULL` and `IS NOT NULL` with dot notation to check for key absence or presence,
-	// as in `Labels.tier IS NULL` (key doesn't exist) or `Labels.tier IS NOT NULL` (key exists).
-	// Comparison results can be tested with `IS TRUE`, `IS FALSE`, `IS NOT TRUE`, and `IS NOT FALSE`.
-	// These are useful for nullable columns: `MergeSourceID = '<uuid>' IS NOT FALSE` matches rows where MergeSourceID equals the value OR is NULL.
-	// The `IN` and `NOT IN` operators accept a comma-separated list of values in parentheses,
-	// such as `Slug IN ('slugone', 'slugtwo')` or `Labels.environment IN ('prod', 'staging')`.
-	// Conjunctions are supported using the `AND` operator.
-	// An example conjunction is:
-	// `CreatedAt >= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.
-	//
-	// Supported attributes for filtering on QueuedOperation: Action, BridgeWorkerID, CreatedAt, DryRun, OrganizationID, QueuedOperationID, RevisionNum, SpaceID, Status, TargetID, UnitActionNum, UnitID.
-	//
-	// The whole string must be query-encoded.
-	Where *string `form:"where,omitempty" json:"where,omitempty" yaml:"where,omitempty"`
-
-	// Filter UUID of a Filter entity to apply to the QueuedOperation list.
-	//
-	// The Filter must be in the same Organization as the user credentials.
-	//
-	// The Filter's From field must match the entity type being filtered (QueuedOperation).
-	//
-	// For Space-resident entities, if the Filter has a FromSpaceID, it must match the operation's SpaceID.
-	//
-	// The Filter's Where clause will be combined with any explicit 'where' parameter using AND logic.
-	//
-	// If both 'filter' and 'where' parameters are specified, they are combined with AND logic.
-	Filter *string `form:"filter,omitempty" json:"filter,omitempty" yaml:"filter,omitempty"`
-
-	// Contains Free text search that approximately matches the specified string against string fields and map keys/values.
-	//
-	// The search is case-insensitive and uses pattern matching to find entities containing the text.
-	//
-	// Searchable string fields include attributes like Slug, DisplayName, and string-typed custom fields.
-	//
-	// For map fields (like Labels and Annotations), the search matches both map keys and values.
-	//
-	// The search uses OR logic across all searchable fields, so matching any field will return the entity.
-	//
-	// If both 'where' and 'contains' parameters are specified, they are combined with AND logic.
-	//
-	// Searchable fields for QueuedOperation include string and map-type attributes from the queryable attributes list.
-	//
-	// The whole string must be query-encoded.
-	Contains *string `form:"contains,omitempty" json:"contains,omitempty" yaml:"contains,omitempty"`
-
-	// WherePermission Only return QueuedOperation entities on which the caller has this permission, as well as View, which every entity listed needs.
-	//
-	// A list made to choose an entity to act on can name the permission the action needs, such as Edit to change it or Use to refer to it from another entity, so that it leaves out the entities the action would be refused on.
-	//
-	// Supported values: Manage, Edit, Use, View.
-	WherePermission *ListUnitActionsParamsWherePermission `form:"where_permission,omitempty" json:"where_permission,omitempty" yaml:"where_permission,omitempty"`
-
-	// Limit Maximum number of QueuedOperation entities to return. If not specified, all matching entities are returned. Values greater than 1000 are rejected with 400. When there may be more entities, the response has a ConfigHub-Continue header to pass as the continue parameter of the next request.
-	Limit *int `form:"limit,omitempty" json:"limit,omitempty" yaml:"limit,omitempty"`
-
-	// OrderBy Comma-separated list of fields to sort QueuedOperation results by, each in the form 'ASC|DESC:FieldName' or just 'FieldName'.
-	//
-	// Field names are case-sensitive and PascalCase, as in the JSON encoding. Sort direction defaults to ASC when the 'DIRECTION:' prefix is omitted.
-	//
-	// Supported attributes for ordering QueuedOperation: Action, BridgeWorkerID, CreatedAt, DryRun, OrganizationID, QueuedOperationID, RevisionNum, Status, TargetID, UnitActionNum, UnitID.
-	//
-	// Example: 'DESC:CreatedAt' or 'DisplayName,DESC:CreatedAt'.
-	//
-	// Results are ordered by the QueuedOperation's ID after the fields named, and by the ID alone if none are.
-	//
-	// The whole string must be query-encoded.
-	OrderBy *string `form:"order_by,omitempty" json:"order_by,omitempty" yaml:"order_by,omitempty"`
-
-	// Continue The token from the ConfigHub-Continue header of the previous page, to return the QueuedOperation entities after it.
-	//
-	// The request's other parameters, except limit, must be the same as those of the request that returned the token.
-	//
-	// Keep reading until a response has no such header: a page can hold fewer entities than the limit, or none, and still be followed by more.
-	Continue *string `form:"continue,omitempty" json:"continue,omitempty" yaml:"continue,omitempty"`
-}
-
-// ListUnitActionsParamsWherePermission defines parameters for ListUnitActions.
-type ListUnitActionsParamsWherePermission string
-
 // ListUnitEventsParams defines parameters for ListUnitEvents.
 type ListUnitEventsParams struct {
 	// Where The specified string is an expression for the purpose of filtering
@@ -23735,7 +22224,7 @@ type ListUnitEventsParams struct {
 	// An example conjunction is:
 	// `CreatedAt >= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.
 	//
-	// Supported attributes for filtering on UnitEvent: Action, BridgeWorkerID, CreatedAt, HiddenReason, OrganizationID, QueuedOperationID, Result, RevisionNum, SpaceID, StartedAt, Status, TerminatedAt, UnitEventID, UnitEventNum, UnitID, UpdatedAt.
+	// Supported attributes for filtering on UnitEvent: Action, CreatedAt, HiddenReason, OrganizationID, Result, RevisionNum, SpaceID, StartedAt, Status, TerminatedAt, UnitEventID, UnitEventNum, UnitID, UpdatedAt.
 	//
 	// The whole string must be query-encoded.
 	Where *string `form:"where,omitempty" json:"where,omitempty" yaml:"where,omitempty"`
@@ -23797,7 +22286,7 @@ type ListUnitEventsParams struct {
 	//
 	// Field names are case-sensitive and PascalCase, as in the JSON encoding. Sort direction defaults to ASC when the 'DIRECTION:' prefix is omitted.
 	//
-	// Supported attributes for ordering UnitEvent: Action, BridgeWorkerID, CreatedAt, HiddenReason, OrganizationID, QueuedOperationID, Result, RevisionNum, StartedAt, Status, TerminatedAt, UnitEventID, UnitEventNum, UnitID, UpdatedAt.
+	// Supported attributes for ordering UnitEvent: Action, CreatedAt, HiddenReason, OrganizationID, Result, RevisionNum, StartedAt, Status, TerminatedAt, UnitEventID, UnitEventNum, UnitID, UpdatedAt.
 	//
 	// Example: 'DESC:CreatedAt' or 'DisplayName,DESC:CreatedAt'.
 	//
@@ -25299,7 +23788,7 @@ type BulkCreateTargetsParams struct {
 	// An example conjunction is:
 	// `CreatedAt >= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.
 	//
-	// Supported attributes for filtering on Unit: Annotations, ApplyGates, ApplyWarnings, ChangeSetID, Conflicts, CreatedAt, DataHash, DeleteGates, DestroyGates, DisplayName, FromLinkID, HeadRevisionID, HeadRevisionNum, HeadUnitActionNum, HeadUnitEventNum, HiddenReason, Labels, LastChangeDescription, LastReleasedRevisionNum, LinkFindings, NeededPaths, OrganizationID, Permissions, ProvidedPaths, ProviderType, Releasable, Slug, SpaceID, TargetID, ToolchainType, UnitID, UpdatedAt, UpstreamRevisionNum, UpstreamSpaceID, UpstreamUnitID, ValidationErrors, ValidationResults, ValidationTriggerIDs, ValidationWarnings, ValueTriggerIDs, Values.
+	// Supported attributes for filtering on Unit: Annotations, ApplyGates, ApplyWarnings, ChangeSetID, Conflicts, CreatedAt, DataHash, DeleteGates, DestroyGates, DisplayName, FromLinkID, HeadRevisionID, HeadRevisionNum, HeadUnitEventNum, HiddenReason, Labels, LastChangeDescription, LastReleasedRevisionNum, LinkFindings, NeededPaths, OrganizationID, Permissions, ProvidedPaths, Slug, SpaceID, TargetID, ToolchainType, UnitID, Unreleasable, UpdatedAt, UpstreamRevisionNum, UpstreamSpaceID, UpstreamUnitID, ValidationErrors, ValidationResults, ValidationTriggerIDs, ValidationWarnings, ValueTriggerIDs, Values.
 	//
 	// The Units to create entities from, with from_backing_units.
 	//
@@ -25445,7 +23934,7 @@ type BulkDeleteTriggersParams struct {
 	// An example conjunction is:
 	// `CreatedAt >= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.
 	//
-	// Supported attributes for filtering on Trigger: Annotations, Arguments, BackingUnitID, BridgeWorkerID, ChannelID, Clearance, CreatedAt, DeleteGates, Description, Disabled, DisplayName, Event, FunctionName, Guards, Hash, HiddenReason, InvocationID, Labels, OrganizationID, OtherDataSource, Permissions, Protect, Slug, SpaceID, ToolchainType, TriggerID, UnitFilterID, UpdatedAt, UpstreamTriggerID, Validating, Warn, WhereResource, WhereUnit.
+	// Supported attributes for filtering on Trigger: Annotations, Arguments, BackingUnitID, ChannelID, Clearance, CreatedAt, DeleteGates, Description, Disabled, DisplayName, Event, FunctionName, Guards, Hash, HiddenReason, InvocationID, Labels, OrganizationID, OtherDataSource, Permissions, Protect, Slug, SpaceID, ToolchainType, TriggerID, UnitFilterID, UpdatedAt, UpstreamTriggerID, Validating, Warn, WhereResource, WhereUnit.
 	//
 	// A Trigger returns the function it invokes inline rather than in a FunctionInvocation object, so `where` names FunctionName and Arguments directly. The arguments are addressed with dot notation into `Arguments`, which is a list: `Arguments.?ParameterName=attribute-name.Value = 'owner'` reads the argument bound to a named parameter, `Arguments.*.Value` matches any argument's value, and `Arguments.0.Value` addresses the first argument. Arguments passed positionally have no ParameterName.
 	//
@@ -25495,7 +23984,7 @@ type BulkDeleteTriggersParams struct {
 	// The attribute names are case-sensitive, PascalCase, and
 	// expected in a comma-separated list format as in the JSON encoding.
 	//
-	// Supported attributes for Trigger are BridgeWorkerID, ChannelID, InvocationID, OrganizationID, Permissions, SpaceID, UnitFilterID.
+	// Supported attributes for Trigger are ChannelID, InvocationID, OrganizationID, Permissions, SpaceID, UnitFilterID.
 	//
 	// The whole string must be query-encoded.
 	Include *string `form:"include,omitempty" json:"include,omitempty" yaml:"include,omitempty"`
@@ -25546,7 +24035,7 @@ type ListAllTriggersParams struct {
 	// An example conjunction is:
 	// `CreatedAt >= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.
 	//
-	// Supported attributes for filtering on Trigger: Annotations, Arguments, BackingUnitID, BridgeWorkerID, ChannelID, Clearance, CreatedAt, DeleteGates, Description, Disabled, DisplayName, Event, FunctionName, Guards, Hash, HiddenReason, InvocationID, Labels, OrganizationID, OtherDataSource, Permissions, Protect, Slug, SpaceID, ToolchainType, TriggerID, UnitFilterID, UpdatedAt, UpstreamTriggerID, Validating, Warn, WhereResource, WhereUnit.
+	// Supported attributes for filtering on Trigger: Annotations, Arguments, BackingUnitID, ChannelID, Clearance, CreatedAt, DeleteGates, Description, Disabled, DisplayName, Event, FunctionName, Guards, Hash, HiddenReason, InvocationID, Labels, OrganizationID, OtherDataSource, Permissions, Protect, Slug, SpaceID, ToolchainType, TriggerID, UnitFilterID, UpdatedAt, UpstreamTriggerID, Validating, Warn, WhereResource, WhereUnit.
 	//
 	// A Trigger returns the function it invokes inline rather than in a FunctionInvocation object, so `where` names FunctionName and Arguments directly. The arguments are addressed with dot notation into `Arguments`, which is a list: `Arguments.?ParameterName=attribute-name.Value = 'owner'` reads the argument bound to a named parameter, `Arguments.*.Value` matches any argument's value, and `Arguments.0.Value` addresses the first argument. Arguments passed positionally have no ParameterName.
 	//
@@ -25587,7 +24076,7 @@ type ListAllTriggersParams struct {
 	// The attribute names are case-sensitive, PascalCase, and
 	// expected in a comma-separated list format as in the JSON encoding.
 	//
-	// Supported attributes for Trigger are BridgeWorkerID, ChannelID, InvocationID, OrganizationID, Permissions, SpaceID, UnitFilterID.
+	// Supported attributes for Trigger are ChannelID, InvocationID, OrganizationID, Permissions, SpaceID, UnitFilterID.
 	//
 	// The whole string must be query-encoded.
 	Include *string `form:"include,omitempty" json:"include,omitempty" yaml:"include,omitempty"`
@@ -25634,7 +24123,7 @@ type ListAllTriggersParams struct {
 	//
 	// Field names are case-sensitive and PascalCase, as in the JSON encoding. Sort direction defaults to ASC when the 'DIRECTION:' prefix is omitted.
 	//
-	// Supported attributes for ordering Trigger: BackingUnitID, BridgeWorkerID, ChannelID, CreatedAt, Description, Disabled, DisplayName, Event, FunctionName, Hash, HiddenReason, InvocationID, OrganizationID, OtherDataSource, Protect, Slug, SpaceID, ToolchainType, TriggerID, UnitFilterID, UpdatedAt, UpstreamTriggerID, Validating, Warn, WhereResource, WhereUnit.
+	// Supported attributes for ordering Trigger: BackingUnitID, ChannelID, CreatedAt, Description, Disabled, DisplayName, Event, FunctionName, Hash, HiddenReason, InvocationID, OrganizationID, OtherDataSource, Protect, Slug, SpaceID, ToolchainType, TriggerID, UnitFilterID, UpdatedAt, UpstreamTriggerID, Validating, Warn, WhereResource, WhereUnit.
 	//
 	// Example: 'DESC:CreatedAt' or 'DisplayName,DESC:CreatedAt'.
 	//
@@ -25660,10 +24149,9 @@ type BulkPatchTriggersApplicationMergePatchPlusJSONBody struct {
 	Annotations *map[string]*string `json:"Annotations,omitempty" yaml:"Annotations,omitempty"`
 
 	// Arguments Function arguments
-	Arguments      *[]*map[string]interface{} `json:"Arguments,omitempty" yaml:"Arguments,omitempty"`
-	BridgeWorkerID *openapi_types.UUID        `json:"BridgeWorkerID,omitempty" yaml:"BridgeWorkerID,omitempty"`
-	ChannelID      *openapi_types.UUID        `json:"ChannelID,omitempty" yaml:"ChannelID,omitempty"`
-	Clearance      *[]*map[string]interface{} `json:"Clearance,omitempty" yaml:"Clearance,omitempty"`
+	Arguments *[]*map[string]interface{} `json:"Arguments,omitempty" yaml:"Arguments,omitempty"`
+	ChannelID *openapi_types.UUID        `json:"ChannelID,omitempty" yaml:"ChannelID,omitempty"`
+	Clearance *[]*map[string]interface{} `json:"Clearance,omitempty" yaml:"Clearance,omitempty"`
 
 	// DeleteGates An optional set of gates that, if any is present, will block deletion
 	DeleteGates *map[string]*bool `json:"DeleteGates,omitempty" yaml:"DeleteGates,omitempty"`
@@ -25671,9 +24159,8 @@ type BulkPatchTriggersApplicationMergePatchPlusJSONBody struct {
 	Disabled    *bool             `json:"Disabled,omitempty" yaml:"Disabled,omitempty"`
 
 	// DisplayName Friendly name for the entity.
-	DisplayName   *string `json:"DisplayName,omitempty" yaml:"DisplayName,omitempty"`
-	Event         *string `json:"Event,omitempty" yaml:"Event,omitempty"`
-	FailOpenAfter *int    `json:"FailOpenAfter,omitempty" yaml:"FailOpenAfter,omitempty"`
+	DisplayName *string `json:"DisplayName,omitempty" yaml:"DisplayName,omitempty"`
+	Event       *string `json:"Event,omitempty" yaml:"Event,omitempty"`
 
 	// FunctionName Function name
 	FunctionName *string `json:"FunctionName,omitempty" yaml:"FunctionName,omitempty"`
@@ -25741,7 +24228,7 @@ type BulkPatchTriggersParams struct {
 	// An example conjunction is:
 	// `CreatedAt >= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.
 	//
-	// Supported attributes for filtering on Trigger: Annotations, Arguments, BackingUnitID, BridgeWorkerID, ChannelID, Clearance, CreatedAt, DeleteGates, Description, Disabled, DisplayName, Event, FunctionName, Guards, Hash, HiddenReason, InvocationID, Labels, OrganizationID, OtherDataSource, Permissions, Protect, Slug, SpaceID, ToolchainType, TriggerID, UnitFilterID, UpdatedAt, UpstreamTriggerID, Validating, Warn, WhereResource, WhereUnit.
+	// Supported attributes for filtering on Trigger: Annotations, Arguments, BackingUnitID, ChannelID, Clearance, CreatedAt, DeleteGates, Description, Disabled, DisplayName, Event, FunctionName, Guards, Hash, HiddenReason, InvocationID, Labels, OrganizationID, OtherDataSource, Permissions, Protect, Slug, SpaceID, ToolchainType, TriggerID, UnitFilterID, UpdatedAt, UpstreamTriggerID, Validating, Warn, WhereResource, WhereUnit.
 	//
 	// A Trigger returns the function it invokes inline rather than in a FunctionInvocation object, so `where` names FunctionName and Arguments directly. The arguments are addressed with dot notation into `Arguments`, which is a list: `Arguments.?ParameterName=attribute-name.Value = 'owner'` reads the argument bound to a named parameter, `Arguments.*.Value` matches any argument's value, and `Arguments.0.Value` addresses the first argument. Arguments passed positionally have no ParameterName.
 	//
@@ -25791,7 +24278,7 @@ type BulkPatchTriggersParams struct {
 	// The attribute names are case-sensitive, PascalCase, and
 	// expected in a comma-separated list format as in the JSON encoding.
 	//
-	// Supported attributes for Trigger are BridgeWorkerID, ChannelID, InvocationID, OrganizationID, Permissions, SpaceID, UnitFilterID.
+	// Supported attributes for Trigger are ChannelID, InvocationID, OrganizationID, Permissions, SpaceID, UnitFilterID.
 	//
 	// The whole string must be query-encoded.
 	Include *string `form:"include,omitempty" json:"include,omitempty" yaml:"include,omitempty"`
@@ -25818,10 +24305,9 @@ type BulkCreateTriggersApplicationMergePatchPlusJSONBody struct {
 	Annotations *map[string]*string `json:"Annotations,omitempty" yaml:"Annotations,omitempty"`
 
 	// Arguments Function arguments
-	Arguments      *[]*map[string]interface{} `json:"Arguments,omitempty" yaml:"Arguments,omitempty"`
-	BridgeWorkerID *openapi_types.UUID        `json:"BridgeWorkerID,omitempty" yaml:"BridgeWorkerID,omitempty"`
-	ChannelID      *openapi_types.UUID        `json:"ChannelID,omitempty" yaml:"ChannelID,omitempty"`
-	Clearance      *[]*map[string]interface{} `json:"Clearance,omitempty" yaml:"Clearance,omitempty"`
+	Arguments *[]*map[string]interface{} `json:"Arguments,omitempty" yaml:"Arguments,omitempty"`
+	ChannelID *openapi_types.UUID        `json:"ChannelID,omitempty" yaml:"ChannelID,omitempty"`
+	Clearance *[]*map[string]interface{} `json:"Clearance,omitempty" yaml:"Clearance,omitempty"`
 
 	// DeleteGates An optional set of gates that, if any is present, will block deletion
 	DeleteGates *map[string]*bool `json:"DeleteGates,omitempty" yaml:"DeleteGates,omitempty"`
@@ -25829,9 +24315,8 @@ type BulkCreateTriggersApplicationMergePatchPlusJSONBody struct {
 	Disabled    *bool             `json:"Disabled,omitempty" yaml:"Disabled,omitempty"`
 
 	// DisplayName Friendly name for the entity.
-	DisplayName   *string `json:"DisplayName,omitempty" yaml:"DisplayName,omitempty"`
-	Event         *string `json:"Event,omitempty" yaml:"Event,omitempty"`
-	FailOpenAfter *int    `json:"FailOpenAfter,omitempty" yaml:"FailOpenAfter,omitempty"`
+	DisplayName *string `json:"DisplayName,omitempty" yaml:"DisplayName,omitempty"`
+	Event       *string `json:"Event,omitempty" yaml:"Event,omitempty"`
 
 	// FunctionName Function name
 	FunctionName *string `json:"FunctionName,omitempty" yaml:"FunctionName,omitempty"`
@@ -25899,7 +24384,7 @@ type BulkCreateTriggersParams struct {
 	// An example conjunction is:
 	// `CreatedAt >= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.
 	//
-	// Supported attributes for filtering on Trigger: Annotations, Arguments, BackingUnitID, BridgeWorkerID, ChannelID, Clearance, CreatedAt, DeleteGates, Description, Disabled, DisplayName, Event, FunctionName, Guards, Hash, HiddenReason, InvocationID, Labels, OrganizationID, OtherDataSource, Permissions, Protect, Slug, SpaceID, ToolchainType, TriggerID, UnitFilterID, UpdatedAt, UpstreamTriggerID, Validating, Warn, WhereResource, WhereUnit.
+	// Supported attributes for filtering on Trigger: Annotations, Arguments, BackingUnitID, ChannelID, Clearance, CreatedAt, DeleteGates, Description, Disabled, DisplayName, Event, FunctionName, Guards, Hash, HiddenReason, InvocationID, Labels, OrganizationID, OtherDataSource, Permissions, Protect, Slug, SpaceID, ToolchainType, TriggerID, UnitFilterID, UpdatedAt, UpstreamTriggerID, Validating, Warn, WhereResource, WhereUnit.
 	//
 	// A Trigger returns the function it invokes inline rather than in a FunctionInvocation object, so `where` names FunctionName and Arguments directly. The arguments are addressed with dot notation into `Arguments`, which is a list: `Arguments.?ParameterName=attribute-name.Value = 'owner'` reads the argument bound to a named parameter, `Arguments.*.Value` matches any argument's value, and `Arguments.0.Value` addresses the first argument. Arguments passed positionally have no ParameterName.
 	//
@@ -25949,7 +24434,7 @@ type BulkCreateTriggersParams struct {
 	// The attribute names are case-sensitive, PascalCase, and
 	// expected in a comma-separated list format as in the JSON encoding.
 	//
-	// Supported attributes for Trigger are BridgeWorkerID, ChannelID, InvocationID, OrganizationID, Permissions, SpaceID, UnitFilterID.
+	// Supported attributes for Trigger are ChannelID, InvocationID, OrganizationID, Permissions, SpaceID, UnitFilterID.
 	//
 	// The whole string must be query-encoded.
 	Include *string `form:"include,omitempty" json:"include,omitempty" yaml:"include,omitempty"`
@@ -26066,7 +24551,7 @@ type BulkCreateTriggersParams struct {
 	// An example conjunction is:
 	// `CreatedAt >= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.
 	//
-	// Supported attributes for filtering on Unit: Annotations, ApplyGates, ApplyWarnings, ChangeSetID, Conflicts, CreatedAt, DataHash, DeleteGates, DestroyGates, DisplayName, FromLinkID, HeadRevisionID, HeadRevisionNum, HeadUnitActionNum, HeadUnitEventNum, HiddenReason, Labels, LastChangeDescription, LastReleasedRevisionNum, LinkFindings, NeededPaths, OrganizationID, Permissions, ProvidedPaths, ProviderType, Releasable, Slug, SpaceID, TargetID, ToolchainType, UnitID, UpdatedAt, UpstreamRevisionNum, UpstreamSpaceID, UpstreamUnitID, ValidationErrors, ValidationResults, ValidationTriggerIDs, ValidationWarnings, ValueTriggerIDs, Values.
+	// Supported attributes for filtering on Unit: Annotations, ApplyGates, ApplyWarnings, ChangeSetID, Conflicts, CreatedAt, DataHash, DeleteGates, DestroyGates, DisplayName, FromLinkID, HeadRevisionID, HeadRevisionNum, HeadUnitEventNum, HiddenReason, Labels, LastChangeDescription, LastReleasedRevisionNum, LinkFindings, NeededPaths, OrganizationID, Permissions, ProvidedPaths, Slug, SpaceID, TargetID, ToolchainType, UnitID, Unreleasable, UpdatedAt, UpstreamRevisionNum, UpstreamSpaceID, UpstreamUnitID, ValidationErrors, ValidationResults, ValidationTriggerIDs, ValidationWarnings, ValueTriggerIDs, Values.
 	//
 	// The Units to create entities from, with from_backing_units.
 	//
@@ -26119,7 +24604,7 @@ type BulkMoveTriggersParams struct {
 	// An example conjunction is:
 	// `CreatedAt >= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.
 	//
-	// Supported attributes for filtering on Trigger: Annotations, Arguments, BackingUnitID, BridgeWorkerID, ChannelID, Clearance, CreatedAt, DeleteGates, Description, Disabled, DisplayName, Event, FunctionName, Guards, Hash, HiddenReason, InvocationID, Labels, OrganizationID, OtherDataSource, Permissions, Protect, Slug, SpaceID, ToolchainType, TriggerID, UnitFilterID, UpdatedAt, UpstreamTriggerID, Validating, Warn, WhereResource, WhereUnit.
+	// Supported attributes for filtering on Trigger: Annotations, Arguments, BackingUnitID, ChannelID, Clearance, CreatedAt, DeleteGates, Description, Disabled, DisplayName, Event, FunctionName, Guards, Hash, HiddenReason, InvocationID, Labels, OrganizationID, OtherDataSource, Permissions, Protect, Slug, SpaceID, ToolchainType, TriggerID, UnitFilterID, UpdatedAt, UpstreamTriggerID, Validating, Warn, WhereResource, WhereUnit.
 	//
 	// The whole string must be query-encoded.
 	Where *string `form:"where,omitempty" json:"where,omitempty" yaml:"where,omitempty"`
@@ -26167,7 +24652,7 @@ type BulkMoveTriggersParams struct {
 	// The attribute names are case-sensitive, PascalCase, and
 	// expected in a comma-separated list format as in the JSON encoding.
 	//
-	// Supported attributes for Trigger are BridgeWorkerID, ChannelID, InvocationID, OrganizationID, Permissions, SpaceID, UnitFilterID.
+	// Supported attributes for Trigger are ChannelID, InvocationID, OrganizationID, Permissions, SpaceID, UnitFilterID.
 	//
 	// The whole string must be query-encoded.
 	Include *string `form:"include,omitempty" json:"include,omitempty" yaml:"include,omitempty"`
@@ -26212,9 +24697,9 @@ type BulkDeleteUnitsParams struct {
 	// An example conjunction is:
 	// `CreatedAt >= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.
 	//
-	// Supported attributes for filtering on Unit: Annotations, ApplyGates, ApplyWarnings, ChangeSetID, Conflicts, CreatedAt, DataHash, DeleteGates, DestroyGates, DisplayName, FromLinkID, HeadRevisionID, HeadRevisionNum, HeadUnitActionNum, HeadUnitEventNum, HiddenReason, Labels, LastChangeDescription, LastReleasedRevisionNum, LinkFindings, NeededPaths, OrganizationID, Permissions, ProvidedPaths, ProviderType, Releasable, Slug, SpaceID, TargetID, ToolchainType, UnitID, UpdatedAt, UpstreamRevisionNum, UpstreamSpaceID, UpstreamUnitID, ValidationErrors, ValidationResults, ValidationTriggerIDs, ValidationWarnings, ValueTriggerIDs, Values.
+	// Supported attributes for filtering on Unit: Annotations, ApplyGates, ApplyWarnings, ChangeSetID, Conflicts, CreatedAt, DataHash, DeleteGates, DestroyGates, DisplayName, FromLinkID, HeadRevisionID, HeadRevisionNum, HeadUnitEventNum, HiddenReason, Labels, LastChangeDescription, LastReleasedRevisionNum, LinkFindings, NeededPaths, OrganizationID, Permissions, ProvidedPaths, Slug, SpaceID, TargetID, ToolchainType, UnitID, Unreleasable, UpdatedAt, UpstreamRevisionNum, UpstreamSpaceID, UpstreamUnitID, ValidationErrors, ValidationResults, ValidationTriggerIDs, ValidationWarnings, ValueTriggerIDs, Values.
 	//
-	// Finding all units created by cloning can be done using the expression `UpstreamRevisionNum > 0`. Clones of a specific unit can be found by additionally filtering based on `UpstreamUnitID`. Units never released can be found using `LastReleasedRevisionNum = 0`. Units with unreleased changes can be found with `HeadRevisionNum > LastReleasedRevisionNum AND TargetID IS NOT NULL`.
+	// Finding all units created by cloning can be done using the expression `UpstreamRevisionNum > 0`. Clones of a specific unit can be found by additionally filtering based on `UpstreamUnitID`. Units never released can be found using `LastReleasedRevisionNum = 0`. Units with unreleased changes can be found with `HeadRevisionNum > LastReleasedRevisionNum AND ReleaseTargetID IS NOT NULL AND Unreleasable = false`.
 	//
 	// The whole string must be query-encoded.
 	Where *string `form:"where,omitempty" json:"where,omitempty" yaml:"where,omitempty"`
@@ -26313,9 +24798,9 @@ type ListAllUnitsParams struct {
 	// An example conjunction is:
 	// `CreatedAt >= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.
 	//
-	// Supported attributes for filtering on Unit: Annotations, ApplyGates, ApplyWarnings, ChangeSetID, Conflicts, CreatedAt, DataHash, DeleteGates, DestroyGates, DisplayName, FromLinkID, HeadRevisionID, HeadRevisionNum, HeadUnitActionNum, HeadUnitEventNum, HiddenReason, Labels, LastChangeDescription, LastReleasedRevisionNum, LinkFindings, NeededPaths, OrganizationID, Permissions, ProvidedPaths, ProviderType, Releasable, Slug, SpaceID, TargetID, ToolchainType, UnitID, UpdatedAt, UpstreamRevisionNum, UpstreamSpaceID, UpstreamUnitID, ValidationErrors, ValidationResults, ValidationTriggerIDs, ValidationWarnings, ValueTriggerIDs, Values.
+	// Supported attributes for filtering on Unit: Annotations, ApplyGates, ApplyWarnings, ChangeSetID, Conflicts, CreatedAt, DataHash, DeleteGates, DestroyGates, DisplayName, FromLinkID, HeadRevisionID, HeadRevisionNum, HeadUnitEventNum, HiddenReason, Labels, LastChangeDescription, LastReleasedRevisionNum, LinkFindings, NeededPaths, OrganizationID, Permissions, ProvidedPaths, Slug, SpaceID, TargetID, ToolchainType, UnitID, Unreleasable, UpdatedAt, UpstreamRevisionNum, UpstreamSpaceID, UpstreamUnitID, ValidationErrors, ValidationResults, ValidationTriggerIDs, ValidationWarnings, ValueTriggerIDs, Values.
 	//
-	// Finding all units created by cloning can be done using the expression `UpstreamRevisionNum > 0`. Clones of a specific unit can be found by additionally filtering based on `UpstreamUnitID`. Units never released can be found using `LastReleasedRevisionNum = 0`. Units with unreleased changes can be found with `HeadRevisionNum > LastReleasedRevisionNum AND TargetID IS NOT NULL`.
+	// Finding all units created by cloning can be done using the expression `UpstreamRevisionNum > 0`. Clones of a specific unit can be found by additionally filtering based on `UpstreamUnitID`. Units never released can be found using `LastReleasedRevisionNum = 0`. Units with unreleased changes can be found with `HeadRevisionNum > LastReleasedRevisionNum AND ReleaseTargetID IS NOT NULL AND Unreleasable = false`.
 	//
 	// The whole string must be query-encoded.
 	Where *string `form:"where,omitempty" json:"where,omitempty" yaml:"where,omitempty"`
@@ -26401,7 +24886,7 @@ type ListAllUnitsParams struct {
 	//
 	// Field names are case-sensitive and PascalCase, as in the JSON encoding. Sort direction defaults to ASC when the 'DIRECTION:' prefix is omitted.
 	//
-	// Supported attributes for ordering Unit: ChangeSetID, CreatedAt, DataHash, DisplayName, HeadRevisionID, HeadRevisionNum, HeadUnitActionNum, HeadUnitEventNum, HiddenReason, LastChangeDescription, LastReleasedRevisionNum, OrganizationID, ProviderType, Slug, SpaceID, TargetID, ToolchainType, UnitID, UpdatedAt, UpstreamRevisionNum, UpstreamUnitID.
+	// Supported attributes for ordering Unit: ChangeSetID, CreatedAt, DataHash, DisplayName, HeadRevisionID, HeadRevisionNum, HeadUnitEventNum, HiddenReason, LastChangeDescription, LastReleasedRevisionNum, OrganizationID, Slug, SpaceID, ToolchainType, UnitID, Unreleasable, UpdatedAt, UpstreamRevisionNum, UpstreamUnitID.
 	//
 	// Example: 'DESC:CreatedAt' or 'DisplayName,DESC:CreatedAt'.
 	//
@@ -26465,16 +24950,13 @@ type BulkPatchUnitsApplicationMergePatchPlusJSONBody struct {
 	// LastChangeDescription LastChangeDescription is a human-readable description of the last change. This description is copied to the new Revision when the Data is changed.
 	LastChangeDescription *string                             `json:"LastChangeDescription,omitempty" yaml:"LastChangeDescription,omitempty"`
 	Permissions           *map[string]*map[string]interface{} `json:"Permissions,omitempty" yaml:"Permissions,omitempty"`
-	ProviderType          *string                             `json:"ProviderType,omitempty" yaml:"ProviderType,omitempty"`
 
 	// Slug Unique URL-safe identifier for the entity.
 	Slug *string `json:"Slug,omitempty" yaml:"Slug,omitempty"`
 
-	// TargetID TargetID is the identifier of the target this unit is associated with. This defines where the configuration will be applied. It must be set to a valid Target before the Unit can be Applied, Destroyed, Imported, or Refreshed.
-	TargetID *openapi_types.UUID `json:"TargetID,omitempty" yaml:"TargetID,omitempty"`
-
 	// ToolchainType ToolchainType specifies the type of toolchain for this unit. Possible values include "Kubernetes/YAML", "AppConfig/Properties", "AppConfig/YAML", "AppConfig/TOML", "AppConfig/INI", "AppConfig/JSON", "AppConfig/Env", "AppConfig/Text", "ConfigHub/YAML".
 	ToolchainType *string `json:"ToolchainType,omitempty" yaml:"ToolchainType,omitempty"`
+	Unreleasable  *bool   `json:"Unreleasable,omitempty" yaml:"Unreleasable,omitempty"`
 
 	// Version An entity-specific sequence number used for optimistic concurrency control. The value read must be sent in calls to Update.
 	Version *int `json:"Version,omitempty" yaml:"Version,omitempty"`
@@ -26516,9 +24998,9 @@ type BulkPatchUnitsParams struct {
 	// An example conjunction is:
 	// `CreatedAt >= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.
 	//
-	// Supported attributes for filtering on Unit: Annotations, ApplyGates, ApplyWarnings, ChangeSetID, Conflicts, CreatedAt, DataHash, DeleteGates, DestroyGates, DisplayName, FromLinkID, HeadRevisionID, HeadRevisionNum, HeadUnitActionNum, HeadUnitEventNum, HiddenReason, Labels, LastChangeDescription, LastReleasedRevisionNum, LinkFindings, NeededPaths, OrganizationID, Permissions, ProvidedPaths, ProviderType, Releasable, Slug, SpaceID, TargetID, ToolchainType, UnitID, UpdatedAt, UpstreamRevisionNum, UpstreamSpaceID, UpstreamUnitID, ValidationErrors, ValidationResults, ValidationTriggerIDs, ValidationWarnings, ValueTriggerIDs, Values.
+	// Supported attributes for filtering on Unit: Annotations, ApplyGates, ApplyWarnings, ChangeSetID, Conflicts, CreatedAt, DataHash, DeleteGates, DestroyGates, DisplayName, FromLinkID, HeadRevisionID, HeadRevisionNum, HeadUnitEventNum, HiddenReason, Labels, LastChangeDescription, LastReleasedRevisionNum, LinkFindings, NeededPaths, OrganizationID, Permissions, ProvidedPaths, Slug, SpaceID, TargetID, ToolchainType, UnitID, Unreleasable, UpdatedAt, UpstreamRevisionNum, UpstreamSpaceID, UpstreamUnitID, ValidationErrors, ValidationResults, ValidationTriggerIDs, ValidationWarnings, ValueTriggerIDs, Values.
 	//
-	// Finding all units created by cloning can be done using the expression `UpstreamRevisionNum > 0`. Clones of a specific unit can be found by additionally filtering based on `UpstreamUnitID`. Units never released can be found using `LastReleasedRevisionNum = 0`. Units with unreleased changes can be found with `HeadRevisionNum > LastReleasedRevisionNum AND TargetID IS NOT NULL`.
+	// Finding all units created by cloning can be done using the expression `UpstreamRevisionNum > 0`. Clones of a specific unit can be found by additionally filtering based on `UpstreamUnitID`. Units never released can be found using `LastReleasedRevisionNum = 0`. Units with unreleased changes can be found with `HeadRevisionNum > LastReleasedRevisionNum AND ReleaseTargetID IS NOT NULL AND Unreleasable = false`.
 	//
 	// The whole string must be query-encoded.
 	Where *string `form:"where,omitempty" json:"where,omitempty" yaml:"where,omitempty"`
@@ -26654,7 +25136,7 @@ type BulkPatchUnitsParams struct {
 	// An example conjunction is:
 	// `CreatedAt >= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.
 	//
-	// Supported attributes for filtering on Mutation: BridgeWorkerID, ChannelID, CreatedAt, FunctionInvocation.Arguments, FunctionInvocation.Clearance, FunctionInvocation.FunctionName, FunctionInvocation.Guards, FunctionInvocation.WhereResource, FunctionName, HiddenReason, InvocationID, InvocationParams, LinkID, MergeBaseRevisionNum, MergeEndRevisionNum, MergeSourceID, MutationID, MutationNum, OrganizationID, ReplayOutcome, ReplayReason, RestoredRevisionNum, RevisionID, RevisionNum, SpaceID, Subgroup, TriggerID, UnitID, UpdatedAt.
+	// Supported attributes for filtering on Mutation: ChannelID, CreatedAt, FunctionInvocation.Arguments, FunctionInvocation.Clearance, FunctionInvocation.FunctionName, FunctionInvocation.Guards, FunctionInvocation.WhereResource, FunctionName, HiddenReason, InvocationID, InvocationParams, LinkID, MergeBaseRevisionNum, MergeEndRevisionNum, MergeSourceID, MutationID, MutationNum, OrganizationID, ReplayOutcome, ReplayReason, RestoredRevisionNum, RevisionID, RevisionNum, SpaceID, Subgroup, TriggerID, UnitID, UpdatedAt.
 	//
 	// Selects Mutations of this Unit whose paths the merge must not overwrite, unioned with the Protected values stored on the Unit's MutationSources.
 	//
@@ -26722,16 +25204,13 @@ type BulkCreateUnitsApplicationMergePatchPlusJSONBody struct {
 	// LastChangeDescription LastChangeDescription is a human-readable description of the last change. This description is copied to the new Revision when the Data is changed.
 	LastChangeDescription *string                             `json:"LastChangeDescription,omitempty" yaml:"LastChangeDescription,omitempty"`
 	Permissions           *map[string]*map[string]interface{} `json:"Permissions,omitempty" yaml:"Permissions,omitempty"`
-	ProviderType          *string                             `json:"ProviderType,omitempty" yaml:"ProviderType,omitempty"`
 
 	// Slug Unique URL-safe identifier for the entity.
 	Slug *string `json:"Slug,omitempty" yaml:"Slug,omitempty"`
 
-	// TargetID TargetID is the identifier of the target this unit is associated with. This defines where the configuration will be applied. It must be set to a valid Target before the Unit can be Applied, Destroyed, Imported, or Refreshed.
-	TargetID *openapi_types.UUID `json:"TargetID,omitempty" yaml:"TargetID,omitempty"`
-
 	// ToolchainType ToolchainType specifies the type of toolchain for this unit. Possible values include "Kubernetes/YAML", "AppConfig/Properties", "AppConfig/YAML", "AppConfig/TOML", "AppConfig/INI", "AppConfig/JSON", "AppConfig/Env", "AppConfig/Text", "ConfigHub/YAML".
 	ToolchainType *string `json:"ToolchainType,omitempty" yaml:"ToolchainType,omitempty"`
+	Unreleasable  *bool   `json:"Unreleasable,omitempty" yaml:"Unreleasable,omitempty"`
 
 	// Version An entity-specific sequence number used for optimistic concurrency control. The value read must be sent in calls to Update.
 	Version *int `json:"Version,omitempty" yaml:"Version,omitempty"`
@@ -26773,9 +25252,9 @@ type BulkCreateUnitsParams struct {
 	// An example conjunction is:
 	// `CreatedAt >= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.
 	//
-	// Supported attributes for filtering on Unit: Annotations, ApplyGates, ApplyWarnings, ChangeSetID, Conflicts, CreatedAt, DataHash, DeleteGates, DestroyGates, DisplayName, FromLinkID, HeadRevisionID, HeadRevisionNum, HeadUnitActionNum, HeadUnitEventNum, HiddenReason, Labels, LastChangeDescription, LastReleasedRevisionNum, LinkFindings, NeededPaths, OrganizationID, Permissions, ProvidedPaths, ProviderType, Releasable, Slug, SpaceID, TargetID, ToolchainType, UnitID, UpdatedAt, UpstreamRevisionNum, UpstreamSpaceID, UpstreamUnitID, ValidationErrors, ValidationResults, ValidationTriggerIDs, ValidationWarnings, ValueTriggerIDs, Values.
+	// Supported attributes for filtering on Unit: Annotations, ApplyGates, ApplyWarnings, ChangeSetID, Conflicts, CreatedAt, DataHash, DeleteGates, DestroyGates, DisplayName, FromLinkID, HeadRevisionID, HeadRevisionNum, HeadUnitEventNum, HiddenReason, Labels, LastChangeDescription, LastReleasedRevisionNum, LinkFindings, NeededPaths, OrganizationID, Permissions, ProvidedPaths, Slug, SpaceID, TargetID, ToolchainType, UnitID, Unreleasable, UpdatedAt, UpstreamRevisionNum, UpstreamSpaceID, UpstreamUnitID, ValidationErrors, ValidationResults, ValidationTriggerIDs, ValidationWarnings, ValueTriggerIDs, Values.
 	//
-	// Finding all units created by cloning can be done using the expression `UpstreamRevisionNum > 0`. Clones of a specific unit can be found by additionally filtering based on `UpstreamUnitID`. Units never released can be found using `LastReleasedRevisionNum = 0`. Units with unreleased changes can be found with `HeadRevisionNum > LastReleasedRevisionNum AND TargetID IS NOT NULL`.
+	// Finding all units created by cloning can be done using the expression `UpstreamRevisionNum > 0`. Clones of a specific unit can be found by additionally filtering based on `UpstreamUnitID`. Units never released can be found using `LastReleasedRevisionNum = 0`. Units with unreleased changes can be found with `HeadRevisionNum > LastReleasedRevisionNum AND ReleaseTargetID IS NOT NULL AND Unreleasable = false`.
 	//
 	// The whole string must be query-encoded.
 	Where *string `form:"where,omitempty" json:"where,omitempty" yaml:"where,omitempty"`
@@ -26955,98 +25434,6 @@ type BulkCreateUnitsParams struct {
 	DryRun *bool `form:"dry_run,omitempty" json:"dry_run,omitempty" yaml:"dry_run,omitempty"`
 }
 
-// BulkCancelUnitsParams defines parameters for BulkCancelUnits.
-type BulkCancelUnitsParams struct {
-	// Where The specified string is an expression for the purpose of filtering
-	// the list of Units returned. The expression syntax was inspired by SQL.
-	// It supports conjunctions using `AND` of relational expressions of the form *attribute*
-	// *operator* *attribute_or_literal*. The attribute names are case-sensitive and PascalCase,
-	// as in the JSON encoding.
-	// Strings support the following operators: `<`, `>`, `<=`, `>=`, `=`, `!=`, `LIKE`, `NOT LIKE`, `ILIKE`, `~~`, `!~~`, `~`, `~*`, `!~`, `!~*`, `IN`, `NOT IN`.
-	// String pattern operators: `LIKE` and `~~` for pattern matching with `%` and `_` wildcards,
-	// `ILIKE` for case-insensitive pattern matching, `NOT LIKE` and `!~~` for negated pattern matching.
-	// String regex operators: `~` for regex matching, `~*` for case-insensitive regex,
-	// `!~` and `!~*` for regex not matching (case-sensitive and insensitive).
-	// Integers support the following operators: `<`, `>`, `<=`, `>=`, `=`, `!=`, `IN`, `NOT IN`.
-	// UUIDs and boolean attributes support equality and inequality only.
-	// UUID and time literals must be quoted as string literals.
-	// String literals are quoted with single quotes, such as `'string'`.
-	// Time literals use the same form as when serialized as JSON,
-	// such as: `CreatedAt > '2025-02-18T23:16:34'`.
-	// Integer and boolean literals are also supported for attributes of those types.
-	// Arrays support the `?` operator to to match any element of the array,
-	// as in `FromLinkID ? '7c61626f-ddbe-41af-93f6-b69f4ab6d308'`.
-	// Arrays can perform LEN() to check for length, as in `LEN(FromLinkID) > 0`.
-	// An attribute naming a list of other entities can be filtered on their attributes with a `*` segment,
-	// as in `FromLink.*.Slug = 'upgrade-app'`, which holds when any element satisfies it.
-	// Without the `*` such a reference is an error, since it names no single value to compare.
-	// Map support the dot notation to specify a particular map key, as in `Labels.tier = 'Backend'`.
-	// Maps support `IS NULL` and `IS NOT NULL` with dot notation to check for key absence or presence,
-	// as in `Labels.tier IS NULL` (key doesn't exist) or `Labels.tier IS NOT NULL` (key exists).
-	// Comparison results can be tested with `IS TRUE`, `IS FALSE`, `IS NOT TRUE`, and `IS NOT FALSE`.
-	// These are useful for nullable columns: `MergeSourceID = '<uuid>' IS NOT FALSE` matches rows where MergeSourceID equals the value OR is NULL.
-	// The `IN` and `NOT IN` operators accept a comma-separated list of values in parentheses,
-	// such as `Slug IN ('slugone', 'slugtwo')` or `Labels.environment IN ('prod', 'staging')`.
-	// Conjunctions are supported using the `AND` operator.
-	// An example conjunction is:
-	// `CreatedAt >= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.
-	//
-	// Supported attributes for filtering on Unit: Annotations, ApplyGates, ApplyWarnings, ChangeSetID, Conflicts, CreatedAt, DataHash, DeleteGates, DestroyGates, DisplayName, FromLinkID, HeadRevisionID, HeadRevisionNum, HeadUnitActionNum, HeadUnitEventNum, HiddenReason, Labels, LastChangeDescription, LastReleasedRevisionNum, LinkFindings, NeededPaths, OrganizationID, Permissions, ProvidedPaths, ProviderType, Releasable, Slug, SpaceID, TargetID, ToolchainType, UnitID, UpdatedAt, UpstreamRevisionNum, UpstreamSpaceID, UpstreamUnitID, ValidationErrors, ValidationResults, ValidationTriggerIDs, ValidationWarnings, ValueTriggerIDs, Values.
-	//
-	// Finding all units created by cloning can be done using the expression `UpstreamRevisionNum > 0`. Clones of a specific unit can be found by additionally filtering based on `UpstreamUnitID`. Units never released can be found using `LastReleasedRevisionNum = 0`. Units with unreleased changes can be found with `HeadRevisionNum > LastReleasedRevisionNum AND TargetID IS NOT NULL`.
-	//
-	// The whole string must be query-encoded.
-	Where *string `form:"where,omitempty" json:"where,omitempty" yaml:"where,omitempty"`
-
-	// Filter UUID of a Filter entity to apply to the Unit list.
-	//
-	// The Filter must be in the same Organization as the user credentials.
-	//
-	// The Filter's From field must match the entity type being filtered (Unit).
-	//
-	// For Space-resident entities, if the Filter has a FromSpaceID, it must match the operation's SpaceID.
-	//
-	// The Filter's Where clause will be combined with any explicit 'where' parameter using AND logic.
-	//
-	// If both 'filter' and 'where' parameters are specified, they are combined with AND logic.
-	Filter *string `form:"filter,omitempty" json:"filter,omitempty" yaml:"filter,omitempty"`
-
-	// Contains Free text search that approximately matches the specified string against string fields and map keys/values.
-	//
-	// The search is case-insensitive and uses pattern matching to find entities containing the text.
-	//
-	// Searchable string fields include attributes like Slug, DisplayName, and string-typed custom fields.
-	//
-	// For map fields (like Labels and Annotations), the search matches both map keys and values.
-	//
-	// The search uses OR logic across all searchable fields, so matching any field will return the entity.
-	//
-	// If both 'where' and 'contains' parameters are specified, they are combined with AND logic.
-	//
-	// Searchable fields for Unit include string and map-type attributes from the queryable attributes list.
-	//
-	// The whole string must be query-encoded.
-	Contains *string `form:"contains,omitempty" json:"contains,omitempty" yaml:"contains,omitempty"`
-
-	// IncludeHidden Hidden Unit entities, those with a HiddenReason, are left out of the results, or of what a bulk operation acts on, unless this names their HiddenReason.
-	//
-	// It is a comma-separated list of HiddenReasons, or `*` for all of them.
-	//
-	// A where clause naming the entities, by their Slug or ID with `=` or `IN`, or naming HiddenReason at all, also returns hidden entities it selects.
-	//
-	// ConfigHub/YAML Units, which hold the configuration of entities, are hidden with the HiddenReason `BackingUnit`.
-	IncludeHidden *string `form:"include_hidden,omitempty" json:"include_hidden,omitempty" yaml:"include_hidden,omitempty"`
-
-	// Include Include clause for expanding related entities in the response for Unit.
-	// The attribute names are case-sensitive, PascalCase, and
-	// expected in a comma-separated list format as in the JSON encoding.
-	//
-	// Supported attributes for Unit are ChangeSetID, FromLinkID, HeadMutationNum, HeadRevisionNum, LastReleasedRevisionNum, OrganizationID, Permissions, SpaceID, TargetID, UnitEventID, UpstreamSpaceID, UpstreamUnitID.
-	//
-	// The whole string must be query-encoded.
-	Include *string `form:"include,omitempty" json:"include,omitempty" yaml:"include,omitempty"`
-}
-
 // BulkMoveUnitsParams defines parameters for BulkMoveUnits.
 type BulkMoveUnitsParams struct {
 	// Where The specified string is an expression for the purpose of filtering
@@ -27083,9 +25470,9 @@ type BulkMoveUnitsParams struct {
 	// An example conjunction is:
 	// `CreatedAt >= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.
 	//
-	// Supported attributes for filtering on Unit: Annotations, ApplyGates, ApplyWarnings, ChangeSetID, Conflicts, CreatedAt, DataHash, DeleteGates, DestroyGates, DisplayName, FromLinkID, HeadRevisionID, HeadRevisionNum, HeadUnitActionNum, HeadUnitEventNum, HiddenReason, Labels, LastChangeDescription, LastReleasedRevisionNum, LinkFindings, NeededPaths, OrganizationID, Permissions, ProvidedPaths, ProviderType, Releasable, Slug, SpaceID, TargetID, ToolchainType, UnitID, UpdatedAt, UpstreamRevisionNum, UpstreamSpaceID, UpstreamUnitID, ValidationErrors, ValidationResults, ValidationTriggerIDs, ValidationWarnings, ValueTriggerIDs, Values.
+	// Supported attributes for filtering on Unit: Annotations, ApplyGates, ApplyWarnings, ChangeSetID, Conflicts, CreatedAt, DataHash, DeleteGates, DestroyGates, DisplayName, FromLinkID, HeadRevisionID, HeadRevisionNum, HeadUnitEventNum, HiddenReason, Labels, LastChangeDescription, LastReleasedRevisionNum, LinkFindings, NeededPaths, OrganizationID, Permissions, ProvidedPaths, Slug, SpaceID, TargetID, ToolchainType, UnitID, Unreleasable, UpdatedAt, UpstreamRevisionNum, UpstreamSpaceID, UpstreamUnitID, ValidationErrors, ValidationResults, ValidationTriggerIDs, ValidationWarnings, ValueTriggerIDs, Values.
 	//
-	// Finding all units created by cloning can be done using the expression `UpstreamRevisionNum > 0`. Clones of a specific unit can be found by additionally filtering based on `UpstreamUnitID`. Units never released can be found using `LastReleasedRevisionNum = 0`. Units with unreleased changes can be found with `HeadRevisionNum > LastReleasedRevisionNum AND TargetID IS NOT NULL`.
+	// Finding all units created by cloning can be done using the expression `UpstreamRevisionNum > 0`. Clones of a specific unit can be found by additionally filtering based on `UpstreamUnitID`. Units never released can be found using `LastReleasedRevisionNum = 0`. Units with unreleased changes can be found with `HeadRevisionNum > LastReleasedRevisionNum AND ReleaseTargetID IS NOT NULL AND Unreleasable = false`.
 	//
 	// The whole string must be query-encoded.
 	Where *string `form:"where,omitempty" json:"where,omitempty" yaml:"where,omitempty"`
@@ -27178,9 +25565,9 @@ type BulkTagUnitsParams struct {
 	// An example conjunction is:
 	// `CreatedAt >= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.
 	//
-	// Supported attributes for filtering on Unit: Annotations, ApplyGates, ApplyWarnings, ChangeSetID, Conflicts, CreatedAt, DataHash, DeleteGates, DestroyGates, DisplayName, FromLinkID, HeadRevisionID, HeadRevisionNum, HeadUnitActionNum, HeadUnitEventNum, HiddenReason, Labels, LastChangeDescription, LastReleasedRevisionNum, LinkFindings, NeededPaths, OrganizationID, Permissions, ProvidedPaths, ProviderType, Releasable, Slug, SpaceID, TargetID, ToolchainType, UnitID, UpdatedAt, UpstreamRevisionNum, UpstreamSpaceID, UpstreamUnitID, ValidationErrors, ValidationResults, ValidationTriggerIDs, ValidationWarnings, ValueTriggerIDs, Values.
+	// Supported attributes for filtering on Unit: Annotations, ApplyGates, ApplyWarnings, ChangeSetID, Conflicts, CreatedAt, DataHash, DeleteGates, DestroyGates, DisplayName, FromLinkID, HeadRevisionID, HeadRevisionNum, HeadUnitEventNum, HiddenReason, Labels, LastChangeDescription, LastReleasedRevisionNum, LinkFindings, NeededPaths, OrganizationID, Permissions, ProvidedPaths, Slug, SpaceID, TargetID, ToolchainType, UnitID, Unreleasable, UpdatedAt, UpstreamRevisionNum, UpstreamSpaceID, UpstreamUnitID, ValidationErrors, ValidationResults, ValidationTriggerIDs, ValidationWarnings, ValueTriggerIDs, Values.
 	//
-	// Finding all units created by cloning can be done using the expression `UpstreamRevisionNum > 0`. Clones of a specific unit can be found by additionally filtering based on `UpstreamUnitID`. Units never released can be found using `LastReleasedRevisionNum = 0`. Units with unreleased changes can be found with `HeadRevisionNum > LastReleasedRevisionNum AND TargetID IS NOT NULL`.
+	// Finding all units created by cloning can be done using the expression `UpstreamRevisionNum > 0`. Clones of a specific unit can be found by additionally filtering based on `UpstreamUnitID`. Units never released can be found using `LastReleasedRevisionNum = 0`. Units with unreleased changes can be found with `HeadRevisionNum > LastReleasedRevisionNum AND ReleaseTargetID IS NOT NULL AND Unreleasable = false`.
 	//
 	// The whole string must be query-encoded.
 	Where *string `form:"where,omitempty" json:"where,omitempty" yaml:"where,omitempty"`
@@ -27234,111 +25621,6 @@ type BulkTagUnitsParams struct {
 	Include *string `form:"include,omitempty" json:"include,omitempty" yaml:"include,omitempty"`
 }
 
-// ListAllUnitActionsParams defines parameters for ListAllUnitActions.
-type ListAllUnitActionsParams struct {
-	// Where The specified string is an expression for the purpose of filtering
-	// the list of QueuedOperations returned. The expression syntax was inspired by SQL.
-	// It supports conjunctions using `AND` of relational expressions of the form *attribute*
-	// *operator* *attribute_or_literal*. The attribute names are case-sensitive and PascalCase,
-	// as in the JSON encoding.
-	// Strings support the following operators: `<`, `>`, `<=`, `>=`, `=`, `!=`, `LIKE`, `NOT LIKE`, `ILIKE`, `~~`, `!~~`, `~`, `~*`, `!~`, `!~*`, `IN`, `NOT IN`.
-	// String pattern operators: `LIKE` and `~~` for pattern matching with `%` and `_` wildcards,
-	// `ILIKE` for case-insensitive pattern matching, `NOT LIKE` and `!~~` for negated pattern matching.
-	// String regex operators: `~` for regex matching, `~*` for case-insensitive regex,
-	// `!~` and `!~*` for regex not matching (case-sensitive and insensitive).
-	// Integers support the following operators: `<`, `>`, `<=`, `>=`, `=`, `!=`, `IN`, `NOT IN`.
-	// UUIDs and boolean attributes support equality and inequality only.
-	// UUID and time literals must be quoted as string literals.
-	// String literals are quoted with single quotes, such as `'string'`.
-	// Time literals use the same form as when serialized as JSON,
-	// such as: `CreatedAt > '2025-02-18T23:16:34'`.
-	// Integer and boolean literals are also supported for attributes of those types.
-	// Arrays support the `?` operator to to match any element of the array,
-	// as in `FromLinkID ? '7c61626f-ddbe-41af-93f6-b69f4ab6d308'`.
-	// Arrays can perform LEN() to check for length, as in `LEN(FromLinkID) > 0`.
-	// An attribute naming a list of other entities can be filtered on their attributes with a `*` segment,
-	// as in `FromLink.*.Slug = 'upgrade-app'`, which holds when any element satisfies it.
-	// Without the `*` such a reference is an error, since it names no single value to compare.
-	// Map support the dot notation to specify a particular map key, as in `Labels.tier = 'Backend'`.
-	// Maps support `IS NULL` and `IS NOT NULL` with dot notation to check for key absence or presence,
-	// as in `Labels.tier IS NULL` (key doesn't exist) or `Labels.tier IS NOT NULL` (key exists).
-	// Comparison results can be tested with `IS TRUE`, `IS FALSE`, `IS NOT TRUE`, and `IS NOT FALSE`.
-	// These are useful for nullable columns: `MergeSourceID = '<uuid>' IS NOT FALSE` matches rows where MergeSourceID equals the value OR is NULL.
-	// The `IN` and `NOT IN` operators accept a comma-separated list of values in parentheses,
-	// such as `Slug IN ('slugone', 'slugtwo')` or `Labels.environment IN ('prod', 'staging')`.
-	// Conjunctions are supported using the `AND` operator.
-	// An example conjunction is:
-	// `CreatedAt >= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.
-	//
-	// Supported attributes for filtering on QueuedOperation: Action, BridgeWorkerID, CreatedAt, DryRun, OrganizationID, QueuedOperationID, RevisionNum, SpaceID, Status, TargetID, UnitActionNum, UnitID.
-	//
-	// The whole string must be query-encoded.
-	Where *string `form:"where,omitempty" json:"where,omitempty" yaml:"where,omitempty"`
-
-	// Filter UUID of a Filter entity to apply to the QueuedOperation list.
-	//
-	// The Filter must be in the same Organization as the user credentials.
-	//
-	// The Filter's From field must match the entity type being filtered (QueuedOperation).
-	//
-	// For Space-resident entities, if the Filter has a FromSpaceID, it must match the operation's SpaceID.
-	//
-	// The Filter's Where clause will be combined with any explicit 'where' parameter using AND logic.
-	//
-	// If both 'filter' and 'where' parameters are specified, they are combined with AND logic.
-	Filter *string `form:"filter,omitempty" json:"filter,omitempty" yaml:"filter,omitempty"`
-
-	// Contains Free text search that approximately matches the specified string against string fields and map keys/values.
-	//
-	// The search is case-insensitive and uses pattern matching to find entities containing the text.
-	//
-	// Searchable string fields include attributes like Slug, DisplayName, and string-typed custom fields.
-	//
-	// For map fields (like Labels and Annotations), the search matches both map keys and values.
-	//
-	// The search uses OR logic across all searchable fields, so matching any field will return the entity.
-	//
-	// If both 'where' and 'contains' parameters are specified, they are combined with AND logic.
-	//
-	// Searchable fields for QueuedOperation include string and map-type attributes from the queryable attributes list.
-	//
-	// The whole string must be query-encoded.
-	Contains *string `form:"contains,omitempty" json:"contains,omitempty" yaml:"contains,omitempty"`
-
-	// WherePermission Only return QueuedOperation entities on which the caller has this permission, as well as View, which every entity listed needs.
-	//
-	// A list made to choose an entity to act on can name the permission the action needs, such as Edit to change it or Use to refer to it from another entity, so that it leaves out the entities the action would be refused on.
-	//
-	// Supported values: Manage, Edit, Use, View.
-	WherePermission *ListAllUnitActionsParamsWherePermission `form:"where_permission,omitempty" json:"where_permission,omitempty" yaml:"where_permission,omitempty"`
-
-	// Limit Maximum number of QueuedOperation entities to return. If not specified, all matching entities are returned. Values greater than 1000 are rejected with 400. When there may be more entities, the response has a ConfigHub-Continue header to pass as the continue parameter of the next request.
-	Limit *int `form:"limit,omitempty" json:"limit,omitempty" yaml:"limit,omitempty"`
-
-	// OrderBy Comma-separated list of fields to sort QueuedOperation results by, each in the form 'ASC|DESC:FieldName' or just 'FieldName'.
-	//
-	// Field names are case-sensitive and PascalCase, as in the JSON encoding. Sort direction defaults to ASC when the 'DIRECTION:' prefix is omitted.
-	//
-	// Supported attributes for ordering QueuedOperation: Action, BridgeWorkerID, CreatedAt, DryRun, OrganizationID, QueuedOperationID, RevisionNum, Status, TargetID, UnitActionNum, UnitID.
-	//
-	// Example: 'DESC:CreatedAt' or 'DisplayName,DESC:CreatedAt'.
-	//
-	// Results are ordered by the QueuedOperation's ID after the fields named, and by the ID alone if none are.
-	//
-	// The whole string must be query-encoded.
-	OrderBy *string `form:"order_by,omitempty" json:"order_by,omitempty" yaml:"order_by,omitempty"`
-
-	// Continue The token from the ConfigHub-Continue header of the previous page, to return the QueuedOperation entities after it.
-	//
-	// The request's other parameters, except limit, must be the same as those of the request that returned the token.
-	//
-	// Keep reading until a response has no such header: a page can hold fewer entities than the limit, or none, and still be followed by more.
-	Continue *string `form:"continue,omitempty" json:"continue,omitempty" yaml:"continue,omitempty"`
-}
-
-// ListAllUnitActionsParamsWherePermission defines parameters for ListAllUnitActions.
-type ListAllUnitActionsParamsWherePermission string
-
 // SearchUnitDataParams defines parameters for SearchUnitData.
 type SearchUnitDataParams struct {
 	// Where The specified string is an expression for the purpose of filtering
@@ -27375,9 +25657,9 @@ type SearchUnitDataParams struct {
 	// An example conjunction is:
 	// `CreatedAt >= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.
 	//
-	// Supported attributes for filtering on Unit: Annotations, ApplyGates, ApplyWarnings, ChangeSetID, Conflicts, CreatedAt, DataHash, DeleteGates, DestroyGates, DisplayName, FromLinkID, HeadRevisionID, HeadRevisionNum, HeadUnitActionNum, HeadUnitEventNum, HiddenReason, Labels, LastChangeDescription, LastReleasedRevisionNum, LinkFindings, NeededPaths, OrganizationID, Permissions, ProvidedPaths, ProviderType, Releasable, Slug, SpaceID, TargetID, ToolchainType, UnitID, UpdatedAt, UpstreamRevisionNum, UpstreamSpaceID, UpstreamUnitID, ValidationErrors, ValidationResults, ValidationTriggerIDs, ValidationWarnings, ValueTriggerIDs, Values.
+	// Supported attributes for filtering on Unit: Annotations, ApplyGates, ApplyWarnings, ChangeSetID, Conflicts, CreatedAt, DataHash, DeleteGates, DestroyGates, DisplayName, FromLinkID, HeadRevisionID, HeadRevisionNum, HeadUnitEventNum, HiddenReason, Labels, LastChangeDescription, LastReleasedRevisionNum, LinkFindings, NeededPaths, OrganizationID, Permissions, ProvidedPaths, Slug, SpaceID, TargetID, ToolchainType, UnitID, Unreleasable, UpdatedAt, UpstreamRevisionNum, UpstreamSpaceID, UpstreamUnitID, ValidationErrors, ValidationResults, ValidationTriggerIDs, ValidationWarnings, ValueTriggerIDs, Values.
 	//
-	// Finding all units created by cloning can be done using the expression `UpstreamRevisionNum > 0`. Clones of a specific unit can be found by additionally filtering based on `UpstreamUnitID`. Units never released can be found using `LastReleasedRevisionNum = 0`. Units with unreleased changes can be found with `HeadRevisionNum > LastReleasedRevisionNum AND TargetID IS NOT NULL`.
+	// Finding all units created by cloning can be done using the expression `UpstreamRevisionNum > 0`. Clones of a specific unit can be found by additionally filtering based on `UpstreamUnitID`. Units never released can be found using `LastReleasedRevisionNum = 0`. Units with unreleased changes can be found with `HeadRevisionNum > LastReleasedRevisionNum AND ReleaseTargetID IS NOT NULL AND Unreleasable = false`.
 	//
 	// The whole string must be query-encoded.
 	Where *string `form:"where,omitempty" json:"where,omitempty" yaml:"where,omitempty"`
@@ -27457,7 +25739,7 @@ type SearchUnitDataParams struct {
 	//
 	// Field names are case-sensitive and PascalCase, as in the JSON encoding. Sort direction defaults to ASC when the 'DIRECTION:' prefix is omitted.
 	//
-	// Supported attributes for ordering Unit: ChangeSetID, CreatedAt, DataHash, DisplayName, HeadRevisionID, HeadRevisionNum, HeadUnitActionNum, HeadUnitEventNum, HiddenReason, LastChangeDescription, LastReleasedRevisionNum, OrganizationID, ProviderType, Slug, SpaceID, TargetID, ToolchainType, UnitID, UpdatedAt, UpstreamRevisionNum, UpstreamUnitID.
+	// Supported attributes for ordering Unit: ChangeSetID, CreatedAt, DataHash, DisplayName, HeadRevisionID, HeadRevisionNum, HeadUnitEventNum, HiddenReason, LastChangeDescription, LastReleasedRevisionNum, OrganizationID, Slug, SpaceID, ToolchainType, UnitID, Unreleasable, UpdatedAt, UpstreamRevisionNum, UpstreamUnitID.
 	//
 	// Example: 'DESC:CreatedAt' or 'DisplayName,DESC:CreatedAt'.
 	//
@@ -27531,9 +25813,9 @@ type SearchUnitDiffParams struct {
 	// An example conjunction is:
 	// `CreatedAt >= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.
 	//
-	// Supported attributes for filtering on Unit: Annotations, ApplyGates, ApplyWarnings, ChangeSetID, Conflicts, CreatedAt, DataHash, DeleteGates, DestroyGates, DisplayName, FromLinkID, HeadRevisionID, HeadRevisionNum, HeadUnitActionNum, HeadUnitEventNum, HiddenReason, Labels, LastChangeDescription, LastReleasedRevisionNum, LinkFindings, NeededPaths, OrganizationID, Permissions, ProvidedPaths, ProviderType, Releasable, Slug, SpaceID, TargetID, ToolchainType, UnitID, UpdatedAt, UpstreamRevisionNum, UpstreamSpaceID, UpstreamUnitID, ValidationErrors, ValidationResults, ValidationTriggerIDs, ValidationWarnings, ValueTriggerIDs, Values.
+	// Supported attributes for filtering on Unit: Annotations, ApplyGates, ApplyWarnings, ChangeSetID, Conflicts, CreatedAt, DataHash, DeleteGates, DestroyGates, DisplayName, FromLinkID, HeadRevisionID, HeadRevisionNum, HeadUnitEventNum, HiddenReason, Labels, LastChangeDescription, LastReleasedRevisionNum, LinkFindings, NeededPaths, OrganizationID, Permissions, ProvidedPaths, Slug, SpaceID, TargetID, ToolchainType, UnitID, Unreleasable, UpdatedAt, UpstreamRevisionNum, UpstreamSpaceID, UpstreamUnitID, ValidationErrors, ValidationResults, ValidationTriggerIDs, ValidationWarnings, ValueTriggerIDs, Values.
 	//
-	// Finding all units created by cloning can be done using the expression `UpstreamRevisionNum > 0`. Clones of a specific unit can be found by additionally filtering based on `UpstreamUnitID`. Units never released can be found using `LastReleasedRevisionNum = 0`. Units with unreleased changes can be found with `HeadRevisionNum > LastReleasedRevisionNum AND TargetID IS NOT NULL`.
+	// Finding all units created by cloning can be done using the expression `UpstreamRevisionNum > 0`. Clones of a specific unit can be found by additionally filtering based on `UpstreamUnitID`. Units never released can be found using `LastReleasedRevisionNum = 0`. Units with unreleased changes can be found with `HeadRevisionNum > LastReleasedRevisionNum AND ReleaseTargetID IS NOT NULL AND Unreleasable = false`.
 	//
 	// The whole string must be query-encoded.
 	Where *string `form:"where,omitempty" json:"where,omitempty" yaml:"where,omitempty"`
@@ -27594,7 +25876,7 @@ type SearchUnitDiffParams struct {
 	//
 	// Field names are case-sensitive and PascalCase, as in the JSON encoding. Sort direction defaults to ASC when the 'DIRECTION:' prefix is omitted.
 	//
-	// Supported attributes for ordering Unit: ChangeSetID, CreatedAt, DataHash, DisplayName, HeadRevisionID, HeadRevisionNum, HeadUnitActionNum, HeadUnitEventNum, HiddenReason, LastChangeDescription, LastReleasedRevisionNum, OrganizationID, ProviderType, Slug, SpaceID, TargetID, ToolchainType, UnitID, UpdatedAt, UpstreamRevisionNum, UpstreamUnitID.
+	// Supported attributes for ordering Unit: ChangeSetID, CreatedAt, DataHash, DisplayName, HeadRevisionID, HeadRevisionNum, HeadUnitEventNum, HiddenReason, LastChangeDescription, LastReleasedRevisionNum, OrganizationID, Slug, SpaceID, ToolchainType, UnitID, Unreleasable, UpdatedAt, UpstreamRevisionNum, UpstreamUnitID.
 	//
 	// Example: 'DESC:CreatedAt' or 'DisplayName,DESC:CreatedAt'.
 	//
@@ -27682,7 +25964,7 @@ type ListAllUnitEventsParams struct {
 	// An example conjunction is:
 	// `CreatedAt >= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.
 	//
-	// Supported attributes for filtering on UnitEvent: Action, BridgeWorkerID, CreatedAt, HiddenReason, OrganizationID, QueuedOperationID, Result, RevisionNum, SpaceID, StartedAt, Status, TerminatedAt, UnitEventID, UnitEventNum, UnitID, UpdatedAt.
+	// Supported attributes for filtering on UnitEvent: Action, CreatedAt, HiddenReason, OrganizationID, Result, RevisionNum, SpaceID, StartedAt, Status, TerminatedAt, UnitEventID, UnitEventNum, UnitID, UpdatedAt.
 	//
 	// The whole string must be query-encoded.
 	Where *string `form:"where,omitempty" json:"where,omitempty" yaml:"where,omitempty"`
@@ -27744,7 +26026,7 @@ type ListAllUnitEventsParams struct {
 	//
 	// Field names are case-sensitive and PascalCase, as in the JSON encoding. Sort direction defaults to ASC when the 'DIRECTION:' prefix is omitted.
 	//
-	// Supported attributes for ordering UnitEvent: Action, BridgeWorkerID, CreatedAt, HiddenReason, OrganizationID, QueuedOperationID, Result, RevisionNum, StartedAt, Status, TerminatedAt, UnitEventID, UnitEventNum, UnitID, UpdatedAt.
+	// Supported attributes for ordering UnitEvent: Action, CreatedAt, HiddenReason, OrganizationID, Result, RevisionNum, StartedAt, Status, TerminatedAt, UnitEventID, UnitEventNum, UnitID, UpdatedAt.
 	//
 	// Example: 'DESC:CreatedAt' or 'DisplayName,DESC:CreatedAt'.
 	//
@@ -27812,9 +26094,9 @@ type SearchUnitMutationSourcesParams struct {
 	// An example conjunction is:
 	// `CreatedAt >= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.
 	//
-	// Supported attributes for filtering on Unit: Annotations, ApplyGates, ApplyWarnings, ChangeSetID, Conflicts, CreatedAt, DataHash, DeleteGates, DestroyGates, DisplayName, FromLinkID, HeadRevisionID, HeadRevisionNum, HeadUnitActionNum, HeadUnitEventNum, HiddenReason, Labels, LastChangeDescription, LastReleasedRevisionNum, LinkFindings, NeededPaths, OrganizationID, Permissions, ProvidedPaths, ProviderType, Releasable, Slug, SpaceID, TargetID, ToolchainType, UnitID, UpdatedAt, UpstreamRevisionNum, UpstreamSpaceID, UpstreamUnitID, ValidationErrors, ValidationResults, ValidationTriggerIDs, ValidationWarnings, ValueTriggerIDs, Values.
+	// Supported attributes for filtering on Unit: Annotations, ApplyGates, ApplyWarnings, ChangeSetID, Conflicts, CreatedAt, DataHash, DeleteGates, DestroyGates, DisplayName, FromLinkID, HeadRevisionID, HeadRevisionNum, HeadUnitEventNum, HiddenReason, Labels, LastChangeDescription, LastReleasedRevisionNum, LinkFindings, NeededPaths, OrganizationID, Permissions, ProvidedPaths, Slug, SpaceID, TargetID, ToolchainType, UnitID, Unreleasable, UpdatedAt, UpstreamRevisionNum, UpstreamSpaceID, UpstreamUnitID, ValidationErrors, ValidationResults, ValidationTriggerIDs, ValidationWarnings, ValueTriggerIDs, Values.
 	//
-	// Finding all units created by cloning can be done using the expression `UpstreamRevisionNum > 0`. Clones of a specific unit can be found by additionally filtering based on `UpstreamUnitID`. Units never released can be found using `LastReleasedRevisionNum = 0`. Units with unreleased changes can be found with `HeadRevisionNum > LastReleasedRevisionNum AND TargetID IS NOT NULL`.
+	// Finding all units created by cloning can be done using the expression `UpstreamRevisionNum > 0`. Clones of a specific unit can be found by additionally filtering based on `UpstreamUnitID`. Units never released can be found using `LastReleasedRevisionNum = 0`. Units with unreleased changes can be found with `HeadRevisionNum > LastReleasedRevisionNum AND ReleaseTargetID IS NOT NULL AND Unreleasable = false`.
 	//
 	// The whole string must be query-encoded.
 	Where *string `form:"where,omitempty" json:"where,omitempty" yaml:"where,omitempty"`
@@ -27894,7 +26176,7 @@ type SearchUnitMutationSourcesParams struct {
 	//
 	// Field names are case-sensitive and PascalCase, as in the JSON encoding. Sort direction defaults to ASC when the 'DIRECTION:' prefix is omitted.
 	//
-	// Supported attributes for ordering Unit: ChangeSetID, CreatedAt, DataHash, DisplayName, HeadRevisionID, HeadRevisionNum, HeadUnitActionNum, HeadUnitEventNum, HiddenReason, LastChangeDescription, LastReleasedRevisionNum, OrganizationID, ProviderType, Slug, SpaceID, TargetID, ToolchainType, UnitID, UpdatedAt, UpstreamRevisionNum, UpstreamUnitID.
+	// Supported attributes for ordering Unit: ChangeSetID, CreatedAt, DataHash, DisplayName, HeadRevisionID, HeadRevisionNum, HeadUnitEventNum, HiddenReason, LastChangeDescription, LastReleasedRevisionNum, OrganizationID, Slug, SpaceID, ToolchainType, UnitID, Unreleasable, UpdatedAt, UpstreamRevisionNum, UpstreamUnitID.
 	//
 	// Example: 'DESC:CreatedAt' or 'DisplayName,DESC:CreatedAt'.
 	//
@@ -28088,12 +26370,6 @@ type GetUserParams struct {
 	// Example: 'DisplayName,CreatedAt,Labels' will return only those fields plus the required ID and Slug fields.
 	// The whole string must be query-encoded.
 	Select *string `form:"select,omitempty" json:"select,omitempty" yaml:"select,omitempty"`
-}
-
-// CreateUserKeyParams defines parameters for CreateUserKey.
-type CreateUserKeyParams struct {
-	// DryRun If true, report what the write would do without doing it: the write runs, including every check it makes, and is then rolled back. The response is the one the write would return, with the entities as they would be written. An entity a dry run creates is given an ID that the real create will not reuse.
-	DryRun *bool `form:"dry_run,omitempty" json:"dry_run,omitempty" yaml:"dry_run,omitempty"`
 }
 
 // BulkDeleteViewsParams defines parameters for BulkDeleteViews.
@@ -28705,7 +26981,7 @@ type BulkCreateViewsParams struct {
 	// An example conjunction is:
 	// `CreatedAt >= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.
 	//
-	// Supported attributes for filtering on Unit: Annotations, ApplyGates, ApplyWarnings, ChangeSetID, Conflicts, CreatedAt, DataHash, DeleteGates, DestroyGates, DisplayName, FromLinkID, HeadRevisionID, HeadRevisionNum, HeadUnitActionNum, HeadUnitEventNum, HiddenReason, Labels, LastChangeDescription, LastReleasedRevisionNum, LinkFindings, NeededPaths, OrganizationID, Permissions, ProvidedPaths, ProviderType, Releasable, Slug, SpaceID, TargetID, ToolchainType, UnitID, UpdatedAt, UpstreamRevisionNum, UpstreamSpaceID, UpstreamUnitID, ValidationErrors, ValidationResults, ValidationTriggerIDs, ValidationWarnings, ValueTriggerIDs, Values.
+	// Supported attributes for filtering on Unit: Annotations, ApplyGates, ApplyWarnings, ChangeSetID, Conflicts, CreatedAt, DataHash, DeleteGates, DestroyGates, DisplayName, FromLinkID, HeadRevisionID, HeadRevisionNum, HeadUnitEventNum, HiddenReason, Labels, LastChangeDescription, LastReleasedRevisionNum, LinkFindings, NeededPaths, OrganizationID, Permissions, ProvidedPaths, Slug, SpaceID, TargetID, ToolchainType, UnitID, Unreleasable, UpdatedAt, UpstreamRevisionNum, UpstreamSpaceID, UpstreamUnitID, ValidationErrors, ValidationResults, ValidationTriggerIDs, ValidationWarnings, ValueTriggerIDs, Values.
 	//
 	// The Units to create entities from, with from_backing_units.
 	//
@@ -28838,12 +27114,6 @@ type BulkCreateAttributesApplicationMergePatchPlusJSONRequestBody BulkCreateAttr
 
 // BulkMoveAttributesJSONRequestBody defines body for BulkMoveAttributes for application/json ContentType.
 type BulkMoveAttributesJSONRequestBody = MoveRequest
-
-// BulkPatchBridgeWorkersApplicationMergePatchPlusJSONRequestBody defines body for BulkPatchBridgeWorkers for application/merge-patch+json ContentType.
-type BulkPatchBridgeWorkersApplicationMergePatchPlusJSONRequestBody BulkPatchBridgeWorkersApplicationMergePatchPlusJSONBody
-
-// UserCreateActionResultJSONRequestBody defines body for UserCreateActionResult for application/json ContentType.
-type UserCreateActionResultJSONRequestBody = ActionResult
 
 // BulkPatchChangeOrdersApplicationMergePatchPlusJSONRequestBody defines body for BulkPatchChangeOrders for application/merge-patch+json ContentType.
 type BulkPatchChangeOrdersApplicationMergePatchPlusJSONRequestBody BulkPatchChangeOrdersApplicationMergePatchPlusJSONBody
@@ -28979,15 +27249,6 @@ type UpdateAttributeJSONRequestBody = Attribute
 
 // UpdateAttributeDocumentJSONRequestBody defines body for UpdateAttributeDocument for application/json ContentType.
 type UpdateAttributeDocumentJSONRequestBody = EntityDocumentEdit
-
-// CreateBridgeWorkerJSONRequestBody defines body for CreateBridgeWorker for application/json ContentType.
-type CreateBridgeWorkerJSONRequestBody = BridgeWorker
-
-// PatchBridgeWorkerApplicationMergePatchPlusJSONRequestBody defines body for PatchBridgeWorker for application/merge-patch+json ContentType.
-type PatchBridgeWorkerApplicationMergePatchPlusJSONRequestBody PatchBridgeWorkerApplicationMergePatchPlusJSONBody
-
-// UpdateBridgeWorkerJSONRequestBody defines body for UpdateBridgeWorker for application/json ContentType.
-type UpdateBridgeWorkerJSONRequestBody = BridgeWorker
 
 // CreateChangeOrderJSONRequestBody defines body for CreateChangeOrder for application/json ContentType.
 type CreateChangeOrderJSONRequestBody = ChangeOrder
@@ -29204,9 +27465,6 @@ type BulkTagUnitsJSONRequestBody = UnitTagRequest
 
 // UploadJSONRequestBody defines body for Upload for application/json ContentType.
 type UploadJSONRequestBody = UploadRequest
-
-// CreateUserKeyJSONRequestBody defines body for CreateUserKey for application/json ContentType.
-type CreateUserKeyJSONRequestBody = CreateUserKeyRequest
 
 // BulkPatchViewsApplicationMergePatchPlusJSONRequestBody defines body for BulkPatchViews for application/merge-patch+json ContentType.
 type BulkPatchViewsApplicationMergePatchPlusJSONRequestBody BulkPatchViewsApplicationMergePatchPlusJSONBody

@@ -1,0 +1,77 @@
+// Copyright (C) ConfigHub, Inc.
+// SPDX-License-Identifier: MIT
+
+// Package configmaps defines the configmaps pack: the Mutation Triggers that keep the hashes
+// that roll a workload when a ConfigMap it uses changes, and that bound how many immutable
+// ConfigMaps render-configmap leaves behind.
+//
+// A pod template carries one annotation per ConfigMap it uses, hash.confighub.com/<configmap>,
+// whose value is the named placeholder for the ConfigMap (set-configmap-hash-annotations adds
+// them). Needs/Provides fills each with the confighub.com/Hash of the ConfigMap it names, which
+// the SetHash Trigger keeps for ConfigMaps authored as Kubernetes/YAML. A ConfigMap rendered
+// immutable by render-configmap changes its name with its content instead, and the Prune
+// Trigger removes old renderings.
+//
+// `cub variant upload` creates these Triggers in a Space that runs its own Triggers and needs
+// them. A Space that selects its Triggers from a policy Space needs them installed there, where
+// they can be selected by their PackLabel.
+package configmaps
+
+import (
+	api "github.com/confighub/sdk/core/function/api"
+	"github.com/confighub/sdk/core/workerapi"
+)
+
+// PackLabel names the group a Trigger belongs to, so that a Space whose Triggers come from a
+// policy Space can select a group of them by label.
+const PackLabel = "Pack"
+
+// Group is the PackLabel value of this pack's Triggers.
+const Group = "configmaps"
+
+// Trigger is one of the pack's Triggers.
+type Trigger struct {
+	Slug          string
+	Description   string
+	Event         string
+	ToolchainType workerapi.ToolchainType
+	Function      string
+	Arguments     []api.FunctionArgument
+	WhereResource string
+}
+
+// Labels are the labels each of the pack's Triggers carries.
+func Labels() map[string]string {
+	return map[string]string{PackLabel: Group}
+}
+
+// SetHash keeps a hash of each ConfigMap's data and binaryData in its confighub.com/Hash
+// annotation, which Needs/Provides carries to the hash annotations of the pod templates that use
+// it. It leaves out the ConfigMaps render-configmap produces, which carry a hash of the rendered
+// file already, and which, latest or superseded, carry a RenderRevision.
+var SetHash = Trigger{
+	Slug:          "set-configmap-hash",
+	Description:   "Keeps a hash of each ConfigMap's data and binaryData in its confighub.com/Hash annotation, so that the workloads using it roll when it changes.",
+	Event:         "Mutation",
+	ToolchainType: workerapi.ToolchainKubernetesYAML,
+	Function:      "set-hash",
+	Arguments:     []api.FunctionArgument{{ParameterName: "path", Value: "data"}, {ParameterName: "path", Value: "binaryData"}},
+	WhereResource: "ConfigHub.ResourceType = 'v1/ConfigMap' AND metadata.annotations.confighub~1com/RenderRevision IS NULL",
+}
+
+// Prune bounds how many immutable ConfigMaps rendered from one AppConfig Unit accumulate, since
+// each change to the AppConfig Unit adds a rendering.
+var Prune = Trigger{
+	Slug:          "prune-configmaps",
+	Description:   "Keeps the 10 newest immutable ConfigMaps rendered from each AppConfig Unit and removes the rest.",
+	Event:         "Mutation",
+	ToolchainType: workerapi.ToolchainKubernetesYAML,
+	Function:      "prune-configmaps",
+	Arguments:     []api.FunctionArgument{{ParameterName: "revision-history-limit", Value: 10}},
+	WhereResource: "ConfigHub.ResourceType = 'v1/ConfigMap'",
+}
+
+// Triggers are the pack's Triggers.
+func Triggers() []Trigger {
+	return []Trigger{SetHash, Prune}
+}

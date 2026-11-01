@@ -88,7 +88,7 @@ func createVariantSveltosProfile(out io.Writer, target *goclientnew.Target, vari
 		fmt.Fprintf(out, "Creating Sveltos ClusterProfile Unit %q in apps space %q%s...\n", variantSpace.Slug, appsSpaceSlug, pruneNote)
 	}
 	manifest := clusterSveltosChildProfileManifest(variantSpace.Slug, repoURL, clusterSveltosPollIntervalOf(target), plainHTTP, prune)
-	unitID, err := clusterCreateK8sYAMLUnit(appsSpace.Space.SpaceID, targetID, variantSpace.Slug, variantSpace.Slug,
+	unitID, err := clusterCreateK8sYAMLUnit(appsSpace.Space.SpaceID, variantSpace.Slug, variantSpace.Slug,
 		clusterUnitTargetUIAnnotations(target.Annotations, variantSpace.Slug), manifest)
 	if err != nil {
 		return false, fmt.Errorf("create Sveltos ClusterProfile unit: %w", err)

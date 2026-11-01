@@ -145,7 +145,7 @@ func TestPruneConfigMaps_UnderLimitIsNoop(t *testing.T) {
 		if name == "c-2" {
 			assert.Equal(t, "Latest", rr, "newest should be Latest")
 		} else if name == "c-1" {
-			assert.Equal(t, "", rr, "older entries should not be marked Latest")
+			assert.Equal(t, "Superseded", rr, "older retained entries should be marked Superseded")
 			assert.Equal(t, "IgnoreProvided", vo, "older retained entries should be marked IgnoreProvided")
 		}
 	}

@@ -18,22 +18,22 @@ func TestFromArgoCD(t *testing.T) {
 		want                goclientnew.ReleaseLiveStatus
 	}{
 		{"Synced", "Healthy", "Succeeded", goclientnew.ReleaseLiveStatus{
-			Sync: goclientnew.Synced, Health: goclientnew.ReleaseLiveStatusHealthHealthy,
-			Operation: goclientnew.ReleaseLiveStatusOperationSucceeded}},
+			Sync: goclientnew.ReleaseLiveStatusSyncSynced, Health: goclientnew.ReleaseLiveStatusHealthHealthy,
+			Operation: goclientnew.Succeeded}},
 		{"OutOfSync", "Progressing", "Running", goclientnew.ReleaseLiveStatus{
-			Sync: goclientnew.OutOfSync, Health: goclientnew.ReleaseLiveStatusHealthProgressing,
-			Operation: goclientnew.ReleaseLiveStatusOperationRunning}},
+			Sync: goclientnew.ReleaseLiveStatusSyncOutOfSync, Health: goclientnew.ReleaseLiveStatusHealthProgressing,
+			Operation: goclientnew.Running}},
 		{"Synced", "Degraded", "Error", goclientnew.ReleaseLiveStatus{
-			Sync: goclientnew.Synced, Health: goclientnew.ReleaseLiveStatusHealthDegraded,
-			Operation: goclientnew.ReleaseLiveStatusOperationFailed}},
+			Sync: goclientnew.ReleaseLiveStatusSyncSynced, Health: goclientnew.ReleaseLiveStatusHealthDegraded,
+			Operation: goclientnew.Failed}},
 		{"Synced", "Suspended", "Terminating", goclientnew.ReleaseLiveStatus{
-			Sync: goclientnew.Synced, Health: goclientnew.ReleaseLiveStatusHealthSuspended,
-			Operation: goclientnew.ReleaseLiveStatusOperationRunning}},
+			Sync: goclientnew.ReleaseLiveStatusSyncSynced, Health: goclientnew.ReleaseLiveStatusHealthSuspended,
+			Operation: goclientnew.Running}},
 		// What Argo CD has not decided, or a value it adds later, is Unknown, and no operation is none.
 		{"", "", "", goclientnew.ReleaseLiveStatus{
-			Sync: goclientnew.Unknown, Health: goclientnew.ReleaseLiveStatusHealthUnknown}},
+			Sync: goclientnew.ReleaseLiveStatusSyncUnknown, Health: goclientnew.ReleaseLiveStatusHealthUnknown}},
 		{"Unknown", "Missing", "", goclientnew.ReleaseLiveStatus{
-			Sync: goclientnew.Unknown, Health: goclientnew.ReleaseLiveStatusHealthMissing}},
+			Sync: goclientnew.ReleaseLiveStatusSyncUnknown, Health: goclientnew.ReleaseLiveStatusHealthMissing}},
 	}
 	for _, tt := range tests {
 		got := livestatus.FromArgoCD(tt.sync, tt.health, tt.phase)

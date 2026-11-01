@@ -337,3 +337,60 @@ func TestSetHash_DifferentDataProducesDifferentHash(t *testing.T) {
 	hash2, _, _ := yamlkit.YamlSafePathGetValue[string](result2[0], api.ResolvedPath(hashAnnotationPath), true)
 	assert.NotEqual(t, hash1, hash2, "different data should produce different hashes")
 }
+
+const binaryConfigMapYAML = `apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: my-config
+  namespace: default
+data:
+  key1: value1
+  key2: value2
+binaryData:
+  logo.png: aGVsbG8=
+`
+
+func hashOf(t *testing.T, input string, paths ...string) string {
+	t.Helper()
+	rp := k8skit.NewK8sResourceProvider()
+	parsedData, err := gaby.ParseAll([]byte(input))
+	require.NoError(t, err)
+	var args []api.FunctionArgument
+	for _, p := range paths {
+		args = append(args, api.FunctionArgument{Value: p})
+	}
+	_, output, err := GenericFnGetHash(rp, parsedData, args, nil)
+	require.NoError(t, err)
+	values := output.(api.AttributeValueList)
+	if len(values) == 0 {
+		return ""
+	}
+	require.Len(t, values, 1)
+	return values[0].Value.(string)
+}
+
+// Values at several paths are hashed together, and a path the resource lacks adds nothing, so
+// set-hash data binaryData keeps the hash set-hash data gave a ConfigMap without binaryData.
+func TestHash_SeveralPaths(t *testing.T) {
+	dataOnly := hashOf(t, configMapYAML, "data")
+	require.NotEmpty(t, dataOnly)
+	assert.Equal(t, dataOnly, hashOf(t, configMapYAML, "data", "binaryData"),
+		"a ConfigMap without binaryData hashes as it did with data alone")
+
+	withBinary := hashOf(t, binaryConfigMapYAML, "data", "binaryData")
+	assert.NotEqual(t, dataOnly, withBinary, "binaryData is part of the hash")
+	assert.Equal(t, withBinary, hashOf(t, binaryConfigMapYAML, "binaryData", "data"),
+		"the order the paths are given in doesn't matter")
+	assert.Equal(t, dataOnly, hashOf(t, binaryConfigMapYAML, "data"),
+		"data alone ignores binaryData, as before")
+
+	rp := k8skit.NewK8sResourceProvider()
+	parsedData, err := gaby.ParseAll([]byte(binaryConfigMapYAML))
+	require.NoError(t, err)
+	result, _, err := GenericFnSetHash(rp, parsedData, []api.FunctionArgument{{Value: "data"}, {Value: "binaryData"}}, nil)
+	require.NoError(t, err)
+	stored, found, err := yamlkit.YamlSafePathGetValue[string](result[0], api.ResolvedPath(rp.ContextPath("Hash")), true)
+	require.NoError(t, err)
+	require.True(t, found)
+	assert.Equal(t, withBinary, stored, "set-hash stores what get-hash returns")
+}

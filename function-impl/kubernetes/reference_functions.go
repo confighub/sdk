@@ -291,6 +291,49 @@ func providedNamespaceEnricher(target api.ResourceType) yamlkit.AttributeEnriche
 	}
 }
 
+// configMapHashEnricher says which ConfigMap a hash is of, so that a pod template carrying one
+// hash annotation per ConfigMap it uses gets each one's own.
+//
+// A ConfigMap's hash offers the ConfigMap's placeholder name, from its ResourceNameStableCore
+// when it has one (a rendered ConfigMap, whose name may carry a hash of its content) and from
+// its name otherwise. A needed hash that is a named placeholder requires that name rather than
+// only preferring it: a hash from another ConfigMap would roll the pods on that ConfigMap's
+// changes and not on the named one's, with nothing to show for it, where an unfilled
+// placeholder is reported. The name is read from NeededPreferred, where
+// yamlkit.PreferPlaceholderName puts it from the value the path held when found to be needed,
+// so it holds after a resolve has written a hash over the placeholder.
+func configMapHashEnricher(doc *gaby.YamlDoc, attr *api.AttributeValue, isProvided bool) error {
+	if attr.Details == nil {
+		attr.Details = &api.AttributeDetails{}
+	}
+	if !isProvided {
+		name, named := attr.Details.NeededPreferred[api.PropertyKeyPlaceholderName]
+		if !named {
+			return nil
+		}
+		if attr.Details.NeededRequired == nil {
+			attr.Details.NeededRequired = make(map[string]string)
+		}
+		attr.Details.NeededRequired[api.PropertyKeyPlaceholderName] = name
+		return nil
+	}
+	if attr.ResourceType != "v1/ConfigMap" || doc == nil {
+		return nil
+	}
+	name, found, _ := yamlkit.YamlSafePathGetValue[string](doc, api.ResolvedPath(k8skit.K8sContextPath(constants.ResourceNameStableCoreKeySuffix)), true)
+	if !found || name == "" {
+		name, found, _ = yamlkit.YamlSafePathGetValue[string](doc, "metadata.name", true)
+	}
+	if !found || name == "" {
+		return nil
+	}
+	if attr.Details.ProvidedProperties == nil {
+		attr.Details.ProvidedProperties = make(map[string]string)
+	}
+	attr.Details.ProvidedProperties[api.PropertyKeyPlaceholderName] = yamlkit.PlaceholderNameFor(name)
+	return nil
+}
+
 // configMapEnricher populates ProvidedProperties and NeededRequired/NeededPreferred
 // for ConfigMap needs/provides matching. For provided ConfigMaps (metadata.name), it extracts
 // ResourceNameStableCore (as Name and PlaceholderName), ConfigMapFormat, Namespace, and data keys. For needed ConfigMap

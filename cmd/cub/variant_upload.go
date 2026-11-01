@@ -114,10 +114,20 @@ Rendered Secrets are never uploaded — apply them out-of-band. AppConfig Config
 Unit, a render-configmap Invocation, a placeholder Unit, and an Upsert link. A file
 holding application configuration rather than Kubernetes resources — a .properties,
 .env, .toml, or .ini file, or YAML or JSON with no apiVersion and kind — becomes one
-untargeted AppConfig Unit, named by its configHub.configName or else by its path
+unreleasable AppConfig Unit, named by its configHub.configName or else by its path
 (config/app.properties becomes config-app). A YAML file mixing the two is refused.
-A README.md becomes an untargeted AppConfig/Text Unit named README.md, which the UI
+A README.md becomes an unreleasable AppConfig/Text Unit named README.md, which the UI
 shows as the Variant's Readme.
+
+A pod template that uses ConfigMaps from the bundle gets a hash annotation for each,
+hash.confighub.com/<configmap>, which Needs/Provides fills with that ConfigMap's hash so
+the pods roll when it changes. A ConfigMap rendered immutable gets none, since its name
+changes with its content, and a pod template with a confighub.com/Hash annotation of
+its own is left alone. The annotations are added by the set-configmap-hash-annotations
+function, which can be run on workloads that weren't uploaded too. The upload creates the Triggers this needs, labeled Pack:
+configmaps -- set-hash for ConfigMaps authored as they are, and prune-configmaps for
+immutable renderings -- in a Space that runs its own Triggers and doesn't already run
+them. A Space selecting its Triggers from elsewhere is told which are missing instead.
 
 Links between Units are inferred from references, label selectors, and custom-resource
 → CRD relationships. Because ConfigHub does not break dependency cycles, any cycle in
@@ -230,7 +240,7 @@ func init() {
 	variantUploadCmd.Flags().StringVar(&variantUploadArgs.sourceName, "source-name", "", "ownership name for the Units, Links, and Invocations this upload writes; defaults to --component")
 	variantUploadCmd.Flags().StringVar(&variantUploadArgs.namespace, "namespace", "", "the release namespace: where namespaced resources that name no namespace, and cluster-scoped resources, belong")
 	variantUploadCmd.Flags().BoolVar(&variantUploadArgs.createNamespace, "create-namespace", false, "synthesize the release Namespace resource if the bundle does not contain it and it is not built in (default, kube-system, ...)")
-	variantUploadCmd.Flags().StringVar(&variantUploadArgs.target, "target", "", "target for the created Units, in <target-slug> or <space-slug>/<target-slug> form")
+	variantUploadCmd.Flags().StringVar(&variantUploadArgs.target, "target", "", "the Space's release Target, which its releases publish its releasable Units for, in <target-slug> or <space-slug>/<target-slug> form")
 	variantUploadCmd.Flags().StringSliceVar(&variantUploadArgs.spaceLabels, "space-label", nil, "label key=value to set on the Space (repeatable); it may not name a label another flag sets, such as Component")
 	variantUploadCmd.Flags().StringSliceVar(&variantUploadArgs.labels, "unit-label", nil, "label key=value to set on every written Unit (repeatable)")
 	variantUploadCmd.Flags().StringSliceVar(&variantUploadArgs.annotations, "unit-annotation", nil, "annotation key=value to set on every written Unit (repeatable)")
@@ -785,6 +795,26 @@ func reportUploadResult(result *goclientnew.UploadResult) {
 				}
 				if l.Action == "Create" {
 					tprint("  linked    %s -> %s (%s)", l.FromUnit, l.ToUnit, l.Reason)
+				}
+			}
+			var missing []goclientnew.UploadTriggerResult
+			for _, t := range s.Triggers {
+				switch {
+				case t.Error != nil:
+					tprint("  trigger FAILED %s: %s", t.Slug, errString(t.Error))
+				case t.Action == "Create":
+					tprint("  trigger   %s (%s)", t.Slug, t.Function)
+				case t.Action == "Missing":
+					missing = append(missing, t)
+				}
+			}
+			if len(missing) > 0 {
+				tprint("")
+				tprint("Note: Space %s selects its Triggers from elsewhere, and none of them runs these", s.SpaceSlug)
+				tprint("functions, which the uploaded configuration needs. Install them where the Space selects")
+				tprint("Triggers from, as Mutation Triggers on Kubernetes/YAML:")
+				for _, t := range missing {
+					tprint("  - %s (%s)", t.Function, t.Slug)
 				}
 			}
 			if len(s.Duplicates) > 0 {

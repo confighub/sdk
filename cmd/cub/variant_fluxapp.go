@@ -84,7 +84,7 @@ func createVariantFluxApp(out io.Writer, target *goclientnew.Target, variantSpac
 		fmt.Fprintf(out, "Creating Flux OCIRepository and Kustomization Unit %q in apps space %q%s...\n", variantSpace.Slug, appsSpaceSlug, pruneNote)
 	}
 	manifest := clusterFluxChildManifest(variantSpace.Slug, repoURL, clusterFluxPollIntervalOf(target), insecure, prune)
-	unitID, err := clusterCreateK8sYAMLUnit(appsSpace.Space.SpaceID, targetID, variantSpace.Slug, variantSpace.Slug, nil, manifest)
+	unitID, err := clusterCreateK8sYAMLUnit(appsSpace.Space.SpaceID, variantSpace.Slug, variantSpace.Slug, nil, manifest)
 	if err != nil {
 		return false, fmt.Errorf("create Flux unit: %w", err)
 	}

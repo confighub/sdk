@@ -23,7 +23,7 @@ import (
 // they would name.
 const hashLength = 10
 
-const hashPathDescription = "Dot-separated configuration path of the attribute(s) to hash. See https://docs.confighub.com/guide/functions/#configuration-path-syntax for more details regarding path syntax."
+const hashPathDescription = "Dot-separated configuration path of the attribute(s) to hash; repeat it to hash the values at several paths together, such as data and binaryData. See https://docs.confighub.com/guide/functions/#configuration-path-syntax for more details regarding path syntax."
 
 func registerSetHash(fh handler.FunctionRegistry, converter configkit.ConfigConverter, resourceProvider yamlkit.ResourceProvider) {
 	if err := fh.RegisterFunction("set-hash", &handler.FunctionRegistration{
@@ -38,6 +38,7 @@ func registerSetHash(fh handler.FunctionRegistry, converter configkit.ConfigConv
 					ValueConstraints: api.ValueConstraints{Regexp: api.PathRegexpString},
 				},
 			},
+			VarArgs:    true,
 			Mutating:   true,
 			Validating: false,
 			Hermetic:   true,
@@ -46,7 +47,7 @@ func registerSetHash(fh handler.FunctionRegistry, converter configkit.ConfigConv
 			// On a Kubernetes ConfigMap the annotation it writes is the provided path of the
 			// configmap-hash attribute, which render-configmap writes too: set-hash is how a
 			// ConfigMap authored as Kubernetes/YAML offers the hash Needs/Provides delivers.
-			Description:           "Computes a SHA-256 hash of all values at the specified path and stores it at the resource provider's context path for Hash: the confighub.com/Hash annotation for Kubernetes. On a ConfigMap, that annotation is the hash Needs/Provides offers to the pod templates that need it, which hold confighubplaceholder in their own confighub.com/Hash annotation, so a change to the ConfigMap rolls the pods. It applies to every resource that has the path, of any type, so narrow it with a where-resource filter",
+			Description:           "Computes a SHA-256 hash of all values at the specified paths and stores it at the resource provider's context path for Hash: the confighub.com/Hash annotation for Kubernetes. On a ConfigMap, that annotation is the hash Needs/Provides offers to the pod templates that need it, in hash.confighub.com/<configmap> or confighub.com/Hash, so a change to the ConfigMap rolls the pods. It applies to every resource that has the path, of any type, so narrow it with a where-resource filter",
 			FunctionType:          api.FunctionTypeCustom,
 			AffectedResourceTypes: []api.ResourceType{api.ResourceTypeAny},
 		},
@@ -71,9 +72,10 @@ func registerGetHash(fh handler.FunctionRegistry, converter configkit.ConfigConv
 					ValueConstraints: api.ValueConstraints{Regexp: api.PathRegexpString},
 				},
 			},
+			VarArgs: true,
 			OutputInfo: &api.FunctionOutput{
 				ResultName:  "hash",
-				Description: "Hash of the values at the specified path, one entry per resource that has values there",
+				Description: "Hash of the values at the specified paths, one entry per resource that has values there",
 				OutputType:  api.OutputTypeAttributeValueList,
 				Schema:      &api.AttributeValueListSchema,
 			},
@@ -87,7 +89,7 @@ func registerGetHash(fh handler.FunctionRegistry, converter configkit.ConfigConv
 			// left alone: the hash is computed from the upstream data while a Link resolves
 			// and written to the downstream Unit, rather than kept in the resource it
 			// describes, where it is a revision behind whatever it is hashing.
-			Description:           "Computes a SHA-256 hash of all values at the specified path and returns it, without modifying the configuration data. Returns the same hash set-hash stores. Use as an UpstreamGetter on a TransformPaths Link to propagate a content hash to another Unit. It reads every resource that has the path, of any type, so narrow it with a where-resource filter.",
+			Description:           "Computes a SHA-256 hash of all values at the specified paths and returns it, without modifying the configuration data. Returns the same hash set-hash stores. Use as an UpstreamGetter on a TransformPaths Link to propagate a content hash to another Unit. It reads every resource that has the path, of any type, so narrow it with a where-resource filter.",
 			FunctionType:          api.FunctionTypeCustom,
 			AffectedResourceTypes: []api.ResourceType{api.ResourceTypeAny},
 		},
@@ -97,6 +99,29 @@ func registerGetHash(fh handler.FunctionRegistry, converter configkit.ConfigConv
 	}); err != nil {
 		slog.Error("failed to register function", "error", err)
 	}
+}
+
+// hashPaths returns the visitor map of the paths set-hash and get-hash are given. Values at
+// all of them are hashed together, sorted by path, so one path hashes exactly as it did alone,
+// and a path a resource lacks adds nothing: set-hash data binaryData gives a ConfigMap without
+// binaryData the hash set-hash data gives it.
+func hashPaths(resourceProvider yamlkit.ResourceProvider, args []api.FunctionArgument) (api.ResourceTypeToPathToVisitorInfoType, error) {
+	merged := api.ResourceTypeToPathToVisitorInfoType{}
+	for _, arg := range args {
+		unresolvedPath, ok := arg.Value.(string)
+		if !ok || unresolvedPath == "" {
+			return nil, fmt.Errorf("path must be a non-empty string, got %v", arg.Value)
+		}
+		for rt, paths := range yamlkit.GetVisitorMapForPath(resourceProvider, api.ResourceTypeAny, api.UnresolvedPath(unresolvedPath)) {
+			if merged[rt] == nil {
+				merged[rt] = api.PathToVisitorInfoType{}
+			}
+			for path, info := range paths {
+				merged[rt][path] = info
+			}
+		}
+	}
+	return merged, nil
 }
 
 // hashValuesAtPath computes the hash of the values at resourceTypeToPaths within one resource.
@@ -133,7 +158,7 @@ func hashValuesAtPath(
 	return hex.EncodeToString(h.Sum(nil))[:hashLength], true, nil
 }
 
-// GenericFnSetHash computes a SHA-256 hash of all values at the specified path for each
+// GenericFnSetHash computes a SHA-256 hash of all values at the specified paths for each
 // resource and stores the hash at the resource provider's context path for HashKeySuffix.
 func GenericFnSetHash(
 	resourceProvider yamlkit.ResourceProvider,
@@ -141,14 +166,15 @@ func GenericFnSetHash(
 	args []api.FunctionArgument,
 	options *api.FunctionOptions,
 ) (gaby.Container, any, error) {
-	unresolvedPath := args[0].Value.(string)
-
 	hashPath := resourceProvider.ContextPath(constants.HashKeySuffix)
 	if hashPath == "" {
 		return parsedData, nil, nil
 	}
 
-	resourceTypeToPaths := yamlkit.GetVisitorMapForPath(resourceProvider, api.ResourceTypeAny, api.UnresolvedPath(unresolvedPath))
+	resourceTypeToPaths, err := hashPaths(resourceProvider, args)
+	if err != nil {
+		return parsedData, nil, err
+	}
 
 	visitor := func(doc *gaby.YamlDoc, output any, _ int, resourceInfo *api.ResourceInfo) (any, []error) {
 		hash, found, err := hashValuesAtPath(doc, resourceTypeToPaths, resourceProvider, options)
@@ -166,23 +192,25 @@ func GenericFnSetHash(
 		return output, nil
 	}
 
-	_, err := yamlkit.VisitResourcesFiltered(parsedData, nil, resourceProvider, options, visitor)
+	_, err = yamlkit.VisitResourcesFiltered(parsedData, nil, resourceProvider, options, visitor)
 	return parsedData, nil, err
 }
 
-// GenericFnGetHash computes a SHA-256 hash of all values at the specified path for each
+// GenericFnGetHash computes a SHA-256 hash of all values at the specified paths for each
 // resource and returns them, one AttributeValue per resource, leaving the data unchanged.
-// The reported Path is the path that was hashed, not a path the hash is stored at -- the
-// point of this function is that it is stored nowhere.
+// The reported Path is the first path hashed, not a path the hash is stored at -- the point
+// of this function is that it is stored nowhere.
 func GenericFnGetHash(
 	resourceProvider yamlkit.ResourceProvider,
 	parsedData gaby.Container,
 	args []api.FunctionArgument,
 	options *api.FunctionOptions,
 ) (gaby.Container, any, error) {
-	unresolvedPath := args[0].Value.(string)
-
-	resourceTypeToPaths := yamlkit.GetVisitorMapForPath(resourceProvider, api.ResourceTypeAny, api.UnresolvedPath(unresolvedPath))
+	resourceTypeToPaths, err := hashPaths(resourceProvider, args)
+	if err != nil {
+		return parsedData, nil, err
+	}
+	reportedPath := args[0].Value.(string)
 
 	visitor := func(doc *gaby.YamlDoc, output any, _ int, resourceInfo *api.ResourceInfo) (any, []error) {
 		accumulated := output.(api.AttributeValueList)
@@ -199,7 +227,7 @@ func GenericFnGetHash(
 			AttributeInfo: api.AttributeInfo{
 				AttributeIdentifier: api.AttributeIdentifier{
 					ResourceInfo: *resourceInfo,
-					Path:         api.ResolvedPath(unresolvedPath),
+					Path:         api.ResolvedPath(reportedPath),
 				},
 				AttributeMetadata: api.AttributeMetadata{
 					DataType: api.DataTypeString,

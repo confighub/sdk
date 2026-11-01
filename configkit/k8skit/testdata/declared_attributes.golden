@@ -1,6 +1,7 @@
 # declared attributes: resourceType	attributeName	path	dataType[	target][	selects=type[,prefixes]]
 attribute	actions.github.com/v1alpha1/AutoscalingListener	automount-service-account-token	spec.template.spec.automountServiceAccountToken	bool
 attribute	actions.github.com/v1alpha1/AutoscalingListener	configmap-hash	spec.template.metadata.annotations.confighub~1com/Hash	
+attribute	actions.github.com/v1alpha1/AutoscalingListener	configmap-hash	spec.template.metadata.annotations.hash~1confighub~1com/*	
 attribute	actions.github.com/v1alpha1/AutoscalingListener	container-flag	spec.template.spec.containers.?name:container-name=%s.args.?flag:container-flag=%s#value	
 attribute	actions.github.com/v1alpha1/AutoscalingListener	container-flag	spec.template.spec.ephemeralContainers.?name:container-name=%s.args.?flag:container-flag=%s#value	
 attribute	actions.github.com/v1alpha1/AutoscalingListener	container-flag	spec.template.spec.initContainers.?name:container-name=%s.args.?flag:container-flag=%s#value	
@@ -70,7 +71,9 @@ attribute	actions.github.com/v1alpha1/AutoscalingListener	resource-name	spec.tem
 attribute	actions.github.com/v1alpha1/AutoscalingRunnerSet	automount-service-account-token	spec.listenerTemplate.spec.automountServiceAccountToken	bool
 attribute	actions.github.com/v1alpha1/AutoscalingRunnerSet	automount-service-account-token	spec.template.spec.automountServiceAccountToken	bool
 attribute	actions.github.com/v1alpha1/AutoscalingRunnerSet	configmap-hash	spec.listenerTemplate.metadata.annotations.confighub~1com/Hash	
+attribute	actions.github.com/v1alpha1/AutoscalingRunnerSet	configmap-hash	spec.listenerTemplate.metadata.annotations.hash~1confighub~1com/*	
 attribute	actions.github.com/v1alpha1/AutoscalingRunnerSet	configmap-hash	spec.template.metadata.annotations.confighub~1com/Hash	
+attribute	actions.github.com/v1alpha1/AutoscalingRunnerSet	configmap-hash	spec.template.metadata.annotations.hash~1confighub~1com/*	
 attribute	actions.github.com/v1alpha1/AutoscalingRunnerSet	container-flag	spec.listenerTemplate.spec.containers.?name:container-name=%s.args.?flag:container-flag=%s#value	
 attribute	actions.github.com/v1alpha1/AutoscalingRunnerSet	container-flag	spec.listenerTemplate.spec.ephemeralContainers.?name:container-name=%s.args.?flag:container-flag=%s#value	
 attribute	actions.github.com/v1alpha1/AutoscalingRunnerSet	container-flag	spec.listenerTemplate.spec.initContainers.?name:container-name=%s.args.?flag:container-flag=%s#value	
@@ -217,6 +220,7 @@ attribute	apiregistration.k8s.io/v1/APIService	resource-name	spec.service.name		
 attribute	apiregistration.k8s.io/v1/APIService	resource-name	spec.service.|namespace		v1/Namespace
 attribute	apps/v1/DaemonSet	automount-service-account-token	spec.template.spec.automountServiceAccountToken	bool
 attribute	apps/v1/DaemonSet	configmap-hash	spec.template.metadata.annotations.confighub~1com/Hash	
+attribute	apps/v1/DaemonSet	configmap-hash	spec.template.metadata.annotations.hash~1confighub~1com/*	
 attribute	apps/v1/DaemonSet	container-flag	spec.template.spec.containers.?name:container-name=%s.args.?flag:container-flag=%s#value	
 attribute	apps/v1/DaemonSet	container-flag	spec.template.spec.ephemeralContainers.?name:container-name=%s.args.?flag:container-flag=%s#value	
 attribute	apps/v1/DaemonSet	container-flag	spec.template.spec.initContainers.?name:container-name=%s.args.?flag:container-flag=%s#value	
@@ -286,6 +290,7 @@ attribute	apps/v1/DaemonSet	resource-name	spec.template.spec.volumes.*.projected
 attribute	apps/v1/DaemonSet	resource-name	spec.template.spec.volumes.*.secret.secretName		v1/Secret
 attribute	apps/v1/Deployment	automount-service-account-token	spec.template.spec.automountServiceAccountToken	bool
 attribute	apps/v1/Deployment	configmap-hash	spec.template.metadata.annotations.confighub~1com/Hash	
+attribute	apps/v1/Deployment	configmap-hash	spec.template.metadata.annotations.hash~1confighub~1com/*	
 attribute	apps/v1/Deployment	container-flag	spec.template.spec.containers.?name:container-name=%s.args.?flag:container-flag=%s#value	
 attribute	apps/v1/Deployment	container-flag	spec.template.spec.ephemeralContainers.?name:container-name=%s.args.?flag:container-flag=%s#value	
 attribute	apps/v1/Deployment	container-flag	spec.template.spec.initContainers.?name:container-name=%s.args.?flag:container-flag=%s#value	
@@ -356,6 +361,7 @@ attribute	apps/v1/Deployment	resource-name	spec.template.spec.volumes.*.projecte
 attribute	apps/v1/Deployment	resource-name	spec.template.spec.volumes.*.secret.secretName		v1/Secret
 attribute	apps/v1/ReplicaSet	automount-service-account-token	spec.template.spec.automountServiceAccountToken	bool
 attribute	apps/v1/ReplicaSet	configmap-hash	spec.template.metadata.annotations.confighub~1com/Hash	
+attribute	apps/v1/ReplicaSet	configmap-hash	spec.template.metadata.annotations.hash~1confighub~1com/*	
 attribute	apps/v1/ReplicaSet	container-flag	spec.template.spec.containers.?name:container-name=%s.args.?flag:container-flag=%s#value	
 attribute	apps/v1/ReplicaSet	container-flag	spec.template.spec.ephemeralContainers.?name:container-name=%s.args.?flag:container-flag=%s#value	
 attribute	apps/v1/ReplicaSet	container-flag	spec.template.spec.initContainers.?name:container-name=%s.args.?flag:container-flag=%s#value	
@@ -426,6 +432,7 @@ attribute	apps/v1/ReplicaSet	resource-name	spec.template.spec.volumes.*.projecte
 attribute	apps/v1/ReplicaSet	resource-name	spec.template.spec.volumes.*.secret.secretName		v1/Secret
 attribute	apps/v1/StatefulSet	automount-service-account-token	spec.template.spec.automountServiceAccountToken	bool
 attribute	apps/v1/StatefulSet	configmap-hash	spec.template.metadata.annotations.confighub~1com/Hash	
+attribute	apps/v1/StatefulSet	configmap-hash	spec.template.metadata.annotations.hash~1confighub~1com/*	
 attribute	apps/v1/StatefulSet	container-flag	spec.template.spec.containers.?name:container-name=%s.args.?flag:container-flag=%s#value	
 attribute	apps/v1/StatefulSet	container-flag	spec.template.spec.ephemeralContainers.?name:container-name=%s.args.?flag:container-flag=%s#value	
 attribute	apps/v1/StatefulSet	container-flag	spec.template.spec.initContainers.?name:container-name=%s.args.?flag:container-flag=%s#value	
@@ -506,6 +513,7 @@ attribute	argoproj.io/v1alpha1/ApplicationSet	resource-name	spec.generators.*.pl
 attribute	argoproj.io/v1alpha1/CronWorkflow	resource-name	spec.workflowSpec.serviceAccountName		v1/ServiceAccount
 attribute	argoproj.io/v1alpha1/Rollout	automount-service-account-token	spec.template.spec.automountServiceAccountToken	bool
 attribute	argoproj.io/v1alpha1/Rollout	configmap-hash	spec.template.metadata.annotations.confighub~1com/Hash	
+attribute	argoproj.io/v1alpha1/Rollout	configmap-hash	spec.template.metadata.annotations.hash~1confighub~1com/*	
 attribute	argoproj.io/v1alpha1/Rollout	container-flag	spec.template.spec.containers.?name:container-name=%s.args.?flag:container-flag=%s#value	
 attribute	argoproj.io/v1alpha1/Rollout	container-flag	spec.template.spec.ephemeralContainers.?name:container-name=%s.args.?flag:container-flag=%s#value	
 attribute	argoproj.io/v1alpha1/Rollout	container-flag	spec.template.spec.initContainers.?name:container-name=%s.args.?flag:container-flag=%s#value	
@@ -587,6 +595,7 @@ attribute	autoscaling/v2/HorizontalPodAutoscaler	resource-name	spec.scaleTargetR
 attribute	autoscaling/v2/HorizontalPodAutoscaler	resource-name	spec.scaleTargetRef.name		v1/ReplicationController
 attribute	batch/v1/CronJob	automount-service-account-token	spec.jobTemplate.spec.template.spec.automountServiceAccountToken	bool
 attribute	batch/v1/CronJob	configmap-hash	spec.jobTemplate.spec.template.metadata.annotations.confighub~1com/Hash	
+attribute	batch/v1/CronJob	configmap-hash	spec.jobTemplate.spec.template.metadata.annotations.hash~1confighub~1com/*	
 attribute	batch/v1/CronJob	container-flag	spec.jobTemplate.spec.template.spec.containers.?name:container-name=%s.args.?flag:container-flag=%s#value	
 attribute	batch/v1/CronJob	container-flag	spec.jobTemplate.spec.template.spec.ephemeralContainers.?name:container-name=%s.args.?flag:container-flag=%s#value	
 attribute	batch/v1/CronJob	container-flag	spec.jobTemplate.spec.template.spec.initContainers.?name:container-name=%s.args.?flag:container-flag=%s#value	
@@ -655,6 +664,7 @@ attribute	batch/v1/CronJob	resource-name	spec.jobTemplate.spec.template.spec.vol
 attribute	batch/v1/CronJob	resource-name	spec.jobTemplate.spec.template.spec.volumes.*.secret.secretName		v1/Secret
 attribute	batch/v1/Job	automount-service-account-token	spec.template.spec.automountServiceAccountToken	bool
 attribute	batch/v1/Job	configmap-hash	spec.template.metadata.annotations.confighub~1com/Hash	
+attribute	batch/v1/Job	configmap-hash	spec.template.metadata.annotations.hash~1confighub~1com/*	
 attribute	batch/v1/Job	container-flag	spec.template.spec.containers.?name:container-name=%s.args.?flag:container-flag=%s#value	
 attribute	batch/v1/Job	container-flag	spec.template.spec.ephemeralContainers.?name:container-name=%s.args.?flag:container-flag=%s#value	
 attribute	batch/v1/Job	container-flag	spec.template.spec.initContainers.?name:container-name=%s.args.?flag:container-flag=%s#value	
@@ -937,6 +947,7 @@ attribute	scheduling.k8s.io/v1/PriorityClass	immutable	preemptionPolicy
 attribute	scheduling.k8s.io/v1/PriorityClass	immutable	value	
 attribute	serving.knative.dev/v1/Service	automount-service-account-token	spec.template.spec.automountServiceAccountToken	bool
 attribute	serving.knative.dev/v1/Service	configmap-hash	spec.template.metadata.annotations.confighub~1com/Hash	
+attribute	serving.knative.dev/v1/Service	configmap-hash	spec.template.metadata.annotations.hash~1confighub~1com/*	
 attribute	serving.knative.dev/v1/Service	container-flag	spec.template.spec.containers.?name:container-name=%s.args.?flag:container-flag=%s#value	
 attribute	serving.knative.dev/v1/Service	container-flag	spec.template.spec.ephemeralContainers.?name:container-name=%s.args.?flag:container-flag=%s#value	
 attribute	serving.knative.dev/v1/Service	container-flag	spec.template.spec.initContainers.?name:container-name=%s.args.?flag:container-flag=%s#value	
@@ -1144,6 +1155,7 @@ attribute	v1/Pod	resource-name	spec.volumes.*.projected.sources.*.secret.name		v
 attribute	v1/Pod	resource-name	spec.volumes.*.secret.secretName		v1/Secret
 attribute	v1/PodTemplate	automount-service-account-token	template.spec.automountServiceAccountToken	bool
 attribute	v1/PodTemplate	configmap-hash	template.metadata.annotations.confighub~1com/Hash	
+attribute	v1/PodTemplate	configmap-hash	template.metadata.annotations.hash~1confighub~1com/*	
 attribute	v1/PodTemplate	container-flag	template.spec.containers.?name:container-name=%s.args.?flag:container-flag=%s#value	
 attribute	v1/PodTemplate	container-flag	template.spec.ephemeralContainers.?name:container-name=%s.args.?flag:container-flag=%s#value	
 attribute	v1/PodTemplate	container-flag	template.spec.initContainers.?name:container-name=%s.args.?flag:container-flag=%s#value	
@@ -1211,6 +1223,7 @@ attribute	v1/PodTemplate	resource-name	template.spec.volumes.*.projected.sources
 attribute	v1/PodTemplate	resource-name	template.spec.volumes.*.secret.secretName		v1/Secret
 attribute	v1/ReplicationController	automount-service-account-token	spec.template.spec.automountServiceAccountToken	bool
 attribute	v1/ReplicationController	configmap-hash	spec.template.metadata.annotations.confighub~1com/Hash	
+attribute	v1/ReplicationController	configmap-hash	spec.template.metadata.annotations.hash~1confighub~1com/*	
 attribute	v1/ReplicationController	container-flag	spec.template.spec.containers.?name:container-name=%s.args.?flag:container-flag=%s#value	
 attribute	v1/ReplicationController	container-flag	spec.template.spec.ephemeralContainers.?name:container-name=%s.args.?flag:container-flag=%s#value	
 attribute	v1/ReplicationController	container-flag	spec.template.spec.initContainers.?name:container-name=%s.args.?flag:container-flag=%s#value	

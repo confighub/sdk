@@ -216,6 +216,27 @@ func ResolveAssociativePaths(
 		}
 
 		switch {
+		case IsKeyPrefixSegment(segment):
+			// The keys of a map that start with the prefix. Anything else under this path --
+			// an array, a scalar, or a map with no such key -- matches nothing.
+			prefix := strings.TrimSuffix(segment, "*")
+			parentSegments := workList[0].ResolvedSegments
+			parentSegments = parentSegments[:len(parentSegments):len(parentSegments)]
+			if workList[0].ParentNode != nil {
+				for key, child := range workList[0].ParentNode.ChildrenMap() {
+					if !strings.HasPrefix(key, prefix) || (constraintSegment != "" && key != constraintSegment) {
+						continue
+					}
+					workList = append(workList, currentPosition{
+						ResolvedSegments:    append(parentSegments, EscapeDotsInPathSegment(key)),
+						CurrentSegmentIndex: workList[0].CurrentSegmentIndex + 1,
+						PathArguments:       workList[0].PathArguments,
+						ParentNode:          child,
+					})
+				}
+			}
+			workList = workList[1:]
+
 		case strings.HasPrefix(segment, "*"):
 			// Gaby Search supports wildcards, at least for array sequence nodes,
 			// but I'm unsure how it returns multiple results. We resolve wildcards here.
@@ -539,6 +560,43 @@ func IsNumber(s string) bool {
 	return true
 }
 
+// IsKeyPrefixSegment reports whether a path segment matches the map keys that start with a
+// prefix: text followed by a trailing "*", as in hash~1confighub~1com/* for the annotations
+// whose keys start with hash.confighub.com/. A segment that starts with "*" is a wildcard of
+// another kind, and one carrying "?", "@" or "%" an associative lookup or a parameter.
+func IsKeyPrefixSegment(segment string) bool {
+	return len(segment) > 1 && strings.HasSuffix(segment, "*") &&
+		!strings.ContainsAny(segment[:len(segment)-1], "*?@%")
+}
+
+// matchesKeyPrefixPath reports whether path names one of the keys a registered path ending in
+// a key-prefix segment matches: the same segments before it, normalized alike, and a last
+// segment starting with the prefix. registered and path are unresolved paths, compared
+// segment by segment because a key may contain dots.
+func matchesKeyPrefixPath(registered, path api.UnresolvedPath) bool {
+	registeredSegments := gaby.DotPathToSlice(string(registered))
+	pathSegments := gaby.DotPathToSlice(string(path))
+	n := len(registeredSegments)
+	if n == 0 || n != len(pathSegments) || !IsKeyPrefixSegment(registeredSegments[n-1]) {
+		return false
+	}
+	for i := 0; i < n-1; i++ {
+		if normalizeSegment(registeredSegments[i]) != normalizeSegment(pathSegments[i]) {
+			return false
+		}
+	}
+	return strings.HasPrefix(pathSegments[n-1], strings.TrimSuffix(registeredSegments[n-1], "*"))
+}
+
+// normalizeSegment is how normalizePath reads one segment on its own: an index, associative
+// lookup or wildcard is "*".
+func normalizeSegment(segment string) string {
+	if (strings.ContainsAny(segment, "?*@%") && !IsKeyPrefixSegment(segment)) || IsNumber(segment) {
+		return "*"
+	}
+	return segment
+}
+
 // normalizePath converts path array indices, associative lookups, and freeform map keys
 // to wildcards to normalize lookups of matching paths.
 // Numerical path segments are assumed to be array indices.
@@ -549,7 +607,10 @@ func normalizePath(resourceProvider ResourceProvider, resourceType api.ResourceT
 	prefix := ""
 	prevWasMapKey := false
 	for i, segment := range segments {
-		if strings.ContainsAny(segment, "?*@%") || IsNumber(segment) {
+		if IsKeyPrefixSegment(segment) {
+			// Kept as written, so that it registers apart from the other keys of its map and a
+			// literal key can be tested against its prefix (matchesKeyPrefixPath).
+		} else if strings.ContainsAny(segment, "?*@%") || IsNumber(segment) {
 			segments[i] = "*"
 		} else if prevWasMapKey {
 			// Previous segment was a wildcard for a map parent — this child is a dynamic key

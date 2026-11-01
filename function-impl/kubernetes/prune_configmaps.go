@@ -38,7 +38,7 @@ func registerPruneConfigMaps(fh handler.FunctionRegistry, rp *k8skit.K8sResource
 			Validating:            false,
 			Hermetic:              true,
 			Idempotent:            true,
-			Description:           "For each group of immutable v1/ConfigMap resources sharing a confighub.com/ResourceNameStableCore annotation, retains at most the configured number of newest (highest confighub.com/RevisionNum) entries, removing the rest. The newest entry retains the confighub.com/RenderRevision: Latest annotation; older retained entries have it stripped and are marked with confighub.com/VisitorOptions: IgnoreProvided. Mutable ConfigMaps are left untouched.",
+			Description:           "For each group of immutable v1/ConfigMap resources sharing a confighub.com/ResourceNameStableCore annotation, retains at most the configured number of newest (highest confighub.com/RevisionNum) entries, removing the rest. The newest entry retains the confighub.com/RenderRevision: Latest annotation; older retained entries are marked confighub.com/RenderRevision: Superseded and confighub.com/VisitorOptions: IgnoreProvided. Mutable ConfigMaps are left untouched.",
 			FunctionType:          api.FunctionTypeCustom,
 			AffectedResourceTypes: []api.ResourceType{api.ResourceType("v1/ConfigMap")},
 		},
@@ -138,12 +138,14 @@ func fnPruneConfigMaps(
 			}
 			if i == 0 {
 				// Keep the newest entry as Latest.
-				if _, err := doc.SetP("Latest", renderRevisionPath); err != nil {
+				if _, err := doc.SetP(constants.RenderRevisionLatest, renderRevisionPath); err != nil {
 					return parsedData, nil, fmt.Errorf("prune-configmaps: failed to set RenderRevision on doc %d: %w", entry.docIndex, err)
 				}
 			} else {
-				// Older retained entries: drop Latest marker and ignore in get-provided.
-				_ = doc.DeleteP(renderRevisionPath)
+				// Older retained entries: mark Superseded and ignore in get-provided.
+				if _, err := doc.SetP(constants.RenderRevisionSuperseded, renderRevisionPath); err != nil {
+					return parsedData, nil, fmt.Errorf("prune-configmaps: failed to set RenderRevision on doc %d: %w", entry.docIndex, err)
+				}
 				if _, err := doc.SetP(constants.VisitorOptionIgnoreProvided, visitorOptionsPath); err != nil {
 					return parsedData, nil, fmt.Errorf("prune-configmaps: failed to set VisitorOptions on doc %d: %w", entry.docIndex, err)
 				}
