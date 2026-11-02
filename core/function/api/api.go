@@ -319,7 +319,7 @@ func (r *FunctionInvocationSuccessResponse) ResultData(sent string) string {
 //
 // includeUnchanged carries the configuration even when the invocation did not change it, for a
 // caller that asked for it and is going to display the result. Omitting it is the right default
-// at the worker boundary -- re-sending what was just sent is waste -- but it makes a read-only
+// at the executor boundary -- re-sending what was just sent is waste -- but it makes a read-only
 // invocation, which by definition changes nothing, cost a second request to show its result.
 // The flag belongs here rather than at the call site so that nothing sets ConfigData directly
 // and the two sides of the contract stay the only place that decides.

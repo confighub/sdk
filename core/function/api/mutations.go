@@ -192,7 +192,7 @@ const (
 	ReplayOutcomeNotReplayable ReplayOutcome = "NotReplayable"
 	// ReplayOutcomeUnavailable: replay was not possible here rather than not allowed -- the
 	// function no longer exists, its signature no longer accepts the stored arguments, or it
-	// ran on a worker.
+	// ran on a Channel's client.
 	ReplayOutcomeUnavailable ReplayOutcome = "ReplayUnavailable"
 	// ReplayOutcomeFailed: executed and errored. The patch ran instead, and a
 	// ConflictReasonReplayFailed was recorded.

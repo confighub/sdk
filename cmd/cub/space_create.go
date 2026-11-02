@@ -24,6 +24,7 @@ var spaceCreateArgs struct {
 	attributes    *spaceAttributeFlagValues
 	releaseTarget string
 	component     string
+	upstreamSpace string
 	permissions   []string
 	variantLabels []string
 	namePattern   string
@@ -53,7 +54,12 @@ Single space creation examples:
 
   # Create a space whose Releases are for the Target prod-cluster in the infra space
   cub space create website-prod --component website --variant prod --release-target infra/prod-cluster
+
+  # Create a space that takes its configuration from website-canary
+  cub space create website-prod --component website --variant prod --upstream-space website-canary
 `+"```"+`
+
+Bulk creation clones spaces, and each clone takes from the space it was cloned from.
 
 Bulk creation examples:
 `+"```"+`
@@ -78,6 +84,7 @@ func init() {
 	spaceCreateArgs.attributes = addSpaceAttributeFlags(spaceCreateCmd)
 	spaceCreateCmd.Flags().StringVar(&spaceCreateArgs.releaseTarget, "release-target", "", "Target to use as the default release Target for Units in this Space, addressed as <target-space>/<target-slug> (a bare <target-slug> resolves in --space; a Target ID is also accepted)")
 	spaceCreateCmd.Flags().StringVar(&spaceCreateArgs.component, "component", "", "slug or ID of the Component the Space is a Variant of")
+	spaceCreateCmd.Flags().StringVar(&spaceCreateArgs.upstreamSpace, "upstream-space", "", "slug or ID of the Space this Space takes its configuration from, which promotion takes from; requires Use on it. A clone takes from the Space it was cloned from, so bulk create does not accept it")
 	spaceCreateCmd.Flags().StringSliceVar(&spaceCreateArgs.permissions, "permission", []string{}, permissionCreateHelp)
 	spaceCreateCmd.Flags().StringSliceVar(&spaceCreateArgs.variantLabels, "variant-labels", []string{}, "labels for bulk create in the format of key1=value1|value2,key2=value1|value2|value3")
 	spaceCreateArgs.spaceLabels = addStandardLabelFlags(spaceCreateCmd, "Space", standardSpaceLabels)
@@ -117,6 +124,10 @@ func checkSpaceCreateConflictingArgs(args []string) (bool, error) {
 
 		if spaceCreateArgs.namePattern != "" && len(spaceCreateArgs.variantLabels) == 0 {
 			return false, errors.New("--variant-labels needs to be set when using --name-pattern")
+		}
+
+		if spaceCreateArgs.upstreamSpace != "" {
+			return false, errors.New("--upstream-space is for a single space: a clone takes from the space it was cloned from")
 		}
 	} else {
 		// Single create mode validation
@@ -240,6 +251,14 @@ func runSingleSpaceCreate(args []string) error {
 			return err
 		}
 		newBody.ComponentID = &componentID
+	}
+
+	if spaceCreateArgs.upstreamSpace != "" {
+		upstreamSpaceID, err := resolveSpaceID(spaceCreateArgs.upstreamSpace)
+		if err != nil {
+			return err
+		}
+		newBody.UpstreamSpaceID = &upstreamSpaceID
 	}
 
 	// Create params with AllowExists if needed

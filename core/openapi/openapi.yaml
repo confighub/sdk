@@ -1156,14 +1156,14 @@ paths:
           The attribute names are case-sensitive, PascalCase, and
           expected in a comma-separated list format as in the JSON encoding.
 
-          Supported attributes for Space are AttributeFilterID, AttributeIDs, ComponentID, OrganizationID, Permissions, ReleaseTargetID, TriggerFilterID, TriggerIDs.
+          Supported attributes for Space are AttributeFilterID, AttributeIDs, ComponentID, OrganizationID, Permissions, ReleaseTargetID, TriggerFilterID, TriggerIDs, UpstreamSpaceID.
 
           The whole string must be query-encoded.
         in: query
         name: include
         required: false
         schema:
-          pattern: ^\s*(AttributeFilterID|AttributeIDs|ComponentID|OrganizationID|Permissions|ReleaseTargetID|TriggerFilterID|TriggerIDs)\s*(?:,\s*(?:AttributeFilterID|AttributeIDs|ComponentID|OrganizationID|Permissions|ReleaseTargetID|TriggerFilterID|TriggerIDs)\s*)*$
+          pattern: ^\s*(AttributeFilterID|AttributeIDs|ComponentID|OrganizationID|Permissions|ReleaseTargetID|TriggerFilterID|TriggerIDs|UpstreamSpaceID)\s*(?:,\s*(?:AttributeFilterID|AttributeIDs|ComponentID|OrganizationID|Permissions|ReleaseTargetID|TriggerFilterID|TriggerIDs|UpstreamSpaceID)\s*)*$
           type: string
       - description: Maximum number of Space entities to act on, in ID order. A request
           that names limit or continue also stops when it runs short of time, and
@@ -1402,14 +1402,14 @@ paths:
           The attribute names are case-sensitive, PascalCase, and
           expected in a comma-separated list format as in the JSON encoding.
 
-          Supported attributes for Space are AttributeFilterID, AttributeIDs, ComponentID, OrganizationID, Permissions, ReleaseTargetID, TriggerFilterID, TriggerIDs.
+          Supported attributes for Space are AttributeFilterID, AttributeIDs, ComponentID, OrganizationID, Permissions, ReleaseTargetID, TriggerFilterID, TriggerIDs, UpstreamSpaceID.
 
           The whole string must be query-encoded.
         in: query
         name: include
         required: false
         schema:
-          pattern: ^\s*(AttributeFilterID|AttributeIDs|ComponentID|OrganizationID|Permissions|ReleaseTargetID|TriggerFilterID|TriggerIDs)\s*(?:,\s*(?:AttributeFilterID|AttributeIDs|ComponentID|OrganizationID|Permissions|ReleaseTargetID|TriggerFilterID|TriggerIDs)\s*)*$
+          pattern: ^\s*(AttributeFilterID|AttributeIDs|ComponentID|OrganizationID|Permissions|ReleaseTargetID|TriggerFilterID|TriggerIDs|UpstreamSpaceID)\s*(?:,\s*(?:AttributeFilterID|AttributeIDs|ComponentID|OrganizationID|Permissions|ReleaseTargetID|TriggerFilterID|TriggerIDs|UpstreamSpaceID)\s*)*$
           type: string
       - description: Maximum number of Space entities to act on, in ID order. A request
           that names limit or continue also stops when it runs short of time, and
@@ -1546,6 +1546,11 @@ paths:
                   nullable: true
                   type: string
                 TriggerFilterID:
+                  description: ""
+                  format: uuid
+                  nullable: true
+                  type: string
+                UpstreamSpaceID:
                   description: ""
                   format: uuid
                   nullable: true
@@ -1745,14 +1750,14 @@ paths:
           The attribute names are case-sensitive, PascalCase, and
           expected in a comma-separated list format as in the JSON encoding.
 
-          Supported attributes for Space are AttributeFilterID, AttributeIDs, ComponentID, OrganizationID, Permissions, ReleaseTargetID, TriggerFilterID, TriggerIDs.
+          Supported attributes for Space are AttributeFilterID, AttributeIDs, ComponentID, OrganizationID, Permissions, ReleaseTargetID, TriggerFilterID, TriggerIDs, UpstreamSpaceID.
 
           The whole string must be query-encoded.
         in: query
         name: include
         required: false
         schema:
-          pattern: ^\s*(AttributeFilterID|AttributeIDs|ComponentID|OrganizationID|Permissions|ReleaseTargetID|TriggerFilterID|TriggerIDs)\s*(?:,\s*(?:AttributeFilterID|AttributeIDs|ComponentID|OrganizationID|Permissions|ReleaseTargetID|TriggerFilterID|TriggerIDs)\s*)*$
+          pattern: ^\s*(AttributeFilterID|AttributeIDs|ComponentID|OrganizationID|Permissions|ReleaseTargetID|TriggerFilterID|TriggerIDs|UpstreamSpaceID)\s*(?:,\s*(?:AttributeFilterID|AttributeIDs|ComponentID|OrganizationID|Permissions|ReleaseTargetID|TriggerFilterID|TriggerIDs|UpstreamSpaceID)\s*)*$
           type: string
       - description: Maximum number of Space entities to act on, in ID order. A request
           that names limit or continue also stops when it runs short of time, and
@@ -1973,6 +1978,11 @@ paths:
                   nullable: true
                   type: string
                 TriggerFilterID:
+                  description: ""
+                  format: uuid
+                  nullable: true
+                  type: string
+                UpstreamSpaceID:
                   description: ""
                   format: uuid
                   nullable: true
@@ -21581,14 +21591,14 @@ paths:
           The attribute names are case-sensitive, PascalCase, and
           expected in a comma-separated list format as in the JSON encoding.
 
-          Supported attributes for Space are AttributeFilterID, AttributeIDs, ComponentID, OrganizationID, Permissions, ReleaseTargetID, TriggerFilterID, TriggerIDs.
+          Supported attributes for Space are AttributeFilterID, AttributeIDs, ComponentID, OrganizationID, Permissions, ReleaseTargetID, TriggerFilterID, TriggerIDs, UpstreamSpaceID.
 
           The whole string must be query-encoded.
         in: query
         name: include
         required: false
         schema:
-          pattern: ^\s*(AttributeFilterID|AttributeIDs|ComponentID|OrganizationID|Permissions|ReleaseTargetID|TriggerFilterID|TriggerIDs)\s*(?:,\s*(?:AttributeFilterID|AttributeIDs|ComponentID|OrganizationID|Permissions|ReleaseTargetID|TriggerFilterID|TriggerIDs)\s*)*$
+          pattern: ^\s*(AttributeFilterID|AttributeIDs|ComponentID|OrganizationID|Permissions|ReleaseTargetID|TriggerFilterID|TriggerIDs|UpstreamSpaceID)\s*(?:,\s*(?:AttributeFilterID|AttributeIDs|ComponentID|OrganizationID|Permissions|ReleaseTargetID|TriggerFilterID|TriggerIDs|UpstreamSpaceID)\s*)*$
           type: string
       - description: |-
           Select clause for specifying which fields to include in the response for Space.
@@ -21956,14 +21966,14 @@ paths:
           The attribute names are case-sensitive, PascalCase, and
           expected in a comma-separated list format as in the JSON encoding.
 
-          Supported attributes for Space are AttributeFilterID, AttributeIDs, ComponentID, OrganizationID, Permissions, ReleaseTargetID, TriggerFilterID, TriggerIDs.
+          Supported attributes for Space are AttributeFilterID, AttributeIDs, ComponentID, OrganizationID, Permissions, ReleaseTargetID, TriggerFilterID, TriggerIDs, UpstreamSpaceID.
 
           The whole string must be query-encoded.
         in: query
         name: include
         required: false
         schema:
-          pattern: ^\s*(AttributeFilterID|AttributeIDs|ComponentID|OrganizationID|Permissions|ReleaseTargetID|TriggerFilterID|TriggerIDs)\s*(?:,\s*(?:AttributeFilterID|AttributeIDs|ComponentID|OrganizationID|Permissions|ReleaseTargetID|TriggerFilterID|TriggerIDs)\s*)*$
+          pattern: ^\s*(AttributeFilterID|AttributeIDs|ComponentID|OrganizationID|Permissions|ReleaseTargetID|TriggerFilterID|TriggerIDs|UpstreamSpaceID)\s*(?:,\s*(?:AttributeFilterID|AttributeIDs|ComponentID|OrganizationID|Permissions|ReleaseTargetID|TriggerFilterID|TriggerIDs|UpstreamSpaceID)\s*)*$
           type: string
       - description: |-
           Select clause for specifying which fields to include in the response for Space.
@@ -22139,6 +22149,11 @@ paths:
                   nullable: true
                   type: string
                 TriggerFilterID:
+                  description: ""
+                  format: uuid
+                  nullable: true
+                  type: string
+                UpstreamSpaceID:
                   description: ""
                   format: uuid
                   nullable: true
@@ -36985,6 +37000,122 @@ paths:
       summary: Update Unit
       tags:
       - Unit
+  /space/{space_id}/unit/{unit_id}/blame:
+    get:
+      description: 'Returns, for every field of a Unit''s configuration, what set
+        the value that is there -- the change, who made it, when and why -- following
+        each merge and Link resolve upstream to where the value was set, and everything
+        else recorded about the field: whether it is protected or guarded, the conflicts
+        and Link findings about it, the failed validation checks that name it, and
+        whether a NeedsProvides Link needs or provides it. A field the Unit does not
+        have is listed, with Absent, when a conflict names it.'
+      operationId: GetUnitBlame
+      parameters:
+      - description: Unique identifier for a space_id
+        in: path
+        name: space_id
+        required: true
+        schema:
+          format: uuid
+          type: string
+      - description: Unique identifier for a unit_id
+        in: path
+        name: unit_id
+        required: true
+        schema:
+          format: uuid
+          type: string
+      - description: Only the fields whose path contains this substring.
+        in: query
+        name: path
+        required: false
+        schema:
+          type: string
+      - description: Only the fields of this resource, named as <type>/<name> or <name>;
+          a substring of either matches.
+        in: query
+        name: resource
+        required: false
+        schema:
+          type: string
+      - description: |-
+          Only the fields with at least one of these flags, comma-separated. Conflict,Absent,Finding,ValidationError,ValidationWarning selects the fields that need attention.
+
+          Supported values: Protected, Guarded, Conflict, Absent, Finding, ValidationError, ValidationWarning, Upgraded, SetByLink, SetByTrigger, ChangeOrder, Unreleased, Needed, Provided.
+        in: query
+        name: flags
+        required: false
+        schema:
+          pattern: ^\s*(Protected|Guarded|Conflict|Absent|Finding|ValidationError|ValidationWarning|Upgraded|SetByLink|SetByTrigger|ChangeOrder|Unreleased|Needed|Provided)\s*(?:,\s*(?:Protected|Guarded|Conflict|Absent|Finding|ValidationError|ValidationWarning|Upgraded|SetByLink|SetByTrigger|ChangeOrder|Unreleased|Needed|Provided)\s*)*$
+          type: string
+      - description: Follow each merge and Link resolve into the unit it took the
+          value from, to where the value was set. Default true; false reports each
+          unit's own record, which names the upstream unit without reading it.
+        in: query
+        name: upstream
+        required: false
+        schema:
+          type: boolean
+      - description: How many upstream units to follow before stopping.
+        in: query
+        name: upstream_depth
+        required: false
+        schema:
+          maximum: 8
+          minimum: 1
+          type: integer
+      - description: Include the $comment$ pseudo-fields that carry YAML comments.
+        in: query
+        name: include_comments
+        required: false
+        schema:
+          type: boolean
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UnitBlame'
+          description: OK
+        "400":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/StandardErrorResponse'
+          description: Unit request is invalid (Bad Request).
+        "401":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/StandardErrorResponse'
+          description: Unauthorized access.
+        "403":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/StandardErrorResponse'
+          description: Forbidden access.
+        "404":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/StandardErrorResponse'
+          description: Unit not found.
+        "500":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/StandardErrorResponse'
+          description: Something went wrong while processing Unit.
+        default:
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/StandardErrorResponse'
+          description: Unexpected error.
+      summary: Get what set each field of a Unit
+      tags:
+      - Unit
   /space/{space_id}/unit/{unit_id}/conflicts:
     post:
       description: Act on the parts of the last merge's patch that were not applied.
@@ -37956,6 +38087,114 @@ paths:
                 $ref: '#/components/schemas/StandardErrorResponse'
           description: Unexpected error.
       summary: Get mutation sources
+      tags:
+      - Unit
+  /space/{space_id}/unit/{unit_id}/path:
+    get:
+      description: 'Returns everything recorded about one field of a Unit''s configuration:
+        the field as the Unit''s blame reports it, its own annotations, whether the
+        Unit''s last Release includes its value, and each change from this Unit out
+        to where the value was set with the Mutation and Revision it was read from.
+        With history, it also returns every change the Unit recorded to the field.
+        A field that names nothing is a 404; one that names several fields, or a value
+        holding several, is a 400 whose message lists them.'
+      operationId: GetUnitPath
+      parameters:
+      - description: Unique identifier for a space_id
+        in: path
+        name: space_id
+        required: true
+        schema:
+          format: uuid
+          type: string
+      - description: Unique identifier for a unit_id
+        in: path
+        name: unit_id
+        required: true
+        schema:
+          format: uuid
+          type: string
+      - description: 'The field: its REF, a prefix of a REF of at least four characters,
+          or its path.'
+        in: query
+        name: field
+        required: true
+        schema:
+          type: string
+      - description: Also return every change the Unit recorded to the field. Reads
+          the record of every Revision of the Unit.
+        in: query
+        name: history
+        required: false
+        schema:
+          type: boolean
+      - description: Only the fields of this resource, named as <type>/<name> or <name>;
+          a substring of either matches.
+        in: query
+        name: resource
+        required: false
+        schema:
+          type: string
+      - description: Follow each merge and Link resolve into the unit it took the
+          value from, to where the value was set. Default true; false reports each
+          unit's own record, which names the upstream unit without reading it.
+        in: query
+        name: upstream
+        required: false
+        schema:
+          type: boolean
+      - description: How many upstream units to follow before stopping.
+        in: query
+        name: upstream_depth
+        required: false
+        schema:
+          maximum: 8
+          minimum: 1
+          type: integer
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UnitPathReport'
+          description: OK
+        "400":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/StandardErrorResponse'
+          description: Unit request is invalid (Bad Request).
+        "401":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/StandardErrorResponse'
+          description: Unauthorized access.
+        "403":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/StandardErrorResponse'
+          description: Forbidden access.
+        "404":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/StandardErrorResponse'
+          description: Unit not found.
+        "500":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/StandardErrorResponse'
+          description: Something went wrong while processing Unit.
+        default:
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/StandardErrorResponse'
+          description: Unexpected error.
+      summary: Get everything recorded about one field of a Unit
       tags:
       - Unit
   /space/{space_id}/unit/{unit_id}/protection:
@@ -47414,6 +47653,354 @@ paths:
       summary: Bulk tag multiple units
       tags:
       - Unit
+  /unit_blame:
+    get:
+      description: 'Returns the blame of every Unit the where clause selects, across
+        every Space in the organization, a page of Units at a time. This is the bulk
+        counterpart of the single-Unit blame subresource. Scope it to one Space with
+        a where clause for a variant, or to several for several variants: a field
+        has the same REF in every variant of a Unit. A Unit whose blame cannot be
+        read carries an Error and no fields.'
+      operationId: SearchUnitBlame
+      parameters:
+      - description: |-
+          The specified string is an expression for the purpose of filtering
+          the list of Units returned. The expression syntax was inspired by SQL.
+          It supports conjunctions using `AND` of relational expressions of the form *attribute*
+          *operator* *attribute_or_literal*. The attribute names are case-sensitive and PascalCase,
+          as in the JSON encoding.
+          Strings support the following operators: `<`, `>`, `<=`, `>=`, `=`, `!=`, `LIKE`, `NOT LIKE`, `ILIKE`, `~~`, `!~~`, `~`, `~*`, `!~`, `!~*`, `IN`, `NOT IN`.
+          String pattern operators: `LIKE` and `~~` for pattern matching with `%` and `_` wildcards,
+          `ILIKE` for case-insensitive pattern matching, `NOT LIKE` and `!~~` for negated pattern matching.
+          String regex operators: `~` for regex matching, `~*` for case-insensitive regex,
+          `!~` and `!~*` for regex not matching (case-sensitive and insensitive).
+          Integers support the following operators: `<`, `>`, `<=`, `>=`, `=`, `!=`, `IN`, `NOT IN`.
+          UUIDs and boolean attributes support equality and inequality only.
+          UUID and time literals must be quoted as string literals.
+          String literals are quoted with single quotes, such as `'string'`.
+          Time literals use the same form as when serialized as JSON,
+          such as: `CreatedAt > '2025-02-18T23:16:34'`.
+          Integer and boolean literals are also supported for attributes of those types.
+          Arrays support the `?` operator to to match any element of the array,
+          as in `FromLinkID ? '7c61626f-ddbe-41af-93f6-b69f4ab6d308'`.
+          Arrays can perform LEN() to check for length, as in `LEN(FromLinkID) > 0`.
+          An attribute naming a list of other entities can be filtered on their attributes with a `*` segment,
+          as in `FromLink.*.Slug = 'upgrade-app'`, which holds when any element satisfies it.
+          Without the `*` such a reference is an error, since it names no single value to compare.
+          Map support the dot notation to specify a particular map key, as in `Labels.tier = 'Backend'`.
+          Maps support `IS NULL` and `IS NOT NULL` with dot notation to check for key absence or presence,
+          as in `Labels.tier IS NULL` (key doesn't exist) or `Labels.tier IS NOT NULL` (key exists).
+          Comparison results can be tested with `IS TRUE`, `IS FALSE`, `IS NOT TRUE`, and `IS NOT FALSE`.
+          These are useful for nullable columns: `MergeSourceID = '<uuid>' IS NOT FALSE` matches rows where MergeSourceID equals the value OR is NULL.
+          The `IN` and `NOT IN` operators accept a comma-separated list of values in parentheses,
+          such as `Slug IN ('slugone', 'slugtwo')` or `Labels.environment IN ('prod', 'staging')`.
+          Conjunctions are supported using the `AND` operator.
+          An example conjunction is:
+          `CreatedAt >= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.
+
+          Supported attributes for filtering on Unit: Annotations, ApplyGates, ApplyWarnings, ChangeSetID, Conflicts, CreatedAt, DataHash, DeleteGates, DestroyGates, DisplayName, FromLinkID, HeadRevisionID, HeadRevisionNum, HeadUnitEventNum, HiddenReason, Labels, LastChangeDescription, LastReleasedRevisionNum, LinkFindings, NeededPaths, OrganizationID, Permissions, ProvidedPaths, Slug, SpaceID, TargetID, ToolchainType, UnitID, Unreleasable, UpdatedAt, UpstreamRevisionNum, UpstreamSpaceID, UpstreamUnitID, ValidationErrors, ValidationResults, ValidationTriggerIDs, ValidationWarnings, ValueTriggerIDs, Values.
+
+          Finding all units created by cloning can be done using the expression `UpstreamRevisionNum > 0`. Clones of a specific unit can be found by additionally filtering based on `UpstreamUnitID`. Units never released can be found using `LastReleasedRevisionNum = 0`. Units with unreleased changes can be found with `HeadRevisionNum > LastReleasedRevisionNum AND ReleaseTargetID IS NOT NULL AND Unreleasable = false`.
+
+          The whole string must be query-encoded.
+        in: query
+        name: where
+        required: false
+        schema:
+          type: string
+      - description: |-
+          UUID of a Filter entity to apply to the Unit list.
+
+          The Filter must be in the same Organization as the user credentials.
+
+          The Filter's From field must match the entity type being filtered (Unit).
+
+          For Space-resident entities, if the Filter has a FromSpaceID, it must match the operation's SpaceID.
+
+          The Filter's Where clause will be combined with any explicit 'where' parameter using AND logic.
+
+          If both 'filter' and 'where' parameters are specified, they are combined with AND logic.
+        in: query
+        name: filter
+        required: false
+        schema:
+          type: string
+      - description: |-
+          Free text search that approximately matches the specified string against string fields and map keys/values.
+
+          The search is case-insensitive and uses pattern matching to find entities containing the text.
+
+          Searchable string fields include attributes like Slug, DisplayName, and string-typed custom fields.
+
+          For map fields (like Labels and Annotations), the search matches both map keys and values.
+
+          The search uses OR logic across all searchable fields, so matching any field will return the entity.
+
+          If both 'where' and 'contains' parameters are specified, they are combined with AND logic.
+
+          Searchable fields for Unit include string and map-type attributes from the queryable attributes list.
+
+          The whole string must be query-encoded.
+        in: query
+        name: contains
+        required: false
+        schema:
+          type: string
+      - description: |-
+          Only return Unit entities on which the caller has this permission, as well as View, which every entity listed needs.
+
+          A list made to choose an entity to act on can name the permission the action needs, such as Edit to change it or Use to refer to it from another entity, so that it leaves out the entities the action would be refused on.
+
+          Supported values: Manage, Edit, Use, View, Approve, TargetEdit, TargetView.
+        in: query
+        name: where_permission
+        required: false
+        schema:
+          enum:
+          - Manage
+          - Edit
+          - Use
+          - View
+          - Approve
+          - TargetEdit
+          - TargetView
+          type: string
+      - description: |-
+          Hidden Unit entities, those with a HiddenReason, are left out of the results, or of what a bulk operation acts on, unless this names their HiddenReason.
+
+          It is a comma-separated list of HiddenReasons, or `*` for all of them.
+
+          A where clause naming the entities, by their Slug or ID with `=` or `IN`, or naming HiddenReason at all, also returns hidden entities it selects.
+
+          ConfigHub/YAML Units, which hold the configuration of entities, are hidden with the HiddenReason `BackingUnit`.
+        in: query
+        name: include_hidden
+        required: false
+        schema:
+          type: string
+      - description: UUID of a View of Unit. Its Filter selects the Units as the filter
+          parameter does, so the two may not both be specified.
+        in: query
+        name: view
+        required: false
+        schema:
+          type: string
+      - description: Maximum number of Units to return the blame of; 50 when not given,
+          and larger values are rejected with 400. When there may be more, the response
+          has a ConfigHub-Continue header to pass as the continue parameter of the
+          next request.
+        in: query
+        name: limit
+        required: false
+        schema:
+          maximum: 50
+          minimum: 1
+          type: integer
+      - description: |-
+          Comma-separated list of fields to sort Unit results by, each in the form 'ASC|DESC:FieldName' or just 'FieldName'.
+
+          Field names are case-sensitive and PascalCase, as in the JSON encoding. Sort direction defaults to ASC when the 'DIRECTION:' prefix is omitted.
+
+          Supported attributes for ordering Unit: ChangeSetID, CreatedAt, DataHash, DisplayName, HeadRevisionID, HeadRevisionNum, HeadUnitEventNum, HiddenReason, LastChangeDescription, LastReleasedRevisionNum, OrganizationID, Slug, SpaceID, ToolchainType, UnitID, Unreleasable, UpdatedAt, UpstreamRevisionNum, UpstreamUnitID.
+
+          Example: 'DESC:CreatedAt' or 'DisplayName,DESC:CreatedAt'.
+
+          Results are ordered by the Unit's ID after the fields named, and by the ID alone if none are.
+
+          The whole string must be query-encoded.
+        in: query
+        name: order_by
+        required: false
+        schema:
+          pattern: ^\s*(?:(?:[Aa][Ss][Cc]|[Dd][Ee][Ss][Cc])\s*:\s*)?(ChangeSetID|CreatedAt|DataHash|DisplayName|HeadRevisionID|HeadRevisionNum|HeadUnitEventNum|HiddenReason|LastChangeDescription|LastReleasedRevisionNum|OrganizationID|Slug|SpaceID|ToolchainType|UnitID|Unreleasable|UpdatedAt|UpstreamRevisionNum|UpstreamUnitID)\s*(?:,\s*(?:(?:[Aa][Ss][Cc]|[Dd][Ee][Ss][Cc])\s*:\s*)?(?:ChangeSetID|CreatedAt|DataHash|DisplayName|HeadRevisionID|HeadRevisionNum|HeadUnitEventNum|HiddenReason|LastChangeDescription|LastReleasedRevisionNum|OrganizationID|Slug|SpaceID|ToolchainType|UnitID|Unreleasable|UpdatedAt|UpstreamRevisionNum|UpstreamUnitID)\s*)*$
+          type: string
+      - description: |-
+          The token from the ConfigHub-Continue header of the previous page, to return the Unit entities after it.
+
+          The request's other parameters, except limit, must be the same as those of the request that returned the token.
+
+          Keep reading until a response has no such header: a page can hold fewer entities than the limit, or none, and still be followed by more.
+        in: query
+        name: continue
+        required: false
+        schema:
+          type: string
+      - description: 'Resource type: Resource type to match for the desired ToolchainType,
+          for example apps/v1/Deployment'
+        in: query
+        name: resource_type
+        required: false
+        schema:
+          type: string
+      - description: 'Where data: The specified string is an expression for the purpose
+          of evaluating whether the configuration data matches the filter. It supports
+          conjunctions using `AND` of relational expressions of the form *path* *operator*
+          *literal*. The path specifications are dot-separated, for both map fields
+          and array indices, as in `spec.template.spec.containers.0.image = ''ghcr.io/headlamp-k8s/headlamp:latest''
+          AND spec.replicas > 1`. Path expressions support `*` for wildcard array
+          or map segments and `?key=value` syntax for associative matches of array
+          elements containing objects with a `key` attribute. Strings support the
+          following operators: `<`, `>`, `<=`, `>=`, `=`, `!=`, `LIKE`, `ILIKE`, `~~`,
+          `!~~`, `~`, `!~`, `~*`, `!~*`, `IN`, `NOT IN`. String pattern operators:
+          `LIKE` and `~~` for pattern matching with `%` and `_` wildcards, `ILIKE`
+          for case-insensitive pattern matching, `!~~` for NOT LIKE. String regex
+          operators: `~` for regex matching, `~*` for case-insensitive regex, `!~`
+          and `!~*` for regex not matching (case-sensitive and insensitive). Integers
+          support the following operators: `<`, `>`, `<=`, `>=`, `=`, `!=`, `IN`,
+          `NOT IN`. Boolean values support equality and inequality only. The `IN`
+          and `NOT IN` operators accept a comma-separated list of values in parentheses,
+          such as `spec.template.spec.containers.0.image#reference IN ('':latest'',
+          '':arm64-latest'')`. The syntax `.|` splits the path: the left side selects,
+          and the right side is a property of what was selected. On the right side
+          of a `.|`, and only there, `!=` is true when the property is absent: `spec.containers.*.|image
+          != ''nginx''` selects the containers and asks that none of their images
+          be nginx, which a container with no image satisfies. Everywhere else a path
+          that is not present is not a match, `!=` included. String literals are quoted
+          with single quotes, such as `''string''`. Integer and boolean literals are
+          also supported for attributes of those types. The whole string must be query-encoded.'
+        in: query
+        name: where_data
+        required: false
+        schema:
+          type: string
+      - description: 'Which engine answers where_data and resource_type: `sql` (the
+          default) evaluates the expression against the stored resource projection
+          in a single query, falling back to the function engine for the expressions
+          it cannot translate; `function` invokes the where-filter function on each
+          candidate Unit, reading every one''s configuration; `shadow` runs both,
+          answers with `function`, and logs any disagreement. Temporary: `function`
+          is the escape hatch for one release, after which this parameter goes away.'
+        in: query
+        name: where_data_engine
+        required: false
+        schema:
+          type: string
+      - description: 'Where expression to match Triggers. Matched triggers are invoked
+          on each unit to filter by validation results. Use with triggers_passed to
+          control whether passing or failing units are returned (default: failing).'
+        in: query
+        name: where_trigger
+        required: false
+        schema:
+          type: string
+      - description: Filter UUID (with From=Trigger). The filter's matching triggers
+          are invoked on units to filter by validation results. Can be combined with
+          where_trigger.
+        in: query
+        name: trigger_filter
+        required: false
+        schema:
+          type: string
+      - description: When true, return units that pass trigger validation; when false
+          (default), return units that fail. Only applies when where_trigger or trigger_filter
+          is specified.
+        in: query
+        name: triggers_passed
+        required: false
+        schema:
+          type: boolean
+      - description: Only the fields whose path contains this substring.
+        in: query
+        name: path
+        required: false
+        schema:
+          type: string
+      - description: Only the fields of this resource, named as <type>/<name> or <name>;
+          a substring of either matches.
+        in: query
+        name: resource
+        required: false
+        schema:
+          type: string
+      - description: |-
+          Only the fields with at least one of these flags, comma-separated. Conflict,Absent,Finding,ValidationError,ValidationWarning selects the fields that need attention.
+
+          Supported values: Protected, Guarded, Conflict, Absent, Finding, ValidationError, ValidationWarning, Upgraded, SetByLink, SetByTrigger, ChangeOrder, Unreleased, Needed, Provided.
+        in: query
+        name: flags
+        required: false
+        schema:
+          pattern: ^\s*(Protected|Guarded|Conflict|Absent|Finding|ValidationError|ValidationWarning|Upgraded|SetByLink|SetByTrigger|ChangeOrder|Unreleased|Needed|Provided)\s*(?:,\s*(?:Protected|Guarded|Conflict|Absent|Finding|ValidationError|ValidationWarning|Upgraded|SetByLink|SetByTrigger|ChangeOrder|Unreleased|Needed|Provided)\s*)*$
+          type: string
+      - description: Follow each merge and Link resolve into the unit it took the
+          value from, to where the value was set. Default true; false reports each
+          unit's own record, which names the upstream unit without reading it.
+        in: query
+        name: upstream
+        required: false
+        schema:
+          type: boolean
+      - description: How many upstream units to follow before stopping.
+        in: query
+        name: upstream_depth
+        required: false
+        schema:
+          maximum: 8
+          minimum: 1
+          type: integer
+      - description: Include the $comment$ pseudo-fields that carry YAML comments.
+        in: query
+        name: include_comments
+        required: false
+        schema:
+          type: boolean
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                items:
+                  $ref: '#/components/schemas/UnitBlame'
+                type: array
+          description: OK
+          headers:
+            ConfigHub-Continue:
+              description: The token to pass as the continue parameter of the next
+                request, when there may be more entities after this page. It is absent
+                on the last page. A page can hold fewer entities than the limit, or
+                none, and still have one.
+              schema:
+                type: string
+              style: simple
+        "400":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/StandardErrorResponse'
+          description: Unit request is invalid (Bad Request).
+        "401":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/StandardErrorResponse'
+          description: Unauthorized access.
+        "403":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/StandardErrorResponse'
+          description: Forbidden access.
+        "404":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/StandardErrorResponse'
+          description: Unit not found.
+        "500":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/StandardErrorResponse'
+          description: Something went wrong while processing Unit.
+        default:
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/StandardErrorResponse'
+          description: Unexpected error.
+      summary: Get what set each field of many Units across spaces
+      tags:
+      - Unit
   /unit_data:
     get:
       description: Returns the configuration of every Unit the where clause selects,
@@ -51635,6 +52222,462 @@ components:
       items:
         $ref: '#/components/schemas/Binding'
       type: array
+    BlameField:
+      properties:
+        Absent:
+          description: 'True for a field the unit does not have, listed because a
+            conflict names it: a merge could not find the path, or the resource, to
+            make an upstream change to. It has no value and no history.'
+          type: boolean
+          x-go-type-skip-optional-pointer: true
+        Chain:
+          description: The changes that put the value here, from this unit out to
+            where it was set, following each merge and Link resolve upstream. The
+            last is the answer.
+          items:
+            $ref: '#/components/schemas/BlameOrigin'
+          type: array
+          x-go-type-skip-optional-pointer: true
+        Conflicts:
+          description: 'The unit''s outstanding conflicts about the field: upstream
+            changes to it a merge or resolve dropped.'
+          items:
+            $ref: '#/components/schemas/MutationConflict'
+          type: array
+          x-go-type-skip-optional-pointer: true
+        Findings:
+          description: 'The unit''s Link findings about the field: what a Link''s
+            resolve could not do here.'
+          items:
+            $ref: '#/components/schemas/LinkFinding'
+          type: array
+          x-go-type-skip-optional-pointer: true
+        Flags:
+          description: 'What there is to know about the field, one code each: Protected,
+            Guarded, Conflict, Absent, Finding, ValidationError, ValidationWarning,
+            Upgraded, SetByLink, SetByTrigger, ChangeOrder, Unreleased, Needed and
+            Provided.'
+          items:
+            type: string
+          type: array
+          x-go-type-skip-optional-pointer: true
+        Guards:
+          additionalProperties:
+            type: string
+          description: 'The guards on the field: its own, its ancestors'' and its
+            resource''s, which an operation writing here has to be cleared for.'
+          type: object
+          x-go-type-skip-optional-pointer: true
+        Needed:
+          description: 'The unit''s needed paths that are the field: a value it is
+            to take from an upstream unit through a NeedsProvides Link.'
+          items:
+            $ref: '#/components/schemas/BlameNeededPath'
+          type: array
+          x-go-type-skip-optional-pointer: true
+        Path:
+          description: The field's path, in the syntax functions and Links take.
+          type: string
+          x-go-type-skip-optional-pointer: true
+        Protected:
+          description: True for a local override, which a merge from upstream leaves
+            alone.
+          type: boolean
+          x-go-type-skip-optional-pointer: true
+        Provided:
+          description: 'The unit''s provided paths that are the field: a value it
+            offers downstream units through NeedsProvides Links.'
+          items:
+            $ref: '#/components/schemas/AttributeInfo'
+          type: array
+          x-go-type-skip-optional-pointer: true
+        Ref:
+          description: 'The field''s short reference: the same in every Revision of
+            the unit and in every variant of it, so it lines up one field across variants.
+            The path report takes it, or a prefix of it, in place of the resource
+            and path.'
+          type: string
+          x-go-type-skip-optional-pointer: true
+        ResourceName:
+          description: The name of the resource the field is in.
+          type: string
+          x-go-type-skip-optional-pointer: true
+        ResourceNameWithoutScope:
+          description: The name of the resource without its scope, such as its namespace,
+            which is how a resource a variant renamed is matched.
+          type: string
+          x-go-type-skip-optional-pointer: true
+        ResourceProtected:
+          description: True when the field is protected because its resource is protected
+            as a whole.
+          type: boolean
+          x-go-type-skip-optional-pointer: true
+        ResourceType:
+          description: The type of the resource the field is in.
+          type: string
+          x-go-type-skip-optional-pointer: true
+        SpaceID:
+          description: The Space of the unit the field is in.
+          example: 248df4b7-aa70-47b8-a036-33ac447e668d
+          format: uuid
+          type: string
+          x-go-type-skip-optional-pointer: true
+          x-omitzero: true
+        SpaceSlug:
+          description: The slug of the Space of the unit the field is in.
+          type: string
+          x-go-type-skip-optional-pointer: true
+        UnitID:
+          description: The unit the field is in.
+          example: 248df4b7-aa70-47b8-a036-33ac447e668d
+          format: uuid
+          type: string
+          x-go-type-skip-optional-pointer: true
+          x-omitzero: true
+        UnitSlug:
+          description: The slug of the unit the field is in.
+          type: string
+          x-go-type-skip-optional-pointer: true
+        Validation:
+          description: The unit's failed validating checks that name the field.
+          items:
+            $ref: '#/components/schemas/BlameValidation'
+          type: array
+          x-go-type-skip-optional-pointer: true
+        Value:
+          description: The field's value, as YAML.
+          type: string
+          x-go-type-skip-optional-pointer: true
+      type: object
+    BlameNeededPath:
+      properties:
+        AttributeName:
+          description: Name of the registered attribute
+          type: string
+          x-go-type-skip-optional-pointer: true
+        BoundLink:
+          type: string
+          x-go-type-skip-optional-pointer: true
+        Comment:
+          description: Line comment on the attribute at the specified Path
+          type: string
+          x-go-type-skip-optional-pointer: true
+        DataType:
+          description: Data type if the attribute value.
+          type: string
+          x-go-type-skip-optional-pointer: true
+        Details:
+          allOf:
+          - $ref: '#/components/schemas/AttributeDetails'
+          description: Additional attribute details
+        FunctionName:
+          description: Name of the function invocation corresponding to the output
+          type: string
+          x-go-type-skip-optional-pointer: true
+        Index:
+          description: Index of the function invocation corresponding to the output.
+            Useful in the case that multiple function invocations in the same executor
+            call return AttributeValueList output.
+          type: integer
+          x-go-type-skip-optional-pointer: true
+        Issues:
+          description: Issues found with the attribute
+          items:
+            $ref: '#/components/schemas/Issue'
+          type: array
+          x-go-type-skip-optional-pointer: true
+        Path:
+          description: Path of the attribute
+          type: string
+          x-go-type-skip-optional-pointer: true
+        ResourceCategory:
+          description: Category of configuration element represented in the configuration
+            data; Kubernetes resources are of category Resource, and application configuration
+            files are of category AppConfig
+          type: string
+          x-go-type-skip-optional-pointer: true
+        ResourceName:
+          description: Name of a resource in the system under management represented
+            in the configuration data; Kubernetes resources are represented in the
+            form <metadata.namespace>/<metadata.name>; not all ToolchainTypes necessarily
+            use '/' as a separator between any scope(s) and name or other client-chosen
+            ID
+          type: string
+          x-go-type-skip-optional-pointer: true
+        ResourceNameStableCore:
+          description: Name of a resource in the system under management represented
+            in the configuration data with generated prefixes and suffixes stripped;
+            empty if nothing to strip
+          type: string
+          x-go-type-skip-optional-pointer: true
+        ResourceNameWithoutScope:
+          description: Name of a resource in the system under management represented
+            in the configuration data, without any uniquifying scope, such as Namespace,
+            Project, Account, Region, etc.; Kubernetes resources are represented in
+            the form <metadata.name>
+          type: string
+          x-go-type-skip-optional-pointer: true
+        ResourceType:
+          description: Type of a resource in the system under management represented
+            in the configuration data; Kubernetes resources are represented in the
+            form <apiVersion>/<kind> (aka group-version-kind)
+          type: string
+          x-go-type-skip-optional-pointer: true
+        Score:
+          description: Score of finding attributed to this Path
+          type: string
+          x-go-type-skip-optional-pointer: true
+        Value:
+          description: Value of the attribute at the specified Path
+          x-go-type-skip-optional-pointer: true
+      type: object
+    BlameOrigin:
+      properties:
+        ChangeOrderIDs:
+          description: The ChangeOrders that made the Revision.
+          items:
+            $ref: '#/components/schemas/UUID'
+          type: array
+          x-go-type-skip-optional-pointer: true
+        ChangeOrders:
+          description: The slugs of the ChangeOrders that made the Revision.
+          items:
+            type: string
+          type: array
+          x-go-type-skip-optional-pointer: true
+        Description:
+          description: The Revision's change description.
+          type: string
+          x-go-type-skip-optional-pointer: true
+        Function:
+          description: The function the change ran, if it ran one.
+          type: string
+          x-go-type-skip-optional-pointer: true
+        Invocation:
+          description: The slug of the Invocation the change ran.
+          type: string
+          x-go-type-skip-optional-pointer: true
+        InvocationID:
+          description: The Invocation the change ran, if it ran one.
+          example: 248df4b7-aa70-47b8-a036-33ac447e668d
+          format: uuid
+          type: string
+          x-go-type-skip-optional-pointer: true
+          x-omitzero: true
+        Link:
+          description: The slug of the Link that made the change.
+          type: string
+          x-go-type-skip-optional-pointer: true
+        LinkID:
+          description: The Link that made the change, if one did.
+          example: 248df4b7-aa70-47b8-a036-33ac447e668d
+          format: uuid
+          type: string
+          x-go-type-skip-optional-pointer: true
+          x-omitzero: true
+        LinkUpstream:
+          description: The unit a Link's resolve read the value from, as space/unit
+            or unit.
+          type: string
+          x-go-type-skip-optional-pointer: true
+        LinkUpstreamRevisionNum:
+          description: The number of the Revision of the upstream unit the Link's
+            resolve read.
+          format: int64
+          type: integer
+          x-go-type-skip-optional-pointer: true
+        LinkUpstreamUnitID:
+          description: The unit a Link's resolve read the value from, whether or not
+            the chain could follow it there.
+          example: 248df4b7-aa70-47b8-a036-33ac447e668d
+          format: uuid
+          type: string
+          x-go-type-skip-optional-pointer: true
+          x-omitzero: true
+        MutationNum:
+          description: The number of the Mutation that recorded the change; 0 for
+            a change no Mutation recorded.
+          format: int64
+          type: integer
+          x-go-type-skip-optional-pointer: true
+        ReleaseIDs:
+          description: The Releases that bundle the Revision.
+          items:
+            $ref: '#/components/schemas/UUID'
+          type: array
+          x-go-type-skip-optional-pointer: true
+        Releases:
+          description: The numbers of the Releases that bundle the Revision.
+          items:
+            type: string
+          type: array
+          x-go-type-skip-optional-pointer: true
+        RevisionID:
+          description: The Revision the change made.
+          example: 248df4b7-aa70-47b8-a036-33ac447e668d
+          format: uuid
+          type: string
+          x-go-type-skip-optional-pointer: true
+          x-omitzero: true
+        RevisionNum:
+          description: The number of the Revision the change made.
+          format: int64
+          type: integer
+          x-go-type-skip-optional-pointer: true
+        SetBy:
+          description: 'What decided to make the change, most specific first: the
+            Link or Trigger, the function, the external source, the Invocation, the
+            merge, or otherwise the operation that made the Revision. For people to
+            read; the fields beside it say the same for programs.'
+          type: string
+          x-go-type-skip-optional-pointer: true
+        Source:
+          description: The operation that made the Revision, such as UpdateUnit or
+            TransformPaths.
+          type: string
+          x-go-type-skip-optional-pointer: true
+        SpaceID:
+          description: The Space of the unit the change was made in.
+          example: 248df4b7-aa70-47b8-a036-33ac447e668d
+          format: uuid
+          type: string
+          x-go-type-skip-optional-pointer: true
+          x-omitzero: true
+        SpaceSlug:
+          description: The slug of the Space of the unit the change was made in.
+          type: string
+          x-go-type-skip-optional-pointer: true
+        TagIDs:
+          description: The Tags that mark the Revision.
+          items:
+            $ref: '#/components/schemas/UUID'
+          type: array
+          x-go-type-skip-optional-pointer: true
+        Tags:
+          description: The slugs of the Tags that mark the Revision.
+          items:
+            type: string
+          type: array
+          x-go-type-skip-optional-pointer: true
+        Trigger:
+          description: The slug of the Trigger that made the change.
+          type: string
+          x-go-type-skip-optional-pointer: true
+        TriggerID:
+          description: The Trigger that made the change, if one did.
+          example: 248df4b7-aa70-47b8-a036-33ac447e668d
+          format: uuid
+          type: string
+          x-go-type-skip-optional-pointer: true
+          x-omitzero: true
+        UnitID:
+          description: The unit the change was made in.
+          example: 248df4b7-aa70-47b8-a036-33ac447e668d
+          format: uuid
+          type: string
+          x-go-type-skip-optional-pointer: true
+          x-omitzero: true
+        UnitSlug:
+          description: The slug of the unit the change was made in.
+          type: string
+          x-go-type-skip-optional-pointer: true
+        User:
+          description: The username of the user who made the change, or automation
+            for a change made by no user.
+          type: string
+          x-go-type-skip-optional-pointer: true
+        UserID:
+          description: The user who made the change; absent for one made by no user.
+          example: 248df4b7-aa70-47b8-a036-33ac447e668d
+          format: uuid
+          type: string
+          x-go-type-skip-optional-pointer: true
+          x-omitzero: true
+        When:
+          description: When the Revision was made.
+          example: 2006-01-02T15:04:05Z07:00
+          format: date-time
+          type: string
+          x-go-type-skip-optional-pointer: true
+          x-omitzero: true
+      type: object
+    BlamePathChange:
+      properties:
+        Mutation:
+          allOf:
+          - $ref: '#/components/schemas/ExtendedMutation'
+          description: The Mutation that recorded the change, with its Link, Trigger,
+            Invocation and merge source.
+        MutationType:
+          description: 'What the unit''s record says the change did to the field:
+            Add, Update, Replace or Delete. Returned in History.'
+          type: string
+          x-go-type-skip-optional-pointer: true
+        Origin:
+          allOf:
+          - $ref: '#/components/schemas/BlameOrigin'
+          description: The change, as a chain hop.
+        Revision:
+          allOf:
+          - $ref: '#/components/schemas/ExtendedRevision'
+          description: The Revision the change made, with its user, ChangeOrders,
+            Releases and Tags.
+        Value:
+          description: The value the change recorded for the field. Returned in History.
+          type: string
+          x-go-type-skip-optional-pointer: true
+      type: object
+    BlameValidation:
+      properties:
+        Details:
+          description: The result's free-text messages, where the function gave no
+            Issues.
+          items:
+            type: string
+          type: array
+          x-go-type-skip-optional-pointer: true
+        Function:
+          description: The validating function that failed.
+          type: string
+          x-go-type-skip-optional-pointer: true
+        Gate:
+          description: The check, as <space slug>/<trigger slug>/<function name>,
+            the key of ValidationErrors, ValidationWarnings and ValidationResults
+            on the Unit.
+          type: string
+          x-go-type-skip-optional-pointer: true
+        Issues:
+          description: What is wrong, as the function put it.
+          items:
+            $ref: '#/components/schemas/Issue'
+          type: array
+          x-go-type-skip-optional-pointer: true
+        Path:
+          description: What the result named, when it named an ancestor of the field,
+            or the field by its position in an array rather than by its path.
+          type: string
+          x-go-type-skip-optional-pointer: true
+        Score:
+          description: The severity the function gave the finding, if it gives one.
+          type: string
+          x-go-type-skip-optional-pointer: true
+        TriggerID:
+          description: The Trigger that ran the check. The gate names it by the slugs
+            it had when it ran.
+          example: 248df4b7-aa70-47b8-a036-33ac447e668d
+          format: uuid
+          type: string
+          x-go-type-skip-optional-pointer: true
+          x-omitzero: true
+        Value:
+          description: What the function found at the path, when it reported it.
+          x-go-type-skip-optional-pointer: true
+        Warning:
+          description: True for a check of a Trigger with Warn set, whose failures
+            do not block a release.
+          type: boolean
+          x-go-type-skip-optional-pointer: true
+      type: object
     BrowserSessionResponse:
       properties:
         ExpiresIn:
@@ -55054,6 +56097,8 @@ components:
           format: int64
           type: integer
           x-go-type-skip-optional-pointer: true
+        UpstreamSpace:
+          $ref: '#/components/schemas/Space'
         ViewColumns:
           description: The values of the columns of the View named by the view parameter,
             in the View's column order. A column that selects several values, such
@@ -59893,12 +60938,16 @@ components:
           x-go-type-skip-optional-pointer: true
           x-omitzero: true
         UpstreamSpaceID:
+          description: 'Reference to the Space this Space takes its configuration
+            from, which promotion takes from: the Space it was cloned from, which
+            a clone sets, or one set since. Setting it requires Use on that Space.
+            (optional)'
           example: 248df4b7-aa70-47b8-a036-33ac447e668d
           format: uuid
-          readOnly: true
           type: string
           x-confighub-where:
             dataType: uuid
+            expandable: true
             references: Space
         Version:
           description: An entity-specific sequence number used for optimistic concurrency
@@ -61258,6 +62307,36 @@ components:
       - Slug
       - ToolchainType
       type: object
+    UnitBlame:
+      properties:
+        Error:
+          allOf:
+          - $ref: '#/components/schemas/ResponseError'
+          description: Why the unit's blame could not be read, in a SearchUnitBlame
+            response.
+        Fields:
+          description: The unit's fields the request selected, each with what set
+            its value and everything else recorded about it, in resource and path
+            order.
+          items:
+            $ref: '#/components/schemas/BlameField'
+          type: array
+          x-go-type-skip-optional-pointer: true
+        SpaceID:
+          description: The Space of the unit.
+          example: 248df4b7-aa70-47b8-a036-33ac447e668d
+          format: uuid
+          type: string
+          x-go-type-skip-optional-pointer: true
+          x-omitzero: true
+        UnitID:
+          description: The unit.
+          example: 248df4b7-aa70-47b8-a036-33ac447e668d
+          format: uuid
+          type: string
+          x-go-type-skip-optional-pointer: true
+          x-omitzero: true
+      type: object
     UnitConflictSelector:
       properties:
         Path:
@@ -61272,6 +62351,12 @@ components:
           x-go-type-skip-optional-pointer: true
         ResourceName:
           description: Match conflicts on this resource; empty matches any resource
+          type: string
+          x-go-type-skip-optional-pointer: true
+        ResourceType:
+          description: Match conflicts on resources of this type, in any API version;
+            empty matches any type. With ResourceName, it picks out one of several
+            resources of that name.
           type: string
           x-go-type-skip-optional-pointer: true
       type: object
@@ -61695,6 +62780,57 @@ components:
           type: string
           x-go-type-skip-optional-pointer: true
           x-omitzero: true
+      type: object
+    UnitPathReport:
+      properties:
+        Annotations:
+          additionalProperties:
+            additionalProperties:
+              type: string
+            type: object
+          description: The path's own annotations other than guards, by kind. The
+            field's Guards are those that apply to it, its ancestors' and its resource's
+            included.
+          type: object
+          x-go-type-skip-optional-pointer: true
+        Changes:
+          description: 'The field''s chain: the changes that put the value here, from
+            this unit out to where it was set, each with the Mutation and Revision
+            it was read from.'
+          items:
+            $ref: '#/components/schemas/BlamePathChange'
+          type: array
+          x-go-type-skip-optional-pointer: true
+        Field:
+          allOf:
+          - $ref: '#/components/schemas/BlameField'
+          description: 'The field, as the unit''s blame reports it, without its Chain:
+            Changes carries the chain with its records.'
+        History:
+          description: Every change this unit recorded to the field, oldest first;
+            returned when history is requested.
+          items:
+            $ref: '#/components/schemas/BlamePathChange'
+          type: array
+          x-go-type-skip-optional-pointer: true
+        Names:
+          additionalProperties:
+            type: string
+          description: 'Names, as space/slug, of the Units and Targets the report''s
+            records refer to by ID alone: the other unit of each conflict, each Link''s
+            upstream unit, each merge source, and each Release''s Target.'
+          type: object
+          x-go-type-skip-optional-pointer: true
+        ReleaseMessage:
+          description: ReleaseState in words, naming the revisions.
+          type: string
+          x-go-type-skip-optional-pointer: true
+        ReleaseState:
+          description: 'Whether the unit''s last Release includes the value: Released,
+            NeverReleased, ChangedSinceRelease, or NothingToRelease in a Space with
+            no release Target. Absent for a field the unit does not have.'
+          type: string
+          x-go-type-skip-optional-pointer: true
       type: object
     UnitProtectionRequest:
       properties:

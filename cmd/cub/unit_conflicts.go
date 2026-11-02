@@ -13,7 +13,7 @@ import (
 )
 
 var unitConflictsCmd = &cobra.Command{
-	Use:   "conflicts <unit-slug> [--apply | --dismiss] [--reason REASON] [--path PATH] [--resource NAME]",
+	Use:   "conflicts <unit-slug> [--apply | --dismiss] [--reason REASON] [--path PATH] [--resource NAME] [--resource-type TYPE]",
 	Short: "Show, apply, or dismiss a unit's outstanding merge conflicts",
 	Long: getCommandHelp(`Work with the parts of the last merge's patch that were not applied.
 
@@ -52,9 +52,11 @@ and a merge that lands cleanly clears them.
 With no flags this lists the outstanding conflicts. --apply replays the changes
 they withheld, with every path eligible so nothing filters them out a second
 time. --dismiss drops them without touching the configuration data. Both act on
-every outstanding conflict unless --reason, --path, or --resource narrows the
-selection, and both take --dry-run, which reports what the request would do and
-writes nothing.
+every outstanding conflict unless --reason, --path, --resource, or
+--resource-type narrows the selection, and both take --dry-run, which reports
+what the request would do and writes nothing. --resource-type tells apart
+resources that share a name, as a Deployment and a Service named for their app
+do; it matches the type in any API version.
 
 Applying changes the configuration data, so the unit goes through the same
 trigger pass as any other change and may pick up a ValidationError. --wait, on by
@@ -74,6 +76,10 @@ Examples:
   # Accept the current state and stop reporting them
   cub unit conflicts my-unit --dismiss
 
+  # Dismiss the conflict at one path of the Service, not of the Deployment of the same name
+  cub unit conflicts my-unit --dismiss --resource prod/web --resource-type v1/Service \
+    --path metadata.labels.tier
+
   # Which units in the space merged with paths the patch could not locate?
   cub unit list --where "Conflicts.*.Reason = 'UnresolvedPath'"
 `+"```"+`
@@ -88,6 +94,7 @@ var (
 	conflictsReason       string
 	conflictsPath         string
 	conflictsResourceName string
+	conflictsResourceType string
 )
 
 func init() {
@@ -101,6 +108,8 @@ func init() {
 		"select conflicts at this path")
 	unitConflictsCmd.Flags().StringVar(&conflictsResourceName, "resource", "",
 		"select conflicts on this resource, by name")
+	unitConflictsCmd.Flags().StringVar(&conflictsResourceType, "resource-type", "",
+		"select conflicts on resources of this type, such as apps/v1/Deployment, in any API version")
 	unitConflictsCmd.Flags().BoolVar(&dryRun, "dry-run", false,
 		"dry run mode: report what --apply or --dismiss would do without writing anything")
 	enableWaitFlag(unitConflictsCmd)
@@ -113,9 +122,9 @@ func unitConflictsCmdRun(_ *cobra.Command, args []string) error {
 	if conflictsApply && conflictsDismiss {
 		return fmt.Errorf("--apply and --dismiss are mutually exclusive")
 	}
-	selecting := conflictsReason != "" || conflictsPath != "" || conflictsResourceName != ""
+	selecting := conflictsReason != "" || conflictsPath != "" || conflictsResourceName != "" || conflictsResourceType != ""
 	if selecting && !conflictsApply && !conflictsDismiss {
-		return fmt.Errorf("--reason, --path, and --resource select which conflicts to --apply or --dismiss")
+		return fmt.Errorf("--reason, --path, --resource, and --resource-type select which conflicts to --apply or --dismiss")
 	}
 
 	if !conflictsApply && !conflictsDismiss {
@@ -136,6 +145,7 @@ func unitConflictsCmdRun(_ *cobra.Command, args []string) error {
 			Reason:       conflictsReason,
 			Path:         conflictsPath,
 			ResourceName: conflictsResourceName,
+			ResourceType: conflictsResourceType,
 		}}
 	}
 

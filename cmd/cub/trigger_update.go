@@ -53,6 +53,9 @@ Examples:
   # Mark triggers as warn mode
   cub trigger update --space my-space --patch --where "Event = 'Mutation'" --warn
 
+  # Make every trigger of two packs in a policy space blocking
+  cub trigger update --space confighub-system --patch --pack basic --pack rbac --unwarn
+
   # Update specific triggers by slug
   cub trigger update --space my-space --patch --trigger my-trigger,another-trigger --disable
 `+"```"+`
@@ -95,6 +98,7 @@ func init() {
 	triggerUpdateCmd.Flags().BoolVar(&triggerPatch, "patch", false, "use patch API for individual or bulk operations")
 	enableWhereFlag(triggerUpdateCmd)
 	enableFilterFlag(triggerUpdateCmd)
+	addTriggerPackFlag(triggerUpdateCmd)
 	triggerUpdateCmd.Flags().StringSliceVar(&triggerIdentifiers, "trigger", []string{}, "target specific triggers by slug or UUID for bulk patch (can be repeated or comma-separated)")
 	triggerUpdateCmd.Flags().StringVar(&invocationSlug, "invocation", "", "invocation to execute (alternative to specifying function and arguments)")
 	triggerUpdateCmd.Flags().StringVar(&triggerDescription, "description", "", "description explaining the trigger's purpose and how to fix failures")
@@ -118,7 +122,7 @@ func checkTriggerConflictingArgs(args []string) bool {
 
 		// Check for mutual exclusivity between --trigger and --where flags
 		if len(triggerIdentifiers) > 0 && where != "" {
-			failOnError(fmt.Errorf("--trigger and --where flags are mutually exclusive"))
+			failOnError(fmt.Errorf("--trigger is mutually exclusive with --where and --pack"))
 		}
 
 	} else {
@@ -127,7 +131,7 @@ func checkTriggerConflictingArgs(args []string) bool {
 		}
 
 		if filter != "" || where != "" || len(triggerIdentifiers) > 0 {
-			failOnError(fmt.Errorf("--filter, --where, or --trigger can only be specified with --patch and no positional arguments"))
+			failOnError(fmt.Errorf("--filter, --where, --pack, or --trigger can only be specified with --patch and no positional arguments"))
 		}
 	}
 
@@ -225,6 +229,9 @@ func runBulkTriggerUpdate() error {
 }
 
 func triggerUpdateCmdRun(cmd *cobra.Command, args []string) error {
+	if err := applyTriggerPackFlag(); err != nil {
+		return err
+	}
 	isBulkPatchMode := checkTriggerConflictingArgs(args)
 
 	if isBulkPatchMode {

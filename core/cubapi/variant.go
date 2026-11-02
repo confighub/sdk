@@ -15,8 +15,9 @@ import (
 )
 
 // AnnotationUpstreamSpaceID is the annotation a variant Space carries naming the Space it was
-// cloned from, which promotion reads to find where to promote from. Space has an
-// UpstreamSpaceID field too, but a Space clone does not fill it yet.
+// cloned from. Promotion takes from the Space's UpstreamSpaceID field, which a Space clone sets,
+// and reads this only for a Space whose field is not set, as servers before the field was set
+// leave it.
 const AnnotationUpstreamSpaceID = "UpstreamSpaceID"
 
 // LabelNamespace is the Space label recording the namespace a Kubernetes variant lands in,

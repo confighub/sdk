@@ -559,7 +559,7 @@ func convertToImportFilter(expr *VisitorRelationalExpression) (ImportFilter, err
 	// Extract values
 	values := extractValuesFromExpression(expr)
 
-	// Use the path directly as the filter type - let the worker handle path interpretation
+	// Use the path directly as the filter type - let the executor handle path interpretation
 	return ImportFilter{
 		Type:     expr.Path,
 		Operator: operator,
@@ -635,7 +635,7 @@ func convertLiteralToValue(literal string, dataType DataType) (any, error) {
 		return parseBoolLiteral(literal), nil
 	case DataTypeInt:
 		// Return as string since ImportOptions expects interface{}
-		// The worker will parse it as needed
+		// The executor will parse it as needed
 		return literal, nil
 	case DataTypeString:
 		// Remove quotes from string literals

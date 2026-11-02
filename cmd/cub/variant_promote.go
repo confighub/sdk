@@ -67,9 +67,9 @@ var variantPromoteCmd = &cobra.Command{
 	Annotations: map[string]string{"OrgLevel": ""},
 	Long: getCommandHelp(`Promote variant spaces to match changes in their upstream spaces.
 
-A space must have been created by "cub variant create", which stamps an "UpstreamSpaceID"
-annotation recording the upstream space it was cloned from. The server reconciles each variant
-with that upstream:
+A space takes from its upstream space: the space it was cloned from, which "cub variant create"
+records, or the one set since with "cub space update --patch <space> --upstream-space <upstream>".
+The server reconciles each variant with that upstream:
 
   1. Upgrade every unit whose upstream unit has advanced, merging the upstream changes. A unit
      whose upstream was emptied is emptied, and an empty unit whose upstream has content again is
@@ -279,7 +279,9 @@ func variantPromoteCmdRun(cmd *cobra.Command, args []string) error {
 			return err
 		}
 		req.WhereSpace = fmt.Sprintf("SpaceID = '%s'", space.Space.SpaceID)
-		if upstream := space.Space.Annotations[AnnotationUpstreamSpaceID]; upstream != "" {
+		if upstream := space.Space.UpstreamSpaceID; upstream != nil {
+			changeOrderSpaceID = upstream.String()
+		} else if upstream := space.Space.Annotations[AnnotationUpstreamSpaceID]; upstream != "" {
 			changeOrderSpaceID = upstream
 		}
 		// The helpers that render mutations resolve units through the selected space.

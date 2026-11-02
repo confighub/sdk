@@ -35,7 +35,7 @@ func IsEmptyDataHash(hash DataHash) bool {
 	return hash == EmptyDataHash
 }
 
-// The worker API ToolchainType identifies the configuration serialization format
+// ToolchainType identifies the configuration serialization format
 // (YAML, TOML, HCL, etc.) and family of configuration entities and their schemas.
 // Kubernetes is ToolchainKubernetesYAML.
 

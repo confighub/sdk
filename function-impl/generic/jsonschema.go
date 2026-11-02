@@ -83,8 +83,8 @@ func GenericFnVetJSONSchema(resourceProvider yamlkit.ResourceProvider, options *
 
 	// Strip the top-level `required` keyword from each schema entry when the
 	// caller opts in. Useful for partial-contract checks — e.g., when a
-	// workload's full env-var schema lists CONFIGHUB_WORKER_ID and
-	// CONFIGHUB_WORKER_SECRET as required but those values come from a Secret
+	// workload's full env-var schema lists CONFIGHUB_AUTH_PRIVATE_KEY
+	// as required but that value comes from a Secret
 	// and only the non-secret subset is being validated here against a
 	// ConfigMap. Only the top-level required is removed; nested-object
 	// `required` keywords in sub-schemas are left in place.

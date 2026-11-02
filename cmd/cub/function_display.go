@@ -18,7 +18,7 @@ import (
 // invokeIncludes asks an invocation for the parts of its result the output modes are going to
 // display: the configuration it produced, and the Diff of what it changed for -o mutations. The
 // response carries the configuration only when the invocation changed it -- right for the
-// worker boundary, where re-sending what was just sent is waste -- so displaying an unchanged
+// executor boundary, where re-sending what was just sent is waste -- so displaying an unchanged
 // one would otherwise cost a second request. Each is requested only when needed, since most
 // invocations want neither.
 func invokeIncludes(includeDiff bool) *string {

@@ -19,7 +19,7 @@ var spaceListCmd = &cobra.Command{
 }
 
 func getSpaceListHelp() string {
-	baseHelp := `List spaces you have access to in this organization. The output includes slugs, the standard space labels, and the number of units. Use --output=wide to also show the counts of links, tags, changesets, filters, views, invocations, triggers, workers, targets, and attributes.
+	baseHelp := `List spaces you have access to in this organization. The output includes slugs, the standard space labels, and the number of units. Use --output=wide to also show the counts of links, tags, changesets, filters, views, invocations, triggers, targets, and attributes.
 
 Examples:
 ` + "```" + `

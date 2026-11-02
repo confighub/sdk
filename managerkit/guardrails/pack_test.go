@@ -42,9 +42,9 @@ func TestSelectionWhere(t *testing.T) {
 		want string
 	}{
 		{Selection{PolicySpace: "common", Groups: []string{"namespace"}},
-			"Space.Slug = 'common' AND Labels.Guardrails IN ('namespace') AND Labels.AppliedTo != 'Target'"},
+			"Space.Slug = 'common' AND Labels.Pack IN ('namespace') AND Labels.AppliedTo != 'Target'"},
 		{Selection{PolicySpace: "confighub-system", Groups: []string{"basic", "rbac"}, Target: true},
-			"Space.Slug = 'confighub-system' AND Labels.Guardrails IN ('basic', 'rbac') AND Labels.AppliedTo = 'Target'"},
+			"Space.Slug = 'confighub-system' AND Labels.Pack IN ('basic', 'rbac') AND Labels.AppliedTo = 'Target'"},
 	} {
 		got, err := tc.sel.Where()
 		if err != nil || got != tc.want {
@@ -64,9 +64,9 @@ func TestParseSelectionRejectsOtherExpressions(t *testing.T) {
 		"",
 		"SpaceID = 'ce022de3-bb4c-4dbb-990f-831260862c3a'",
 		"Space.Slug = 'confighub-system' AND Labels.Pack IN ('basic')",
-		"Labels.Guardrails IN ('basic') AND Labels.AppliedTo != 'Target'",
-		"Space.Slug = 'common' AND Labels.Guardrails IN ('basic') AND Labels.AppliedTo != 'Target' AND Slug = 'x'",
-		"Space.Slug = 'common' AND Labels.Guardrails IN (basic) AND Labels.AppliedTo != 'Target'",
+		"Labels.Pack IN ('basic') AND Labels.AppliedTo != 'Target'",
+		"Space.Slug = 'common' AND Labels.Pack IN ('basic') AND Labels.AppliedTo != 'Target' AND Slug = 'x'",
+		"Space.Slug = 'common' AND Labels.Pack IN (basic) AND Labels.AppliedTo != 'Target'",
 	} {
 		if sel, ok := ParseSelection(where); ok {
 			t.Errorf("ParseSelection(%q) = %+v, want not ours", where, sel)

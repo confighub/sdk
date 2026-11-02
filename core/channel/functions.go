@@ -18,7 +18,7 @@ import (
 // FunctionInvokeCommand: a Channel that serves functions declares it, with the functions it
 // serves by toolchain and name under FunctionAttribute, and every run of it carries one
 // FunctionInvocationRequest, the unit's configuration and the functions to run on it in
-// order, exactly what a function worker is sent. Users never see the command: cub function do
+// order. Users never see the command: cub function do
 // --channel runs it. A bot that serves functions implements them as it always has, against
 // the function executor's interface, and HandleFunctions does the rest.
 //
@@ -77,8 +77,7 @@ func FunctionCommands(functions map[workerapi.ToolchainType]map[string]funcapi.F
 // decoded into the invocation request, executed by the invoker, and answered with the
 // function response. A request the run does not carry is Rejected; an executor error is
 // Failed, with its message. An invoker that is a FunctionExecutor also has its functions
-// declared on the Channel when the listener starts (Declare), as a function worker's were
-// registered when it connected.
+// declared on the Channel when the listener starts (Declare).
 func (l *Listener) HandleFunctions(invoker FunctionInvoker) *Listener {
 	if executor, ok := invoker.(FunctionExecutor); ok {
 		l.Declare(FunctionCommands(executor.RegisteredFunctions()))

@@ -18,7 +18,7 @@ import (
 
 // The built-in Kubernetes resource-type specs are data, not Go: resource_type_specs.yaml is
 // the whole declaration, and this file only loads it. The same format loads from a file given
-// to a server or worker, and is the format a stored spec Unit is meant to hold, so a type
+// to a server or bot, and is the format a stored spec Unit is meant to hold, so a type
 // registered without a ConfigHub release is registered exactly the way the built-ins are.
 // See docs/design/resource-type-specs.md.
 

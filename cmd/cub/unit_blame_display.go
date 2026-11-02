@@ -232,7 +232,7 @@ func blameHeader(wide bool) []string {
 // set the value, after following upstream. VIA and CHANGE ORDER describe the change in this
 // unit that brought it, which is the same change unless the value arrived from upstream.
 func blameRow(f *blame.Field, wide bool) []string {
-	origin := f.Origin()
+	origin := blame.OriginOf(f)
 	setBy, function, user, where, rev, mut, when := "", "", "", "", "", "", ""
 	if origin != nil {
 		setBy = origin.SetBy
@@ -252,7 +252,7 @@ func blameRow(f *blame.Field, wide bool) []string {
 		when = blameAgo(origin.When)
 	}
 	if !wide {
-		return []string{f.Ref, f.Flags, f.Path, setBy, user, where, rev, when}
+		return []string{f.Ref, blame.Letters(f), f.Path, setBy, user, where, rev, when}
 	}
 	via, changeOrders := "", ""
 	if len(f.Chain) > 0 {
@@ -263,7 +263,7 @@ func blameRow(f *blame.Field, wide bool) []string {
 		changeOrders = strings.Join(here.ChangeOrders, ",")
 	}
 	return []string{
-		f.Ref, f.Flags, f.Path,
+		f.Ref, blame.Letters(f), f.Path,
 		truncateWithEllipsis(blameOneLine(f.Value), blameMaxValueWidth),
 		setBy, function, user, where, rev, mut, when, via, changeOrders,
 	}

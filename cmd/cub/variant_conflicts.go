@@ -123,7 +123,8 @@ func variantConflictsCmdRun(_ *cobra.Command, args []string) error {
 	}
 	sort.Slice(conflicted, func(i, j int) bool { return conflicted[i].unit.Slug < conflicted[j].unit.Slug })
 
-	// --resource narrows to the unit holding that resource, and the selector to its name.
+	// --resource narrows to the unit holding that resource, and the selector to its name and type,
+	// which keep apart another resource of the same name.
 	var selector *goclientnew.UnitConflictSelector
 	if selecting {
 		selector = &goclientnew.UnitConflictSelector{Reason: a.reason, Path: a.path}
@@ -139,6 +140,7 @@ func variantConflictsCmdRun(_ *cobra.Command, args []string) error {
 			return err
 		}
 		selector.ResourceName = resolved.ResourceName
+		selector.ResourceType = resolved.ResourceType
 		kept := conflicted[:0]
 		for _, c := range conflicted {
 			if c.unit.UnitID == resolved.UnitID {

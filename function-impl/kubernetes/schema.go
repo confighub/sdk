@@ -122,7 +122,7 @@ func (e *SchemaFinder) LookupPath(gvkString, fieldPath string) (*SchemaInfo, err
 	// There used to be a fallback here that fetched the type's schema from the CRDs-catalog.
 	// It could never run: the only caller of LookupPath is addDescriptionToPathInfos, which
 	// skips any type without a bundled schema precisely so that registration does not reach
-	// the network -- it runs at process init, in the server and in every worker. So the
+	// the network -- it runs at process init, in the server and in every bot that serves functions. So the
 	// fallback served no caller and was removed rather than left looking live.
 	//
 	// Whatever replaces it has to resolve descriptions somewhere other than registration:

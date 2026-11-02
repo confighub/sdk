@@ -31,7 +31,7 @@ import (
 //
 // Each registration is captured as the JSON the function server publishes for it on its
 // /paths route, one per line under the key it is registered at, so a difference here is a
-// difference a worker would serve and it shows up as one changed line rather than as a
+// difference a client would serve and it shows up as one changed line rather than as a
 // reindented block. Marshaling rather than rendering by hand is what keeps a field nobody
 // thought about from being silently omitted from the comparison; Enricher and
 // TypeExceptionFunc are function values and are not serialized, in the capture or on the

@@ -56,11 +56,15 @@ func spaceGetCmdRun(cmd *cobra.Command, args []string) error {
 }
 
 func displaySpaceDetailsInView(spaceDetails *goclientnew.Space, expanded *goclientnew.ExtendedPermissions,
-	component *goclientnew.Component, releaseTarget *goclientnew.Target, view *tablewriter.Table) {
+	component *goclientnew.Component, releaseTarget *goclientnew.Target, upstreamSpace *goclientnew.Space,
+	view *tablewriter.Table) {
 	view.Append([]string{"ID", spaceDetails.SpaceID.String()})
 	view.Append([]string{"Name", spaceDetails.Slug})
 	if spaceDetails.ComponentID != nil {
 		view.Append([]string{"Component", componentName(spaceDetails, component)})
+	}
+	if spaceDetails.UpstreamSpaceID != nil {
+		view.Append([]string{"Upstream Space", upstreamSpaceName(spaceDetails, upstreamSpace)})
 	}
 	view.Append([]string{"Created At", spaceDetails.CreatedAt.String()})
 	view.Append([]string{"Updated At", spaceDetails.UpdatedAt.String()})
@@ -103,6 +107,15 @@ func componentName(space *goclientnew.Space, component *goclientnew.Component) s
 	return component.Slug
 }
 
+// upstreamSpaceName names the Space a space takes from by its slug, or by its ID when it was not
+// expanded, as when --select leaves it out.
+func upstreamSpaceName(space *goclientnew.Space, upstream *goclientnew.Space) string {
+	if upstream == nil || upstream.Slug == "" {
+		return space.UpstreamSpaceID.String()
+	}
+	return upstream.Slug
+}
+
 func displaySpaceDetails(spaceDetails *goclientnew.Space) {
 	// Create an ExtendedSpace wrapper with just the Space set
 	extendedSpace := &goclientnew.ExtendedSpace{
@@ -137,7 +150,7 @@ func triggerSliceSlugsToString(triggers []goclientnew.Trigger) string {
 func displayExtendedSpaceDetails(extendedSpace *goclientnew.ExtendedSpace) {
 	view := tableView()
 	displaySpaceDetailsInView(extendedSpace.Space, extendedSpace.Permissions, extendedSpace.Component,
-		extendedSpace.ReleaseTarget, view)
+		extendedSpace.ReleaseTarget, extendedSpace.UpstreamSpace, view)
 
 	// Display TriggerFilter - use Slug if expanded, otherwise UUID
 	if extendedSpace.TriggerFilter != nil {

@@ -70,8 +70,8 @@ instead: a service account, which logs in with a key and renews from it without 
   controller pulls from the Space's OCI repository, which `cub space get` shows. A Release's live
   status reports what the controller did with it, when something reports it.
 - **Identity and automation.** A **ServiceAccount** is an identity for something that is not a
-  person: a pipeline, an agent, or the controller pulling Releases. A **Channel** carries events and
-  commands to whatever claims it. A **Worker** is needed only to serve external functions.
+  person: a pipeline, an agent, or the controller pulling Releases. A **Channel** carries events,
+  commands and external function invocations to whatever claims it.
 - **ConfigHub's own configuration.** Triggers, Filters, Views, Links, Targets, Spaces, Components
   and other entities can each be backed by a hidden Unit holding the entity as a YAML document, so
   they get Revisions, diffs and validation too. `cub apply` creates and updates entities from such
@@ -149,8 +149,8 @@ cub apply --space platform -f platform/ --dry-run
 
 ## No longer part of cub
 
-Bridge workers are gone, and with them the unit subcommands that applied, destroyed and refreshed
-a Unit in a cluster or showed its live data, live state and bridge state, and the worker
-subcommands that ran, installed and upgraded a worker process. Configuration reaches clusters only
+Workers were removed in v0.10.0, and with them the unit subcommands that applied, destroyed and
+refreshed a Unit in a cluster or showed its live data, live state and bridge state, and all of the
+worker subcommands. Configuration reaches clusters only
 through Releases. Functions marked deprecated in `cub function list` have replacements named in their
 descriptions.

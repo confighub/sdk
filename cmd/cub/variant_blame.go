@@ -4,6 +4,8 @@
 package main
 
 import (
+	"github.com/cockroachdb/errors"
+	"github.com/confighub/sdk/core/cubapi"
 	"github.com/confighub/sdk/cubutil/blame"
 	"github.com/spf13/cobra"
 )
@@ -48,7 +50,7 @@ Examples:
   cub variant blame apptique-prod --where "Slug LIKE 'deployment-%'" -o wide
 
   # Every field a link set, as JSON
-  cub variant blame apptique-prod -o jq='[.[] | select(.Flags | contains("L"))]'
+  cub variant blame apptique-prod -o jq='[.[] | select(.Flags | index("SetByLink"))]'
 `+"```"+`
 `, ""),
 	Args: cobra.ExactArgs(1),
@@ -76,15 +78,20 @@ func variantBlameCmdRun(cmd *cobra.Command, args []string) error {
 	if err != nil {
 		return err
 	}
-	resolver := blame.NewResolver(cubClient, blame.Options{
+	selection := cubapi.NewWhere(where).SpaceID(space.Space.SpaceID).String()
+	fields, err := blame.Variant(ctx, cubClient, selection, blame.Options{
 		MaxUpstreamDepth: variantBlameArgs.upstreamMax,
 		NoUpstream:       variantBlameArgs.noUpstream,
+		Path:             variantBlameArgs.path,
+		Resource:         variantBlameArgs.resource,
+		IncludeComments:  variantBlameArgs.showInternal,
 	})
-	fields, err := resolver.Variant(ctx, space.Space, where)
+	if errors.Is(err, blame.ErrNoUnits) {
+		return errors.Newf("no units selected in space %s", space.Space.Slug)
+	}
 	if err != nil {
 		return err
 	}
-	fields = blame.Filter(fields, variantBlameArgs.path, variantBlameArgs.resource, variantBlameArgs.showInternal)
 
 	if renderPayload(fields) {
 		return nil

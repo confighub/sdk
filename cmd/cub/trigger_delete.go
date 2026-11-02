@@ -36,6 +36,9 @@ Examples:
   # Delete triggers across the organization: without --space, --where spans every space
   cub trigger delete --where "Labels.cleanup = 'true'"
 
+  # Delete the disabled triggers of a pack in a policy space
+  cub trigger delete --space confighub-system --pack scheduling --where "Disabled = true"
+
   # Delete specific triggers by slug
   cub trigger delete --space my-space --trigger my-trigger,another-trigger
 `+"```"+`
@@ -54,6 +57,7 @@ func init() {
 	addPruneFlag(triggerDeleteCmd, "Trigger")
 	enableWhereFlag(triggerDeleteCmd)
 	enableFilterFlag(triggerDeleteCmd)
+	addTriggerPackFlag(triggerDeleteCmd)
 	triggerDeleteCmd.Flags().StringSliceVar(&triggerDeleteIdentifiers, "trigger", []string{}, "target specific triggers by slug or UUID for bulk delete (can be repeated or comma-separated)")
 	triggerCmd.AddCommand(triggerDeleteCmd)
 }
@@ -65,7 +69,7 @@ func checkTriggerDeleteConflictingArgs(args []string) bool {
 	if isBulkDeleteMode {
 		// Check for mutual exclusivity between --trigger and --where flags
 		if len(triggerDeleteIdentifiers) > 0 && where != "" {
-			failOnError(fmt.Errorf("--trigger and --where flags are mutually exclusive"))
+			failOnError(fmt.Errorf("--trigger is mutually exclusive with --where and --pack"))
 		}
 
 	} else {
@@ -75,7 +79,7 @@ func checkTriggerDeleteConflictingArgs(args []string) bool {
 		}
 
 		if filter != "" || where != "" || len(triggerDeleteIdentifiers) > 0 {
-			failOnError(fmt.Errorf("--filter, --where, or --trigger can only be specified with no positional arguments"))
+			failOnError(fmt.Errorf("--filter, --where, --pack, or --trigger can only be specified with no positional arguments"))
 		}
 	}
 
@@ -127,6 +131,9 @@ func runBulkTriggerDelete() error {
 }
 
 func triggerDeleteCmdRun(cmd *cobra.Command, args []string) error {
+	if err := applyTriggerPackFlag(); err != nil {
+		return err
+	}
 	isBulkDeleteMode := checkTriggerDeleteConflictingArgs(args)
 
 	if isBulkDeleteMode {

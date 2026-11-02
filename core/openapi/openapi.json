@@ -1051,10 +1051,10 @@
           {
             "name": "include",
             "in": "query",
-            "description": "Include clause for expanding related entities in the response for Space.\nThe attribute names are case-sensitive, PascalCase, and\nexpected in a comma-separated list format as in the JSON encoding.\n\nSupported attributes for Space are AttributeFilterID, AttributeIDs, ComponentID, OrganizationID, Permissions, ReleaseTargetID, TriggerFilterID, TriggerIDs.\n\nThe whole string must be query-encoded.",
+            "description": "Include clause for expanding related entities in the response for Space.\nThe attribute names are case-sensitive, PascalCase, and\nexpected in a comma-separated list format as in the JSON encoding.\n\nSupported attributes for Space are AttributeFilterID, AttributeIDs, ComponentID, OrganizationID, Permissions, ReleaseTargetID, TriggerFilterID, TriggerIDs, UpstreamSpaceID.\n\nThe whole string must be query-encoded.",
             "required": false,
             "schema": {
-              "pattern": "^\\s*(AttributeFilterID|AttributeIDs|ComponentID|OrganizationID|Permissions|ReleaseTargetID|TriggerFilterID|TriggerIDs)\\s*(?:,\\s*(?:AttributeFilterID|AttributeIDs|ComponentID|OrganizationID|Permissions|ReleaseTargetID|TriggerFilterID|TriggerIDs)\\s*)*$",
+              "pattern": "^\\s*(AttributeFilterID|AttributeIDs|ComponentID|OrganizationID|Permissions|ReleaseTargetID|TriggerFilterID|TriggerIDs|UpstreamSpaceID)\\s*(?:,\\s*(?:AttributeFilterID|AttributeIDs|ComponentID|OrganizationID|Permissions|ReleaseTargetID|TriggerFilterID|TriggerIDs|UpstreamSpaceID)\\s*)*$",
               "type": "string"
             }
           },
@@ -1280,10 +1280,10 @@
           {
             "name": "include",
             "in": "query",
-            "description": "Include clause for expanding related entities in the response for Space.\nThe attribute names are case-sensitive, PascalCase, and\nexpected in a comma-separated list format as in the JSON encoding.\n\nSupported attributes for Space are AttributeFilterID, AttributeIDs, ComponentID, OrganizationID, Permissions, ReleaseTargetID, TriggerFilterID, TriggerIDs.\n\nThe whole string must be query-encoded.",
+            "description": "Include clause for expanding related entities in the response for Space.\nThe attribute names are case-sensitive, PascalCase, and\nexpected in a comma-separated list format as in the JSON encoding.\n\nSupported attributes for Space are AttributeFilterID, AttributeIDs, ComponentID, OrganizationID, Permissions, ReleaseTargetID, TriggerFilterID, TriggerIDs, UpstreamSpaceID.\n\nThe whole string must be query-encoded.",
             "required": false,
             "schema": {
-              "pattern": "^\\s*(AttributeFilterID|AttributeIDs|ComponentID|OrganizationID|Permissions|ReleaseTargetID|TriggerFilterID|TriggerIDs)\\s*(?:,\\s*(?:AttributeFilterID|AttributeIDs|ComponentID|OrganizationID|Permissions|ReleaseTargetID|TriggerFilterID|TriggerIDs)\\s*)*$",
+              "pattern": "^\\s*(AttributeFilterID|AttributeIDs|ComponentID|OrganizationID|Permissions|ReleaseTargetID|TriggerFilterID|TriggerIDs|UpstreamSpaceID)\\s*(?:,\\s*(?:AttributeFilterID|AttributeIDs|ComponentID|OrganizationID|Permissions|ReleaseTargetID|TriggerFilterID|TriggerIDs|UpstreamSpaceID)\\s*)*$",
               "type": "string"
             }
           },
@@ -1429,6 +1429,12 @@
                     "nullable": true
                   },
                   "TriggerFilterID": {
+                    "type": "string",
+                    "description": "",
+                    "format": "uuid",
+                    "nullable": true
+                  },
+                  "UpstreamSpaceID": {
                     "type": "string",
                     "description": "",
                     "format": "uuid",
@@ -1620,10 +1626,10 @@
           {
             "name": "include",
             "in": "query",
-            "description": "Include clause for expanding related entities in the response for Space.\nThe attribute names are case-sensitive, PascalCase, and\nexpected in a comma-separated list format as in the JSON encoding.\n\nSupported attributes for Space are AttributeFilterID, AttributeIDs, ComponentID, OrganizationID, Permissions, ReleaseTargetID, TriggerFilterID, TriggerIDs.\n\nThe whole string must be query-encoded.",
+            "description": "Include clause for expanding related entities in the response for Space.\nThe attribute names are case-sensitive, PascalCase, and\nexpected in a comma-separated list format as in the JSON encoding.\n\nSupported attributes for Space are AttributeFilterID, AttributeIDs, ComponentID, OrganizationID, Permissions, ReleaseTargetID, TriggerFilterID, TriggerIDs, UpstreamSpaceID.\n\nThe whole string must be query-encoded.",
             "required": false,
             "schema": {
-              "pattern": "^\\s*(AttributeFilterID|AttributeIDs|ComponentID|OrganizationID|Permissions|ReleaseTargetID|TriggerFilterID|TriggerIDs)\\s*(?:,\\s*(?:AttributeFilterID|AttributeIDs|ComponentID|OrganizationID|Permissions|ReleaseTargetID|TriggerFilterID|TriggerIDs)\\s*)*$",
+              "pattern": "^\\s*(AttributeFilterID|AttributeIDs|ComponentID|OrganizationID|Permissions|ReleaseTargetID|TriggerFilterID|TriggerIDs|UpstreamSpaceID)\\s*(?:,\\s*(?:AttributeFilterID|AttributeIDs|ComponentID|OrganizationID|Permissions|ReleaseTargetID|TriggerFilterID|TriggerIDs|UpstreamSpaceID)\\s*)*$",
               "type": "string"
             }
           },
@@ -1823,6 +1829,12 @@
                     "nullable": true
                   },
                   "TriggerFilterID": {
+                    "type": "string",
+                    "description": "",
+                    "format": "uuid",
+                    "nullable": true
+                  },
+                  "UpstreamSpaceID": {
                     "type": "string",
                     "description": "",
                     "format": "uuid",
@@ -20862,10 +20874,10 @@
           {
             "name": "include",
             "in": "query",
-            "description": "Include clause for expanding related entities in the response for Space.\nThe attribute names are case-sensitive, PascalCase, and\nexpected in a comma-separated list format as in the JSON encoding.\n\nSupported attributes for Space are AttributeFilterID, AttributeIDs, ComponentID, OrganizationID, Permissions, ReleaseTargetID, TriggerFilterID, TriggerIDs.\n\nThe whole string must be query-encoded.",
+            "description": "Include clause for expanding related entities in the response for Space.\nThe attribute names are case-sensitive, PascalCase, and\nexpected in a comma-separated list format as in the JSON encoding.\n\nSupported attributes for Space are AttributeFilterID, AttributeIDs, ComponentID, OrganizationID, Permissions, ReleaseTargetID, TriggerFilterID, TriggerIDs, UpstreamSpaceID.\n\nThe whole string must be query-encoded.",
             "required": false,
             "schema": {
-              "pattern": "^\\s*(AttributeFilterID|AttributeIDs|ComponentID|OrganizationID|Permissions|ReleaseTargetID|TriggerFilterID|TriggerIDs)\\s*(?:,\\s*(?:AttributeFilterID|AttributeIDs|ComponentID|OrganizationID|Permissions|ReleaseTargetID|TriggerFilterID|TriggerIDs)\\s*)*$",
+              "pattern": "^\\s*(AttributeFilterID|AttributeIDs|ComponentID|OrganizationID|Permissions|ReleaseTargetID|TriggerFilterID|TriggerIDs|UpstreamSpaceID)\\s*(?:,\\s*(?:AttributeFilterID|AttributeIDs|ComponentID|OrganizationID|Permissions|ReleaseTargetID|TriggerFilterID|TriggerIDs|UpstreamSpaceID)\\s*)*$",
               "type": "string"
             }
           },
@@ -21333,10 +21345,10 @@
           {
             "name": "include",
             "in": "query",
-            "description": "Include clause for expanding related entities in the response for Space.\nThe attribute names are case-sensitive, PascalCase, and\nexpected in a comma-separated list format as in the JSON encoding.\n\nSupported attributes for Space are AttributeFilterID, AttributeIDs, ComponentID, OrganizationID, Permissions, ReleaseTargetID, TriggerFilterID, TriggerIDs.\n\nThe whole string must be query-encoded.",
+            "description": "Include clause for expanding related entities in the response for Space.\nThe attribute names are case-sensitive, PascalCase, and\nexpected in a comma-separated list format as in the JSON encoding.\n\nSupported attributes for Space are AttributeFilterID, AttributeIDs, ComponentID, OrganizationID, Permissions, ReleaseTargetID, TriggerFilterID, TriggerIDs, UpstreamSpaceID.\n\nThe whole string must be query-encoded.",
             "required": false,
             "schema": {
-              "pattern": "^\\s*(AttributeFilterID|AttributeIDs|ComponentID|OrganizationID|Permissions|ReleaseTargetID|TriggerFilterID|TriggerIDs)\\s*(?:,\\s*(?:AttributeFilterID|AttributeIDs|ComponentID|OrganizationID|Permissions|ReleaseTargetID|TriggerFilterID|TriggerIDs)\\s*)*$",
+              "pattern": "^\\s*(AttributeFilterID|AttributeIDs|ComponentID|OrganizationID|Permissions|ReleaseTargetID|TriggerFilterID|TriggerIDs|UpstreamSpaceID)\\s*(?:,\\s*(?:AttributeFilterID|AttributeIDs|ComponentID|OrganizationID|Permissions|ReleaseTargetID|TriggerFilterID|TriggerIDs|UpstreamSpaceID)\\s*)*$",
               "type": "string"
             }
           },
@@ -21555,6 +21567,12 @@
                     "nullable": true
                   },
                   "TriggerFilterID": {
+                    "type": "string",
+                    "description": "",
+                    "format": "uuid",
+                    "nullable": true
+                  },
+                  "UpstreamSpaceID": {
                     "type": "string",
                     "description": "",
                     "format": "uuid",
@@ -39475,6 +39493,167 @@
         }
       }
     },
+    "/space/{space_id}/unit/{unit_id}/blame": {
+      "get": {
+        "tags": [
+          "Unit"
+        ],
+        "summary": "Get what set each field of a Unit",
+        "description": "Returns, for every field of a Unit's configuration, what set the value that is there -- the change, who made it, when and why -- following each merge and Link resolve upstream to where the value was set, and everything else recorded about the field: whether it is protected or guarded, the conflicts and Link findings about it, the failed validation checks that name it, and whether a NeedsProvides Link needs or provides it. A field the Unit does not have is listed, with Absent, when a conflict names it.",
+        "operationId": "GetUnitBlame",
+        "parameters": [
+          {
+            "name": "space_id",
+            "in": "path",
+            "description": "Unique identifier for a space_id",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "unit_id",
+            "in": "path",
+            "description": "Unique identifier for a unit_id",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "path",
+            "in": "query",
+            "description": "Only the fields whose path contains this substring.",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "resource",
+            "in": "query",
+            "description": "Only the fields of this resource, named as \u003ctype\u003e/\u003cname\u003e or \u003cname\u003e; a substring of either matches.",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "flags",
+            "in": "query",
+            "description": "Only the fields with at least one of these flags, comma-separated. Conflict,Absent,Finding,ValidationError,ValidationWarning selects the fields that need attention.\n\nSupported values: Protected, Guarded, Conflict, Absent, Finding, ValidationError, ValidationWarning, Upgraded, SetByLink, SetByTrigger, ChangeOrder, Unreleased, Needed, Provided.",
+            "required": false,
+            "schema": {
+              "pattern": "^\\s*(Protected|Guarded|Conflict|Absent|Finding|ValidationError|ValidationWarning|Upgraded|SetByLink|SetByTrigger|ChangeOrder|Unreleased|Needed|Provided)\\s*(?:,\\s*(?:Protected|Guarded|Conflict|Absent|Finding|ValidationError|ValidationWarning|Upgraded|SetByLink|SetByTrigger|ChangeOrder|Unreleased|Needed|Provided)\\s*)*$",
+              "type": "string"
+            }
+          },
+          {
+            "name": "upstream",
+            "in": "query",
+            "description": "Follow each merge and Link resolve into the unit it took the value from, to where the value was set. Default true; false reports each unit's own record, which names the upstream unit without reading it.",
+            "required": false,
+            "schema": {
+              "type": "boolean"
+            }
+          },
+          {
+            "name": "upstream_depth",
+            "in": "query",
+            "description": "How many upstream units to follow before stopping.",
+            "required": false,
+            "schema": {
+              "maximum": 8,
+              "minimum": 1,
+              "type": "integer"
+            }
+          },
+          {
+            "name": "include_comments",
+            "in": "query",
+            "description": "Include the $comment$ pseudo-fields that carry YAML comments.",
+            "required": false,
+            "schema": {
+              "type": "boolean"
+            }
+          }
+        ],
+        "responses": {
+          "default": {
+            "description": "Unexpected error.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/StandardErrorResponse"
+                }
+              }
+            }
+          },
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/UnitBlame"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Unit request is invalid (Bad Request).",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/StandardErrorResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized access.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/StandardErrorResponse"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Forbidden access.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/StandardErrorResponse"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Unit not found.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/StandardErrorResponse"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Something went wrong while processing Unit.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/StandardErrorResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/space/{space_id}/unit/{unit_id}/conflicts": {
       "post": {
         "tags": [
@@ -40612,6 +40791,157 @@
               "application/json": {
                 "schema": {
                   "$ref": "#/components/schemas/MutationSourcesResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Unit request is invalid (Bad Request).",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/StandardErrorResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized access.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/StandardErrorResponse"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Forbidden access.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/StandardErrorResponse"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Unit not found.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/StandardErrorResponse"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Something went wrong while processing Unit.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/StandardErrorResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/space/{space_id}/unit/{unit_id}/path": {
+      "get": {
+        "tags": [
+          "Unit"
+        ],
+        "summary": "Get everything recorded about one field of a Unit",
+        "description": "Returns everything recorded about one field of a Unit's configuration: the field as the Unit's blame reports it, its own annotations, whether the Unit's last Release includes its value, and each change from this Unit out to where the value was set with the Mutation and Revision it was read from. With history, it also returns every change the Unit recorded to the field. A field that names nothing is a 404; one that names several fields, or a value holding several, is a 400 whose message lists them.",
+        "operationId": "GetUnitPath",
+        "parameters": [
+          {
+            "name": "space_id",
+            "in": "path",
+            "description": "Unique identifier for a space_id",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "unit_id",
+            "in": "path",
+            "description": "Unique identifier for a unit_id",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "field",
+            "in": "query",
+            "description": "The field: its REF, a prefix of a REF of at least four characters, or its path.",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "history",
+            "in": "query",
+            "description": "Also return every change the Unit recorded to the field. Reads the record of every Revision of the Unit.",
+            "required": false,
+            "schema": {
+              "type": "boolean"
+            }
+          },
+          {
+            "name": "resource",
+            "in": "query",
+            "description": "Only the fields of this resource, named as \u003ctype\u003e/\u003cname\u003e or \u003cname\u003e; a substring of either matches.",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "upstream",
+            "in": "query",
+            "description": "Follow each merge and Link resolve into the unit it took the value from, to where the value was set. Default true; false reports each unit's own record, which names the upstream unit without reading it.",
+            "required": false,
+            "schema": {
+              "type": "boolean"
+            }
+          },
+          {
+            "name": "upstream_depth",
+            "in": "query",
+            "description": "How many upstream units to follow before stopping.",
+            "required": false,
+            "schema": {
+              "maximum": 8,
+              "minimum": 1,
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "default": {
+            "description": "Unexpected error.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/StandardErrorResponse"
+                }
+              }
+            }
+          },
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/UnitPathReport"
                 }
               }
             }
@@ -49818,6 +50148,306 @@
         }
       }
     },
+    "/unit_blame": {
+      "get": {
+        "tags": [
+          "Unit"
+        ],
+        "summary": "Get what set each field of many Units across spaces",
+        "description": "Returns the blame of every Unit the where clause selects, across every Space in the organization, a page of Units at a time. This is the bulk counterpart of the single-Unit blame subresource. Scope it to one Space with a where clause for a variant, or to several for several variants: a field has the same REF in every variant of a Unit. A Unit whose blame cannot be read carries an Error and no fields.",
+        "operationId": "SearchUnitBlame",
+        "parameters": [
+          {
+            "name": "where",
+            "in": "query",
+            "description": "The specified string is an expression for the purpose of filtering\nthe list of Units returned. The expression syntax was inspired by SQL.\nIt supports conjunctions using `AND` of relational expressions of the form *attribute*\n*operator* *attribute_or_literal*. The attribute names are case-sensitive and PascalCase,\nas in the JSON encoding.\nStrings support the following operators: `\u003c`, `\u003e`, `\u003c=`, `\u003e=`, `=`, `!=`, `LIKE`, `NOT LIKE`, `ILIKE`, `~~`, `!~~`, `~`, `~*`, `!~`, `!~*`, `IN`, `NOT IN`.\nString pattern operators: `LIKE` and `~~` for pattern matching with `%` and `_` wildcards,\n`ILIKE` for case-insensitive pattern matching, `NOT LIKE` and `!~~` for negated pattern matching.\nString regex operators: `~` for regex matching, `~*` for case-insensitive regex,\n`!~` and `!~*` for regex not matching (case-sensitive and insensitive).\nIntegers support the following operators: `\u003c`, `\u003e`, `\u003c=`, `\u003e=`, `=`, `!=`, `IN`, `NOT IN`.\nUUIDs and boolean attributes support equality and inequality only.\nUUID and time literals must be quoted as string literals.\nString literals are quoted with single quotes, such as `'string'`.\nTime literals use the same form as when serialized as JSON,\nsuch as: `CreatedAt \u003e '2025-02-18T23:16:34'`.\nInteger and boolean literals are also supported for attributes of those types.\nArrays support the `?` operator to to match any element of the array,\nas in `FromLinkID ? '7c61626f-ddbe-41af-93f6-b69f4ab6d308'`.\nArrays can perform LEN() to check for length, as in `LEN(FromLinkID) \u003e 0`.\nAn attribute naming a list of other entities can be filtered on their attributes with a `*` segment,\nas in `FromLink.*.Slug = 'upgrade-app'`, which holds when any element satisfies it.\nWithout the `*` such a reference is an error, since it names no single value to compare.\nMap support the dot notation to specify a particular map key, as in `Labels.tier = 'Backend'`.\nMaps support `IS NULL` and `IS NOT NULL` with dot notation to check for key absence or presence,\nas in `Labels.tier IS NULL` (key doesn't exist) or `Labels.tier IS NOT NULL` (key exists).\nComparison results can be tested with `IS TRUE`, `IS FALSE`, `IS NOT TRUE`, and `IS NOT FALSE`.\nThese are useful for nullable columns: `MergeSourceID = '\u003cuuid\u003e' IS NOT FALSE` matches rows where MergeSourceID equals the value OR is NULL.\nThe `IN` and `NOT IN` operators accept a comma-separated list of values in parentheses,\nsuch as `Slug IN ('slugone', 'slugtwo')` or `Labels.environment IN ('prod', 'staging')`.\nConjunctions are supported using the `AND` operator.\nAn example conjunction is:\n`CreatedAt \u003e= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.\n\nSupported attributes for filtering on Unit: Annotations, ApplyGates, ApplyWarnings, ChangeSetID, Conflicts, CreatedAt, DataHash, DeleteGates, DestroyGates, DisplayName, FromLinkID, HeadRevisionID, HeadRevisionNum, HeadUnitEventNum, HiddenReason, Labels, LastChangeDescription, LastReleasedRevisionNum, LinkFindings, NeededPaths, OrganizationID, Permissions, ProvidedPaths, Slug, SpaceID, TargetID, ToolchainType, UnitID, Unreleasable, UpdatedAt, UpstreamRevisionNum, UpstreamSpaceID, UpstreamUnitID, ValidationErrors, ValidationResults, ValidationTriggerIDs, ValidationWarnings, ValueTriggerIDs, Values.\n\nFinding all units created by cloning can be done using the expression `UpstreamRevisionNum \u003e 0`. Clones of a specific unit can be found by additionally filtering based on `UpstreamUnitID`. Units never released can be found using `LastReleasedRevisionNum = 0`. Units with unreleased changes can be found with `HeadRevisionNum \u003e LastReleasedRevisionNum AND ReleaseTargetID IS NOT NULL AND Unreleasable = false`.\n\nThe whole string must be query-encoded.",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "filter",
+            "in": "query",
+            "description": "UUID of a Filter entity to apply to the Unit list.\n\nThe Filter must be in the same Organization as the user credentials.\n\nThe Filter's From field must match the entity type being filtered (Unit).\n\nFor Space-resident entities, if the Filter has a FromSpaceID, it must match the operation's SpaceID.\n\nThe Filter's Where clause will be combined with any explicit 'where' parameter using AND logic.\n\nIf both 'filter' and 'where' parameters are specified, they are combined with AND logic.",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "contains",
+            "in": "query",
+            "description": "Free text search that approximately matches the specified string against string fields and map keys/values.\n\nThe search is case-insensitive and uses pattern matching to find entities containing the text.\n\nSearchable string fields include attributes like Slug, DisplayName, and string-typed custom fields.\n\nFor map fields (like Labels and Annotations), the search matches both map keys and values.\n\nThe search uses OR logic across all searchable fields, so matching any field will return the entity.\n\nIf both 'where' and 'contains' parameters are specified, they are combined with AND logic.\n\nSearchable fields for Unit include string and map-type attributes from the queryable attributes list.\n\nThe whole string must be query-encoded.",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "where_permission",
+            "in": "query",
+            "description": "Only return Unit entities on which the caller has this permission, as well as View, which every entity listed needs.\n\nA list made to choose an entity to act on can name the permission the action needs, such as Edit to change it or Use to refer to it from another entity, so that it leaves out the entities the action would be refused on.\n\nSupported values: Manage, Edit, Use, View, Approve, TargetEdit, TargetView.",
+            "required": false,
+            "schema": {
+              "enum": [
+                "Manage",
+                "Edit",
+                "Use",
+                "View",
+                "Approve",
+                "TargetEdit",
+                "TargetView"
+              ],
+              "type": "string"
+            }
+          },
+          {
+            "name": "include_hidden",
+            "in": "query",
+            "description": "Hidden Unit entities, those with a HiddenReason, are left out of the results, or of what a bulk operation acts on, unless this names their HiddenReason.\n\nIt is a comma-separated list of HiddenReasons, or `*` for all of them.\n\nA where clause naming the entities, by their Slug or ID with `=` or `IN`, or naming HiddenReason at all, also returns hidden entities it selects.\n\nConfigHub/YAML Units, which hold the configuration of entities, are hidden with the HiddenReason `BackingUnit`.",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "view",
+            "in": "query",
+            "description": "UUID of a View of Unit. Its Filter selects the Units as the filter parameter does, so the two may not both be specified.",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "limit",
+            "in": "query",
+            "description": "Maximum number of Units to return the blame of; 50 when not given, and larger values are rejected with 400. When there may be more, the response has a ConfigHub-Continue header to pass as the continue parameter of the next request.",
+            "required": false,
+            "schema": {
+              "maximum": 50,
+              "minimum": 1,
+              "type": "integer"
+            }
+          },
+          {
+            "name": "order_by",
+            "in": "query",
+            "description": "Comma-separated list of fields to sort Unit results by, each in the form 'ASC|DESC:FieldName' or just 'FieldName'.\n\nField names are case-sensitive and PascalCase, as in the JSON encoding. Sort direction defaults to ASC when the 'DIRECTION:' prefix is omitted.\n\nSupported attributes for ordering Unit: ChangeSetID, CreatedAt, DataHash, DisplayName, HeadRevisionID, HeadRevisionNum, HeadUnitEventNum, HiddenReason, LastChangeDescription, LastReleasedRevisionNum, OrganizationID, Slug, SpaceID, ToolchainType, UnitID, Unreleasable, UpdatedAt, UpstreamRevisionNum, UpstreamUnitID.\n\nExample: 'DESC:CreatedAt' or 'DisplayName,DESC:CreatedAt'.\n\nResults are ordered by the Unit's ID after the fields named, and by the ID alone if none are.\n\nThe whole string must be query-encoded.",
+            "required": false,
+            "schema": {
+              "pattern": "^\\s*(?:(?:[Aa][Ss][Cc]|[Dd][Ee][Ss][Cc])\\s*:\\s*)?(ChangeSetID|CreatedAt|DataHash|DisplayName|HeadRevisionID|HeadRevisionNum|HeadUnitEventNum|HiddenReason|LastChangeDescription|LastReleasedRevisionNum|OrganizationID|Slug|SpaceID|ToolchainType|UnitID|Unreleasable|UpdatedAt|UpstreamRevisionNum|UpstreamUnitID)\\s*(?:,\\s*(?:(?:[Aa][Ss][Cc]|[Dd][Ee][Ss][Cc])\\s*:\\s*)?(?:ChangeSetID|CreatedAt|DataHash|DisplayName|HeadRevisionID|HeadRevisionNum|HeadUnitEventNum|HiddenReason|LastChangeDescription|LastReleasedRevisionNum|OrganizationID|Slug|SpaceID|ToolchainType|UnitID|Unreleasable|UpdatedAt|UpstreamRevisionNum|UpstreamUnitID)\\s*)*$",
+              "type": "string"
+            }
+          },
+          {
+            "name": "continue",
+            "in": "query",
+            "description": "The token from the ConfigHub-Continue header of the previous page, to return the Unit entities after it.\n\nThe request's other parameters, except limit, must be the same as those of the request that returned the token.\n\nKeep reading until a response has no such header: a page can hold fewer entities than the limit, or none, and still be followed by more.",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "resource_type",
+            "in": "query",
+            "description": "Resource type: Resource type to match for the desired ToolchainType, for example apps/v1/Deployment",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "where_data",
+            "in": "query",
+            "description": "Where data: The specified string is an expression for the purpose of evaluating whether the configuration data matches the filter. It supports conjunctions using `AND` of relational expressions of the form *path* *operator* *literal*. The path specifications are dot-separated, for both map fields and array indices, as in `spec.template.spec.containers.0.image = 'ghcr.io/headlamp-k8s/headlamp:latest' AND spec.replicas \u003e 1`. Path expressions support `*` for wildcard array or map segments and `?key=value` syntax for associative matches of array elements containing objects with a `key` attribute. Strings support the following operators: `\u003c`, `\u003e`, `\u003c=`, `\u003e=`, `=`, `!=`, `LIKE`, `ILIKE`, `~~`, `!~~`, `~`, `!~`, `~*`, `!~*`, `IN`, `NOT IN`. String pattern operators: `LIKE` and `~~` for pattern matching with `%` and `_` wildcards, `ILIKE` for case-insensitive pattern matching, `!~~` for NOT LIKE. String regex operators: `~` for regex matching, `~*` for case-insensitive regex, `!~` and `!~*` for regex not matching (case-sensitive and insensitive). Integers support the following operators: `\u003c`, `\u003e`, `\u003c=`, `\u003e=`, `=`, `!=`, `IN`, `NOT IN`. Boolean values support equality and inequality only. The `IN` and `NOT IN` operators accept a comma-separated list of values in parentheses, such as `spec.template.spec.containers.0.image#reference IN (':latest', ':arm64-latest')`. The syntax `.|` splits the path: the left side selects, and the right side is a property of what was selected. On the right side of a `.|`, and only there, `!=` is true when the property is absent: `spec.containers.*.|image != 'nginx'` selects the containers and asks that none of their images be nginx, which a container with no image satisfies. Everywhere else a path that is not present is not a match, `!=` included. String literals are quoted with single quotes, such as `'string'`. Integer and boolean literals are also supported for attributes of those types. The whole string must be query-encoded.",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "where_data_engine",
+            "in": "query",
+            "description": "Which engine answers where_data and resource_type: `sql` (the default) evaluates the expression against the stored resource projection in a single query, falling back to the function engine for the expressions it cannot translate; `function` invokes the where-filter function on each candidate Unit, reading every one's configuration; `shadow` runs both, answers with `function`, and logs any disagreement. Temporary: `function` is the escape hatch for one release, after which this parameter goes away.",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "where_trigger",
+            "in": "query",
+            "description": "Where expression to match Triggers. Matched triggers are invoked on each unit to filter by validation results. Use with triggers_passed to control whether passing or failing units are returned (default: failing).",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "trigger_filter",
+            "in": "query",
+            "description": "Filter UUID (with From=Trigger). The filter's matching triggers are invoked on units to filter by validation results. Can be combined with where_trigger.",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "triggers_passed",
+            "in": "query",
+            "description": "When true, return units that pass trigger validation; when false (default), return units that fail. Only applies when where_trigger or trigger_filter is specified.",
+            "required": false,
+            "schema": {
+              "type": "boolean"
+            }
+          },
+          {
+            "name": "path",
+            "in": "query",
+            "description": "Only the fields whose path contains this substring.",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "resource",
+            "in": "query",
+            "description": "Only the fields of this resource, named as \u003ctype\u003e/\u003cname\u003e or \u003cname\u003e; a substring of either matches.",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "flags",
+            "in": "query",
+            "description": "Only the fields with at least one of these flags, comma-separated. Conflict,Absent,Finding,ValidationError,ValidationWarning selects the fields that need attention.\n\nSupported values: Protected, Guarded, Conflict, Absent, Finding, ValidationError, ValidationWarning, Upgraded, SetByLink, SetByTrigger, ChangeOrder, Unreleased, Needed, Provided.",
+            "required": false,
+            "schema": {
+              "pattern": "^\\s*(Protected|Guarded|Conflict|Absent|Finding|ValidationError|ValidationWarning|Upgraded|SetByLink|SetByTrigger|ChangeOrder|Unreleased|Needed|Provided)\\s*(?:,\\s*(?:Protected|Guarded|Conflict|Absent|Finding|ValidationError|ValidationWarning|Upgraded|SetByLink|SetByTrigger|ChangeOrder|Unreleased|Needed|Provided)\\s*)*$",
+              "type": "string"
+            }
+          },
+          {
+            "name": "upstream",
+            "in": "query",
+            "description": "Follow each merge and Link resolve into the unit it took the value from, to where the value was set. Default true; false reports each unit's own record, which names the upstream unit without reading it.",
+            "required": false,
+            "schema": {
+              "type": "boolean"
+            }
+          },
+          {
+            "name": "upstream_depth",
+            "in": "query",
+            "description": "How many upstream units to follow before stopping.",
+            "required": false,
+            "schema": {
+              "maximum": 8,
+              "minimum": 1,
+              "type": "integer"
+            }
+          },
+          {
+            "name": "include_comments",
+            "in": "query",
+            "description": "Include the $comment$ pseudo-fields that carry YAML comments.",
+            "required": false,
+            "schema": {
+              "type": "boolean"
+            }
+          }
+        ],
+        "responses": {
+          "default": {
+            "description": "Unexpected error.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/StandardErrorResponse"
+                }
+              }
+            }
+          },
+          "200": {
+            "description": "OK",
+            "headers": {
+              "ConfigHub-Continue": {
+                "style": "simple",
+                "description": "The token to pass as the continue parameter of the next request, when there may be more entities after this page. It is absent on the last page. A page can hold fewer entities than the limit, or none, and still have one.",
+                "schema": {
+                  "type": "string"
+                }
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/UnitBlame"
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Unit request is invalid (Bad Request).",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/StandardErrorResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized access.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/StandardErrorResponse"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Forbidden access.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/StandardErrorResponse"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Unit not found.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/StandardErrorResponse"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Something went wrong while processing Unit.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/StandardErrorResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/unit_data": {
       "get": {
         "tags": [
@@ -53893,6 +54523,530 @@
           "$ref": "#/components/schemas/Binding"
         }
       },
+      "BlameField": {
+        "type": "object",
+        "properties": {
+          "Absent": {
+            "type": "boolean",
+            "description": "True for a field the unit does not have, listed because a conflict names it: a merge could not find the path, or the resource, to make an upstream change to. It has no value and no history.",
+            "x-go-type-skip-optional-pointer": true
+          },
+          "Chain": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/BlameOrigin"
+            },
+            "description": "The changes that put the value here, from this unit out to where it was set, following each merge and Link resolve upstream. The last is the answer.",
+            "x-go-type-skip-optional-pointer": true
+          },
+          "Conflicts": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/MutationConflict"
+            },
+            "description": "The unit's outstanding conflicts about the field: upstream changes to it a merge or resolve dropped.",
+            "x-go-type-skip-optional-pointer": true
+          },
+          "Findings": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/LinkFinding"
+            },
+            "description": "The unit's Link findings about the field: what a Link's resolve could not do here.",
+            "x-go-type-skip-optional-pointer": true
+          },
+          "Flags": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            },
+            "description": "What there is to know about the field, one code each: Protected, Guarded, Conflict, Absent, Finding, ValidationError, ValidationWarning, Upgraded, SetByLink, SetByTrigger, ChangeOrder, Unreleased, Needed and Provided.",
+            "x-go-type-skip-optional-pointer": true
+          },
+          "Guards": {
+            "type": "object",
+            "additionalProperties": {
+              "type": "string"
+            },
+            "description": "The guards on the field: its own, its ancestors' and its resource's, which an operation writing here has to be cleared for.",
+            "x-go-type-skip-optional-pointer": true
+          },
+          "Needed": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/BlameNeededPath"
+            },
+            "description": "The unit's needed paths that are the field: a value it is to take from an upstream unit through a NeedsProvides Link.",
+            "x-go-type-skip-optional-pointer": true
+          },
+          "Path": {
+            "type": "string",
+            "description": "The field's path, in the syntax functions and Links take.",
+            "x-go-type-skip-optional-pointer": true
+          },
+          "Protected": {
+            "type": "boolean",
+            "description": "True for a local override, which a merge from upstream leaves alone.",
+            "x-go-type-skip-optional-pointer": true
+          },
+          "Provided": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/AttributeInfo"
+            },
+            "description": "The unit's provided paths that are the field: a value it offers downstream units through NeedsProvides Links.",
+            "x-go-type-skip-optional-pointer": true
+          },
+          "Ref": {
+            "type": "string",
+            "description": "The field's short reference: the same in every Revision of the unit and in every variant of it, so it lines up one field across variants. The path report takes it, or a prefix of it, in place of the resource and path.",
+            "x-go-type-skip-optional-pointer": true
+          },
+          "ResourceName": {
+            "type": "string",
+            "description": "The name of the resource the field is in.",
+            "x-go-type-skip-optional-pointer": true
+          },
+          "ResourceNameWithoutScope": {
+            "type": "string",
+            "description": "The name of the resource without its scope, such as its namespace, which is how a resource a variant renamed is matched.",
+            "x-go-type-skip-optional-pointer": true
+          },
+          "ResourceProtected": {
+            "type": "boolean",
+            "description": "True when the field is protected because its resource is protected as a whole.",
+            "x-go-type-skip-optional-pointer": true
+          },
+          "ResourceType": {
+            "type": "string",
+            "description": "The type of the resource the field is in.",
+            "x-go-type-skip-optional-pointer": true
+          },
+          "SpaceID": {
+            "type": "string",
+            "description": "The Space of the unit the field is in.",
+            "format": "uuid",
+            "example": "248df4b7-aa70-47b8-a036-33ac447e668d",
+            "x-go-type-skip-optional-pointer": true,
+            "x-omitzero": true
+          },
+          "SpaceSlug": {
+            "type": "string",
+            "description": "The slug of the Space of the unit the field is in.",
+            "x-go-type-skip-optional-pointer": true
+          },
+          "UnitID": {
+            "type": "string",
+            "description": "The unit the field is in.",
+            "format": "uuid",
+            "example": "248df4b7-aa70-47b8-a036-33ac447e668d",
+            "x-go-type-skip-optional-pointer": true,
+            "x-omitzero": true
+          },
+          "UnitSlug": {
+            "type": "string",
+            "description": "The slug of the unit the field is in.",
+            "x-go-type-skip-optional-pointer": true
+          },
+          "Validation": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/BlameValidation"
+            },
+            "description": "The unit's failed validating checks that name the field.",
+            "x-go-type-skip-optional-pointer": true
+          },
+          "Value": {
+            "type": "string",
+            "description": "The field's value, as YAML.",
+            "x-go-type-skip-optional-pointer": true
+          }
+        }
+      },
+      "BlameNeededPath": {
+        "type": "object",
+        "properties": {
+          "AttributeName": {
+            "type": "string",
+            "description": "Name of the registered attribute",
+            "x-go-type-skip-optional-pointer": true
+          },
+          "BoundLink": {
+            "type": "string",
+            "x-go-type-skip-optional-pointer": true
+          },
+          "Comment": {
+            "type": "string",
+            "description": "Line comment on the attribute at the specified Path",
+            "x-go-type-skip-optional-pointer": true
+          },
+          "DataType": {
+            "type": "string",
+            "description": "Data type if the attribute value.",
+            "x-go-type-skip-optional-pointer": true
+          },
+          "Details": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/AttributeDetails"
+              }
+            ],
+            "description": "Additional attribute details"
+          },
+          "FunctionName": {
+            "type": "string",
+            "description": "Name of the function invocation corresponding to the output",
+            "x-go-type-skip-optional-pointer": true
+          },
+          "Index": {
+            "type": "integer",
+            "description": "Index of the function invocation corresponding to the output. Useful in the case that multiple function invocations in the same executor call return AttributeValueList output.",
+            "x-go-type-skip-optional-pointer": true
+          },
+          "Issues": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/Issue"
+            },
+            "description": "Issues found with the attribute",
+            "x-go-type-skip-optional-pointer": true
+          },
+          "Path": {
+            "type": "string",
+            "description": "Path of the attribute",
+            "x-go-type-skip-optional-pointer": true
+          },
+          "ResourceCategory": {
+            "type": "string",
+            "description": "Category of configuration element represented in the configuration data; Kubernetes resources are of category Resource, and application configuration files are of category AppConfig",
+            "x-go-type-skip-optional-pointer": true
+          },
+          "ResourceName": {
+            "type": "string",
+            "description": "Name of a resource in the system under management represented in the configuration data; Kubernetes resources are represented in the form \u003cmetadata.namespace\u003e/\u003cmetadata.name\u003e; not all ToolchainTypes necessarily use '/' as a separator between any scope(s) and name or other client-chosen ID",
+            "x-go-type-skip-optional-pointer": true
+          },
+          "ResourceNameStableCore": {
+            "type": "string",
+            "description": "Name of a resource in the system under management represented in the configuration data with generated prefixes and suffixes stripped; empty if nothing to strip",
+            "x-go-type-skip-optional-pointer": true
+          },
+          "ResourceNameWithoutScope": {
+            "type": "string",
+            "description": "Name of a resource in the system under management represented in the configuration data, without any uniquifying scope, such as Namespace, Project, Account, Region, etc.; Kubernetes resources are represented in the form \u003cmetadata.name\u003e",
+            "x-go-type-skip-optional-pointer": true
+          },
+          "ResourceType": {
+            "type": "string",
+            "description": "Type of a resource in the system under management represented in the configuration data; Kubernetes resources are represented in the form \u003capiVersion\u003e/\u003ckind\u003e (aka group-version-kind)",
+            "x-go-type-skip-optional-pointer": true
+          },
+          "Score": {
+            "type": "string",
+            "description": "Score of finding attributed to this Path",
+            "x-go-type-skip-optional-pointer": true
+          },
+          "Value": {
+            "description": "Value of the attribute at the specified Path",
+            "x-go-type-skip-optional-pointer": true
+          }
+        }
+      },
+      "BlameOrigin": {
+        "type": "object",
+        "properties": {
+          "ChangeOrderIDs": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/UUID"
+            },
+            "description": "The ChangeOrders that made the Revision.",
+            "x-go-type-skip-optional-pointer": true
+          },
+          "ChangeOrders": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            },
+            "description": "The slugs of the ChangeOrders that made the Revision.",
+            "x-go-type-skip-optional-pointer": true
+          },
+          "Description": {
+            "type": "string",
+            "description": "The Revision's change description.",
+            "x-go-type-skip-optional-pointer": true
+          },
+          "Function": {
+            "type": "string",
+            "description": "The function the change ran, if it ran one.",
+            "x-go-type-skip-optional-pointer": true
+          },
+          "Invocation": {
+            "type": "string",
+            "description": "The slug of the Invocation the change ran.",
+            "x-go-type-skip-optional-pointer": true
+          },
+          "InvocationID": {
+            "type": "string",
+            "description": "The Invocation the change ran, if it ran one.",
+            "format": "uuid",
+            "example": "248df4b7-aa70-47b8-a036-33ac447e668d",
+            "x-go-type-skip-optional-pointer": true,
+            "x-omitzero": true
+          },
+          "Link": {
+            "type": "string",
+            "description": "The slug of the Link that made the change.",
+            "x-go-type-skip-optional-pointer": true
+          },
+          "LinkID": {
+            "type": "string",
+            "description": "The Link that made the change, if one did.",
+            "format": "uuid",
+            "example": "248df4b7-aa70-47b8-a036-33ac447e668d",
+            "x-go-type-skip-optional-pointer": true,
+            "x-omitzero": true
+          },
+          "LinkUpstream": {
+            "type": "string",
+            "description": "The unit a Link's resolve read the value from, as space/unit or unit.",
+            "x-go-type-skip-optional-pointer": true
+          },
+          "LinkUpstreamRevisionNum": {
+            "type": "integer",
+            "description": "The number of the Revision of the upstream unit the Link's resolve read.",
+            "format": "int64",
+            "x-go-type-skip-optional-pointer": true
+          },
+          "LinkUpstreamUnitID": {
+            "type": "string",
+            "description": "The unit a Link's resolve read the value from, whether or not the chain could follow it there.",
+            "format": "uuid",
+            "example": "248df4b7-aa70-47b8-a036-33ac447e668d",
+            "x-go-type-skip-optional-pointer": true,
+            "x-omitzero": true
+          },
+          "MutationNum": {
+            "type": "integer",
+            "description": "The number of the Mutation that recorded the change; 0 for a change no Mutation recorded.",
+            "format": "int64",
+            "x-go-type-skip-optional-pointer": true
+          },
+          "ReleaseIDs": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/UUID"
+            },
+            "description": "The Releases that bundle the Revision.",
+            "x-go-type-skip-optional-pointer": true
+          },
+          "Releases": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            },
+            "description": "The numbers of the Releases that bundle the Revision.",
+            "x-go-type-skip-optional-pointer": true
+          },
+          "RevisionID": {
+            "type": "string",
+            "description": "The Revision the change made.",
+            "format": "uuid",
+            "example": "248df4b7-aa70-47b8-a036-33ac447e668d",
+            "x-go-type-skip-optional-pointer": true,
+            "x-omitzero": true
+          },
+          "RevisionNum": {
+            "type": "integer",
+            "description": "The number of the Revision the change made.",
+            "format": "int64",
+            "x-go-type-skip-optional-pointer": true
+          },
+          "SetBy": {
+            "type": "string",
+            "description": "What decided to make the change, most specific first: the Link or Trigger, the function, the external source, the Invocation, the merge, or otherwise the operation that made the Revision. For people to read; the fields beside it say the same for programs.",
+            "x-go-type-skip-optional-pointer": true
+          },
+          "Source": {
+            "type": "string",
+            "description": "The operation that made the Revision, such as UpdateUnit or TransformPaths.",
+            "x-go-type-skip-optional-pointer": true
+          },
+          "SpaceID": {
+            "type": "string",
+            "description": "The Space of the unit the change was made in.",
+            "format": "uuid",
+            "example": "248df4b7-aa70-47b8-a036-33ac447e668d",
+            "x-go-type-skip-optional-pointer": true,
+            "x-omitzero": true
+          },
+          "SpaceSlug": {
+            "type": "string",
+            "description": "The slug of the Space of the unit the change was made in.",
+            "x-go-type-skip-optional-pointer": true
+          },
+          "TagIDs": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/UUID"
+            },
+            "description": "The Tags that mark the Revision.",
+            "x-go-type-skip-optional-pointer": true
+          },
+          "Tags": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            },
+            "description": "The slugs of the Tags that mark the Revision.",
+            "x-go-type-skip-optional-pointer": true
+          },
+          "Trigger": {
+            "type": "string",
+            "description": "The slug of the Trigger that made the change.",
+            "x-go-type-skip-optional-pointer": true
+          },
+          "TriggerID": {
+            "type": "string",
+            "description": "The Trigger that made the change, if one did.",
+            "format": "uuid",
+            "example": "248df4b7-aa70-47b8-a036-33ac447e668d",
+            "x-go-type-skip-optional-pointer": true,
+            "x-omitzero": true
+          },
+          "UnitID": {
+            "type": "string",
+            "description": "The unit the change was made in.",
+            "format": "uuid",
+            "example": "248df4b7-aa70-47b8-a036-33ac447e668d",
+            "x-go-type-skip-optional-pointer": true,
+            "x-omitzero": true
+          },
+          "UnitSlug": {
+            "type": "string",
+            "description": "The slug of the unit the change was made in.",
+            "x-go-type-skip-optional-pointer": true
+          },
+          "User": {
+            "type": "string",
+            "description": "The username of the user who made the change, or automation for a change made by no user.",
+            "x-go-type-skip-optional-pointer": true
+          },
+          "UserID": {
+            "type": "string",
+            "description": "The user who made the change; absent for one made by no user.",
+            "format": "uuid",
+            "example": "248df4b7-aa70-47b8-a036-33ac447e668d",
+            "x-go-type-skip-optional-pointer": true,
+            "x-omitzero": true
+          },
+          "When": {
+            "type": "string",
+            "description": "When the Revision was made.",
+            "format": "date-time",
+            "example": "2006-01-02T15:04:05Z07:00",
+            "x-go-type-skip-optional-pointer": true,
+            "x-omitzero": true
+          }
+        }
+      },
+      "BlamePathChange": {
+        "type": "object",
+        "properties": {
+          "Mutation": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/ExtendedMutation"
+              }
+            ],
+            "description": "The Mutation that recorded the change, with its Link, Trigger, Invocation and merge source."
+          },
+          "MutationType": {
+            "type": "string",
+            "description": "What the unit's record says the change did to the field: Add, Update, Replace or Delete. Returned in History.",
+            "x-go-type-skip-optional-pointer": true
+          },
+          "Origin": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/BlameOrigin"
+              }
+            ],
+            "description": "The change, as a chain hop."
+          },
+          "Revision": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/ExtendedRevision"
+              }
+            ],
+            "description": "The Revision the change made, with its user, ChangeOrders, Releases and Tags."
+          },
+          "Value": {
+            "type": "string",
+            "description": "The value the change recorded for the field. Returned in History.",
+            "x-go-type-skip-optional-pointer": true
+          }
+        }
+      },
+      "BlameValidation": {
+        "type": "object",
+        "properties": {
+          "Details": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            },
+            "description": "The result's free-text messages, where the function gave no Issues.",
+            "x-go-type-skip-optional-pointer": true
+          },
+          "Function": {
+            "type": "string",
+            "description": "The validating function that failed.",
+            "x-go-type-skip-optional-pointer": true
+          },
+          "Gate": {
+            "type": "string",
+            "description": "The check, as \u003cspace slug\u003e/\u003ctrigger slug\u003e/\u003cfunction name\u003e, the key of ValidationErrors, ValidationWarnings and ValidationResults on the Unit.",
+            "x-go-type-skip-optional-pointer": true
+          },
+          "Issues": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/Issue"
+            },
+            "description": "What is wrong, as the function put it.",
+            "x-go-type-skip-optional-pointer": true
+          },
+          "Path": {
+            "type": "string",
+            "description": "What the result named, when it named an ancestor of the field, or the field by its position in an array rather than by its path.",
+            "x-go-type-skip-optional-pointer": true
+          },
+          "Score": {
+            "type": "string",
+            "description": "The severity the function gave the finding, if it gives one.",
+            "x-go-type-skip-optional-pointer": true
+          },
+          "TriggerID": {
+            "type": "string",
+            "description": "The Trigger that ran the check. The gate names it by the slugs it had when it ran.",
+            "format": "uuid",
+            "example": "248df4b7-aa70-47b8-a036-33ac447e668d",
+            "x-go-type-skip-optional-pointer": true,
+            "x-omitzero": true
+          },
+          "Value": {
+            "description": "What the function found at the path, when it reported it.",
+            "x-go-type-skip-optional-pointer": true
+          },
+          "Warning": {
+            "type": "boolean",
+            "description": "True for a check of a Trigger with Warn set, whose failures do not block a release.",
+            "x-go-type-skip-optional-pointer": true
+          }
+        }
+      },
       "BrowserSessionResponse": {
         "type": "object",
         "properties": {
@@ -57913,6 +59067,9 @@
             "type": "integer",
             "format": "int64",
             "x-go-type-skip-optional-pointer": true
+          },
+          "UpstreamSpace": {
+            "$ref": "#/components/schemas/Space"
           },
           "ViewColumns": {
             "type": "array",
@@ -63582,12 +64739,13 @@
           },
           "UpstreamSpaceID": {
             "type": "string",
+            "description": "Reference to the Space this Space takes its configuration from, which promotion takes from: the Space it was cloned from, which a clone sets, or one set since. Setting it requires Use on that Space. (optional)",
             "format": "uuid",
-            "readOnly": true,
             "example": "248df4b7-aa70-47b8-a036-33ac447e668d",
             "x-confighub-where": {
               "dataType": "uuid",
-              "references": "Space"
+              "references": "Space",
+              "expandable": true
             }
           },
           "Version": {
@@ -64989,6 +66147,43 @@
         },
         "description": "Unit is the core unit of operation in ConfigHub. It contains a blob of configuration Data of a single supported Config Type (configuration format). This blob is typically a text document that contains a collection of Kubernetes or infrastructure resources, or an application configuration file. Applying / deploying or destroying the configuration happens as a single *transaction* from ConfigHub's perspective. In reality, it is most often a multi-step workflow performed by the underlying configuration / deployment tool. The resources must belong to a single infrastructure provider and the actuation mechanism must be able to resolve references and ordering dependencies among the resources within the document. For example, if one resource needs to be fully provisioned to provide input to another resource, then the actuation code is responsible for handling this. Revisions store historical copies of the configuration data. Configuration data can be restored from prior Revisions. Units can also be cloned to create new variants of a configuration."
       },
+      "UnitBlame": {
+        "type": "object",
+        "properties": {
+          "Error": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/ResponseError"
+              }
+            ],
+            "description": "Why the unit's blame could not be read, in a SearchUnitBlame response."
+          },
+          "Fields": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/BlameField"
+            },
+            "description": "The unit's fields the request selected, each with what set its value and everything else recorded about it, in resource and path order.",
+            "x-go-type-skip-optional-pointer": true
+          },
+          "SpaceID": {
+            "type": "string",
+            "description": "The Space of the unit.",
+            "format": "uuid",
+            "example": "248df4b7-aa70-47b8-a036-33ac447e668d",
+            "x-go-type-skip-optional-pointer": true,
+            "x-omitzero": true
+          },
+          "UnitID": {
+            "type": "string",
+            "description": "The unit.",
+            "format": "uuid",
+            "example": "248df4b7-aa70-47b8-a036-33ac447e668d",
+            "x-go-type-skip-optional-pointer": true,
+            "x-omitzero": true
+          }
+        }
+      },
       "UnitConflictSelector": {
         "type": "object",
         "properties": {
@@ -65005,6 +66200,11 @@
           "ResourceName": {
             "type": "string",
             "description": "Match conflicts on this resource; empty matches any resource",
+            "x-go-type-skip-optional-pointer": true
+          },
+          "ResourceType": {
+            "type": "string",
+            "description": "Match conflicts on resources of this type, in any API version; empty matches any type. With ResourceName, it picks out one of several resources of that name.",
             "x-go-type-skip-optional-pointer": true
           }
         }
@@ -65531,6 +66731,64 @@
             "example": "248df4b7-aa70-47b8-a036-33ac447e668d",
             "x-go-type-skip-optional-pointer": true,
             "x-omitzero": true
+          }
+        }
+      },
+      "UnitPathReport": {
+        "type": "object",
+        "properties": {
+          "Annotations": {
+            "type": "object",
+            "additionalProperties": {
+              "type": "object",
+              "additionalProperties": {
+                "type": "string"
+              }
+            },
+            "description": "The path's own annotations other than guards, by kind. The field's Guards are those that apply to it, its ancestors' and its resource's included.",
+            "x-go-type-skip-optional-pointer": true
+          },
+          "Changes": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/BlamePathChange"
+            },
+            "description": "The field's chain: the changes that put the value here, from this unit out to where it was set, each with the Mutation and Revision it was read from.",
+            "x-go-type-skip-optional-pointer": true
+          },
+          "Field": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/BlameField"
+              }
+            ],
+            "description": "The field, as the unit's blame reports it, without its Chain: Changes carries the chain with its records."
+          },
+          "History": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/BlamePathChange"
+            },
+            "description": "Every change this unit recorded to the field, oldest first; returned when history is requested.",
+            "x-go-type-skip-optional-pointer": true
+          },
+          "Names": {
+            "type": "object",
+            "additionalProperties": {
+              "type": "string"
+            },
+            "description": "Names, as space/slug, of the Units and Targets the report's records refer to by ID alone: the other unit of each conflict, each Link's upstream unit, each merge source, and each Release's Target.",
+            "x-go-type-skip-optional-pointer": true
+          },
+          "ReleaseMessage": {
+            "type": "string",
+            "description": "ReleaseState in words, naming the revisions.",
+            "x-go-type-skip-optional-pointer": true
+          },
+          "ReleaseState": {
+            "type": "string",
+            "description": "Whether the unit's last Release includes the value: Released, NeverReleased, ChangedSinceRelease, or NothingToRelease in a Space with no release Target. Absent for a field the unit does not have.",
+            "x-go-type-skip-optional-pointer": true
           }
         }
       },

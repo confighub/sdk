@@ -20,6 +20,7 @@ var spaceUpdateArgs struct {
 	attributes      *spaceAttributeFlagValues
 	releaseTarget   string
 	component       string
+	upstreamSpace   string
 	permissions     []string
 	refreshTriggers bool
 	spaceLabels     standardLabelFlagValues
@@ -40,6 +41,9 @@ Single space update examples:
 
   # Set the well-known Space labels, as shown by "cub space list"
   cub space update --patch my-space --stage Canary --environment Prod --region us-east1
+
+  # Make my-space take its configuration from my-upstream-space, which promotion then takes from
+  cub space update --patch my-space --upstream-space my-upstream-space
 `+"```"+`
 
 Bulk update examples:
@@ -65,6 +69,7 @@ func init() {
 	spaceUpdateArgs.attributes = addSpaceAttributeFlags(spaceUpdateCmd)
 	spaceUpdateCmd.Flags().StringVar(&spaceUpdateArgs.releaseTarget, "release-target", "", "Target to use as the default release Target for Units in this Space, addressed as <target-space>/<target-slug> (a bare <target-slug> resolves in --space; a Target ID is also accepted; use '-' to clear). Setting it requires Use on the Target, and any change requires Edit on each Unit whose Target it changes: those with the previous release Target, or, when there was none, those with no Target")
 	spaceUpdateCmd.Flags().StringVar(&spaceUpdateArgs.component, "component", "", "slug or ID of the Component the Space is a Variant of (use '-' to clear)")
+	spaceUpdateCmd.Flags().StringVar(&spaceUpdateArgs.upstreamSpace, "upstream-space", "", "slug or ID of the Space this Space takes its configuration from, which promotion takes from (use '-' to clear). Setting it requires Use on that Space")
 	spaceUpdateCmd.Flags().StringSliceVar(&spaceUpdateArgs.permissions, "permission", []string{}, permissionUpdateHelp)
 	spaceUpdateArgs.spaceLabels = addStandardLabelFlags(spaceUpdateCmd, "Space", standardSpaceLabels)
 	spaceUpdateCmd.Flags().BoolVar(&spaceUpdateArgs.refreshTriggers, "refresh-triggers", false, "re-list the Triggers the space selects (with WhereTrigger and/or TriggerFilterID, or the ones in it with neither) even if these fields have not changed")
@@ -191,6 +196,11 @@ func runSingleSpaceUpdate(args []string) error {
 			componentUUID = &resolved
 		}
 
+		upstreamSpaceUUID, err := resolveUpstreamSpaceFlag()
+		if err != nil {
+			return err
+		}
+
 		// Build patch data using BuildPatchData with space enhancer
 		spaceEnhancer := func(patchMap map[string]interface{}) {
 			// Add WhereTrigger if provided
@@ -218,6 +228,11 @@ func runSingleSpaceUpdate(args []string) error {
 				patchMap["ComponentID"] = nil
 			} else if componentUUID != nil {
 				patchMap["ComponentID"] = componentUUID.String()
+			}
+			if spaceUpdateArgs.upstreamSpace == "-" {
+				patchMap["UpstreamSpaceID"] = nil
+			} else if upstreamSpaceUUID != nil {
+				patchMap["UpstreamSpaceID"] = upstreamSpaceUUID.String()
 			}
 		}
 
@@ -320,6 +335,16 @@ func runSingleSpaceUpdate(args []string) error {
 		newBody.ComponentID = &componentUUID
 	}
 
+	if spaceUpdateArgs.upstreamSpace == "-" {
+		newBody.UpstreamSpaceID = nil
+	} else if spaceUpdateArgs.upstreamSpace != "" {
+		upstreamSpaceUUID, err := resolveSpaceID(spaceUpdateArgs.upstreamSpace)
+		if err != nil {
+			return err
+		}
+		newBody.UpstreamSpaceID = &upstreamSpaceUUID
+	}
+
 	updateParams := &goclientnew.UpdateSpaceParams{}
 	if spaceUpdateArgs.refreshTriggers {
 		updateParams.RefreshTriggers = &spaceUpdateArgs.refreshTriggers
@@ -337,6 +362,19 @@ func runSingleSpaceUpdate(args []string) error {
 	displayUpdateResults(spaceDetails, "space", args[0], spaceDetails.SpaceID.String(), displaySpaceDetails)
 
 	return nil
+}
+
+// resolveUpstreamSpaceFlag resolves --upstream-space for a patch: nil when the flag is not
+// given or clears the upstream.
+func resolveUpstreamSpaceFlag() (*uuid.UUID, error) {
+	if spaceUpdateArgs.upstreamSpace == "" || spaceUpdateArgs.upstreamSpace == "-" {
+		return nil, nil
+	}
+	resolved, err := resolveSpaceID(spaceUpdateArgs.upstreamSpace)
+	if err != nil {
+		return nil, err
+	}
+	return &resolved, nil
 }
 
 func patchSpace(spaceID uuid.UUID, patchData []byte) (*goclientnew.Space, error) {
@@ -418,6 +456,11 @@ func runBulkSpaceUpdate() error {
 		componentUUID = &resolved
 	}
 
+	upstreamSpaceUUID, err := resolveUpstreamSpaceFlag()
+	if err != nil {
+		return err
+	}
+
 	// Build patch data with space enhancer
 	spaceEnhancer := func(patchMap map[string]interface{}) {
 		// Add WhereTrigger if provided
@@ -445,6 +488,11 @@ func runBulkSpaceUpdate() error {
 			patchMap["ComponentID"] = nil
 		} else if componentUUID != nil {
 			patchMap["ComponentID"] = componentUUID.String()
+		}
+		if spaceUpdateArgs.upstreamSpace == "-" {
+			patchMap["UpstreamSpaceID"] = nil
+		} else if upstreamSpaceUUID != nil {
+			patchMap["UpstreamSpaceID"] = upstreamSpaceUUID.String()
 		}
 	}
 

@@ -12,21 +12,21 @@
 // immutable by render-configmap changes its name with its content instead, and the Prune
 // Trigger removes old renderings.
 //
-// `cub variant upload` creates these Triggers in a Space that runs its own Triggers and needs
-// them. A Space that selects its Triggers from a policy Space needs them installed there, where
-// they can be selected by their PackLabel.
+// `cub variant upload` creates the Prune Trigger in a Space that runs its own Triggers and needs
+// it. It does not create SetHash: it fills the annotation for a ConfigMap authored as it is
+// uploaded with a TransformPaths Link that hashes the ConfigMap with get-hash. A Space that
+// selects its Triggers from a policy Space needs them installed there, where they can be
+// selected by their Pack label.
 package configmaps
 
 import (
+	"github.com/confighub/sdk/core/constants"
 	api "github.com/confighub/sdk/core/function/api"
 	"github.com/confighub/sdk/core/workerapi"
 )
 
-// PackLabel names the group a Trigger belongs to, so that a Space whose Triggers come from a
-// policy Space can select a group of them by label.
-const PackLabel = "Pack"
-
-// Group is the PackLabel value of this pack's Triggers.
+// Group is the constants.PackLabel value of this pack's Triggers, by which a Space whose Triggers
+// come from a policy Space selects them.
 const Group = "configmaps"
 
 // Trigger is one of the pack's Triggers.
@@ -42,7 +42,7 @@ type Trigger struct {
 
 // Labels are the labels each of the pack's Triggers carries.
 func Labels() map[string]string {
-	return map[string]string{PackLabel: Group}
+	return map[string]string{constants.PackLabel: Group}
 }
 
 // SetHash keeps a hash of each ConfigMap's data and binaryData in its confighub.com/Hash

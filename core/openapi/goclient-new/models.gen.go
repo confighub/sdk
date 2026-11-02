@@ -1631,6 +1631,39 @@ func (e ListAllUnitsParamsWherePermission) Valid() bool {
 	}
 }
 
+// Defines values for SearchUnitBlameParamsWherePermission.
+const (
+	SearchUnitBlameParamsWherePermissionApprove    SearchUnitBlameParamsWherePermission = "Approve"
+	SearchUnitBlameParamsWherePermissionEdit       SearchUnitBlameParamsWherePermission = "Edit"
+	SearchUnitBlameParamsWherePermissionManage     SearchUnitBlameParamsWherePermission = "Manage"
+	SearchUnitBlameParamsWherePermissionTargetEdit SearchUnitBlameParamsWherePermission = "TargetEdit"
+	SearchUnitBlameParamsWherePermissionTargetView SearchUnitBlameParamsWherePermission = "TargetView"
+	SearchUnitBlameParamsWherePermissionUse        SearchUnitBlameParamsWherePermission = "Use"
+	SearchUnitBlameParamsWherePermissionView       SearchUnitBlameParamsWherePermission = "View"
+)
+
+// Valid indicates whether the value is a known member of the SearchUnitBlameParamsWherePermission enum.
+func (e SearchUnitBlameParamsWherePermission) Valid() bool {
+	switch e {
+	case SearchUnitBlameParamsWherePermissionApprove:
+		return true
+	case SearchUnitBlameParamsWherePermissionEdit:
+		return true
+	case SearchUnitBlameParamsWherePermissionManage:
+		return true
+	case SearchUnitBlameParamsWherePermissionTargetEdit:
+		return true
+	case SearchUnitBlameParamsWherePermissionTargetView:
+		return true
+	case SearchUnitBlameParamsWherePermissionUse:
+		return true
+	case SearchUnitBlameParamsWherePermissionView:
+		return true
+	default:
+		return false
+	}
+}
+
 // Defines values for SearchUnitDataParamsWherePermission.
 const (
 	SearchUnitDataParamsWherePermissionApprove    SearchUnitDataParamsWherePermission = "Approve"
@@ -2386,6 +2419,283 @@ type Binding struct {
 
 // BindingList defines model for BindingList.
 type BindingList = []Binding
+
+// BlameField defines model for BlameField.
+type BlameField struct {
+	// Absent True for a field the unit does not have, listed because a conflict names it: a merge could not find the path, or the resource, to make an upstream change to. It has no value and no history.
+	Absent bool `json:"Absent,omitempty" yaml:"Absent,omitempty"`
+
+	// Chain The changes that put the value here, from this unit out to where it was set, following each merge and Link resolve upstream. The last is the answer.
+	Chain []BlameOrigin `json:"Chain,omitempty" yaml:"Chain,omitempty"`
+
+	// Conflicts The unit's outstanding conflicts about the field: upstream changes to it a merge or resolve dropped.
+	Conflicts []MutationConflict `json:"Conflicts,omitempty" yaml:"Conflicts,omitempty"`
+
+	// Findings The unit's Link findings about the field: what a Link's resolve could not do here.
+	Findings []LinkFinding `json:"Findings,omitempty" yaml:"Findings,omitempty"`
+
+	// Flags What there is to know about the field, one code each: Protected, Guarded, Conflict, Absent, Finding, ValidationError, ValidationWarning, Upgraded, SetByLink, SetByTrigger, ChangeOrder, Unreleased, Needed and Provided.
+	Flags []string `json:"Flags,omitempty" yaml:"Flags,omitempty"`
+
+	// Guards The guards on the field: its own, its ancestors' and its resource's, which an operation writing here has to be cleared for.
+	Guards map[string]string `json:"Guards,omitempty" yaml:"Guards,omitempty"`
+
+	// Needed The unit's needed paths that are the field: a value it is to take from an upstream unit through a NeedsProvides Link.
+	Needed []BlameNeededPath `json:"Needed,omitempty" yaml:"Needed,omitempty"`
+
+	// Path The field's path, in the syntax functions and Links take.
+	Path string `json:"Path,omitempty" yaml:"Path,omitempty"`
+
+	// Protected True for a local override, which a merge from upstream leaves alone.
+	Protected bool `json:"Protected,omitempty" yaml:"Protected,omitempty"`
+
+	// Provided The unit's provided paths that are the field: a value it offers downstream units through NeedsProvides Links.
+	Provided []AttributeInfo `json:"Provided,omitempty" yaml:"Provided,omitempty"`
+
+	// Ref The field's short reference: the same in every Revision of the unit and in every variant of it, so it lines up one field across variants. The path report takes it, or a prefix of it, in place of the resource and path.
+	Ref string `json:"Ref,omitempty" yaml:"Ref,omitempty"`
+
+	// ResourceName The name of the resource the field is in.
+	ResourceName string `json:"ResourceName,omitempty" yaml:"ResourceName,omitempty"`
+
+	// ResourceNameWithoutScope The name of the resource without its scope, such as its namespace, which is how a resource a variant renamed is matched.
+	ResourceNameWithoutScope string `json:"ResourceNameWithoutScope,omitempty" yaml:"ResourceNameWithoutScope,omitempty"`
+
+	// ResourceProtected True when the field is protected because its resource is protected as a whole.
+	ResourceProtected bool `json:"ResourceProtected,omitempty" yaml:"ResourceProtected,omitempty"`
+
+	// ResourceType The type of the resource the field is in.
+	ResourceType string `json:"ResourceType,omitempty" yaml:"ResourceType,omitempty"`
+
+	// SpaceID The Space of the unit the field is in.
+	//
+	// Example: 248df4b7-aa70-47b8-a036-33ac447e668d
+	SpaceID openapi_types.UUID `json:"SpaceID,omitempty,omitzero" yaml:"SpaceID,omitempty"`
+
+	// SpaceSlug The slug of the Space of the unit the field is in.
+	SpaceSlug string `json:"SpaceSlug,omitempty" yaml:"SpaceSlug,omitempty"`
+
+	// UnitID The unit the field is in.
+	//
+	// Example: 248df4b7-aa70-47b8-a036-33ac447e668d
+	UnitID openapi_types.UUID `json:"UnitID,omitempty,omitzero" yaml:"UnitID,omitempty"`
+
+	// UnitSlug The slug of the unit the field is in.
+	UnitSlug string `json:"UnitSlug,omitempty" yaml:"UnitSlug,omitempty"`
+
+	// Validation The unit's failed validating checks that name the field.
+	Validation []BlameValidation `json:"Validation,omitempty" yaml:"Validation,omitempty"`
+
+	// Value The field's value, as YAML.
+	Value string `json:"Value,omitempty" yaml:"Value,omitempty"`
+}
+
+// BlameNeededPath defines model for BlameNeededPath.
+type BlameNeededPath struct {
+	// AttributeName Name of the registered attribute
+	AttributeName string `json:"AttributeName,omitempty" yaml:"AttributeName,omitempty"`
+	BoundLink     string `json:"BoundLink,omitempty" yaml:"BoundLink,omitempty"`
+
+	// Comment Line comment on the attribute at the specified Path
+	Comment string `json:"Comment,omitempty" yaml:"Comment,omitempty"`
+
+	// DataType Data type if the attribute value.
+	DataType string `json:"DataType,omitempty" yaml:"DataType,omitempty"`
+
+	// Details Additional attribute details
+	Details *AttributeDetails `json:"Details,omitempty" yaml:"Details,omitempty"`
+
+	// FunctionName Name of the function invocation corresponding to the output
+	FunctionName string `json:"FunctionName,omitempty" yaml:"FunctionName,omitempty"`
+
+	// Index Index of the function invocation corresponding to the output. Useful in the case that multiple function invocations in the same executor call return AttributeValueList output.
+	Index int `json:"Index,omitempty" yaml:"Index,omitempty"`
+
+	// Issues Issues found with the attribute
+	Issues []Issue `json:"Issues,omitempty" yaml:"Issues,omitempty"`
+
+	// Path Path of the attribute
+	Path string `json:"Path,omitempty" yaml:"Path,omitempty"`
+
+	// ResourceCategory Category of configuration element represented in the configuration data; Kubernetes resources are of category Resource, and application configuration files are of category AppConfig
+	ResourceCategory string `json:"ResourceCategory,omitempty" yaml:"ResourceCategory,omitempty"`
+
+	// ResourceName Name of a resource in the system under management represented in the configuration data; Kubernetes resources are represented in the form <metadata.namespace>/<metadata.name>; not all ToolchainTypes necessarily use '/' as a separator between any scope(s) and name or other client-chosen ID
+	ResourceName string `json:"ResourceName,omitempty" yaml:"ResourceName,omitempty"`
+
+	// ResourceNameStableCore Name of a resource in the system under management represented in the configuration data with generated prefixes and suffixes stripped; empty if nothing to strip
+	ResourceNameStableCore string `json:"ResourceNameStableCore,omitempty" yaml:"ResourceNameStableCore,omitempty"`
+
+	// ResourceNameWithoutScope Name of a resource in the system under management represented in the configuration data, without any uniquifying scope, such as Namespace, Project, Account, Region, etc.; Kubernetes resources are represented in the form <metadata.name>
+	ResourceNameWithoutScope string `json:"ResourceNameWithoutScope,omitempty" yaml:"ResourceNameWithoutScope,omitempty"`
+
+	// ResourceType Type of a resource in the system under management represented in the configuration data; Kubernetes resources are represented in the form <apiVersion>/<kind> (aka group-version-kind)
+	ResourceType string `json:"ResourceType,omitempty" yaml:"ResourceType,omitempty"`
+
+	// Score Score of finding attributed to this Path
+	Score string `json:"Score,omitempty" yaml:"Score,omitempty"`
+
+	// Value Value of the attribute at the specified Path
+	Value interface{} `json:"Value,omitempty" yaml:"Value,omitempty"`
+}
+
+// BlameOrigin defines model for BlameOrigin.
+type BlameOrigin struct {
+	// ChangeOrderIDs The ChangeOrders that made the Revision.
+	ChangeOrderIDs []UUID `json:"ChangeOrderIDs,omitempty" yaml:"ChangeOrderIDs,omitempty"`
+
+	// ChangeOrders The slugs of the ChangeOrders that made the Revision.
+	ChangeOrders []string `json:"ChangeOrders,omitempty" yaml:"ChangeOrders,omitempty"`
+
+	// Description The Revision's change description.
+	Description string `json:"Description,omitempty" yaml:"Description,omitempty"`
+
+	// Function The function the change ran, if it ran one.
+	Function string `json:"Function,omitempty" yaml:"Function,omitempty"`
+
+	// Invocation The slug of the Invocation the change ran.
+	Invocation string `json:"Invocation,omitempty" yaml:"Invocation,omitempty"`
+
+	// InvocationID The Invocation the change ran, if it ran one.
+	//
+	// Example: 248df4b7-aa70-47b8-a036-33ac447e668d
+	InvocationID openapi_types.UUID `json:"InvocationID,omitempty,omitzero" yaml:"InvocationID,omitempty"`
+
+	// Link The slug of the Link that made the change.
+	Link string `json:"Link,omitempty" yaml:"Link,omitempty"`
+
+	// LinkID The Link that made the change, if one did.
+	//
+	// Example: 248df4b7-aa70-47b8-a036-33ac447e668d
+	LinkID openapi_types.UUID `json:"LinkID,omitempty,omitzero" yaml:"LinkID,omitempty"`
+
+	// LinkUpstream The unit a Link's resolve read the value from, as space/unit or unit.
+	LinkUpstream string `json:"LinkUpstream,omitempty" yaml:"LinkUpstream,omitempty"`
+
+	// LinkUpstreamRevisionNum The number of the Revision of the upstream unit the Link's resolve read.
+	LinkUpstreamRevisionNum int64 `json:"LinkUpstreamRevisionNum,omitempty" yaml:"LinkUpstreamRevisionNum,omitempty"`
+
+	// LinkUpstreamUnitID The unit a Link's resolve read the value from, whether or not the chain could follow it there.
+	//
+	// Example: 248df4b7-aa70-47b8-a036-33ac447e668d
+	LinkUpstreamUnitID openapi_types.UUID `json:"LinkUpstreamUnitID,omitempty,omitzero" yaml:"LinkUpstreamUnitID,omitempty"`
+
+	// MutationNum The number of the Mutation that recorded the change; 0 for a change no Mutation recorded.
+	MutationNum int64 `json:"MutationNum,omitempty" yaml:"MutationNum,omitempty"`
+
+	// ReleaseIDs The Releases that bundle the Revision.
+	ReleaseIDs []UUID `json:"ReleaseIDs,omitempty" yaml:"ReleaseIDs,omitempty"`
+
+	// Releases The numbers of the Releases that bundle the Revision.
+	Releases []string `json:"Releases,omitempty" yaml:"Releases,omitempty"`
+
+	// RevisionID The Revision the change made.
+	//
+	// Example: 248df4b7-aa70-47b8-a036-33ac447e668d
+	RevisionID openapi_types.UUID `json:"RevisionID,omitempty,omitzero" yaml:"RevisionID,omitempty"`
+
+	// RevisionNum The number of the Revision the change made.
+	RevisionNum int64 `json:"RevisionNum,omitempty" yaml:"RevisionNum,omitempty"`
+
+	// SetBy What decided to make the change, most specific first: the Link or Trigger, the function, the external source, the Invocation, the merge, or otherwise the operation that made the Revision. For people to read; the fields beside it say the same for programs.
+	SetBy string `json:"SetBy,omitempty" yaml:"SetBy,omitempty"`
+
+	// Source The operation that made the Revision, such as UpdateUnit or TransformPaths.
+	Source string `json:"Source,omitempty" yaml:"Source,omitempty"`
+
+	// SpaceID The Space of the unit the change was made in.
+	//
+	// Example: 248df4b7-aa70-47b8-a036-33ac447e668d
+	SpaceID openapi_types.UUID `json:"SpaceID,omitempty,omitzero" yaml:"SpaceID,omitempty"`
+
+	// SpaceSlug The slug of the Space of the unit the change was made in.
+	SpaceSlug string `json:"SpaceSlug,omitempty" yaml:"SpaceSlug,omitempty"`
+
+	// TagIDs The Tags that mark the Revision.
+	TagIDs []UUID `json:"TagIDs,omitempty" yaml:"TagIDs,omitempty"`
+
+	// Tags The slugs of the Tags that mark the Revision.
+	Tags []string `json:"Tags,omitempty" yaml:"Tags,omitempty"`
+
+	// Trigger The slug of the Trigger that made the change.
+	Trigger string `json:"Trigger,omitempty" yaml:"Trigger,omitempty"`
+
+	// TriggerID The Trigger that made the change, if one did.
+	//
+	// Example: 248df4b7-aa70-47b8-a036-33ac447e668d
+	TriggerID openapi_types.UUID `json:"TriggerID,omitempty,omitzero" yaml:"TriggerID,omitempty"`
+
+	// UnitID The unit the change was made in.
+	//
+	// Example: 248df4b7-aa70-47b8-a036-33ac447e668d
+	UnitID openapi_types.UUID `json:"UnitID,omitempty,omitzero" yaml:"UnitID,omitempty"`
+
+	// UnitSlug The slug of the unit the change was made in.
+	UnitSlug string `json:"UnitSlug,omitempty" yaml:"UnitSlug,omitempty"`
+
+	// User The username of the user who made the change, or automation for a change made by no user.
+	User string `json:"User,omitempty" yaml:"User,omitempty"`
+
+	// UserID The user who made the change; absent for one made by no user.
+	//
+	// Example: 248df4b7-aa70-47b8-a036-33ac447e668d
+	UserID openapi_types.UUID `json:"UserID,omitempty,omitzero" yaml:"UserID,omitempty"`
+
+	// When When the Revision was made.
+	//
+	// Example: 2006-01-02T15:04:05Z07:00
+	When time.Time `json:"When,omitempty,omitzero" yaml:"When,omitempty"`
+}
+
+// BlamePathChange defines model for BlamePathChange.
+type BlamePathChange struct {
+	// Mutation The Mutation that recorded the change, with its Link, Trigger, Invocation and merge source.
+	Mutation *ExtendedMutation `json:"Mutation,omitempty" yaml:"Mutation,omitempty"`
+
+	// MutationType What the unit's record says the change did to the field: Add, Update, Replace or Delete. Returned in History.
+	MutationType string `json:"MutationType,omitempty" yaml:"MutationType,omitempty"`
+
+	// Origin The change, as a chain hop.
+	Origin *BlameOrigin `json:"Origin,omitempty" yaml:"Origin,omitempty"`
+
+	// Revision The Revision the change made, with its user, ChangeOrders, Releases and Tags.
+	Revision *ExtendedRevision `json:"Revision,omitempty" yaml:"Revision,omitempty"`
+
+	// Value The value the change recorded for the field. Returned in History.
+	Value string `json:"Value,omitempty" yaml:"Value,omitempty"`
+}
+
+// BlameValidation defines model for BlameValidation.
+type BlameValidation struct {
+	// Details The result's free-text messages, where the function gave no Issues.
+	Details []string `json:"Details,omitempty" yaml:"Details,omitempty"`
+
+	// Function The validating function that failed.
+	Function string `json:"Function,omitempty" yaml:"Function,omitempty"`
+
+	// Gate The check, as <space slug>/<trigger slug>/<function name>, the key of ValidationErrors, ValidationWarnings and ValidationResults on the Unit.
+	Gate string `json:"Gate,omitempty" yaml:"Gate,omitempty"`
+
+	// Issues What is wrong, as the function put it.
+	Issues []Issue `json:"Issues,omitempty" yaml:"Issues,omitempty"`
+
+	// Path What the result named, when it named an ancestor of the field, or the field by its position in an array rather than by its path.
+	Path string `json:"Path,omitempty" yaml:"Path,omitempty"`
+
+	// Score The severity the function gave the finding, if it gives one.
+	Score string `json:"Score,omitempty" yaml:"Score,omitempty"`
+
+	// TriggerID The Trigger that ran the check. The gate names it by the slugs it had when it ran.
+	//
+	// Example: 248df4b7-aa70-47b8-a036-33ac447e668d
+	TriggerID openapi_types.UUID `json:"TriggerID,omitempty,omitzero" yaml:"TriggerID,omitempty"`
+
+	// Value What the function found at the path, when it reported it.
+	Value interface{} `json:"Value,omitempty" yaml:"Value,omitempty"`
+
+	// Warning True for a check of a Trigger with Warn set, whose failures do not block a release.
+	Warning bool `json:"Warning,omitempty" yaml:"Warning,omitempty"`
+}
 
 // BrowserSessionResponse defines model for BrowserSessionResponse.
 type BrowserSessionResponse struct {
@@ -4196,6 +4506,9 @@ type ExtendedSpace struct {
 	UnlinkedUnitCount   int64     `json:"UnlinkedUnitCount,omitempty" yaml:"UnlinkedUnitCount,omitempty"`
 	UnreleasedUnitCount int64     `json:"UnreleasedUnitCount,omitempty" yaml:"UnreleasedUnitCount,omitempty"`
 	UpgradableUnitCount int64     `json:"UpgradableUnitCount,omitempty" yaml:"UpgradableUnitCount,omitempty"`
+
+	// UpstreamSpace The logical container for most entities in ConfigHub. Namespaces triggers, units, targets, and other entities.
+	UpstreamSpace *Space `json:"UpstreamSpace,omitempty" yaml:"UpstreamSpace,omitempty"`
 
 	// ViewColumns The values of the columns of the View named by the view parameter, in the View's column order. A column that selects several values, such as one with a wildcard, has an entry for each, all with the column's Name.
 	ViewColumns     []ViewColumn `json:"ViewColumns,omitempty" yaml:"ViewColumns,omitempty"`
@@ -6586,7 +6899,9 @@ type Space struct {
 	// Example: 2025-04-04T11:50:02.95102-07:00
 	UpdatedAt time.Time `json:"UpdatedAt,omitempty,omitzero" yaml:"UpdatedAt,omitempty"`
 
-	// UpstreamSpaceID Example: 248df4b7-aa70-47b8-a036-33ac447e668d
+	// UpstreamSpaceID Reference to the Space this Space takes its configuration from, which promotion takes from: the Space it was cloned from, which a clone sets, or one set since. Setting it requires Use on that Space. (optional)
+	//
+	// Example: 248df4b7-aa70-47b8-a036-33ac447e668d
 	UpstreamSpaceID *openapi_types.UUID `json:"UpstreamSpaceID,omitempty" yaml:"UpstreamSpaceID,omitempty"`
 
 	// Version An entity-specific sequence number used for optimistic concurrency control. The value read must be sent in calls to Update.
@@ -7218,6 +7533,25 @@ type Unit struct {
 	Version int64 `json:"Version,omitempty" yaml:"Version,omitempty"`
 }
 
+// UnitBlame defines model for UnitBlame.
+type UnitBlame struct {
+	// Error Why the unit's blame could not be read, in a SearchUnitBlame response.
+	Error *ResponseError `json:"Error,omitempty" yaml:"Error,omitempty"`
+
+	// Fields The unit's fields the request selected, each with what set its value and everything else recorded about it, in resource and path order.
+	Fields []BlameField `json:"Fields,omitempty" yaml:"Fields,omitempty"`
+
+	// SpaceID The Space of the unit.
+	//
+	// Example: 248df4b7-aa70-47b8-a036-33ac447e668d
+	SpaceID openapi_types.UUID `json:"SpaceID,omitempty,omitzero" yaml:"SpaceID,omitempty"`
+
+	// UnitID The unit.
+	//
+	// Example: 248df4b7-aa70-47b8-a036-33ac447e668d
+	UnitID openapi_types.UUID `json:"UnitID,omitempty,omitzero" yaml:"UnitID,omitempty"`
+}
+
 // UnitConflictSelector defines model for UnitConflictSelector.
 type UnitConflictSelector struct {
 	// Path Match conflicts at this path; empty matches any path, including resource-level conflicts
@@ -7228,6 +7562,9 @@ type UnitConflictSelector struct {
 
 	// ResourceName Match conflicts on this resource; empty matches any resource
 	ResourceName string `json:"ResourceName,omitempty" yaml:"ResourceName,omitempty"`
+
+	// ResourceType Match conflicts on resources of this type, in any API version; empty matches any type. With ResourceName, it picks out one of several resources of that name.
+	ResourceType string `json:"ResourceType,omitempty" yaml:"ResourceType,omitempty"`
 }
 
 // UnitConflictsRequest defines model for UnitConflictsRequest.
@@ -7472,6 +7809,30 @@ type UnitMutationSources struct {
 	//
 	// Example: 248df4b7-aa70-47b8-a036-33ac447e668d
 	UnitID openapi_types.UUID `json:"UnitID,omitempty,omitzero" yaml:"UnitID,omitempty"`
+}
+
+// UnitPathReport defines model for UnitPathReport.
+type UnitPathReport struct {
+	// Annotations The path's own annotations other than guards, by kind. The field's Guards are those that apply to it, its ancestors' and its resource's included.
+	Annotations map[string]map[string]string `json:"Annotations,omitempty" yaml:"Annotations,omitempty"`
+
+	// Changes The field's chain: the changes that put the value here, from this unit out to where it was set, each with the Mutation and Revision it was read from.
+	Changes []BlamePathChange `json:"Changes,omitempty" yaml:"Changes,omitempty"`
+
+	// Field The field, as the unit's blame reports it, without its Chain: Changes carries the chain with its records.
+	Field *BlameField `json:"Field,omitempty" yaml:"Field,omitempty"`
+
+	// History Every change this unit recorded to the field, oldest first; returned when history is requested.
+	History []BlamePathChange `json:"History,omitempty" yaml:"History,omitempty"`
+
+	// Names Names, as space/slug, of the Units and Targets the report's records refer to by ID alone: the other unit of each conflict, each Link's upstream unit, each merge source, and each Release's Target.
+	Names map[string]string `json:"Names,omitempty" yaml:"Names,omitempty"`
+
+	// ReleaseMessage ReleaseState in words, naming the revisions.
+	ReleaseMessage string `json:"ReleaseMessage,omitempty" yaml:"ReleaseMessage,omitempty"`
+
+	// ReleaseState Whether the unit's last Release includes the value: Released, NeverReleased, ChangedSinceRelease, or NothingToRelease in a Space with no release Target. Absent for a field the unit does not have.
+	ReleaseState string `json:"ReleaseState,omitempty" yaml:"ReleaseState,omitempty"`
 }
 
 // UnitProtectionRequest defines model for UnitProtectionRequest.
@@ -8666,7 +9027,7 @@ type BulkDeleteSpacesParams struct {
 	// The attribute names are case-sensitive, PascalCase, and
 	// expected in a comma-separated list format as in the JSON encoding.
 	//
-	// Supported attributes for Space are AttributeFilterID, AttributeIDs, ComponentID, OrganizationID, Permissions, ReleaseTargetID, TriggerFilterID, TriggerIDs.
+	// Supported attributes for Space are AttributeFilterID, AttributeIDs, ComponentID, OrganizationID, Permissions, ReleaseTargetID, TriggerFilterID, TriggerIDs, UpstreamSpaceID.
 	//
 	// The whole string must be query-encoded.
 	Include *string `form:"include,omitempty" json:"include,omitempty" yaml:"include,omitempty"`
@@ -8714,6 +9075,7 @@ type BulkPatchSpacesApplicationMergePatchPlusJSONBody struct {
 	// Slug Unique URL-safe identifier for the entity.
 	Slug            *string             `json:"Slug,omitempty" yaml:"Slug,omitempty"`
 	TriggerFilterID *openapi_types.UUID `json:"TriggerFilterID,omitempty" yaml:"TriggerFilterID,omitempty"`
+	UpstreamSpaceID *openapi_types.UUID `json:"UpstreamSpaceID,omitempty" yaml:"UpstreamSpaceID,omitempty"`
 
 	// Version An entity-specific sequence number used for optimistic concurrency control. The value read must be sent in calls to Update.
 	Version        *int    `json:"Version,omitempty" yaml:"Version,omitempty"`
@@ -8805,7 +9167,7 @@ type BulkPatchSpacesParams struct {
 	// The attribute names are case-sensitive, PascalCase, and
 	// expected in a comma-separated list format as in the JSON encoding.
 	//
-	// Supported attributes for Space are AttributeFilterID, AttributeIDs, ComponentID, OrganizationID, Permissions, ReleaseTargetID, TriggerFilterID, TriggerIDs.
+	// Supported attributes for Space are AttributeFilterID, AttributeIDs, ComponentID, OrganizationID, Permissions, ReleaseTargetID, TriggerFilterID, TriggerIDs, UpstreamSpaceID.
 	//
 	// The whole string must be query-encoded.
 	Include *string `form:"include,omitempty" json:"include,omitempty" yaml:"include,omitempty"`
@@ -8856,6 +9218,7 @@ type BulkCreateSpacesApplicationMergePatchPlusJSONBody struct {
 	// Slug Unique URL-safe identifier for the entity.
 	Slug            *string             `json:"Slug,omitempty" yaml:"Slug,omitempty"`
 	TriggerFilterID *openapi_types.UUID `json:"TriggerFilterID,omitempty" yaml:"TriggerFilterID,omitempty"`
+	UpstreamSpaceID *openapi_types.UUID `json:"UpstreamSpaceID,omitempty" yaml:"UpstreamSpaceID,omitempty"`
 
 	// Version An entity-specific sequence number used for optimistic concurrency control. The value read must be sent in calls to Update.
 	Version        *int    `json:"Version,omitempty" yaml:"Version,omitempty"`
@@ -8947,7 +9310,7 @@ type BulkCreateSpacesParams struct {
 	// The attribute names are case-sensitive, PascalCase, and
 	// expected in a comma-separated list format as in the JSON encoding.
 	//
-	// Supported attributes for Space are AttributeFilterID, AttributeIDs, ComponentID, OrganizationID, Permissions, ReleaseTargetID, TriggerFilterID, TriggerIDs.
+	// Supported attributes for Space are AttributeFilterID, AttributeIDs, ComponentID, OrganizationID, Permissions, ReleaseTargetID, TriggerFilterID, TriggerIDs, UpstreamSpaceID.
 	//
 	// The whole string must be query-encoded.
 	Include *string `form:"include,omitempty" json:"include,omitempty" yaml:"include,omitempty"`
@@ -17466,7 +17829,7 @@ type ListSpacesParams struct {
 	// The attribute names are case-sensitive, PascalCase, and
 	// expected in a comma-separated list format as in the JSON encoding.
 	//
-	// Supported attributes for Space are AttributeFilterID, AttributeIDs, ComponentID, OrganizationID, Permissions, ReleaseTargetID, TriggerFilterID, TriggerIDs.
+	// Supported attributes for Space are AttributeFilterID, AttributeIDs, ComponentID, OrganizationID, Permissions, ReleaseTargetID, TriggerFilterID, TriggerIDs, UpstreamSpaceID.
 	//
 	// The whole string must be query-encoded.
 	Include *string `form:"include,omitempty" json:"include,omitempty" yaml:"include,omitempty"`
@@ -17569,7 +17932,7 @@ type GetSpaceParams struct {
 	// The attribute names are case-sensitive, PascalCase, and
 	// expected in a comma-separated list format as in the JSON encoding.
 	//
-	// Supported attributes for Space are AttributeFilterID, AttributeIDs, ComponentID, OrganizationID, Permissions, ReleaseTargetID, TriggerFilterID, TriggerIDs.
+	// Supported attributes for Space are AttributeFilterID, AttributeIDs, ComponentID, OrganizationID, Permissions, ReleaseTargetID, TriggerFilterID, TriggerIDs, UpstreamSpaceID.
 	//
 	// The whole string must be query-encoded.
 	Include *string `form:"include,omitempty" json:"include,omitempty" yaml:"include,omitempty"`
@@ -17612,6 +17975,7 @@ type PatchSpaceApplicationMergePatchPlusJSONBody struct {
 	// Slug Unique URL-safe identifier for the entity.
 	Slug            *string             `json:"Slug,omitempty" yaml:"Slug,omitempty"`
 	TriggerFilterID *openapi_types.UUID `json:"TriggerFilterID,omitempty" yaml:"TriggerFilterID,omitempty"`
+	UpstreamSpaceID *openapi_types.UUID `json:"UpstreamSpaceID,omitempty" yaml:"UpstreamSpaceID,omitempty"`
 
 	// Version An entity-specific sequence number used for optimistic concurrency control. The value read must be sent in calls to Update.
 	Version        *int    `json:"Version,omitempty" yaml:"Version,omitempty"`
@@ -21412,6 +21776,29 @@ type UpdateUnitParams struct {
 	Include *string `form:"include,omitempty" json:"include,omitempty" yaml:"include,omitempty"`
 }
 
+// GetUnitBlameParams defines parameters for GetUnitBlame.
+type GetUnitBlameParams struct {
+	// Path Only the fields whose path contains this substring.
+	Path *string `form:"path,omitempty" json:"path,omitempty" yaml:"path,omitempty"`
+
+	// Resource Only the fields of this resource, named as <type>/<name> or <name>; a substring of either matches.
+	Resource *string `form:"resource,omitempty" json:"resource,omitempty" yaml:"resource,omitempty"`
+
+	// Flags Only the fields with at least one of these flags, comma-separated. Conflict,Absent,Finding,ValidationError,ValidationWarning selects the fields that need attention.
+	//
+	// Supported values: Protected, Guarded, Conflict, Absent, Finding, ValidationError, ValidationWarning, Upgraded, SetByLink, SetByTrigger, ChangeOrder, Unreleased, Needed, Provided.
+	Flags *string `form:"flags,omitempty" json:"flags,omitempty" yaml:"flags,omitempty"`
+
+	// Upstream Follow each merge and Link resolve into the unit it took the value from, to where the value was set. Default true; false reports each unit's own record, which names the upstream unit without reading it.
+	Upstream *bool `form:"upstream,omitempty" json:"upstream,omitempty" yaml:"upstream,omitempty"`
+
+	// UpstreamDepth How many upstream units to follow before stopping.
+	UpstreamDepth *int `form:"upstream_depth,omitempty" json:"upstream_depth,omitempty" yaml:"upstream_depth,omitempty"`
+
+	// IncludeComments Include the $comment$ pseudo-fields that carry YAML comments.
+	IncludeComments *bool `form:"include_comments,omitempty" json:"include_comments,omitempty" yaml:"include_comments,omitempty"`
+}
+
 // UploadUnitDataParams defines parameters for UploadUnitData.
 type UploadUnitDataParams struct {
 	// LastChangeDescription Human-readable description of this change, copied to the Revision it creates.
@@ -21637,6 +22024,24 @@ type GetExtendedMutationParams struct {
 	// Example: 'DisplayName,CreatedAt,Labels' will return only those fields plus the required ID and Slug fields.
 	// The whole string must be query-encoded.
 	Select *string `form:"select,omitempty" json:"select,omitempty" yaml:"select,omitempty"`
+}
+
+// GetUnitPathParams defines parameters for GetUnitPath.
+type GetUnitPathParams struct {
+	// Field The field: its REF, a prefix of a REF of at least four characters, or its path.
+	Field string `form:"field" json:"field" yaml:"field"`
+
+	// History Also return every change the Unit recorded to the field. Reads the record of every Revision of the Unit.
+	History *bool `form:"history,omitempty" json:"history,omitempty" yaml:"history,omitempty"`
+
+	// Resource Only the fields of this resource, named as <type>/<name> or <name>; a substring of either matches.
+	Resource *string `form:"resource,omitempty" json:"resource,omitempty" yaml:"resource,omitempty"`
+
+	// Upstream Follow each merge and Link resolve into the unit it took the value from, to where the value was set. Default true; false reports each unit's own record, which names the upstream unit without reading it.
+	Upstream *bool `form:"upstream,omitempty" json:"upstream,omitempty" yaml:"upstream,omitempty"`
+
+	// UpstreamDepth How many upstream units to follow before stopping.
+	UpstreamDepth *int `form:"upstream_depth,omitempty" json:"upstream_depth,omitempty" yaml:"upstream_depth,omitempty"`
 }
 
 // ListExtendedResourcesParams defines parameters for ListExtendedResources.
@@ -25620,6 +26025,163 @@ type BulkTagUnitsParams struct {
 	// The whole string must be query-encoded.
 	Include *string `form:"include,omitempty" json:"include,omitempty" yaml:"include,omitempty"`
 }
+
+// SearchUnitBlameParams defines parameters for SearchUnitBlame.
+type SearchUnitBlameParams struct {
+	// Where The specified string is an expression for the purpose of filtering
+	// the list of Units returned. The expression syntax was inspired by SQL.
+	// It supports conjunctions using `AND` of relational expressions of the form *attribute*
+	// *operator* *attribute_or_literal*. The attribute names are case-sensitive and PascalCase,
+	// as in the JSON encoding.
+	// Strings support the following operators: `<`, `>`, `<=`, `>=`, `=`, `!=`, `LIKE`, `NOT LIKE`, `ILIKE`, `~~`, `!~~`, `~`, `~*`, `!~`, `!~*`, `IN`, `NOT IN`.
+	// String pattern operators: `LIKE` and `~~` for pattern matching with `%` and `_` wildcards,
+	// `ILIKE` for case-insensitive pattern matching, `NOT LIKE` and `!~~` for negated pattern matching.
+	// String regex operators: `~` for regex matching, `~*` for case-insensitive regex,
+	// `!~` and `!~*` for regex not matching (case-sensitive and insensitive).
+	// Integers support the following operators: `<`, `>`, `<=`, `>=`, `=`, `!=`, `IN`, `NOT IN`.
+	// UUIDs and boolean attributes support equality and inequality only.
+	// UUID and time literals must be quoted as string literals.
+	// String literals are quoted with single quotes, such as `'string'`.
+	// Time literals use the same form as when serialized as JSON,
+	// such as: `CreatedAt > '2025-02-18T23:16:34'`.
+	// Integer and boolean literals are also supported for attributes of those types.
+	// Arrays support the `?` operator to to match any element of the array,
+	// as in `FromLinkID ? '7c61626f-ddbe-41af-93f6-b69f4ab6d308'`.
+	// Arrays can perform LEN() to check for length, as in `LEN(FromLinkID) > 0`.
+	// An attribute naming a list of other entities can be filtered on their attributes with a `*` segment,
+	// as in `FromLink.*.Slug = 'upgrade-app'`, which holds when any element satisfies it.
+	// Without the `*` such a reference is an error, since it names no single value to compare.
+	// Map support the dot notation to specify a particular map key, as in `Labels.tier = 'Backend'`.
+	// Maps support `IS NULL` and `IS NOT NULL` with dot notation to check for key absence or presence,
+	// as in `Labels.tier IS NULL` (key doesn't exist) or `Labels.tier IS NOT NULL` (key exists).
+	// Comparison results can be tested with `IS TRUE`, `IS FALSE`, `IS NOT TRUE`, and `IS NOT FALSE`.
+	// These are useful for nullable columns: `MergeSourceID = '<uuid>' IS NOT FALSE` matches rows where MergeSourceID equals the value OR is NULL.
+	// The `IN` and `NOT IN` operators accept a comma-separated list of values in parentheses,
+	// such as `Slug IN ('slugone', 'slugtwo')` or `Labels.environment IN ('prod', 'staging')`.
+	// Conjunctions are supported using the `AND` operator.
+	// An example conjunction is:
+	// `CreatedAt >= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.
+	//
+	// Supported attributes for filtering on Unit: Annotations, ApplyGates, ApplyWarnings, ChangeSetID, Conflicts, CreatedAt, DataHash, DeleteGates, DestroyGates, DisplayName, FromLinkID, HeadRevisionID, HeadRevisionNum, HeadUnitEventNum, HiddenReason, Labels, LastChangeDescription, LastReleasedRevisionNum, LinkFindings, NeededPaths, OrganizationID, Permissions, ProvidedPaths, Slug, SpaceID, TargetID, ToolchainType, UnitID, Unreleasable, UpdatedAt, UpstreamRevisionNum, UpstreamSpaceID, UpstreamUnitID, ValidationErrors, ValidationResults, ValidationTriggerIDs, ValidationWarnings, ValueTriggerIDs, Values.
+	//
+	// Finding all units created by cloning can be done using the expression `UpstreamRevisionNum > 0`. Clones of a specific unit can be found by additionally filtering based on `UpstreamUnitID`. Units never released can be found using `LastReleasedRevisionNum = 0`. Units with unreleased changes can be found with `HeadRevisionNum > LastReleasedRevisionNum AND ReleaseTargetID IS NOT NULL AND Unreleasable = false`.
+	//
+	// The whole string must be query-encoded.
+	Where *string `form:"where,omitempty" json:"where,omitempty" yaml:"where,omitempty"`
+
+	// Filter UUID of a Filter entity to apply to the Unit list.
+	//
+	// The Filter must be in the same Organization as the user credentials.
+	//
+	// The Filter's From field must match the entity type being filtered (Unit).
+	//
+	// For Space-resident entities, if the Filter has a FromSpaceID, it must match the operation's SpaceID.
+	//
+	// The Filter's Where clause will be combined with any explicit 'where' parameter using AND logic.
+	//
+	// If both 'filter' and 'where' parameters are specified, they are combined with AND logic.
+	Filter *string `form:"filter,omitempty" json:"filter,omitempty" yaml:"filter,omitempty"`
+
+	// Contains Free text search that approximately matches the specified string against string fields and map keys/values.
+	//
+	// The search is case-insensitive and uses pattern matching to find entities containing the text.
+	//
+	// Searchable string fields include attributes like Slug, DisplayName, and string-typed custom fields.
+	//
+	// For map fields (like Labels and Annotations), the search matches both map keys and values.
+	//
+	// The search uses OR logic across all searchable fields, so matching any field will return the entity.
+	//
+	// If both 'where' and 'contains' parameters are specified, they are combined with AND logic.
+	//
+	// Searchable fields for Unit include string and map-type attributes from the queryable attributes list.
+	//
+	// The whole string must be query-encoded.
+	Contains *string `form:"contains,omitempty" json:"contains,omitempty" yaml:"contains,omitempty"`
+
+	// WherePermission Only return Unit entities on which the caller has this permission, as well as View, which every entity listed needs.
+	//
+	// A list made to choose an entity to act on can name the permission the action needs, such as Edit to change it or Use to refer to it from another entity, so that it leaves out the entities the action would be refused on.
+	//
+	// Supported values: Manage, Edit, Use, View, Approve, TargetEdit, TargetView.
+	WherePermission *SearchUnitBlameParamsWherePermission `form:"where_permission,omitempty" json:"where_permission,omitempty" yaml:"where_permission,omitempty"`
+
+	// IncludeHidden Hidden Unit entities, those with a HiddenReason, are left out of the results, or of what a bulk operation acts on, unless this names their HiddenReason.
+	//
+	// It is a comma-separated list of HiddenReasons, or `*` for all of them.
+	//
+	// A where clause naming the entities, by their Slug or ID with `=` or `IN`, or naming HiddenReason at all, also returns hidden entities it selects.
+	//
+	// ConfigHub/YAML Units, which hold the configuration of entities, are hidden with the HiddenReason `BackingUnit`.
+	IncludeHidden *string `form:"include_hidden,omitempty" json:"include_hidden,omitempty" yaml:"include_hidden,omitempty"`
+
+	// View UUID of a View of Unit. Its Filter selects the Units as the filter parameter does, so the two may not both be specified.
+	View *string `form:"view,omitempty" json:"view,omitempty" yaml:"view,omitempty"`
+
+	// Limit Maximum number of Units to return the blame of; 50 when not given, and larger values are rejected with 400. When there may be more, the response has a ConfigHub-Continue header to pass as the continue parameter of the next request.
+	Limit *int `form:"limit,omitempty" json:"limit,omitempty" yaml:"limit,omitempty"`
+
+	// OrderBy Comma-separated list of fields to sort Unit results by, each in the form 'ASC|DESC:FieldName' or just 'FieldName'.
+	//
+	// Field names are case-sensitive and PascalCase, as in the JSON encoding. Sort direction defaults to ASC when the 'DIRECTION:' prefix is omitted.
+	//
+	// Supported attributes for ordering Unit: ChangeSetID, CreatedAt, DataHash, DisplayName, HeadRevisionID, HeadRevisionNum, HeadUnitEventNum, HiddenReason, LastChangeDescription, LastReleasedRevisionNum, OrganizationID, Slug, SpaceID, ToolchainType, UnitID, Unreleasable, UpdatedAt, UpstreamRevisionNum, UpstreamUnitID.
+	//
+	// Example: 'DESC:CreatedAt' or 'DisplayName,DESC:CreatedAt'.
+	//
+	// Results are ordered by the Unit's ID after the fields named, and by the ID alone if none are.
+	//
+	// The whole string must be query-encoded.
+	OrderBy *string `form:"order_by,omitempty" json:"order_by,omitempty" yaml:"order_by,omitempty"`
+
+	// Continue The token from the ConfigHub-Continue header of the previous page, to return the Unit entities after it.
+	//
+	// The request's other parameters, except limit, must be the same as those of the request that returned the token.
+	//
+	// Keep reading until a response has no such header: a page can hold fewer entities than the limit, or none, and still be followed by more.
+	Continue *string `form:"continue,omitempty" json:"continue,omitempty" yaml:"continue,omitempty"`
+
+	// ResourceType Resource type: Resource type to match for the desired ToolchainType, for example apps/v1/Deployment
+	ResourceType *string `form:"resource_type,omitempty" json:"resource_type,omitempty" yaml:"resource_type,omitempty"`
+
+	// WhereData Where data: The specified string is an expression for the purpose of evaluating whether the configuration data matches the filter. It supports conjunctions using `AND` of relational expressions of the form *path* *operator* *literal*. The path specifications are dot-separated, for both map fields and array indices, as in `spec.template.spec.containers.0.image = 'ghcr.io/headlamp-k8s/headlamp:latest' AND spec.replicas > 1`. Path expressions support `*` for wildcard array or map segments and `?key=value` syntax for associative matches of array elements containing objects with a `key` attribute. Strings support the following operators: `<`, `>`, `<=`, `>=`, `=`, `!=`, `LIKE`, `ILIKE`, `~~`, `!~~`, `~`, `!~`, `~*`, `!~*`, `IN`, `NOT IN`. String pattern operators: `LIKE` and `~~` for pattern matching with `%` and `_` wildcards, `ILIKE` for case-insensitive pattern matching, `!~~` for NOT LIKE. String regex operators: `~` for regex matching, `~*` for case-insensitive regex, `!~` and `!~*` for regex not matching (case-sensitive and insensitive). Integers support the following operators: `<`, `>`, `<=`, `>=`, `=`, `!=`, `IN`, `NOT IN`. Boolean values support equality and inequality only. The `IN` and `NOT IN` operators accept a comma-separated list of values in parentheses, such as `spec.template.spec.containers.0.image#reference IN (':latest', ':arm64-latest')`. The syntax `.|` splits the path: the left side selects, and the right side is a property of what was selected. On the right side of a `.|`, and only there, `!=` is true when the property is absent: `spec.containers.*.|image != 'nginx'` selects the containers and asks that none of their images be nginx, which a container with no image satisfies. Everywhere else a path that is not present is not a match, `!=` included. String literals are quoted with single quotes, such as `'string'`. Integer and boolean literals are also supported for attributes of those types. The whole string must be query-encoded.
+	WhereData *string `form:"where_data,omitempty" json:"where_data,omitempty" yaml:"where_data,omitempty"`
+
+	// WhereDataEngine Which engine answers where_data and resource_type: `sql` (the default) evaluates the expression against the stored resource projection in a single query, falling back to the function engine for the expressions it cannot translate; `function` invokes the where-filter function on each candidate Unit, reading every one's configuration; `shadow` runs both, answers with `function`, and logs any disagreement. Temporary: `function` is the escape hatch for one release, after which this parameter goes away.
+	WhereDataEngine *string `form:"where_data_engine,omitempty" json:"where_data_engine,omitempty" yaml:"where_data_engine,omitempty"`
+
+	// WhereTrigger Where expression to match Triggers. Matched triggers are invoked on each unit to filter by validation results. Use with triggers_passed to control whether passing or failing units are returned (default: failing).
+	WhereTrigger *string `form:"where_trigger,omitempty" json:"where_trigger,omitempty" yaml:"where_trigger,omitempty"`
+
+	// TriggerFilter Filter UUID (with From=Trigger). The filter's matching triggers are invoked on units to filter by validation results. Can be combined with where_trigger.
+	TriggerFilter *string `form:"trigger_filter,omitempty" json:"trigger_filter,omitempty" yaml:"trigger_filter,omitempty"`
+
+	// TriggersPassed When true, return units that pass trigger validation; when false (default), return units that fail. Only applies when where_trigger or trigger_filter is specified.
+	TriggersPassed *bool `form:"triggers_passed,omitempty" json:"triggers_passed,omitempty" yaml:"triggers_passed,omitempty"`
+
+	// Path Only the fields whose path contains this substring.
+	Path *string `form:"path,omitempty" json:"path,omitempty" yaml:"path,omitempty"`
+
+	// Resource Only the fields of this resource, named as <type>/<name> or <name>; a substring of either matches.
+	Resource *string `form:"resource,omitempty" json:"resource,omitempty" yaml:"resource,omitempty"`
+
+	// Flags Only the fields with at least one of these flags, comma-separated. Conflict,Absent,Finding,ValidationError,ValidationWarning selects the fields that need attention.
+	//
+	// Supported values: Protected, Guarded, Conflict, Absent, Finding, ValidationError, ValidationWarning, Upgraded, SetByLink, SetByTrigger, ChangeOrder, Unreleased, Needed, Provided.
+	Flags *string `form:"flags,omitempty" json:"flags,omitempty" yaml:"flags,omitempty"`
+
+	// Upstream Follow each merge and Link resolve into the unit it took the value from, to where the value was set. Default true; false reports each unit's own record, which names the upstream unit without reading it.
+	Upstream *bool `form:"upstream,omitempty" json:"upstream,omitempty" yaml:"upstream,omitempty"`
+
+	// UpstreamDepth How many upstream units to follow before stopping.
+	UpstreamDepth *int `form:"upstream_depth,omitempty" json:"upstream_depth,omitempty" yaml:"upstream_depth,omitempty"`
+
+	// IncludeComments Include the $comment$ pseudo-fields that carry YAML comments.
+	IncludeComments *bool `form:"include_comments,omitempty" json:"include_comments,omitempty" yaml:"include_comments,omitempty"`
+}
+
+// SearchUnitBlameParamsWherePermission defines parameters for SearchUnitBlame.
+type SearchUnitBlameParamsWherePermission string
 
 // SearchUnitDataParams defines parameters for SearchUnitData.
 type SearchUnitDataParams struct {

@@ -29,8 +29,8 @@ import (
 // The listener's lifecycle: claim the Channel, write the commands it declares itself, verify
 // the Channel declares what the handlers handle, poll under the lease, dispatch runs and
 // events, report outcomes, and on shutdown drain, report and release in that order. Its loop
-// is the worker tier's long-poll loop, carried over with its transient-failure policy; what it
-// does on the wire is the generated client.
+// is a long-poll loop with a transient-failure policy; what it does on the wire is the
+// generated client.
 
 const (
 	// pollTimeoutSeconds is how long each poll asks the server to hold. The server caps it at 60.
@@ -619,7 +619,7 @@ func (l *Listener) execute(ctx context.Context, handler Handler, run *Run) (resu
 	return handler(ctx, run)
 }
 
-// report sends a run's outcome with the retry policy the worker tier's results had: five
+// report sends a run's outcome with a retry policy of five
 // minutes in all, exponential backoff capped at thirty seconds. A 4xx other than 409 is
 // permanent; the server's own answer to a late result is 200 with the run as it is.
 func (l *Listener) report(run *Run, result goclientnew.CommandRunResult) {

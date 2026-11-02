@@ -198,6 +198,15 @@ func resolveComponentID(ref string) (uuid.UUID, error) {
 	return component.Component.ComponentID, nil
 }
 
+// resolveSpaceID resolves a Space by slug or ID.
+func resolveSpaceID(ref string) (uuid.UUID, error) {
+	space, err := resolveSpace(ref, "SpaceID,Slug")
+	if err != nil {
+		return uuid.Nil, err
+	}
+	return space.Space.SpaceID, nil
+}
+
 func resolveFilterID(ref string) (uuid.UUID, error) {
 	filter, err := resolveFilter(ref, defaultSpaceID(), idSelect("FilterID"))
 	if err != nil {

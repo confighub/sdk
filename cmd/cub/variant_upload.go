@@ -120,14 +120,18 @@ A README.md becomes an unreleasable AppConfig/Text Unit named README.md, which t
 shows as the Variant's Readme.
 
 A pod template that uses ConfigMaps from the bundle gets a hash annotation for each,
-hash.confighub.com/<configmap>, which Needs/Provides fills with that ConfigMap's hash so
-the pods roll when it changes. A ConfigMap rendered immutable gets none, since its name
-changes with its content, and a pod template with a confighub.com/Hash annotation of
-its own is left alone. The annotations are added by the set-configmap-hash-annotations
-function, which can be run on workloads that weren't uploaded too. The upload creates the Triggers this needs, labeled Pack:
-configmaps -- set-hash for ConfigMaps authored as they are, and prune-configmaps for
-immutable renderings -- in a Space that runs its own Triggers and doesn't already run
-them. A Space selecting its Triggers from elsewhere is told which are missing instead.
+hash.confighub.com/<configmap>, which is filled with that ConfigMap's hash so the pods
+roll when it changes. For a ConfigMap authored as it is, the upload creates a
+TransformPaths Link from the workload's Unit to the ConfigMap's, beside the
+Needs/Provides one, that hashes the ConfigMap's data and binaryData with get-hash and
+writes the annotation. A ConfigMap rendered mutable from AppConfig carries its hash,
+which Needs/Provides fills the annotation with. A ConfigMap rendered immutable gets none,
+since its name changes with its content, and a pod template with a confighub.com/Hash
+annotation of its own is left alone. The annotations are added by the
+set-configmap-hash-annotations function, which can be run on workloads that weren't
+uploaded too. For immutable renderings the upload creates a prune-configmaps Trigger,
+labeled Pack: configmaps, in a Space that runs its own Triggers and doesn't already run
+one. A Space selecting its Triggers from elsewhere is told it is missing instead.
 
 Links between Units are inferred from references, label selectors, and custom-resource
 → CRD relationships. Because ConfigHub does not break dependency cycles, any cycle in

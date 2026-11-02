@@ -10,7 +10,8 @@ import (
 
 // AnnotationUpstreamSpaceID is the Space annotation "cub variant create" stamps
 // on a new variant space, recording the UUID of the upstream space it was cloned
-// from. "cub variant promote" reads it to find the space to promote from.
+// from. "cub variant promote" reads it to find the space to promote from when
+// the space's UpstreamSpaceID is not set.
 const AnnotationUpstreamSpaceID = cubapi.AnnotationUpstreamSpaceID
 
 // variantCmd is inherently multi-space: it reads from an upstream space and

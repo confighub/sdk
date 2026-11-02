@@ -1535,7 +1535,8 @@
       },
       "UpstreamSpaceID": {
         "dataType": "uuid",
-        "references": "Space"
+        "references": "Space",
+        "expandable": true
       }
     },
     "Tag": {

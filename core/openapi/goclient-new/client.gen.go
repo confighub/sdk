@@ -2451,6 +2451,13 @@ type ClientInterface interface {
 	// Corresponds with PUT /space/{space_id}/unit/{unit_id} (the `UpdateUnit` operationId).
 	UpdateUnit(ctx context.Context, spaceId openapi_types.UUID, unitId openapi_types.UUID, params *UpdateUnitParams, body UpdateUnitJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error)
 
+	// GetUnitBlame Get what set each field of a Unit
+	//
+	// Returns, for every field of a Unit's configuration, what set the value that is there -- the change, who made it, when and why -- following each merge and Link resolve upstream to where the value was set, and everything else recorded about the field: whether it is protected or guarded, the conflicts and Link findings about it, the failed validation checks that name it, and whether a NeedsProvides Link needs or provides it. A field the Unit does not have is listed, with Absent, when a conflict names it.
+	//
+	// Corresponds with GET /space/{space_id}/unit/{unit_id}/blame (the `GetUnitBlame` operationId).
+	GetUnitBlame(ctx context.Context, spaceId openapi_types.UUID, unitId openapi_types.UUID, params *GetUnitBlameParams, reqEditors ...RequestEditorFn) (*http.Response, error)
+
 	// ResolveUnitConflictsWithBody Apply or dismiss a unit's outstanding merge conflicts
 	//
 	// Act on the parts of the last merge's patch that were not applied. Apply replays the withheld change with every path eligible; Dismiss drops it without changing the configuration data. Either way the selected conflicts leave the Unit's outstanding set. Requires Edit permission.
@@ -2526,6 +2533,13 @@ type ClientInterface interface {
 	//
 	// Corresponds with GET /space/{space_id}/unit/{unit_id}/mutation_sources (the `GetUnitMutationSources` operationId).
 	GetUnitMutationSources(ctx context.Context, spaceId openapi_types.UUID, unitId openapi_types.UUID, reqEditors ...RequestEditorFn) (*http.Response, error)
+
+	// GetUnitPath Get everything recorded about one field of a Unit
+	//
+	// Returns everything recorded about one field of a Unit's configuration: the field as the Unit's blame reports it, its own annotations, whether the Unit's last Release includes its value, and each change from this Unit out to where the value was set with the Mutation and Revision it was read from. With history, it also returns every change the Unit recorded to the field. A field that names nothing is a 404; one that names several fields, or a value holding several, is a 400 whose message lists them.
+	//
+	// Corresponds with GET /space/{space_id}/unit/{unit_id}/path (the `GetUnitPath` operationId).
+	GetUnitPath(ctx context.Context, spaceId openapi_types.UUID, unitId openapi_types.UUID, params *GetUnitPathParams, reqEditors ...RequestEditorFn) (*http.Response, error)
 
 	// SetUnitProtectionWithBody Set path protection on a unit
 	//
@@ -3015,6 +3029,13 @@ type ClientInterface interface {
 	//
 	// Corresponds with POST /unit/tag (the `BulkTagUnits` operationId).
 	BulkTagUnits(ctx context.Context, params *BulkTagUnitsParams, body BulkTagUnitsJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error)
+
+	// SearchUnitBlame Get what set each field of many Units across spaces
+	//
+	// Returns the blame of every Unit the where clause selects, across every Space in the organization, a page of Units at a time. This is the bulk counterpart of the single-Unit blame subresource. Scope it to one Space with a where clause for a variant, or to several for several variants: a field has the same REF in every variant of a Unit. A Unit whose blame cannot be read carries an Error and no fields.
+	//
+	// Corresponds with GET /unit_blame (the `SearchUnitBlame` operationId).
+	SearchUnitBlame(ctx context.Context, params *SearchUnitBlameParams, reqEditors ...RequestEditorFn) (*http.Response, error)
 
 	// SearchUnitData Get the config data of many Units across spaces
 	//
@@ -8748,6 +8769,23 @@ func (c *Client) UpdateUnit(ctx context.Context, spaceId openapi_types.UUID, uni
 	return c.Client.Do(req)
 }
 
+// GetUnitBlame Get what set each field of a Unit
+//
+// Returns, for every field of a Unit's configuration, what set the value that is there -- the change, who made it, when and why -- following each merge and Link resolve upstream to where the value was set, and everything else recorded about the field: whether it is protected or guarded, the conflicts and Link findings about it, the failed validation checks that name it, and whether a NeedsProvides Link needs or provides it. A field the Unit does not have is listed, with Absent, when a conflict names it.
+//
+// Corresponds with GET /space/{space_id}/unit/{unit_id}/blame (the `GetUnitBlame` operationId).
+func (c *Client) GetUnitBlame(ctx context.Context, spaceId openapi_types.UUID, unitId openapi_types.UUID, params *GetUnitBlameParams, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewGetUnitBlameRequest(c.Server, spaceId, unitId, params)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
 // ResolveUnitConflictsWithBody Apply or dismiss a unit's outstanding merge conflicts
 //
 // Act on the parts of the last merge's patch that were not applied. Apply replays the withheld change with every path eligible; Dismiss drops it without changing the configuration data. Either way the selected conflicts leave the Unit's outstanding set. Requires Edit permission.
@@ -8914,6 +8952,23 @@ func (c *Client) GetExtendedMutation(ctx context.Context, spaceId openapi_types.
 // Corresponds with GET /space/{space_id}/unit/{unit_id}/mutation_sources (the `GetUnitMutationSources` operationId).
 func (c *Client) GetUnitMutationSources(ctx context.Context, spaceId openapi_types.UUID, unitId openapi_types.UUID, reqEditors ...RequestEditorFn) (*http.Response, error) {
 	req, err := NewGetUnitMutationSourcesRequest(c.Server, spaceId, unitId)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+// GetUnitPath Get everything recorded about one field of a Unit
+//
+// Returns everything recorded about one field of a Unit's configuration: the field as the Unit's blame reports it, its own annotations, whether the Unit's last Release includes its value, and each change from this Unit out to where the value was set with the Mutation and Revision it was read from. With history, it also returns every change the Unit recorded to the field. A field that names nothing is a 404; one that names several fields, or a value holding several, is a 400 whose message lists them.
+//
+// Corresponds with GET /space/{space_id}/unit/{unit_id}/path (the `GetUnitPath` operationId).
+func (c *Client) GetUnitPath(ctx context.Context, spaceId openapi_types.UUID, unitId openapi_types.UUID, params *GetUnitPathParams, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewGetUnitPathRequest(c.Server, spaceId, unitId, params)
 	if err != nil {
 		return nil, err
 	}
@@ -10053,6 +10108,23 @@ func (c *Client) BulkTagUnitsWithBody(ctx context.Context, params *BulkTagUnitsP
 // Corresponds with POST /unit/tag (the `BulkTagUnits` operationId).
 func (c *Client) BulkTagUnits(ctx context.Context, params *BulkTagUnitsParams, body BulkTagUnitsJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error) {
 	req, err := NewBulkTagUnitsRequest(c.Server, params, body)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+// SearchUnitBlame Get what set each field of many Units across spaces
+//
+// Returns the blame of every Unit the where clause selects, across every Space in the organization, a page of Units at a time. This is the bulk counterpart of the single-Unit blame subresource. Scope it to one Space with a where clause for a variant, or to several for several variants: a field has the same REF in every variant of a Unit. A Unit whose blame cannot be read carries an Error and no fields.
+//
+// Corresponds with GET /unit_blame (the `SearchUnitBlame` operationId).
+func (c *Client) SearchUnitBlame(ctx context.Context, params *SearchUnitBlameParams, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewSearchUnitBlameRequest(c.Server, params)
 	if err != nil {
 		return nil, err
 	}
@@ -35277,6 +35349,134 @@ func NewUpdateUnitRequestWithBody(server string, spaceId openapi_types.UUID, uni
 	return req, nil
 }
 
+// NewGetUnitBlameRequest constructs an http.Request for the GetUnitBlame method
+func NewGetUnitBlameRequest(server string, spaceId openapi_types.UUID, unitId openapi_types.UUID, params *GetUnitBlameParams) (*http.Request, error) {
+	var err error
+
+	var pathParam0 string
+
+	pathParam0, err = runtime.StyleParamWithOptions("simple", false, "space_id", spaceId, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationPath, Type: "string", Format: "uuid"})
+	if err != nil {
+		return nil, err
+	}
+
+	var pathParam1 string
+
+	pathParam1, err = runtime.StyleParamWithOptions("simple", false, "unit_id", unitId, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationPath, Type: "string", Format: "uuid"})
+	if err != nil {
+		return nil, err
+	}
+
+	serverURL, err := url.Parse(server)
+	if err != nil {
+		return nil, err
+	}
+
+	operationPath := fmt.Sprintf("/space/%s/unit/%s/blame", pathParam0, pathParam1)
+	if operationPath[0] == '/' {
+		operationPath = "." + operationPath
+	}
+
+	queryURL, err := serverURL.Parse(operationPath)
+	if err != nil {
+		return nil, err
+	}
+
+	if params != nil {
+		// queryValues collects non-styled parameters (passthrough, JSON)
+		// that are safe to round-trip through url.Values.Encode().
+		queryValues := queryURL.Query()
+		// rawQueryFragments collects pre-encoded query fragments from
+		// styled parameters, preserving literal commas as delimiters
+		// per the OpenAPI spec (e.g. "color=blue,black,brown").
+		var rawQueryFragments []string
+
+		if params.Path != nil {
+
+			if queryFrag, err := runtime.StyleParamWithOptions("form", true, "path", *params.Path, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationQuery, Type: "string", Format: ""}); err != nil {
+				return nil, err
+			} else {
+				for _, qp := range strings.Split(queryFrag, "&") {
+					rawQueryFragments = append(rawQueryFragments, qp)
+				}
+			}
+
+		}
+
+		if params.Resource != nil {
+
+			if queryFrag, err := runtime.StyleParamWithOptions("form", true, "resource", *params.Resource, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationQuery, Type: "string", Format: ""}); err != nil {
+				return nil, err
+			} else {
+				for _, qp := range strings.Split(queryFrag, "&") {
+					rawQueryFragments = append(rawQueryFragments, qp)
+				}
+			}
+
+		}
+
+		if params.Flags != nil {
+
+			if queryFrag, err := runtime.StyleParamWithOptions("form", true, "flags", *params.Flags, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationQuery, Type: "string", Format: ""}); err != nil {
+				return nil, err
+			} else {
+				for _, qp := range strings.Split(queryFrag, "&") {
+					rawQueryFragments = append(rawQueryFragments, qp)
+				}
+			}
+
+		}
+
+		if params.Upstream != nil {
+
+			if queryFrag, err := runtime.StyleParamWithOptions("form", true, "upstream", *params.Upstream, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationQuery, Type: "boolean", Format: ""}); err != nil {
+				return nil, err
+			} else {
+				for _, qp := range strings.Split(queryFrag, "&") {
+					rawQueryFragments = append(rawQueryFragments, qp)
+				}
+			}
+
+		}
+
+		if params.UpstreamDepth != nil {
+
+			if queryFrag, err := runtime.StyleParamWithOptions("form", true, "upstream_depth", *params.UpstreamDepth, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationQuery, Type: "integer", Format: ""}); err != nil {
+				return nil, err
+			} else {
+				for _, qp := range strings.Split(queryFrag, "&") {
+					rawQueryFragments = append(rawQueryFragments, qp)
+				}
+			}
+
+		}
+
+		if params.IncludeComments != nil {
+
+			if queryFrag, err := runtime.StyleParamWithOptions("form", true, "include_comments", *params.IncludeComments, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationQuery, Type: "boolean", Format: ""}); err != nil {
+				return nil, err
+			} else {
+				for _, qp := range strings.Split(queryFrag, "&") {
+					rawQueryFragments = append(rawQueryFragments, qp)
+				}
+			}
+
+		}
+
+		if encoded := queryValues.Encode(); encoded != "" {
+			rawQueryFragments = append(rawQueryFragments, encoded)
+		}
+		queryURL.RawQuery = strings.Join(rawQueryFragments, "&")
+	}
+
+	req, err := http.NewRequest(http.MethodGet, queryURL.String(), nil)
+	if err != nil {
+		return nil, err
+	}
+
+	return req, nil
+}
+
 // NewResolveUnitConflictsRequest calls the generic ResolveUnitConflicts builder with application/json body
 func NewResolveUnitConflictsRequest(server string, spaceId openapi_types.UUID, unitId openapi_types.UUID, body ResolveUnitConflictsJSONRequestBody) (*http.Request, error) {
 	var bodyReader io.Reader
@@ -36053,6 +36253,118 @@ func NewGetUnitMutationSourcesRequest(server string, spaceId openapi_types.UUID,
 	queryURL, err := serverURL.Parse(operationPath)
 	if err != nil {
 		return nil, err
+	}
+
+	req, err := http.NewRequest(http.MethodGet, queryURL.String(), nil)
+	if err != nil {
+		return nil, err
+	}
+
+	return req, nil
+}
+
+// NewGetUnitPathRequest constructs an http.Request for the GetUnitPath method
+func NewGetUnitPathRequest(server string, spaceId openapi_types.UUID, unitId openapi_types.UUID, params *GetUnitPathParams) (*http.Request, error) {
+	var err error
+
+	var pathParam0 string
+
+	pathParam0, err = runtime.StyleParamWithOptions("simple", false, "space_id", spaceId, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationPath, Type: "string", Format: "uuid"})
+	if err != nil {
+		return nil, err
+	}
+
+	var pathParam1 string
+
+	pathParam1, err = runtime.StyleParamWithOptions("simple", false, "unit_id", unitId, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationPath, Type: "string", Format: "uuid"})
+	if err != nil {
+		return nil, err
+	}
+
+	serverURL, err := url.Parse(server)
+	if err != nil {
+		return nil, err
+	}
+
+	operationPath := fmt.Sprintf("/space/%s/unit/%s/path", pathParam0, pathParam1)
+	if operationPath[0] == '/' {
+		operationPath = "." + operationPath
+	}
+
+	queryURL, err := serverURL.Parse(operationPath)
+	if err != nil {
+		return nil, err
+	}
+
+	if params != nil {
+		// queryValues collects non-styled parameters (passthrough, JSON)
+		// that are safe to round-trip through url.Values.Encode().
+		queryValues := queryURL.Query()
+		// rawQueryFragments collects pre-encoded query fragments from
+		// styled parameters, preserving literal commas as delimiters
+		// per the OpenAPI spec (e.g. "color=blue,black,brown").
+		var rawQueryFragments []string
+
+		if queryFrag, err := runtime.StyleParamWithOptions("form", true, "field", params.Field, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationQuery, Type: "string", Format: ""}); err != nil {
+			return nil, err
+		} else {
+			for _, qp := range strings.Split(queryFrag, "&") {
+				rawQueryFragments = append(rawQueryFragments, qp)
+			}
+		}
+
+		if params.History != nil {
+
+			if queryFrag, err := runtime.StyleParamWithOptions("form", true, "history", *params.History, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationQuery, Type: "boolean", Format: ""}); err != nil {
+				return nil, err
+			} else {
+				for _, qp := range strings.Split(queryFrag, "&") {
+					rawQueryFragments = append(rawQueryFragments, qp)
+				}
+			}
+
+		}
+
+		if params.Resource != nil {
+
+			if queryFrag, err := runtime.StyleParamWithOptions("form", true, "resource", *params.Resource, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationQuery, Type: "string", Format: ""}); err != nil {
+				return nil, err
+			} else {
+				for _, qp := range strings.Split(queryFrag, "&") {
+					rawQueryFragments = append(rawQueryFragments, qp)
+				}
+			}
+
+		}
+
+		if params.Upstream != nil {
+
+			if queryFrag, err := runtime.StyleParamWithOptions("form", true, "upstream", *params.Upstream, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationQuery, Type: "boolean", Format: ""}); err != nil {
+				return nil, err
+			} else {
+				for _, qp := range strings.Split(queryFrag, "&") {
+					rawQueryFragments = append(rawQueryFragments, qp)
+				}
+			}
+
+		}
+
+		if params.UpstreamDepth != nil {
+
+			if queryFrag, err := runtime.StyleParamWithOptions("form", true, "upstream_depth", *params.UpstreamDepth, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationQuery, Type: "integer", Format: ""}); err != nil {
+				return nil, err
+			} else {
+				for _, qp := range strings.Split(queryFrag, "&") {
+					rawQueryFragments = append(rawQueryFragments, qp)
+				}
+			}
+
+		}
+
+		if encoded := queryValues.Encode(); encoded != "" {
+			rawQueryFragments = append(rawQueryFragments, encoded)
+		}
+		queryURL.RawQuery = strings.Join(rawQueryFragments, "&")
 	}
 
 	req, err := http.NewRequest(http.MethodGet, queryURL.String(), nil)
@@ -42206,6 +42518,300 @@ func NewBulkTagUnitsRequestWithBody(server string, params *BulkTagUnitsParams, c
 	return req, nil
 }
 
+// NewSearchUnitBlameRequest constructs an http.Request for the SearchUnitBlame method
+func NewSearchUnitBlameRequest(server string, params *SearchUnitBlameParams) (*http.Request, error) {
+	var err error
+
+	serverURL, err := url.Parse(server)
+	if err != nil {
+		return nil, err
+	}
+
+	operationPath := fmt.Sprintf("/unit_blame")
+	if operationPath[0] == '/' {
+		operationPath = "." + operationPath
+	}
+
+	queryURL, err := serverURL.Parse(operationPath)
+	if err != nil {
+		return nil, err
+	}
+
+	if params != nil {
+		// queryValues collects non-styled parameters (passthrough, JSON)
+		// that are safe to round-trip through url.Values.Encode().
+		queryValues := queryURL.Query()
+		// rawQueryFragments collects pre-encoded query fragments from
+		// styled parameters, preserving literal commas as delimiters
+		// per the OpenAPI spec (e.g. "color=blue,black,brown").
+		var rawQueryFragments []string
+
+		if params.Where != nil {
+
+			if queryFrag, err := runtime.StyleParamWithOptions("form", true, "where", *params.Where, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationQuery, Type: "string", Format: ""}); err != nil {
+				return nil, err
+			} else {
+				for _, qp := range strings.Split(queryFrag, "&") {
+					rawQueryFragments = append(rawQueryFragments, qp)
+				}
+			}
+
+		}
+
+		if params.Filter != nil {
+
+			if queryFrag, err := runtime.StyleParamWithOptions("form", true, "filter", *params.Filter, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationQuery, Type: "string", Format: ""}); err != nil {
+				return nil, err
+			} else {
+				for _, qp := range strings.Split(queryFrag, "&") {
+					rawQueryFragments = append(rawQueryFragments, qp)
+				}
+			}
+
+		}
+
+		if params.Contains != nil {
+
+			if queryFrag, err := runtime.StyleParamWithOptions("form", true, "contains", *params.Contains, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationQuery, Type: "string", Format: ""}); err != nil {
+				return nil, err
+			} else {
+				for _, qp := range strings.Split(queryFrag, "&") {
+					rawQueryFragments = append(rawQueryFragments, qp)
+				}
+			}
+
+		}
+
+		if params.WherePermission != nil {
+
+			if queryFrag, err := runtime.StyleParamWithOptions("form", true, "where_permission", *params.WherePermission, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationQuery, Type: "string", Format: ""}); err != nil {
+				return nil, err
+			} else {
+				for _, qp := range strings.Split(queryFrag, "&") {
+					rawQueryFragments = append(rawQueryFragments, qp)
+				}
+			}
+
+		}
+
+		if params.IncludeHidden != nil {
+
+			if queryFrag, err := runtime.StyleParamWithOptions("form", true, "include_hidden", *params.IncludeHidden, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationQuery, Type: "string", Format: ""}); err != nil {
+				return nil, err
+			} else {
+				for _, qp := range strings.Split(queryFrag, "&") {
+					rawQueryFragments = append(rawQueryFragments, qp)
+				}
+			}
+
+		}
+
+		if params.View != nil {
+
+			if queryFrag, err := runtime.StyleParamWithOptions("form", true, "view", *params.View, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationQuery, Type: "string", Format: ""}); err != nil {
+				return nil, err
+			} else {
+				for _, qp := range strings.Split(queryFrag, "&") {
+					rawQueryFragments = append(rawQueryFragments, qp)
+				}
+			}
+
+		}
+
+		if params.Limit != nil {
+
+			if queryFrag, err := runtime.StyleParamWithOptions("form", true, "limit", *params.Limit, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationQuery, Type: "integer", Format: ""}); err != nil {
+				return nil, err
+			} else {
+				for _, qp := range strings.Split(queryFrag, "&") {
+					rawQueryFragments = append(rawQueryFragments, qp)
+				}
+			}
+
+		}
+
+		if params.OrderBy != nil {
+
+			if queryFrag, err := runtime.StyleParamWithOptions("form", true, "order_by", *params.OrderBy, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationQuery, Type: "string", Format: ""}); err != nil {
+				return nil, err
+			} else {
+				for _, qp := range strings.Split(queryFrag, "&") {
+					rawQueryFragments = append(rawQueryFragments, qp)
+				}
+			}
+
+		}
+
+		if params.Continue != nil {
+
+			if queryFrag, err := runtime.StyleParamWithOptions("form", true, "continue", *params.Continue, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationQuery, Type: "string", Format: ""}); err != nil {
+				return nil, err
+			} else {
+				for _, qp := range strings.Split(queryFrag, "&") {
+					rawQueryFragments = append(rawQueryFragments, qp)
+				}
+			}
+
+		}
+
+		if params.ResourceType != nil {
+
+			if queryFrag, err := runtime.StyleParamWithOptions("form", true, "resource_type", *params.ResourceType, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationQuery, Type: "string", Format: ""}); err != nil {
+				return nil, err
+			} else {
+				for _, qp := range strings.Split(queryFrag, "&") {
+					rawQueryFragments = append(rawQueryFragments, qp)
+				}
+			}
+
+		}
+
+		if params.WhereData != nil {
+
+			if queryFrag, err := runtime.StyleParamWithOptions("form", true, "where_data", *params.WhereData, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationQuery, Type: "string", Format: ""}); err != nil {
+				return nil, err
+			} else {
+				for _, qp := range strings.Split(queryFrag, "&") {
+					rawQueryFragments = append(rawQueryFragments, qp)
+				}
+			}
+
+		}
+
+		if params.WhereDataEngine != nil {
+
+			if queryFrag, err := runtime.StyleParamWithOptions("form", true, "where_data_engine", *params.WhereDataEngine, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationQuery, Type: "string", Format: ""}); err != nil {
+				return nil, err
+			} else {
+				for _, qp := range strings.Split(queryFrag, "&") {
+					rawQueryFragments = append(rawQueryFragments, qp)
+				}
+			}
+
+		}
+
+		if params.WhereTrigger != nil {
+
+			if queryFrag, err := runtime.StyleParamWithOptions("form", true, "where_trigger", *params.WhereTrigger, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationQuery, Type: "string", Format: ""}); err != nil {
+				return nil, err
+			} else {
+				for _, qp := range strings.Split(queryFrag, "&") {
+					rawQueryFragments = append(rawQueryFragments, qp)
+				}
+			}
+
+		}
+
+		if params.TriggerFilter != nil {
+
+			if queryFrag, err := runtime.StyleParamWithOptions("form", true, "trigger_filter", *params.TriggerFilter, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationQuery, Type: "string", Format: ""}); err != nil {
+				return nil, err
+			} else {
+				for _, qp := range strings.Split(queryFrag, "&") {
+					rawQueryFragments = append(rawQueryFragments, qp)
+				}
+			}
+
+		}
+
+		if params.TriggersPassed != nil {
+
+			if queryFrag, err := runtime.StyleParamWithOptions("form", true, "triggers_passed", *params.TriggersPassed, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationQuery, Type: "boolean", Format: ""}); err != nil {
+				return nil, err
+			} else {
+				for _, qp := range strings.Split(queryFrag, "&") {
+					rawQueryFragments = append(rawQueryFragments, qp)
+				}
+			}
+
+		}
+
+		if params.Path != nil {
+
+			if queryFrag, err := runtime.StyleParamWithOptions("form", true, "path", *params.Path, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationQuery, Type: "string", Format: ""}); err != nil {
+				return nil, err
+			} else {
+				for _, qp := range strings.Split(queryFrag, "&") {
+					rawQueryFragments = append(rawQueryFragments, qp)
+				}
+			}
+
+		}
+
+		if params.Resource != nil {
+
+			if queryFrag, err := runtime.StyleParamWithOptions("form", true, "resource", *params.Resource, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationQuery, Type: "string", Format: ""}); err != nil {
+				return nil, err
+			} else {
+				for _, qp := range strings.Split(queryFrag, "&") {
+					rawQueryFragments = append(rawQueryFragments, qp)
+				}
+			}
+
+		}
+
+		if params.Flags != nil {
+
+			if queryFrag, err := runtime.StyleParamWithOptions("form", true, "flags", *params.Flags, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationQuery, Type: "string", Format: ""}); err != nil {
+				return nil, err
+			} else {
+				for _, qp := range strings.Split(queryFrag, "&") {
+					rawQueryFragments = append(rawQueryFragments, qp)
+				}
+			}
+
+		}
+
+		if params.Upstream != nil {
+
+			if queryFrag, err := runtime.StyleParamWithOptions("form", true, "upstream", *params.Upstream, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationQuery, Type: "boolean", Format: ""}); err != nil {
+				return nil, err
+			} else {
+				for _, qp := range strings.Split(queryFrag, "&") {
+					rawQueryFragments = append(rawQueryFragments, qp)
+				}
+			}
+
+		}
+
+		if params.UpstreamDepth != nil {
+
+			if queryFrag, err := runtime.StyleParamWithOptions("form", true, "upstream_depth", *params.UpstreamDepth, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationQuery, Type: "integer", Format: ""}); err != nil {
+				return nil, err
+			} else {
+				for _, qp := range strings.Split(queryFrag, "&") {
+					rawQueryFragments = append(rawQueryFragments, qp)
+				}
+			}
+
+		}
+
+		if params.IncludeComments != nil {
+
+			if queryFrag, err := runtime.StyleParamWithOptions("form", true, "include_comments", *params.IncludeComments, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationQuery, Type: "boolean", Format: ""}); err != nil {
+				return nil, err
+			} else {
+				for _, qp := range strings.Split(queryFrag, "&") {
+					rawQueryFragments = append(rawQueryFragments, qp)
+				}
+			}
+
+		}
+
+		if encoded := queryValues.Encode(); encoded != "" {
+			rawQueryFragments = append(rawQueryFragments, encoded)
+		}
+		queryURL.RawQuery = strings.Join(rawQueryFragments, "&")
+	}
+
+	req, err := http.NewRequest(http.MethodGet, queryURL.String(), nil)
+	if err != nil {
+		return nil, err
+	}
+
+	return req, nil
+}
+
 // NewSearchUnitDataRequest constructs an http.Request for the SearchUnitData method
 func NewSearchUnitDataRequest(server string, params *SearchUnitDataParams) (*http.Request, error) {
 	var err error
@@ -46976,6 +47582,15 @@ type ClientWithResponsesInterface interface {
 	// Corresponds with PUT /space/{space_id}/unit/{unit_id} (the `UpdateUnit` operationId).
 	UpdateUnitWithResponse(ctx context.Context, spaceId openapi_types.UUID, unitId openapi_types.UUID, params *UpdateUnitParams, body UpdateUnitJSONRequestBody, reqEditors ...RequestEditorFn) (*UpdateUnitResponse, error)
 
+	// GetUnitBlameWithResponse Get what set each field of a Unit
+	//
+	// Returns, for every field of a Unit's configuration, what set the value that is there -- the change, who made it, when and why -- following each merge and Link resolve upstream to where the value was set, and everything else recorded about the field: whether it is protected or guarded, the conflicts and Link findings about it, the failed validation checks that name it, and whether a NeedsProvides Link needs or provides it. A field the Unit does not have is listed, with Absent, when a conflict names it.
+	//
+	// Returns a wrapper object for the known response body format(s).
+	//
+	// Corresponds with GET /space/{space_id}/unit/{unit_id}/blame (the `GetUnitBlame` operationId).
+	GetUnitBlameWithResponse(ctx context.Context, spaceId openapi_types.UUID, unitId openapi_types.UUID, params *GetUnitBlameParams, reqEditors ...RequestEditorFn) (*GetUnitBlameResponse, error)
+
 	// ResolveUnitConflictsWithBodyWithResponse Apply or dismiss a unit's outstanding merge conflicts
 	//
 	// Act on the parts of the last merge's patch that were not applied. Apply replays the withheld change with every path eligible; Dismiss drops it without changing the configuration data. Either way the selected conflicts leave the Unit's outstanding set. Requires Edit permission.
@@ -47061,6 +47676,15 @@ type ClientWithResponsesInterface interface {
 	//
 	// Corresponds with GET /space/{space_id}/unit/{unit_id}/mutation_sources (the `GetUnitMutationSources` operationId).
 	GetUnitMutationSourcesWithResponse(ctx context.Context, spaceId openapi_types.UUID, unitId openapi_types.UUID, reqEditors ...RequestEditorFn) (*GetUnitMutationSourcesResponse, error)
+
+	// GetUnitPathWithResponse Get everything recorded about one field of a Unit
+	//
+	// Returns everything recorded about one field of a Unit's configuration: the field as the Unit's blame reports it, its own annotations, whether the Unit's last Release includes its value, and each change from this Unit out to where the value was set with the Mutation and Revision it was read from. With history, it also returns every change the Unit recorded to the field. A field that names nothing is a 404; one that names several fields, or a value holding several, is a 400 whose message lists them.
+	//
+	// Returns a wrapper object for the known response body format(s).
+	//
+	// Corresponds with GET /space/{space_id}/unit/{unit_id}/path (the `GetUnitPath` operationId).
+	GetUnitPathWithResponse(ctx context.Context, spaceId openapi_types.UUID, unitId openapi_types.UUID, params *GetUnitPathParams, reqEditors ...RequestEditorFn) (*GetUnitPathResponse, error)
 
 	// SetUnitProtectionWithBodyWithResponse Set path protection on a unit
 	//
@@ -47596,6 +48220,15 @@ type ClientWithResponsesInterface interface {
 	//
 	// Corresponds with POST /unit/tag (the `BulkTagUnits` operationId).
 	BulkTagUnitsWithResponse(ctx context.Context, params *BulkTagUnitsParams, body BulkTagUnitsJSONRequestBody, reqEditors ...RequestEditorFn) (*BulkTagUnitsResponse, error)
+
+	// SearchUnitBlameWithResponse Get what set each field of many Units across spaces
+	//
+	// Returns the blame of every Unit the where clause selects, across every Space in the organization, a page of Units at a time. This is the bulk counterpart of the single-Unit blame subresource. Scope it to one Space with a where clause for a variant, or to several for several variants: a field has the same REF in every variant of a Unit. A Unit whose blame cannot be read carries an Error and no fields.
+	//
+	// Returns a wrapper object for the known response body format(s).
+	//
+	// Corresponds with GET /unit_blame (the `SearchUnitBlame` operationId).
+	SearchUnitBlameWithResponse(ctx context.Context, params *SearchUnitBlameParams, reqEditors ...RequestEditorFn) (*SearchUnitBlameResponse, error)
 
 	// SearchUnitDataWithResponse Get the config data of many Units across spaces
 	//
@@ -68535,6 +69168,89 @@ func (r UpdateUnitResponse) ContentType() string {
 	return ""
 }
 
+type GetUnitBlameResponse struct {
+	Body         []byte
+	HTTPResponse *http.Response
+	// JSON200 the response for an HTTP 200 `application/json` response
+	JSON200 *UnitBlame
+	// JSON400 the response for an HTTP 400 `application/json` response
+	JSON400 *StandardErrorResponse
+	// JSON401 the response for an HTTP 401 `application/json` response
+	JSON401 *StandardErrorResponse
+	// JSON403 the response for an HTTP 403 `application/json` response
+	JSON403 *StandardErrorResponse
+	// JSON404 the response for an HTTP 404 `application/json` response
+	JSON404 *StandardErrorResponse
+	// JSON500 the response for an HTTP 500 `application/json` response
+	JSON500 *StandardErrorResponse
+	// JSONDefault the response for an HTTP default `application/json` response
+	JSONDefault *StandardErrorResponse
+}
+
+// GetJSON200 returns the response for an HTTP 200 `application/json` response
+func (r GetUnitBlameResponse) GetJSON200() *UnitBlame {
+	return r.JSON200
+}
+
+// GetJSON400 returns the response for an HTTP 400 `application/json` response
+func (r GetUnitBlameResponse) GetJSON400() *StandardErrorResponse {
+	return r.JSON400
+}
+
+// GetJSON401 returns the response for an HTTP 401 `application/json` response
+func (r GetUnitBlameResponse) GetJSON401() *StandardErrorResponse {
+	return r.JSON401
+}
+
+// GetJSON403 returns the response for an HTTP 403 `application/json` response
+func (r GetUnitBlameResponse) GetJSON403() *StandardErrorResponse {
+	return r.JSON403
+}
+
+// GetJSON404 returns the response for an HTTP 404 `application/json` response
+func (r GetUnitBlameResponse) GetJSON404() *StandardErrorResponse {
+	return r.JSON404
+}
+
+// GetJSON500 returns the response for an HTTP 500 `application/json` response
+func (r GetUnitBlameResponse) GetJSON500() *StandardErrorResponse {
+	return r.JSON500
+}
+
+// GetJSONDefault returns the response for an HTTP default `application/json` response
+func (r GetUnitBlameResponse) GetJSONDefault() *StandardErrorResponse {
+	return r.JSONDefault
+}
+
+// GetBody returns the raw response body bytes
+func (r GetUnitBlameResponse) GetBody() []byte {
+	return r.Body
+}
+
+// Status returns HTTPResponse.Status
+func (r GetUnitBlameResponse) Status() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Status
+	}
+	return http.StatusText(0)
+}
+
+// StatusCode returns HTTPResponse.StatusCode
+func (r GetUnitBlameResponse) StatusCode() int {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.StatusCode
+	}
+	return 0
+}
+
+// ContentType is a convenience method to retrieve the Content-Type value from the HTTP response headers
+func (r GetUnitBlameResponse) ContentType() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Header.Get("Content-Type")
+	}
+	return ""
+}
+
 type ResolveUnitConflictsResponse struct {
 	Body         []byte
 	HTTPResponse *http.Response
@@ -69214,6 +69930,89 @@ func (r GetUnitMutationSourcesResponse) StatusCode() int {
 
 // ContentType is a convenience method to retrieve the Content-Type value from the HTTP response headers
 func (r GetUnitMutationSourcesResponse) ContentType() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Header.Get("Content-Type")
+	}
+	return ""
+}
+
+type GetUnitPathResponse struct {
+	Body         []byte
+	HTTPResponse *http.Response
+	// JSON200 the response for an HTTP 200 `application/json` response
+	JSON200 *UnitPathReport
+	// JSON400 the response for an HTTP 400 `application/json` response
+	JSON400 *StandardErrorResponse
+	// JSON401 the response for an HTTP 401 `application/json` response
+	JSON401 *StandardErrorResponse
+	// JSON403 the response for an HTTP 403 `application/json` response
+	JSON403 *StandardErrorResponse
+	// JSON404 the response for an HTTP 404 `application/json` response
+	JSON404 *StandardErrorResponse
+	// JSON500 the response for an HTTP 500 `application/json` response
+	JSON500 *StandardErrorResponse
+	// JSONDefault the response for an HTTP default `application/json` response
+	JSONDefault *StandardErrorResponse
+}
+
+// GetJSON200 returns the response for an HTTP 200 `application/json` response
+func (r GetUnitPathResponse) GetJSON200() *UnitPathReport {
+	return r.JSON200
+}
+
+// GetJSON400 returns the response for an HTTP 400 `application/json` response
+func (r GetUnitPathResponse) GetJSON400() *StandardErrorResponse {
+	return r.JSON400
+}
+
+// GetJSON401 returns the response for an HTTP 401 `application/json` response
+func (r GetUnitPathResponse) GetJSON401() *StandardErrorResponse {
+	return r.JSON401
+}
+
+// GetJSON403 returns the response for an HTTP 403 `application/json` response
+func (r GetUnitPathResponse) GetJSON403() *StandardErrorResponse {
+	return r.JSON403
+}
+
+// GetJSON404 returns the response for an HTTP 404 `application/json` response
+func (r GetUnitPathResponse) GetJSON404() *StandardErrorResponse {
+	return r.JSON404
+}
+
+// GetJSON500 returns the response for an HTTP 500 `application/json` response
+func (r GetUnitPathResponse) GetJSON500() *StandardErrorResponse {
+	return r.JSON500
+}
+
+// GetJSONDefault returns the response for an HTTP default `application/json` response
+func (r GetUnitPathResponse) GetJSONDefault() *StandardErrorResponse {
+	return r.JSONDefault
+}
+
+// GetBody returns the raw response body bytes
+func (r GetUnitPathResponse) GetBody() []byte {
+	return r.Body
+}
+
+// Status returns HTTPResponse.Status
+func (r GetUnitPathResponse) Status() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Status
+	}
+	return http.StatusText(0)
+}
+
+// StatusCode returns HTTPResponse.StatusCode
+func (r GetUnitPathResponse) StatusCode() int {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.StatusCode
+	}
+	return 0
+}
+
+// ContentType is a convenience method to retrieve the Content-Type value from the HTTP response headers
+func (r GetUnitPathResponse) ContentType() string {
 	if r.HTTPResponse != nil {
 		return r.HTTPResponse.Header.Get("Content-Type")
 	}
@@ -73412,6 +74211,96 @@ func (r BulkTagUnitsResponse) StatusCode() int {
 
 // ContentType is a convenience method to retrieve the Content-Type value from the HTTP response headers
 func (r BulkTagUnitsResponse) ContentType() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Header.Get("Content-Type")
+	}
+	return ""
+}
+
+// SearchUnitBlameResponse200Headers the declared response headers of an HTTP 200 response for SearchUnitBlame
+type SearchUnitBlameResponse200Headers struct {
+	ConfigHubContinue *string
+}
+
+type SearchUnitBlameResponse struct {
+	Body         []byte
+	HTTPResponse *http.Response
+	// JSON200 the response for an HTTP 200 `application/json` response
+	JSON200 *[]UnitBlame
+	// JSON400 the response for an HTTP 400 `application/json` response
+	JSON400 *StandardErrorResponse
+	// JSON401 the response for an HTTP 401 `application/json` response
+	JSON401 *StandardErrorResponse
+	// JSON403 the response for an HTTP 403 `application/json` response
+	JSON403 *StandardErrorResponse
+	// JSON404 the response for an HTTP 404 `application/json` response
+	JSON404 *StandardErrorResponse
+	// JSON500 the response for an HTTP 500 `application/json` response
+	JSON500 *StandardErrorResponse
+	// JSONDefault the response for an HTTP default `application/json` response
+	JSONDefault *StandardErrorResponse
+	// Headers200 the parsed response headers for an HTTP 200 response
+	Headers200 *SearchUnitBlameResponse200Headers
+}
+
+// GetJSON200 returns the response for an HTTP 200 `application/json` response
+func (r SearchUnitBlameResponse) GetJSON200() *[]UnitBlame {
+	return r.JSON200
+}
+
+// GetJSON400 returns the response for an HTTP 400 `application/json` response
+func (r SearchUnitBlameResponse) GetJSON400() *StandardErrorResponse {
+	return r.JSON400
+}
+
+// GetJSON401 returns the response for an HTTP 401 `application/json` response
+func (r SearchUnitBlameResponse) GetJSON401() *StandardErrorResponse {
+	return r.JSON401
+}
+
+// GetJSON403 returns the response for an HTTP 403 `application/json` response
+func (r SearchUnitBlameResponse) GetJSON403() *StandardErrorResponse {
+	return r.JSON403
+}
+
+// GetJSON404 returns the response for an HTTP 404 `application/json` response
+func (r SearchUnitBlameResponse) GetJSON404() *StandardErrorResponse {
+	return r.JSON404
+}
+
+// GetJSON500 returns the response for an HTTP 500 `application/json` response
+func (r SearchUnitBlameResponse) GetJSON500() *StandardErrorResponse {
+	return r.JSON500
+}
+
+// GetJSONDefault returns the response for an HTTP default `application/json` response
+func (r SearchUnitBlameResponse) GetJSONDefault() *StandardErrorResponse {
+	return r.JSONDefault
+}
+
+// GetBody returns the raw response body bytes
+func (r SearchUnitBlameResponse) GetBody() []byte {
+	return r.Body
+}
+
+// Status returns HTTPResponse.Status
+func (r SearchUnitBlameResponse) Status() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Status
+	}
+	return http.StatusText(0)
+}
+
+// StatusCode returns HTTPResponse.StatusCode
+func (r SearchUnitBlameResponse) StatusCode() int {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.StatusCode
+	}
+	return 0
+}
+
+// ContentType is a convenience method to retrieve the Content-Type value from the HTTP response headers
+func (r SearchUnitBlameResponse) ContentType() string {
 	if r.HTTPResponse != nil {
 		return r.HTTPResponse.Header.Get("Content-Type")
 	}
@@ -79135,6 +80024,21 @@ func (c *ClientWithResponses) UpdateUnitWithResponse(ctx context.Context, spaceI
 	return ParseUpdateUnitResponse(rsp)
 }
 
+// GetUnitBlameWithResponse Get what set each field of a Unit
+//
+// Returns, for every field of a Unit's configuration, what set the value that is there -- the change, who made it, when and why -- following each merge and Link resolve upstream to where the value was set, and everything else recorded about the field: whether it is protected or guarded, the conflicts and Link findings about it, the failed validation checks that name it, and whether a NeedsProvides Link needs or provides it. A field the Unit does not have is listed, with Absent, when a conflict names it.
+//
+// Returns a wrapper object for the known response body format(s).
+//
+// Corresponds with GET /space/{space_id}/unit/{unit_id}/blame (the `GetUnitBlame` operationId).
+func (c *ClientWithResponses) GetUnitBlameWithResponse(ctx context.Context, spaceId openapi_types.UUID, unitId openapi_types.UUID, params *GetUnitBlameParams, reqEditors ...RequestEditorFn) (*GetUnitBlameResponse, error) {
+	rsp, err := c.GetUnitBlame(ctx, spaceId, unitId, params, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseGetUnitBlameResponse(rsp)
+}
+
 // ResolveUnitConflictsWithBodyWithResponse Apply or dismiss a unit's outstanding merge conflicts
 //
 // Act on the parts of the last merge's patch that were not applied. Apply replays the withheld change with every path eligible; Dismiss drops it without changing the configuration data. Either way the selected conflicts leave the Unit's outstanding set. Requires Edit permission.
@@ -79279,6 +80183,21 @@ func (c *ClientWithResponses) GetUnitMutationSourcesWithResponse(ctx context.Con
 		return nil, err
 	}
 	return ParseGetUnitMutationSourcesResponse(rsp)
+}
+
+// GetUnitPathWithResponse Get everything recorded about one field of a Unit
+//
+// Returns everything recorded about one field of a Unit's configuration: the field as the Unit's blame reports it, its own annotations, whether the Unit's last Release includes its value, and each change from this Unit out to where the value was set with the Mutation and Revision it was read from. With history, it also returns every change the Unit recorded to the field. A field that names nothing is a 404; one that names several fields, or a value holding several, is a 400 whose message lists them.
+//
+// Returns a wrapper object for the known response body format(s).
+//
+// Corresponds with GET /space/{space_id}/unit/{unit_id}/path (the `GetUnitPath` operationId).
+func (c *ClientWithResponses) GetUnitPathWithResponse(ctx context.Context, spaceId openapi_types.UUID, unitId openapi_types.UUID, params *GetUnitPathParams, reqEditors ...RequestEditorFn) (*GetUnitPathResponse, error) {
+	rsp, err := c.GetUnitPath(ctx, spaceId, unitId, params, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseGetUnitPathResponse(rsp)
 }
 
 // SetUnitProtectionWithBodyWithResponse Set path protection on a unit
@@ -80204,6 +81123,21 @@ func (c *ClientWithResponses) BulkTagUnitsWithResponse(ctx context.Context, para
 		return nil, err
 	}
 	return ParseBulkTagUnitsResponse(rsp)
+}
+
+// SearchUnitBlameWithResponse Get what set each field of many Units across spaces
+//
+// Returns the blame of every Unit the where clause selects, across every Space in the organization, a page of Units at a time. This is the bulk counterpart of the single-Unit blame subresource. Scope it to one Space with a where clause for a variant, or to several for several variants: a field has the same REF in every variant of a Unit. A Unit whose blame cannot be read carries an Error and no fields.
+//
+// Returns a wrapper object for the known response body format(s).
+//
+// Corresponds with GET /unit_blame (the `SearchUnitBlame` operationId).
+func (c *ClientWithResponses) SearchUnitBlameWithResponse(ctx context.Context, params *SearchUnitBlameParams, reqEditors ...RequestEditorFn) (*SearchUnitBlameResponse, error) {
+	rsp, err := c.SearchUnitBlame(ctx, params, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseSearchUnitBlameResponse(rsp)
 }
 
 // SearchUnitDataWithResponse Get the config data of many Units across spaces
@@ -98299,6 +99233,74 @@ func ParseUpdateUnitResponse(rsp *http.Response) (*UpdateUnitResponse, error) {
 	return response, nil
 }
 
+// ParseGetUnitBlameResponse parses an HTTP response from a GetUnitBlameWithResponse call
+func ParseGetUnitBlameResponse(rsp *http.Response) (*GetUnitBlameResponse, error) {
+	bodyBytes, err := io.ReadAll(rsp.Body)
+	defer func() { _ = rsp.Body.Close() }()
+	if err != nil {
+		return nil, err
+	}
+
+	response := &GetUnitBlameResponse{
+		Body:         bodyBytes,
+		HTTPResponse: rsp,
+	}
+
+	switch {
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 200:
+		var dest UnitBlame
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON200 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 400:
+		var dest StandardErrorResponse
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON400 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 401:
+		var dest StandardErrorResponse
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON401 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 403:
+		var dest StandardErrorResponse
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON403 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 404:
+		var dest StandardErrorResponse
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON404 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 500:
+		var dest StandardErrorResponse
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON500 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && true:
+		var dest StandardErrorResponse
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSONDefault = &dest
+
+	}
+
+	return response, nil
+}
+
 // ParseResolveUnitConflictsResponse parses an HTTP response from a ResolveUnitConflictsWithResponse call
 func ParseResolveUnitConflictsResponse(rsp *http.Response) (*ResolveUnitConflictsResponse, error) {
 	bodyBytes, err := io.ReadAll(rsp.Body)
@@ -98818,6 +99820,74 @@ func ParseGetUnitMutationSourcesResponse(rsp *http.Response) (*GetUnitMutationSo
 	switch {
 	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 200:
 		var dest MutationSourcesResponse
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON200 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 400:
+		var dest StandardErrorResponse
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON400 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 401:
+		var dest StandardErrorResponse
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON401 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 403:
+		var dest StandardErrorResponse
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON403 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 404:
+		var dest StandardErrorResponse
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON404 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 500:
+		var dest StandardErrorResponse
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON500 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && true:
+		var dest StandardErrorResponse
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSONDefault = &dest
+
+	}
+
+	return response, nil
+}
+
+// ParseGetUnitPathResponse parses an HTTP response from a GetUnitPathWithResponse call
+func ParseGetUnitPathResponse(rsp *http.Response) (*GetUnitPathResponse, error) {
+	bodyBytes, err := io.ReadAll(rsp.Body)
+	defer func() { _ = rsp.Body.Close() }()
+	if err != nil {
+		return nil, err
+	}
+
+	response := &GetUnitPathResponse{
+		Body:         bodyBytes,
+		HTTPResponse: rsp,
+	}
+
+	switch {
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 200:
+		var dest UnitPathReport
 		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
 			return nil, err
 		}
@@ -102529,6 +103599,87 @@ func ParseBulkTagUnitsResponse(rsp *http.Response) (*BulkTagUnitsResponse, error
 		}
 		response.JSONDefault = &dest
 
+	}
+
+	return response, nil
+}
+
+// ParseSearchUnitBlameResponse parses an HTTP response from a SearchUnitBlameWithResponse call
+func ParseSearchUnitBlameResponse(rsp *http.Response) (*SearchUnitBlameResponse, error) {
+	bodyBytes, err := io.ReadAll(rsp.Body)
+	defer func() { _ = rsp.Body.Close() }()
+	if err != nil {
+		return nil, err
+	}
+
+	response := &SearchUnitBlameResponse{
+		Body:         bodyBytes,
+		HTTPResponse: rsp,
+	}
+
+	switch {
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 200:
+		var dest []UnitBlame
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON200 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 400:
+		var dest StandardErrorResponse
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON400 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 401:
+		var dest StandardErrorResponse
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON401 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 403:
+		var dest StandardErrorResponse
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON403 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 404:
+		var dest StandardErrorResponse
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON404 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 500:
+		var dest StandardErrorResponse
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON500 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && true:
+		var dest StandardErrorResponse
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSONDefault = &dest
+
+	}
+
+	switch {
+	case rsp.StatusCode == 200:
+		var headers SearchUnitBlameResponse200Headers
+		if values := rsp.Header.Values("ConfigHub-Continue"); len(values) > 0 {
+			var value string
+			if err := runtime.BindStyledParameterWithOptions("simple", "ConfigHub-Continue", values[0], &value, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: false, Type: "string", Format: ""}); err != nil {
+				return nil, err
+			}
+			headers.ConfigHubContinue = &value
+		}
+		response.Headers200 = &headers
 	}
 
 	return response, nil

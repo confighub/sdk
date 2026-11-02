@@ -243,6 +243,9 @@ resourceTypes:
     - optional: true
       path: Component
       target: Component
+    - optional: true
+      path: UpstreamSpace
+      target: Space
     where-expression:
     - dataType: string
       path: WhereTrigger

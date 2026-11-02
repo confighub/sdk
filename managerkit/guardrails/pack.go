@@ -23,6 +23,7 @@ import (
 	"strings"
 
 	"github.com/confighub/sdk/core/configkit/yamlkit"
+	"github.com/confighub/sdk/core/constants"
 	"github.com/confighub/sdk/core/cubapi"
 	api "github.com/confighub/sdk/core/function/api"
 	goclientnew "github.com/confighub/sdk/core/openapi/goclient-new"
@@ -43,10 +44,11 @@ const ValidatingFunction = "vet-cel"
 // group a Space has opted into.
 const DefaultPolicySpace = managerkit.CommonSpace
 
-// GroupLabel names the group a guardrail Trigger belongs to. A Space selects
-// guardrails by listing groups, so installing a new group never adds rules to a
-// Space that did not ask for them.
-const GroupLabel = "Guardrails"
+// GroupLabel names the group a guardrail Trigger belongs to: the Pack label,
+// which every pack of Triggers selected from a policy Space shares. A Space
+// selects guardrails by listing groups, so installing a new group never adds
+// rules to a Space that did not ask for them.
+const GroupLabel = constants.PackLabel
 
 // AppliedToLabel marks the Triggers that belong on Targets rather than on
 // Spaces: rules about what is released, which a Space would run on every

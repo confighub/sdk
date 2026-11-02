@@ -73,7 +73,7 @@ Flags:
   E  validation error: a validating trigger failed a check that names the field, which
      blocks a release
   W  validation warning: a validating trigger with --warn failed a check that names the field
-  U  an upgrade from upstream brought the value to this unit, through an UpgradeUnit link
+  U  an upgrade from upstream brought the value to this unit
   L  another link set the value in this unit, by resolving or merging
   T  a trigger set the value in this unit
   C  the change in this unit was made by a ChangeOrder
@@ -151,15 +151,16 @@ func runUnitBlame(cmd *cobra.Command, args []string) error {
 		return err
 	}
 
-	resolver := blame.NewResolver(cubClient, blame.Options{
+	fields, err := blame.Unit(ctx, cubClient, unit.Unit.SpaceID, unit.Unit.UnitID, blame.Options{
 		MaxUpstreamDepth: unitBlameArgs.upstreamMax,
 		NoUpstream:       unitBlameArgs.noUpstream,
+		Path:             unitBlameArgs.path,
+		Resource:         unitBlameArgs.resource,
+		IncludeComments:  unitBlameArgs.showInternal,
 	})
-	fields, err := resolver.Unit(ctx, unit.Unit)
 	if err != nil {
 		return err
 	}
-	fields = blame.Filter(fields, unitBlameArgs.path, unitBlameArgs.resource, unitBlameArgs.showInternal)
 
 	if renderPayload(fields) {
 		return nil

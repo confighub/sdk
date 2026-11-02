@@ -7,6 +7,7 @@ import (
 	"fmt"
 	"strconv"
 
+	"github.com/confighub/sdk/core/constants"
 	"github.com/confighub/sdk/core/cubapi"
 	goclientnew "github.com/confighub/sdk/core/openapi/goclient-new"
 	"github.com/google/uuid"
@@ -16,7 +17,7 @@ import (
 var triggerListCmd = &cobra.Command{
 	Use:   "list",
 	Short: "List triggers",
-	Long: getCommandHelp(`List triggers you have access to in a space or across all spaces. The output includes slugs, channel slugs, events, whether each validates, is disabled, or only warns, toolchain types, function names, and the number of arguments.
+	Long: getCommandHelp(`List triggers you have access to in a space or across all spaces. The output includes slugs, space slugs, the pack each belongs to (its `+constants.PackLabel+` label), channel slugs, events, whether each validates, is disabled, or only warns, toolchain types, function names, and the number of arguments.
 
 Examples:
 `+"```"+`
@@ -61,6 +62,9 @@ Examples:
 
   # List triggers that stamp a guard on what they write
   cub trigger list --where "Guards.owner = 'platform-trigger'"
+
+  # List the triggers of two packs in a policy space
+  cub trigger list --space confighub-system --pack basic --pack rbac
 `+"```"+`
 `, ""),
 	Args:        cobra.ExactArgs(0),
@@ -69,7 +73,7 @@ Examples:
 }
 
 // Default columns to display when no custom columns are specified
-var defaultTriggerColumns = []string{"Trigger.Slug", "Space.Slug", "Channel.Slug", "Trigger.Event", "Trigger.Validating", "Trigger.Disabled", "Trigger.Warn", "Trigger.ToolchainType", "Trigger.FunctionName", "Trigger.Arguments", "Invocation.Slug"}
+var defaultTriggerColumns = []string{"Trigger.Slug", "Space.Slug", "Trigger.Labels", "Channel.Slug", "Trigger.Event", "Trigger.Validating", "Trigger.Disabled", "Trigger.Warn", "Trigger.ToolchainType", "Trigger.FunctionName", "Trigger.Arguments", "Invocation.Slug"}
 
 // triggerListInclude is the Include parameter for trigger list queries (the
 // related entities expanded into each ExtendedTrigger).
@@ -85,18 +89,33 @@ var triggerAliases = map[string]string{
 	"ID":   "Trigger.TriggerID",
 }
 
-// Trigger custom column dependencies
-var triggerCustomColumnDependencies = map[string][]string{}
+// Trigger custom column dependencies: Pack comes from Labels.Pack.
+var triggerCustomColumnDependencies = map[string][]string{"Pack": {"Labels"}}
+
+// triggerCustomColumns are the columns the default table computes rather than
+// reads.
+var triggerCustomColumns = map[string]func(any) string{
+	"Pack": func(obj any) string {
+		if t, ok := obj.(*goclientnew.ExtendedTrigger); ok && t.Trigger != nil {
+			return t.Trigger.Labels[constants.PackLabel]
+		}
+		return ""
+	},
+}
 
 func init() {
 	addStandardListFlags(triggerListCmd)
 	enableWherePermissionFlag(triggerListCmd)
 	enableListPagingFlags(triggerListCmd)
 	enableViewFlag(triggerListCmd)
+	addTriggerPackFlag(triggerListCmd)
 	triggerCmd.AddCommand(triggerListCmd)
 }
 
 func triggerListCmdRun(cmd *cobra.Command, args []string) error {
+	if err := applyTriggerPackFlag(); err != nil {
+		return err
+	}
 	filterID, err := parseFilterFlag(filter)
 	if err != nil {
 		return err
@@ -120,12 +139,12 @@ func getTriggerSlug(trigger *goclientnew.ExtendedTrigger) string {
 }
 
 func displayTriggerList(triggers []*goclientnew.ExtendedTrigger) {
-	if displayRequestedColumns(triggers, triggerAliases, nil) {
+	if displayRequestedColumns(triggers, triggerAliases, triggerCustomColumns) {
 		return
 	}
 	table := tableView()
 	if !noheader {
-		table.SetHeader([]string{"Name", "Space", "Channel", "Event", "Validating", "Disabled", "Warn", "Toolchain-Type", "Function-Name", "Num-Args", "Invocation"})
+		table.SetHeader([]string{"Name", "Space", "Pack", "Channel", "Event", "Validating", "Disabled", "Warn", "Toolchain-Type", "Function-Name", "Num-Args", "Invocation"})
 	}
 	for _, t := range triggers {
 		trigger := t.Trigger
@@ -146,6 +165,7 @@ func displayTriggerList(triggers []*goclientnew.ExtendedTrigger) {
 		table.Append([]string{
 			trigger.Slug,
 			spaceSlug,
+			trigger.Labels[constants.PackLabel],
 			channelSlug,
 			trigger.Event,
 			strconv.FormatBool(trigger.Validating),

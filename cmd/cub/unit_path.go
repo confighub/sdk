@@ -81,19 +81,11 @@ func runUnitPath(cmd *cobra.Command, args []string) error {
 	if err != nil {
 		return err
 	}
-	resolver := blame.NewResolver(cubClient, blame.Options{
-		MaxUpstreamDepth: unitPathArgs.upstreamMax,
-		NoUpstream:       unitPathArgs.noUpstream,
-	})
-	fields, err := resolver.Unit(ctx, unit.Unit)
-	if err != nil {
-		return err
-	}
-	field, err := blame.FindField(fields, args[1], unitPathArgs.resource)
-	if err != nil {
-		return err
-	}
-	report, err := resolver.Path(ctx, unit.Unit, field, unitPathArgs.history)
+	report, err := blame.Path(ctx, cubClient, unit.Unit.SpaceID, unit.Unit.UnitID, args[1], unitPathArgs.resource,
+		unitPathArgs.history, blame.Options{
+			MaxUpstreamDepth: unitPathArgs.upstreamMax,
+			NoUpstream:       unitPathArgs.noUpstream,
+		})
 	if err != nil {
 		return err
 	}
@@ -101,6 +93,6 @@ func runUnitPath(cmd *cobra.Command, args []string) error {
 	if renderPayload(report) {
 		return nil
 	}
-	displayUnitPath(report, resolver)
+	displayUnitPath(report)
 	return nil
 }

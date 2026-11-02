@@ -19,18 +19,19 @@ const unitPathLabelWidth = 14
 
 // displayUnitPath prints the report: the field as it stands, then each change from this unit
 // out to where the value was set, then, with --history, every change this unit recorded.
-func displayUnitPath(report *blame.PathReport, resolver *blame.Resolver) {
+func displayUnitPath(report *blame.PathReport) {
 	f := report.Field
+	names := report.Names
 	unitPathLine(0, "Unit", f.SpaceSlug+"/"+f.UnitSlug)
 	unitPathLine(0, "Resource", f.ResourceType+" "+f.ResourceName)
 	unitPathLine(0, "Path", wrapBlameText(f.Path, unitPathWrapWidth(0), ".,/", "-_"))
 	unitPathLine(0, "Ref", f.Ref)
-	unitPathLine(0, "Flags", f.Flags)
+	unitPathLine(0, "Flags", blame.Letters(f))
 	if f.Absent {
 		unitPathLine(0, "Value", "none: the unit does not have this field")
 	}
 	unitPathValue(0, "Value", f.Value)
-	unitPathLine(0, "Released", report.Released)
+	unitPathLine(0, "Released", report.ReleaseMessage)
 	switch {
 	case f.ResourceProtected:
 		unitPathLine(0, "Protected", "yes: its resource is protected as a whole, so a merge from upstream leaves all of it alone")
@@ -48,15 +49,15 @@ func displayUnitPath(report *blame.PathReport, resolver *blame.Resolver) {
 	for _, kind := range kinds {
 		unitPathLine(0, kind, blame.FormatGuards(report.Annotations[kind]))
 	}
-	for _, attribute := range report.Needed {
+	for _, attribute := range f.Needed {
 		unitPathLine(0, "Needed", blame.FormatNeeded(attribute))
 	}
-	for _, attribute := range report.Provided {
+	for _, attribute := range f.Provided {
 		unitPathLine(0, "Provided", blame.FormatProvided(attribute))
 	}
 	for _, conflict := range f.Conflicts {
 		text := formatBlameConflict(conflict, 0)
-		if upstream := resolver.UnitName(ctx, uuid.Nil, conflict.UnitID); upstream != "" {
+		if upstream := pathReportName(names, conflict.UnitID); upstream != "" {
 			text += "; from " + upstream
 		}
 		unitPathLine(0, "Conflict", text)
@@ -79,7 +80,7 @@ func displayUnitPath(report *blame.PathReport, resolver *blame.Resolver) {
 		tprintRaw("Changes, from this unit out to where the value was set:")
 		for _, change := range report.Changes {
 			tprintRaw("")
-			displayUnitPathChange(change, resolver)
+			displayUnitPathChange(change, names)
 		}
 	}
 
@@ -96,14 +97,14 @@ func displayUnitPath(report *blame.PathReport, resolver *blame.Resolver) {
 		}
 		for _, change := range report.History {
 			table.Append([]string{
-				fmt.Sprintf("%d", change.RevisionNum),
-				fmt.Sprintf("%d", change.MutationNum),
+				fmt.Sprintf("%d", change.Origin.RevisionNum),
+				fmt.Sprintf("%d", change.Origin.MutationNum),
 				change.MutationType,
 				truncateWithEllipsis(blameOneLine(change.Value), blameMaxValueWidth),
-				change.SetBy,
-				change.User,
-				blameAgo(change.When),
-				strings.Join(change.ChangeOrders, ","),
+				change.Origin.SetBy,
+				change.Origin.User,
+				blameAgo(change.Origin.When),
+				strings.Join(change.Origin.ChangeOrders, ","),
 			})
 		}
 		table.Render()
@@ -112,7 +113,7 @@ func displayUnitPath(report *blame.PathReport, resolver *blame.Resolver) {
 
 // displayUnitPathChange prints one change: the hop it is, what made it and why, and the
 // Revision it is in, each line present only where the record has something to say.
-func displayUnitPathChange(change blame.PathChange, resolver *blame.Resolver) {
+func displayUnitPathChange(change blame.PathChange, names map[string]string) {
 	origin := change.Origin
 	tprintRaw(fmt.Sprintf("  %s/%s revision %d, mutation %d",
 		origin.SpaceSlug, origin.UnitSlug, origin.RevisionNum, origin.MutationNum))
@@ -131,7 +132,7 @@ func displayUnitPathChange(change blame.PathChange, resolver *blame.Resolver) {
 			if link.UpdateType != "" {
 				line += " (" + link.UpdateType + ")"
 			}
-			if upstream := resolver.UnitName(ctx, link.ToSpaceID, link.ToUnitID); upstream != "" {
+			if upstream := pathReportName(names, link.ToUnitID); upstream != "" {
 				line += " from " + upstream
 			}
 			unitPathLine(4, "Link", line)
@@ -168,7 +169,7 @@ func displayUnitPathChange(change blame.PathChange, resolver *blame.Resolver) {
 		if isSetUUID(m.MergeSourceID) {
 			source := m.MergeSourceID.String()
 			if em.MergeSource != nil {
-				source = resolver.UnitName(ctx, em.MergeSource.SpaceID, em.MergeSource.UnitID)
+				source = pathReportName(names, em.MergeSource.UnitID)
 			}
 			unitPathLine(4, "Merged from", fmt.Sprintf("%s, revisions %d to %d", source, m.MergeBaseRevisionNum, m.MergeEndRevisionNum))
 		} else if origin.LinkUpstreamRevisionNum != 0 {
@@ -203,7 +204,7 @@ func displayUnitPathChange(change blame.PathChange, resolver *blame.Resolver) {
 	}
 	if extended := change.Revision; extended != nil {
 		for _, release := range extended.Releases {
-			unitPathLine(4, "Released in", formatUnitPathRelease(release, extended.ChangeOrders, origin, resolver))
+			unitPathLine(4, "Released in", formatUnitPathRelease(release, extended.ChangeOrders, origin, names))
 		}
 	}
 	if len(origin.Tags) > 0 {
@@ -215,7 +216,7 @@ func displayUnitPathChange(change blame.PathChange, resolver *blame.Resolver) {
 // what 'cub release get' takes in the unit's Space, whether it was published and to which
 // Target, and the ChangeOrder that cut it.
 func formatUnitPathRelease(release goclientnew.Release, changeOrders []goclientnew.ChangeOrder, origin *blame.Origin,
-	resolver *blame.Resolver) string {
+	names map[string]string) string {
 	text := fmt.Sprintf("release %d", release.ReleaseNum)
 	if release.Published {
 		text += ", published"
@@ -223,7 +224,7 @@ func formatUnitPathRelease(release goclientnew.Release, changeOrders []goclientn
 		text += ", not published"
 	}
 	if isSetUUID(release.TargetID) {
-		text += " to target " + resolver.TargetName(ctx, release.SpaceID, *release.TargetID)
+		text += " to target " + pathReportName(names, *release.TargetID)
 	}
 	if isSetUUID(release.ChangeOrderID) {
 		for _, changeOrder := range changeOrders {
@@ -288,4 +289,16 @@ func unitPathValue(indent int, label, value string) {
 	for _, line := range strings.Split(value, "\n") {
 		tprintRaw(pad + line)
 	}
+}
+
+// pathReportName names a Unit or Target a path report refers to by ID, as the report's Names
+// give it, or by the ID when they do not.
+func pathReportName(names map[string]string, id uuid.UUID) string {
+	if id == uuid.Nil {
+		return ""
+	}
+	if name, ok := names[id.String()]; ok && name != "" {
+		return name
+	}
+	return id.String()
 }

@@ -16,8 +16,7 @@ import (
 	"github.com/confighub/sdk/core/cubapi"
 )
 
-// Connector serves a function executor on a Channel. It is the channel counterpart of the
-// worker package's Connector, and takes the same executor: build the executor, register the
+// Connector serves a function executor on a Channel: build the executor, register the
 // functions, and Start. The functions are declared on the Channel when it starts, so the bot
 // has nothing to declare out of band.
 type Connector struct {
@@ -39,7 +38,7 @@ type ConnectorOptions struct {
 	// FunctionExecutor runs the functions; the SDK's executors satisfy it.
 	FunctionExecutor FunctionExecutor
 	// Concurrency is how many runs execute at once. Zero means one, which keeps a Unit's
-	// functions in order, as a function worker ran them.
+	// functions in order.
 	Concurrency int
 	// UserAgent names the bot in the server's logs. Empty means "function-bot".
 	UserAgent string

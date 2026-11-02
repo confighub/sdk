@@ -161,7 +161,7 @@ type Store struct {
 // CUB_CONFIG names the config *directory*, not the file. That is what the
 // published documentation says, what cub exports to plugins
 // (`CUB_CONFIG=<dir>` in cmd/cub/plugin_exec.go), and what plugins already
-// assume -- cub-che's installer builds "$CUB_CONFIG/plugins" from it.
+// assume, building paths such as "$CUB_CONFIG/plugins" from it.
 func DefaultConfigDir() (string, error) {
 	if p := os.Getenv("CUB_CONFIG"); p != "" {
 		// A path that exists and is not a directory is the one mistake worth
