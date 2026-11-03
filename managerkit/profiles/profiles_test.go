@@ -34,11 +34,12 @@ func TestDescriptionAnnotationIsShared(t *testing.T) {
 func TestBuildInvocation(t *testing.T) {
 	spaceID := goclientnew.UUID{}
 	inv := lib.buildInvocation(spaceID, Spec{
-		Slug:        "hpa-range",
-		Description: "set minReplicas/maxReplicas",
-		Function:    "set-yq",
-		Args:        []api.FunctionArgument{Arg("yq-expression", ".spec.minReplicas = 1")},
-		Params:      []Param{{Name: "min"}, {Name: "max", DataType: "int"}},
+		Slug:          "hpa-range",
+		Description:   "set minReplicas/maxReplicas",
+		Function:      "set-yq",
+		Args:          []api.FunctionArgument{Arg("yq-expression", ".spec.minReplicas = 1")},
+		Params:        []Param{{Name: "min"}, {Name: "max", DataType: "int"}},
+		WhereResource: "ConfigHub.ResourceType = 'autoscaling/v2/HorizontalPodAutoscaler'",
 	})
 
 	if inv.Slug != "hpa-range" || inv.DisplayName != "hpa-range" {
@@ -49,6 +50,11 @@ func TestBuildInvocation(t *testing.T) {
 	}
 	if inv.ToolchainType != "Kubernetes/YAML" {
 		t.Errorf("toolchain = %q", inv.ToolchainType)
+	}
+	// The resource filter is stored on the function invocation, so it applies
+	// whether the profile is applied to one Unit, across a fleet, or by a Trigger.
+	if fis := *inv.FunctionInvocations; len(fis) != 1 || fis[0].WhereResource != "ConfigHub.ResourceType = 'autoscaling/v2/HorizontalPodAutoscaler'" {
+		t.Errorf("function invocations = %+v, want the profile's WhereResource on its one invocation", fis)
 	}
 	// A parameter with no DataType is a string, and every parameter is required:
 	// a profile applied without one would substitute an empty value rather than

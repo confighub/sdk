@@ -155,8 +155,10 @@ type EnvEntry struct {
 	Value string
 }
 
-// ParseEnvEntries parses env file data into key-value string pairs, skipping
-// empty lines, comments, and configHub metadata keys. Values are kept as raw strings.
+// ParseEnvEntries parses env file data into key-value string pairs, sorted by
+// key, skipping empty lines, comments, and configHub metadata keys. Each value
+// is read with ParseValue, so it has its quoting and inline comment removed,
+// and a malformed quoted value is an error.
 func ParseEnvEntries(data []byte) ([]EnvEntry, error) {
 	var entries []EnvEntry
 	scanner := bufio.NewScanner(bytes.NewReader(data))
@@ -172,8 +174,10 @@ func ParseEnvEntries(data []byte) ([]EnvEntry, error) {
 			return nil, fmt.Errorf("error parsing line %d: no '=' separator found", lineNum)
 		}
 		key := strings.TrimSpace(line[:eqIndex])
-		value := strings.TrimSpace(line[eqIndex+1:])
-		value = stripQuotes(value)
+		value, err := ParseValue(line[eqIndex+1:])
+		if err != nil {
+			return nil, fmt.Errorf("error parsing line %d: %w", lineNum, err)
+		}
 		if key == "" {
 			continue
 		}
@@ -225,14 +229,10 @@ func (*EnvResourceProviderType) NativeToYAML(data []byte) ([]byte, error) {
 		}
 
 		key := strings.TrimSpace(line[:eqIndex])
-		value := strings.TrimSpace(line[eqIndex+1:])
-
-		// Strip surrounding quotes from value
-		value = stripQuotes(value)
-
-		// Strip inline comments from unquoted values
-		cleanValue, _ := yamlkit.SplitInlineComment(value)
-		value = cleanValue
+		value, err := ParseValue(line[eqIndex+1:])
+		if err != nil {
+			return nil, fmt.Errorf("error parsing line %d: %w", lineNum, err)
+		}
 
 		if key == "" {
 			continue
@@ -330,13 +330,7 @@ func (*EnvResourceProviderType) YAMLToNative(yamlData []byte) ([]byte, error) {
 	var buf bytes.Buffer
 	writer := bufio.NewWriter(&buf)
 	for _, key := range keys {
-		value := props[key]
-		// Quote values that contain spaces or special characters
-		if needsQuoting(value) {
-			fmt.Fprintf(writer, "%s=\"%s\"\n", key, escapeValue(value))
-		} else {
-			fmt.Fprintf(writer, "%s=%s\n", key, value)
-		}
+		fmt.Fprintf(writer, "%s=%s\n", key, FormatValue(props[key]))
 	}
 	if err := writer.Flush(); err != nil {
 		return nil, fmt.Errorf("error flushing buffer: %w", err)
@@ -346,16 +340,6 @@ func (*EnvResourceProviderType) YAMLToNative(yamlData []byte) ([]byte, error) {
 	result := injectEnvComments(buf.Bytes(), comments)
 
 	return result, nil
-}
-
-// stripQuotes removes surrounding single or double quotes from a value.
-func stripQuotes(s string) string {
-	if len(s) >= 2 {
-		if (s[0] == '"' && s[len(s)-1] == '"') || (s[0] == '\'' && s[len(s)-1] == '\'') {
-			return s[1 : len(s)-1]
-		}
-	}
-	return s
 }
 
 // flattenOrdered recursively flattens nested structures into dot-notation keys,
@@ -390,16 +374,4 @@ func flattenOrdered(data interface{}, prefix string, keys *[]string, result map[
 		*keys = append(*keys, prefix)
 		result[prefix] = fmt.Sprintf("%v", v)
 	}
-}
-
-// needsQuoting returns true if a value contains characters that need quoting.
-func needsQuoting(value string) bool {
-	return strings.ContainsAny(value, " \t\"'\\#$")
-}
-
-// escapeValue escapes special characters in a value for env file format.
-func escapeValue(value string) string {
-	value = strings.ReplaceAll(value, "\\", "\\\\")
-	value = strings.ReplaceAll(value, "\"", "\\\"")
-	return value
 }

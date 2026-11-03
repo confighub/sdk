@@ -206,6 +206,45 @@ func TestRenderConfigMap_EnvAsKeyValue(t *testing.T) {
 	assert.False(t, present)
 }
 
+// Each data entry holds the value itself, not the quoted and escaped form the
+// env file writes it in.
+func TestRenderConfigMap_EnvAsKeyValueUnquotesValues(t *testing.T) {
+	rp := envkit.NewEnvResourceProvider()
+	var converter configkit.ConfigConverter = rp
+	var resourceProvider yamlkit.ResourceProvider = rp
+
+	native := `configHub.configName=Cfg
+ADMIN_JWK={"kty":"OKP","x":"abc"}
+GREETING="hello world"
+HASHED="a # b"
+PATH_LIKE="C:\\temp\\x"
+MULTILINE="line1\nline2"
+`
+	parsed := parseNative(t, converter, native)
+	fc := newFunctionContext(workerapi.ToolchainAppConfigEnv, "envcfg", 1)
+	args := []api.FunctionArgument{
+		{ParameterName: "immutable", Value: true},
+		{ParameterName: "as-key-value", Value: true},
+	}
+
+	_, output, err := fnRenderConfigMap(converter, resourceProvider, fc, parsed, args)
+	require.NoError(t, err)
+	payload := output.(api.YAMLPayload)
+
+	cm, err := gaby.ParseAll([]byte(payload.Payload))
+	require.NoError(t, err)
+	require.Equal(t, 1, len(cm))
+	dataMap, _ := cm[0].Path("data").Data().(map[string]any)
+	require.NotNil(t, dataMap)
+	assert.Equal(t, map[string]any{
+		"ADMIN_JWK": `{"kty":"OKP","x":"abc"}`,
+		"GREETING":  "hello world",
+		"HASHED":    "a # b",
+		"PATH_LIKE": `C:\temp\x`,
+		"MULTILINE": "line1\nline2",
+	}, dataMap)
+}
+
 func TestRenderConfigMap_JSONUsesConfigName(t *testing.T) {
 	rp := jsonkit.NewJSONResourceProvider()
 	var converter configkit.ConfigConverter = rp

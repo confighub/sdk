@@ -47,9 +47,8 @@ func extractEnvComments(source []byte) map[string]string {
 		}
 
 		// Detect inline comment
-		value := strings.TrimSpace(trimmed[eqIdx+1:])
-		value = stripQuotesForComments(value)
-		if _, inlineComment := yamlkit.SplitInlineComment(value); inlineComment != "" {
+		// A malformed value is reported by the parse that reads the values.
+		if _, inlineComment, err := parseValue(trimmed[eqIdx+1:]); err == nil && inlineComment != "" {
 			commentKey := yamlkit.CommentKey(yamlkit.CommentLine, key)
 			comments[commentKey] = inlineComment
 		}
@@ -81,16 +80,6 @@ func extractEnvComments(source []byte) map[string]string {
 	}
 
 	return comments
-}
-
-// stripQuotesForComments removes surrounding quotes for inline comment detection.
-func stripQuotesForComments(s string) string {
-	if len(s) >= 2 {
-		if (s[0] == '"' && s[len(s)-1] == '"') || (s[0] == '\'' && s[len(s)-1] == '\'') {
-			return s[1 : len(s)-1]
-		}
-	}
-	return s
 }
 
 // injectEnvComments post-processes env encoder output to re-insert comments.

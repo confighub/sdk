@@ -131,6 +131,7 @@ func (p Pack) AnnotateCmd(preflight Preflight, spec AnnotateSpec) *cobra.Command
 	managerkit.AddOutputFlag(cmd, &output)
 	filter.BindWhere(cmd)
 	filter.BindSpaceLabels(cmd)
+	managerkit.BindComponentResolver(cmd, &filter, preflight)
 	cmd.Flags().StringVar(&clusterFilter, "cluster", "", "only annotate Units in this cluster")
 	commit.Bind(cmd)
 	return cmd

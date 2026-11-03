@@ -271,6 +271,7 @@ Dry-run unless --commit --change-desc.%s`,
 	managerkit.AddOutputFlag(cmd, &output)
 	filter.BindWhere(cmd)
 	filter.BindSpaceLabels(cmd)
+	managerkit.BindComponentResolver(cmd, &filter, l.Preflight)
 	commit.Bind(cmd)
 	cmd.Flags().StringVar(&profileSlug, "profile", "",
 		fmt.Sprintf("%s (stored Invocation) to apply (required)", l.noun()))

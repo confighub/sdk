@@ -50,6 +50,12 @@ type Spec struct {
 	Function    string
 	Args        []api.FunctionArgument
 	Params      []Param
+	// WhereResource restricts the profile to the resources it selects, e.g.
+	// "ConfigHub.ResourceType = 'apps/v1/Deployment'". A Unit can hold several
+	// resources, and a function runs on every one unless told otherwise, so a
+	// profile that edits one kind should name it. It is stored with the profile,
+	// so it holds however the profile is invoked.
+	WhereResource string
 }
 
 // Arg is a function argument with a fixed value.
@@ -80,7 +86,7 @@ func YQParamArg(name string) api.FunctionArgument {
 
 // Library is one tool's profile library.
 type Library struct {
-	// Tool is the tool's module name, e.g. "autoscale-manager". It becomes the
+	// Tool is the tool's name, e.g. "cub-manage". It becomes the
 	// profiles Space's `app` label.
 	Tool string
 	// Noun is what this tool calls a profile in help text: "autoscaling
@@ -99,7 +105,7 @@ type Library struct {
 	// Preflight verifies the tool's ConfigHub session and returns the client.
 	Preflight func(context.Context) (*cubapi.Client, error)
 	// InvocationName is how the tool is spelled in help text, e.g.
-	// "cub-autoscale" or "cub autoscale" when run as a plugin.
+	// "cub-manage", or "cub manage" when run as a plugin.
 	InvocationName func() string
 
 	// FleetEdit configures the bulk command. Leave WhereData empty to omit the
@@ -142,8 +148,9 @@ func (l Library) buildInvocation(spaceID goclientnew.UUID, spec Spec) goclientne
 		DisplayName:   spec.Slug,
 		ToolchainType: cubapi.DefaultToolchainType,
 		FunctionInvocations: cubapi.FunctionInvocations(api.FunctionInvocation{
-			FunctionName: spec.Function,
-			Arguments:    spec.Args,
+			FunctionName:  spec.Function,
+			Arguments:     spec.Args,
+			WhereResource: spec.WhereResource,
 		}),
 		Parameters:  params,
 		Annotations: map[string]string{DescriptionAnnotation: spec.Description},
