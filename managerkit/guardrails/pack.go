@@ -123,7 +123,8 @@ type Pack struct {
 	Group string
 	// Rules are the policies. They install with Warn=true: advisory
 	// ValidationWarnings, never blocking, until someone promotes one with
-	// `cub trigger update <slug> --space <policy-space> --unwarn`.
+	// `cub trigger update <slug> --space <policy-space> --unwarn`, which
+	// installing again leaves in place.
 	Rules []Rule
 }
 
@@ -387,6 +388,20 @@ func (p Pack) Execute(ctx context.Context, client *cubapi.Client, policySpace st
 	}
 	for _, r := range p.Rules {
 		fn, args := r.invocation()
+		// A rule installs as a warning, but one already promoted with --unwarn
+		// stays blocking: re-installing to update the rules must not quietly undo
+		// that decision.
+		// Only a rule with no Trigger yet is new; on any other error, guessing
+		// would risk the very demotion this avoids.
+		warn := true
+		existing, err := cubapi.ResolveTrigger(ctx, client, cubapi.NewRef("", r.Slug),
+			cubapi.ResolveOpts{Space: ps.SpaceID, Select: "TriggerID,Slug,Warn"})
+		switch {
+		case err == nil && existing.Trigger != nil:
+			warn = existing.Trigger.Warn
+		case err != nil && !cubapi.IsNotFoundError(err):
+			return fmt.Errorf("read trigger %s: %w", r.Slug, err)
+		}
 		if _, err := cubapi.EnsureTrigger(ctx, client, goclientnew.Trigger{
 			SpaceID:       ps.SpaceID,
 			Slug:          r.Slug,
@@ -396,7 +411,7 @@ func (p Pack) Execute(ctx context.Context, client *cubapi.Client, policySpace st
 			FunctionName:  fn,
 			Arguments:     cubapi.Arguments(args),
 			WhereResource: exceptionWhereResource(r.Slug),
-			Warn:          true,
+			Warn:          warn,
 			Labels:        r.labels(p.Group),
 		}); err != nil {
 			return fmt.Errorf("create trigger %s: %w", r.Slug, err)

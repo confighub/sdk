@@ -41,7 +41,7 @@ default.`, l.noun(), l.Target),
 
 // installCmd seeds the profile library. It is idempotent: every entity is
 // ensured rather than created, so re-running after adding a profile installs the
-// new one and leaves the rest alone.
+// new one and brings the rest up to date.
 func (l Library) installCmd() *cobra.Command {
 	var profilesSpace string
 	cmd := &cobra.Command{
@@ -49,12 +49,10 @@ func (l Library) installCmd() *cobra.Command {
 		Short: fmt.Sprintf("Create the profile library Space and seed the default %ss", l.noun()),
 		Long: fmt.Sprintf(`install creates the profile library Space and seeds the default %ss.
 
-Re-running it is safe: a profile that is already there is left alone, so
-installing after adding one installs only the new one. That also means it does
-not update a profile whose definition has changed -- a new description, argument
-or parameter reaches the library only once the old Invocation is deleted:
-
-  cub invocation delete <slug> --space %s`, l.noun(), managerkit.CommonSpace),
+Re-running it is safe, and brings each profile up to this version's
+definition: one that is already there is updated in place, so a new
+description, argument or parameter reaches the library without deleting
+anything.`, l.noun()),
 		Args: cobra.NoArgs,
 		RunE: func(cmd *cobra.Command, args []string) error {
 			ctx := cmd.Context()
@@ -224,7 +222,8 @@ matches, in one server-side operation — the bulk analog of 'profile apply'.
 It is scoped to %s,
 so a profile never reaches a Unit it has nothing to say about.
 
-Scope with --where and the label shorthands (e.g. --environment prod).
+A selector is required: --where, or a label shorthand such as --environment
+prod.
 %s
 
 Dry-run unless --commit --change-desc.%s`,
@@ -242,16 +241,22 @@ Dry-run unless --commit --change-desc.%s`,
 			if err != nil {
 				return err
 			}
+			// Before the session is checked, so a missing selector is reported
+			// first. Resolving --component reaches the server on its own.
+			scope, err := filter.Predicate()
+			if err != nil {
+				return err
+			}
+			if scope == "" {
+				return fmt.Errorf("fleet-edit needs a selector, --where or a label shorthand such as --environment, " +
+					"so that a fleet-wide change is always a deliberate one")
+			}
 			ctx := cmd.Context()
 			client, err := l.Preflight(ctx)
 			if err != nil {
 				return err
 			}
 			inv, err := l.resolveProfile(ctx, client, profilesSpace, profileSlug)
-			if err != nil {
-				return err
-			}
-			scope, err := filter.Predicate()
 			if err != nil {
 				return err
 			}

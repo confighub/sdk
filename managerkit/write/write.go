@@ -141,7 +141,21 @@ func ReportMutations(cmd *cobra.Command, command, space string, dryRun bool, out
 	cliutil.Fprintln(cmd.OutOrStdout(), fmt.Sprintf("\n%s: %d of %d Unit(s) %s%s",
 		command, rep.Mutated, len(rep.Outcomes), verb, DryRunSuffix(dryRun)))
 	WriteDiffs(cmd.OutOrStdout(), command, rep)
+	if rep.Committed > 0 {
+		cliutil.Fprintln(cmd.OutOrStdout(), "\n"+ReleaseNote(space))
+	}
 	return nil
+}
+
+// ReleaseNote is what a committed write's report ends with, for a command with a
+// report of its own as for ReportMutations: the Units changed, and none of it
+// reaches a Target until the Space is released. A write command edits
+// configuration; releasing it is a separate, deliberate step.
+func ReleaseNote(space string) string {
+	if space == "" {
+		space = "<space>"
+	}
+	return fmt.Sprintf("Not released: 'cub release publish %s' releases a Space's Units to its Target.", space)
 }
 
 // WriteDiffs writes what each changed Unit in rep was changed by, or on a dry run

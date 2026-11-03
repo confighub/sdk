@@ -45,12 +45,14 @@ selected. Rules that check only released Units are labeled ` + AppliedToLabel + 
 and selected by Targets instead.
 
 Each rule skips the resources annotated ` + ExceptionAnnotationPrefix + `<rule>,
-whose value says why the resource is excepted.
+whose value says why the resource is excepted. 'guardrails exception' adds,
+removes and lists them.
 
 Dry-run by default: it prints the plan and changes nothing. Re-run with --commit
 to apply. Spaces that already select Triggers another way are reported, not
 modified. Narrow which Spaces get wired with --where-space. Re-running updates
-the Triggers to this version of the rules.`,
+the Triggers to this version of the rules, and leaves a rule promoted with
+--unwarn blocking.`,
 		Args: cobra.NoArgs,
 		RunE: func(cmd *cobra.Command, args []string) error {
 			client, err := preflight(cmd.Context())

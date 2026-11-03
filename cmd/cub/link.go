@@ -60,7 +60,7 @@ func addLinkFieldFlags(cmd *cobra.Command) {
 	cmd.Flags().BoolVar(&linkProtect, "protect", false, "record the paths this link's resolve writes as protected local overrides, so a later merge from upstream does not overwrite them; refused on UpgradeUnit and MergeUnits links")
 	cmd.Flags().BoolVar(&linkNoProtect, "no-protect", false, "return this link to the default: its resolve claims nothing it writes")
 	cmd.Flags().StringArrayVar(&linkClearance, "clearance", nil,
-		"class of guarded reason this link's merges are cleared for, as KEY, KEY=VALUE[;VALUE...], KEY!=VALUE[;VALUE...], or !KEY to refuse any path carrying KEY (repeatable). Pass an empty value to clear")
+		"class of guarded reason this link's resolve is cleared for, as KEY, KEY=VALUE[;VALUE...], KEY!=VALUE[;VALUE...], or !KEY to refuse any path carrying KEY (repeatable). Pass an empty value to clear")
 	cmd.Flags().StringArrayVar(&linkGuardSpecs, "guard", nil,
 		"reason to record on the paths this link's resolve writes, as KEY=VALUE (repeatable). A later operation must be cleared for it before overwriting those paths, the link's next resolve included, so --clearance has to cover it; refused on UpgradeUnit and MergeUnits links, whose guards propagate from upstream. Pass an empty value to clear")
 	cmd.Flags().BoolVar(&linkSquash, "squash", false, "merge this link's range as one rebased diff in one revision instead of walking it: by default a resolve re-runs the upstream's recorded function invocations against the downstream unit where it can, and records one revision per upstream revision that has an effect; only meaningful for UpgradeUnit and MergeUnits links")

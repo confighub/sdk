@@ -1883,7 +1883,10 @@ type ApiInfo struct {
 	OCIHost string `json:"OCIHost,omitempty" yaml:"OCIHost,omitempty"`
 
 	// OCIPort OCI registry port for pulling configuration artifacts.
-	OCIPort               string `json:"OCIPort,omitempty" yaml:"OCIPort,omitempty"`
+	OCIPort string `json:"OCIPort,omitempty" yaml:"OCIPort,omitempty"`
+
+	// OCITLS Whether the OCI registry is reached over https. It is the scheme of the instance's configured registry URL. Without one, it is true when the request arrived over https and absent otherwise, since a load balancer that terminates TLS without forwarding headers makes an https request look like plain http. When it is absent, as it also is from servers that predate it, a client uses the scheme it reached the API over.
+	OCITLS                *bool  `json:"OCITLS,omitempty" yaml:"OCITLS,omitempty"`
 	TokenExchangeAudience string `json:"TokenExchangeAudience,omitempty" yaml:"TokenExchangeAudience,omitempty"`
 	TokenExchangeEndpoint string `json:"TokenExchangeEndpoint,omitempty" yaml:"TokenExchangeEndpoint,omitempty"`
 	UIURL                 string `json:"UIURL,omitempty" yaml:"UIURL,omitempty"`

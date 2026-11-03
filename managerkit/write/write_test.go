@@ -123,6 +123,23 @@ func TestReportMutationsShowsDiffs(t *testing.T) {
 	}
 }
 
+// A commit that changed something ends by saying it is not released; a dry run
+// does not, having changed nothing.
+func TestReportMutationsReleaseNote(t *testing.T) {
+	outcomes := []cubapi.UnitOutcome{{UnitID: "u-web", SpaceSlug: "prod", UnitSlug: "web", Success: true, HasMutations: true}}
+	for _, dryRun := range []bool{true, false} {
+		var out bytes.Buffer
+		cmd := &cobra.Command{}
+		cmd.SetOut(&out)
+		if err := ReportMutations(cmd, "scale", "prod", dryRun, "table", &cubapi.Result{DryRun: dryRun, Outcomes: outcomes}); err != nil {
+			t.Fatal(err)
+		}
+		if got := strings.Contains(out.String(), ReleaseNote("prod")); got == dryRun {
+			t.Errorf("dryRun=%v: release note shown = %v:\n%s", dryRun, got, out.String())
+		}
+	}
+}
+
 // A command that runs several functions over the same Unit shows one row,
 // mutated if any function changed it.
 func TestSummarizeAggregatesPerUnit(t *testing.T) {

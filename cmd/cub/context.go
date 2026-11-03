@@ -240,11 +240,12 @@ func (cm *ContextManager) DeleteTokenData(ctx *Context) error {
 // --- endpoints the server advertises for a context's server URL ---
 
 // ociServerURLFromApiInfo builds the OCI registry URL for a server from what it
-// advertises at /api/info. The scheme is taken from the API's own URL: the
-// response carries a host and a port but nothing that says whether the registry
-// speaks TLS, and an http API fronts a plaintext registry. The port is omitted
-// when it is the scheme's default, so the result matches what a puller would
-// write by hand.
+// advertises at /api/info. The scheme is the one the server says the registry
+// speaks (OCITLS), which can differ from the API's: an API reached over plain
+// http inside a cluster can front a registry reached over https outside it, and
+// the other way round. A server that predates OCITLS does not send it, and then
+// the scheme is taken from the API's own URL. The port is omitted when it is the
+// scheme's default, so the result matches what a puller would write by hand.
 //
 // The result is empty when the server advertises no OCI host — an older server,
 // or one running with the registry disabled — so callers get nothing rather than
@@ -254,10 +255,17 @@ func ociServerURLFromApiInfo(serverURL string, apiInfo *goclientnew.ApiInfo) str
 		return ""
 	}
 	scheme := "https"
-	// Anything else (including a bare "host:port", which parses as an opaque URL
-	// with the host as its scheme) is not something to propagate.
-	if u, err := url.Parse(serverURL); err == nil && (u.Scheme == "http" || u.Scheme == "https") {
-		scheme = u.Scheme
+	switch {
+	case apiInfo.OCITLS != nil && *apiInfo.OCITLS:
+		scheme = "https"
+	case apiInfo.OCITLS != nil:
+		scheme = "http"
+	default:
+		// Anything else (including a bare "host:port", which parses as an opaque URL
+		// with the host as its scheme) is not something to propagate.
+		if u, err := url.Parse(serverURL); err == nil && (u.Scheme == "http" || u.Scheme == "https") {
+			scheme = u.Scheme
+		}
 	}
 	host := apiInfo.OCIHost
 	if port := apiInfo.OCIPort; port != "" && !isDefaultPort(scheme, port) {
