@@ -3889,27 +3889,154 @@ func ownedMember(group *gaby.YamlDoc, fields ExclusiveFields, touch exclusiveTou
 // A Delete splits the same way, against nothing: the leaves are what the target currently holds
 // under the path, each a Delete of its own. Left whole, a coarse Delete writes straight past
 // every protected path beneath it -- protection is matched by walking up to the closest entry,
-// and the entry it finds is the mapping, which nothing claimed. DeleteShadowed does not cover
-// this: it is emitted by SubtractMutations, and subtraction is off on the path where stored
-// protection is doing the preserving.
+// and the entry it finds is the mapping, which nothing claimed. For a mapping, the
+// DeleteShadowed that SubtractMutations emits does not cover this: subtraction is off on the
+// path where stored protection is doing the preserving. A leaf that is itself a mapping with
+// something held under it splits again, so a protected key survives however deep below the
+// Delete it sits.
+//
+// The Delete of a list, or of an element of one, is the exception, and never splits: see
+// deleteListWhole.
 //
 // It only runs where it can matter: the target has a protected path strictly below the entry
 // and holds a mapping there.
 func expandCoarsePatchEntries(doc *gaby.YamlDoc, entries []api.MutationMapEntry,
 	canonicalProtection, storedProtection api.MutationMap,
 	resourceGuards *api.ResourcePathAnnotations, clearance api.Clearance,
-	mergeKeyLookup MergeKeyLookup) []api.MutationMapEntry {
+	mergeKeyLookup MergeKeyLookup, resource api.ResourceInfo) ([]api.MutationMapEntry, api.MutationConflictList) {
 	expanded := make([]api.MutationMapEntry, 0, len(entries))
+	var conflicts api.MutationConflictList
 	for _, entry := range entries {
+		if keep, listConflicts, isList := deleteListWhole(doc, entry, canonicalProtection,
+			storedProtection, resourceGuards, clearance, resource); isList {
+			if keep {
+				expanded = append(expanded, entry)
+			}
+			conflicts = append(conflicts, listConflicts...)
+			continue
+		}
 		leaves := coarseEntryLeaves(doc, entry, canonicalProtection, storedProtection,
 			resourceGuards, clearance, mergeKeyLookup)
 		if leaves == nil {
 			expanded = append(expanded, entry)
 			continue
 		}
-		expanded = append(expanded, leaves...)
+		for _, leaf := range leaves {
+			// Every leaf of a sub-diff of two mappings is strictly below the entry, which is
+			// what bounds the recursion; anything else is kept as it is rather than trusted.
+			if !strings.HasPrefix(string(leaf.Path), string(entry.Path)+".") {
+				expanded = append(expanded, leaf)
+				continue
+			}
+			deeper, deeperConflicts := expandCoarsePatchEntries(doc, []api.MutationMapEntry{leaf},
+				canonicalProtection, storedProtection, resourceGuards, clearance, mergeKeyLookup, resource)
+			expanded = append(expanded, deeper...)
+			conflicts = append(conflicts, deeperConflicts...)
+		}
 	}
-	return expanded
+	return expanded, conflicts
+}
+
+// deleteListWhole decides the Delete of a list, or of an element of one, that the target holds
+// something under, which a mapping's Delete would split into leaves. An element without its
+// unclaimed fields is not a smaller element but a malformed one -- an env var with no name, a
+// container with no image, an ExternalSecret data entry with nothing in it, which the
+// controller rejects and stops syncing the whole secret over -- and it is what the list's
+// consumer reads, and a list cut down to the elements holding something is made of them. So
+// the list or element goes or stays whole:
+//
+//   - A protected path under it does not keep it. The source removed it, and a target's
+//     override of one of its fields has nowhere to live once it is gone; each one is
+//     reported as DeleteShadowed, as SubtractMutations reports the target edits a Delete
+//     displaces. Protecting the element itself is how a target keeps one the source removes,
+//     and that is decided by the patch loop, which finds it walking up from the Delete's path.
+//   - A guard under it that the operation is not cleared for does keep it: the guard says the
+//     value may not be changed without clearance, and taking it away changes it. The Delete is
+//     withheld whole and reported as Guarded.
+//
+// isList is false for anything but the Delete of a list or a list element; keep says whether
+// the Delete is to be applied.
+func deleteListWhole(doc *gaby.YamlDoc, entry api.MutationMapEntry,
+	canonicalProtection, storedProtection api.MutationMap,
+	resourceGuards *api.ResourcePathAnnotations, clearance api.Clearance,
+	resource api.ResourceInfo) (keep bool, conflicts api.MutationConflictList, isList bool) {
+	if entry.MutationInfo.MutationType != api.MutationTypeDelete {
+		return false, nil, false
+	}
+	resolvedPath, resolved := ResolveAssociativeSegments(doc, string(entry.Path))
+	if !resolved {
+		return false, nil, false
+	}
+	if target := doc.Path(resolvedPath); !(target != nil && target.IsArray()) && !isListElement(doc, resolvedPath) {
+		return false, nil, false
+	}
+	canonicalPath := CanonicalMutationPath(entry.Path)
+
+	// Held at the element or above it: the patch loop withholds the Delete and says why, and
+	// nothing under it is displaced.
+	if _, info, found := api.FindAncestorPath(canonicalProtection, canonicalPath); found && info.Protected {
+		return true, nil, true
+	}
+	if _, info, found := api.FindAncestorPath(storedProtection, api.ResolvedPath(resolvedPath)); found && info.Protected {
+		return true, nil, true
+	}
+	if resourceGuards != nil {
+		if admitted, _ := clearance.Admits(resourceGuards.GuardsForPath(canonicalPath)); !admitted {
+			return true, nil, true
+		}
+	}
+
+	if guardedPath, withheld, found := withheldGuardBelow(resourceGuards, clearance, canonicalPath); found {
+		slog.Debug("list delete guarded", "path", string(entry.Path),
+			"guardedPath", string(guardedPath), "guard", withheld.Key)
+		withheldCopy := withheld
+		return false, api.MutationConflictList{{
+			Reason:   api.ConflictReasonGuarded,
+			Resource: resource,
+			Path:     entry.Path,
+			Source:   *entry.MutationInfo,
+			Guard:    &withheldCopy,
+			Details:  api.WithheldGuardDetails(withheld),
+		}}, true
+	}
+
+	// The stored record keys a path either by merge key or by position, and the canonical
+	// protection map is the same entries canonicalized, so walking the stored entries and
+	// matching each in both forms finds every one exactly once.
+	canonicalPrefix := string(canonicalPath) + "."
+	resolvedPrefix := resolvedPath + "."
+	for _, protected := range api.SortedMutationMapEntries(storedProtection) {
+		// A field the target removed and protected is not displaced by removing what held it.
+		if !protected.MutationInfo.Protected || protected.MutationInfo.MutationType == api.MutationTypeDelete {
+			continue
+		}
+		if !strings.HasPrefix(string(CanonicalMutationPath(protected.Path)), canonicalPrefix) &&
+			!strings.HasPrefix(string(protected.Path), resolvedPrefix) {
+			continue
+		}
+		displaced := *protected.MutationInfo
+		conflicts = append(conflicts, api.MutationConflict{
+			Reason:   api.ConflictReasonDeleteShadowed,
+			Resource: resource,
+			Path:     protected.Path,
+			Source:   *entry.MutationInfo,
+			Target:   &displaced,
+		})
+	}
+	return true, conflicts, true
+}
+
+// isListElement reports whether a resolved path names an element of a list in the document.
+func isListElement(doc *gaby.YamlDoc, resolvedPath string) bool {
+	segments := gaby.DotPathToSlice(resolvedPath)
+	if len(segments) < 2 {
+		return false
+	}
+	if index, err := strconv.Atoi(segments[len(segments)-1]); err != nil || index < 0 {
+		return false
+	}
+	list := doc.Path(JoinPathSegments(segments[:len(segments)-1]))
+	return list != nil && list.IsArray()
 }
 
 // coarseEntryLeaves returns the per-leaf entries an entry breaks into, or nil to leave it
@@ -3972,19 +4099,32 @@ func coarseEntryLeaves(doc *gaby.YamlDoc, entry api.MutationMapEntry,
 // so the guards on a coarse entry's own path say nothing about the descendants it would erase.
 func guardsBelow(resourceGuards *api.ResourcePathAnnotations, clearance api.Clearance,
 	path api.ResolvedPath) bool {
+	_, _, found := withheldGuardBelow(resourceGuards, clearance, path)
+	return found
+}
+
+// withheldGuardBelow is guardsBelow, also saying which path and guard it found, the first in
+// path order so the one reported does not vary from run to run.
+func withheldGuardBelow(resourceGuards *api.ResourcePathAnnotations, clearance api.Clearance,
+	path api.ResolvedPath) (api.ResolvedPath, api.WithheldGuard, bool) {
 	if resourceGuards == nil {
-		return false
+		return "", api.WithheldGuard{}, false
 	}
 	prefix := string(path) + "."
+	candidates := make([]string, 0, len(resourceGuards.PathAnnotationMap))
 	for candidate := range resourceGuards.PathAnnotationMap {
-		if !strings.HasPrefix(string(candidate), prefix) {
-			continue
-		}
-		if admitted, _ := clearance.Admits(resourceGuards.GuardsForPath(candidate)); !admitted {
-			return true
+		if strings.HasPrefix(string(candidate), prefix) {
+			candidates = append(candidates, string(candidate))
 		}
 	}
-	return false
+	slices.Sort(candidates)
+	for _, candidate := range candidates {
+		guarded := api.ResolvedPath(candidate)
+		if admitted, withheld := clearance.Admits(resourceGuards.GuardsForPath(guarded)); !admitted {
+			return guarded, withheld, true
+		}
+	}
+	return "", api.WithheldGuard{}, false
 }
 
 // emptyMapping is the document a Delete is diffed against: the subtree the entry wants to
@@ -4116,8 +4256,10 @@ func applyPathMutations(doc *gaby.YamlDoc, pathMutationMap api.MutationMap,
 		storedProtection = mutationsProtection[protectionIndex].PathMutationMap
 	}
 	if hasProtection || resourceGuards != nil {
-		sorted = expandCoarsePatchEntries(doc, sorted, canonicalProtection,
-			storedProtection, resourceGuards, clearance, mergeKeyLookup)
+		var expansionConflicts api.MutationConflictList
+		sorted, expansionConflicts = expandCoarsePatchEntries(doc, sorted, canonicalProtection,
+			storedProtection, resourceGuards, clearance, mergeKeyLookup, resource)
+		conflicts = append(conflicts, expansionConflicts...)
 	}
 	patches := make([]api.MutationMapEntry, 0, len(sorted))
 	for _, entry := range sorted {

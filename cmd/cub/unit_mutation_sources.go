@@ -30,10 +30,16 @@ table.
 
 With --where, reads every unit the clause selects in one request rather than one per unit.
 Each row carries the unit it belongs to, so the payload is addressed as
-'.[0].MutationSources' rather than '.[0]'. Scoped to --space when it is given. Examples:
+'.[0].MutationSources' rather than '.[0]'. Scoped to --space when it is given.
+
+The clause can select on MutationSources itself. Its PathMutationMap is keyed by path, and
+a * there iterates the paths, so the first example below selects the units that have a
+protected path in any resource. A dot in a path is written ~1 when naming one. Examples:
 
   cub unit mutation-sources --space my-space my-unit
-  cub unit mutation-sources --space my-space --where "Slug LIKE 'app-%'"`, ""),
+  cub unit mutation-sources --space my-space --where "Slug LIKE 'app-%'"
+  cub unit mutation-sources --where "MutationSources.*.PathMutationMap.*.Protected = true"
+  cub unit mutation-sources --where "MutationSources.*.PathMutationMap.spec~1replicas.Protected = true"`, ""),
 	Args: cobra.MaximumNArgs(1),
 	RunE: runUnitMutationSources,
 }

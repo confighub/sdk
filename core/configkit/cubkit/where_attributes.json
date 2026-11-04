@@ -1337,6 +1337,9 @@
       "LinkFindings": {
         "dataType": "JSON"
       },
+      "MutationSources": {
+        "dataType": "JSON"
+      },
       "NeededPaths": {
         "dataType": "JSON"
       },
@@ -1836,6 +1839,9 @@
         "expandable": true
       },
       "LinkFindings": {
+        "dataType": "JSON"
+      },
+      "MutationSources": {
         "dataType": "JSON"
       },
       "NeededPaths": {
