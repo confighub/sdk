@@ -37041,12 +37041,12 @@ paths:
       - description: |-
           Only the fields with at least one of these flags, comma-separated. Conflict,Absent,Finding,ValidationError,ValidationWarning selects the fields that need attention.
 
-          Supported values: Protected, Guarded, Conflict, Absent, Finding, ValidationError, ValidationWarning, Upgraded, SetByLink, SetByTrigger, ChangeOrder, Unreleased, Needed, Provided.
+          Supported values: Protected, Guarded, Conflict, Absent, Deleted, Finding, ValidationError, ValidationWarning, Upgraded, SetByLink, SetByTrigger, ChangeOrder, Unreleased, Needed, Provided.
         in: query
         name: flags
         required: false
         schema:
-          pattern: ^\s*(Protected|Guarded|Conflict|Absent|Finding|ValidationError|ValidationWarning|Upgraded|SetByLink|SetByTrigger|ChangeOrder|Unreleased|Needed|Provided)\s*(?:,\s*(?:Protected|Guarded|Conflict|Absent|Finding|ValidationError|ValidationWarning|Upgraded|SetByLink|SetByTrigger|ChangeOrder|Unreleased|Needed|Provided)\s*)*$
+          pattern: ^\s*(Protected|Guarded|Conflict|Absent|Deleted|Finding|ValidationError|ValidationWarning|Upgraded|SetByLink|SetByTrigger|ChangeOrder|Unreleased|Needed|Provided)\s*(?:,\s*(?:Protected|Guarded|Conflict|Absent|Deleted|Finding|ValidationError|ValidationWarning|Upgraded|SetByLink|SetByTrigger|ChangeOrder|Unreleased|Needed|Provided)\s*)*$
           type: string
       - description: Follow each merge and Link resolve into the unit it took the
           value from, to where the value was set. Default true; false reports each
@@ -47915,12 +47915,12 @@ paths:
       - description: |-
           Only the fields with at least one of these flags, comma-separated. Conflict,Absent,Finding,ValidationError,ValidationWarning selects the fields that need attention.
 
-          Supported values: Protected, Guarded, Conflict, Absent, Finding, ValidationError, ValidationWarning, Upgraded, SetByLink, SetByTrigger, ChangeOrder, Unreleased, Needed, Provided.
+          Supported values: Protected, Guarded, Conflict, Absent, Deleted, Finding, ValidationError, ValidationWarning, Upgraded, SetByLink, SetByTrigger, ChangeOrder, Unreleased, Needed, Provided.
         in: query
         name: flags
         required: false
         schema:
-          pattern: ^\s*(Protected|Guarded|Conflict|Absent|Finding|ValidationError|ValidationWarning|Upgraded|SetByLink|SetByTrigger|ChangeOrder|Unreleased|Needed|Provided)\s*(?:,\s*(?:Protected|Guarded|Conflict|Absent|Finding|ValidationError|ValidationWarning|Upgraded|SetByLink|SetByTrigger|ChangeOrder|Unreleased|Needed|Provided)\s*)*$
+          pattern: ^\s*(Protected|Guarded|Conflict|Absent|Deleted|Finding|ValidationError|ValidationWarning|Upgraded|SetByLink|SetByTrigger|ChangeOrder|Unreleased|Needed|Provided)\s*(?:,\s*(?:Protected|Guarded|Conflict|Absent|Deleted|Finding|ValidationError|ValidationWarning|Upgraded|SetByLink|SetByTrigger|ChangeOrder|Unreleased|Needed|Provided)\s*)*$
           type: string
       - description: Follow each merge and Link resolve into the unit it took the
           value from, to where the value was set. Default true; false reports each
@@ -52255,6 +52255,13 @@ components:
             $ref: '#/components/schemas/MutationConflict'
           type: array
           x-go-type-skip-optional-pointer: true
+        Deleted:
+          description: 'True for a field, or a resource, that the unit does not have
+            because a change deleted it: the unit''s record still names the deletion.
+            It has no value; its chain is the change that deleted it, and Protected
+            says whether a merge from upstream leaves it deleted.'
+          type: boolean
+          x-go-type-skip-optional-pointer: true
         Findings:
           description: 'The unit''s Link findings about the field: what a Link''s
             resolve could not do here.'
@@ -52264,7 +52271,7 @@ components:
           x-go-type-skip-optional-pointer: true
         Flags:
           description: 'What there is to know about the field, one code each: Protected,
-            Guarded, Conflict, Absent, Finding, ValidationError, ValidationWarning,
+            Guarded, Conflict, Absent, Deleted, Finding, ValidationError, ValidationWarning,
             Upgraded, SetByLink, SetByTrigger, ChangeOrder, Unreleased, Needed and
             Provided.'
           items:
@@ -52286,12 +52293,18 @@ components:
           type: array
           x-go-type-skip-optional-pointer: true
         Path:
-          description: The field's path, in the syntax functions and Links take.
+          description: 'The field''s path, in the syntax functions and Links take.
+            Empty on the row about the resource as a whole, which comes first among
+            the resource''s fields and carries what is recorded about the resource
+            rather than one of its fields: the change that added or deleted it, whether
+            it is protected as a whole, its guards, and its conflicts, findings and
+            failed checks that name no path.'
           type: string
           x-go-type-skip-optional-pointer: true
         Protected:
           description: True for a local override, which a merge from upstream leaves
-            alone.
+            alone. On the row about a resource as a whole, true when the resource
+            is protected as a whole.
           type: boolean
           x-go-type-skip-optional-pointer: true
         Provided:
@@ -52319,7 +52332,7 @@ components:
           x-go-type-skip-optional-pointer: true
         ResourceProtected:
           description: True when the field is protected because its resource is protected
-            as a whole.
+            as a whole, and on the row about that resource.
           type: boolean
           x-go-type-skip-optional-pointer: true
         ResourceType:

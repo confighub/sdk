@@ -107,7 +107,7 @@ func clusterControllerInstallCmdRun(cmd *cobra.Command, args []string) error {
 // its own and records the cluster, leaving its cluster Space marked so `cub
 // cluster attach` finishes it. Of opts it reads the name, the credentials, the
 // controller and the gate; the rest belongs to attach.
-func clusterControllerInstallRun(out io.Writer, opts clusterAttachOptions) error {
+func clusterControllerInstallRun(out io.Writer, opts clusterAttachOptions) (err error) {
 	if err := clusterCheckController(opts.controller); err != nil {
 		return err
 	}
@@ -133,17 +133,10 @@ func clusterControllerInstallRun(out io.Writer, opts clusterAttachOptions) error
 		return err
 	}
 
-	var rollback []func()
+	rollback := clusterBeginRollback(out)
 	commit := false
-	defer func() {
-		if commit {
-			return
-		}
-		for i := len(rollback) - 1; i >= 0; i-- {
-			rollback[i]()
-		}
-	}()
-	inst, err := clusterControllerInstallStage(out, &opts, func(f func()) { rollback = append(rollback, f) })
+	defer func() { rollback.finish(commit, &err) }()
+	inst, err := clusterControllerInstallStage(out, &opts, rollback.add)
 	if err != nil {
 		return err
 	}

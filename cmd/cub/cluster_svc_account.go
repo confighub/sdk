@@ -72,7 +72,7 @@ func clusterSvcAccountBootstrapCmdRun(cmd *cobra.Command, args []string) error {
 // attachment on a cluster `cub cluster controller-install` set up; the stage
 // moves its cluster Space on to clusterStageServiceAccount, so `cub cluster
 // attach` finishes it.
-func clusterSvcAccountBootstrapRun(out io.Writer, name string, noArgobot bool) error {
+func clusterSvcAccountBootstrapRun(out io.Writer, name string, noArgobot bool) (err error) {
 	if _, err := exec.LookPath("kubectl"); err != nil {
 		return fmt.Errorf("kubectl not found on PATH")
 	}
@@ -109,23 +109,16 @@ func clusterSvcAccountBootstrapRun(out io.Writer, name string, noArgobot bool) e
 		return err
 	}
 
-	var rollback []func()
+	rollback := clusterBeginRollback(out)
 	commit := false
-	defer func() {
-		if commit {
-			return
-		}
-		for i := len(rollback) - 1; i >= 0; i-- {
-			rollback[i]()
-		}
-	}()
+	defer func() { rollback.finish(commit, &err) }()
 	if err := clusterBootstrapServiceAccount(out, clusterServiceAccountSpec{
 		name:           name,
 		spaceSlug:      space.SpaceSlug,
 		kubeconfigPath: kubeconfigPath,
 		controller:     space.Controller,
 		noArgobot:      noArgobot,
-	}, inst, func(f func()) { rollback = append(rollback, f) }); err != nil {
+	}, inst, rollback.add); err != nil {
 		return err
 	}
 	commit = true
@@ -167,7 +160,7 @@ type clusterServiceAccountSpec struct {
 // its own rather than with a Space, and the credentials Secrets are rolled back
 // too, since the registry one marks the cluster as wired. When it is done it
 // moves the cluster Space's stage marker on to clusterStageServiceAccount.
-func clusterBootstrapServiceAccount(out io.Writer, spec clusterServiceAccountSpec, inst clusterInstalled, addRollback func(func())) error {
+func clusterBootstrapServiceAccount(out io.Writer, spec clusterServiceAccountSpec, inst clusterInstalled, addRollback func(clusterUndo)) error {
 	serviceAccountSlug := clusterServiceAccountSlug(spec.name)
 	fmt.Fprintf(out, "Creating service account %q (OrgRole=none; the controller pulls and argobot runs as it)...\n", serviceAccountSlug)
 	serviceAccountID, serviceAccountUserID, err := clusterCreateServiceAccount(serviceAccountSlug, serviceAccountSlug,
@@ -175,9 +168,13 @@ func clusterBootstrapServiceAccount(out io.Writer, spec clusterServiceAccountSpe
 	if err != nil {
 		return err
 	}
-	addRollback(func() {
-		fmt.Fprintf(out, "Rolling back: cub serviceaccount delete %q\n", serviceAccountSlug)
-		_ = clusterDeleteServiceAccount(serviceAccountSlug)
+	addRollback(clusterUndo{
+		what: fmt.Sprintf("service account %q", serviceAccountSlug),
+		fix:  []string{fmt.Sprintf("cub serviceaccount delete %s", serviceAccountSlug)},
+		run: func() error {
+			fmt.Fprintf(out, "Rolling back: cub serviceaccount delete %q\n", serviceAccountSlug)
+			return clusterDeleteServiceAccount(serviceAccountSlug)
+		},
 	})
 
 	fmt.Fprintf(out, "Granting %q its deployment path on OCI target %q...\n", serviceAccountSlug, clusterTargetSlug)
@@ -205,17 +202,15 @@ func clusterBootstrapServiceAccount(out io.Writer, spec clusterServiceAccountSpe
 	if err != nil {
 		return err
 	}
-	addRollback(func() {
-		_ = clusterKubectl(ctx, spec.kubeconfigPath, nil, io.Discard,
-			"delete", "secret", clusterControllerCredsSecret(spec.controller), "-n", clusterControllerNamespace(spec.controller), "--ignore-not-found")
-	})
+	addRollback(clusterUndoKubectlDeleteSecret(out, spec.kubeconfigPath,
+		clusterControllerNamespace(spec.controller), clusterControllerCredsSecret(spec.controller)))
 	switch spec.controller {
 	case clusterControllerSveltos:
 		err = clusterSveltosApplyOCICreds(ctx, spec.kubeconfigPath, pullToken, out)
 	case clusterControllerFlux:
-		err = clusterFluxApplyOCICreds(ctx, spec.kubeconfigPath, ociURLForArgo, pullToken, out)
+		err = clusterFluxApplyOCICreds(ctx, spec.kubeconfigPath, spec.name, ociURLForArgo, pullToken, out)
 	default:
-		err = clusterArgoApplyOCIRepoCreds(ctx, spec.kubeconfigPath, ociURLForArgo, pullToken, ociInsecure, out)
+		err = clusterArgoApplyOCIRepoCreds(ctx, spec.kubeconfigPath, spec.name, ociURLForArgo, pullToken, ociInsecure, out)
 	}
 	if err != nil {
 		return err

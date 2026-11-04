@@ -43,7 +43,8 @@ from adding it back. A path that is not
 already present inherits the closest ancestor mutation's provenance. Protecting
 a path does not protect a path beneath it that a change of its own wrote, such
 as an env entry's value set after the entry was added: name that path too, and
-check the result with 'cub unit blame', which marks a protected field P.
+check the result with 'cub unit blame', which marks a protected field P, and a
+resource protected as a whole P on its (resource) row, deleted resources included.
 
 --unprotect-all clears every protected path and resource of the unit, so a
 future merge may overwrite all of them. Combined with --protect, it clears the rest first, and

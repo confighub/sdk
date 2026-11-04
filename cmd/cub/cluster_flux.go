@@ -169,8 +169,8 @@ func clusterFluxCredsHost(encoded []byte) (string, error) {
 // account as the password for the registry at ociURL, under the username
 // "token" the registry accepts it with. Flux looks credentials up by the
 // host:port of the OCIRepository's URL, so ociURL has to be the one the
-// OCIRepositories pull from.
-func clusterFluxCredsManifest(ociURL, pullToken string) ([]byte, error) {
+// OCIRepositories pull from. annotations are clusterCredsAnnotations.
+func clusterFluxCredsManifest(annotations map[string]string, ociURL, pullToken string) ([]byte, error) {
 	u, err := url.Parse(ociURL)
 	if err != nil {
 		return nil, fmt.Errorf("parse %q: %w", ociURL, err)
@@ -190,15 +190,19 @@ func clusterFluxCredsManifest(ociURL, pullToken string) ([]byte, error) {
 	return json.Marshal(map[string]any{
 		"apiVersion": "v1",
 		"kind":       "Secret",
-		"metadata":   map[string]string{"name": clusterFluxCredsSecret, "namespace": clusterFluxNamespace},
+		"metadata": map[string]any{
+			"name":        clusterFluxCredsSecret,
+			"namespace":   clusterFluxNamespace,
+			"annotations": annotations,
+		},
 		"type":       "kubernetes.io/dockerconfigjson",
 		"stringData": map[string]string{".dockerconfigjson": string(dockerConfig)},
 	})
 }
 
 // clusterFluxApplyOCICreds installs the Secret from clusterFluxCredsManifest.
-func clusterFluxApplyOCICreds(ctx context.Context, kubeconfigPath, ociURL, pullToken string, out io.Writer) error {
-	secret, err := clusterFluxCredsManifest(ociURL, pullToken)
+func clusterFluxApplyOCICreds(ctx context.Context, kubeconfigPath, clusterName, ociURL, pullToken string, out io.Writer) error {
+	secret, err := clusterFluxCredsManifest(clusterCredsAnnotations(clusterName), ociURL, pullToken)
 	if err != nil {
 		return err
 	}

@@ -59,7 +59,7 @@ func clusterAppBootstrapCmdRun(cmd *cobra.Command, args []string) error {
 
 // clusterAppBootstrapRun runs the apps stage of an attachment, without
 // argobot, on a cluster `cub cluster svc-account-bootstrap` set up.
-func clusterAppBootstrapRun(out io.Writer, name string, prune bool) error {
+func clusterAppBootstrapRun(out io.Writer, name string, prune bool) (err error) {
 	if _, err := exec.LookPath("kubectl"); err != nil {
 		return fmt.Errorf("kubectl not found on PATH")
 	}
@@ -88,16 +88,9 @@ func clusterAppBootstrapRun(out io.Writer, name string, prune bool) error {
 		return err
 	}
 
-	var rollback []func()
+	rollback := clusterBeginRollback(out)
 	commit := false
-	defer func() {
-		if commit {
-			return
-		}
-		for i := len(rollback) - 1; i >= 0; i-- {
-			rollback[i]()
-		}
-	}()
+	defer func() { rollback.finish(commit, &err) }()
 	spec := clusterAttachSpec{
 		clusterControllerSpec: clusterControllerSpec{
 			name:              name,
@@ -110,7 +103,7 @@ func clusterAppBootstrapRun(out io.Writer, name string, prune bool) error {
 		noArgobot: true,
 		prune:     prune,
 	}
-	result, err := clusterBootstrapApps(out, spec, inst, nil, func(f func()) { rollback = append(rollback, f) })
+	result, err := clusterBootstrapApps(out, spec, inst, nil, rollback.add)
 	if err != nil {
 		return err
 	}

@@ -6,6 +6,7 @@ package main
 import (
 	"encoding/base64"
 	"encoding/json"
+	"maps"
 	"reflect"
 	"strings"
 	"testing"
@@ -134,11 +135,15 @@ func TestClusterFluxManifestPrune(t *testing.T) {
 
 func TestClusterFluxCredsManifest(t *testing.T) {
 	const url = "oci://172.18.0.1:9092"
-	manifest, err := clusterFluxCredsManifest(url, "s3cr:et")
+	annotations := map[string]string{clusterAnnotationName: "lab", clusterAnnotationOrganization: "org-1"}
+	manifest, err := clusterFluxCredsManifest(annotations, url, "s3cr:et")
 	if err != nil {
 		t.Fatal(err)
 	}
 	var secret struct {
+		Metadata struct {
+			Annotations map[string]string `json:"annotations"`
+		} `json:"metadata"`
 		Type       string            `json:"type"`
 		StringData map[string]string `json:"stringData"`
 	}
@@ -147,6 +152,11 @@ func TestClusterFluxCredsManifest(t *testing.T) {
 	}
 	if secret.Type != "kubernetes.io/dockerconfigjson" {
 		t.Errorf("type = %q, want kubernetes.io/dockerconfigjson", secret.Type)
+	}
+	// A later attach reads the cluster and organization back to tell a
+	// leftover Secret from a live attachment's.
+	if !maps.Equal(secret.Metadata.Annotations, annotations) {
+		t.Errorf("annotations = %v, want %v", secret.Metadata.Annotations, annotations)
 	}
 	var config struct {
 		Auths map[string]struct {
@@ -168,7 +178,7 @@ func TestClusterFluxCredsManifest(t *testing.T) {
 		t.Errorf("auth.auth = %q, want %q", auth.Auth, want)
 	}
 
-	if _, err := clusterFluxCredsManifest("not a url", "p"); err == nil {
+	if _, err := clusterFluxCredsManifest(nil, "not a url", "p"); err == nil {
 		t.Error("clusterFluxCredsManifest() with no host: want an error")
 	}
 }
@@ -198,7 +208,7 @@ func TestClusterAppsSuffix(t *testing.T) {
 }
 
 func TestClusterFluxCredsHostReadsTheSecretAttachWrites(t *testing.T) {
-	raw, err := clusterFluxCredsManifest("http://172.17.0.1:9093", "tok")
+	raw, err := clusterFluxCredsManifest(nil, "http://172.17.0.1:9093", "tok")
 	if err != nil {
 		t.Fatal(err)
 	}

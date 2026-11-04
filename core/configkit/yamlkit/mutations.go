@@ -727,11 +727,13 @@ func ResolveAssociativeSegmentsForInsertion(doc *gaby.YamlDoc, path string) (str
 // names in doc, and leaves every other segment as it is, merge-keyed ones included.
 //
 // It is for a reader holding a path that addresses a positional array's elements by index, as
-// a walk over the data does, who has to find the entries of a stored record that name the same
-// elements by content. Such an entry cannot be compared as text, and the merge engine's own
-// resolution is not enough to place it: the digest is of the element as the change found it,
-// so the entry an edit leaves names the element as it was before the edit, and the record keeps
-// no index to fall back to (see CanonicalMutationPath). So a segment is resolved in two stages:
+// a walk over the data does, who has to find the entries of a record from history -- the record
+// of one Mutation, or of a Revision written before stored keys were kept current -- that name
+// the same elements by content. Such an entry cannot be compared as text, and exact resolution
+// (ResolveStoredAnchors, which is enough for a current record) does not place it: the digest is
+// of the element as the change found it, so the entry an edit leaves names the element as it was
+// before the edit, and the record keeps no index to fall back to (see CanonicalMutationPath). So
+// a segment is resolved in two stages:
 //
 //   - as ResolveAssociativeSegments resolves it, by the element's content or identity, which
 //     places an element nothing has edited since the entry was recorded, wherever it has moved;
@@ -3721,9 +3723,10 @@ func findExclusiveTouch(patchPath api.ResolvedPath, resolvedPath string, lookup 
 
 // pathOwnership answers whether the target has claimed a path as its own — a stored
 // Protected=true on it or an ancestor, or, when subtraction is in play, a mutation of its
-// own at it or an ancestor. Both forms of the path are consulted for the same reason the
-// protection filter consults both: the target's records name a path the way the diff produced
-// it, while the path in hand has been resolved against this document.
+// own at it or an ancestor. Every form of the path is consulted for the same reason the
+// protection filter consults them: the target's records name a path the way the diff produced
+// it, while the path in hand has been resolved against this document, and an element of a list
+// with no merge key is named by two different contents on the two sides (see positionalForm).
 type pathOwnership func(canonicalPath, resolvedPath string) bool
 
 // clearExclusiveSiblings settles a union the patch wrote into, so that at most one member is
@@ -3971,22 +3974,29 @@ func deleteListWhole(doc *gaby.YamlDoc, entry api.MutationMapEntry,
 		return false, nil, false
 	}
 	canonicalPath := CanonicalMutationPath(entry.Path)
+	positionalPath := api.ResolvedPath(positionalForm(string(canonicalPath), resolvedPath))
 
 	// Held at the element or above it: the patch loop withholds the Delete and says why, and
 	// nothing under it is displaced.
-	if _, info, found := api.FindAncestorPath(canonicalProtection, canonicalPath); found && info.Protected {
-		return true, nil, true
+	for _, path := range []api.ResolvedPath{canonicalPath, positionalPath} {
+		if _, info, found := api.FindAncestorPath(canonicalProtection, path); found && info.Protected {
+			return true, nil, true
+		}
 	}
 	if _, info, found := api.FindAncestorPath(storedProtection, api.ResolvedPath(resolvedPath)); found && info.Protected {
 		return true, nil, true
 	}
 	if resourceGuards != nil {
-		if admitted, _ := clearance.Admits(resourceGuards.GuardsForPath(canonicalPath)); !admitted {
+		if admitted, _ := clearance.Admits(guardsAt(resourceGuards, canonicalPath, positionalPath)); !admitted {
 			return true, nil, true
 		}
 	}
 
-	if guardedPath, withheld, found := withheldGuardBelow(resourceGuards, clearance, canonicalPath); found {
+	guardedPath, withheld, found := withheldGuardBelow(resourceGuards, clearance, canonicalPath)
+	if !found {
+		guardedPath, withheld, found = withheldGuardBelow(resourceGuards, clearance, positionalPath)
+	}
+	if found {
 		slog.Debug("list delete guarded", "path", string(entry.Path),
 			"guardedPath", string(guardedPath), "guard", withheld.Key)
 		withheldCopy := withheld
@@ -4000,17 +4010,20 @@ func deleteListWhole(doc *gaby.YamlDoc, entry api.MutationMapEntry,
 		}}, true
 	}
 
-	// The stored record keys a path either by merge key or by position, and the canonical
-	// protection map is the same entries canonicalized, so walking the stored entries and
-	// matching each in both forms finds every one exactly once.
+	// The stored record keys a path by merge key, by content, or by position, so walking the
+	// stored entries and matching each in every form finds every one exactly once.
 	canonicalPrefix := string(canonicalPath) + "."
+	positionalPrefix := string(positionalPath) + "."
 	resolvedPrefix := resolvedPath + "."
 	for _, protected := range api.SortedMutationMapEntries(storedProtection) {
 		// A field the target removed and protected is not displaced by removing what held it.
 		if !protected.MutationInfo.Protected || protected.MutationInfo.MutationType == api.MutationTypeDelete {
 			continue
 		}
-		if !strings.HasPrefix(string(CanonicalMutationPath(protected.Path)), canonicalPrefix) &&
+		storedCanonical := string(CanonicalMutationPath(protected.Path))
+		storedPositional, _ := ResolveStoredAnchors(doc, storedCanonical)
+		if !strings.HasPrefix(storedCanonical, canonicalPrefix) &&
+			!strings.HasPrefix(storedPositional, positionalPrefix) &&
 			!strings.HasPrefix(string(protected.Path), resolvedPrefix) {
 			continue
 		}
@@ -4049,9 +4062,13 @@ func coarseEntryLeaves(doc *gaby.YamlDoc, entry api.MutationMapEntry,
 	if !resolved {
 		return nil
 	}
-	if !protectsBelow(canonicalProtection, CanonicalMutationPath(entry.Path)) &&
+	canonicalPath := CanonicalMutationPath(entry.Path)
+	positionalPath := api.ResolvedPath(positionalForm(string(canonicalPath), resolvedPath))
+	if !protectsBelow(canonicalProtection, canonicalPath) &&
+		!protectsBelow(canonicalProtection, positionalPath) &&
 		!protectsBelow(storedProtection, api.ResolvedPath(resolvedPath)) &&
-		!guardsBelow(resourceGuards, clearance, CanonicalMutationPath(entry.Path)) {
+		!guardsBelow(resourceGuards, clearance, canonicalPath) &&
+		!guardsBelow(resourceGuards, clearance, positionalPath) {
 		return nil
 	}
 	target := doc.Path(resolvedPath)
@@ -4207,10 +4224,21 @@ func applyPathMutations(doc *gaby.YamlDoc, pathMutationMap api.MutationMap,
 	// nothing. The resolved form is still consulted as a fallback, since protection set
 	// through the /protection API and protection from toolchains with no merge keys are
 	// recorded numerically.
+	//
+	// An element of a list with no merge key is named by content on both sides, and the two
+	// contents are not the same content: the stored key names the element as the target holds
+	// it, the patch's as the source held it before its change. Compared as text they agree only
+	// until the first change either side makes to the element, its neighbors, or the list's
+	// length. So each such key is also entered in its positional form -- resolved against this
+	// document, which it describes (see ResolveStoredAnchors) -- and the patch path is looked up
+	// in the same form.
 	var canonicalProtection api.MutationMap
 	if hasProtection {
 		canonicalProtection, _ = canonicalMutationMap(mutationsProtection[protectionIndex].PathMutationMap)
+		addPositionalKeys(doc, canonicalProtection)
 	}
+	// The guard table names elements the same way, and is read the same way.
+	resourceGuards = withPositionalGuardKeys(doc, resourceGuards)
 
 	// What the target has claimed as its own, in whichever way this merge expresses it: a
 	// stored Protected=true, or — when subtraction is in play, where there is no stored
@@ -4222,6 +4250,10 @@ func applyPathMutations(doc *gaby.YamlDoc, pathMutationMap api.MutationMap,
 	}
 	targetOwns := pathOwnership(func(canonicalPath, resolvedPath string) bool {
 		if hasProtection {
+			if _, mutation, found := api.FindAncestorPath(canonicalProtection,
+				api.ResolvedPath(positionalForm(canonicalPath, resolvedPath))); found && mutation.Protected {
+				return true
+			}
 			for _, candidate := range []api.MutationMap{canonicalProtection,
 				mutationsProtection[protectionIndex].PathMutationMap} {
 				if _, mutation, found := api.FindAncestorPath(candidate,
@@ -4329,6 +4361,10 @@ func applyPathMutations(doc *gaby.YamlDoc, pathMutationMap api.MutationMap,
 			_, protectionMutation, hasFilter := api.FindAncestorPath(
 				canonicalProtection, CanonicalMutationPath(patches[i].Path))
 			if !hasFilter {
+				_, protectionMutation, hasFilter = api.FindAncestorPath(canonicalProtection,
+					api.ResolvedPath(positionalForm(string(CanonicalMutationPath(patches[i].Path)), string(patchPath))))
+			}
+			if !hasFilter {
 				_, protectionMutation, hasFilter = api.FindAncestorPath(
 					mutationsProtection[protectionIndex].PathMutationMap, patchPath)
 			}
@@ -4350,9 +4386,12 @@ func applyPathMutations(doc *gaby.YamlDoc, pathMutationMap api.MutationMap,
 		}
 		// Then the guards in force at this path. Resolved on the canonical form, as the
 		// table is keyed: the annotation names the element, and the patch path says where
-		// the element sat on the side the patch came from.
+		// the element sat on the side the patch came from. An element of a list with no merge
+		// key is found by position, as protection is.
 		if resourceGuards != nil {
-			pathGuards := resourceGuards.GuardsForPath(CanonicalMutationPath(patches[i].Path))
+			canonicalPatchPath := CanonicalMutationPath(patches[i].Path)
+			pathGuards := guardsAt(resourceGuards, canonicalPatchPath,
+				api.ResolvedPath(positionalForm(string(canonicalPatchPath), string(patchPath))))
 			if admitted, withheld := clearance.Admits(pathGuards); !admitted {
 				if targetHoldsPathMutation(doc, string(patchPath), patchMutation) {
 					continue
@@ -4752,6 +4791,11 @@ func Reset(parsedData gaby.Container, mutationsProtection api.ResourceMutationLi
 //   - Accumulative: designed to be called repeatedly as changes occur.
 //   - Last-write-wins for values and types on exact-path matches.
 //   - Alias awareness: handles resources renamed between mutation sets.
+//   - Content keys are not kept here: a key naming an element of a list with no merge key names
+//     it by its content, which the change being added may have altered, and following it needs
+//     the data on both sides of the change. A Unit's write re-anchors the result against the data
+//     it stores (ReanchorStoredPaths), which is also what makes a fresh diff's key for such an
+//     element match the one the accumulated record already holds for it.
 func AddMutations(identifier api.ResourceIdentifier, mutations, newMutations api.ResourceMutationList) (api.ResourceMutationList, bool) {
 	hasMutations := false
 	idx := api.NewResourceMutationIndex(identifier, mutations)
@@ -5281,6 +5325,11 @@ func SetProtection(parsedData gaby.Container, mutations api.ResourceMutationList
 		rm.PathMutationMap = make(api.MutationMap)
 	}
 	doc, _ := FindResourceDoc(parsedData, resourceProvider, &resource)
+	// A path into a list with no merge key is typed by position, which is how such a list is
+	// addressed from outside, and the record names the element by content. The two meet in
+	// positional form, the record's keys resolved against the data they describe.
+	byPosition := storedKeysByPosition(doc, rm.PathMutationMap)
+	mergeKeyLookup := mergeKeyLookupFor(rm.Resource.ResourceType, resourceProvider)
 	for path, protected := range protection {
 		if path == "" {
 			rm.ResourceMutationInfo.Protected = protected
@@ -5291,6 +5340,9 @@ func SetProtection(parsedData gaby.Container, mutations api.ResourceMutationList
 		// original path is what gets resolved against the data below, where the fallback
 		// still earns its keep.
 		key := CanonicalMutationPath(path)
+		if stored, found := byPosition[key]; found {
+			key = stored
+		}
 		// Exact match: the entry's Value is already correct; just flip the flag.
 		if info, ok := rm.PathMutationMap[key]; ok {
 			info.Protected = protected
@@ -5300,6 +5352,11 @@ func SetProtection(parsedData gaby.Container, mutations api.ResourceMutationList
 		// Split: inherit MutationType+Index from the closest ancestor (or the
 		// resource-level mutation), take Value from the data at path, leave Patch empty.
 		_, ancInfo, hasAncestor := api.FindAncestorPath(rm.PathMutationMap, key)
+		if !hasAncestor {
+			if stored, found := ancestorByPosition(byPosition, key); found {
+				ancInfo, hasAncestor = rm.PathMutationMap[stored], true
+			}
+		}
 		if !hasAncestor {
 			if rm.ResourceMutationInfo.MutationType == api.MutationTypeNone {
 				unresolved = append(unresolved, path)
@@ -5321,7 +5378,8 @@ func SetProtection(parsedData gaby.Container, mutations api.ResourceMutationList
 			unresolved = append(unresolved, path)
 			continue
 		}
-		rm.PathMutationMap[key] = api.MutationInfo{
+		// Stored as the record keys it, so the next write follows it with the element.
+		rm.PathMutationMap[StoredFormOf(doc, key, mergeKeyLookup)] = api.MutationInfo{
 			MutationType: ancInfo.MutationType,
 			Index:        ancInfo.Index,
 			Protected:    protected,

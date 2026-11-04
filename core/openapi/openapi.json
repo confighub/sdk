@@ -39543,10 +39543,10 @@
           {
             "name": "flags",
             "in": "query",
-            "description": "Only the fields with at least one of these flags, comma-separated. Conflict,Absent,Finding,ValidationError,ValidationWarning selects the fields that need attention.\n\nSupported values: Protected, Guarded, Conflict, Absent, Finding, ValidationError, ValidationWarning, Upgraded, SetByLink, SetByTrigger, ChangeOrder, Unreleased, Needed, Provided.",
+            "description": "Only the fields with at least one of these flags, comma-separated. Conflict,Absent,Finding,ValidationError,ValidationWarning selects the fields that need attention.\n\nSupported values: Protected, Guarded, Conflict, Absent, Deleted, Finding, ValidationError, ValidationWarning, Upgraded, SetByLink, SetByTrigger, ChangeOrder, Unreleased, Needed, Provided.",
             "required": false,
             "schema": {
-              "pattern": "^\\s*(Protected|Guarded|Conflict|Absent|Finding|ValidationError|ValidationWarning|Upgraded|SetByLink|SetByTrigger|ChangeOrder|Unreleased|Needed|Provided)\\s*(?:,\\s*(?:Protected|Guarded|Conflict|Absent|Finding|ValidationError|ValidationWarning|Upgraded|SetByLink|SetByTrigger|ChangeOrder|Unreleased|Needed|Provided)\\s*)*$",
+              "pattern": "^\\s*(Protected|Guarded|Conflict|Absent|Deleted|Finding|ValidationError|ValidationWarning|Upgraded|SetByLink|SetByTrigger|ChangeOrder|Unreleased|Needed|Provided)\\s*(?:,\\s*(?:Protected|Guarded|Conflict|Absent|Deleted|Finding|ValidationError|ValidationWarning|Upgraded|SetByLink|SetByTrigger|ChangeOrder|Unreleased|Needed|Provided)\\s*)*$",
               "type": "string"
             }
           },
@@ -50325,10 +50325,10 @@
           {
             "name": "flags",
             "in": "query",
-            "description": "Only the fields with at least one of these flags, comma-separated. Conflict,Absent,Finding,ValidationError,ValidationWarning selects the fields that need attention.\n\nSupported values: Protected, Guarded, Conflict, Absent, Finding, ValidationError, ValidationWarning, Upgraded, SetByLink, SetByTrigger, ChangeOrder, Unreleased, Needed, Provided.",
+            "description": "Only the fields with at least one of these flags, comma-separated. Conflict,Absent,Finding,ValidationError,ValidationWarning selects the fields that need attention.\n\nSupported values: Protected, Guarded, Conflict, Absent, Deleted, Finding, ValidationError, ValidationWarning, Upgraded, SetByLink, SetByTrigger, ChangeOrder, Unreleased, Needed, Provided.",
             "required": false,
             "schema": {
-              "pattern": "^\\s*(Protected|Guarded|Conflict|Absent|Finding|ValidationError|ValidationWarning|Upgraded|SetByLink|SetByTrigger|ChangeOrder|Unreleased|Needed|Provided)\\s*(?:,\\s*(?:Protected|Guarded|Conflict|Absent|Finding|ValidationError|ValidationWarning|Upgraded|SetByLink|SetByTrigger|ChangeOrder|Unreleased|Needed|Provided)\\s*)*$",
+              "pattern": "^\\s*(Protected|Guarded|Conflict|Absent|Deleted|Finding|ValidationError|ValidationWarning|Upgraded|SetByLink|SetByTrigger|ChangeOrder|Unreleased|Needed|Provided)\\s*(?:,\\s*(?:Protected|Guarded|Conflict|Absent|Deleted|Finding|ValidationError|ValidationWarning|Upgraded|SetByLink|SetByTrigger|ChangeOrder|Unreleased|Needed|Provided)\\s*)*$",
               "type": "string"
             }
           },
@@ -54553,6 +54553,11 @@
             "description": "The unit's outstanding conflicts about the field: upstream changes to it a merge or resolve dropped.",
             "x-go-type-skip-optional-pointer": true
           },
+          "Deleted": {
+            "type": "boolean",
+            "description": "True for a field, or a resource, that the unit does not have because a change deleted it: the unit's record still names the deletion. It has no value; its chain is the change that deleted it, and Protected says whether a merge from upstream leaves it deleted.",
+            "x-go-type-skip-optional-pointer": true
+          },
           "Findings": {
             "type": "array",
             "items": {
@@ -54566,7 +54571,7 @@
             "items": {
               "type": "string"
             },
-            "description": "What there is to know about the field, one code each: Protected, Guarded, Conflict, Absent, Finding, ValidationError, ValidationWarning, Upgraded, SetByLink, SetByTrigger, ChangeOrder, Unreleased, Needed and Provided.",
+            "description": "What there is to know about the field, one code each: Protected, Guarded, Conflict, Absent, Deleted, Finding, ValidationError, ValidationWarning, Upgraded, SetByLink, SetByTrigger, ChangeOrder, Unreleased, Needed and Provided.",
             "x-go-type-skip-optional-pointer": true
           },
           "Guards": {
@@ -54587,12 +54592,12 @@
           },
           "Path": {
             "type": "string",
-            "description": "The field's path, in the syntax functions and Links take.",
+            "description": "The field's path, in the syntax functions and Links take. Empty on the row about the resource as a whole, which comes first among the resource's fields and carries what is recorded about the resource rather than one of its fields: the change that added or deleted it, whether it is protected as a whole, its guards, and its conflicts, findings and failed checks that name no path.",
             "x-go-type-skip-optional-pointer": true
           },
           "Protected": {
             "type": "boolean",
-            "description": "True for a local override, which a merge from upstream leaves alone.",
+            "description": "True for a local override, which a merge from upstream leaves alone. On the row about a resource as a whole, true when the resource is protected as a whole.",
             "x-go-type-skip-optional-pointer": true
           },
           "Provided": {
@@ -54620,7 +54625,7 @@
           },
           "ResourceProtected": {
             "type": "boolean",
-            "description": "True when the field is protected because its resource is protected as a whole.",
+            "description": "True when the field is protected because its resource is protected as a whole, and on the row about that resource.",
             "x-go-type-skip-optional-pointer": true
           },
           "ResourceType": {

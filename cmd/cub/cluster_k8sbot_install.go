@@ -78,7 +78,7 @@ func clusterK8sbotInstallCmdRun(cmd *cobra.Command, args []string) error {
 
 // clusterK8sbotInstallRun installs argobot in a cluster attached without it.
 // withInstaller installs its base with ConfigHub's installer.
-func clusterK8sbotInstallRun(out io.Writer, name, argobotBase, registry string, withInstaller bool) error {
+func clusterK8sbotInstallRun(out io.Writer, name, argobotBase, registry string, withInstaller bool) (err error) {
 	repository, err := clusterArgobotRepository(registry)
 	if err != nil {
 		return err
@@ -134,16 +134,9 @@ func clusterK8sbotInstallRun(out io.Writer, name, argobotBase, registry string, 
 		return err
 	}
 
-	var rollback []func()
+	rollback := clusterBeginRollback(out)
 	commit := false
-	defer func() {
-		if commit {
-			return
-		}
-		for i := len(rollback) - 1; i >= 0; i-- {
-			rollback[i]()
-		}
-	}()
+	defer func() { rollback.finish(commit, &err) }()
 	if err := clusterInstallK8sbot(out, clusterK8sbotSpec{
 		name:              name,
 		spaceSlug:         space.SpaceSlug,
@@ -155,7 +148,7 @@ func clusterK8sbotInstallRun(out io.Writer, name, argobotBase, registry string, 
 		argobotRepository: repository,
 		argobotInstaller:  installer,
 		standalone:        true,
-	}, func(f func()) { rollback = append(rollback, f) }); err != nil {
+	}, rollback.add); err != nil {
 		return err
 	}
 	commit = true

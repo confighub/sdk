@@ -11,6 +11,9 @@ import (
 	"errors"
 	"fmt"
 	"io"
+	"maps"
+	"slices"
+	"strings"
 	"time"
 )
 
@@ -271,28 +274,42 @@ func clusterArgoExistingOCICredsURL(ctx context.Context, kubeconfigPath string) 
 // The credential is a long-lived token of the cluster's service account,
 // presented the way ConfigHub's registry takes any of its own tokens: as the
 // password, with the fixed username "token".
-func clusterArgoApplyOCIRepoCreds(ctx context.Context, kubeconfigPath, ociURL, pullToken string, insecureHTTP bool, out io.Writer) error {
+//
+// The Secret records the cluster's name and organization, so a later attach
+// that finds it can tell whether anything still uses it.
+func clusterArgoApplyOCIRepoCreds(ctx context.Context, kubeconfigPath, clusterName, ociURL, pullToken string, insecureHTTP bool, out io.Writer) error {
+	secret := clusterArgoOCIRepoCredsManifest(clusterCredsAnnotations(clusterName), ociURL, pullToken, insecureHTTP)
+	fmt.Fprintln(out, "Applying confighub-oci-creds repo-creds Secret to argocd namespace...")
+	return clusterKubectlApply(ctx, kubeconfigPath, []byte(secret), out)
+}
+
+// clusterArgoOCIRepoCredsManifest returns the Secret clusterArgoApplyOCIRepoCreds
+// applies.
+func clusterArgoOCIRepoCredsManifest(annotations map[string]string, ociURL, pullToken string, insecureHTTP bool) string {
 	extra := ""
 	if insecureHTTP {
 		extra = "  insecureOCIForceHttp: \"true\"\n"
 	}
-	secret := fmt.Sprintf(`apiVersion: v1
+	var annotationLines strings.Builder
+	for _, k := range slices.Sorted(maps.Keys(annotations)) {
+		fmt.Fprintf(&annotationLines, "    %s: %q\n", k, annotations[k])
+	}
+	return fmt.Sprintf(`apiVersion: v1
 kind: Secret
 metadata:
   name: %s
   namespace: %s
   labels:
     argocd.argoproj.io/secret-type: repo-creds
-type: Opaque
+  annotations:
+%stype: Opaque
 stringData:
   type: oci
   url: %s
   enableOCI: "true"
 %s  username: token
   password: %s
-`, clusterArgoOCICredsSecret, clusterArgoNamespace, ociURL, extra, pullToken)
-	fmt.Fprintln(out, "Applying confighub-oci-creds repo-creds Secret to argocd namespace...")
-	return clusterKubectlApply(ctx, kubeconfigPath, []byte(secret), out)
+`, clusterArgoOCICredsSecret, clusterArgoNamespace, annotationLines.String(), ociURL, extra, pullToken)
 }
 
 // clusterArgoRootAppManifest returns the YAML for the root "app-of-apps"

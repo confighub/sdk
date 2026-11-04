@@ -251,8 +251,9 @@ func blameRow(f *blame.Field, wide bool) []string {
 		}
 		when = blameAgo(origin.When)
 	}
+	path := blame.PathLabel(f)
 	if !wide {
-		return []string{f.Ref, blame.Letters(f), f.Path, setBy, user, where, rev, when}
+		return []string{f.Ref, blame.Letters(f), path, setBy, user, where, rev, when}
 	}
 	via, changeOrders := "", ""
 	if len(f.Chain) > 0 {
@@ -263,7 +264,7 @@ func blameRow(f *blame.Field, wide bool) []string {
 		changeOrders = strings.Join(here.ChangeOrders, ",")
 	}
 	return []string{
-		f.Ref, blame.Letters(f), f.Path,
+		f.Ref, blame.Letters(f), path,
 		truncateWithEllipsis(blameOneLine(f.Value), blameMaxValueWidth),
 		setBy, function, user, where, rev, mut, when, via, changeOrders,
 	}
@@ -317,6 +318,10 @@ func displayBlameDetail(f *blame.Field) {
 	switch {
 	case f.Absent:
 		tprintRaw("    (not in the unit: the conflicts above are changes a merge could not make here)")
+	case f.Deleted && f.Protected:
+		tprintRaw("    (not in the unit: deleted by the change above, and protected, so a merge from upstream leaves it deleted)")
+	case f.Deleted:
+		tprintRaw("    (not in the unit: deleted by the change above)")
 	case len(f.Chain) == 0:
 		tprintRaw("    (no recorded change; the value has been there since the unit was created)")
 	}

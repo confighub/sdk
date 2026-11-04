@@ -192,7 +192,7 @@ type clusterK8sbotSpec struct {
 // account with a key in the argobot-secrets Secret, issued here unless
 // svc-account-bootstrap already put one in the cluster. Everything it creates
 // is registered with registerRollback.
-func clusterInstallK8sbot(out io.Writer, spec clusterK8sbotSpec, registerRollback func(func())) error {
+func clusterInstallK8sbot(out io.Writer, spec clusterK8sbotSpec, registerRollback func(clusterUndo)) error {
 	serviceAccountSlug := clusterServiceAccountSlug(spec.name)
 	serviceAccountID, serviceAccountUserID, err := clusterServiceAccountIDs(serviceAccountSlug)
 	if err != nil {
@@ -222,32 +222,68 @@ func clusterInstallK8sbot(out io.Writer, spec clusterK8sbotSpec, registerRollbac
 			map[string]string{clusterAnnotationArgobot: "true"}); err != nil {
 			return fmt.Errorf("mark the target as argobot's: %w", err)
 		}
-		registerRollback(func() {
-			_ = clusterRemoveTargetAnnotation(spec.spaceID, spec.targetID, clusterAnnotationArgobot)
+		registerRollback(clusterUndo{
+			what: fmt.Sprintf("annotation %s on target %s/%s", clusterAnnotationArgobot, spec.spaceSlug, clusterTargetSlug),
+			fix: []string{fmt.Sprintf("cub target update --patch %s/%s --annotation %s=-",
+				spec.spaceSlug, clusterTargetSlug, clusterAnnotationArgobot)},
+			run: func() error {
+				fmt.Fprintf(out, "Rolling back: removing annotation %s from target %s/%s\n", clusterAnnotationArgobot, spec.spaceSlug, clusterTargetSlug)
+				return clusterRemoveTargetAnnotation(spec.spaceID, spec.targetID, clusterAnnotationArgobot)
+			},
 		})
 		// The root deploys the apps Space's Release, which `cub variant create`
 		// adds argobot's Unit to: take it back out so the root drops argobot.
-		registerRollback(func() {
-			appsSpace, err := resolveSpace(appsSlug, "SpaceID")
-			if err != nil {
-				return
-			}
-			unit, err := resolveUnit(argobotSlug, appsSpace.Space.SpaceID.String(), "UnitID")
-			if err != nil {
-				return
-			}
-			fmt.Fprintf(out, "Rolling back: removing argobot's Unit from apps space %q\n", appsSlug)
-			_, _ = cubClientNew.DeleteUnitWithResponse(ctx, appsSpace.Space.SpaceID, unit.Unit.UnitID, &goclientnew.DeleteUnitParams{})
-			_ = clusterPublishRelease(appsSpace.Space.SpaceID)
+		registerRollback(clusterUndo{
+			what: fmt.Sprintf("argobot's Unit %s/%s, in the apps space's Release", appsSlug, argobotSlug),
+			fix: []string{
+				fmt.Sprintf("cub unit delete %s/%s", appsSlug, argobotSlug),
+				fmt.Sprintf("cub release publish %s", appsSlug),
+			},
+			run: func() error {
+				appsSpace, err := resolveSpace(appsSlug, "SpaceID")
+				if cubapi.IsNotFoundError(err) {
+					return nil
+				} else if err != nil {
+					return err
+				}
+				unit, err := resolveUnit(argobotSlug, appsSpace.Space.SpaceID.String(), "UnitID")
+				if cubapi.IsNotFoundError(err) {
+					return nil // never added
+				} else if err != nil {
+					return err
+				}
+				fmt.Fprintf(out, "Rolling back: removing argobot's Unit from apps space %q\n", appsSlug)
+				res, err := cubClientNew.DeleteUnitWithResponse(ctx, appsSpace.Space.SpaceID, unit.Unit.UnitID, &goclientnew.DeleteUnitParams{})
+				if cubapi.IsAPIError(err, res) {
+					return cubapi.InterpretErrorGeneric(err, res)
+				}
+				if err := clusterPublishRelease(appsSpace.Space.SpaceID); err != nil {
+					return &clusterUndoPartial{
+						fix: []string{fmt.Sprintf("cub release publish %s", appsSlug)},
+						err: fmt.Errorf("argobot's Unit is deleted, but publishing the apps space's Release without it failed: %w", err),
+					}
+				}
+				return nil
+			},
 		})
 		// Within an attachment the Channel goes with the cluster Space.
-		registerRollback(func() {
-			channel, err := resolveChannel(clusterArgobotChannelSlug, spec.spaceID.String(), "ChannelID")
-			if err != nil {
-				return
-			}
-			fmt.Fprintf(out, "Rolling back: cub channel delete %s/%s\n", spec.spaceSlug, clusterArgobotChannelSlug)
-			_, _ = cubClientNew.DeleteChannelWithResponse(ctx, spec.spaceID, channel.Channel.ChannelID)
+		registerRollback(clusterUndo{
+			what: fmt.Sprintf("Channel %s/%s", spec.spaceSlug, clusterArgobotChannelSlug),
+			fix:  []string{fmt.Sprintf("cub channel delete %s/%s", spec.spaceSlug, clusterArgobotChannelSlug)},
+			run: func() error {
+				channel, err := resolveChannel(clusterArgobotChannelSlug, spec.spaceID.String(), "ChannelID")
+				if cubapi.IsNotFoundError(err) {
+					return nil // never created
+				} else if err != nil {
+					return err
+				}
+				fmt.Fprintf(out, "Rolling back: cub channel delete %s/%s\n", spec.spaceSlug, clusterArgobotChannelSlug)
+				res, err := cubClientNew.DeleteChannelWithResponse(ctx, spec.spaceID, channel.Channel.ChannelID)
+				if cubapi.IsAPIError(err, res) {
+					return cubapi.InterpretErrorGeneric(err, res)
+				}
+				return nil
+			},
 		})
 		// Before `cub variant create`, so argobot's own deployment polls like
 		// the root. Its rollbacks run before the ones above, so the apps-Space
@@ -262,15 +298,7 @@ func clusterInstallK8sbot(out io.Writer, spec clusterK8sbotSpec, registerRollbac
 	// release-target reference that would otherwise block deleting the cluster's
 	// OCI target. Resolve by slug at rollback time (it may not exist yet). The
 	// shared argobot-base Space is intentionally left alone.
-	registerRollback(func() {
-		sp, err := resolveSpace(argobotSlug, "SpaceID")
-		if err != nil {
-			return // never created
-		}
-		fmt.Fprintf(out, "Rolling back: cub space delete --recursive %q\n", argobotSlug)
-		_ = clusterClearReleaseTarget(sp.Space.SpaceID)
-		_ = clusterDeleteSpace(argobotSlug, true)
-	})
+	registerRollback(clusterUndoDeleteSpace(out, argobotSlug, true))
 
 	// ConfigHub API URL as argobot (in-cluster) reaches it — loopback rewritten
 	// to the docker host address, since a loopback cub server can only be
@@ -337,7 +365,7 @@ func clusterInstallK8sbot(out io.Writer, spec clusterK8sbotSpec, registerRollbac
 // publish after argobot's install carries to the cluster. Deployments that
 // already exist keep polling every minute. Argo CD has no interval of cub's to
 // change.
-func clusterPollWithArgobot(out io.Writer, spec clusterK8sbotSpec, appsSlug string, registerRollback func(func())) error {
+func clusterPollWithArgobot(out io.Writer, spec clusterK8sbotSpec, appsSlug string, registerRollback func(clusterUndo)) error {
 	var key string
 	var render func(interval, rootRepoURL string, insecure, prune bool) []byte
 	switch spec.controller {
@@ -372,12 +400,22 @@ func clusterPollWithArgobot(out io.Writer, spec clusterK8sbotSpec, appsSlug stri
 	if _, err := clusterGrantTarget(spec.spaceID, spec.targetID, uuid.Nil, map[string]string{key: interval}); err != nil {
 		return fmt.Errorf("record the poll interval on the target: %w", err)
 	}
-	registerRollback(func() {
-		if old == "" {
-			_ = clusterRemoveTargetAnnotation(spec.spaceID, spec.targetID, key)
-			return
-		}
-		_, _ = clusterGrantTarget(spec.spaceID, spec.targetID, uuid.Nil, map[string]string{key: old})
+	restoreTo := old
+	if old == "" {
+		restoreTo = "-"
+	}
+	registerRollback(clusterUndo{
+		what: fmt.Sprintf("annotation %s=%s on target %s/%s", key, interval, spec.spaceSlug, clusterTargetSlug),
+		fix: []string{fmt.Sprintf("cub target update --patch %s/%s --annotation %s=%s",
+			spec.spaceSlug, clusterTargetSlug, key, restoreTo)},
+		run: func() error {
+			fmt.Fprintf(out, "Rolling back: restoring annotation %s on target %s/%s\n", key, spec.spaceSlug, clusterTargetSlug)
+			if old == "" {
+				return clusterRemoveTargetAnnotation(spec.spaceID, spec.targetID, key)
+			}
+			_, err := clusterGrantTarget(spec.spaceID, spec.targetID, uuid.Nil, map[string]string{key: old})
+			return err
+		},
 	})
 
 	appsSpace, err := resolveSpace(appsSlug, "SpaceID")
@@ -385,11 +423,12 @@ func clusterPollWithArgobot(out io.Writer, spec clusterK8sbotSpec, appsSlug stri
 		return fmt.Errorf("resolve apps space %q: %w", appsSlug, err)
 	}
 	appsSpaceID := appsSpace.Space.SpaceID
-	root, err := resolveUnit(clusterRootUnitSlug, appsSpaceID.String(), "UnitID")
+	root, err := resolveUnit(clusterRootUnitSlug, appsSpaceID.String(), "UnitID,HeadRevisionNum")
 	if err != nil {
 		return fmt.Errorf("resolve root unit in apps space %q: %w", appsSlug, err)
 	}
 	rootUnitID := root.Unit.UnitID
+	rootRevision := root.Unit.HeadRevisionNum
 	ociURLForCluster, insecure, err := clusterControllerOCIEndpoint()
 	if err != nil {
 		return err
@@ -398,16 +437,32 @@ func clusterPollWithArgobot(out io.Writer, spec clusterK8sbotSpec, appsSlug stri
 	if _, err := putUnitData(appsSpaceID, rootUnitID, string(render(interval, rootRepoURL, insecure, prune)), nil); err != nil {
 		return fmt.Errorf("update root unit: %w", err)
 	}
-	registerRollback(func() {
-		previous := old
-		if previous == "" {
-			previous = clusterSveltosPollInterval(false)
-			if spec.controller == clusterControllerFlux {
-				previous = clusterFluxPollInterval(false)
+	registerRollback(clusterUndo{
+		what: fmt.Sprintf("the root Unit %s/%s at the %s poll interval", appsSlug, clusterRootUnitSlug, interval),
+		fix: []string{
+			fmt.Sprintf("cub unit update --space %s %s --restore %d", appsSlug, clusterRootUnitSlug, rootRevision),
+			fmt.Sprintf("cub release publish %s", appsSlug),
+		},
+		run: func() error {
+			previous := old
+			if previous == "" {
+				previous = clusterSveltosPollInterval(false)
+				if spec.controller == clusterControllerFlux {
+					previous = clusterFluxPollInterval(false)
+				}
 			}
-		}
-		_, _ = putUnitData(appsSpaceID, rootUnitID, string(render(previous, rootRepoURL, insecure, prune)), nil)
-		_ = clusterWaitUnitTriggers(appsSpaceID, rootUnitID)
+			fmt.Fprintf(out, "Rolling back: moving root Unit %s/%s back to the %s poll interval\n", appsSlug, clusterRootUnitSlug, previous)
+			if _, err := putUnitData(appsSpaceID, rootUnitID, string(render(previous, rootRepoURL, insecure, prune)), nil); err != nil {
+				return err
+			}
+			// The root is restored by now. The wait only lets the publish a
+			// later step makes find no pending Triggers; if that publish is
+			// refused for it, that step reports it.
+			if err := clusterWaitUnitTriggers(appsSpaceID, rootUnitID); err != nil {
+				fmt.Fprintf(out, "  note: the root's Triggers had not finished evaluating: %v\n", err)
+			}
+			return nil
+		},
 	})
 	return clusterWaitUnitTriggers(appsSpaceID, rootUnitID)
 }
@@ -417,15 +472,12 @@ func clusterPollWithArgobot(out io.Writer, spec clusterK8sbotSpec, appsSlug stri
 // argobot reads CONFIGHUB_AUTH_PRIVATE_KEY from. Applied straight to the
 // cluster so the key never enters a published Release, and before argobot's
 // Deployment so it is there when the pod starts.
-func clusterApplyArgobotKey(out io.Writer, kubeconfigPath string, privateKey json.RawMessage, registerRollback func(func())) error {
+func clusterApplyArgobotKey(out io.Writer, kubeconfigPath string, privateKey json.RawMessage, registerRollback func(clusterUndo)) error {
 	fmt.Fprintf(out, "Applying argobot key Secret to the %q namespace...\n", clusterArgobotNamespace)
 	if err := clusterKubectlApply(ctx, kubeconfigPath, clusterArgobotSecretManifest(privateKey), out); err != nil {
 		return fmt.Errorf("apply argobot secret: %w", err)
 	}
-	registerRollback(func() {
-		_ = clusterKubectl(ctx, kubeconfigPath, nil, io.Discard,
-			"delete", "secret", clusterArgobotSecret, "-n", clusterArgobotNamespace, "--ignore-not-found")
-	})
+	registerRollback(clusterUndoKubectlDeleteSecret(out, kubeconfigPath, clusterArgobotNamespace, clusterArgobotSecret))
 	return nil
 }
 

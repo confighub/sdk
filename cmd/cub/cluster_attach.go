@@ -6,6 +6,7 @@ package main
 import (
 	"bytes"
 	"context"
+	"errors"
 	"fmt"
 	"io"
 	"maps"
@@ -282,7 +283,7 @@ func clusterAttachCmdRun(cmd *cobra.Command, args []string) error {
 	})
 }
 
-func clusterAttachRun(out io.Writer, opts clusterAttachOptions) error {
+func clusterAttachRun(out io.Writer, opts clusterAttachOptions) (err error) {
 	if opts.name == "" {
 		return fmt.Errorf("a cluster name is required: cub cluster attach <name>")
 	}
@@ -373,17 +374,10 @@ func clusterAttachRun(out io.Writer, opts clusterAttachOptions) error {
 		opts.argobotBase = mode
 	}
 
-	var rollback []func()
+	rollback := clusterBeginRollback(out)
 	commit := false
-	defer func() {
-		if commit {
-			return
-		}
-		for i := len(rollback) - 1; i >= 0; i-- {
-			rollback[i]()
-		}
-	}()
-	addRollback := func(f func()) { rollback = append(rollback, f) }
+	defer func() { rollback.finish(commit, &err) }()
+	addRollback := rollback.add
 
 	var inst clusterInstalled
 	if installedSpace != nil {
@@ -550,7 +544,7 @@ func clusterLoadInstalled(space *clusterSpace, kubeconfigPath string) (clusterIn
 // and every ConfigHub entity it creates with addRollback. It sets opts.origin
 // to clusterOriginKind for a kind cluster `cub cluster create` made, which the
 // caller records.
-func clusterControllerInstallStage(out io.Writer, opts *clusterAttachOptions, addRollback func(func())) (clusterInstalled, error) {
+func clusterControllerInstallStage(out io.Writer, opts *clusterAttachOptions, addRollback func(clusterUndo)) (clusterInstalled, error) {
 	var inst clusterInstalled
 	eks := opts.provider == clusterProviderEKS
 	kubeconfigPath := clusterKubeconfigPath(opts.name)
@@ -587,11 +581,21 @@ func clusterControllerInstallStage(out io.Writer, opts *clusterAttachOptions, ad
 	if err := os.WriteFile(kubeconfigPath, kubeconfig, 0o600); err != nil {
 		return inst, fmt.Errorf("write kubeconfig: %w", err)
 	}
-	addRollback(func() {
-		fmt.Fprintf(out, "Rolling back: removing %s\n", kubeconfigPath)
-		_ = os.Remove(kubeconfigPath)
-		_ = os.Remove(envFilePath)
-		_ = clusterRemoveRecord(opts.name)
+	recordPath := clusterRecordPath(opts.name)
+	addRollback(clusterUndo{
+		what:              fmt.Sprintf("the local kubeconfig, env file and record of cluster %q", opts.name),
+		fix:               []string{fmt.Sprintf("rm -f %s %s %s", kubeconfigPath, envFilePath, recordPath)},
+		removesKubeconfig: true,
+		run: func() error {
+			fmt.Fprintf(out, "Rolling back: removing %s\n", kubeconfigPath)
+			var errs []error
+			for _, p := range []string{kubeconfigPath, envFilePath, recordPath} {
+				if err := os.Remove(p); err != nil && !os.IsNotExist(err) {
+					errs = append(errs, err)
+				}
+			}
+			return errors.Join(errs...)
+		},
 	})
 
 	// Installing the controller and applying the root need cluster-admin.
@@ -609,7 +613,7 @@ func clusterControllerInstallStage(out io.Writer, opts *clusterAttachOptions, ad
 	}
 	// One ConfigHub per cluster. The registry credentials Secret is the
 	// in-cluster mark of an attachment, whichever server it was to.
-	if err := clusterAttachRequireUnwired(ctx, kubeconfigPath, opts.controller); err != nil {
+	if err := clusterAttachRequireUnwired(ctx, out, kubeconfigPath, opts); err != nil {
 		return inst, err
 	}
 
@@ -723,31 +727,84 @@ func clusterPrintControllerSummary(out io.Writer, name, controller, kubeconfigPa
 
 // clusterAttachRequireUnwired fails when an earlier attachment's registry
 // credentials Secret is in the cluster: whichever ConfigHub it was to, the
-// cluster is already wired to one.
-func clusterAttachRequireUnwired(ctx context.Context, kubeconfigPath, controller string) error {
-	const detachHint = "Detach it first with 'cub cluster detach' on the machine that attached it, or delete that Secret by hand"
+// cluster is already wired to one. The exception is a Secret an attach that did
+// not finish left behind, which attach replaces as clusterJudgeCreds and
+// clusterAllowLeftoverCreds decide: one that records this organization and a
+// cluster nothing in it claims is replaced, asking first in a terminal; one an
+// older cub wrote, which records neither, is checked against name, the
+// cluster being attached, and replaced only when a terminal answers yes.
+// Sveltos's Secret records no registry, so it is never taken for a leftover.
+//
+// The error says how to remove the Secret with commands that work from here
+// (clusterWiredHint): `cub cluster detach` only when this machine has what it
+// needs, and always a kubectl command that reaches the cluster the way attach
+// did.
+func clusterAttachRequireUnwired(ctx context.Context, out io.Writer, kubeconfigPath string, opts *clusterAttachOptions) error {
+	controller, name := opts.controller, opts.name
+	// cluster and organization are what the Secret records.
+	hint := func(namespace, secret, cluster, organization string) string {
+		access := clusterAccessForHint(opts, clusterKubeconfigContext(ctx, kubeconfigPath))
+		return clusterWiredHint(clusterLocalDetachName(cluster, organization, kubeconfigPath),
+			clusterDeleteSecretCommands(access, namespace, secret), access.contextUnknown, namespace, secret)
+	}
+	var namespace, secret, existing string
+	var forRegistry func(existing, ociURL string) bool
 	switch controller {
 	case clusterControllerSveltos:
 		if wired, err := clusterSveltosHasOCICreds(ctx, kubeconfigPath); err != nil {
 			return err
 		} else if wired {
+			// The Secret records nothing that names the cluster it is for.
 			return fmt.Errorf("the cluster is already wired to a ConfigHub: Sveltos holds registry credentials (Secret %s/%s). %s",
-				clusterSveltosNamespace, clusterSveltosGatewaySecret, detachHint)
+				clusterSveltosNamespace, clusterSveltosGatewaySecret, hint(clusterSveltosNamespace, clusterSveltosGatewaySecret, "", ""))
 		}
+		return nil
 	case clusterControllerFlux:
-		if existing, err := clusterFluxExistingOCICredsHost(ctx, kubeconfigPath); err != nil {
+		var err error
+		if existing, err = clusterFluxExistingOCICredsHost(ctx, kubeconfigPath); err != nil {
 			return err
-		} else if existing != "" {
-			return fmt.Errorf("the cluster is already wired to a ConfigHub: Flux holds registry credentials for %s (Secret %s/%s). %s",
-				existing, clusterFluxNamespace, clusterFluxCredsSecret, detachHint)
 		}
+		namespace, secret, forRegistry = clusterFluxNamespace, clusterFluxCredsSecret, clusterFluxCredsForRegistry
 	default:
-		if existing, err := clusterArgoExistingOCICredsURL(ctx, kubeconfigPath); err != nil {
+		var err error
+		if existing, err = clusterArgoExistingOCICredsURL(ctx, kubeconfigPath); err != nil {
 			return err
-		} else if existing != "" {
-			return fmt.Errorf("the cluster is already wired to a ConfigHub: Argo CD holds registry credentials for %s (Secret %s/%s). %s",
-				existing, clusterArgoNamespace, clusterArgoOCICredsSecret, detachHint)
 		}
+		namespace, secret, forRegistry = clusterArgoNamespace, clusterArgoOCICredsSecret, clusterArgoCredsForRegistry
+	}
+	if existing == "" {
+		return nil
+	}
+	ociURL, _, err := clusterControllerOCIEndpoint()
+	if err != nil {
+		return err
+	}
+	// Read whatever registry the Secret is for: a cluster attached from this
+	// machine to another server is still one `cub cluster detach` removes.
+	found := clusterFoundCreds{forRegistry: forRegistry(existing, ociURL)}
+	if found.cluster, found.organization, err = clusterReadCredsAnnotations(ctx, kubeconfigPath, namespace, secret); err != nil {
+		return err
+	}
+	wiredBecause := func(why string) error {
+		return fmt.Errorf("the cluster is already wired to a ConfigHub: %s holds registry credentials for %s (Secret %s/%s).%s %s",
+			clusterControllerDisplayName(controller), existing, namespace, secret, why, hint(namespace, secret, found.cluster, found.organization))
+	}
+
+	verdict, checked, err := clusterJudgeCreds(found, contextManager.ActiveContext().Coordinate.OrganizationID, name, clusterClaimedInOrg)
+	if err != nil {
+		return err
+	}
+	if verdict == clusterCredsWired {
+		return wiredBecause("")
+	}
+	left := clusterLeftoverCreds{namespace: namespace, secret: secret, cluster: checked,
+		named: verdict == clusterCredsLeftover, server: clusterServerURL()}
+	replace, err := clusterAllowLeftoverCreds(out, os.Stdin, clusterStdinIsTerminal(), left)
+	if err != nil {
+		return err
+	}
+	if !replace {
+		return wiredBecause(" It may be left by an attach that did not finish, but it does not say which cluster or organization it was written for, as an older cub wrote it, so attach replaces it only when asked: run attach in a terminal to be asked.")
 	}
 	return nil
 }
@@ -1017,7 +1074,7 @@ type clusterAttachResult struct {
 // its OCI target, granting no one access to the target yet. The Space carries
 // clusterAnnotationStage until an attachment finishes. Every ConfigHub entity
 // it creates is registered with addRollback.
-func clusterInstallController(out io.Writer, spec clusterControllerSpec, addRollback func(func())) (clusterInstalled, error) {
+func clusterInstallController(out io.Writer, spec clusterControllerSpec, addRollback func(clusterUndo)) (clusterInstalled, error) {
 	var inst clusterInstalled
 	sveltos := spec.controller == clusterControllerSveltos
 	kubeconfigPath := spec.kubeconfigPath
@@ -1074,13 +1131,10 @@ func clusterInstallController(out io.Writer, spec clusterControllerSpec, addRoll
 	if err != nil {
 		return inst, err
 	}
-	addRollback(func() {
-		fmt.Fprintf(out, "Rolling back: cub space delete --recursive %q\n", spec.spaceSlug)
-		// This Space has no release target of its own; the apps Space's rollback
-		// (registered later, so it runs first) clears its cross-Space reference
-		// and deletes the Units bound to this target before we delete it here.
-		_ = clusterDeleteSpace(spec.spaceSlug, true)
-	})
+	// This Space has no release target of its own; the apps Space's rollback
+	// (registered later, so it runs first) clears its cross-Space reference
+	// and deletes the Units bound to this target before this one runs.
+	addRollback(clusterUndoDeleteSpace(out, spec.spaceSlug, false))
 	inst.spaceID = spaceID
 
 	// The default gate, created BEFORE the target: the server resolves a
@@ -1129,7 +1183,7 @@ func clusterInstallController(out io.Writer, spec clusterControllerSpec, addRoll
 // is registered with addRollback; the caller runs those (in reverse) if
 // anything after this fails, and clusterBootstrapApps returns an error before
 // completing.
-func clusterBootstrapApps(out io.Writer, spec clusterAttachSpec, inst clusterInstalled, installBot func() error, addRollback func(func())) (clusterAttachResult, error) {
+func clusterBootstrapApps(out io.Writer, spec clusterAttachSpec, inst clusterInstalled, installBot func() error, addRollback func(clusterUndo)) (clusterAttachResult, error) {
 	var result clusterAttachResult
 	sveltos := spec.controller == clusterControllerSveltos
 	flux := spec.controller == clusterControllerFlux
@@ -1170,14 +1224,7 @@ func clusterBootstrapApps(out io.Writer, spec clusterAttachSpec, inst clusterIns
 	if err != nil {
 		return result, err
 	}
-	addRollback(func() {
-		fmt.Fprintf(out, "Rolling back: cub space delete --recursive %q\n", appsSlug)
-		// Clear the cross-Space release-target reference first (ON DELETE
-		// RESTRICT blocks deleting the OCI target it points at, which lives in
-		// the cluster Space).
-		_ = clusterClearReleaseTarget(appsSpaceID)
-		_ = clusterDeleteSpace(appsSlug, true)
-	})
+	addRollback(clusterUndoDeleteSpace(out, appsSlug, true))
 
 	fmt.Fprintf(out, "Setting the apps space's release target to %q...\n", spec.spaceSlug+"/"+clusterTargetSlug)
 	if err := clusterSetReleaseTarget(appsSpaceID, targetID); err != nil {

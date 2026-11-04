@@ -24,15 +24,28 @@ func displayUnitPath(report *blame.PathReport) {
 	names := report.Names
 	unitPathLine(0, "Unit", f.SpaceSlug+"/"+f.UnitSlug)
 	unitPathLine(0, "Resource", f.ResourceType+" "+f.ResourceName)
-	unitPathLine(0, "Path", wrapBlameText(f.Path, unitPathWrapWidth(0), ".,/", "-_"))
+	if f.Path == "" {
+		unitPathLine(0, "Path", "none: this is the row about the resource as a whole")
+	} else {
+		unitPathLine(0, "Path", wrapBlameText(f.Path, unitPathWrapWidth(0), ".,/", "-_"))
+	}
 	unitPathLine(0, "Ref", f.Ref)
 	unitPathLine(0, "Flags", blame.Letters(f))
-	if f.Absent {
+	switch {
+	case f.Absent:
 		unitPathLine(0, "Value", "none: the unit does not have this field")
+	case f.Deleted && f.Path == "":
+		unitPathLine(0, "Value", "none: a change deleted the resource from the unit")
+	case f.Deleted:
+		unitPathLine(0, "Value", "none: a change deleted the field from the unit")
 	}
 	unitPathValue(0, "Value", f.Value)
 	unitPathLine(0, "Released", report.ReleaseMessage)
 	switch {
+	case f.Deleted && f.Protected:
+		unitPathLine(0, "Protected", "yes: a merge from upstream leaves it deleted")
+	case f.ResourceProtected && f.Path == "":
+		unitPathLine(0, "Protected", "yes: the resource is protected as a whole, so a merge from upstream leaves all of it alone")
 	case f.ResourceProtected:
 		unitPathLine(0, "Protected", "yes: its resource is protected as a whole, so a merge from upstream leaves all of it alone")
 	case f.Protected:
@@ -74,8 +87,22 @@ func displayUnitPath(report *blame.PathReport) {
 	case f.Absent:
 		tprintRaw("No recorded change: the unit does not have this field. Each conflict above is a change a")
 		tprintRaw("merge could not make to it; 'cub unit conflicts' applies or dismisses them.")
+	case len(report.Changes) == 0 && f.Path == "":
+		tprintRaw("No recorded change: the resource has been there since the unit was created.")
 	case len(report.Changes) == 0:
 		tprintRaw("No recorded change: the value has been there since the unit was created.")
+	case f.Deleted:
+		tprintRaw("Changes, from this unit out to where it was deleted:")
+		for _, change := range report.Changes {
+			tprintRaw("")
+			displayUnitPathChange(change, names)
+		}
+	case f.Path == "":
+		tprintRaw("Changes, from this unit out to where the resource was added:")
+		for _, change := range report.Changes {
+			tprintRaw("")
+			displayUnitPathChange(change, names)
+		}
 	default:
 		tprintRaw("Changes, from this unit out to where the value was set:")
 		for _, change := range report.Changes {
@@ -90,7 +117,11 @@ func displayUnitPath(report *blame.PathReport) {
 			tprintRaw("History: this unit records no change to the field itself; it arrived with its resource.")
 			return
 		}
-		tprintRaw("History of the field in this unit, oldest first (-o json for each change's records):")
+		if f.Path == "" {
+			tprintRaw("History of the resource in this unit, oldest first (-o json for each change's records):")
+		} else {
+			tprintRaw("History of the field in this unit, oldest first (-o json for each change's records):")
+		}
 		table := tableView()
 		if !noheader {
 			table.SetHeader([]string{"Rev", "Mut", "Type", "Value", "Set By", "User", "When", "Change Order"})

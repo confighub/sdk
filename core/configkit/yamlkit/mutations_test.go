@@ -80,8 +80,14 @@ func TestSetProtectionParentSplitExtractsValue(t *testing.T) {
 	updated, unresolved := SetProtection(setProtectionData(t), mutations, deploymentResource(),
 		map[api.ResolvedPath]bool{childPath: true}, testProvider)
 	assert.Empty(t, unresolved)
-	got, ok := updated[0].PathMutationMap[childPath]
-	require.True(t, ok, "a new child entry should be spliced in")
+	// The provider declares no merge key for containers, so the entry names the container by
+	// content, as the record keys every element of a list with no merge key.
+	doc, _ := FindResourceDoc(setProtectionData(t), testProvider, &api.ResourceInfo{
+		ResourceType: "apps/v1/Deployment", ResourceName: "default/myapp", ResourceNameWithoutScope: "myapp"})
+	stored, ok := storedKeysByPosition(doc, updated[0].PathMutationMap)[childPath]
+	require.True(t, ok, "a new child entry should be spliced in, found by the position it was given")
+	assert.Contains(t, string(stored), "?~h=")
+	got := updated[0].PathMutationMap[stored]
 	assert.True(t, got.Protected)
 	assert.Equal(t, int64(7), got.Index, "child should inherit the ancestor's Index/provenance")
 	// Value is extracted from the data at the child path, NOT copied from the ancestor block.

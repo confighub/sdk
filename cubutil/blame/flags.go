@@ -13,7 +13,7 @@ type Flag struct {
 }
 
 // FlagLegend is every flag, in the order the column prints them. P through W are about the
-// field as it stands; U through N are about the change in this unit that put the value there,
+// field as it stands, or on a resource's own row the resource; U through N are about the change in this unit that put the value there,
 // which for a value that arrived from upstream is the merge that brought it, not the upstream
 // change the SET BY column names. The lowercase n and p say what part the field plays in
 // NeedsProvides Links: they are about the field too, but nothing is wrong or pending because
@@ -23,6 +23,7 @@ var FlagLegend = []Flag{
 	{"Guarded", "G", "guarded: reasons are recorded for this value, and an operation must be cleared for them to overwrite it"},
 	{"Conflict", "X", "conflict: an upstream change to this field was dropped by a merge or resolve"},
 	{"Absent", "A", "absent: the unit does not have this field; a conflict names a change that could not be made to it"},
+	{"Deleted", "D", "deleted: the unit does not have this field or resource because a change deleted it; with P, a merge from upstream leaves it deleted"},
 	{"Finding", "F", "finding: a Link's resolve could not do what it names here"},
 	{"ValidationError", "E", "validation error: a validating Trigger's failed check names this field, which blocks a release"},
 	{"ValidationWarning", "W", "validation warning: a validating Trigger with Warn set failed a check that names this field"},
@@ -33,6 +34,18 @@ var FlagLegend = []Flag{
 	{"Unreleased", "N", "not released: the value changed after the unit's last Release, or the unit has none"},
 	{"Needed", "n", "needed: the value is to come from an upstream unit, through a NeedsProvides Link"},
 	{"Provided", "p", "provided: the value is offered to downstream units, through NeedsProvides Links"},
+}
+
+// ResourcePathLabel is what the PATH column prints on the row about a resource as a whole,
+// whose path is empty.
+const ResourcePathLabel = "(resource)"
+
+// PathLabel is a field's path as the PATH column prints it.
+func PathLabel(f *Field) string {
+	if f.Path == "" {
+		return ResourcePathLabel
+	}
+	return f.Path
 }
 
 // Letters renders a field's flags as the FLAGS column prints them, one letter each, in
@@ -66,4 +79,3 @@ func FlagsUsed(fields []*Field) []Flag {
 	}
 	return legend
 }
-

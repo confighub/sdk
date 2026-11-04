@@ -2434,10 +2434,13 @@ type BlameField struct {
 	// Conflicts The unit's outstanding conflicts about the field: upstream changes to it a merge or resolve dropped.
 	Conflicts []MutationConflict `json:"Conflicts,omitempty" yaml:"Conflicts,omitempty"`
 
+	// Deleted True for a field, or a resource, that the unit does not have because a change deleted it: the unit's record still names the deletion. It has no value; its chain is the change that deleted it, and Protected says whether a merge from upstream leaves it deleted.
+	Deleted bool `json:"Deleted,omitempty" yaml:"Deleted,omitempty"`
+
 	// Findings The unit's Link findings about the field: what a Link's resolve could not do here.
 	Findings []LinkFinding `json:"Findings,omitempty" yaml:"Findings,omitempty"`
 
-	// Flags What there is to know about the field, one code each: Protected, Guarded, Conflict, Absent, Finding, ValidationError, ValidationWarning, Upgraded, SetByLink, SetByTrigger, ChangeOrder, Unreleased, Needed and Provided.
+	// Flags What there is to know about the field, one code each: Protected, Guarded, Conflict, Absent, Deleted, Finding, ValidationError, ValidationWarning, Upgraded, SetByLink, SetByTrigger, ChangeOrder, Unreleased, Needed and Provided.
 	Flags []string `json:"Flags,omitempty" yaml:"Flags,omitempty"`
 
 	// Guards The guards on the field: its own, its ancestors' and its resource's, which an operation writing here has to be cleared for.
@@ -2446,10 +2449,10 @@ type BlameField struct {
 	// Needed The unit's needed paths that are the field: a value it is to take from an upstream unit through a NeedsProvides Link.
 	Needed []BlameNeededPath `json:"Needed,omitempty" yaml:"Needed,omitempty"`
 
-	// Path The field's path, in the syntax functions and Links take.
+	// Path The field's path, in the syntax functions and Links take. Empty on the row about the resource as a whole, which comes first among the resource's fields and carries what is recorded about the resource rather than one of its fields: the change that added or deleted it, whether it is protected as a whole, its guards, and its conflicts, findings and failed checks that name no path.
 	Path string `json:"Path,omitempty" yaml:"Path,omitempty"`
 
-	// Protected True for a local override, which a merge from upstream leaves alone.
+	// Protected True for a local override, which a merge from upstream leaves alone. On the row about a resource as a whole, true when the resource is protected as a whole.
 	Protected bool `json:"Protected,omitempty" yaml:"Protected,omitempty"`
 
 	// Provided The unit's provided paths that are the field: a value it offers downstream units through NeedsProvides Links.
@@ -2464,7 +2467,7 @@ type BlameField struct {
 	// ResourceNameWithoutScope The name of the resource without its scope, such as its namespace, which is how a resource a variant renamed is matched.
 	ResourceNameWithoutScope string `json:"ResourceNameWithoutScope,omitempty" yaml:"ResourceNameWithoutScope,omitempty"`
 
-	// ResourceProtected True when the field is protected because its resource is protected as a whole.
+	// ResourceProtected True when the field is protected because its resource is protected as a whole, and on the row about that resource.
 	ResourceProtected bool `json:"ResourceProtected,omitempty" yaml:"ResourceProtected,omitempty"`
 
 	// ResourceType The type of the resource the field is in.
@@ -21789,7 +21792,7 @@ type GetUnitBlameParams struct {
 
 	// Flags Only the fields with at least one of these flags, comma-separated. Conflict,Absent,Finding,ValidationError,ValidationWarning selects the fields that need attention.
 	//
-	// Supported values: Protected, Guarded, Conflict, Absent, Finding, ValidationError, ValidationWarning, Upgraded, SetByLink, SetByTrigger, ChangeOrder, Unreleased, Needed, Provided.
+	// Supported values: Protected, Guarded, Conflict, Absent, Deleted, Finding, ValidationError, ValidationWarning, Upgraded, SetByLink, SetByTrigger, ChangeOrder, Unreleased, Needed, Provided.
 	Flags *string `form:"flags,omitempty" json:"flags,omitempty" yaml:"flags,omitempty"`
 
 	// Upstream Follow each merge and Link resolve into the unit it took the value from, to where the value was set. Default true; false reports each unit's own record, which names the upstream unit without reading it.
@@ -26170,7 +26173,7 @@ type SearchUnitBlameParams struct {
 
 	// Flags Only the fields with at least one of these flags, comma-separated. Conflict,Absent,Finding,ValidationError,ValidationWarning selects the fields that need attention.
 	//
-	// Supported values: Protected, Guarded, Conflict, Absent, Finding, ValidationError, ValidationWarning, Upgraded, SetByLink, SetByTrigger, ChangeOrder, Unreleased, Needed, Provided.
+	// Supported values: Protected, Guarded, Conflict, Absent, Deleted, Finding, ValidationError, ValidationWarning, Upgraded, SetByLink, SetByTrigger, ChangeOrder, Unreleased, Needed, Provided.
 	Flags *string `form:"flags,omitempty" json:"flags,omitempty" yaml:"flags,omitempty"`
 
 	// Upstream Follow each merge and Link resolve into the unit it took the value from, to where the value was set. Default true; false reports each unit's own record, which names the upstream unit without reading it.
