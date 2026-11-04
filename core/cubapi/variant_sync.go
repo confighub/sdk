@@ -239,7 +239,7 @@ func cloneSyncUnit(ctx context.Context, c *Client, spec VariantSyncSpec, targetS
 	if namespace := targetSpace.Labels[LabelNamespace]; namespace != "" && created.Unit != nil {
 		variantSpec := VariantSpec{Namespace: namespace, ChangeDescription: spec.ChangeDescription}
 		unitWhere := NewWhere("").Eq("UnitID", created.Unit.UnitID.String()).String()
-		if err := setVariantNamespace(ctx, c, variantSpec, targetSpace, "", unitWhere); err != nil {
+		if _, err := setVariantNamespace(ctx, c, variantSpec, targetSpace, "", unitWhere); err != nil {
 			return nil, err
 		}
 	}

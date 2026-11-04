@@ -148,4 +148,5 @@ func RegisterFunctions(rp *k8skit.K8sResourceProviderType, fh handler.FunctionRe
 	registerPruneConfigMaps(fh, rp)
 	registerConfigMapHashAnnotations(fh, rp)
 	registerPodSecurityFunctions(fh, rp)
+	registerVetEnv(fh, rp)
 }

@@ -311,6 +311,18 @@ func diffValueText(doc *gaby.YamlDoc) string {
 	return strings.TrimRight(diffDocumentText(doc), "\n")
 }
 
+// DisplayValueText renders a value recorded as YAML text, such as a MutationInfo's Value, the
+// way a ConfigDiff shows one: a scalar as its text, without quoting or escaping, and a map or
+// array as a YAML block with its comments written back as comments rather than comment keys.
+// Text that does not parse is returned as it is.
+func DisplayValueText(value string) string {
+	doc, err := gaby.ParseYAML([]byte(value))
+	if err != nil || doc.YNode() == nil {
+		return strings.TrimRight(value, "\n")
+	}
+	return strings.TrimRight(diffValueText(doc), "\n")
+}
+
 // diffDocumentText renders a map or array as YAML, with the comments the parse lifted into
 // comment keys (see CommentKey) written back as comments.
 func diffDocumentText(doc *gaby.YamlDoc) string {

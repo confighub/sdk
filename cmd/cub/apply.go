@@ -126,7 +126,7 @@ func applyCmdRun(cmd *cobra.Command, args []string) error {
 	var with []func(*goclientnew.UploadParams)
 	showMutations := shouldDisplayMutations()
 	if showMutations {
-		with = append(with, cubapi.WithUploadMutations)
+		with = append(with, cubapi.WithUploadDiff)
 	}
 	result, err := cubapi.Upload(ctx, cubClient, req, applyArgs.dryRun, with...)
 	if err != nil {
@@ -183,8 +183,14 @@ func reportApplyResult(result *goclientnew.UploadResult, showMutations bool) int
 				default:
 					tprint("%-9s %s (backing Unit %s %s)", e.Action, name, u.Slug, strings.ToLower(u.Action))
 				}
-				if showMutations && u.Mutations != nil && len(*u.Mutations) > 0 {
-					displayResourceMutationList(u.Mutations)
+				// Every Unit action other than Unchanged writes the Unit, so a Diff missing
+				// from one of those is reported rather than looking like nothing changed.
+				if showMutations && u.Action != "Unchanged" {
+					if u.Diff == nil {
+						tprintRaw("The server returned no diff")
+					} else {
+						displayConfigDiff(u.Diff)
+					}
 				}
 			}
 		}

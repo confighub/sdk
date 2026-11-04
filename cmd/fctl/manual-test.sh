@@ -49,6 +49,8 @@ ${FCTL} do test-data/deployment.yaml "MyDeployment" set-image-reference nginx ":
 ${FCTL} do test-data/confighub.yaml "app" set-image-reference-by-uri ghcr.io/example/example ":testbuild" > ${DIR}/set-image-reference-by-uri.txt
 ${FCTL} do test-data/deployment-with-env.yaml "MyDeployment" set-env-var nginx SUCCESS true > ${DIR}/set-env-var.txt
 ${FCTL} do test-data/deployment-with-env.yaml "MyDeployment" get-env-var nginx HOPE > ${DIR}/get-env-var.txt
+${FCTL} do test-data/configmap.yaml "MyCM" vet-env "$(<test-data/env-vars-schema.json)" > ${DIR}/vet-env-configmap.txt
+${FCTL} do test-data/deployment-with-env.yaml "MyDeployment" vet-env "$(<test-data/env-vars-schema.json)" > ${DIR}/vet-env-deployment-fail.txt
 ${FCTL} do test-data/deployment.yaml "MyDeployment" set-container-resources nginx all 500m 256Mi 2 > ${DIR}/set-container-resources.txt
 ${FCTL} do test-data/deployment.yaml "MyDeployment" set-container-volume-mount-path nginx config-volume /etc/config configMap > ${DIR}/set-container-volume-mount-path.txt
 ${FCTL} do test-data/deployment.yaml "MyDeployment" set-container-port nginx http 8080 TCP > ${DIR}/set-container-port.txt

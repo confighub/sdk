@@ -8,6 +8,8 @@ import (
 	"fmt"
 	"io"
 	"os/exec"
+	"strings"
+	"sync"
 
 	"github.com/spf13/cobra"
 )
@@ -89,6 +91,17 @@ func clusterSvcAccountBootstrapRun(out io.Writer, name string, noArgobot bool) e
 		return err
 	} else if exists {
 		return fmt.Errorf("ConfigHub service account %q already exists (leftover cluster identity; delete it with 'cub serviceaccount delete %s')", serviceAccountSlug, serviceAccountSlug)
+	}
+	// The controller's registry credentials are matched to the registry by its
+	// address. Argo CD's confighub-oci-creds repo-creds Secret carries a url, and
+	// Argo CD uses it for every Application whose source.repoURL starts with that
+	// url. Flux's confighub-oci Secret is a docker config keyed by the registry's
+	// host:port, which has to be the host of the OCIRepository's URL. (Sveltos's
+	// confighub-gateway Secret records no URL.) This stage writes the credentials'
+	// half and app-bootstrap the root's source, which they are matched against, so
+	// both say which registry they use.
+	if err := clusterPrintControllerOCIEndpoint(out); err != nil {
+		return err
 	}
 	kubeconfigPath := clusterKubeconfigPath(name)
 	inst, err := clusterLoadInstalled(space, kubeconfigPath)
@@ -213,28 +226,92 @@ func clusterBootstrapServiceAccount(out io.Writer, spec clusterServiceAccountSpe
 	return clusterSetSpaceStage(inst.spaceID, clusterStageServiceAccount)
 }
 
+// clusterControllerOCI is the registry the controller is set up with.
+type clusterControllerOCI struct {
+	// advertised is the registry URL the server advertises at /api/info, ""
+	// when it advertises none; apiURL is the server's.
+	advertised, apiURL string
+	// url is the registry as the controller, inside the cluster, reaches it, and
+	// insecure whether that is plain HTTP.
+	url      string
+	insecure bool
+}
+
+// clusterResolveControllerOCI asks the server where its registry is once per
+// command, and every caller gets that one answer. The URL is printed before
+// anything is written with it (clusterPrintControllerOCIEndpoint), and then
+// written into the controller's credentials and into the root's source, by
+// different stages; a second request could tell those a different registry
+// from the one that was printed, or from each other.
+var clusterResolveControllerOCI = sync.OnceValues(func() (clusterControllerOCI, error) {
+	advertised, err := clusterOCIServerURL()
+	if err != nil {
+		return clusterControllerOCI{}, err
+	}
+	apiURL := clusterServerURL()
+	url, err := clusterOCIEndpointFromContainer(advertised, apiURL)
+	if err != nil {
+		return clusterControllerOCI{}, err
+	}
+	insecure, err := clusterOCIInsecure(advertised, apiURL)
+	if err != nil {
+		return clusterControllerOCI{}, err
+	}
+	return clusterControllerOCI{advertised: advertised, apiURL: apiURL, url: url, insecure: insecure}, nil
+})
+
 // clusterControllerOCIEndpoint returns the OCI registry URL as the controller,
-// running inside the cluster, reaches it, and whether it is plain HTTP. The
-// server is asked where its registry is once, for both, so the two cannot
-// disagree. A loopback registry is rewritten to the docker host address, which
-// only a cluster on this machine can reach anyway; a remote one passes through
-// untouched. Plain HTTP comes from the advertised registry's scheme, or failing
-// that from the cub server URL's: http:// API → http:// OCI (the local-dev
-// case), https:// API → TLS OCI.
+// running inside the cluster, reaches it, and whether it is plain HTTP, from
+// the one answer clusterResolveControllerOCI gets. A loopback registry is
+// rewritten to the docker host address, which only a cluster on this machine
+// can reach anyway; a remote one passes through untouched. Plain HTTP comes from
+// the advertised registry's scheme, or failing that from the cub server URL's:
+// http:// API → http:// OCI (the local-dev case), https:// API → TLS OCI.
 func clusterControllerOCIEndpoint() (string, bool, error) {
-	ociServerURL, err := clusterOCIServerURL()
+	oci, err := clusterResolveControllerOCI()
 	if err != nil {
 		return "", false, err
 	}
-	url, err := clusterOCIEndpointFromContainer(ociServerURL, clusterServerURL())
+	return oci.url, oci.insecure, nil
+}
+
+// clusterPrintControllerOCIEndpoint says which registry URL the controller is
+// set up with, and where it came from, before anything is written with it: the
+// repo-creds Secret and the root's source both carry it, and a wrong one shows
+// only later, as a controller that cannot pull.
+func clusterPrintControllerOCIEndpoint(out io.Writer) error {
+	oci, err := clusterResolveControllerOCI()
 	if err != nil {
-		return "", false, err
+		return err
 	}
-	insecure, err := clusterOCIInsecure(ociServerURL, clusterServerURL())
-	if err != nil {
-		return "", false, err
+	fmt.Fprint(out, clusterDescribeControllerOCIEndpoint(oci))
+	return nil
+}
+
+// clusterDescribeControllerOCIEndpoint is the text clusterPrintControllerOCIEndpoint
+// prints: the registry as the controller will reach it, and how that follows from
+// what the server advertises. The server's OCI_EXTERNAL_URL is offered as the fix
+// only where it decides the address. For a server on this machine it does not:
+// the host is replaced by the docker network's address for this machine, whatever
+// the server says, so only the port and scheme would follow it.
+func clusterDescribeControllerOCIEndpoint(oci clusterControllerOCI) string {
+	var b strings.Builder
+	fmt.Fprintf(&b, "Registry the controller will pull Releases from: %s", oci.url)
+	if oci.insecure {
+		b.WriteString(" (plain HTTP)")
 	}
-	return url, insecure, nil
+	b.WriteString("\n")
+	if oci.advertised == "" {
+		fmt.Fprintf(&b, "  derived from the API URL %s: the server advertises no registry at /api/info\n", oci.apiURL)
+	} else {
+		fmt.Fprintf(&b, "  advertised by %s at /api/info as %s\n", oci.apiURL, oci.advertised)
+	}
+	if beforeRewrite, err := clusterOCIEndpoint(oci.advertised, oci.apiURL); err == nil && beforeRewrite != oci.url {
+		b.WriteString("  its host rewritten to the docker network's address for this machine, which a container in a cluster on this machine reaches the server by\n")
+		return b.String()
+	}
+	b.WriteString("  If the cluster reaches the registry at another address, set OCI_EXTERNAL_URL on the ConfigHub server.\n")
+	return b.String()
 }
 
 // clusterControllerCredsSecret returns the Secret, in the controller's

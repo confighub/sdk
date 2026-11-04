@@ -129,3 +129,62 @@ func TestClusterAPIEndpointFromContainer(t *testing.T) {
 		}
 	}
 }
+
+// Attach says which registry URL it sets the controller up with and where it came from, before
+// writing it anywhere, so a wrong one can be fixed on the server before the controller fails.
+func TestClusterDescribeControllerOCIEndpoint(t *testing.T) {
+	const (
+		hint      = "  If the cluster reaches the registry at another address, set OCI_EXTERNAL_URL on the ConfigHub server.\n"
+		rewritten = "  its host rewritten to the docker network's address for this machine, which a container in a cluster on this machine reaches the server by\n"
+	)
+	cases := []struct {
+		name string
+		oci  clusterControllerOCI
+		want string
+	}{{
+		name: "advertised, used as is",
+		oci: clusterControllerOCI{
+			advertised: "https://confighub-oci.example.com",
+			apiURL:     "https://confighub.example.com",
+			url:        "oci://confighub-oci.example.com:443",
+		},
+		want: "Registry the controller will pull Releases from: oci://confighub-oci.example.com:443\n" +
+			"  advertised by https://confighub.example.com at /api/info as https://confighub-oci.example.com\n" + hint,
+	}, {
+		name: "nothing advertised",
+		oci: clusterControllerOCI{
+			apiURL: "https://hub.example.com",
+			url:    "oci://oci.hub.example.com:443",
+		},
+		want: "Registry the controller will pull Releases from: oci://oci.hub.example.com:443\n" +
+			"  derived from the API URL https://hub.example.com: the server advertises no registry at /api/info\n" + hint,
+	}, {
+		// The server's settings do not decide the host a local cluster reaches, so
+		// OCI_EXTERNAL_URL is not offered as the fix.
+		name: "advertised, rewritten for a cluster on this machine",
+		oci: clusterControllerOCI{
+			advertised: "http://localhost:9092",
+			apiURL:     "http://localhost:9090",
+			url:        "oci://172.18.0.1:9092",
+			insecure:   true,
+		},
+		want: "Registry the controller will pull Releases from: oci://172.18.0.1:9092 (plain HTTP)\n" +
+			"  advertised by http://localhost:9090 at /api/info as http://localhost:9092\n" + rewritten,
+	}, {
+		name: "nothing advertised, rewritten for a cluster on this machine",
+		oci: clusterControllerOCI{
+			apiURL:   "http://localhost:9090",
+			url:      "oci://172.18.0.1:9092",
+			insecure: true,
+		},
+		want: "Registry the controller will pull Releases from: oci://172.18.0.1:9092 (plain HTTP)\n" +
+			"  derived from the API URL http://localhost:9090: the server advertises no registry at /api/info\n" + rewritten,
+	}}
+	for _, c := range cases {
+		t.Run(c.name, func(t *testing.T) {
+			if got := clusterDescribeControllerOCIEndpoint(c.oci); got != c.want {
+				t.Errorf("got:\n%s\nwant:\n%s", got, c.want)
+			}
+		})
+	}
+}

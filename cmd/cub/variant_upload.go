@@ -187,7 +187,8 @@ does not change untagged. An upload with a Unit to write that the tag already ma
 refused before anything is written.
 
 Use --dry-run to see what would be created, updated, emptied, revived, or adopted
-without changing anything.
+without changing anything. Add -o mutations to see what the upload changes, or would change,
+in each Unit, path by path with the values on both sides.
 
 Examples:
 `+"```"+`
@@ -221,8 +222,8 @@ Examples:
     --tag cubbychat-base/v2 --clearance owner=platform \
     oci://ghcr.io/confighub/configs/cubbychat:v2
 
-  # Preview that upload first.
-  cub variant upload --dry-run --component cubbychat --variant base \
+  # Preview that upload first, with the values it would change.
+  cub variant upload --dry-run -o mutations --component cubbychat --variant base \
     oci://ghcr.io/confighub/configs/cubbychat:v2
 `+"```"+`
 `, ""),
@@ -261,6 +262,8 @@ func init() {
 	variantUploadCmd.Flags().BoolVar(&variantUploadArgs.yes, "yes", false, "do not ask for confirmation when the upload would empty Units")
 	variantUploadCmd.Flags().BoolVar(&variantUploadArgs.clientPull, "client-pull", false, "pull oci:// inputs on this machine rather than having the server pull them, for a registry the server cannot reach")
 	variantUploadCmd.Flags().BoolVar(&variantUploadArgs.noClusterApp, "no-cluster-app", false, "skip adding the Argo CD Application, Sveltos ClusterProfile, or Flux OCIRepository and Kustomization, when the upload creates its Space with a cub-cluster --target")
+	variantUploadCmd.Flags().StringVarP(&outputFormat, "output", "o", "",
+		"output format: mutations, to show what the upload changes, or would change, in each Unit, path by path with the values on both sides")
 	variantCmd.AddCommand(variantUploadCmd)
 }
 
@@ -278,6 +281,9 @@ var variantUploadReservedLabels = map[string]string{
 
 func variantUploadCmdRun(cmd *cobra.Command, args []string) error {
 	a := &variantUploadArgs
+	if kind := effectiveOutput().Kind; kind != OutputDefault && kind != OutputMutations {
+		return fmt.Errorf("cub variant upload supports only -o mutations")
+	}
 	if a.component == "" && !strings.Contains(a.variant, "/") {
 		return fmt.Errorf("--component is required, or name it in --variant as <component>/<variant>")
 	}
@@ -413,7 +419,11 @@ func variantUploadCmdRun(cmd *cobra.Command, args []string) error {
 		}
 	}
 
-	result, err := cubapi.Upload(ctx, cubClient, req, a.dryRun)
+	var with []func(*goclientnew.UploadParams)
+	if shouldDisplayMutations() {
+		with = append(with, cubapi.WithUploadDiff)
+	}
+	result, err := cubapi.Upload(ctx, cubClient, req, a.dryRun, with...)
 	if err != nil {
 		return err
 	}
@@ -421,6 +431,9 @@ func variantUploadCmdRun(cmd *cobra.Command, args []string) error {
 		tprint("Pulled %s (%s)", req.Source.Ref, result.SourceDigest)
 	}
 	reportUploadResult(result)
+	if shouldDisplayMutations() {
+		displayUploadDiffs(result)
+	}
 	if a.dryRun {
 		owner.reportDryRun()
 		return nil
@@ -858,6 +871,23 @@ func reportUploadResult(result *goclientnew.UploadResult) {
 			tprint("target lives in the cluster, e.g. a Secret created out-of-band):")
 			for _, u := range c.UnmatchedReferences {
 				tprint("  - %s -> %s %q", u.FromUnit, u.TargetType, u.TargetName)
+			}
+		}
+	}
+}
+
+// displayUploadDiffs prints what the upload changed, or on a dry run would change, in each Unit
+// it wrote, from the Diff WithUploadDiff asked for.
+func displayUploadDiffs(result *goclientnew.UploadResult) {
+	for _, c := range result.Components {
+		for _, s := range c.Spaces {
+			for i := range s.Units {
+				u := &s.Units[i]
+				if u.Error != nil || u.Action == "Unchanged" {
+					continue
+				}
+				tprintRaw("")
+				displayUnitChanges(s.SpaceSlug+"/"+u.Slug, "upload", u.Diff)
 			}
 		}
 	}

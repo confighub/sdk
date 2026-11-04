@@ -349,6 +349,9 @@ func clusterAttachRun(out io.Writer, opts clusterAttachOptions) error {
 	if err := clusterRequireFreshConfigHub(opts.name, freshSpaceSlug, appsSlug, argobotSlug, freshServiceAccount); err != nil {
 		return err
 	}
+	if err := clusterPrintControllerOCIEndpoint(out); err != nil {
+		return err
+	}
 	var argobotRepository string
 	var argobotInstaller *PluginCommand
 	if !opts.noArgobot {

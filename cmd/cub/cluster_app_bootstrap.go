@@ -77,6 +77,11 @@ func clusterAppBootstrapRun(out io.Writer, name string, prune bool) error {
 	if err := clusterRequireFreshConfigHub(name, "", appsSlug, "", false); err != nil {
 		return err
 	}
+	// The root's source names the registry, which has to be the one the credentials
+	// svc-account-bootstrap wrote are for.
+	if err := clusterPrintControllerOCIEndpoint(out); err != nil {
+		return err
+	}
 	kubeconfigPath := clusterKubeconfigPath(name)
 	inst, err := clusterLoadInstalled(space, kubeconfigPath)
 	if err != nil {

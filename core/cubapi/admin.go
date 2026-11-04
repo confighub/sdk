@@ -29,6 +29,16 @@
 // for the CLI or the API, not for a declaration in code. Nor does an Ensure
 // preserve a hand edit -- a field the description names is set to what the
 // description says.
+//
+// # Backing Units
+//
+// Every Ensure except [EnsureSpace] gives its entity a backing Unit: a
+// ConfigHub/YAML Unit in the entity's Space holding the entity's configuration,
+// so the entity has a revision history and can be changed through the Unit. A
+// create asks for one, and an update asks for one too, so an entity created
+// before it had one gets it the next time it is ensured. A Space's backing Unit
+// would have to live in another Space, which the description does not name, so
+// EnsureSpace creates none.
 package cubapi
 
 import (
@@ -43,6 +53,42 @@ import (
 func allowExists() *string {
 	s := "true"
 	return &s
+}
+
+func withBackingUnits() *bool {
+	b := true
+	return &b
+}
+
+// whereID selects the one entity whose idField is id, for a bulk write of that entity alone.
+func whereID(idField string, id goclientnew.UUID) *string {
+	where := fmt.Sprintf("%s = '%s'", idField, id)
+	return &where
+}
+
+// onlyResult is the entity a bulk write of one entity returned, or the error it reported for it.
+// An Ensure updates through the bulk patch because the single-entity PATCH takes no
+// with_backing_units.
+func onlyResult[Result any, Entity any](results200, results207 *[]Result, entityType string, id goclientnew.UUID,
+	read func(Result) (*Entity, *goclientnew.ResponseError)) (*Entity, error) {
+	results := results200
+	if results == nil {
+		results = results207
+	}
+	if results == nil || len(*results) == 0 {
+		return nil, fmt.Errorf("cubapi: %s %s not found to update", entityType, id)
+	}
+	if len(*results) != 1 {
+		return nil, fmt.Errorf("cubapi: update of %s %s wrote %d entities", entityType, id, len(*results))
+	}
+	entity, responseError := read((*results)[0])
+	if responseError != nil {
+		return nil, fmt.Errorf("cubapi: update %s %s: %s", entityType, id, errString(responseError))
+	}
+	if entity == nil {
+		return nil, fmt.Errorf("cubapi: update of %s %s returned no %s", entityType, id, entityType)
+	}
+	return entity, nil
 }
 
 const mergePatchContentType = "application/merge-patch+json"
@@ -133,7 +179,7 @@ func EnsureSpace(ctx context.Context, c *Client, space goclientnew.Space) (*gocl
 func EnsureFilter(ctx context.Context, c *Client, filter goclientnew.Filter) (*goclientnew.Filter, error) {
 	existing, err := ResolveFilter(ctx, c, NewRef("", filter.Slug), ResolveOpts{Space: filter.SpaceID, Select: "FilterID,Slug,SpaceID"})
 	if err != nil {
-		res, err := c.API.CreateFilterWithResponse(ctx, filter.SpaceID, &goclientnew.CreateFilterParams{AllowExists: allowExists()}, filter)
+		res, err := c.API.CreateFilterWithResponse(ctx, filter.SpaceID, &goclientnew.CreateFilterParams{AllowExists: allowExists(), WithBackingUnits: withBackingUnits()}, filter)
 		if IsAPIError(err, res) {
 			return nil, InterpretErrorGeneric(err, res)
 		}
@@ -143,19 +189,25 @@ func EnsureFilter(ctx context.Context, c *Client, filter goclientnew.Filter) (*g
 	if err != nil {
 		return nil, err
 	}
-	res, err := c.API.PatchFilterWithBodyWithResponse(ctx, filter.SpaceID, existing.Filter.FilterID, &goclientnew.PatchFilterParams{},
-		mergePatchContentType, bytes.NewReader(patch))
+	id := existing.Filter.FilterID
+	res, err := c.API.BulkPatchFiltersWithBodyWithResponse(ctx, &goclientnew.BulkPatchFiltersParams{
+		Where:            whereID("FilterID", id),
+		WithBackingUnits: withBackingUnits(),
+	}, mergePatchContentType, bytes.NewReader(patch))
 	if IsAPIError(err, res) {
 		return nil, InterpretErrorGeneric(err, res)
 	}
-	return res.JSON200, nil
+	return onlyResult(res.JSON200, res.JSON207, "Filter", id,
+		func(r goclientnew.FilterCreateOrUpdateResponse) (*goclientnew.Filter, *goclientnew.ResponseError) {
+			return r.Filter, r.Error
+		})
 }
 
 // EnsureTrigger creates a Trigger in trigger.SpaceID or patches an existing one.
 func EnsureTrigger(ctx context.Context, c *Client, trigger goclientnew.Trigger) (*goclientnew.Trigger, error) {
 	existing, err := ResolveTrigger(ctx, c, NewRef("", trigger.Slug), ResolveOpts{Space: trigger.SpaceID, Select: "TriggerID,Slug,SpaceID"})
 	if err != nil {
-		res, err := c.API.CreateTriggerWithResponse(ctx, trigger.SpaceID, &goclientnew.CreateTriggerParams{AllowExists: allowExists()}, trigger)
+		res, err := c.API.CreateTriggerWithResponse(ctx, trigger.SpaceID, &goclientnew.CreateTriggerParams{AllowExists: allowExists(), WithBackingUnits: withBackingUnits()}, trigger)
 		if IsAPIError(err, res) {
 			return nil, InterpretErrorGeneric(err, res)
 		}
@@ -165,12 +217,18 @@ func EnsureTrigger(ctx context.Context, c *Client, trigger goclientnew.Trigger) 
 	if err != nil {
 		return nil, err
 	}
-	res, err := c.API.PatchTriggerWithBodyWithResponse(ctx, trigger.SpaceID, existing.Trigger.TriggerID, &goclientnew.PatchTriggerParams{},
-		mergePatchContentType, bytes.NewReader(patch))
+	id := existing.Trigger.TriggerID
+	res, err := c.API.BulkPatchTriggersWithBodyWithResponse(ctx, &goclientnew.BulkPatchTriggersParams{
+		Where:            whereID("TriggerID", id),
+		WithBackingUnits: withBackingUnits(),
+	}, mergePatchContentType, bytes.NewReader(patch))
 	if IsAPIError(err, res) {
 		return nil, InterpretErrorGeneric(err, res)
 	}
-	return res.JSON200, nil
+	return onlyResult(res.JSON200, res.JSON207, "Trigger", id,
+		func(r goclientnew.TriggerCreateOrUpdateResponse) (*goclientnew.Trigger, *goclientnew.ResponseError) {
+			return r.Trigger, r.Error
+		})
 }
 
 // EnsureInvocation creates a stored Invocation in invocation.SpaceID or patches
@@ -178,7 +236,7 @@ func EnsureTrigger(ctx context.Context, c *Client, trigger goclientnew.Trigger) 
 func EnsureInvocation(ctx context.Context, c *Client, invocation goclientnew.Invocation) (*goclientnew.Invocation, error) {
 	existing, err := ResolveInvocation(ctx, c, NewRef("", invocation.Slug), ResolveOpts{Space: invocation.SpaceID, Select: "InvocationID,Slug,SpaceID"})
 	if err != nil {
-		res, err := c.API.CreateInvocationWithResponse(ctx, invocation.SpaceID, &goclientnew.CreateInvocationParams{AllowExists: allowExists()}, invocation)
+		res, err := c.API.CreateInvocationWithResponse(ctx, invocation.SpaceID, &goclientnew.CreateInvocationParams{AllowExists: allowExists(), WithBackingUnits: withBackingUnits()}, invocation)
 		if IsAPIError(err, res) {
 			return nil, InterpretErrorGeneric(err, res)
 		}
@@ -188,19 +246,25 @@ func EnsureInvocation(ctx context.Context, c *Client, invocation goclientnew.Inv
 	if err != nil {
 		return nil, err
 	}
-	res, err := c.API.PatchInvocationWithBodyWithResponse(ctx, invocation.SpaceID, existing.Invocation.InvocationID, &goclientnew.PatchInvocationParams{},
-		mergePatchContentType, bytes.NewReader(patch))
+	id := existing.Invocation.InvocationID
+	res, err := c.API.BulkPatchInvocationsWithBodyWithResponse(ctx, &goclientnew.BulkPatchInvocationsParams{
+		Where:            whereID("InvocationID", id),
+		WithBackingUnits: withBackingUnits(),
+	}, mergePatchContentType, bytes.NewReader(patch))
 	if IsAPIError(err, res) {
 		return nil, InterpretErrorGeneric(err, res)
 	}
-	return res.JSON200, nil
+	return onlyResult(res.JSON200, res.JSON207, "Invocation", id,
+		func(r goclientnew.InvocationCreateOrUpdateResponse) (*goclientnew.Invocation, *goclientnew.ResponseError) {
+			return r.Invocation, r.Error
+		})
 }
 
 // EnsureTarget creates a Target in target.SpaceID or patches an existing one.
 func EnsureTarget(ctx context.Context, c *Client, target goclientnew.Target) (*goclientnew.Target, error) {
 	existing, err := ResolveTarget(ctx, c, NewRef("", target.Slug), ResolveOpts{Space: target.SpaceID, Select: "TargetID,Slug,SpaceID"})
 	if err != nil {
-		res, err := c.API.CreateTargetWithResponse(ctx, target.SpaceID, &goclientnew.CreateTargetParams{AllowExists: allowExists()}, target)
+		res, err := c.API.CreateTargetWithResponse(ctx, target.SpaceID, &goclientnew.CreateTargetParams{AllowExists: allowExists(), WithBackingUnits: withBackingUnits()}, target)
 		if IsAPIError(err, res) {
 			return nil, InterpretErrorGeneric(err, res)
 		}
@@ -210,12 +274,18 @@ func EnsureTarget(ctx context.Context, c *Client, target goclientnew.Target) (*g
 	if err != nil {
 		return nil, err
 	}
-	res, err := c.API.PatchTargetWithBodyWithResponse(ctx, target.SpaceID, existing.Target.TargetID, &goclientnew.PatchTargetParams{},
-		mergePatchContentType, bytes.NewReader(patch))
+	id := existing.Target.TargetID
+	res, err := c.API.BulkPatchTargetsWithBodyWithResponse(ctx, &goclientnew.BulkPatchTargetsParams{
+		Where:            whereID("TargetID", id),
+		WithBackingUnits: withBackingUnits(),
+	}, mergePatchContentType, bytes.NewReader(patch))
 	if IsAPIError(err, res) {
 		return nil, InterpretErrorGeneric(err, res)
 	}
-	return res.JSON200, nil
+	return onlyResult(res.JSON200, res.JSON207, "Target", id,
+		func(r goclientnew.TargetCreateOrUpdateResponse) (*goclientnew.Target, *goclientnew.ResponseError) {
+			return r.Target, r.Error
+		})
 }
 
 // EnsureAttribute creates an Attribute in attribute.SpaceID or patches an
@@ -223,7 +293,7 @@ func EnsureTarget(ctx context.Context, c *Client, target goclientnew.Target) (*g
 func EnsureAttribute(ctx context.Context, c *Client, attribute goclientnew.Attribute) (*goclientnew.Attribute, error) {
 	existing, err := ResolveAttribute(ctx, c, NewRef("", attribute.Slug), ResolveOpts{Space: attribute.SpaceID, Select: "AttributeID,Slug,SpaceID"})
 	if err != nil {
-		res, err := c.API.CreateAttributeWithResponse(ctx, attribute.SpaceID, &goclientnew.CreateAttributeParams{AllowExists: allowExists()}, attribute)
+		res, err := c.API.CreateAttributeWithResponse(ctx, attribute.SpaceID, &goclientnew.CreateAttributeParams{AllowExists: allowExists(), WithBackingUnits: withBackingUnits()}, attribute)
 		if IsAPIError(err, res) {
 			return nil, InterpretErrorGeneric(err, res)
 		}
@@ -233,12 +303,18 @@ func EnsureAttribute(ctx context.Context, c *Client, attribute goclientnew.Attri
 	if err != nil {
 		return nil, err
 	}
-	res, err := c.API.PatchAttributeWithBodyWithResponse(ctx, attribute.SpaceID, existing.Attribute.AttributeID, &goclientnew.PatchAttributeParams{},
-		mergePatchContentType, bytes.NewReader(patch))
+	id := existing.Attribute.AttributeID
+	res, err := c.API.BulkPatchAttributesWithBodyWithResponse(ctx, &goclientnew.BulkPatchAttributesParams{
+		Where:            whereID("AttributeID", id),
+		WithBackingUnits: withBackingUnits(),
+	}, mergePatchContentType, bytes.NewReader(patch))
 	if IsAPIError(err, res) {
 		return nil, InterpretErrorGeneric(err, res)
 	}
-	return res.JSON200, nil
+	return onlyResult(res.JSON200, res.JSON207, "Attribute", id,
+		func(r goclientnew.AttributeCreateOrUpdateResponse) (*goclientnew.Attribute, *goclientnew.ResponseError) {
+			return r.Attribute, r.Error
+		})
 }
 
 // SetSpaceTriggerFilter points a Space's Triggers at a shared Filter: it sets the

@@ -66,16 +66,19 @@ func fakeServer(t *testing.T) (*cubapi.Client, map[string]map[string]any) {
 				return
 			}
 			_, _ = w.Write([]byte(`[]`))
-		case r.Method == http.MethodPatch && strings.HasPrefix(path, "/space/"+testSpaceID+"/trigger/"):
+		case r.Method == http.MethodPatch && path == "/trigger":
 			m := record(r)
+			if r.URL.Query().Get("with_backing_units") != "true" {
+				t.Errorf("patch of %s asks for no backing Unit", where)
+			}
 			for slug, id := range map[string]string{"promoted": promotedID, "warned": warnedID} {
-				if strings.HasSuffix(path, id) {
+				if where == "TriggerID = '"+id+"'" {
 					sent[slug] = m
-					_, _ = w.Write([]byte(existing[slug]))
+					fmt.Fprintf(w, `[{"Trigger":%s}]`, existing[slug])
 					return
 				}
 			}
-			t.Errorf("patch of an unknown trigger: %s", path)
+			t.Errorf("patch of an unknown trigger: %s", where)
 		case r.Method == http.MethodPost && path == "/space/"+testSpaceID+"/trigger":
 			m := record(r)
 			slug, _ := m["Slug"].(string)

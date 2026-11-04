@@ -1,0 +1,26 @@
+SUCCESS    true    
+OUTPUT
+------
+[
+  {
+    "Passed": false,
+    "Index": 0,
+    "FunctionName": "vet-env",
+    "Details": [
+      "Resource apps/v1/Deployment/example/mydep: spec.template.spec.containers.?name=nginx.env.?name=HOPE.value: HOPE must be one of the following: \"true\""
+    ],
+    "FailedAttributes": [
+      {
+        "ResourceName": "example/mydep",
+        "ResourceNameWithoutScope": "mydep",
+        "ResourceType": "apps/v1/Deployment",
+        "ResourceCategory": "Resource",
+        "Path": "spec.template.spec.containers.?name=nginx.env.?name=HOPE.value",
+        "AttributeName": "none",
+        "DataType": "string",
+        "Value": "false",
+        "Index": 0
+      }
+    ]
+  }
+]

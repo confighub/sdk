@@ -66,6 +66,11 @@ type VariantSpec struct {
 	AllowExists bool
 	// DryRun sends every request as a dry run.
 	DryRun bool
+	// Diff asks each write for what it changed, or on a dry run would change, path by path with
+	// the values on both sides: the Diff of each unit's clone on Units, and of set-namespace on
+	// NamespaceInvocations. A dry run creates no units for set-namespace to change, so it returns
+	// only the clones' Diffs.
+	Diff bool
 }
 
 // VariantResult is what CreateVariant made. Space is set as soon as the Space exists, so a
@@ -76,6 +81,8 @@ type VariantResult struct {
 	// 200 when every unit was cloned, 207 when some failed.
 	Units       []goclientnew.UnitCreateOrUpdateResponse
 	UnitsStatus int
+	// NamespaceInvocations are the per-unit responses of set-namespace, when Namespace was given.
+	NamespaceInvocations []goclientnew.FunctionInvocationsResponse
 }
 
 // UnitErrors returns the errors of the units that failed to clone.
@@ -120,7 +127,8 @@ func CreateVariant(ctx context.Context, c *Client, spec VariantSpec) (*VariantRe
 	}
 
 	if spec.Namespace != "" {
-		if err := setVariantNamespace(ctx, c, spec, space, upstream.Labels[LabelNamespace], ""); err != nil {
+		result.NamespaceInvocations, err = setVariantNamespace(ctx, c, spec, space, upstream.Labels[LabelNamespace], "")
+		if err != nil {
 			return result, err
 		}
 	}
@@ -181,6 +189,9 @@ func cloneVariantUnits(ctx context.Context, c *Client, spec VariantSpec, upstrea
 	where := NewWhere("").SpaceID(upstreamID).String()
 	whereSpace := NewWhere("").SpaceID(spaceID).String()
 	include := "UnitEventID,TargetID,UpstreamUnitID,SpaceID"
+	if spec.Diff {
+		include += ",Diff"
+	}
 	params := &goclientnew.BulkCreateUnitsParams{Where: &where, WhereSpace: &whereSpace, Include: &include, DryRun: dryRun(spec.DryRun)}
 	if spec.AllowExists {
 		params.AllowExists = allowExists()
@@ -219,12 +230,12 @@ func cloneVariantUnits(ctx context.Context, c *Client, spec VariantSpec, upstrea
 }
 
 // setVariantNamespace runs set-namespace over the variant's units, or the ones unitWhere
-// selects among them. The clones joined the ChangeSet, if any, and a change to a unit in an
-// open ChangeSet has to name it.
+// selects among them, and returns the per-unit responses. The clones joined the ChangeSet, if
+// any, and a change to a unit in an open ChangeSet has to name it.
 //
 // The namespace is the variant's own value, so the paths it writes are protected: a merge from
 // the upstream does not write the upstream's value back over them.
-func setVariantNamespace(ctx context.Context, c *Client, spec VariantSpec, space *goclientnew.Space, upstreamNamespace, unitWhere string) error {
+func setVariantNamespace(ctx context.Context, c *Client, spec VariantSpec, space *goclientnew.Space, upstreamNamespace, unitWhere string) ([]goclientnew.FunctionInvocationsResponse, error) {
 	args := []api.FunctionArgument{{Value: spec.Namespace}}
 	if upstreamNamespace != "" {
 		args = append(args, api.FunctionArgument{ParameterName: "old-namespace", Value: upstreamNamespace})
@@ -236,6 +247,10 @@ func setVariantNamespace(ctx context.Context, c *Client, spec VariantSpec, space
 		value := "true"
 		params.DryRun = &value
 	}
+	if spec.Diff {
+		include := "Diff"
+		params.Include = &include
+	}
 	req := goclientnew.FunctionInvocationsRequest{
 		ToolchainType:       DefaultToolchainType,
 		ChangeDescription:   spec.ChangeDescription,
@@ -243,20 +258,21 @@ func setVariantNamespace(ctx context.Context, c *Client, spec VariantSpec, space
 	}
 	res, err := c.API.InvokeFunctionsOnOrgWithResponse(ctx, params, req)
 	if IsAPIError(err, res) {
-		return fmt.Errorf("set-namespace on %s: %w", space.Slug, InterpretErrorGeneric(err, res))
+		return nil, fmt.Errorf("set-namespace on %s: %w", space.Slug, InterpretErrorGeneric(err, res))
 	}
 	responses := res.JSON200
 	if responses == nil {
 		responses = res.JSON207
 	}
-	if responses != nil {
-		for _, r := range *responses {
-			if !r.Success {
-				return fmt.Errorf("set-namespace on %s/%s: %s", space.Slug, r.UnitSlug, errString(r.Error))
-			}
+	if responses == nil {
+		return nil, nil
+	}
+	for _, r := range *responses {
+		if !r.Success {
+			return *responses, fmt.Errorf("set-namespace on %s/%s: %s", space.Slug, r.UnitSlug, errString(r.Error))
 		}
 	}
-	return nil
+	return *responses, nil
 }
 
 func patchSpace(ctx context.Context, c *Client, spaceID goclientnew.UUID, patch map[string]any, dryRunRequest bool) error {

@@ -1,0 +1,11 @@
+{
+  "type": "object",
+  "required": ["DATABASE_HOST"],
+  "additionalProperties": false,
+  "properties": {
+    "DATABASE_HOST": {"type": "string"},
+    "MYVAR": {"type": "string"},
+    "SUCCESS": {"type": "string", "enum": ["true", "false"]},
+    "HOPE": {"type": "string", "enum": ["true"]}
+  }
+}

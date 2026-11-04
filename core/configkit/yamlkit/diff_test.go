@@ -494,3 +494,27 @@ func TestDisplayLinePatch(t *testing.T) {
 `, patch)
 	assert.Empty(t, DisplayLinePatch("same\n", "same\n"))
 }
+
+func TestDisplayValueText(t *testing.T) {
+	headComment := CommentKey(CommentHead, "key")
+	tests := []struct {
+		name  string
+		value string
+		want  string
+	}{
+		{name: "plain scalar", value: "Default\n", want: "Default"},
+		{name: "quoted scalar loses its quoting", value: "\"1h0m0s\"\n", want: "1h0m0s"},
+		{name: "map stays a block", value: "key: k1\nproperty: p\n", want: "key: k1\nproperty: p"},
+		{
+			name:  "comment keys become comments",
+			value: headComment + ": the secret's path\nkey: k1\n",
+			want:  "# the secret's path\nkey: k1",
+		},
+		{name: "unparseable text is returned as it is", value: "key: [\n", want: "key: ["},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			assert.Equal(t, tt.want, DisplayValueText(tt.value))
+		})
+	}
+}

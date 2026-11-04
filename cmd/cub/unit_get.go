@@ -59,7 +59,7 @@ Key information provided:
 Important flags for agents:
 - -o json: Get full metadata in structured format
 - -o jq=<expr>: Drill into a specific field
-- -o mutations: Show the mutation diff for the current head revision
+- -o mutations: Show what set each value in the configuration, and the value it recorded (cub unit diff shows what a change did)
 
 For the raw configuration bytes, use the dedicated subcommand:
 - cub unit data <unit> [-O <path>]  — prints the configuration, or writes it to a file
@@ -96,9 +96,9 @@ func unitGetCmdRun(cmd *cobra.Command, args []string) error {
 		return err
 	}
 
-	// -o mutations replaces the default summary with the mutations diff for
-	// the current head revision. The deprecated --display-mutations flag
-	// remains additive and is handled inside displayExtendedUnitDetails.
+	// -o mutations replaces the default summary with what set each value in the
+	// configuration. The deprecated --display-mutations flag remains additive and is
+	// handled inside displayExtendedUnitDetails.
 	if effectiveOutput().Kind == OutputMutations {
 		displayMutationsForUnit(unitDetails.Unit)
 		return nil

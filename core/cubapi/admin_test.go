@@ -6,9 +6,11 @@ package cubapi
 import (
 	"context"
 	"encoding/json"
+	"fmt"
 	"io"
 	"net/http"
 	"net/http/httptest"
+	"net/url"
 	"strings"
 	"testing"
 
@@ -56,6 +58,10 @@ func TestEnsureSpaceSendsAllowExists(t *testing.T) {
 	if !strings.Contains(rec.query, "allow_exists=true") {
 		t.Fatalf("query = %q", rec.query)
 	}
+	// A Space's backing Unit would live in another Space, which the description does not name.
+	if strings.Contains(rec.query, "with_backing_units") {
+		t.Fatalf("query = %q, want no backing Unit for a Space", rec.query)
+	}
 	var sent goclientnew.Space
 	_ = json.Unmarshal(rec.body, &sent)
 	if sent.Slug != "rbac-edits" || sent.Labels["app"] != "rbac-manager" {
@@ -81,6 +87,9 @@ func TestEnsureTrigger(t *testing.T) {
 	}
 	if !strings.Contains(rec.path, spaceID.String()) {
 		t.Fatalf("path = %q, want space id", rec.path)
+	}
+	if !strings.Contains(rec.query, "with_backing_units=true") {
+		t.Fatalf("query = %q, want the create to ask for a backing Unit", rec.query)
 	}
 	var sent goclientnew.Trigger
 	_ = json.Unmarshal(rec.body, &sent)
@@ -120,6 +129,82 @@ func TestEnsureInvocationCarriesParametersAndTemplatedArgs(t *testing.T) {
 	args := (*sent.FunctionInvocations)[0].Arguments
 	if len(args) != 2 || args[1].Evaluator == nil || *args[1].Evaluator != api.EvaluatorTemplate {
 		t.Fatalf("arguments = %+v", args)
+	}
+}
+
+// existingTriggerServer answers the lookup of one existing Trigger and the bulk patch of it with
+// bulkResponse, recording the patch.
+func existingTriggerServer(t *testing.T, rec *adminRec, triggerID string, bulkResponse string) *Client {
+	t.Helper()
+	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("Content-Type", "application/json")
+		path := strings.TrimPrefix(r.URL.Path, "/api")
+		switch {
+		case r.Method == http.MethodGet && path == "/trigger":
+			fmt.Fprintf(w, `[{"Trigger":{"TriggerID":%q,"Slug":"no-rbac-wildcards"}}]`, triggerID)
+		case r.Method == http.MethodPatch && path == "/trigger":
+			rec.method = r.Method
+			rec.path = path
+			rec.query = r.URL.RawQuery
+			rec.body, _ = io.ReadAll(r.Body)
+			_, _ = w.Write([]byte(bulkResponse))
+		default:
+			t.Errorf("unexpected request %s %s", r.Method, path)
+			w.WriteHeader(http.StatusNotFound)
+		}
+	}))
+	t.Cleanup(srv.Close)
+	c, err := NewClient(ClientOptions{ServerURL: srv.URL, Token: "t"})
+	if err != nil {
+		t.Fatalf("client: %v", err)
+	}
+	return c
+}
+
+// An existing entity is patched through the bulk patch of it alone, which is the patch that can
+// give it a backing Unit when it was created without one.
+func TestEnsureTriggerUpdatesWithBackingUnit(t *testing.T) {
+	var rec adminRec
+	triggerID := "66666666-6666-6666-6666-666666666666"
+	c := existingTriggerServer(t, &rec, triggerID,
+		fmt.Sprintf(`[{"Trigger":{"TriggerID":%q,"Slug":"no-rbac-wildcards","Warn":true}}]`, triggerID))
+	got, err := EnsureTrigger(context.Background(), c, goclientnew.Trigger{
+		SpaceID: goclientnew.UUID(uuid.MustParse("22222222-2222-2222-2222-222222222222")),
+		Slug:    "no-rbac-wildcards",
+		Warn:    true,
+	})
+	if err != nil {
+		t.Fatalf("EnsureTrigger: %v", err)
+	}
+	if got.TriggerID.String() != triggerID || !got.Warn {
+		t.Fatalf("returned %+v", got)
+	}
+	query, err := url.ParseQuery(rec.query)
+	if err != nil {
+		t.Fatalf("query %q: %v", rec.query, err)
+	}
+	if want := "TriggerID = '" + triggerID + "'"; query.Get("where") != want {
+		t.Fatalf("where = %q, want %q", query.Get("where"), want)
+	}
+	if query.Get("with_backing_units") != "true" {
+		t.Fatalf("query = %q, want with_backing_units=true", rec.query)
+	}
+	if body := patchMap(t, rec.body); body["Warn"] != true {
+		t.Fatalf("patch = %v", body)
+	}
+}
+
+// The error a bulk patch reports for the entity is the Ensure's error, not a nil entity.
+func TestEnsureTriggerReportsTheUpdatesError(t *testing.T) {
+	var rec adminRec
+	c := existingTriggerServer(t, &rec, "66666666-6666-6666-6666-666666666666",
+		`[{"Error":{"Message":"cannot create the backing Unit","Details":["no Create permission"]}}]`)
+	_, err := EnsureTrigger(context.Background(), c, goclientnew.Trigger{
+		SpaceID: goclientnew.UUID(uuid.MustParse("22222222-2222-2222-2222-222222222222")),
+		Slug:    "no-rbac-wildcards",
+	})
+	if err == nil || !strings.Contains(err.Error(), "cannot create the backing Unit: no Create permission") {
+		t.Fatalf("err = %v", err)
 	}
 }
 

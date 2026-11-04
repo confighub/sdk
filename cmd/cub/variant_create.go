@@ -187,6 +187,9 @@ Examples:
   # the Argo CD Application so the cluster picks up the deployment (skip with --no-argo-app).
   cub variant create dev cubbychat-base --target dev/target --namespace cubbychat
 
+  # Show the configuration each clone was created with, and what set-namespace changed in it.
+  cub variant create staging website-prod --namespace website-staging -o mutations
+
   # Clone a space as a draft to change and review, with links to merge the changes back.
   cub variant create draft website-prod --syncback
 
@@ -333,6 +336,7 @@ func variantCreateCmdRun(cmd *cobra.Command, args []string) (retErr error) {
 		IncludeHidden:             includeHidden,
 		AllowExists:               allowExists,
 		DryRun:                    dryRun,
+		Diff:                      shouldDisplayMutations(),
 	})
 	if result != nil && result.Space != nil {
 		ownerPending = setOwner
@@ -378,7 +382,12 @@ func variantCreateCmdRun(cmd *cobra.Command, args []string) (retErr error) {
 		}
 	}
 
-	return handleBulkCreateOrUpdateResponse(&result.Units, result.UnitsStatus, "create", "")
+	bulkErr := handleBulkCreateOrUpdateResponse(&result.Units, result.UnitsStatus, "create", "")
+	if shouldDisplayMutations() {
+		displayDiffsForUnitWrites(&result.Units, "clone")
+		displayDiffsFromFunctionResponse(&result.NamespaceInvocations, "set-namespace")
+	}
+	return bulkErr
 }
 
 // createVariantClusterApp adds the Unit that deploys variantSpace to its

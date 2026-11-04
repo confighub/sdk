@@ -455,6 +455,12 @@ func runSingleUnitCreate(args []string) error {
 		}
 	}
 
+	if shouldDisplayMutations() {
+		// The Diff runs from nothing to what the Unit was created with. The configuration
+		// write below takes the same include, so with a file the Diff shown is that write's.
+		newParams.Include = includeWriteDiff()
+	}
+
 	newParams.DryRun = dryRunParam()
 	unitRes, err := cubClientNew.CreateUnitWithResponse(ctx, spaceID, newParams, *newUnit)
 	if cubapi.IsAPIError(err, unitRes) {
@@ -465,6 +471,7 @@ func runSingleUnitCreate(args []string) error {
 	if err != nil {
 		return err
 	}
+	writeDiff := unitRes.JSON200.Diff
 
 	// Configuration is not part of a Unit, so creating one with configuration is a create
 	// followed by a write to its data endpoint. The Unit is left in place if the write
@@ -481,9 +488,13 @@ func runSingleUnitCreate(args []string) error {
 		if paramErr != nil {
 			return paramErr
 		}
-		if _, err := putUnitData(spaceID, unitDetails.UnitID, configData, dataParams); err != nil {
+		dataWrite, err := putUnitData(spaceID, unitDetails.UnitID, configData, dataParams)
+		if err != nil {
 			return fmt.Errorf("unit %s was created, but its config data could not be written: %w",
 				unitDetails.Slug, err)
+		}
+		if dataWrite != nil {
+			writeDiff = dataWrite.Diff
 		}
 		// Re-read so what is displayed reflects the configuration that was just written.
 		if refreshed, refreshErr := resolveUnit(unitDetails.UnitID.String(), spaceID.String(), "*"); refreshErr == nil {
@@ -498,6 +509,13 @@ func runSingleUnitCreate(args []string) error {
 		}
 	}
 	displayCreateResults(unitDetails, "unit", args[0], unitDetails.UnitID.String(), displayUnitDetails)
+
+	// What the Unit was created with. A dry run with a file did not try the configuration, so
+	// it has nothing to show beyond the note above.
+	if shouldDisplayMutations() && !(configDataSupplied && dryRun) {
+		tprintRaw("")
+		displayUnitChanges(unitDetails.Slug, "create", writeDiff)
+	}
 	return nil
 }
 
@@ -579,6 +597,9 @@ func runBulkUnitCreate() error {
 
 	// Set include parameter to expand UpstreamUnitID
 	include := "UnitEventID,TargetID,UpstreamUnitID,SpaceID"
+	if shouldDisplayMutations() {
+		include += "," + *includeWriteDiff()
+	}
 	params.Include = &include
 
 	// Set name prefixes parameter if specified
@@ -647,7 +668,11 @@ func runBulkUnitCreate() error {
 		return err
 	}
 
-	return handleBulkCreateOrUpdateResponse(responses, statusCode, "create", "")
+	bulkErr := handleBulkCreateOrUpdateResponse(responses, statusCode, "create", "")
+	if shouldDisplayMutations() {
+		displayDiffsForUnitWrites(responses, "create")
+	}
+	return bulkErr
 }
 
 // bulkCreateUnits calls the bulk-create-units API with the given parameters and

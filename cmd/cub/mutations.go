@@ -8,6 +8,7 @@ import (
 	"sort"
 	"strings"
 
+	"github.com/confighub/sdk/core/configkit/yamlkit"
 	goclientnew "github.com/confighub/sdk/core/openapi/goclient-new"
 	"github.com/google/uuid"
 	"github.com/spf13/cobra"
@@ -47,9 +48,9 @@ func collectUniqueIndices(mutations *goclientnew.ResourceMutationList) []int64 {
 }
 
 // displayResourceMutationList displays stored MutationSources, whose Index values are the
-// MutationNums of the Unit's Mutations. Locally-overridden paths, which merges preserve, are
-// shown apart from those an upstream merge may overwrite. With --verbose, each path's value is
-// shown and each Mutation is described.
+// MutationNums of the Unit's Mutations, each with the value it recorded: the value written, or
+// for a Delete the value removed. Locally-overridden paths, which merges preserve, are shown
+// apart from those an upstream merge may overwrite. With --verbose, each Mutation is described.
 func displayResourceMutationList(mutations *goclientnew.ResourceMutationList) {
 	if mutations == nil || len(*mutations) == 0 {
 		tprintRaw("No mutations")
@@ -150,9 +151,7 @@ func displayMutationEntries(mutations *goclientnew.ResourceMutationList, mutatio
 		// Resource-level mutation
 		if mutType != goclientnew.None && protectionMatches(protectionFilter, rm.ResourceMutationInfo.Protected) {
 			tprintRaw(fmt.Sprintf("  %s %s", mutationTypeSymbol(mutType), formatIndexLabel(rm.ResourceMutationInfo.Index, mutationMap)))
-			if rm.ResourceMutationInfo.Value != "" && verbose {
-				displayMutationValue(rm.ResourceMutationInfo.Value, "    ")
-			}
+			displayMutationValue(mutType, rm.ResourceMutationInfo.Value, "    ")
 		}
 
 		// Path-level mutations
@@ -172,9 +171,7 @@ func displayMutationEntries(mutations *goclientnew.ResourceMutationList, mutatio
 					continue
 				}
 				tprintRaw(fmt.Sprintf("  %s %s  %s", mutationTypeSymbol(*mi.MutationType), displayPath(path), formatIndexLabel(mi.Index, mutationMap)))
-				if mi.Value != "" && verbose {
-					displayMutationValue(mi.Value, "    ")
-				}
+				displayMutationValue(*mi.MutationType, mi.Value, "    ")
 			}
 		}
 	}
@@ -199,9 +196,9 @@ func mutationTypeSymbol(mt goclientnew.MutationType) string {
 // formatIndexLabel returns a label for a mutation index, which is a MutationNum.
 func formatIndexLabel(index int64, mutationMap map[int64]*goclientnew.ExtendedMutation) string {
 	label := fmt.Sprintf("(#%d", index)
-	if mutationMap != nil {
-		if em, ok := mutationMap[index]; ok {
-			label += " " + describeMutationSource(em)
+	if em, ok := mutationMap[index]; ok {
+		if source := describeMutationSource(em); source != "" {
+			label += " " + source
 		}
 	}
 	label += ")"
@@ -244,11 +241,19 @@ func describeMutationSource(em *goclientnew.ExtendedMutation) string {
 	return strings.Join(parts, ", ")
 }
 
-// displayMutationValue displays a mutation value with indentation.
-func displayMutationValue(value string, indent string) {
-	lines := strings.Split(strings.TrimRight(value, "\n"), "\n")
-	for _, line := range lines {
-		tprintRaw(indent + line)
+// displayMutationValue displays the value a mutation recorded, indented under it and colored as
+// a diff colors it: red for the value a Delete removed, green for a value written. The value is
+// recorded as YAML and shown as a ConfigDiff shows one, so a scalar appears without quoting.
+func displayMutationValue(mutationType goclientnew.MutationType, value string, indent string) {
+	if value == "" {
+		return
+	}
+	color := colorGreen
+	if mutationType == goclientnew.Delete {
+		color = colorRed
+	}
+	for _, line := range strings.Split(yamlkit.DisplayValueText(value), "\n") {
+		tprintRaw(indent + color + line + colorReset)
 	}
 }
 
