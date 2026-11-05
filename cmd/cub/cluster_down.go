@@ -260,5 +260,8 @@ func clusterDeleteClusterConfig(out io.Writer, c *clusterSpace) error {
 	if err := clusterDeleteServiceAccount(serviceAccountSlug); err != nil {
 		return fmt.Errorf("delete service account %q: %w", serviceAccountSlug, err)
 	}
+	if c.ExistingSecrets {
+		fmt.Fprintf(out, "  warning: the credentials of %q in your secret store, and the Secrets it keeps in the cluster, no longer authenticate; remove them from the store\n", serviceAccountSlug)
+	}
 	return nil
 }

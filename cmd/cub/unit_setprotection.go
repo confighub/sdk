@@ -50,7 +50,8 @@ resource protected as a whole P on its (resource) row, deleted resources include
 future merge may overwrite all of them. Combined with --protect, it clears the rest first, and
 the paths named are the only ones protected afterwards.
 
-Setting protection creates a new revision only if it changes.
+Setting protection creates a new revision only if it changes; pass
+--change-desc to record why on it.
 
 It prints the unit's MutationSources with -o json, yaml, jq or yq, or after its
 confirmation with --verbose.
@@ -59,7 +60,8 @@ Examples:
 `+"```"+`
   # Protect the downstream replica count from being overwritten by upgrades
   cub unit set-protection my-unit \
-    --protect "apps/v1/Deployment:default/myapp:spec.replicas"
+    --protect "apps/v1/Deployment:default/myapp:spec.replicas" \
+    --change-desc "Prod runs more replicas than the base"
 
   # Re-open a path so a future merge may overwrite it again
   cub unit set-protection my-unit \
@@ -82,9 +84,10 @@ Examples:
 }
 
 var (
-	protectSpecs   []string
-	unprotectSpecs []string
-	unprotectAll   bool
+	protectSpecs            []string
+	unprotectSpecs          []string
+	unprotectAll            bool
+	setProtectionChangeDesc string
 )
 
 func init() {
@@ -94,6 +97,8 @@ func init() {
 		"path to re-open to merges, as RESOURCE_TYPE:RESOURCE_NAME:PATH, or a whole resource as RESOURCE_TYPE:RESOURCE_NAME (repeatable)")
 	unitSetProtectionCmd.Flags().BoolVar(&unprotectAll, "unprotect-all", false,
 		"re-open every protected path of the unit to merges, before applying --protect and --unprotect")
+	unitSetProtectionCmd.Flags().StringVar(&setProtectionChangeDesc, "change-desc", "",
+		"change description recorded on the revision the edit creates")
 	addStandardDisplayFlags(unitSetProtectionCmd)
 	enableOptionalSpace(unitSetProtectionCmd)
 	unitCmd.AddCommand(unitSetProtectionCmd)
@@ -151,7 +156,7 @@ func unitSetProtectionCmdRun(_ *cobra.Command, args []string) error {
 		return err
 	}
 
-	body := goclientnew.UnitProtectionRequest{UnprotectAll: unprotectAll}
+	body := goclientnew.UnitProtectionRequest{UnprotectAll: unprotectAll, ChangeDescription: setProtectionChangeDesc}
 	for _, key := range order {
 		resourceType := key.resourceType
 		resourceName := key.resourceName

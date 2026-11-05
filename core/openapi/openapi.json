@@ -61478,6 +61478,14 @@
             ],
             "description": "For GuardWithheld: the guard change that did not propagate"
           },
+          "Guards": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/WithheldGuard"
+            },
+            "description": "For Guarded and GuardWithheld: every guard the operation's clearance did not cover, those it forbade with DoesNotExist first and then in key order. Guard is the first of them.",
+            "x-go-type-skip-optional-pointer": true
+          },
           "Path": {
             "type": "string",
             "description": "Path of the mutation; empty for resource-level conflicts",
@@ -66206,19 +66214,32 @@
       "UnitConflictSelector": {
         "type": "object",
         "properties": {
+          "Guards": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            },
+            "description": "Match Guarded and GuardWithheld conflicts every one of whose guards is named here, as key or key=value; empty matches any conflict, guarded or not",
+            "x-go-type-skip-optional-pointer": true
+          },
           "Path": {
             "type": "string",
-            "description": "Match conflicts at this path; empty matches any path, including resource-level conflicts",
+            "description": "Match conflicts at this path; empty matches any path, including resource-level conflicts. An element of a list may be named by position (spec.data.0.secretKey), by merge key (containers.?name=main.image), or as the conflict records it, and * matches any one list element or map key (spec.data.*.secretKey).",
             "x-go-type-skip-optional-pointer": true
           },
           "Reason": {
             "type": "string",
-            "description": "Match conflicts dropped for this reason: Subtracted, DeleteShadowed, ProtectedPath, or UnresolvedPath; empty matches any reason",
+            "description": "Match conflicts dropped for this reason, as their Reason names it; empty matches any reason",
             "x-go-type-skip-optional-pointer": true
           },
           "ResourceName": {
             "type": "string",
-            "description": "Match conflicts on this resource; empty matches any resource",
+            "description": "Match conflicts on this resource, by its whole name (namespace/name, or /name for a cluster-scoped Kubernetes resource) or a name it had before a rename; empty matches any resource",
+            "x-go-type-skip-optional-pointer": true
+          },
+          "ResourceNameWithoutScope": {
+            "type": "string",
+            "description": "Match conflicts on every resource with this name without its namespace, now or before a rename; empty matches any. With Permanent or Undismiss it has to match only one resource.",
             "x-go-type-skip-optional-pointer": true
           },
           "ResourceType": {
@@ -66233,7 +66254,7 @@
         "properties": {
           "Action": {
             "type": "string",
-            "description": "Apply re-applies the withheld change; Dismiss drops the conflict without changing the configuration data",
+            "description": "Apply re-applies the withheld change; Dismiss drops the conflict without changing the configuration data; Undismiss removes dismissals recorded with Permanent",
             "x-go-type-skip-optional-pointer": true
           },
           "DryRun": {
@@ -66241,12 +66262,17 @@
             "description": "Report what the request would do without writing anything. The response carries the Unit as it would be.",
             "x-go-type-skip-optional-pointer": true
           },
+          "Permanent": {
+            "type": "boolean",
+            "description": "With Dismiss, also dismiss the conflicts each selector matches whenever a later merge reports them. Each selector names one resource, by ResourceName or ResourceNameWithoutScope, and a Reason, and Guards for a guard-caused reason; an empty Path covers every path of the resource.",
+            "x-go-type-skip-optional-pointer": true
+          },
           "Select": {
             "type": "array",
             "items": {
               "$ref": "#/components/schemas/UnitConflictSelector"
             },
-            "description": "Which outstanding conflicts to act on. Empty acts on all of them.",
+            "description": "Which outstanding conflicts to act on. Empty acts on all of them. Permanent and Undismiss need at least one, each naming a ResourceName or ResourceNameWithoutScope, and for Permanent a Reason.",
             "x-go-type-skip-optional-pointer": true
           }
         }
@@ -66282,6 +66308,16 @@
           },
           "Error": {
             "$ref": "#/components/schemas/ResponseError"
+          },
+          "Recorded": {
+            "type": "integer",
+            "description": "Number of permanent dismissals recorded, each a reason (or a reason and a guard) at one path of one resource",
+            "x-go-type-skip-optional-pointer": true
+          },
+          "Removed": {
+            "type": "integer",
+            "description": "Number of permanent dismissals removed by Undismiss",
+            "x-go-type-skip-optional-pointer": true
           },
           "Unit": {
             "allOf": [
@@ -66626,6 +66662,11 @@
       "UnitGuardRequest": {
         "type": "object",
         "properties": {
+          "ChangeDescription": {
+            "type": "string",
+            "description": "Recorded on the Revision the edit creates. Defaults to \"Set path guards\".",
+            "x-go-type-skip-optional-pointer": true
+          },
           "Clearance": {
             "allOf": [
               {
@@ -66814,6 +66855,11 @@
       "UnitProtectionRequest": {
         "type": "object",
         "properties": {
+          "ChangeDescription": {
+            "type": "string",
+            "description": "Recorded on the Revision the edit creates. Defaults to \"Set path protection\".",
+            "x-go-type-skip-optional-pointer": true
+          },
           "ResourceProtection": {
             "type": "array",
             "items": {

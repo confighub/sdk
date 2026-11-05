@@ -32,6 +32,12 @@ const (
 	// cleared for every one of them before it may write the path. Enforcement is a later
 	// stage; the kind is defined here because the table is keyed by kind from the start.
 	AnnotationKindGuard AnnotationKind = "Guard"
+	// AnnotationKindConflictDismissal: the merge conflicts at a path that are understood and
+	// expected, so that a merge reporting one again does not leave it outstanding. Each key
+	// names a conflict reason, alone or with a guard key (see ConflictDismissalKey). Recorded by
+	// the conflicts API, never by a merge, and not carried to a clone: what a Unit has decided
+	// about its own conflicts is not a decision about its clones'.
+	AnnotationKindConflictDismissal AnnotationKind = "ConflictDismissal"
 )
 
 // registeredAnnotationKinds is the set a stored kind is validated against. An unknown kind is
@@ -39,7 +45,8 @@ const (
 // -- which is the failure mode of a schemaless side table, and the reason this is a closed set
 // rather than a convention.
 var registeredAnnotationKinds = map[AnnotationKind]struct{}{
-	AnnotationKindGuard: {},
+	AnnotationKindGuard:             {},
+	AnnotationKindConflictDismissal: {},
 }
 
 // AnnotationKindIsRegistered reports whether a kind is one this build understands.
@@ -231,6 +238,58 @@ func HasPathAnnotations(list PathAnnotationList) bool {
 		}
 	}
 	return false
+}
+
+// HasGuards reports whether a table holds any guard. It is what the guard filter shortcuts on,
+// rather than HasPathAnnotations: a table holding only other kinds of annotation has nothing
+// for an operation to be cleared for, and a Unit that has recorded a conflict dismissal must not
+// start paying for a filter that can withhold nothing.
+func HasGuards(list PathAnnotationList) bool {
+	for i := range list {
+		if len(list[i].ResourceAnnotations[AnnotationKindGuard]) > 0 {
+			return true
+		}
+		for _, annotations := range list[i].PathAnnotationMap {
+			if len(annotations[AnnotationKindGuard]) > 0 {
+				return true
+			}
+		}
+	}
+	return false
+}
+
+// WithoutAnnotationKind returns a copy of a table with every annotation of one kind removed, and
+// the entries left with nothing dropped.
+func WithoutAnnotationKind(list PathAnnotationList, kind AnnotationKind) PathAnnotationList {
+	if list == nil {
+		return nil
+	}
+	cloned := ClonePathAnnotationList(list)
+	kept := cloned[:0]
+	for i := range cloned {
+		entry := cloned[i]
+		delete(entry.ResourceAnnotations, kind)
+		if len(entry.ResourceAnnotations) == 0 {
+			entry.ResourceAnnotations = nil
+		}
+		for path, annotations := range entry.PathAnnotationMap {
+			delete(annotations, kind)
+			if len(annotations) == 0 {
+				delete(entry.PathAnnotationMap, path)
+			}
+		}
+		if len(entry.PathAnnotationMap) == 0 {
+			entry.PathAnnotationMap = nil
+		}
+		if entry.ResourceAnnotations == nil && entry.PathAnnotationMap == nil {
+			continue
+		}
+		kept = append(kept, entry)
+	}
+	if len(kept) == 0 {
+		return nil
+	}
+	return kept
 }
 
 // ClonePathAnnotations deep-copies one path's annotations, so an edit to the copy cannot reach
@@ -450,6 +509,13 @@ func findResourceAnnotations(identifier ResourceIdentifier, table PathAnnotation
 	return annotationIndex(identifier, table).Find(resource, nil)
 }
 
+// FindResourceAnnotations is findResourceAnnotations for a reader outside this package: the entry
+// of a table about a resource, matched as MutationSources entries are, including by the names
+// the resource had before a rename.
+func FindResourceAnnotations(identifier ResourceIdentifier, table PathAnnotationList, resource ResourceInfo) (int, bool) {
+	return findResourceAnnotations(identifier, table, resource)
+}
+
 // annotationIndex indexes a table's resources as a ResourceMutationIndex, which is what
 // ResourcePathAnnotations was shaped for: one implementation of resource matching and of
 // renames.
@@ -546,7 +612,8 @@ type WithheldGuard struct {
 }
 
 // Admits reports whether an operation carrying this clearance may write a path whose effective
-// guards are the given key/value pairs, and if not, which guard stopped it.
+// guards are the given key/value pairs, and if not, which guard stopped it: the first that
+// Withheld lists.
 //
 // The rule, from the design:
 //
@@ -559,25 +626,46 @@ type WithheldGuard struct {
 // A path with no guards is admitted by any clearance, including an empty one -- which is the
 // overwhelming majority of paths, and the case that has to stay free.
 func (c Clearance) Admits(guards map[string]string) (bool, WithheldGuard) {
-	if len(guards) == 0 {
+	withheld := c.Withheld(guards)
+	if len(withheld) == 0 {
 		return true, WithheldGuard{}
 	}
-	// Preconditions first, so that a clearance which both forbids a key and would otherwise
-	// clear it reports the forbidding -- the more deliberate of the two statements.
+	return false, withheld[0]
+}
+
+// Withheld returns every guard of a path that the clearance does not cover: the ones it forbids
+// with DoesNotExist first, the more deliberate of the two statements, and then the ones it does
+// not mention or does not clear, each group in key order.
+//
+// All of them rather than the first, because each is a reason the write was withheld, and a
+// person deciding the conflict is understood has to have been told every reason: a conflict that
+// named one of two would be dismissed for that one, and the other would never be seen. And in key
+// order rather than as the guards map iterates, so that the same write withheld twice reports
+// the same guards in the same order -- which is what lets a recorded dismissal recognize it.
+func (c Clearance) Withheld(guards map[string]string) []WithheldGuard {
+	if len(guards) == 0 {
+		return nil
+	}
+	var preconditions, uncleared []WithheldGuard
+	forbidden := map[string]bool{}
 	for i := range c {
-		if c[i].Operator != ClearanceOperatorDoesNotExist {
+		if c[i].Operator != ClearanceOperatorDoesNotExist || forbidden[c[i].Key] {
 			continue
 		}
 		if value, carried := guards[c[i].Key]; carried {
-			return false, WithheldGuard{Key: c[i].Key, Value: value, Precondition: true}
+			forbidden[c[i].Key] = true
+			preconditions = append(preconditions, WithheldGuard{Key: c[i].Key, Value: value, Precondition: true})
 		}
 	}
 	for key, value := range guards {
-		if !c.admitsGuard(key, value) {
-			return false, WithheldGuard{Key: key, Value: value}
+		if !forbidden[key] && !c.admitsGuard(key, value) {
+			uncleared = append(uncleared, WithheldGuard{Key: key, Value: value})
 		}
 	}
-	return true, WithheldGuard{}
+	byKey := func(a, b WithheldGuard) int { return strings.Compare(a.Key, b.Key) }
+	slices.SortFunc(preconditions, byKey)
+	slices.SortFunc(uncleared, byKey)
+	return append(preconditions, uncleared...)
 }
 
 // admitsGuard reports whether any requirement clears one guard.

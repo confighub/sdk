@@ -14,7 +14,7 @@ import (
 )
 
 var variantConflictsCmd = &cobra.Command{
-	Use:         "conflicts <variant> [--apply | --dismiss] [--reason REASON] [--path PATH] [--resource <kind>/[<namespace>/]<name>]",
+	Use:         "conflicts <variant> [--apply | --dismiss [--permanent]] [--reason REASON] [--path PATH] [--resource <kind>/[<namespace>/]<name>] [--guard KEY[=VALUE]]...",
 	Short:       "Show, apply, or dismiss a variant's outstanding merge conflicts",
 	Annotations: map[string]string{"OrgLevel": ""},
 	Long: getCommandHelp(`Work with the parts of the last promote's patch that were not applied, across a
@@ -32,10 +32,16 @@ conflicts" explains each reason in full.
 With no flags this lists the outstanding conflicts in every unit of the variant, by the
 resource they are on. --apply replays the changes they withheld, and --dismiss drops them
 without touching the configuration data. Both act on every outstanding conflict in the
-variant unless --reason, --path, or --resource narrows the selection; --resource names
-one resource the way the function verbs do, as <kind>/<name> or
-<kind>/<namespace>/<name>. Both take --dry-run, which reports what would be done and
-writes nothing.
+variant unless --reason, --path, --resource, or --guard narrows the selection; --resource
+names one resource the way the function verbs do, as <kind>/<name> or
+<kind>/<namespace>/<name>. --path and --guard select as they do for "cub unit
+conflicts": a list element by position or merge key, * for any one element or key, and
+the guards a conflict was withheld by. Both take --dry-run, which reports what would be
+done and writes nothing.
+
+--dismiss --permanent also records the selection on the unit holding the resource, so a
+later promote reporting a conflict it covers leaves it dismissed rather than outstanding.
+It needs --resource and --reason. "cub unit conflicts --undismiss" removes one.
 
 The variant is named as <component>/<variant>, or by its space slug.
 
@@ -52,6 +58,10 @@ Examples:
 
   # Accept the variant as it is and stop reporting them
   cub variant conflicts web/dev --dismiss
+
+  # This variant sets its own replica count: stop reporting the base's
+  cub variant conflicts web/dev --dismiss --permanent --resource Deployment/backend \
+    --reason Subtracted --path spec.replicas
 `+"```"+`
 `, ""),
 	Args: cobra.ExactArgs(1),
@@ -59,11 +69,13 @@ Examples:
 }
 
 var variantConflictsArgs struct {
-	apply    bool
-	dismiss  bool
-	reason   string
-	path     string
-	resource string
+	apply     bool
+	dismiss   bool
+	permanent bool
+	reason    string
+	path      string
+	resource  string
+	guards    []string
 }
 
 func init() {
@@ -71,10 +83,14 @@ func init() {
 		"apply the changes the selected conflicts withheld")
 	variantConflictsCmd.Flags().BoolVar(&variantConflictsArgs.dismiss, "dismiss", false,
 		"drop the selected conflicts without changing the configuration data")
+	variantConflictsCmd.Flags().BoolVar(&variantConflictsArgs.permanent, "permanent", false,
+		"with --dismiss, also dismiss what the selection covers whenever a later promote reports it")
 	variantConflictsCmd.Flags().StringVar(&variantConflictsArgs.reason, "reason", "",
-		"select conflicts with this reason: Subtracted, DeleteShadowed, ProtectedPath, UnresolvedPath, Guarded, GuardWithheld, ExclusiveWithheld, or ExclusiveCleared")
+		"select conflicts with this reason: "+conflictReasonsHelp())
 	variantConflictsCmd.Flags().StringVar(&variantConflictsArgs.path, "path", "",
-		"select conflicts at this path")
+		"select conflicts at this path; a list element by position or merge key, * for any one element or key")
+	variantConflictsCmd.Flags().StringArrayVar(&variantConflictsArgs.guards, "guard", nil,
+		"select conflicts withheld only by these guards, as key or key=value (repeatable)")
 	variantConflictsCmd.Flags().StringVar(&variantConflictsArgs.resource, "resource", "",
 		"select conflicts on one resource, as <kind>/<name> or <kind>/<namespace>/<name>")
 	variantConflictsCmd.Flags().BoolVar(&dryRun, "dry-run", false,
@@ -98,9 +114,12 @@ func variantConflictsCmdRun(_ *cobra.Command, args []string) error {
 	if a.apply && a.dismiss {
 		return fmt.Errorf("--apply and --dismiss are mutually exclusive")
 	}
-	selecting := a.reason != "" || a.path != "" || a.resource != ""
+	selecting := a.reason != "" || a.path != "" || a.resource != "" || len(a.guards) > 0
 	if selecting && !a.apply && !a.dismiss {
-		return fmt.Errorf("--reason, --path, and --resource select which conflicts to --apply or --dismiss")
+		return fmt.Errorf("--reason, --path, --resource, and --guard select which conflicts to --apply or --dismiss")
+	}
+	if a.permanent && (!a.dismiss || a.resource == "" || a.reason == "") {
+		return fmt.Errorf("--permanent records what --dismiss dismisses on the unit holding one resource: it needs --dismiss, --resource, and --reason")
 	}
 
 	space, err := resolveVariantOrSpace(args[0], "SpaceID,Slug")
@@ -127,7 +146,7 @@ func variantConflictsCmdRun(_ *cobra.Command, args []string) error {
 	// which keep apart another resource of the same name.
 	var selector *goclientnew.UnitConflictSelector
 	if selecting {
-		selector = &goclientnew.UnitConflictSelector{Reason: a.reason, Path: a.path}
+		selector = &goclientnew.UnitConflictSelector{Reason: a.reason, Path: a.path, Guards: a.guards}
 	}
 	if a.resource != "" {
 		ref, err := parseResourceRef(a.resource)
@@ -148,20 +167,28 @@ func variantConflictsCmdRun(_ *cobra.Command, args []string) error {
 			}
 		}
 		conflicted = kept
+		// A dismissal can be recorded before the conflict it is about is reported again.
+		if a.permanent && len(conflicted) == 0 {
+			for _, unit := range units {
+				if unit != nil && unit.Unit != nil && unit.Unit.UnitID == resolved.UnitID {
+					conflicted = append(conflicted, conflictedUnit{unit: unit.Unit})
+				}
+			}
+		}
 	}
 
 	if !a.apply && !a.dismiss {
 		return listVariantConflicts(args[0], conflicted)
 	}
 
-	body := goclientnew.UnitConflictsRequest{Action: "Dismiss", DryRun: dryRun}
+	body := goclientnew.UnitConflictsRequest{Action: "Dismiss", DryRun: dryRun, Permanent: a.permanent}
 	if a.apply {
 		body.Action = "Apply"
 	}
 	if selector != nil {
 		body.Select = []goclientnew.UnitConflictSelector{*selector}
 	}
-	applied, dismissed := 0, 0
+	applied, dismissed, recorded := 0, 0, 0
 	var outstanding []goclientnew.MutationConflict
 	var touched []*goclientnew.Unit
 	for _, c := range conflicted {
@@ -175,11 +202,12 @@ func variantConflictsCmdRun(_ *cobra.Command, args []string) error {
 		}
 		applied += resp.Applied
 		dismissed += resp.Dismissed
+		recorded += resp.Recorded
 		if a.apply && resp.Unit != nil && shouldDisplayMutations() && resp.Applied > 0 {
 			tprintRaw("")
 			displayUnitChanges(space.Space.Slug+"/"+c.unit.Slug, "apply withheld merge changes", resp.Diff)
 		}
-		if resp.Unit != nil && (resp.Applied > 0 || resp.Dismissed > 0) {
+		if resp.Unit != nil && (resp.Applied > 0 || resp.Dismissed > 0 || resp.Recorded > 0) {
 			touched = append(touched, resp.Unit)
 		}
 		if resp.Conflicts != nil {
@@ -201,7 +229,14 @@ func variantConflictsCmdRun(_ *cobra.Command, args []string) error {
 			}
 			fmt.Printf("%s %d merge %s in variant %s\n", verb, dismissed, plural("conflict", dismissed), args[0])
 		}
-		if applied == 0 && dismissed == 0 {
+		if recorded > 0 {
+			verb = "Recorded"
+			if dryRun {
+				verb = "Would record"
+			}
+			fmt.Printf("%s %d conflict %s in variant %s\n", verb, recorded, plural("dismissal", recorded), args[0])
+		}
+		if applied == 0 && dismissed == 0 && recorded == 0 {
 			fmt.Printf("No matching outstanding conflicts in variant %s\n", args[0])
 		}
 	}

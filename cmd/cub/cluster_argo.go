@@ -262,9 +262,9 @@ func clusterArgoExistingOCICredsURL(ctx context.Context, kubeconfigPath string) 
 	return string(decoded), nil
 }
 
-// clusterArgoApplyOCIRepoCreds installs the Argo repo-creds Secret pointing at
-// the ConfigHub OCI registry. Argo uses prefix-matching to pair this with any
-// Application whose source.repoURL falls under ociURL.
+// clusterArgoOCIRepoCredsManifest returns the Argo repo-creds Secret pointing
+// at the ConfigHub OCI registry. Argo uses prefix-matching to pair this with
+// any Application whose source.repoURL falls under ociURL.
 //
 // When insecureHTTP is true the Secret carries Argo's insecureOCIForceHttp flag,
 // telling the repo-server to use plain HTTP against the OCI registry. Needed
@@ -275,16 +275,9 @@ func clusterArgoExistingOCICredsURL(ctx context.Context, kubeconfigPath string) 
 // presented the way ConfigHub's registry takes any of its own tokens: as the
 // password, with the fixed username "token".
 //
-// The Secret records the cluster's name and organization, so a later attach
-// that finds it can tell whether anything still uses it.
-func clusterArgoApplyOCIRepoCreds(ctx context.Context, kubeconfigPath, clusterName, ociURL, pullToken string, insecureHTTP bool, out io.Writer) error {
-	secret := clusterArgoOCIRepoCredsManifest(clusterCredsAnnotations(clusterName), ociURL, pullToken, insecureHTTP)
-	fmt.Fprintln(out, "Applying confighub-oci-creds repo-creds Secret to argocd namespace...")
-	return clusterKubectlApply(ctx, kubeconfigPath, []byte(secret), out)
-}
-
-// clusterArgoOCIRepoCredsManifest returns the Secret clusterArgoApplyOCIRepoCreds
-// applies.
+// annotations are clusterCredsAnnotations: the cluster's name and organization,
+// so a later attach that finds the Secret can tell whether anything still uses
+// it.
 func clusterArgoOCIRepoCredsManifest(annotations map[string]string, ociURL, pullToken string, insecureHTTP bool) string {
 	extra := ""
 	if insecureHTTP {

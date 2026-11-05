@@ -15,6 +15,7 @@ import (
 	"os/exec"
 	"strconv"
 	"strings"
+	"time"
 
 	"github.com/google/uuid"
 	"github.com/spf13/cobra"
@@ -41,6 +42,9 @@ var clusterAttachArgs struct {
 	k8sbotInstaller   bool
 	noPlaceholderGate bool
 	prune             bool
+	secretsDir        string
+	existingSecrets   bool
+	existingTimeout   time.Duration
 }
 
 var clusterAttachCmd = &cobra.Command{
@@ -179,6 +183,61 @@ A Sveltos or Flux cluster is refused, like an Argo CD one, when it already
 holds the registry credentials of an attachment: the confighub-gateway Secret
 in projectsveltos, or the confighub-oci Secret in flux-system.
 
+Two Secrets hold ConfigHub credentials: the controller's registry credentials
+(above) and argobot's key, argobot-secrets in the argobot namespace, whose
+CONFIGHUB_AUTH_PRIVATE_KEY argobot authenticates with. Attach applies both. A
+cluster that takes credentials only from a secret store, through the External
+Secrets Operator, gets them with --secrets-dir <dir> instead: each Secret's
+Kubernetes manifest, exactly what attach would apply, is written to
+<dir>/<name>/<namespace>_<secret>.yaml and not applied. The values are in plain
+text, in the manifest's stringData, so the file is readable only by you;
+argobot's also holds the argobot Namespace, which attach applies itself. Load
+the values into the store, and have the store keep a Secret of that name in the
+cluster with the manifest's type, labels, annotations and keys. Until it is
+there the controller cannot pull and argobot cannot start; attach does not wait
+for it. The credentials belong to the service account attach creates, so they
+cannot be put in the store beforehand, and a failed attach removes the files
+along with the service account.
+
+The Secrets Store CSI driver's secretObjects does not fit either flag on its
+own: it keeps a Secret only while a pod mounts the driver's volume, and neither
+argobot nor the controller mounts one. With it, run a pod that mounts the
+SecretProviderClass in each Secret's namespace.
+
+With --existing-secrets, attach uses credentials already in the store instead.
+Before attaching, create the cluster's service account and its credentials:
+
+  cub serviceaccount create argo-<name>
+  cub serviceaccount token create argo-<name>      # the controller's pull token
+  cub serviceaccount key add argo-<name> --generate <path>
+                                                   # argobot's key; unless --no-k8sbot
+
+load them into the store, and have it keep these Secrets in the cluster:
+
+  argocd/confighub-oci-creds        (Argo CD) label argocd.argoproj.io/secret-type:
+                                    repo-creds; keys type: oci, url: the
+                                    registry attach prints, username: token,
+                                    password: the token, and with a plain-HTTP
+                                    registry insecureOCIForceHttp: "true"
+  projectsveltos/confighub-gateway  (Sveltos) type
+                                    addons.projectsveltos.io/cluster-profile;
+                                    keys username: token, password: the token
+  flux-system/confighub-oci         (Flux) type kubernetes.io/dockerconfigjson;
+                                    an auth for the registry's host:port with
+                                    username token and the token as password
+  argobot/argobot-secrets           key CONFIGHUB_AUTH_PRIVATE_KEY: the private
+                                    JWK the key add wrote
+
+The service account takes no organization role; attach grants it the target.
+Attach skips the check for an earlier attachment's credentials, applies the
+argobot namespace (unless --no-k8sbot), waits for each Secret up to
+--existing-secrets-timeout (default 5m), since a store can only create one once
+its namespace is there and attach may be what installs the controller, and then
+checks it: the controller's by its shape and by authenticating with its token,
+argobot's by authenticating with its key, each as argo-<name>. Neither the service account nor the Secrets are removed when
+attach fails, and "cub cluster detach" leaves the Secrets, and the argobot
+namespace, in place.
+
 Examples:
   # Attach whatever your current kube context points at
   cub cluster attach staging
@@ -222,6 +281,9 @@ func init() {
 	clusterAttachCmd.Flags().StringVar(&clusterAttachArgs.registry, "registry", "", clusterRegistryFlagUsage)
 	clusterAttachCmd.Flags().BoolVar(&clusterAttachArgs.k8sbotInstaller, "k8sbot-installer", false, clusterK8sbotInstallerFlagUsage)
 	clusterAttachCmd.Flags().BoolVar(&clusterAttachArgs.noPlaceholderGate, "no-placeholder-gate", false, "skip the default vet-placeholders Trigger, allowing Releases with unfilled confighubplaceholder values to be published to this cluster")
+	clusterAttachCmd.Flags().StringVar(&clusterAttachArgs.secretsDir, "secrets-dir", "", clusterSecretsDirFlagUsage)
+	clusterAttachCmd.Flags().BoolVar(&clusterAttachArgs.existingSecrets, "existing-secrets", false, "use the service account argo-<name> and the credentials Secrets a secret store keeps in the cluster, checking each, instead of creating the service account and applying new credentials")
+	clusterAttachCmd.Flags().DurationVar(&clusterAttachArgs.existingTimeout, "existing-secrets-timeout", clusterExistingSecretsTimeoutDefault, "--existing-secrets: how long to wait for each Secret to be in the cluster")
 	clusterAttachCmd.Flags().BoolVar(&clusterAttachArgs.prune, "prune", false, "let the controller delete what a removed deployment deployed: the root prunes deployments whose Units leave the apps space (Sveltos's always does), and deployments created later prune what they deployed")
 	clusterCmd.AddCommand(clusterAttachCmd)
 }
@@ -246,6 +308,13 @@ type clusterAttachOptions struct {
 	k8sbotInstaller   bool
 	noPlaceholderGate bool
 	prune             bool
+	// secretsDir is --secrets-dir as given; clusterSecretsDirFor makes the
+	// cluster's directory in it.
+	secretsDir string
+	// existingSecrets and existingTimeout are --existing-secrets and
+	// --existing-secrets-timeout (clusterAdoptServiceAccount).
+	existingSecrets bool
+	existingTimeout time.Duration
 	// origin is clusterOriginAttach, or clusterOriginKind when `cub cluster up`
 	// attaches the kind cluster it just created, which makes it a cluster `cub
 	// cluster down` deletes rather than one `cub cluster detach` leaves running.
@@ -280,6 +349,9 @@ func clusterAttachCmdRun(cmd *cobra.Command, args []string) error {
 		k8sbotInstaller:   clusterAttachArgs.k8sbotInstaller,
 		noPlaceholderGate: clusterAttachArgs.noPlaceholderGate,
 		prune:             clusterAttachArgs.prune,
+		secretsDir:        clusterAttachArgs.secretsDir,
+		existingSecrets:   clusterAttachArgs.existingSecrets,
+		existingTimeout:   clusterAttachArgs.existingTimeout,
 	})
 }
 
@@ -293,6 +365,9 @@ func clusterAttachRun(out io.Writer, opts clusterAttachOptions) (err error) {
 		if err := clusterCheckController(opts.controller); err != nil {
 			return err
 		}
+	}
+	if opts.existingSecrets && opts.secretsDir != "" {
+		return fmt.Errorf("--existing-secrets uses the Secrets in the cluster, and --secrets-dir writes new ones; pass one")
 	}
 	if _, err := exec.LookPath("kubectl"); err != nil {
 		return fmt.Errorf("kubectl not found on PATH")
@@ -313,6 +388,11 @@ func clusterAttachRun(out io.Writer, opts clusterAttachOptions) (err error) {
 		}
 		if opts.spaceSlug != "" && opts.spaceSlug != installedSpace.SpaceSlug {
 			return fmt.Errorf("--space %s: cluster %q is in space %q, which 'cub cluster controller-install' created", opts.spaceSlug, opts.name, installedSpace.SpaceSlug)
+		}
+		// svc-account-bootstrap issued and applied the credentials itself, so
+		// there are no Secrets of a store's to check, nor for detach to keep.
+		if opts.existingSecrets && installedSpace.Stage == clusterStageServiceAccount {
+			return fmt.Errorf("--existing-secrets: cluster %q has the credentials 'cub cluster svc-account-bootstrap' issued and applied; attach it without --existing-secrets", opts.name)
 		}
 		opts.controller = installedSpace.Controller
 		opts.spaceSlug = installedSpace.SpaceSlug
@@ -336,6 +416,7 @@ func clusterAttachRun(out io.Writer, opts clusterAttachOptions) (err error) {
 	appsSlug := opts.spaceSlug + clusterAppsSuffix(opts.controller)
 	kubeconfigPath := clusterKubeconfigPath(opts.name)
 	envFilePath := clusterEnvFilePath(opts.name)
+	secretsDir := clusterSecretsDirFor(opts.secretsDir, opts.name)
 
 	argobotSlug := ""
 	if !opts.noArgobot {
@@ -347,8 +428,18 @@ func clusterAttachRun(out io.Writer, opts clusterAttachOptions) (err error) {
 		freshSpaceSlug = ""
 		freshServiceAccount = installedSpace.Stage != clusterStageServiceAccount
 	}
-	if err := clusterRequireFreshConfigHub(opts.name, freshSpaceSlug, appsSlug, argobotSlug, freshServiceAccount); err != nil {
+	// With --existing-secrets the service account is the operator's, and has
+	// to exist before anything is created.
+	if err := clusterRequireFreshConfigHub(opts.name, freshSpaceSlug, appsSlug, argobotSlug, freshServiceAccount && !opts.existingSecrets); err != nil {
 		return err
+	}
+	if opts.existingSecrets && freshServiceAccount {
+		serviceAccountSlug := clusterServiceAccountSlug(opts.name)
+		if exists, err := clusterServiceAccountExists(serviceAccountSlug); err != nil {
+			return err
+		} else if !exists {
+			return fmt.Errorf("--existing-secrets: no service account %q; create it, and the credentials the Secrets hold, first (see 'cub cluster attach --help')", serviceAccountSlug)
+		}
 	}
 	if err := clusterPrintControllerOCIEndpoint(out); err != nil {
 		return err
@@ -403,6 +494,10 @@ func clusterAttachRun(out io.Writer, opts clusterAttachOptions) (err error) {
 			kubeconfigPath: kubeconfigPath,
 			controller:     opts.controller,
 			noArgobot:      opts.noArgobot,
+			secretsDir:     secretsDir,
+
+			existingSecrets:        opts.existingSecrets,
+			existingSecretsTimeout: opts.existingTimeout,
 		}, inst, addRollback); err != nil {
 			return err
 		}
@@ -436,6 +531,7 @@ func clusterAttachRun(out io.Writer, opts clusterAttachOptions) (err error) {
 				argobotBase:       opts.argobotBase,
 				argobotRepository: argobotRepository,
 				argobotInstaller:  argobotInstaller,
+				secretsDir:        secretsDir,
 			}, addRollback)
 		}
 	}
@@ -458,6 +554,10 @@ func clusterAttachRun(out io.Writer, opts clusterAttachOptions) (err error) {
 	}
 	clusterPrintSummaryHead(out, verb, result, kubeconfigPath, envFilePath)
 	clusterPrintControllerSummary(out, opts.name, opts.controller, kubeconfigPath, inst)
+	if secretsDir != "" {
+		fmt.Fprintf(out, "\nThe ConfigHub credentials are in %s, not in the cluster. Until your secret store puts\n"+
+			"each of them in the cluster as the Secret its file is, the controller cannot pull and argobot cannot start.\n", secretsDir)
+	}
 	clusterPrintSummaryTail(out, result, envFilePath)
 	return nil
 }
@@ -612,9 +712,13 @@ func clusterControllerInstallStage(out io.Writer, opts *clusterAttachOptions, ad
 		}
 	}
 	// One ConfigHub per cluster. The registry credentials Secret is the
-	// in-cluster mark of an attachment, whichever server it was to.
-	if err := clusterAttachRequireUnwired(ctx, out, kubeconfigPath, opts); err != nil {
-		return inst, err
+	// in-cluster mark of an attachment, whichever server it was to. With
+	// --existing-secrets it is expected, and the service account stage checks
+	// it authenticates to this ConfigHub as this cluster's service account.
+	if !opts.existingSecrets {
+		if err := clusterAttachRequireUnwired(ctx, out, kubeconfigPath, opts); err != nil {
+			return inst, err
+		}
 	}
 
 	spaceAnnotations := map[string]string{clusterAnnotationProvider: opts.provider}

@@ -17,8 +17,8 @@ import (
 
 // Signing a browser in from here.
 //
-// On an instance with no identity provider there is nothing for a browser to log
-// in against: no realm, and no stored password to type. The CLI is the thing
+// A local identity or a service account has nothing for a browser to log in
+// against: no realm, and no stored password to type. The CLI is the thing
 // holding a credential, so it hands the browser a session rather than sending it
 // somewhere to earn one.
 
@@ -32,8 +32,8 @@ credential of its own -- the web UI exchanges it for a session once and it then
 stops working, which is why it is safe to appear in a URL and why it expires
 quickly.
 
-Useful on an instance with no identity provider, where the browser has no
-other way in.`, ""),
+For a local identity or a service account, which have no login page. An identity
+that signs in through an identity provider is refused.`, ""),
 	Args: cobra.NoArgs,
 	RunE: authBrowserSessionCmdRun,
 }

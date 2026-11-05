@@ -61,6 +61,11 @@ const (
 	clusterAnnotationStage     = "confighub.com/cluster-stage"
 	clusterStageController     = "controller"
 	clusterStageServiceAccount = "service-account"
+	// clusterAnnotationExistingSecrets is "true" on the cluster Space of a
+	// cluster attached with --existing-secrets: its credentials Secrets were
+	// put in the cluster by a secret store, not by attach, so `cub cluster
+	// detach` leaves them, and the argobot namespace they are in, in place.
+	clusterAnnotationExistingSecrets = "confighub.com/cluster-existing-secrets"
 	// clusterLabel is the queryable marker label on every cluster Space.
 	clusterLabel = "confighub.com/cluster"
 

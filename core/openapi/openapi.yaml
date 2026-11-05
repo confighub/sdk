@@ -58121,6 +58121,14 @@ components:
           allOf:
           - $ref: '#/components/schemas/GuardDelta'
           description: 'For GuardWithheld: the guard change that did not propagate'
+        Guards:
+          description: 'For Guarded and GuardWithheld: every guard the operation''s
+            clearance did not cover, those it forbade with DoesNotExist first and
+            then in key order. Guard is the first of them.'
+          items:
+            $ref: '#/components/schemas/WithheldGuard'
+          type: array
+          x-go-type-skip-optional-pointer: true
         Path:
           description: Path of the mutation; empty for resource-level conflicts
           type: string
@@ -62367,18 +62375,37 @@ components:
       type: object
     UnitConflictSelector:
       properties:
+        Guards:
+          description: Match Guarded and GuardWithheld conflicts every one of whose
+            guards is named here, as key or key=value; empty matches any conflict,
+            guarded or not
+          items:
+            type: string
+          type: array
+          x-go-type-skip-optional-pointer: true
         Path:
           description: Match conflicts at this path; empty matches any path, including
-            resource-level conflicts
+            resource-level conflicts. An element of a list may be named by position
+            (spec.data.0.secretKey), by merge key (containers.?name=main.image), or
+            as the conflict records it, and * matches any one list element or map
+            key (spec.data.*.secretKey).
           type: string
           x-go-type-skip-optional-pointer: true
         Reason:
-          description: 'Match conflicts dropped for this reason: Subtracted, DeleteShadowed,
-            ProtectedPath, or UnresolvedPath; empty matches any reason'
+          description: Match conflicts dropped for this reason, as their Reason names
+            it; empty matches any reason
           type: string
           x-go-type-skip-optional-pointer: true
         ResourceName:
-          description: Match conflicts on this resource; empty matches any resource
+          description: Match conflicts on this resource, by its whole name (namespace/name,
+            or /name for a cluster-scoped Kubernetes resource) or a name it had before
+            a rename; empty matches any resource
+          type: string
+          x-go-type-skip-optional-pointer: true
+        ResourceNameWithoutScope:
+          description: Match conflicts on every resource with this name without its
+            namespace, now or before a rename; empty matches any. With Permanent or
+            Undismiss it has to match only one resource.
           type: string
           x-go-type-skip-optional-pointer: true
         ResourceType:
@@ -62392,7 +62419,8 @@ components:
       properties:
         Action:
           description: Apply re-applies the withheld change; Dismiss drops the conflict
-            without changing the configuration data
+            without changing the configuration data; Undismiss removes dismissals
+            recorded with Permanent
           type: string
           x-go-type-skip-optional-pointer: true
         DryRun:
@@ -62400,9 +62428,17 @@ components:
             The response carries the Unit as it would be.
           type: boolean
           x-go-type-skip-optional-pointer: true
+        Permanent:
+          description: With Dismiss, also dismiss the conflicts each selector matches
+            whenever a later merge reports them. Each selector names one resource,
+            by ResourceName or ResourceNameWithoutScope, and a Reason, and Guards
+            for a guard-caused reason; an empty Path covers every path of the resource.
+          type: boolean
+          x-go-type-skip-optional-pointer: true
         Select:
           description: Which outstanding conflicts to act on. Empty acts on all of
-            them.
+            them. Permanent and Undismiss need at least one, each naming a ResourceName
+            or ResourceNameWithoutScope, and for Permanent a Reason.
           items:
             $ref: '#/components/schemas/UnitConflictSelector'
           type: array
@@ -62430,6 +62466,15 @@ components:
           x-go-type-skip-optional-pointer: true
         Error:
           $ref: '#/components/schemas/ResponseError'
+        Recorded:
+          description: Number of permanent dismissals recorded, each a reason (or
+            a reason and a guard) at one path of one resource
+          type: integer
+          x-go-type-skip-optional-pointer: true
+        Removed:
+          description: Number of permanent dismissals removed by Undismiss
+          type: integer
+          x-go-type-skip-optional-pointer: true
         Unit:
           allOf:
           - $ref: '#/components/schemas/Unit'
@@ -62717,6 +62762,11 @@ components:
       type: object
     UnitGuardRequest:
       properties:
+        ChangeDescription:
+          description: Recorded on the Revision the edit creates. Defaults to "Set
+            path guards".
+          type: string
+          x-go-type-skip-optional-pointer: true
         Clearance:
           allOf:
           - $ref: '#/components/schemas/Clearance'
@@ -62862,6 +62912,11 @@ components:
       type: object
     UnitProtectionRequest:
       properties:
+        ChangeDescription:
+          description: Recorded on the Revision the edit creates. Defaults to "Set
+            path protection".
+          type: string
+          x-go-type-skip-optional-pointer: true
         ResourceProtection:
           description: Per-resource Protected edits to apply to the Unit's MutationSources
           items:

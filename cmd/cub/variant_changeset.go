@@ -7,6 +7,8 @@ import (
 	"bytes"
 	"encoding/json"
 	"fmt"
+	"slices"
+	"strings"
 
 	"github.com/cockroachdb/errors"
 	"github.com/confighub/sdk/core/cubapi"
@@ -37,8 +39,15 @@ var variantChangeSetOpenCmd = &cobra.Command{
 	Use:         "open <variant> <changeset>",
 	Short:       "Open a changeset on the units of a variant",
 	Annotations: map[string]string{"OrgLevel": ""},
-	Long: getCommandHelp(`Open a changeset on the units of a variant: every unit of the variant's space that is not
-in a changeset already, or those --where selects among them.
+	Long: getCommandHelp(`Open a changeset on the units of a variant: every unit of the variant's space, or those
+--where selects among them.
+
+The changeset is opened on all of the units or on none. A unit is in one changeset at a time,
+so when another changeset holds any of them the command fails, naming the units and the
+changeset holding each, and opens nothing; wait for that changeset to close, or select other
+units with --where. A unit left in a changeset that has closed stays held until it is taken
+out with "cub unit update --patch --changeset -". A unit the changeset is already open on
+stays in it.
 
 The changeset is named by slug, space/slug, or UUID; a bare slug is looked up in the variant's
 space. When the variant is a Variant of a Component, the changeset's ChangeWorkflow has to be
@@ -122,7 +131,22 @@ func variantChangeSetOpenCmdRun(cmd *cobra.Command, args []string) error {
 	if err != nil {
 		return err
 	}
-	selection := fmt.Sprintf("SpaceID = '%s' AND ChangeSetID IS NULL", space.Space.SpaceID)
+	// The bulk patch is not one transaction, so what would make it partial is found first: a
+	// unit another changeset holds is refused by the server one unit at a time, after the units
+	// before it have been taken.
+	units, err := apiListUnits(space.Space.SpaceID.String(), where, "UnitID,Slug,ChangeSetID")
+	if err != nil {
+		return err
+	}
+	already, held := unitsByChangeSet(units, changeSetID)
+	if len(held) > 0 {
+		return errors.Newf("changeset %s was not opened on any unit of %s, because another changeset holds %d of them: %s",
+			args[1], space.Space.Slug, heldUnitCount(held), describeHeldUnits(held, changeSetNames(held, space.Space.SpaceID)))
+	}
+	// Every selected unit is patched, those already in the changeset included, which the
+	// server takes as no change. A unit another changeset took since the listing is refused
+	// by the server by name, where leaving it out of the selection would hide it.
+	selection := fmt.Sprintf("SpaceID = '%s'", space.Space.SpaceID)
 	if where != "" {
 		selection = fmt.Sprintf("%s AND %s", selection, where)
 	}
@@ -131,24 +155,96 @@ func variantChangeSetOpenCmdRun(cmd *cobra.Command, args []string) error {
 	if err != nil {
 		return err
 	}
-	opened, failed := 0, 0
+	patched, failed := 0, 0
 	for _, response := range responses {
 		if response.Error != nil {
 			failed++
 			displayBulkFailure("open the changeset on", "unit", response.Error)
 			continue
 		}
-		opened++
+		patched++
 	}
 	verb := "Opened"
 	if variantChangeSetOpenArgs.dryRun {
 		verb = "Would open"
 	}
-	tprint("%s changeset %s on %d unit(s) of %s", verb, args[1], opened, space.Space.Slug)
+	tprint("%s changeset %s on %d unit(s) of %s", verb, args[1], max(patched-already, 0), space.Space.Slug)
 	if failed > 0 {
 		return errors.Errorf("failed to open the changeset on %d unit(s)", failed)
 	}
 	return nil
+}
+
+// unitsByChangeSet counts the units already in changeSetID, and groups the slugs of those
+// another changeset holds by that changeset.
+func unitsByChangeSet(units []*goclientnew.Unit, changeSetID uuid.UUID) (int, map[uuid.UUID][]string) {
+	already := 0
+	held := map[uuid.UUID][]string{}
+	for _, unit := range units {
+		switch {
+		case unit.ChangeSetID == nil || *unit.ChangeSetID == uuid.Nil:
+		case *unit.ChangeSetID == changeSetID:
+			already++
+		default:
+			held[*unit.ChangeSetID] = append(held[*unit.ChangeSetID], unit.Slug)
+		}
+	}
+	return already, held
+}
+
+func heldUnitCount(held map[uuid.UUID][]string) int {
+	count := 0
+	for _, slugs := range held {
+		count += len(slugs)
+	}
+	return count
+}
+
+// changeSetNames names each changeset holding units for a message, as its slug and state, with
+// its space when that is not the variant's. One that cannot be read keeps its ID, which is what
+// the caller is left to look up.
+func changeSetNames(held map[uuid.UUID][]string, spaceID uuid.UUID) map[uuid.UUID]string {
+	names := make(map[uuid.UUID]string, len(held))
+	ids := make([]goclientnew.UUID, 0, len(held))
+	for id := range held {
+		names[id] = id.String()
+		ids = append(ids, id)
+	}
+	changeSets, err := cubapi.ListChangeSets(ctx, cubClient, cubapi.Where{}.In("ChangeSetID", ids),
+		cubapi.ListOpts{Include: "SpaceID"})
+	if err != nil {
+		return names
+	}
+	for _, extended := range changeSets {
+		if extended.ChangeSet == nil {
+			continue
+		}
+		name := extended.ChangeSet.Slug
+		if extended.ChangeSet.SpaceID != spaceID && extended.Space != nil {
+			name = prefixedSlug(extended.Space.Slug, name)
+		}
+		if extended.ChangeSet.State != "" {
+			name = fmt.Sprintf("%s (%s)", name, extended.ChangeSet.State)
+		}
+		names[extended.ChangeSet.ChangeSetID] = name
+	}
+	return names
+}
+
+// describeHeldUnits lists the held units by the changeset holding them, in a stable order:
+// "api, config are in capacity-1 (Open); web is in hotfix (Open)".
+func describeHeldUnits(held map[uuid.UUID][]string, names map[uuid.UUID]string) string {
+	parts := make([]string, 0, len(held))
+	for id, slugs := range held {
+		slices.Sort(slugs)
+		verb := "is"
+		if len(slugs) > 1 {
+			verb = "are"
+		}
+		parts = append(parts, fmt.Sprintf("%s %s in %s", strings.Join(slugs, ", "), verb, names[id]))
+	}
+	slices.Sort(parts)
+	return strings.Join(parts, "; ")
 }
 
 func variantChangeSetCloseCmdRun(cmd *cobra.Command, args []string) error {

@@ -200,16 +200,6 @@ func clusterFluxCredsManifest(annotations map[string]string, ociURL, pullToken s
 	})
 }
 
-// clusterFluxApplyOCICreds installs the Secret from clusterFluxCredsManifest.
-func clusterFluxApplyOCICreds(ctx context.Context, kubeconfigPath, clusterName, ociURL, pullToken string, out io.Writer) error {
-	secret, err := clusterFluxCredsManifest(clusterCredsAnnotations(clusterName), ociURL, pullToken)
-	if err != nil {
-		return err
-	}
-	fmt.Fprintf(out, "Applying %s Secret to the %s namespace...\n", clusterFluxCredsSecret, clusterFluxNamespace)
-	return clusterKubectlApply(ctx, kubeconfigPath, secret, out)
-}
-
 // clusterFluxChildManifest returns the YAML for the OCIRepository and
 // Kustomization that deploy a deployment Space's Release to the cluster: the
 // Flux counterpart of variantArgoAppManifest. Both are named after the Space,

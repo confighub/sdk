@@ -228,6 +228,10 @@ type MutationConflict struct {
 	// Details because it is matched on, not only read: deciding what to do about a withheld
 	// change starts with which class of reason stopped it.
 	Guard *WithheldGuard `json:",omitempty" description:"For Guarded: the guard the operation's clearance did not cover"`
+	// Guards is every guard that withheld the write, of which Guard is the first. A path can
+	// carry several the operation was not cleared for, and each is a reason: deciding the
+	// conflict is understood, or recording that it is, has to be about all of them.
+	Guards []WithheldGuard `json:",omitempty" description:"For Guarded and GuardWithheld: every guard the operation's clearance did not cover, those it forbade with DoesNotExist first and then in key order. Guard is the first of them."`
 	// GuardChange is the withheld guard delta, for GuardWithheld. Typed rather than
 	// serialized into Source.Value, which is a MutationInfo and cannot describe a delta:
 	// applying this conflict has to know the direction, so that an applied removal removes.

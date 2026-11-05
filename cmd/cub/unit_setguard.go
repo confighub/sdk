@@ -42,7 +42,8 @@ Each --guard takes RESOURCE_TYPE:RESOURCE_NAME:PATH=KEY=VALUE and each
 --remove-guard takes RESOURCE_TYPE:RESOURCE_NAME:PATH=KEY. Leave PATH empty to
 guard the resource as a whole. Repeat either flag to edit several paths or
 resources at once, and combine them to add some guards and retire others in one
-revision. Setting guards creates a new revision only if they change.
+revision. Setting guards creates a new revision only if they change; pass
+--change-desc to record why on it.
 
 A change can state its own reasons instead, without naming where: cub unit
 update --guard, cub function do --guard, and the Guards field on a link or a
@@ -59,9 +60,10 @@ Examples:
   cub unit set-guard my-unit \
     --guard "apps/v1/Deployment:default/myapp:spec.template.spec.containers.?name=app.image=owner=transform-link"
 
-  # Record a deliberate policy exception on the pod spec
+  # Record a deliberate policy exception on the pod spec, and why
   cub unit set-guard my-unit \
-    --guard "apps/v1/Deployment:default/myapp:spec.template.spec=policy-exception=host-network"
+    --guard "apps/v1/Deployment:default/myapp:spec.template.spec=policy-exception=host-network" \
+    --change-desc "The CNI agent needs the host network"
 
   # Retire a guard whose reason no longer applies, saying the reason is understood
   cub unit set-guard my-unit \
@@ -74,9 +76,10 @@ Examples:
 }
 
 var (
-	guardSpecs        []string
-	removeGuardSpecs  []string
-	setGuardClearance []string
+	guardSpecs         []string
+	removeGuardSpecs   []string
+	setGuardClearance  []string
+	setGuardChangeDesc string
 )
 
 func init() {
@@ -86,6 +89,8 @@ func init() {
 		"guard to remove, as RESOURCE_TYPE:RESOURCE_NAME:PATH=KEY (repeatable)")
 	unitSetGuardCmd.Flags().StringArrayVar(&setGuardClearance, "clearance", nil,
 		"class of guarded reason this edit is cleared for, as KEY, KEY=VALUE[;VALUE...], KEY!=VALUE[;VALUE...], or !KEY (repeatable). Required to edit a path that already carries guards")
+	unitSetGuardCmd.Flags().StringVar(&setGuardChangeDesc, "change-desc", "",
+		"change description recorded on the revision the edit creates")
 	addStandardDisplayFlags(unitSetGuardCmd)
 	enableOptionalSpace(unitSetGuardCmd)
 	unitCmd.AddCommand(unitSetGuardCmd)
@@ -190,7 +195,7 @@ func unitSetGuardCmdRun(_ *cobra.Command, args []string) error {
 		remove[key][path] = append(remove[key][path], k)
 	}
 
-	body := goclientnew.UnitGuardRequest{}
+	body := goclientnew.UnitGuardRequest{ChangeDescription: setGuardChangeDesc}
 	if len(setGuardClearance) > 0 {
 		clearance, err := parseClearanceSpecs(setGuardClearance)
 		if err != nil {

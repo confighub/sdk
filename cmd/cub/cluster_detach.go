@@ -10,8 +10,10 @@ import (
 	"io"
 	"os"
 	"slices"
+	"strings"
 
 	"github.com/spf13/cobra"
+	"sigs.k8s.io/yaml"
 )
 
 var clusterDetachArgs struct {
@@ -34,7 +36,9 @@ wiring:
     deployed stay (Applications lose their finalizers, ClusterProfiles are set
     to LeavePolicies, Kustomizations are suspended first);
   - argobot, cub's own bot, is deleted with its resources;
-  - the registry credentials Secret is deleted;
+  - the registry credentials Secret is deleted, and argobot's key Secret with
+    it, unless they were in the cluster before attach ("cub cluster attach
+    --existing-secrets"), which leaves them and the argobot namespace;
   - the local kubeconfig, env file and record are removed.
 
 By default the ConfigHub side is left in place — the cluster Space with its OCI
@@ -152,24 +156,49 @@ func clusterDetach(ctx context.Context, out io.Writer, name, kubeconfigPath stri
 	if match == nil {
 		argobotName = clusterArgobotComponent + "-" + name
 	}
+	// A secret store keeps the Secrets of a cluster attached with
+	// --existing-secrets, which were there before attach, and argobot's is in
+	// the argobot Namespace that argobot's deployment deployed, so the
+	// deployment is removed without cascading, and argobot's other resources
+	// are deleted here.
+	keepSecrets := match != nil && match.ExistingSecrets
+	cascadeName := argobotName
+	if keepSecrets {
+		cascadeName = ""
+	}
 	var argobotRemoved bool
 	var credsSecret, left string
 	switch controller {
 	case clusterControllerSveltos:
-		argobotRemoved, err = clusterDetachSveltos(ctx, out, kubeconfigPath, children, argobotName)
+		argobotRemoved, err = clusterDetachSveltos(ctx, out, kubeconfigPath, children, cascadeName)
 		credsSecret = clusterSveltosGatewaySecret
 		left = "Sveltos left installed in %q; workloads deployed by the removed ClusterProfiles left running\n"
 	case clusterControllerFlux:
-		argobotRemoved, err = clusterDetachFlux(ctx, out, kubeconfigPath, children, argobotName)
+		argobotRemoved, err = clusterDetachFlux(ctx, out, kubeconfigPath, children, cascadeName)
 		credsSecret = clusterFluxCredsSecret
 		left = "Flux left installed in %q; workloads applied by the removed Kustomizations left running\n"
 	default:
-		argobotRemoved, err = clusterDetachArgo(ctx, out, kubeconfigPath, appsSlug, children, argobotName)
+		argobotRemoved, err = clusterDetachArgo(ctx, out, kubeconfigPath, appsSlug, children, cascadeName)
 		credsSecret = clusterArgoOCICredsSecret
 		left = "Argo CD left installed in %q; workloads deployed by the removed Applications left running\n"
 	}
 	if err != nil {
 		return err
+	}
+	if keepSecrets {
+		if match.BotSpace != "" {
+			if err := clusterDeleteArgobotKeepingNamespace(ctx, out, kubeconfigPath, match.BotSpace); err != nil {
+				fmt.Fprintf(out, "  warning: %v\n", err)
+			}
+		}
+		if match.BotSpace != "" {
+			fmt.Fprintf(out, "  left the Secrets %s/%s and %s/%s, which were in the cluster before attach, and the %s namespace\n",
+				controllerNamespace, credsSecret, clusterArgobotNamespace, clusterArgobotSecret, clusterArgobotNamespace)
+		} else {
+			fmt.Fprintf(out, "  left the Secret %s/%s, which was in the cluster before attach\n", controllerNamespace, credsSecret)
+		}
+		fmt.Fprintf(out, "  "+left, controllerNamespace)
+		return nil
 	}
 	if argobotRemoved {
 		// argobot's Namespace holds the key Secret cub applied out of band; the
@@ -192,6 +221,56 @@ func clusterDetach(ctx context.Context, out io.Writer, name, kubeconfigPath stri
 	}
 	fmt.Fprintf(out, "  "+left, controllerNamespace)
 	return nil
+}
+
+// clusterDeleteArgobotKeepingNamespace deletes what argobot's deployment
+// deployed, as cascading its deletion would, except the argobot Namespace. The
+// controller is told to leave all of it, and the resources are deleted here from
+// argobot's Units, since a secret store's Secrets, and its own objects for them,
+// are in that Namespace, and deleting it would delete them too.
+func clusterDeleteArgobotKeepingNamespace(ctx context.Context, out io.Writer, kubeconfigPath, botSpaceSlug string) error {
+	space, err := resolveSpace(botSpaceSlug, "SpaceID")
+	if err != nil {
+		return fmt.Errorf("resolve argobot's space %q: %w", botSpaceSlug, err)
+	}
+	units, err := apiListUnits(space.Space.SpaceID.String(), "", "UnitID,Slug")
+	if err != nil {
+		return fmt.Errorf("list argobot's Units: %w", err)
+	}
+	var manifest strings.Builder
+	for _, u := range units {
+		data, err := fetchUnitData(space.Space.SpaceID, u.UnitID)
+		if err != nil {
+			return fmt.Errorf("read argobot's Unit %q: %w", u.Slug, err)
+		}
+		manifest.WriteString(clusterWithoutNamespaces(data))
+	}
+	if manifest.Len() == 0 {
+		return nil
+	}
+	fmt.Fprintf(out, "  deleting argobot's resources, leaving the %s namespace...\n", clusterArgobotNamespace)
+	if err := clusterKubectl(ctx, kubeconfigPath, []byte(manifest.String()), io.Discard,
+		"delete", "-f", "-", "--ignore-not-found", "--wait=false"); err != nil {
+		return fmt.Errorf("delete argobot's resources: %w", err)
+	}
+	return nil
+}
+
+// clusterWithoutNamespaces returns the documents of a Unit's data that are not
+// Namespaces, each ending with a document separator.
+func clusterWithoutNamespaces(data string) string {
+	var b strings.Builder
+	for _, doc := range strings.Split(data, "\n---") {
+		var meta struct {
+			Kind string `json:"kind"`
+		}
+		if yaml.Unmarshal([]byte(doc), &meta) != nil || meta.Kind == "" || meta.Kind == "Namespace" {
+			continue
+		}
+		b.WriteString(strings.TrimPrefix(strings.TrimSpace(doc), "---"))
+		b.WriteString("\n---\n")
+	}
+	return b.String()
 }
 
 // clusterDetachArgo deletes the root Application, named for the apps Space,

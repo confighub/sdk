@@ -357,12 +357,12 @@ func clusterJWTExpiry(token string) (time.Time, error) {
 	return time.Unix(claims.Exp, 0), nil
 }
 
-// clusterSveltosApplyOCICreds installs the Secret the ClusterProfiles'
+// clusterSveltosOCICredsManifest returns the Secret the ClusterProfiles'
 // remoteURL.secretRef names: the cluster service account's token as the
 // basic-auth password for the ConfigHub OCI registry, under the username
 // "token" the registry accepts it with.
-func clusterSveltosApplyOCICreds(ctx context.Context, kubeconfigPath, pullToken string, out io.Writer) error {
-	secret := fmt.Sprintf(`apiVersion: v1
+func clusterSveltosOCICredsManifest(pullToken string) []byte {
+	return fmt.Appendf(nil, `apiVersion: v1
 kind: Secret
 metadata:
   name: %s
@@ -372,8 +372,6 @@ stringData:
   username: token
   password: %s
 `, clusterSveltosGatewaySecret, clusterSveltosNamespace, pullToken)
-	fmt.Fprintf(out, "Applying %s Secret to the %s namespace...\n", clusterSveltosGatewaySecret, clusterSveltosNamespace)
-	return clusterKubectlApply(ctx, kubeconfigPath, []byte(secret), out)
 }
 
 // clusterSveltosChildProfileManifest returns the YAML for the ClusterProfile

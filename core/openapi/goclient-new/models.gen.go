@@ -5525,6 +5525,9 @@ type MutationConflict struct {
 	// GuardChange For GuardWithheld: the guard change that did not propagate
 	GuardChange *GuardDelta `json:"GuardChange,omitempty" yaml:"GuardChange,omitempty"`
 
+	// Guards For Guarded and GuardWithheld: every guard the operation's clearance did not cover, those it forbade with DoesNotExist first and then in key order. Guard is the first of them.
+	Guards []WithheldGuard `json:"Guards,omitempty" yaml:"Guards,omitempty"`
+
 	// Path Path of the mutation; empty for resource-level conflicts
 	Path string `json:"Path,omitempty" yaml:"Path,omitempty"`
 
@@ -7560,14 +7563,20 @@ type UnitBlame struct {
 
 // UnitConflictSelector defines model for UnitConflictSelector.
 type UnitConflictSelector struct {
-	// Path Match conflicts at this path; empty matches any path, including resource-level conflicts
+	// Guards Match Guarded and GuardWithheld conflicts every one of whose guards is named here, as key or key=value; empty matches any conflict, guarded or not
+	Guards []string `json:"Guards,omitempty" yaml:"Guards,omitempty"`
+
+	// Path Match conflicts at this path; empty matches any path, including resource-level conflicts. An element of a list may be named by position (spec.data.0.secretKey), by merge key (containers.?name=main.image), or as the conflict records it, and * matches any one list element or map key (spec.data.*.secretKey).
 	Path string `json:"Path,omitempty" yaml:"Path,omitempty"`
 
-	// Reason Match conflicts dropped for this reason: Subtracted, DeleteShadowed, ProtectedPath, or UnresolvedPath; empty matches any reason
+	// Reason Match conflicts dropped for this reason, as their Reason names it; empty matches any reason
 	Reason string `json:"Reason,omitempty" yaml:"Reason,omitempty"`
 
-	// ResourceName Match conflicts on this resource; empty matches any resource
+	// ResourceName Match conflicts on this resource, by its whole name (namespace/name, or /name for a cluster-scoped Kubernetes resource) or a name it had before a rename; empty matches any resource
 	ResourceName string `json:"ResourceName,omitempty" yaml:"ResourceName,omitempty"`
+
+	// ResourceNameWithoutScope Match conflicts on every resource with this name without its namespace, now or before a rename; empty matches any. With Permanent or Undismiss it has to match only one resource.
+	ResourceNameWithoutScope string `json:"ResourceNameWithoutScope,omitempty" yaml:"ResourceNameWithoutScope,omitempty"`
 
 	// ResourceType Match conflicts on resources of this type, in any API version; empty matches any type. With ResourceName, it picks out one of several resources of that name.
 	ResourceType string `json:"ResourceType,omitempty" yaml:"ResourceType,omitempty"`
@@ -7575,13 +7584,16 @@ type UnitConflictSelector struct {
 
 // UnitConflictsRequest defines model for UnitConflictsRequest.
 type UnitConflictsRequest struct {
-	// Action Apply re-applies the withheld change; Dismiss drops the conflict without changing the configuration data
+	// Action Apply re-applies the withheld change; Dismiss drops the conflict without changing the configuration data; Undismiss removes dismissals recorded with Permanent
 	Action string `json:"Action,omitempty" yaml:"Action,omitempty"`
 
 	// DryRun Report what the request would do without writing anything. The response carries the Unit as it would be.
 	DryRun bool `json:"DryRun,omitempty" yaml:"DryRun,omitempty"`
 
-	// Select Which outstanding conflicts to act on. Empty acts on all of them.
+	// Permanent With Dismiss, also dismiss the conflicts each selector matches whenever a later merge reports them. Each selector names one resource, by ResourceName or ResourceNameWithoutScope, and a Reason, and Guards for a guard-caused reason; an empty Path covers every path of the resource.
+	Permanent bool `json:"Permanent,omitempty" yaml:"Permanent,omitempty"`
+
+	// Select Which outstanding conflicts to act on. Empty acts on all of them. Permanent and Undismiss need at least one, each naming a ResourceName or ResourceNameWithoutScope, and for Permanent a Reason.
 	Select []UnitConflictSelector `json:"Select,omitempty" yaml:"Select,omitempty"`
 }
 
@@ -7599,6 +7611,12 @@ type UnitConflictsResponse struct {
 	// Dismissed Number of conflicts dropped without changing the configuration data
 	Dismissed int            `json:"Dismissed,omitempty" yaml:"Dismissed,omitempty"`
 	Error     *ResponseError `json:"Error,omitempty" yaml:"Error,omitempty"`
+
+	// Recorded Number of permanent dismissals recorded, each a reason (or a reason and a guard) at one path of one resource
+	Recorded int `json:"Recorded,omitempty" yaml:"Recorded,omitempty"`
+
+	// Removed Number of permanent dismissals removed by Undismiss
+	Removed int `json:"Removed,omitempty" yaml:"Removed,omitempty"`
 
 	// Unit The Unit as the request left it, or would have left it for a dry run
 	Unit *Unit `json:"Unit,omitempty" yaml:"Unit,omitempty"`
@@ -7758,6 +7776,9 @@ type UnitEvent struct {
 
 // UnitGuardRequest defines model for UnitGuardRequest.
 type UnitGuardRequest struct {
+	// ChangeDescription Recorded on the Revision the edit creates. Defaults to "Set path guards".
+	ChangeDescription string `json:"ChangeDescription,omitempty" yaml:"ChangeDescription,omitempty"`
+
 	// Clearance The classes of reason this edit is cleared for; required to edit a path that already carries guards
 	Clearance *Clearance `json:"Clearance,omitempty" yaml:"Clearance,omitempty"`
 
@@ -7843,6 +7864,9 @@ type UnitPathReport struct {
 
 // UnitProtectionRequest defines model for UnitProtectionRequest.
 type UnitProtectionRequest struct {
+	// ChangeDescription Recorded on the Revision the edit creates. Defaults to "Set path protection".
+	ChangeDescription string `json:"ChangeDescription,omitempty" yaml:"ChangeDescription,omitempty"`
+
 	// ResourceProtection Per-resource Protected edits to apply to the Unit's MutationSources
 	ResourceProtection []ResourceProtection `json:"ResourceProtection,omitempty" yaml:"ResourceProtection,omitempty"`
 

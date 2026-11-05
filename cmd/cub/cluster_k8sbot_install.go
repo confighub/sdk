@@ -16,6 +16,7 @@ var clusterK8sbotInstallArgs struct {
 	argobotBase     string
 	registry        string
 	k8sbotInstaller bool
+	secretsDir      string
 }
 
 var clusterK8sbotInstallCmd = &cobra.Command{
@@ -51,7 +52,13 @@ In ConfigHub:
 
 argobot runs as the cluster's service account, with the key in the
 argobot-secrets Secret that "cub cluster svc-account-bootstrap" applied; one
-is issued and applied here when the cluster has none.
+is issued and applied here when the cluster has none. A Secret already there,
+such as one a secret store keeps, is used as it is, and has to hold the key as
+CONFIGHUB_AUTH_PRIVATE_KEY. With --secrets-dir <dir> the Kubernetes manifest of
+the Secret holding an issued key (with the argobot Namespace, which is
+applied) is written to <dir>/<name>/argobot_argobot-secrets.yaml instead of
+being applied, for the store to put in the cluster, and a manifest written
+there before is used rather than another key issued; argobot cannot start until the Secret is in the cluster.
 
 The apps Space's Release is published with argobot in it, so the root deploys
 it, and with Argo CD the root is asked to refresh at once. A Sveltos or Flux
@@ -68,17 +75,19 @@ func init() {
 	clusterK8sbotInstallCmd.Flags().StringVar(&clusterK8sbotInstallArgs.argobotBase, "k8sbot-base", "", clusterK8sbotBaseFlagUsage)
 	clusterK8sbotInstallCmd.Flags().StringVar(&clusterK8sbotInstallArgs.registry, "registry", "", clusterRegistryFlagUsage)
 	clusterK8sbotInstallCmd.Flags().BoolVar(&clusterK8sbotInstallArgs.k8sbotInstaller, "k8sbot-installer", false, clusterK8sbotInstallerFlagUsage)
+	clusterK8sbotInstallCmd.Flags().StringVar(&clusterK8sbotInstallArgs.secretsDir, "secrets-dir", "", clusterSecretsDirFlagUsage)
 	clusterCmd.AddCommand(clusterK8sbotInstallCmd)
 }
 
 func clusterK8sbotInstallCmdRun(cmd *cobra.Command, args []string) error {
 	a := clusterK8sbotInstallArgs
-	return clusterK8sbotInstallRun(cmd.OutOrStdout(), args[0], a.argobotBase, a.registry, a.k8sbotInstaller)
+	return clusterK8sbotInstallRun(cmd.OutOrStdout(), args[0], a.argobotBase, a.registry, a.k8sbotInstaller, a.secretsDir)
 }
 
 // clusterK8sbotInstallRun installs argobot in a cluster attached without it.
-// withInstaller installs its base with ConfigHub's installer.
-func clusterK8sbotInstallRun(out io.Writer, name, argobotBase, registry string, withInstaller bool) (err error) {
+// withInstaller installs its base with ConfigHub's installer. secretsDirFlag is
+// --secrets-dir.
+func clusterK8sbotInstallRun(out io.Writer, name, argobotBase, registry string, withInstaller bool, secretsDirFlag string) (err error) {
 	repository, err := clusterArgobotRepository(registry)
 	if err != nil {
 		return err
@@ -148,6 +157,7 @@ func clusterK8sbotInstallRun(out io.Writer, name, argobotBase, registry string, 
 		argobotRepository: repository,
 		argobotInstaller:  installer,
 		standalone:        true,
+		secretsDir:        clusterSecretsDirFor(secretsDirFlag, name),
 	}, rollback.add); err != nil {
 		return err
 	}

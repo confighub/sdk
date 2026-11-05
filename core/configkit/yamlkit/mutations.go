@@ -3111,7 +3111,7 @@ type GuardFilter struct {
 
 // active reports whether there is any guard to consult.
 func (g *GuardFilter) active() bool {
-	return g != nil && api.HasPathAnnotations(g.Annotations)
+	return g != nil && api.HasGuards(g.Annotations)
 }
 
 // PatchMutations applies a patch with no guard filtering. Equivalent to PatchMutationsGuarded
@@ -4006,6 +4006,7 @@ func deleteListWhole(doc *gaby.YamlDoc, entry api.MutationMapEntry,
 			Path:     entry.Path,
 			Source:   *entry.MutationInfo,
 			Guard:    &withheldCopy,
+			Guards:   clearance.Withheld(resourceGuards.GuardsForPath(guardedPath)),
 			Details:  api.WithheldGuardDetails(withheld),
 		}}, true
 	}
@@ -4404,6 +4405,7 @@ func applyPathMutations(doc *gaby.YamlDoc, pathMutationMap api.MutationMap,
 					Path:     patches[i].Path,
 					Source:   *patchMutation,
 					Guard:    &withheldCopy,
+					Guards:   clearance.Withheld(pathGuards),
 					Details:  api.WithheldGuardDetails(withheld),
 				})
 				continue

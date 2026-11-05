@@ -36,7 +36,10 @@ type clusterSpace struct {
 	BotSpace    string // the bot's variant Space slug, from clusterAnnotationBotSpace; "" when unrecorded
 	BotChannel  string // the bot's Channel slug in the cluster Space, from clusterAnnotationBotChannel
 	Stage       string // clusterStageController or clusterStageServiceAccount before attach has run, from clusterAnnotationStage
-	CreatedAt   time.Time
+	// ExistingSecrets is whether the cluster's credentials Secrets were there
+	// before attach, from clusterAnnotationExistingSecrets.
+	ExistingSecrets bool
+	CreatedAt       time.Time
 }
 
 // clusterOriginOf reads the origin annotation, defaulting to kind: every
@@ -219,19 +222,20 @@ func clusterListSpaces() ([]clusterSpace, error) {
 			controller = clusterControllerArgo
 		}
 		out = append(out, clusterSpace{
-			SpaceID:     s.SpaceID,
-			SpaceSlug:   s.Slug,
-			ClusterName: name,
-			Controller:  controller,
-			PortRange:   s.Annotations[clusterAnnotationPortRange],
-			Host:        s.Annotations[clusterAnnotationHost],
-			ArgoPort:    s.Annotations[clusterAnnotationArgoPort],
-			SveltosPort: s.Annotations[clusterAnnotationSveltosPort],
-			Origin:      clusterOriginOf(s.Annotations),
-			BotSpace:    s.Annotations[clusterAnnotationBotSpace],
-			BotChannel:  s.Annotations[clusterAnnotationBotChannel],
-			Stage:       s.Annotations[clusterAnnotationStage],
-			CreatedAt:   s.CreatedAt,
+			SpaceID:         s.SpaceID,
+			SpaceSlug:       s.Slug,
+			ClusterName:     name,
+			Controller:      controller,
+			PortRange:       s.Annotations[clusterAnnotationPortRange],
+			Host:            s.Annotations[clusterAnnotationHost],
+			ArgoPort:        s.Annotations[clusterAnnotationArgoPort],
+			SveltosPort:     s.Annotations[clusterAnnotationSveltosPort],
+			Origin:          clusterOriginOf(s.Annotations),
+			BotSpace:        s.Annotations[clusterAnnotationBotSpace],
+			BotChannel:      s.Annotations[clusterAnnotationBotChannel],
+			Stage:           s.Annotations[clusterAnnotationStage],
+			ExistingSecrets: s.Annotations[clusterAnnotationExistingSecrets] == "true",
+			CreatedAt:       s.CreatedAt,
 		})
 	}
 	return out, nil

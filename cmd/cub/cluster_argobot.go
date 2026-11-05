@@ -184,6 +184,9 @@ type clusterK8sbotSpec struct {
 	// records the bot on the cluster Space, and republishes the apps Space
 	// itself. Within an attachment, attach does all three.
 	standalone bool
+	// secretsDir is --secrets-dir: where the Kubernetes manifest of argobot's
+	// key Secret is written instead of being applied (clusterPutSecret).
+	secretsDir string
 }
 
 // clusterInstallK8sbot installs argobot in a cluster, as `cub cluster
@@ -202,13 +205,48 @@ func clusterInstallK8sbot(out io.Writer, spec clusterK8sbotSpec, registerRollbac
 	if err != nil {
 		return err
 	}
-	if !hasKey {
+	keyFile := ""
+	if spec.secretsDir != "" {
+		// The service account stage wrote the key for the secret store, which
+		// may not have put it in the cluster yet. A second key would replace
+		// the file under an operator who has loaded the first.
+		path := clusterSecretFilePath(spec.secretsDir, clusterArgobotKeySecret())
+		if _, err := os.Stat(path); err == nil {
+			keyFile = path
+		} else if !os.IsNotExist(err) {
+			return fmt.Errorf("check for argobot's key file: %w", err)
+		}
+	}
+	switch {
+	case keyFile != "":
+		// A file of an earlier attachment of this name holds a key of a service
+		// account deleted since, which argobot would fail to authenticate with.
+		manifest, err := os.ReadFile(keyFile)
+		if err != nil {
+			return fmt.Errorf("read argobot's key file: %w", err)
+		}
+		key, err := clusterArgobotKeyInManifest(manifest)
+		if err == nil {
+			err = clusterCheckArgobotKey(key, serviceAccountUserID, serviceAccountSlug)
+		}
+		if err != nil {
+			return fmt.Errorf("argobot's key file %s: %w; remove the file for a key to be issued", keyFile, err)
+		}
+		fmt.Fprintf(out, "Using argobot's key from %s, which the secret store is to put in the cluster\n", keyFile)
+	case hasKey:
+		// A Secret a secret store keeps is used as it is, so check it holds
+		// what argobot reads before argobot is deployed to read it.
+		if err := clusterRequireArgobotKeyField(spec.kubeconfigPath); err != nil {
+			return err
+		}
+		fmt.Fprintf(out, "Using argobot's key from the Secret %s/%s already in the cluster\n", clusterArgobotNamespace, clusterArgobotSecret)
+	default:
 		fmt.Fprintf(out, "Issuing a key for argobot on %q...\n", serviceAccountSlug)
 		privateKey, err := clusterCreateServiceAccountKey(serviceAccountID, serviceAccountUserID, "argobot in cluster "+spec.name)
 		if err != nil {
 			return fmt.Errorf("issue the service account key: %w", err)
 		}
-		if err := clusterApplyArgobotKey(out, spec.kubeconfigPath, privateKey, registerRollback); err != nil {
+		if err := clusterApplyArgobotKey(out, spec.kubeconfigPath, spec.secretsDir, privateKey, registerRollback); err != nil {
 			return err
 		}
 	}
@@ -471,14 +509,27 @@ func clusterPollWithArgobot(out io.Writer, spec clusterK8sbotSpec, appsSlug stri
 // argobot-secrets Secret in the argobot namespace (created with it), where
 // argobot reads CONFIGHUB_AUTH_PRIVATE_KEY from. Applied straight to the
 // cluster so the key never enters a published Release, and before argobot's
-// Deployment so it is there when the pod starts.
-func clusterApplyArgobotKey(out io.Writer, kubeconfigPath string, privateKey json.RawMessage, registerRollback func(clusterUndo)) error {
-	fmt.Fprintf(out, "Applying argobot key Secret to the %q namespace...\n", clusterArgobotNamespace)
-	if err := clusterKubectlApply(ctx, kubeconfigPath, clusterArgobotSecretManifest(privateKey), out); err != nil {
-		return fmt.Errorf("apply argobot secret: %w", err)
+// Deployment so it is there when the pod starts. With secretsDir set the
+// Secret is written there instead (clusterPutSecret), and only the namespace is
+// applied, for the secret store to put the Secret in.
+func clusterApplyArgobotKey(out io.Writer, kubeconfigPath, secretsDir string, privateKey json.RawMessage, registerRollback func(clusterUndo)) error {
+	if secretsDir != "" {
+		fmt.Fprintf(out, "Applying the %q namespace...\n", clusterArgobotNamespace)
+		if err := clusterKubectlApply(ctx, kubeconfigPath, clusterArgobotNamespaceManifest(), out); err != nil {
+			return fmt.Errorf("apply the %s namespace: %w", clusterArgobotNamespace, err)
+		}
 	}
-	registerRollback(clusterUndoKubectlDeleteSecret(out, kubeconfigPath, clusterArgobotNamespace, clusterArgobotSecret))
-	return nil
+	return clusterPutSecret(out, kubeconfigPath, secretsDir, clusterSecret{
+		namespace: clusterArgobotNamespace,
+		name:      clusterArgobotSecret,
+		manifest:  clusterArgobotSecretManifest(privateKey),
+	}, registerRollback)
+}
+
+// clusterArgobotNamespaceManifest is the argobot namespace, the first document
+// of clusterArgobotSecretManifest.
+func clusterArgobotNamespaceManifest() []byte {
+	return fmt.Appendf(nil, "apiVersion: v1\nkind: Namespace\nmetadata:\n  name: %s\n", clusterArgobotNamespace)
 }
 
 // clusterArgobotSubscriptions is what argobot's Channel subscribes to: the
@@ -527,11 +578,7 @@ func clusterCreateArgobotChannel(spaceID, targetID, serviceAccountUserID uuid.UU
 // The JWK goes in as a literal block scalar: one JSON line, indented, with no
 // quoting to get wrong. A JWK carries no newline of its own.
 func clusterArgobotSecretManifest(privateKey json.RawMessage) []byte {
-	return fmt.Appendf(nil, `apiVersion: v1
-kind: Namespace
-metadata:
-  name: %s
----
+	return fmt.Appendf(clusterArgobotNamespaceManifest(), `---
 apiVersion: v1
 kind: Secret
 metadata:
@@ -541,7 +588,7 @@ type: Opaque
 stringData:
   CONFIGHUB_AUTH_PRIVATE_KEY: |-
     %s
-`, clusterArgobotNamespace, clusterArgobotSecret, clusterArgobotNamespace, bytes.TrimSpace(privateKey))
+`, clusterArgobotSecret, clusterArgobotNamespace, bytes.TrimSpace(privateKey))
 }
 
 // clusterArgobotManifestPath is where argobot's image carries its deployment
