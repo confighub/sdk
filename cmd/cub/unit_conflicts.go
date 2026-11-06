@@ -81,9 +81,10 @@ resource and one reason, so --permanent needs --resource and --reason, and
 --guard for a Guarded or GuardWithheld conflict to dismiss only what those
 guards withheld. Without --path it covers every path of the resource. The merge's
 revision keeps the conflicts it reported, and a revision of its own records
-their dismissal. --undismiss removes recorded dismissals of a --resource: those
-at --path, or at every path without it, for --reason and --guard, or for every
-reason without them.
+their dismissal. --undismiss removes recorded dismissals of a --resource, for
+--reason and --guard, or for every reason without them: without --path, the one
+on the resource as a whole; with --path '*', every one; with a path, the one
+recorded at that path, a pattern such as containers.*.image included.
 
 Applying changes the configuration data, so the unit goes through the same
 trigger pass as any other change and may pick up a ValidationError. --wait, on by
@@ -120,6 +121,9 @@ Examples:
 
   # Report the replica count again
   cub unit conflicts my-unit --undismiss --resource web --path spec.replicas
+
+  # Remove every dismissal recorded on the resource
+  cub unit conflicts my-unit --undismiss --resource web --path '*'
 
   # Which units in the space merged with paths the patch could not locate?
   cub unit list --where "Conflicts.*.Reason = 'UnresolvedPath'"
@@ -225,12 +229,9 @@ func unitConflictsCmdRun(_ *cobra.Command, args []string) error {
 			Path:         conflictsPath,
 			ResourceType: conflictsResourceType,
 		}
-		// A name with no namespace in it names no resource on its own: it is the filter for
-		// that name in every namespace.
-		if strings.Contains(conflictsResourceName, "/") {
-			selector.ResourceName = conflictsResourceName
-		} else {
-			selector.ResourceNameWithoutScope = conflictsResourceName
+		if conflictsResourceName != "" {
+			resource := specResource(conflictsResourceType, conflictsResourceName)
+			selector.ResourceName, selector.ResourceNameWithoutScope = resource.ResourceName, resource.ResourceNameWithoutScope
 		}
 		if len(conflictsGuards) > 0 {
 			selector.Guards = conflictsGuards

@@ -2423,6 +2423,21 @@ type Binding struct {
 // BindingList defines model for BindingList.
 type BindingList = []Binding
 
+// BlameConflictDismissal defines model for BlameConflictDismissal.
+type BlameConflictDismissal struct {
+	// Guard For a dismissal of what one guard withheld, the guard's key.
+	Guard string `json:"Guard,omitempty" yaml:"Guard,omitempty"`
+
+	// GuardValue The guard's value; empty for any value.
+	GuardValue string `json:"GuardValue,omitempty" yaml:"GuardValue,omitempty"`
+
+	// Path Where the dismissal is recorded: a path, which may name any list element or map key with *, or empty for the resource as a whole.
+	Path string `json:"Path,omitempty" yaml:"Path,omitempty"`
+
+	// Reason The reason of the conflicts dismissed.
+	Reason string `json:"Reason,omitempty" yaml:"Reason,omitempty"`
+}
+
 // BlameField defines model for BlameField.
 type BlameField struct {
 	// Absent True for a field the unit does not have, listed because a conflict names it: a merge could not find the path, or the resource, to make an upstream change to. It has no value and no history.
@@ -2430,6 +2445,9 @@ type BlameField struct {
 
 	// Chain The changes that put the value here, from this unit out to where it was set, following each merge and Link resolve upstream. The last is the answer.
 	Chain []BlameOrigin `json:"Chain,omitempty" yaml:"Chain,omitempty"`
+
+	// ConflictDismissals The conflict dismissals recorded for this row: at the field's path or by a pattern naming it, or, on the row about a resource as a whole, on the resource. The unit's path report lists every dismissal covering the field, its resource's included.
+	ConflictDismissals []BlameConflictDismissal `json:"ConflictDismissals,omitempty" yaml:"ConflictDismissals,omitempty"`
 
 	// Conflicts The unit's outstanding conflicts about the field: upstream changes to it a merge or resolve dropped.
 	Conflicts []MutationConflict `json:"Conflicts,omitempty" yaml:"Conflicts,omitempty"`
@@ -2440,7 +2458,7 @@ type BlameField struct {
 	// Findings The unit's Link findings about the field: what a Link's resolve could not do here.
 	Findings []LinkFinding `json:"Findings,omitempty" yaml:"Findings,omitempty"`
 
-	// Flags What there is to know about the field, one code each: Protected, Guarded, Conflict, Absent, Deleted, Finding, ValidationError, ValidationWarning, Upgraded, SetByLink, SetByTrigger, ChangeOrder, Unreleased, Needed and Provided.
+	// Flags What there is to know about the field, one code each: Protected, Guarded, Conflict, ConflictDismissed, Absent, Deleted, Finding, ValidationError, ValidationWarning, Upgraded, SetByLink, SetByTrigger, ChangeOrder, Unreleased, Needed and Provided.
 	Flags []string `json:"Flags,omitempty" yaml:"Flags,omitempty"`
 
 	// Guards The guards on the field: its own, its ancestors' and its resource's, which an operation writing here has to be cleared for.
@@ -2731,7 +2749,7 @@ type ChangeOrder struct {
 	// ChangeWorkflow ChangeWorkflow governs how this ChangeOrder is promoted: the ordered stages it moves through and the gates that have to pass before it enters one. It is a copy taken when the workflow was associated, not a reference, so editing the ChangeWorkflow afterwards cannot change the rules a rollout already started under. Empty is a ChangeOrder no workflow governs, which is promoted ungated.
 	ChangeWorkflow *ChangeWorkflowSpec `json:"ChangeWorkflow,omitempty" yaml:"ChangeWorkflow,omitempty"`
 
-	// ChangeWorkflowID ChangeWorkflowID is the ChangeWorkflow this ChangeOrder is promoted under. It says which workflow the stored copy was taken from, and keeps saying so after that workflow has been edited or deleted, which is why it is not a foreign key.
+	// ChangeWorkflowID ChangeWorkflowID is the ChangeWorkflow this ChangeOrder is promoted under. It says which workflow the stored copy was taken from, and keeps saying so after that workflow has been edited or deleted, which is why it is not a foreign key. Every Space the ChangeOrder is headed for has to be selected by one of the workflow's Stages, since a Space in none of them cannot be promoted into; the ChangeOrder's own Space is exempt when the change is already there, as it is for UpgradeUnit and MergeUnits. Creating a ChangeOrder, or an update adding a Space to InScopeSpaceIDs, is refused otherwise.
 	//
 	// Example: 248df4b7-aa70-47b8-a036-33ac447e668d
 	ChangeWorkflowID *openapi_types.UUID `json:"ChangeWorkflowID,omitempty" yaml:"ChangeWorkflowID,omitempty"`
@@ -6337,13 +6355,13 @@ type ResourceDiff struct {
 
 // ResourceGuards defines model for ResourceGuards.
 type ResourceGuards struct {
-	// Remove Guard keys to remove, by path. Removing a key that is not there is not an error
+	// Remove Guard keys to remove, by path, named as in Set; * also matches the paths guarded that the data no longer has. Removing a key that is not there is not an error
 	Remove map[string][]string `json:"Remove,omitempty" yaml:"Remove,omitempty"`
 
-	// Resource Identifies the resource within the Unit whose guards are being edited
+	// Resource The resource whose guards are being edited: ResourceName, its whole name (namespace/name) or a name it had before a rename, or ResourceNameWithoutScope, a name without its namespace that has to match one resource; ResourceType, in any API version, is optional. A resource the unit does not have yet is named by ResourceType and ResourceName.
 	Resource *ResourceInfo `json:"Resource,omitempty" yaml:"Resource,omitempty"`
 
-	// Set Guard key/value pairs to add or overwrite, by path. The empty path addresses the resource as a whole
+	// Set Guard key/value pairs to add or overwrite, by path. The empty path addresses the resource as a whole. A list element is named by merge key or by position, and * stands for every element or key there is; a path that does not exist yet is kept as written
 	Set map[string]map[string]string `json:"Set,omitempty" yaml:"Set,omitempty"`
 }
 
@@ -6427,10 +6445,10 @@ type ResourcePathAnnotations struct {
 
 // ResourceProtection defines model for ResourceProtection.
 type ResourceProtection struct {
-	// Protected Map of resolved path to its new Protected value: true = a local override a merge must not overwrite, false = the merge's to update. The empty path addresses the resource as a whole: a merge withholds every change to a resource protected as a whole, including its deletion and replacement, whatever its paths' values are
+	// Protected Map of path to its new Protected value: true = a local override a merge must not overwrite, false = the merge's to update. A list element is named by merge key or by position, and * stands for every element or key there is; a path naming a field the unit deleted is set on the record of that deletion. The empty path addresses the resource as a whole: a merge withholds every change to a resource protected as a whole, including its deletion and replacement, whatever its paths' values are
 	Protected map[string]bool `json:"Protected,omitempty" yaml:"Protected,omitempty"`
 
-	// Resource Identifies the resource within the unit whose protection is being set
+	// Resource The resource whose protection is being set: ResourceName, its whole name (namespace/name) or a name it had before a rename, or ResourceNameWithoutScope, a name without its namespace that has to match one resource; ResourceType, in any API version, is optional
 	Resource *ResourceInfo `json:"Resource,omitempty" yaml:"Resource,omitempty"`
 }
 
@@ -7566,7 +7584,7 @@ type UnitConflictSelector struct {
 	// Guards Match Guarded and GuardWithheld conflicts every one of whose guards is named here, as key or key=value; empty matches any conflict, guarded or not
 	Guards []string `json:"Guards,omitempty" yaml:"Guards,omitempty"`
 
-	// Path Match conflicts at this path; empty matches any path, including resource-level conflicts. An element of a list may be named by position (spec.data.0.secretKey), by merge key (containers.?name=main.image), or as the conflict records it, and * matches any one list element or map key (spec.data.*.secretKey).
+	// Path Match conflicts at this path; empty matches any path, including resource-level conflicts. An element of a list may be named by position (spec.data.0.secretKey), by merge key (containers.?name=main.image), or as the conflict records it, and * matches any one list element or map key (spec.data.*.secretKey). With Undismiss, the path names dismissals as Permanent recorded them: empty, the one on the resource as a whole; *, every one; a path, the one recorded at that path, a pattern included.
 	Path string `json:"Path,omitempty" yaml:"Path,omitempty"`
 
 	// Reason Match conflicts dropped for this reason, as their Reason names it; empty matches any reason
@@ -7840,11 +7858,14 @@ type UnitMutationSources struct {
 
 // UnitPathReport defines model for UnitPathReport.
 type UnitPathReport struct {
-	// Annotations The path's own annotations other than guards, by kind. The field's Guards are those that apply to it, its ancestors' and its resource's included.
+	// Annotations The path's own annotations other than guards and conflict dismissals, by kind. The field's Guards are those that apply to it, its ancestors' and its resource's included.
 	Annotations map[string]map[string]string `json:"Annotations,omitempty" yaml:"Annotations,omitempty"`
 
 	// Changes The field's chain: the changes that put the value here, from this unit out to where it was set, each with the Mutation and Revision it was read from.
 	Changes []BlamePathChange `json:"Changes,omitempty" yaml:"Changes,omitempty"`
+
+	// ConflictDismissals Every conflict dismissal covering the field, each with the Path it is recorded at: the field's, a pattern naming it, or empty for one on its resource as a whole.
+	ConflictDismissals []BlameConflictDismissal `json:"ConflictDismissals,omitempty" yaml:"ConflictDismissals,omitempty"`
 
 	// Field The field, as the unit's blame reports it, without its Chain: Changes carries the chain with its records.
 	Field *BlameField `json:"Field,omitempty" yaml:"Field,omitempty"`
@@ -21816,7 +21837,7 @@ type GetUnitBlameParams struct {
 
 	// Flags Only the fields with at least one of these flags, comma-separated. Conflict,Absent,Finding,ValidationError,ValidationWarning selects the fields that need attention.
 	//
-	// Supported values: Protected, Guarded, Conflict, Absent, Deleted, Finding, ValidationError, ValidationWarning, Upgraded, SetByLink, SetByTrigger, ChangeOrder, Unreleased, Needed, Provided.
+	// Supported values: Protected, Guarded, Conflict, ConflictDismissed, Absent, Deleted, Finding, ValidationError, ValidationWarning, Upgraded, SetByLink, SetByTrigger, ChangeOrder, Unreleased, Needed, Provided.
 	Flags *string `form:"flags,omitempty" json:"flags,omitempty" yaml:"flags,omitempty"`
 
 	// Upstream Follow each merge and Link resolve into the unit it took the value from, to where the value was set. Default true; false reports each unit's own record, which names the upstream unit without reading it.
@@ -26197,7 +26218,7 @@ type SearchUnitBlameParams struct {
 
 	// Flags Only the fields with at least one of these flags, comma-separated. Conflict,Absent,Finding,ValidationError,ValidationWarning selects the fields that need attention.
 	//
-	// Supported values: Protected, Guarded, Conflict, Absent, Deleted, Finding, ValidationError, ValidationWarning, Upgraded, SetByLink, SetByTrigger, ChangeOrder, Unreleased, Needed, Provided.
+	// Supported values: Protected, Guarded, Conflict, ConflictDismissed, Absent, Deleted, Finding, ValidationError, ValidationWarning, Upgraded, SetByLink, SetByTrigger, ChangeOrder, Unreleased, Needed, Provided.
 	Flags *string `form:"flags,omitempty" json:"flags,omitempty" yaml:"flags,omitempty"`
 
 	// Upstream Follow each merge and Link resolve into the unit it took the value from, to where the value was set. Default true; false reports each unit's own record, which names the upstream unit without reading it.

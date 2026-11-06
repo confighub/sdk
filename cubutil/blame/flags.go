@@ -15,9 +15,9 @@ type Flag struct {
 // FlagLegend is every flag, in the order the column prints them. P through W are about the
 // field as it stands, or on a resource's own row the resource; U through N are about the change in this unit that put the value there,
 // which for a value that arrived from upstream is the merge that brought it, not the upstream
-// change the SET BY column names. The lowercase n and p say what part the field plays in
-// NeedsProvides Links: they are about the field too, but nothing is wrong or pending because
-// of either, so they come last and in lowercase.
+// change the SET BY column names. The lowercase letters come last because nothing is wrong or
+// pending because of any of them: x says conflicts are dismissed here, and n and p what part the
+// field plays in NeedsProvides Links.
 var FlagLegend = []Flag{
 	{"Protected", "P", "protected: a local override a merge from upstream leaves alone, by itself or as part of a resource protected as a whole"},
 	{"Guarded", "G", "guarded: reasons are recorded for this value, and an operation must be cleared for them to overwrite it"},
@@ -32,6 +32,7 @@ var FlagLegend = []Flag{
 	{"SetByTrigger", "T", "a Trigger set the value in this unit"},
 	{"ChangeOrder", "C", "the change in this unit was made by a ChangeOrder"},
 	{"Unreleased", "N", "not released: the value changed after the unit's last Release, or the unit has none"},
+	{"ConflictDismissed", "x", "conflicts dismissed: a dismissal is recorded for this row, so a merge reporting a conflict of its reason here leaves it dismissed; the path report lists every one covering the field"},
 	{"Needed", "n", "needed: the value is to come from an upstream unit, through a NeedsProvides Link"},
 	{"Provided", "p", "provided: the value is offered to downstream units, through NeedsProvides Links"},
 }

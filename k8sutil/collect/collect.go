@@ -2,8 +2,9 @@
 // SPDX-License-Identifier: MIT
 
 // Package collect gathers facts about a Kubernetes cluster (its version, the
-// resource types it serves, its storage and ingress classes) and stores them
-// on a ConfigHub Target, under the reserved "Cluster." fact prefix.
+// resource types it serves, its storage and ingress classes, the managed
+// service it runs on, and its nodes' zones and labels) and stores them on a
+// ConfigHub Target, under the reserved "Cluster." fact prefix.
 //
 // It is shared by "cub k8s collect" and the bots that run in a cluster, so
 // that a Target's facts mean the same thing whoever collected them.
@@ -19,11 +20,13 @@ import (
 
 	"github.com/confighub/sdk/core/cubapi"
 	goclientnew "github.com/confighub/sdk/core/openapi/goclient-new"
+	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	"k8s.io/apimachinery/pkg/runtime/schema"
 	"k8s.io/client-go/discovery"
 	"k8s.io/client-go/dynamic"
+	"k8s.io/client-go/metadata"
 	"k8s.io/client-go/rest"
 )
 
@@ -44,13 +47,23 @@ var (
 	crdGVR          = schema.GroupVersionResource{Group: "apiextensions.k8s.io", Version: "v1", Resource: "customresourcedefinitions"}
 	storageClassGVR = schema.GroupVersionResource{Group: "storage.k8s.io", Version: "v1", Resource: "storageclasses"}
 	ingressClassGVR = schema.GroupVersionResource{Group: "networking.k8s.io", Version: "v1", Resource: "ingressclasses"}
+	nodeGVR         = schema.GroupVersionResource{Version: "v1", Resource: "nodes"}
 )
+
+// zoneLabel is the well-known node label naming the zone a node is in.
+const zoneLabel = "topology.kubernetes.io/zone"
+
+// aksClusterLabel is a label AKS puts on every node it manages; AKS's server
+// version, unlike EKS's and GKE's, does not name the service.
+const aksClusterLabel = "kubernetes.azure.com/cluster"
 
 // Facts gathers facts about the cluster reachable via restConfig, keyed under
 // [FactPrefix]. List-valued facts are comma-separated and sorted.
 //
 // It needs discovery, and list on CustomResourceDefinitions, StorageClasses
-// and IngressClasses.
+// and IngressClasses. It also lists Nodes; without permission to, it leaves
+// out the facts read from them, including Cluster.Distribution unless the
+// server version alone names the service.
 func Facts(ctx context.Context, restConfig *rest.Config) (map[string]string, error) {
 	discoveryClient, err := discovery.NewDiscoveryClientForConfig(restConfig)
 	if err != nil {
@@ -60,10 +73,14 @@ func Facts(ctx context.Context, restConfig *rest.Config) (map[string]string, err
 	if err != nil {
 		return nil, fmt.Errorf("failed to create dynamic client: %w", err)
 	}
-	return facts(ctx, discoveryClient, dynamicClient)
+	metadataClient, err := metadata.NewForConfig(restConfig)
+	if err != nil {
+		return nil, fmt.Errorf("failed to create metadata client: %w", err)
+	}
+	return facts(ctx, discoveryClient, dynamicClient, metadataClient)
 }
 
-func facts(ctx context.Context, discoveryClient discovery.DiscoveryInterface, dynamicClient dynamic.Interface) (map[string]string, error) {
+func facts(ctx context.Context, discoveryClient discovery.DiscoveryInterface, dynamicClient dynamic.Interface, metadataClient metadata.Interface) (map[string]string, error) {
 	facts := map[string]string{}
 
 	ver, err := discoveryClient.ServerVersion()
@@ -131,7 +148,85 @@ func facts(ctx context.Context, discoveryClient discovery.DiscoveryInterface, dy
 	}
 	facts[FactPrefix+"IngressClasses"] = sortedCSV(icNames)
 
+	// Nodes: the zones they are in and the label keys they carry, which say what
+	// a topology spread constraint or a nodeSelector can name. Node counts are
+	// left out, since they change with autoscaling far more often than facts are
+	// collected.
+	nodeLabels, err := listNodeLabels(ctx, metadataClient)
+	if err != nil && !apierrors.IsForbidden(err) {
+		return nil, fmt.Errorf("failed to list nodes: %w", err)
+	}
+	nodesListed := err == nil
+	if nodesListed {
+		zones := map[string]bool{}
+		labelKeys := map[string]bool{}
+		for _, labels := range nodeLabels {
+			for k, v := range labels {
+				labelKeys[k] = true
+				if k == zoneLabel && v != "" {
+					zones[v] = true
+				}
+			}
+		}
+		facts[FactPrefix+"Zones"] = sortedCSV(setKeys(zones))
+		facts[FactPrefix+"NodeLabelKeys"] = sortedCSV(setKeys(labelKeys))
+	}
+
+	// The managed Kubernetes service the cluster runs on: eks, gke or aks, or ""
+	// for none of those. A managed service's control plane, including its
+	// kube-scheduler configuration, is not the user's to change. Without the
+	// Nodes, AKS cannot be told from a self-managed cluster, so the fact is left
+	// out rather than reporting "" for what is unknown.
+	if d, known := distribution(ver.GitVersion, nodeLabels, nodesListed); known {
+		facts[FactPrefix+"Distribution"] = d
+	}
+
 	return facts, nil
+}
+
+// nodeListPageSize bounds each page of the Node list.
+const nodeListPageSize = 500
+
+// listNodeLabels returns every Node's labels. It lists metadata only, since a
+// full Node carries its status, including the images on it, which can be tens
+// of kilobytes per node and is not used.
+func listNodeLabels(ctx context.Context, metadataClient metadata.Interface) ([]map[string]string, error) {
+	var out []map[string]string
+	opts := metav1.ListOptions{Limit: nodeListPageSize}
+	for {
+		page, err := metadataClient.Resource(nodeGVR).List(ctx, opts)
+		if err != nil {
+			return nil, err
+		}
+		for i := range page.Items {
+			out = append(out, page.Items[i].GetLabels())
+		}
+		if page.Continue == "" {
+			return out, nil
+		}
+		opts.Continue = page.Continue
+	}
+}
+
+// distribution names the managed Kubernetes service a cluster runs on, from its
+// server version and, when nodesListed, its nodes' labels. known is false when
+// the version names no service and the Nodes could not be listed.
+func distribution(gitVersion string, nodeLabels []map[string]string, nodesListed bool) (d string, known bool) {
+	switch {
+	case strings.Contains(gitVersion, "-eks-"):
+		return "eks", true
+	case strings.Contains(gitVersion, "-gke."):
+		return "gke", true
+	}
+	if !nodesListed {
+		return "", false
+	}
+	for _, labels := range nodeLabels {
+		if _, ok := labels[aksClusterLabel]; ok {
+			return "aks", true
+		}
+	}
+	return "", true
 }
 
 // Patch returns the Facts of a JSON merge patch that owns the [FactPrefix]

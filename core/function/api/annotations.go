@@ -352,9 +352,9 @@ func cloneResourceNameSet(names map[ResourceName]struct{}) map[ResourceName]stru
 // The empty ResolvedPath addresses the resource as a whole, as it does nowhere else; a guard
 // there covers every path in the resource that has no more specific entry.
 type ResourceGuards struct {
-	Resource ResourceInfo                       `description:"Identifies the resource within the Unit whose guards are being edited"`
-	Set      map[ResolvedPath]map[string]string `json:",omitempty" description:"Guard key/value pairs to add or overwrite, by path. The empty path addresses the resource as a whole"`
-	Remove   map[ResolvedPath][]string          `json:",omitempty" description:"Guard keys to remove, by path. Removing a key that is not there is not an error"`
+	Resource ResourceInfo                       `description:"The resource whose guards are being edited: ResourceName, its whole name (namespace/name) or a name it had before a rename, or ResourceNameWithoutScope, a name without its namespace that has to match one resource; ResourceType, in any API version, is optional. A resource the unit does not have yet is named by ResourceType and ResourceName."`
+	Set      map[ResolvedPath]map[string]string `json:",omitempty" description:"Guard key/value pairs to add or overwrite, by path. The empty path addresses the resource as a whole. A list element is named by merge key or by position, and * stands for every element or key there is; a path that does not exist yet is kept as written"`
+	Remove   map[ResolvedPath][]string          `json:",omitempty" description:"Guard keys to remove, by path, named as in Set; * also matches the paths guarded that the data no longer has. Removing a key that is not there is not an error"`
 }
 
 // ValidateResourceGuards checks the edits a request is asking for: every key and value legal,

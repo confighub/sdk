@@ -512,6 +512,39 @@ func reanchorResourcePaths(resourceMutation *api.ResourceMutation, before, after
 	return rewritten, changed
 }
 
+// ReanchoredKeys returns, for each path of a resource's PathMutationMap that a write from before to
+// after moves, the key ReanchorStoredPaths would store it under. A path the write leaves as it is,
+// or whose element it removed, has no entry.
+//
+// It is how a diff of a write is matched against the record the write stored: the diff names an
+// element of a list with no merge key as the write found it, and the record as the write left it,
+// so the two agree as text only when the write did not change the element.
+func ReanchoredKeys(resourceMutation *api.ResourceMutation, before, after gaby.Container,
+	resourceProvider ResourceProvider) map[api.ResolvedPath]api.ResolvedPath {
+	if resourceProvider == nil {
+		return nil
+	}
+	var reanchorer *storedPathReanchorer
+	var keys map[api.ResolvedPath]api.ResolvedPath
+	for path, info := range resourceMutation.PathMutationMap {
+		if !storedPathMayBePositional(string(path)) {
+			continue
+		}
+		if reanchorer == nil {
+			if reanchorer = resourceReanchorer(&resourceMutation.Resource, before, after, resourceProvider); reanchorer == nil {
+				return nil
+			}
+		}
+		if key, outcome := reanchorer.reanchor(string(path), info.MutationType); outcome == reanchorMoved {
+			if keys == nil {
+				keys = map[api.ResolvedPath]api.ResolvedPath{}
+			}
+			keys[path] = api.ResolvedPath(key)
+		}
+	}
+	return keys
+}
+
 // resourceReanchorer finds a resource's documents on both sides of a write, or nil when the write
 // left no document for it.
 func resourceReanchorer(resource *api.ResourceInfo, before, after gaby.Container,

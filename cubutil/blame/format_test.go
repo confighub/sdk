@@ -131,3 +131,19 @@ func TestEveryFlagHasACodeAndALetter(t *testing.T) {
 		codes[flag.Code], letters[flag.Letter] = true, true
 	}
 }
+
+func TestFormatConflictDismissal(t *testing.T) {
+	for _, tt := range []struct {
+		dismissal ConflictDismissal
+		want      string
+	}{
+		{ConflictDismissal{Reason: "Subtracted", Path: "spec.replicas"}, "Subtracted, at spec.replicas"},
+		{ConflictDismissal{Reason: "Guarded", Guard: "owner", GuardValue: "platform", Path: "spec.template.spec.containers.*.image"},
+			"Guarded by guard owner=platform, at spec.template.spec.containers.*.image"},
+		{ConflictDismissal{Reason: "Guarded", Guard: "owner"}, "Guarded by guard owner, on the resource as a whole"},
+	} {
+		if got := FormatConflictDismissal(tt.dismissal); got != tt.want {
+			t.Errorf("FormatConflictDismissal(%+v) = %q, want %q", tt.dismissal, got, tt.want)
+		}
+	}
+}

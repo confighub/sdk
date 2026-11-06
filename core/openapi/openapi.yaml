@@ -37041,12 +37041,12 @@ paths:
       - description: |-
           Only the fields with at least one of these flags, comma-separated. Conflict,Absent,Finding,ValidationError,ValidationWarning selects the fields that need attention.
 
-          Supported values: Protected, Guarded, Conflict, Absent, Deleted, Finding, ValidationError, ValidationWarning, Upgraded, SetByLink, SetByTrigger, ChangeOrder, Unreleased, Needed, Provided.
+          Supported values: Protected, Guarded, Conflict, ConflictDismissed, Absent, Deleted, Finding, ValidationError, ValidationWarning, Upgraded, SetByLink, SetByTrigger, ChangeOrder, Unreleased, Needed, Provided.
         in: query
         name: flags
         required: false
         schema:
-          pattern: ^\s*(Protected|Guarded|Conflict|Absent|Deleted|Finding|ValidationError|ValidationWarning|Upgraded|SetByLink|SetByTrigger|ChangeOrder|Unreleased|Needed|Provided)\s*(?:,\s*(?:Protected|Guarded|Conflict|Absent|Deleted|Finding|ValidationError|ValidationWarning|Upgraded|SetByLink|SetByTrigger|ChangeOrder|Unreleased|Needed|Provided)\s*)*$
+          pattern: ^\s*(Protected|Guarded|Conflict|ConflictDismissed|Absent|Deleted|Finding|ValidationError|ValidationWarning|Upgraded|SetByLink|SetByTrigger|ChangeOrder|Unreleased|Needed|Provided)\s*(?:,\s*(?:Protected|Guarded|Conflict|ConflictDismissed|Absent|Deleted|Finding|ValidationError|ValidationWarning|Upgraded|SetByLink|SetByTrigger|ChangeOrder|Unreleased|Needed|Provided)\s*)*$
           type: string
       - description: Follow each merge and Link resolve into the unit it took the
           value from, to where the value was set. Default true; false reports each
@@ -47915,12 +47915,12 @@ paths:
       - description: |-
           Only the fields with at least one of these flags, comma-separated. Conflict,Absent,Finding,ValidationError,ValidationWarning selects the fields that need attention.
 
-          Supported values: Protected, Guarded, Conflict, Absent, Deleted, Finding, ValidationError, ValidationWarning, Upgraded, SetByLink, SetByTrigger, ChangeOrder, Unreleased, Needed, Provided.
+          Supported values: Protected, Guarded, Conflict, ConflictDismissed, Absent, Deleted, Finding, ValidationError, ValidationWarning, Upgraded, SetByLink, SetByTrigger, ChangeOrder, Unreleased, Needed, Provided.
         in: query
         name: flags
         required: false
         schema:
-          pattern: ^\s*(Protected|Guarded|Conflict|Absent|Deleted|Finding|ValidationError|ValidationWarning|Upgraded|SetByLink|SetByTrigger|ChangeOrder|Unreleased|Needed|Provided)\s*(?:,\s*(?:Protected|Guarded|Conflict|Absent|Deleted|Finding|ValidationError|ValidationWarning|Upgraded|SetByLink|SetByTrigger|ChangeOrder|Unreleased|Needed|Provided)\s*)*$
+          pattern: ^\s*(Protected|Guarded|Conflict|ConflictDismissed|Absent|Deleted|Finding|ValidationError|ValidationWarning|Upgraded|SetByLink|SetByTrigger|ChangeOrder|Unreleased|Needed|Provided)\s*(?:,\s*(?:Protected|Guarded|Conflict|ConflictDismissed|Absent|Deleted|Finding|ValidationError|ValidationWarning|Upgraded|SetByLink|SetByTrigger|ChangeOrder|Unreleased|Needed|Provided)\s*)*$
           type: string
       - description: Follow each merge and Link resolve into the unit it took the
           value from, to where the value was set. Default true; false reports each
@@ -52232,6 +52232,26 @@ components:
       items:
         $ref: '#/components/schemas/Binding'
       type: array
+    BlameConflictDismissal:
+      properties:
+        Guard:
+          description: For a dismissal of what one guard withheld, the guard's key.
+          type: string
+          x-go-type-skip-optional-pointer: true
+        GuardValue:
+          description: The guard's value; empty for any value.
+          type: string
+          x-go-type-skip-optional-pointer: true
+        Path:
+          description: 'Where the dismissal is recorded: a path, which may name any
+            list element or map key with *, or empty for the resource as a whole.'
+          type: string
+          x-go-type-skip-optional-pointer: true
+        Reason:
+          description: The reason of the conflicts dismissed.
+          type: string
+          x-go-type-skip-optional-pointer: true
+      type: object
     BlameField:
       properties:
         Absent:
@@ -52246,6 +52266,15 @@ components:
             last is the answer.
           items:
             $ref: '#/components/schemas/BlameOrigin'
+          type: array
+          x-go-type-skip-optional-pointer: true
+        ConflictDismissals:
+          description: 'The conflict dismissals recorded for this row: at the field''s
+            path or by a pattern naming it, or, on the row about a resource as a whole,
+            on the resource. The unit''s path report lists every dismissal covering
+            the field, its resource''s included.'
+          items:
+            $ref: '#/components/schemas/BlameConflictDismissal'
           type: array
           x-go-type-skip-optional-pointer: true
         Conflicts:
@@ -52271,9 +52300,9 @@ components:
           x-go-type-skip-optional-pointer: true
         Flags:
           description: 'What there is to know about the field, one code each: Protected,
-            Guarded, Conflict, Absent, Deleted, Finding, ValidationError, ValidationWarning,
-            Upgraded, SetByLink, SetByTrigger, ChangeOrder, Unreleased, Needed and
-            Provided.'
+            Guarded, Conflict, ConflictDismissed, Absent, Deleted, Finding, ValidationError,
+            ValidationWarning, Upgraded, SetByLink, SetByTrigger, ChangeOrder, Unreleased,
+            Needed and Provided.'
           items:
             type: string
           type: array
@@ -52774,7 +52803,12 @@ components:
           description: ChangeWorkflowID is the ChangeWorkflow this ChangeOrder is
             promoted under. It says which workflow the stored copy was taken from,
             and keeps saying so after that workflow has been edited or deleted, which
-            is why it is not a foreign key.
+            is why it is not a foreign key. Every Space the ChangeOrder is headed
+            for has to be selected by one of the workflow's Stages, since a Space
+            in none of them cannot be promoted into; the ChangeOrder's own Space is
+            exempt when the change is already there, as it is for UpgradeUnit and
+            MergeUnits. Creating a ChangeOrder, or an update adding a Space to InScopeSpaceIDs,
+            is refused otherwise.
           example: 248df4b7-aa70-47b8-a036-33ac447e668d
           format: uuid
           type: string
@@ -59703,22 +59737,28 @@ components:
             items:
               type: string
             type: array
-          description: Guard keys to remove, by path. Removing a key that is not there
-            is not an error
+          description: Guard keys to remove, by path, named as in Set; * also matches
+            the paths guarded that the data no longer has. Removing a key that is
+            not there is not an error
           type: object
           x-go-type-skip-optional-pointer: true
         Resource:
           allOf:
           - $ref: '#/components/schemas/ResourceInfo'
-          description: Identifies the resource within the Unit whose guards are being
-            edited
+          description: 'The resource whose guards are being edited: ResourceName,
+            its whole name (namespace/name) or a name it had before a rename, or ResourceNameWithoutScope,
+            a name without its namespace that has to match one resource; ResourceType,
+            in any API version, is optional. A resource the unit does not have yet
+            is named by ResourceType and ResourceName.'
         Set:
           additionalProperties:
             additionalProperties:
               type: string
             type: object
           description: Guard key/value pairs to add or overwrite, by path. The empty
-            path addresses the resource as a whole
+            path addresses the resource as a whole. A list element is named by merge
+            key or by position, and * stands for every element or key there is; a
+            path that does not exist yet is kept as written
           type: object
           x-go-type-skip-optional-pointer: true
       type: object
@@ -59877,19 +59917,23 @@ components:
         Protected:
           additionalProperties:
             type: boolean
-          description: 'Map of resolved path to its new Protected value: true = a
-            local override a merge must not overwrite, false = the merge''s to update.
-            The empty path addresses the resource as a whole: a merge withholds every
-            change to a resource protected as a whole, including its deletion and
-            replacement, whatever its paths'' values are'
+          description: 'Map of path to its new Protected value: true = a local override
+            a merge must not overwrite, false = the merge''s to update. A list element
+            is named by merge key or by position, and * stands for every element or
+            key there is; a path naming a field the unit deleted is set on the record
+            of that deletion. The empty path addresses the resource as a whole: a
+            merge withholds every change to a resource protected as a whole, including
+            its deletion and replacement, whatever its paths'' values are'
           nullable: true
           type: object
           x-go-type-skip-optional-pointer: true
         Resource:
           allOf:
           - $ref: '#/components/schemas/ResourceInfo'
-          description: Identifies the resource within the unit whose protection is
-            being set
+          description: 'The resource whose protection is being set: ResourceName,
+            its whole name (namespace/name) or a name it had before a rename, or ResourceNameWithoutScope,
+            a name without its namespace that has to match one resource; ResourceType,
+            in any API version, is optional'
       type: object
     ResourceTypePathsEntry:
       properties:
@@ -62384,11 +62428,13 @@ components:
           type: array
           x-go-type-skip-optional-pointer: true
         Path:
-          description: Match conflicts at this path; empty matches any path, including
+          description: 'Match conflicts at this path; empty matches any path, including
             resource-level conflicts. An element of a list may be named by position
             (spec.data.0.secretKey), by merge key (containers.?name=main.image), or
             as the conflict records it, and * matches any one list element or map
-            key (spec.data.*.secretKey).
+            key (spec.data.*.secretKey). With Undismiss, the path names dismissals
+            as Permanent recorded them: empty, the one on the resource as a whole;
+            *, every one; a path, the one recorded at that path, a pattern included.'
           type: string
           x-go-type-skip-optional-pointer: true
         Reason:
@@ -62866,9 +62912,9 @@ components:
             additionalProperties:
               type: string
             type: object
-          description: The path's own annotations other than guards, by kind. The
-            field's Guards are those that apply to it, its ancestors' and its resource's
-            included.
+          description: The path's own annotations other than guards and conflict dismissals,
+            by kind. The field's Guards are those that apply to it, its ancestors'
+            and its resource's included.
           type: object
           x-go-type-skip-optional-pointer: true
         Changes:
@@ -62877,6 +62923,14 @@ components:
             it was read from.'
           items:
             $ref: '#/components/schemas/BlamePathChange'
+          type: array
+          x-go-type-skip-optional-pointer: true
+        ConflictDismissals:
+          description: 'Every conflict dismissal covering the field, each with the
+            Path it is recorded at: the field''s, a pattern naming it, or empty for
+            one on its resource as a whole.'
+          items:
+            $ref: '#/components/schemas/BlameConflictDismissal'
           type: array
           x-go-type-skip-optional-pointer: true
         Field:

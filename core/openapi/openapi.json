@@ -39543,10 +39543,10 @@
           {
             "name": "flags",
             "in": "query",
-            "description": "Only the fields with at least one of these flags, comma-separated. Conflict,Absent,Finding,ValidationError,ValidationWarning selects the fields that need attention.\n\nSupported values: Protected, Guarded, Conflict, Absent, Deleted, Finding, ValidationError, ValidationWarning, Upgraded, SetByLink, SetByTrigger, ChangeOrder, Unreleased, Needed, Provided.",
+            "description": "Only the fields with at least one of these flags, comma-separated. Conflict,Absent,Finding,ValidationError,ValidationWarning selects the fields that need attention.\n\nSupported values: Protected, Guarded, Conflict, ConflictDismissed, Absent, Deleted, Finding, ValidationError, ValidationWarning, Upgraded, SetByLink, SetByTrigger, ChangeOrder, Unreleased, Needed, Provided.",
             "required": false,
             "schema": {
-              "pattern": "^\\s*(Protected|Guarded|Conflict|Absent|Deleted|Finding|ValidationError|ValidationWarning|Upgraded|SetByLink|SetByTrigger|ChangeOrder|Unreleased|Needed|Provided)\\s*(?:,\\s*(?:Protected|Guarded|Conflict|Absent|Deleted|Finding|ValidationError|ValidationWarning|Upgraded|SetByLink|SetByTrigger|ChangeOrder|Unreleased|Needed|Provided)\\s*)*$",
+              "pattern": "^\\s*(Protected|Guarded|Conflict|ConflictDismissed|Absent|Deleted|Finding|ValidationError|ValidationWarning|Upgraded|SetByLink|SetByTrigger|ChangeOrder|Unreleased|Needed|Provided)\\s*(?:,\\s*(?:Protected|Guarded|Conflict|ConflictDismissed|Absent|Deleted|Finding|ValidationError|ValidationWarning|Upgraded|SetByLink|SetByTrigger|ChangeOrder|Unreleased|Needed|Provided)\\s*)*$",
               "type": "string"
             }
           },
@@ -50325,10 +50325,10 @@
           {
             "name": "flags",
             "in": "query",
-            "description": "Only the fields with at least one of these flags, comma-separated. Conflict,Absent,Finding,ValidationError,ValidationWarning selects the fields that need attention.\n\nSupported values: Protected, Guarded, Conflict, Absent, Deleted, Finding, ValidationError, ValidationWarning, Upgraded, SetByLink, SetByTrigger, ChangeOrder, Unreleased, Needed, Provided.",
+            "description": "Only the fields with at least one of these flags, comma-separated. Conflict,Absent,Finding,ValidationError,ValidationWarning selects the fields that need attention.\n\nSupported values: Protected, Guarded, Conflict, ConflictDismissed, Absent, Deleted, Finding, ValidationError, ValidationWarning, Upgraded, SetByLink, SetByTrigger, ChangeOrder, Unreleased, Needed, Provided.",
             "required": false,
             "schema": {
-              "pattern": "^\\s*(Protected|Guarded|Conflict|Absent|Deleted|Finding|ValidationError|ValidationWarning|Upgraded|SetByLink|SetByTrigger|ChangeOrder|Unreleased|Needed|Provided)\\s*(?:,\\s*(?:Protected|Guarded|Conflict|Absent|Deleted|Finding|ValidationError|ValidationWarning|Upgraded|SetByLink|SetByTrigger|ChangeOrder|Unreleased|Needed|Provided)\\s*)*$",
+              "pattern": "^\\s*(Protected|Guarded|Conflict|ConflictDismissed|Absent|Deleted|Finding|ValidationError|ValidationWarning|Upgraded|SetByLink|SetByTrigger|ChangeOrder|Unreleased|Needed|Provided)\\s*(?:,\\s*(?:Protected|Guarded|Conflict|ConflictDismissed|Absent|Deleted|Finding|ValidationError|ValidationWarning|Upgraded|SetByLink|SetByTrigger|ChangeOrder|Unreleased|Needed|Provided)\\s*)*$",
               "type": "string"
             }
           },
@@ -54529,6 +54529,31 @@
           "$ref": "#/components/schemas/Binding"
         }
       },
+      "BlameConflictDismissal": {
+        "type": "object",
+        "properties": {
+          "Guard": {
+            "type": "string",
+            "description": "For a dismissal of what one guard withheld, the guard's key.",
+            "x-go-type-skip-optional-pointer": true
+          },
+          "GuardValue": {
+            "type": "string",
+            "description": "The guard's value; empty for any value.",
+            "x-go-type-skip-optional-pointer": true
+          },
+          "Path": {
+            "type": "string",
+            "description": "Where the dismissal is recorded: a path, which may name any list element or map key with *, or empty for the resource as a whole.",
+            "x-go-type-skip-optional-pointer": true
+          },
+          "Reason": {
+            "type": "string",
+            "description": "The reason of the conflicts dismissed.",
+            "x-go-type-skip-optional-pointer": true
+          }
+        }
+      },
       "BlameField": {
         "type": "object",
         "properties": {
@@ -54543,6 +54568,14 @@
               "$ref": "#/components/schemas/BlameOrigin"
             },
             "description": "The changes that put the value here, from this unit out to where it was set, following each merge and Link resolve upstream. The last is the answer.",
+            "x-go-type-skip-optional-pointer": true
+          },
+          "ConflictDismissals": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/BlameConflictDismissal"
+            },
+            "description": "The conflict dismissals recorded for this row: at the field's path or by a pattern naming it, or, on the row about a resource as a whole, on the resource. The unit's path report lists every dismissal covering the field, its resource's included.",
             "x-go-type-skip-optional-pointer": true
           },
           "Conflicts": {
@@ -54571,7 +54604,7 @@
             "items": {
               "type": "string"
             },
-            "description": "What there is to know about the field, one code each: Protected, Guarded, Conflict, Absent, Deleted, Finding, ValidationError, ValidationWarning, Upgraded, SetByLink, SetByTrigger, ChangeOrder, Unreleased, Needed and Provided.",
+            "description": "What there is to know about the field, one code each: Protected, Guarded, Conflict, ConflictDismissed, Absent, Deleted, Finding, ValidationError, ValidationWarning, Upgraded, SetByLink, SetByTrigger, ChangeOrder, Unreleased, Needed and Provided.",
             "x-go-type-skip-optional-pointer": true
           },
           "Guards": {
@@ -55140,7 +55173,7 @@
           },
           "ChangeWorkflowID": {
             "type": "string",
-            "description": "ChangeWorkflowID is the ChangeWorkflow this ChangeOrder is promoted under. It says which workflow the stored copy was taken from, and keeps saying so after that workflow has been edited or deleted, which is why it is not a foreign key.",
+            "description": "ChangeWorkflowID is the ChangeWorkflow this ChangeOrder is promoted under. It says which workflow the stored copy was taken from, and keeps saying so after that workflow has been edited or deleted, which is why it is not a foreign key. Every Space the ChangeOrder is headed for has to be selected by one of the workflow's Stages, since a Space in none of them cannot be promoted into; the ChangeOrder's own Space is exempt when the change is already there, as it is for UpgradeUnit and MergeUnits. Creating a ChangeOrder, or an update adding a Space to InScopeSpaceIDs, is refused otherwise.",
             "format": "uuid",
             "example": "248df4b7-aa70-47b8-a036-33ac447e668d",
             "x-confighub-where": {
@@ -63293,7 +63326,7 @@
                 "type": "string"
               }
             },
-            "description": "Guard keys to remove, by path. Removing a key that is not there is not an error",
+            "description": "Guard keys to remove, by path, named as in Set; * also matches the paths guarded that the data no longer has. Removing a key that is not there is not an error",
             "x-go-type-skip-optional-pointer": true
           },
           "Resource": {
@@ -63302,7 +63335,7 @@
                 "$ref": "#/components/schemas/ResourceInfo"
               }
             ],
-            "description": "Identifies the resource within the Unit whose guards are being edited"
+            "description": "The resource whose guards are being edited: ResourceName, its whole name (namespace/name) or a name it had before a rename, or ResourceNameWithoutScope, a name without its namespace that has to match one resource; ResourceType, in any API version, is optional. A resource the unit does not have yet is named by ResourceType and ResourceName."
           },
           "Set": {
             "type": "object",
@@ -63312,7 +63345,7 @@
                 "type": "string"
               }
             },
-            "description": "Guard key/value pairs to add or overwrite, by path. The empty path addresses the resource as a whole",
+            "description": "Guard key/value pairs to add or overwrite, by path. The empty path addresses the resource as a whole. A list element is named by merge key or by position, and * stands for every element or key there is; a path that does not exist yet is kept as written",
             "x-go-type-skip-optional-pointer": true
           }
         }
@@ -63492,7 +63525,7 @@
             "additionalProperties": {
               "type": "boolean"
             },
-            "description": "Map of resolved path to its new Protected value: true = a local override a merge must not overwrite, false = the merge's to update. The empty path addresses the resource as a whole: a merge withholds every change to a resource protected as a whole, including its deletion and replacement, whatever its paths' values are",
+            "description": "Map of path to its new Protected value: true = a local override a merge must not overwrite, false = the merge's to update. A list element is named by merge key or by position, and * stands for every element or key there is; a path naming a field the unit deleted is set on the record of that deletion. The empty path addresses the resource as a whole: a merge withholds every change to a resource protected as a whole, including its deletion and replacement, whatever its paths' values are",
             "nullable": true,
             "x-go-type-skip-optional-pointer": true
           },
@@ -63502,7 +63535,7 @@
                 "$ref": "#/components/schemas/ResourceInfo"
               }
             ],
-            "description": "Identifies the resource within the unit whose protection is being set"
+            "description": "The resource whose protection is being set: ResourceName, its whole name (namespace/name) or a name it had before a rename, or ResourceNameWithoutScope, a name without its namespace that has to match one resource; ResourceType, in any API version, is optional"
           }
         }
       },
@@ -66224,7 +66257,7 @@
           },
           "Path": {
             "type": "string",
-            "description": "Match conflicts at this path; empty matches any path, including resource-level conflicts. An element of a list may be named by position (spec.data.0.secretKey), by merge key (containers.?name=main.image), or as the conflict records it, and * matches any one list element or map key (spec.data.*.secretKey).",
+            "description": "Match conflicts at this path; empty matches any path, including resource-level conflicts. An element of a list may be named by position (spec.data.0.secretKey), by merge key (containers.?name=main.image), or as the conflict records it, and * matches any one list element or map key (spec.data.*.secretKey). With Undismiss, the path names dismissals as Permanent recorded them: empty, the one on the resource as a whole; *, every one; a path, the one recorded at that path, a pattern included.",
             "x-go-type-skip-optional-pointer": true
           },
           "Reason": {
@@ -66805,7 +66838,7 @@
                 "type": "string"
               }
             },
-            "description": "The path's own annotations other than guards, by kind. The field's Guards are those that apply to it, its ancestors' and its resource's included.",
+            "description": "The path's own annotations other than guards and conflict dismissals, by kind. The field's Guards are those that apply to it, its ancestors' and its resource's included.",
             "x-go-type-skip-optional-pointer": true
           },
           "Changes": {
@@ -66814,6 +66847,14 @@
               "$ref": "#/components/schemas/BlamePathChange"
             },
             "description": "The field's chain: the changes that put the value here, from this unit out to where it was set, each with the Mutation and Revision it was read from.",
+            "x-go-type-skip-optional-pointer": true
+          },
+          "ConflictDismissals": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/BlameConflictDismissal"
+            },
+            "description": "Every conflict dismissal covering the field, each with the Path it is recorded at: the field's, a pattern naming it, or empty for one on its resource as a whole.",
             "x-go-type-skip-optional-pointer": true
           },
           "Field": {

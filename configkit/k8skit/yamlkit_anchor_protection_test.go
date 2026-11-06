@@ -355,3 +355,24 @@ func TestStoredPathsMayNeedReanchoring_IgnoresEscapedDots(t *testing.T) {
 	record[0].PathMutationMap["spec.data.?~h=8b7b7275,~p=^,~n=d013,~l=3.secretKey"] = api.MutationInfo{MutationType: api.MutationTypeUpdate}
 	assert.True(t, yamlkit.StoredPathsMayNeedReanchoring(record, nil))
 }
+
+// A write's diff names an element of a list with no merge key as the write found it, and the
+// record the write stores names it as the write left it. ReanchoredKeys takes the one to the other.
+func TestReanchoredKeys_TakesAWritesDiffToTheRecordItStored(t *testing.T) {
+	provider := k8skit.NewK8sResourceProvider()
+	after := externalSecret(
+		secretEntry("OLD_KEY", "/placeholder/env/OLD_KEY", ""),
+		secretEntry("SIGNING_KEY", "/placeholder/env/SIGNING_KEY-v1", ""),
+	)
+	diff, err := yamlkit.ComputeMutations(parseConfig(t, clonedSecret), parseConfig(t, after), 1, provider)
+	require.NoError(t, err)
+	record, _ := yamlkit.ReanchorStoredPaths(diff, parseConfig(t, clonedSecret), parseConfig(t, after), provider)
+
+	keys := yamlkit.ReanchoredKeys(&diff[0], parseConfig(t, clonedSecret), parseConfig(t, after), provider)
+	require.Len(t, keys, 1, "the edited element's key moves: %v", keysOf(diff))
+	for path, key := range keys {
+		assert.NotEqual(t, path, key)
+		_, found := record[0].PathMutationMap[key]
+		assert.True(t, found, "%s is a key of the record %v", key, keysOf(record))
+	}
+}

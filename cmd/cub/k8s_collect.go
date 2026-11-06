@@ -23,7 +23,9 @@ var k8sCollectCmd = &cobra.Command{
 	Use:   "collect [<target-slug-or-id>]",
 	Short: "Collect facts from a Kubernetes cluster and store them on a Target",
 	Long: getCommandHelp(`Collect facts about a Kubernetes cluster (version, CRDs, storage classes,
-ingress classes) and store them on a Target under the reserved "Cluster." fact prefix.
+ingress classes, the managed service it runs on, and its nodes' zones and label keys)
+and store them on a Target under the reserved "Cluster." fact prefix. Without
+permission to list Nodes, the facts read from them are left out.
 
 Collection owns the "Cluster." namespace: it (re)writes those facts and removes stale
 ones, while leaving user-defined facts (any key outside the prefix) untouched.

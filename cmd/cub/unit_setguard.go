@@ -40,7 +40,14 @@ added next year as about the ones there now, and each of those inherits it.
 
 Each --guard takes RESOURCE_TYPE:RESOURCE_NAME:PATH=KEY=VALUE and each
 --remove-guard takes RESOURCE_TYPE:RESOURCE_NAME:PATH=KEY. Leave PATH empty to
-guard the resource as a whole. Repeat either flag to edit several paths or
+guard the resource as a whole. RESOURCE_TYPE may be left empty when the name
+alone picks out one of the unit's resources, and it matches in any API version;
+a resource the unit does not have yet is named by both. RESOURCE_NAME is the
+whole name, or a name the resource had before a rename; a name without a
+namespace (myapp) matches that name in any namespace, and has to match only one
+resource. PATH names a list element by merge key or by position, and * stands
+for every element or key there is; for --remove-guard it also matches the
+guarded paths the data no longer has. Repeat either flag to edit several paths or
 resources at once, and combine them to add some guards and retire others in one
 revision. Setting guards creates a new revision only if they change; pass
 --change-desc to record why on it.
@@ -64,6 +71,10 @@ Examples:
   cub unit set-guard my-unit \
     --guard "apps/v1/Deployment:default/myapp:spec.template.spec=policy-exception=host-network" \
     --change-desc "The CNI agent needs the host network"
+
+  # Say every container's image is maintained by a link, naming the resource by name alone
+  cub unit set-guard my-unit \
+    --guard ":myapp:spec.template.spec.containers.*.image=owner=transform-link"
 
   # Retire a guard whose reason no longer applies, saying the reason is understood
   cub unit set-guard my-unit \
@@ -113,7 +124,7 @@ func parseGuardSpec(flag, spec string, wantValue bool) (resourceType, resourceNa
 	}
 
 	parts := strings.SplitN(spec, ":", 3)
-	if len(parts) != 3 || parts[0] == "" || parts[1] == "" {
+	if len(parts) != 3 || parts[1] == "" {
 		return malformed()
 	}
 	resourceType, resourceName, rest := parts[0], parts[1], parts[2]
@@ -205,10 +216,7 @@ func unitSetGuardCmdRun(_ *cobra.Command, args []string) error {
 	}
 	for _, key := range order {
 		guards := goclientnew.ResourceGuards{
-			Resource: &goclientnew.ResourceInfo{
-				ResourceType: key.resourceType,
-				ResourceName: key.resourceName,
-			},
+			Resource: specResource(key.resourceType, key.resourceName),
 		}
 		if len(set[key]) > 0 {
 			guards.Set = set[key]

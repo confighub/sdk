@@ -67,7 +67,9 @@ Examples:
 
   # Create one governed by a change workflow. The workflow says in what order the spaces the
   # change is headed for are promoted: each stage is the spaces its selector matches among them.
-  # Where the change is headed is still the change order's to say, as above.
+  # Where the change is headed is still the change order's to say, as above, but each space it
+  # is headed for has to be in one of the stages: creating it is refused otherwise. Its own space
+  # is exempt when the change is already there.
   cub changeorder create --space my-space bump-base-image --component my-app \
     --change-workflow workflows/main-line
 

@@ -68,6 +68,9 @@ func displayUnitPath(report *blame.PathReport) {
 	for _, attribute := range f.Provided {
 		unitPathLine(0, "Provided", blame.FormatProvided(attribute))
 	}
+	for _, dismissal := range report.ConflictDismissals {
+		unitPathLine(0, "Dismissed", blame.FormatConflictDismissal(dismissal))
+	}
 	for _, conflict := range f.Conflicts {
 		text := formatBlameConflict(conflict, 0)
 		if upstream := pathReportName(names, conflict.UnitID); upstream != "" {

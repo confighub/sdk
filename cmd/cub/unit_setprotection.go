@@ -28,9 +28,16 @@ values are not consulted.
 
 Each --protect and --unprotect takes RESOURCE_TYPE:RESOURCE_NAME:PATH, where
 RESOURCE_TYPE and RESOURCE_NAME identify the resource (e.g. apps/v1/Deployment
-and default/myapp) and PATH is a resolved path within that resource. Repeat
-either flag to set several paths or resources at once, and combine them to
-protect some paths and re-open others in one revision.
+and default/myapp) and PATH is a path within that resource. RESOURCE_TYPE may
+be left empty, as :default/myapp:PATH, when the name alone picks out the
+resource, and it matches in any API version. RESOURCE_NAME is the whole name,
+or a name the resource had before a rename; a name without a namespace (myapp)
+matches that name in any namespace, and has to match only one resource. PATH
+names a list element by merge key (containers.?name=app.image) or by position
+(containers.0.image), and * stands for every element or key there is
+(containers.*.image). Repeat either flag to set several paths or resources at
+once, and combine them to protect some paths and re-open others in one
+revision; a path named on its own decides over a * that also names it.
 
 Leave out PATH, as RESOURCE_TYPE:RESOURCE_NAME, to protect or re-open the
 resource as a whole. A merge withholds every change to a resource protected as
@@ -71,6 +78,10 @@ Examples:
   cub unit set-protection my-unit \
     --protect "v1/ServiceAccount:default/myapp"
 
+  # Protect every container's image, naming the resource without its type or namespace
+  cub unit set-protection my-unit \
+    --protect ":myapp:spec.template.spec.containers.*.image"
+
   # Re-open every protected path of the unit
   cub unit set-protection my-unit --unprotect-all
 
@@ -92,9 +103,9 @@ var (
 
 func init() {
 	unitSetProtectionCmd.Flags().StringArrayVar(&protectSpecs, "protect", nil,
-		"path to protect from merges, as RESOURCE_TYPE:RESOURCE_NAME:PATH, or a whole resource as RESOURCE_TYPE:RESOURCE_NAME (repeatable)")
+		"path to protect from merges, as RESOURCE_TYPE:RESOURCE_NAME:PATH, or a whole resource as RESOURCE_TYPE:RESOURCE_NAME; RESOURCE_TYPE may be empty (repeatable)")
 	unitSetProtectionCmd.Flags().StringArrayVar(&unprotectSpecs, "unprotect", nil,
-		"path to re-open to merges, as RESOURCE_TYPE:RESOURCE_NAME:PATH, or a whole resource as RESOURCE_TYPE:RESOURCE_NAME (repeatable)")
+		"path to re-open to merges, as RESOURCE_TYPE:RESOURCE_NAME:PATH, or a whole resource as RESOURCE_TYPE:RESOURCE_NAME; RESOURCE_TYPE may be empty (repeatable)")
 	unitSetProtectionCmd.Flags().BoolVar(&unprotectAll, "unprotect-all", false,
 		"re-open every protected path of the unit to merges, before applying --protect and --unprotect")
 	unitSetProtectionCmd.Flags().StringVar(&setProtectionChangeDesc, "change-desc", "",
@@ -108,16 +119,25 @@ func init() {
 // itself contain ':' and '=' (associative segments such as ?name=app;@0), so only the
 // first two ':' separate the resource from the path. A spec with no path, or an empty one
 // as set-guard spells it, names the resource as a whole, which the API addresses by the
-// empty path.
+// empty path. An empty type matches any.
 func parseProtectionSpec(flag, spec string) (resourceType, resourceName, path string, err error) {
 	parts := strings.SplitN(spec, ":", 3)
-	if len(parts) < 2 || parts[0] == "" || parts[1] == "" {
+	if len(parts) < 2 || parts[1] == "" {
 		return "", "", "", fmt.Errorf("--%s %q must be RESOURCE_TYPE:RESOURCE_NAME:PATH, or RESOURCE_TYPE:RESOURCE_NAME for the whole resource", flag, spec)
 	}
 	if len(parts) == 2 {
 		return parts[0], parts[1], "", nil
 	}
 	return parts[0], parts[1], parts[2], nil
+}
+
+// specResource is the resource a spec names. A name with no namespace in it names no resource on
+// its own: it is the filter for that name in every namespace.
+func specResource(resourceType, resourceName string) *goclientnew.ResourceInfo {
+	if strings.Contains(resourceName, "/") {
+		return &goclientnew.ResourceInfo{ResourceType: resourceType, ResourceName: resourceName}
+	}
+	return &goclientnew.ResourceInfo{ResourceType: resourceType, ResourceNameWithoutScope: resourceName}
 }
 
 func unitSetProtectionCmdRun(_ *cobra.Command, args []string) error {
@@ -161,10 +181,7 @@ func unitSetProtectionCmdRun(_ *cobra.Command, args []string) error {
 		resourceType := key.resourceType
 		resourceName := key.resourceName
 		body.ResourceProtection = append(body.ResourceProtection, goclientnew.ResourceProtection{
-			Resource: &goclientnew.ResourceInfo{
-				ResourceType: resourceType,
-				ResourceName: resourceName,
-			},
+			Resource:  specResource(resourceType, resourceName),
 			Protected: byResource[key],
 		})
 	}

@@ -282,6 +282,9 @@ func displayBlameDetail(f *blame.Field) {
 	for _, conflict := range f.Conflicts {
 		tprintRaw(fmt.Sprintf("    %sconflict: %s%s", colorDim, formatBlameConflict(conflict, blameMaxValueWidth), colorReset))
 	}
+	for _, dismissal := range f.ConflictDismissals {
+		tprintRaw(fmt.Sprintf("    %sconflicts dismissed: %s%s", colorDim, blame.FormatConflictDismissal(dismissal), colorReset))
+	}
 	for _, validation := range f.Validation {
 		tprintRaw(fmt.Sprintf("    %svalidation %s%s", colorDim, blame.FormatValidation(validation), colorReset))
 	}

@@ -36,6 +36,8 @@ type (
 	PathReport = goclientnew.UnitPathReport
 	// PathChange is one change to a field, with the records it was read from.
 	PathChange = goclientnew.BlamePathChange
+	// ConflictDismissal is a conflict dismissal recorded on a unit, where it was recorded.
+	ConflictDismissal = goclientnew.BlameConflictDismissal
 )
 
 // ErrNoUnits is what Variant returns when the where clause selects no units.

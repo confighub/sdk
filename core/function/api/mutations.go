@@ -56,8 +56,8 @@ type MutationMap map[ResolvedPath]MutationInfo
 //
 // Consumed by the set-protection function via yamlkit.SetProtection.
 type ResourceProtection struct {
-	Resource  ResourceInfo          `description:"Identifies the resource within the unit whose protection is being set"`
-	Protected map[ResolvedPath]bool `description:"Map of resolved path to its new Protected value: true = a local override a merge must not overwrite, false = the merge's to update. The empty path addresses the resource as a whole: a merge withholds every change to a resource protected as a whole, including its deletion and replacement, whatever its paths' values are"`
+	Resource  ResourceInfo          `description:"The resource whose protection is being set: ResourceName, its whole name (namespace/name) or a name it had before a rename, or ResourceNameWithoutScope, a name without its namespace that has to match one resource; ResourceType, in any API version, is optional"`
+	Protected map[ResolvedPath]bool `description:"Map of path to its new Protected value: true = a local override a merge must not overwrite, false = the merge's to update. A list element is named by merge key or by position, and * stands for every element or key there is; a path naming a field the unit deleted is set on the record of that deletion. The empty path addresses the resource as a whole: a merge withholds every change to a resource protected as a whole, including its deletion and replacement, whatever its paths' values are"`
 }
 
 // ArrayOrderMap records, for each merge-keyed array path whose element set or

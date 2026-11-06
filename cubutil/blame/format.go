@@ -25,6 +25,22 @@ func FormatGuards(guards map[string]string) string {
 	return strings.Join(specs, " ")
 }
 
+// FormatConflictDismissal renders a recorded conflict dismissal on one line: what it dismisses,
+// the way cub unit conflicts takes it, and where it is recorded.
+func FormatConflictDismissal(dismissal ConflictDismissal) string {
+	text := dismissal.Reason
+	if dismissal.Guard != "" {
+		text += " by guard " + dismissal.Guard
+		if dismissal.GuardValue != "" {
+			text += "=" + dismissal.GuardValue
+		}
+	}
+	if dismissal.Path == "" {
+		return text + ", on the resource as a whole"
+	}
+	return text + ", at " + dismissal.Path
+}
+
 // FormatNeeded renders one of a field's needed paths on one line: the attribute, the Link that
 // bound it, and what it asks of the value that fills it.
 func FormatNeeded(needed NeededPath) string {
