@@ -17,6 +17,15 @@ func guardAnnotations(entries map[string]string) api.PathAnnotations {
 	return api.PathAnnotations{api.AnnotationKindGuard: entries}
 }
 
+// inheritedGuardAnnotations is guardAnnotations with every guard marked inherited.
+func inheritedGuardAnnotations(entries map[string]string) api.PathAnnotations {
+	markers := map[string]string{}
+	for key := range entries {
+		markers[key] = ""
+	}
+	return api.PathAnnotations{api.AnnotationKindGuard: entries, api.AnnotationKindGuardInherited: markers}
+}
+
 func TestValidatePathAnnotationsAcceptsTheMotivatingCases(t *testing.T) {
 	// The two classes §4 names, and a key whose presence is the whole statement.
 	for _, entries := range []map[string]string{
@@ -359,21 +368,31 @@ func TestGuardsForPathIsNilWhenThereAreNone(t *testing.T) {
 // Guard propagation
 // ---------------------------------------------------------------------------
 
+// table builds a one-resource table whose guards are all inherited, the only ones a merge carries.
 func table(resource string, paths map[api.ResolvedPath]map[string]string) api.PathAnnotationList {
 	entry := api.ResourcePathAnnotations{
 		Resource:          api.ResourceInfo{ResourceType: "apps/v1/Deployment", ResourceName: api.ResourceName(resource)},
 		PathAnnotationMap: map[api.ResolvedPath]api.PathAnnotations{},
 	}
 	for path, guards := range paths {
-		entry.PathAnnotationMap[path] = guardAnnotations(guards)
+		entry.PathAnnotationMap[path] = inheritedGuardAnnotations(guards)
 	}
 	return api.PathAnnotationList{entry}
 }
 
-// TestDiffGuardsCarriesARemoval is why guards propagate by diff rather than by union. When a
+// localTable is table with no guard inherited.
+func localTable(resource string, paths map[api.ResolvedPath]map[string]string) api.PathAnnotationList {
+	list := table(resource, paths)
+	for path := range list[0].PathAnnotationMap {
+		delete(list[0].PathAnnotationMap[path], api.AnnotationKindGuardInherited)
+	}
+	return list
+}
+
+// TestDiffInheritedGuardsCarriesARemoval is why guards propagate by diff rather than by union. When a
 // workload stops needing hostNetwork and the base drops the exception, the variants have to drop
 // it too -- a union would leave every clone carrying a stale guard nobody can account for.
-func TestDiffGuardsCarriesARemoval(t *testing.T) {
+func TestDiffInheritedGuardsCarriesARemoval(t *testing.T) {
 	base := table("ns/web", map[api.ResolvedPath]map[string]string{
 		"spec.template.spec": {"policy-exception": "host-network", "owner": "platform"},
 	})
@@ -381,7 +400,7 @@ func TestDiffGuardsCarriesARemoval(t *testing.T) {
 		"spec.template.spec": {"owner": "platform"},
 	})
 
-	diffs := api.DiffGuards(k8s, base, end)
+	diffs := api.DiffInheritedGuards(k8s, base, end)
 	require.Len(t, diffs, 1)
 	require.Len(t, diffs[0].Deltas, 1)
 	assert.Equal(t, api.ResolvedPath("spec.template.spec"), diffs[0].Deltas[0].Path)
@@ -389,7 +408,7 @@ func TestDiffGuardsCarriesARemoval(t *testing.T) {
 	assert.Empty(t, diffs[0].Deltas[0].Set)
 }
 
-func TestDiffGuardsCarriesAdditionsAndChanges(t *testing.T) {
+func TestDiffInheritedGuardsCarriesAdditionsAndChanges(t *testing.T) {
 	base := table("ns/web", map[api.ResolvedPath]map[string]string{
 		"spec.replicas": {"owner": "platform"},
 	})
@@ -398,7 +417,7 @@ func TestDiffGuardsCarriesAdditionsAndChanges(t *testing.T) {
 		"spec.template.spec.containers.?name=app.image": {"owner": "transform-link"},
 	})
 
-	diffs := api.DiffGuards(k8s, base, end)
+	diffs := api.DiffInheritedGuards(k8s, base, end)
 	require.Len(t, diffs, 1)
 	byPath := map[api.ResolvedPath]api.GuardDelta{}
 	for _, delta := range diffs[0].Deltas {
@@ -410,21 +429,21 @@ func TestDiffGuardsCarriesAdditionsAndChanges(t *testing.T) {
 		byPath["spec.template.spec.containers.?name=app.image"].Set)
 }
 
-func TestDiffGuardsIsEmptyWhenNothingChanged(t *testing.T) {
+func TestDiffInheritedGuardsIsEmptyWhenNothingChanged(t *testing.T) {
 	same := table("ns/web", map[api.ResolvedPath]map[string]string{
 		"spec.replicas": {"owner": "platform"},
 	})
-	assert.Empty(t, api.DiffGuards(k8s, same, api.ClonePathAnnotationList(same)),
+	assert.Empty(t, api.DiffInheritedGuards(k8s, same, api.ClonePathAnnotationList(same)),
 		"an unchanged table produces no work for the merge to do")
 }
 
-// TestDiffGuardsReportsAResourceThatIsGone covers the entry the end no longer has: everything it
+// TestDiffInheritedGuardsReportsAResourceThatIsGone covers the entry the end no longer has: everything it
 // carried was removed, and the removal has to travel rather than being lost with the entry.
-func TestDiffGuardsReportsAResourceThatIsGone(t *testing.T) {
+func TestDiffInheritedGuardsReportsAResourceThatIsGone(t *testing.T) {
 	base := table("ns/web", map[api.ResolvedPath]map[string]string{
 		"spec.replicas": {"owner": "platform"},
 	})
-	diffs := api.DiffGuards(k8s, base, nil)
+	diffs := api.DiffInheritedGuards(k8s, base, nil)
 	require.Len(t, diffs, 1)
 	require.Len(t, diffs[0].Deltas, 1)
 	assert.Equal(t, []string{"owner"}, diffs[0].Deltas[0].Remove)
@@ -442,7 +461,7 @@ func TestApplyGuardDeltaRoundTrips(t *testing.T) {
 	// Applying the base->end diff to a copy of base reproduces end. This is the property the
 	// whole propagation rests on: what a downstream receives is what the upstream changed.
 	downstream := api.ClonePathAnnotationList(base)
-	for _, diff := range api.DiffGuards(k8s, base, end) {
+	for _, diff := range api.DiffInheritedGuards(k8s, base, end) {
 		for i := range diff.Deltas {
 			var changed bool
 			downstream, changed = api.ApplyGuardDelta(k8s, downstream, diff.Resource, &diff.Deltas[i])
@@ -471,6 +490,167 @@ func TestApplyGuardDeltaIsIdempotent(t *testing.T) {
 
 	_, changed = api.ApplyGuardDelta(k8s, downstream, resource, &delta)
 	assert.False(t, changed, "applying the same delta again is not a change")
+}
+
+// ---------------------------------------------------------------------------
+// Inherited guards
+// ---------------------------------------------------------------------------
+
+// A local guard is about the Unit that carries it, so a merge does not carry it, and neither a
+// change to it nor its removal is anything downstream needs to hear about.
+func TestDiffInheritedGuardsIgnoresLocalGuards(t *testing.T) {
+	base := localTable("ns/web", map[api.ResolvedPath]map[string]string{
+		"spec.replicas": {"Scale": "RegionSpecific"},
+	})
+	end := localTable("ns/web", map[api.ResolvedPath]map[string]string{
+		"spec.replicas":      {"Scale": "Burst"},
+		"spec.template.spec": {"Link": "TransformPaths"},
+	})
+	assert.Empty(t, api.DiffInheritedGuards(k8s, base, end))
+}
+
+// A guard that stops being inherited has stopped being policy for the Units downstream, so to
+// them it reads as removed; the source keeps it as a guard of its own.
+func TestDiffInheritedGuardsReadsUnmarkingAsRemoval(t *testing.T) {
+	base := table("ns/web", map[api.ResolvedPath]map[string]string{
+		"spec.template.spec": {"RunAsRoot": "LegacyImage"},
+	})
+	end := localTable("ns/web", map[api.ResolvedPath]map[string]string{
+		"spec.template.spec": {"RunAsRoot": "LegacyImage"},
+	})
+	diffs := api.DiffInheritedGuards(k8s, base, end)
+	require.Len(t, diffs, 1)
+	require.Len(t, diffs[0].Deltas, 1)
+	assert.Equal(t, []string{"RunAsRoot"}, diffs[0].Deltas[0].Remove)
+
+	// And marking a local guard inherited reads as its arrival.
+	diffs = api.DiffInheritedGuards(k8s, end, base)
+	require.Len(t, diffs, 1)
+	assert.Equal(t, map[string]string{"RunAsRoot": "LegacyImage"}, diffs[0].Deltas[0].Set)
+}
+
+// What arrives inherited stays inherited, so it travels on to the next Unit downstream; and an
+// inherited removal leaves alone a downstream's own guard with the same key.
+func TestApplyGuardDeltaKeepsInheritanceAndLocalGuards(t *testing.T) {
+	resource := api.ResourceInfo{ResourceType: "apps/v1/Deployment", ResourceName: "ns/web"}
+	downstream := localTable("ns/web", map[api.ResolvedPath]map[string]string{
+		"spec.replicas": {"Scale": "RegionSpecific"},
+	})
+
+	downstream, changed := api.ApplyGuardDelta(k8s, downstream, resource, &api.GuardDelta{
+		Path: "spec.template.spec", Set: map[string]string{"RunAsRoot": "LegacyImage"},
+	})
+	require.True(t, changed)
+	assert.Equal(t, []string{"RunAsRoot"}, downstream[0].InheritedGuardKeysForPath("spec.template.spec.securityContext"))
+
+	downstream, changed = api.ApplyGuardDelta(k8s, downstream, resource, &api.GuardDelta{
+		Path: "spec.replicas", Remove: []string{"Scale"},
+	})
+	assert.False(t, changed, "the downstream's own guard is not the upstream's to retract")
+	assert.Equal(t, map[string]string{"Scale": "RegionSpecific"},
+		downstream[0].PathAnnotationMap["spec.replicas"][api.AnnotationKindGuard])
+
+	downstream, changed = api.ApplyGuardDelta(k8s, downstream, resource, &api.GuardDelta{
+		Path: "spec.template.spec", Remove: []string{"RunAsRoot"},
+	})
+	assert.True(t, changed)
+	assert.Empty(t, downstream[0].PathAnnotationMap["spec.template.spec"][api.AnnotationKindGuard])
+	assert.Empty(t, downstream[0].PathAnnotationMap["spec.template.spec"][api.AnnotationKindGuardInherited],
+		"removing a guard removes its marker")
+}
+
+// A clone takes the inherited guards and nothing else of the table: not the local guards, and
+// not the conflict dismissals.
+func TestInheritedGuardsIsWhatACloneTakes(t *testing.T) {
+	list := api.PathAnnotationList{{
+		Resource: api.ResourceInfo{ResourceType: "apps/v1/Deployment", ResourceName: "ns/web"},
+		ResourceAnnotations: api.PathAnnotations{
+			api.AnnotationKindGuard: {"Link": "TransformPaths"},
+		},
+		PathAnnotationMap: map[api.ResolvedPath]api.PathAnnotations{
+			"spec.template.spec": {
+				api.AnnotationKindGuard:             {"RunAsRoot": "LegacyImage", "Scale": "RegionSpecific"},
+				api.AnnotationKindGuardInherited:    {"RunAsRoot": ""},
+				api.AnnotationKindConflictDismissal: {"Guarded": ""},
+			},
+			"spec.replicas": {api.AnnotationKindGuard: {"Scale": "RegionSpecific"}},
+		},
+	}}
+	inherited := api.InheritedGuards(list)
+	require.Len(t, inherited, 1)
+	assert.Nil(t, inherited[0].ResourceAnnotations)
+	assert.Equal(t, map[api.ResolvedPath]api.PathAnnotations{
+		"spec.template.spec": inheritedGuardAnnotations(map[string]string{"RunAsRoot": "LegacyImage"}),
+	}, inherited[0].PathAnnotationMap)
+	assert.Nil(t, api.InheritedGuards(localTable("ns/web", map[api.ResolvedPath]map[string]string{
+		"spec.replicas": {"Scale": "RegionSpecific"},
+	})), "a table with no inherited guard gives a clone nothing")
+}
+
+func TestValidatePathAnnotationsChecksInheritanceMarkers(t *testing.T) {
+	require.NoError(t, api.ValidatePathAnnotations(
+		inheritedGuardAnnotations(map[string]string{"RunAsRoot": "LegacyImage"})))
+	assert.Error(t, api.ValidatePathAnnotations(api.PathAnnotations{
+		api.AnnotationKindGuard:          {"Scale": "RegionSpecific"},
+		api.AnnotationKindGuardInherited: {"RunAsRoot": ""},
+	}), "a marker names a guard beside it")
+	assert.Error(t, api.ValidatePathAnnotations(api.PathAnnotations{
+		api.AnnotationKindGuard:          {"RunAsRoot": "LegacyImage"},
+		api.AnnotationKindGuardInherited: {"RunAsRoot": "LegacyImage"},
+	}), "a marker carries no value of its own")
+}
+
+// Set and SetInherited each say whether the guard travels as well as what it is, so the one
+// re-setting a guard decides; and removing a guard takes its marker with it.
+func TestSetGuardsWritesWhetherAGuardIsInherited(t *testing.T) {
+	resource := api.ResourceInfo{ResourceType: "apps/v1/Deployment", ResourceName: "default/app"}
+	path := api.ResolvedPath("spec.template.spec")
+	identity := func(p api.ResolvedPath) api.ResolvedPath { return p }
+
+	list := api.SetGuards(k8s, nil, []api.ResourceGuards{{
+		Resource:     resource,
+		Set:          map[api.ResolvedPath]map[string]string{path: {"Scale": "RegionSpecific"}},
+		SetInherited: map[api.ResolvedPath]map[string]string{path: {"RunAsRoot": "LegacyImage"}},
+	}}, identity)
+	require.NoError(t, api.ValidatePathAnnotationList(list, true))
+	assert.Equal(t, []string{"RunAsRoot"}, list[0].InheritedGuardKeysForPath(path))
+
+	list = api.SetGuards(k8s, list, []api.ResourceGuards{{
+		Resource: resource,
+		Set:      map[api.ResolvedPath]map[string]string{path: {"RunAsRoot": "LegacyImage"}},
+	}}, identity)
+	assert.Empty(t, list[0].InheritedGuardKeysForPath(path), "Set makes an inherited guard local")
+
+	list = api.SetGuards(k8s, list, []api.ResourceGuards{{
+		Resource:     resource,
+		SetInherited: map[api.ResolvedPath]map[string]string{path: {"RunAsRoot": "LegacyImage"}},
+	}}, identity)
+	list = api.SetGuards(k8s, list, []api.ResourceGuards{{
+		Resource: resource,
+		Remove:   map[api.ResolvedPath][]string{path: {"RunAsRoot"}},
+	}}, identity)
+	assert.Empty(t, list[0].PathAnnotationMap[path][api.AnnotationKindGuardInherited])
+	require.NoError(t, api.ValidatePathAnnotationList(list, true))
+}
+
+func TestValidateResourceGuardsRefusesAKeySetBothWays(t *testing.T) {
+	assert.Error(t, api.ValidateResourceGuards([]api.ResourceGuards{{
+		Resource:     api.ResourceInfo{ResourceName: "web"},
+		Set:          map[api.ResolvedPath]map[string]string{"spec": {"RunAsRoot": "LegacyImage"}},
+		SetInherited: map[api.ResolvedPath]map[string]string{"spec": {"RunAsRoot": "LegacyImage"}},
+	}}))
+}
+
+// Nearer wins on whether a key is inherited, as it does on the value.
+func TestInheritedGuardKeysForPathNearestDecides(t *testing.T) {
+	entry := api.ResourcePathAnnotations{
+		ResourceAnnotations: inheritedGuardAnnotations(map[string]string{"RunAsRoot": "LegacyImage"}),
+		PathAnnotationMap: map[api.ResolvedPath]api.PathAnnotations{
+			"spec.template.spec.containers.?name=sidecar": guardAnnotations(map[string]string{"RunAsRoot": "Debug"}),
+		},
+	}
+	assert.Equal(t, []string{"RunAsRoot"}, entry.InheritedGuardKeysForPath("spec.template.spec.containers.?name=app"))
+	assert.Empty(t, entry.InheritedGuardKeysForPath("spec.template.spec.containers.?name=sidecar.image"))
 }
 
 // A change can state the reasons it has for what it writes -- the guard analogue of --protect.

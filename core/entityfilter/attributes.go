@@ -30,7 +30,7 @@ type Attribute struct {
 
 // AttributeTable is what a where expression can name, by entity type and then attribute name.
 // A name the API nests and the entity's row does not, such as a Mutation's
-// FunctionInvocation.Guards, is an attribute name too.
+// FunctionInvocation.Arguments, is an attribute name too.
 type AttributeTable map[string]map[string]Attribute
 
 // Attributes is what a Parser reads names from. An AttributeTable is one; the server reads its own

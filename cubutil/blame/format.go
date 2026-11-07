@@ -25,6 +25,33 @@ func FormatGuards(guards map[string]string) string {
 	return strings.Join(specs, " ")
 }
 
+// FormatFieldGuards renders a field's guards as FormatGuards does, with "(inherited)" after each
+// inherited one: a guard that arrived from upstream keeps arriving from there, and one that is
+// local is this unit's own to change.
+func FormatFieldGuards(guards map[string]string, inherited []string) string {
+	if len(guards) == 0 {
+		return ""
+	}
+	isInherited := make(map[string]bool, len(inherited))
+	for _, key := range inherited {
+		isInherited[key] = true
+	}
+	keys := make([]string, 0, len(guards))
+	for key := range guards {
+		keys = append(keys, key)
+	}
+	sort.Strings(keys)
+	specs := make([]string, 0, len(keys))
+	for _, key := range keys {
+		spec := fmt.Sprintf("%s=%s", key, guards[key])
+		if isInherited[key] {
+			spec += " (inherited)"
+		}
+		specs = append(specs, spec)
+	}
+	return strings.Join(specs, " ")
+}
+
 // FormatConflictDismissal renders a recorded conflict dismissal on one line: what it dismisses,
 // the way cub unit conflicts takes it, and where it is recorded.
 func FormatConflictDismissal(dismissal ConflictDismissal) string {

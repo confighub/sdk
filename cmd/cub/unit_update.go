@@ -240,6 +240,7 @@ func init() {
 	unitUpdateCmd.Flags().BoolVar(&protectChange, "protect", false, "record the paths this change writes as protected local overrides, so a later merge from upstream does not overwrite them; by default a change claims nothing and each path keeps the protection it already has. Refused on the merges protection holds paths against: --upgrade, --merge-source other than Self, --merge-external-source, and --resolve of an UpgradeUnit or MergeUnits link")
 	addClearanceFlag(unitUpdateCmd)
 	addGuardFlag(unitUpdateCmd)
+	addInheritedGuardFlag(unitUpdateCmd)
 	unitUpdateCmd.Flags().BoolVar(&squashMerge, "squash", false, "merge the range as one rebased diff in one revision instead of walking it: by default a merge re-runs the upstream's recorded function invocations against this unit where it can, so each change lands where this unit's own structure puts it, and records one revision per upstream revision that has an effect here; only valid with --upgrade, --merge-source, or --resolve")
 	unitUpdateCmd.Flags().BoolVar(&isPatch, "patch", false, "use patch API instead of update API")
 	unitUpdateCmd.Flags().StringVar(&mergeSource, "merge-source", "", "source unit for 3-way merge (slug or UUID)")
@@ -613,6 +614,13 @@ func unitUpdateCmdRun(cmd *cobra.Command, args []string) error {
 	}
 	if guards != "" {
 		newParams.Guards = &guards
+	}
+	inheritedGuards, err := inheritedGuardsJSON()
+	if err != nil {
+		return err
+	}
+	if inheritedGuards != "" {
+		newParams.InheritedGuards = &inheritedGuards
 	}
 	if squashMerge {
 		newParams.Squash = &squashMerge
@@ -1053,6 +1061,13 @@ func runBulkUnitUpdate() error {
 	}
 	if guards != "" {
 		params.Guards = &guards
+	}
+	inheritedGuards, err := inheritedGuardsJSON()
+	if err != nil {
+		return err
+	}
+	if inheritedGuards != "" {
+		params.InheritedGuards = &inheritedGuards
 	}
 	if squashMerge {
 		params.Squash = &squashMerge

@@ -70,6 +70,8 @@ func init() {
 	addStandardUpdateFlags(invocationUpdateCmd)
 	addFieldEditFlags(invocationUpdateCmd, "Invocation")
 	addInvocationFunctionFlag(invocationUpdateCmd)
+	addInvocationClearanceFlag(invocationUpdateCmd)
+	addInvocationGuardFlag(invocationUpdateCmd)
 	enableUpdatePermissionFlag(invocationUpdateCmd)
 	invocationUpdateCmd.Flags().StringVar(&functionChannel, "channel", "", "channel whose client executes the invocation's functions")
 	invocationUpdateCmd.Flags().StringArrayVar(&invocationDeclaredParameterFlags, "parameter", nil, "replace the declared parameters with the ones given, each as name[:datatype[:required]] (datatype defaults to string, required defaults to true; can be repeated). Reference declared parameters from templated argument values via {{ .Params.<name> }}.")
@@ -154,6 +156,10 @@ func runBulkInvocationUpdate() error {
 	if err != nil {
 		return err
 	}
+	clearance, guards, err := parseStandingPolicyFlags(invocationClearance, invocationGuards)
+	if err != nil {
+		return err
+	}
 
 	// Create enhancer function for invocation-specific fields
 	enhancer := func(patchMap map[string]interface{}) {
@@ -163,6 +169,7 @@ func runBulkInvocationUpdate() error {
 		if len(declaredParams) > 0 {
 			patchMap["Parameters"] = declaredParams
 		}
+		addInvocationPolicyToPatch(patchMap, clearance, guards)
 	}
 
 	// Build patch data using consolidated function
@@ -205,7 +212,8 @@ func runBulkInvocationUpdate() error {
 // them alone.
 func invocationUpdateMinArgs() int {
 	if flagPopulateModelFromStdin || flagFilename != "" || len(invocationFunctionLines) > 0 ||
-		len(invocationDeclaredParameterFlags) > 0 || functionChannel != "" || hasMetadataFlags() ||
+		len(invocationDeclaredParameterFlags) > 0 || len(invocationClearance) > 0 || len(invocationGuards) > 0 ||
+		functionChannel != "" || hasMetadataFlags() ||
 		len(label) > 0 || len(deleteGate) > 0 || len(permissionFlag) > 0 {
 		return 2
 	}
@@ -254,6 +262,10 @@ func invocationUpdateCmdRun(cmd *cobra.Command, args []string) error {
 		if err != nil {
 			return err
 		}
+		clearance, guards, err := parseStandingPolicyFlags(invocationClearance, invocationGuards)
+		if err != nil {
+			return err
+		}
 
 		// Build patch data using BuildPatchData with invocation enhancer
 		invocationEnhancer := func(patchData map[string]interface{}) {
@@ -264,6 +276,7 @@ func invocationUpdateCmdRun(cmd *cobra.Command, args []string) error {
 			if len(declaredParams) > 0 {
 				patchData["Parameters"] = declaredParams
 			}
+			addInvocationPolicyToPatch(patchData, clearance, guards)
 
 			// Add function details from args
 			patchData["ToolchainType"] = args[1]
@@ -353,6 +366,16 @@ func invocationUpdateCmdRun(cmd *cobra.Command, args []string) error {
 		// keeps the parameters it has, or the ones a file or stdin supplied.
 		currentInvocation.Parameters = declaredParams
 	}
+	clearance, guards, err := parseStandingPolicyFlags(invocationClearance, invocationGuards)
+	if err != nil {
+		return err
+	}
+	if clearance != nil {
+		currentInvocation.Clearance = &clearance
+	}
+	if guards != nil {
+		currentInvocation.Guards = &guards
+	}
 	if err := applyFieldEdits("Invocation", currentInvocation); err != nil {
 		return err
 	}
@@ -364,6 +387,17 @@ func invocationUpdateCmdRun(cmd *cobra.Command, args []string) error {
 	invocationDetails := invocationRes.JSON200
 	displayUpdateResults(invocationDetails, "invocation", args[0], invocationDetails.InvocationID.String(), displayInvocationDetails)
 	return nil
+}
+
+// addInvocationPolicyToPatch adds --clearance and --guard to a patch of an Invocation. A nil
+// value means the flag was not given, and leaves the field alone.
+func addInvocationPolicyToPatch(patch map[string]interface{}, clearance goclientnew.Clearance, guards goclientnew.GuardStamp) {
+	if clearance != nil {
+		patch["Clearance"] = clearance
+	}
+	if guards != nil {
+		patch["Guards"] = guards
+	}
 }
 
 func handleBulkInvocationCreateOrUpdateResponse(responses200 *[]goclientnew.InvocationCreateOrUpdateResponse, responses207 *[]goclientnew.InvocationCreateOrUpdateResponse, statusCode int, operationName, contextInfo string) error {

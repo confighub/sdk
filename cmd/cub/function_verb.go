@@ -256,6 +256,7 @@ func registerFunctionVerbFlags(cmd *cobra.Command) {
 	// say the reason was understood, and no way to state a new one.
 	addClearanceFlag(cmd)
 	addGuardFlag(cmd)
+	addInheritedGuardFlag(cmd)
 	cmd.Flags().StringSliceVar(&functionTriggerIdentifiers, "trigger", []string{}, "execute triggers by UUID, slug, or space/slug (can be repeated or comma-separated)")
 	cmd.Flags().StringSliceVar(&functionInvocationIdentifiers, "invocation", []string{}, "execute invocations by UUID, slug, or space/slug (can be repeated or comma-separated)")
 	cmd.Flags().BoolVar(&updateValidationResults, "update-validation-results", false, "update ValidationErrors and ValidationWarnings on units based on trigger results (requires --trigger)")

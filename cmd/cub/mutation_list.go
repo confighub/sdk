@@ -52,8 +52,11 @@ Examples:
   # List mutations whose function took a given value as any argument
   cub mutation list --space my-space --where "FunctionInvocation.Arguments.*.Value = 'production'" my-ns
 
-  # List mutations whose invocation stated a reason for what it wrote
-  cub mutation list --space my-space --where "FunctionInvocation.Guards.owner = 'platform-trigger'" my-ns
+  # List changes that recorded a reason for what they wrote
+  cub mutation list --space my-space --where "Guards.Link = 'TransformPaths'" my-ns
+
+  # List changes written under a clearance for a reason
+  cub mutation list --space my-space --where "Clearance.*.Key = 'RunAsRoot'" my-ns
 `+"```"+`
 `, ""),
 	Args: cobra.ExactArgs(1),

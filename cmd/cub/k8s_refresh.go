@@ -97,6 +97,7 @@ func init() {
 	enableDisplayMutationsFlag(k8sRefreshCmd)
 	addClearanceFlag(k8sRefreshCmd)
 	addGuardFlag(k8sRefreshCmd)
+	addInheritedGuardFlag(k8sRefreshCmd)
 	k8sRefreshCmd.Flags().StringVar(&changeDescription, "change-desc", "", "change description")
 	k8sRefreshCmd.Flags().BoolVar(&k8sRefreshArgs.dryRun, "dry-run", false, "report what would change without writing it")
 	k8sCmd.AddCommand(k8sRefreshCmd)
@@ -300,13 +301,18 @@ func applyClusterDrift(unit *goclientnew.Unit, spaceID, resourceType, name strin
 	if err != nil {
 		return err
 	}
+	inheritedGuards, err := inheritedGuardsJSON()
+	if err != nil {
+		return err
+	}
 	resp, err := invokeFunctionsOnUnits(&invokeArgs{
-		Where:       where,
-		DryRun:      k8sRefreshArgs.dryRun,
-		Clearance:   clearance,
-		Guards:      guards,
-		Body:        body,
-		IncludeDiff: showDrift,
+		Where:           where,
+		DryRun:          k8sRefreshArgs.dryRun,
+		Clearance:       clearance,
+		Guards:          guards,
+		InheritedGuards: inheritedGuards,
+		Body:            body,
+		IncludeDiff:     showDrift,
 	})
 	if err != nil {
 		return err

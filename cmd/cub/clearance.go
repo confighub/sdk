@@ -194,6 +194,16 @@ func addPersistentClearanceFlag(cmd *cobra.Command) {
 // run of it, where the others describe one operation.
 var triggerClearance []string
 
+// invocationClearance holds the --clearance flag on invocation create and update, for the reason
+// triggerClearance is separate.
+var invocationClearance []string
+
+// addInvocationClearanceFlag registers --clearance on an invocation command.
+func addInvocationClearanceFlag(cmd *cobra.Command) {
+	cmd.Flags().StringArrayVar(&invocationClearance, "clearance", nil,
+		"class of guarded reason this invocation's functions are cleared for, as KEY, KEY=VALUE[;VALUE...], KEY!=VALUE[;VALUE...], or !KEY to refuse any path carrying KEY (repeatable). Combined with the clearance of the trigger or command that runs it. Part of the invocation's Hash")
+}
+
 // addTriggerClearanceFlag registers --clearance on a trigger command.
 func addTriggerClearanceFlag(cmd *cobra.Command) {
 	cmd.Flags().StringArrayVar(&triggerClearance, "clearance", nil,

@@ -16,7 +16,7 @@ type Expression struct {
 
 	// Attribute is what the table says about the attribute the term names. AttributeEntityType and
 	// AttributeName are where it is in the table: the type of the entity the prefix names, and the
-	// name it is declared under, which for a qualified name such as FunctionInvocation.Guards is
+	// name it is declared under, which for a qualified name such as FunctionInvocation.Arguments is
 	// not Path.
 	Attribute           Attribute
 	AttributeEntityType string

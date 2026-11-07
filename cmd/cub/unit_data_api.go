@@ -112,6 +112,7 @@ func unitDataParamsFromUpdate(p *goclientnew.UpdateUnitParams, changeDescription
 		Protect:                p.Protect,
 		Clearance:              p.Clearance,
 		Guards:                 p.Guards,
+		InheritedGuards:        p.InheritedGuards,
 		MergeBase:              p.MergeBase,
 		MergeExternalSource:    p.MergeExternalSource,
 		MergeEnableSubtraction: p.MergeEnableSubtraction,

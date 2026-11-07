@@ -62,7 +62,7 @@ func addLinkFieldFlags(cmd *cobra.Command) {
 	cmd.Flags().StringArrayVar(&linkClearance, "clearance", nil,
 		"class of guarded reason this link's resolve is cleared for, as KEY, KEY=VALUE[;VALUE...], KEY!=VALUE[;VALUE...], or !KEY to refuse any path carrying KEY (repeatable). Pass an empty value to clear")
 	cmd.Flags().StringArrayVar(&linkGuardSpecs, "guard", nil,
-		"reason to record on the paths this link's resolve writes, as KEY=VALUE (repeatable). A later operation must be cleared for it before overwriting those paths, the link's next resolve included, so --clearance has to cover it; refused on UpgradeUnit and MergeUnits links, whose guards propagate from upstream. Pass an empty value to clear")
+		"reason to record on the paths this link's resolve writes, as KEY=VALUE (repeatable). A later operation must be cleared for it before overwriting those paths, the link's next resolve included, so --clearance has to cover it; refused on UpgradeUnit and MergeUnits links, whose inherited guards propagate from upstream. Pass an empty value to clear")
 	cmd.Flags().BoolVar(&linkSquash, "squash", false, "merge this link's range as one rebased diff in one revision instead of walking it: by default a resolve re-runs the upstream's recorded function invocations against the downstream unit where it can, and records one revision per upstream revision that has an effect; only meaningful for UpgradeUnit and MergeUnits links")
 	cmd.Flags().BoolVar(&linkNoSquash, "no-squash", false, "return this link to the default: its resolve walks the range")
 	cmd.Flags().BoolVar(&linkMakeCurrent, "make-current", false, "set link revision numbers to current unit revisions; on create this skips the initial merge, on update it re-points the link at what the units now hold")

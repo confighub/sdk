@@ -417,25 +417,9 @@
             "null"
           ]
         },
-        "Clearance": {
-          "allOf": [
-            {
-              "$ref": "#/definitions/Clearance"
-            }
-          ],
-          "description": "Classes of guarded reason this invocation is cleared for; combined by union with the clearance of whatever drove the execution"
-        },
         "FunctionName": {
           "description": "Function name",
           "type": "string"
-        },
-        "Guards": {
-          "allOf": [
-            {
-              "$ref": "#/definitions/GuardStamp"
-            }
-          ],
-          "description": "Guards to record on the paths this invocation writes, so a later operation must be cleared for them; combined with the guards of whatever drove the execution, later winning per key"
         },
         "Params": {
           "additionalProperties": {},
@@ -1208,6 +1192,14 @@
           "pattern": "^([A-Za-z0-9]([\\-_.A-Za-z0-9]*[A-Za-z0-9])?/)?[A-Za-z0-9]([\\-_.A-Za-z0-9]*[A-Za-z0-9])?$",
           "type": "string"
         },
+        "Clearance": {
+          "allOf": [
+            {
+              "$ref": "#/definitions/Clearance"
+            }
+          ],
+          "description": "Classes of guarded reason this Invocation's functions are cleared for; combined by union with the clearance of the Trigger or API call that runs it"
+        },
         "DeleteGates": {
           "additionalProperties": {
             "type": "boolean"
@@ -1227,6 +1219,14 @@
         },
         "FunctionInvocations": {
           "$ref": "#/definitions/FunctionInvocationList"
+        },
+        "Guards": {
+          "allOf": [
+            {
+              "$ref": "#/definitions/GuardStamp"
+            }
+          ],
+          "description": "Guards to record on the paths this Invocation's functions write, so a later operation must be cleared for them; combined with the guards of a Trigger running it, the Trigger's winning per key. Add and overwrite only -- retiring a guard is the /guard API (cub unit set-guard --remove-guard). Clearance must cover them."
         },
         "Labels": {
           "additionalProperties": {

@@ -135,3 +135,14 @@ func TestIsKeyedMap(t *testing.T) {
 		assert.False(t, table.IsKeyedMap(name), name)
 	}
 }
+
+// A Mutation's guard maps are keyed by a guard key, the AttributeName class, so a dot ends the key.
+func TestParseMutationGuardMaps(t *testing.T) {
+	for _, attribute := range []string{"Guards", "InheritedGuards"} {
+		expressions, err := parserFor("Mutation").Parse(attribute + ".RunAsRoot = 'LegacyImage'")
+		require.NoError(t, err, attribute)
+		require.Len(t, expressions, 1)
+		assert.Equal(t, attribute, expressions[0].Path)
+		assert.Equal(t, "RunAsRoot", expressions[0].MapKey)
+	}
+}

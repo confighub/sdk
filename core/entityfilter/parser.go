@@ -185,9 +185,9 @@ func (p *Parser) isValidEntityPrefix(prefix string, isArrayElement bool) bool {
 // entity being filtered, rather than a reference to another entity.
 //
 // It is how an attribute the API nests is named the way the API names it, when the row does not
-// nest it. Mutation.FunctionInvocation is the case: the API returns FunctionName, Arguments,
-// Clearance and Guards inside a FunctionInvocation object, while the server stores them as flat
-// columns of the Mutation. Declaring `FunctionInvocation.Guards` lets the filter read as the
+// nest it. Mutation.FunctionInvocation is the case: the API returns FunctionName, Arguments and
+// WhereResource inside a FunctionInvocation object, while the server stores them as flat columns
+// of the Mutation. Declaring `FunctionInvocation.Arguments` lets the filter read as the
 // response does and still be one predicate against one row -- unlike an entity prefix, which
 // means a second entity and a term evaluated in memory after expansion.
 //
@@ -324,7 +324,7 @@ func (p *Parser) parseAndValidateBinaryExpression(decodedQueryString string) (*E
 	var isExtendedTerm bool
 	var isArrayElement bool
 	// The name an attribute is declared under, when the API nests it and the row does not, as
-	// with Mutation's `FunctionInvocation.Guards`. Empty for every other attribute, whose
+	// with Mutation's `FunctionInvocation.Arguments`. Empty for every other attribute, whose
 	// declared name and field name are the same.
 	var qualifiedAttributeName string
 
@@ -422,7 +422,7 @@ func (p *Parser) parseAndValidateBinaryExpression(decodedQueryString string) (*E
 	var nestedMapKey string
 	if !lengthExpr && attribs.DataType == api.DataTypeStringMap {
 		switch attributeName {
-		case "Labels", "Annotations", "Facts", "Guards":
+		case "Labels", "Annotations", "Facts", "Guards", "InheritedGuards":
 			decodedQueryString, mapKey, err = parseSingleKeyMapKey(decodedQueryString, attributeName)
 			if err != nil {
 				return nil, decodedQueryString, err

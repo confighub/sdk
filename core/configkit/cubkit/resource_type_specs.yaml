@@ -145,6 +145,8 @@ resourceTypes:
   listTypes:
   - path: FunctionInvocations
     type: atomic
+  - path: Clearance.*.Values
+    type: set
   mapKeyPaths:
   - DeleteGates.*
   - Labels.*
@@ -153,12 +155,17 @@ resourceTypes:
   - Parameters.*.Schema.properties.*
   - Parameters.*.Schema.patternProperties.*
   - Parameters.*.Schema.dependencies.*
+  - Guards.*
   - Permissions.*
   - Permissions.*.UserIDs.*
   - Permissions.*.GroupIDs.*
   mergeKeys:
   - key: ParameterName
     path: Parameters
+  - extraKeys:
+    - Operator
+    key: Key
+    path: Clearance
   scope: Space
   type: Invocation
 - applyPriority: 600
@@ -183,19 +190,13 @@ resourceTypes:
     type: set
   - path: DownstreamPaths.*.Parameters
     type: set
-  - path: UpstreamGetters.*.FunctionInvocation.Clearance.*.Values
-    type: set
   - path: DownstreamSetters.*.Parameters
-    type: set
-  - path: DownstreamSetters.*.FunctionInvocation.Clearance.*.Values
     type: set
   mapKeyPaths:
   - DeleteGates.*
   - Labels.*
   - Annotations.*
   - Guards.*
-  - UpstreamGetters.*.FunctionInvocation.Guards.*
-  - DownstreamSetters.*.FunctionInvocation.Guards.*
   - Permissions.*
   - Permissions.*.UserIDs.*
   - Permissions.*.GroupIDs.*
@@ -214,18 +215,10 @@ resourceTypes:
     path: UpstreamGetters
   - key: ParameterName
     path: UpstreamGetters.*.FunctionInvocation.Arguments
-  - extraKeys:
-    - Operator
-    key: Key
-    path: UpstreamGetters.*.FunctionInvocation.Clearance
   - key: Key
     path: DownstreamSetters
   - key: ParameterName
     path: DownstreamSetters.*.FunctionInvocation.Arguments
-  - extraKeys:
-    - Operator
-    key: Key
-    path: DownstreamSetters.*.FunctionInvocation.Clearance
   scope: Space
   type: Link
 - applyPriority: 100

@@ -548,17 +548,23 @@ func patchTrigger(spaceID uuid.UUID, triggerID uuid.UUID, patchData []byte) (*go
 // A nil result means the flag was not given, which is distinct from an empty one: an empty
 // clearance clears nothing and is how a clearance is removed.
 func parseTriggerPolicyFlags() (goclientnew.Clearance, goclientnew.GuardStamp, error) {
+	return parseStandingPolicyFlags(triggerClearance, triggerGuards)
+}
+
+// parseStandingPolicyFlags parses the --clearance and --guard of an entity that stores them,
+// a Trigger or an Invocation, as parseTriggerPolicyFlags describes.
+func parseStandingPolicyFlags(clearanceSpecs, guardSpecs []string) (goclientnew.Clearance, goclientnew.GuardStamp, error) {
 	var clearance goclientnew.Clearance
 	var guards goclientnew.GuardStamp
-	if len(triggerClearance) > 0 {
-		parsed, err := parseClearanceSpecs(triggerClearance)
+	if len(clearanceSpecs) > 0 {
+		parsed, err := parseClearanceSpecs(clearanceSpecs)
 		if err != nil {
 			return nil, nil, err
 		}
 		clearance = parsed
 	}
-	if len(triggerGuards) > 0 {
-		parsed, err := parseGuardStampSpecs(triggerGuards)
+	if len(guardSpecs) > 0 {
+		parsed, err := parseGuardStampSpecs(guardSpecs)
 		if err != nil {
 			return nil, nil, err
 		}

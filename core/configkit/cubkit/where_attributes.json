@@ -764,6 +764,9 @@
         "references": "Channel",
         "expandable": true
       },
+      "Clearance": {
+        "dataType": "JSON"
+      },
       "CreatedAt": {
         "dataType": "time"
       },
@@ -775,6 +778,9 @@
       },
       "FunctionInvocations": {
         "dataType": "JSON"
+      },
+      "Guards": {
+        "dataType": "map[string]string"
       },
       "Hash": {
         "dataType": "string"
@@ -948,20 +954,17 @@
         "dataType": "uuid",
         "references": "Channel"
       },
+      "Clearance": {
+        "dataType": "JSON"
+      },
       "CreatedAt": {
         "dataType": "time"
       },
       "FunctionInvocation.Arguments": {
         "dataType": "JSON"
       },
-      "FunctionInvocation.Clearance": {
-        "dataType": "JSON"
-      },
       "FunctionInvocation.FunctionName": {
         "dataType": "string"
-      },
-      "FunctionInvocation.Guards": {
-        "dataType": "map[string]string"
       },
       "FunctionInvocation.WhereResource": {
         "dataType": "string"
@@ -969,8 +972,14 @@
       "FunctionName": {
         "dataType": "string"
       },
+      "Guards": {
+        "dataType": "map[string]string"
+      },
       "HiddenReason": {
         "dataType": "string"
+      },
+      "InheritedGuards": {
+        "dataType": "map[string]string"
       },
       "InvocationID": {
         "dataType": "uuid",

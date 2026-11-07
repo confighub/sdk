@@ -18,10 +18,14 @@ import (
 // know about them before overwriting. This is --guard, the guard analogue of --protect: where
 // --protect claims the paths the operation wrote, --guard says why they hold what they hold.
 //
-// On the command line each guard is one KEY=VALUE pair:
+// On the command line each guard is one KEY=VALUE pair, the key naming a class of reason and the
+// value the specific one:
 //
-//	owner=transform-link            this field is maintained by a link
-//	policy-exception=host-network   this value breaks a default policy on purpose
+//	Link=TransformPaths     this field is maintained by a link
+//	RunAsRoot=LegacyImage   this value breaks a default policy because the image needs it
+//
+// --guard records guards that stay with the unit. --inherited-guard records guards that travel:
+// a clone of the unit receives them, and a merge carries them to the units downstream.
 //
 // It names no path, which is the point. The paths are the ones the operation wrote, exactly as
 // they are for --protect. `cub unit set-guard --guard` spells the same flag with a resource and
@@ -35,6 +39,12 @@ const guardFlagUsage = "reason to record on the paths this change writes, as KEY
 
 // parseGuardStampSpecs turns --guard flag values into the key/value map the wire carries.
 func parseGuardStampSpecs(specs []string) (goclientnew.GuardStamp, error) {
+	return parseGuardStampFlag("guard", specs)
+}
+
+// parseGuardStampFlag is parseGuardStampSpecs for a named flag, so an error names the flag that
+// was typed.
+func parseGuardStampFlag(flag string, specs []string) (goclientnew.GuardStamp, error) {
 	stamp := goclientnew.GuardStamp{}
 	for _, spec := range specs {
 		spec = strings.TrimSpace(spec)
@@ -43,7 +53,7 @@ func parseGuardStampSpecs(specs []string) (goclientnew.GuardStamp, error) {
 		}
 		key, value, found := strings.Cut(spec, "=")
 		if !found || key == "" {
-			return nil, fmt.Errorf("--guard %q must be KEY=VALUE", spec)
+			return nil, fmt.Errorf("--%s %q must be KEY=VALUE", flag, spec)
 		}
 		stamp[key] = value
 	}
@@ -84,6 +94,39 @@ func addPersistentGuardFlag(cmd *cobra.Command) {
 	cmd.PersistentFlags().StringArrayVar(&changeGuards, "guard", nil, guardFlagUsage)
 }
 
+const inheritedGuardFlagUsage = "inherited guard to record on the paths this change writes, as KEY=VALUE (repeatable): unlike --guard, a clone of the unit receives it and a merge carries it to the units downstream. --clearance has to cover it, as it covers --guard, and a key may not be given to both"
+
+// changeInheritedGuards holds --inherited-guard, the --guard of guards that travel downstream.
+var changeInheritedGuards []string
+
+// addInheritedGuardFlag registers --inherited-guard on a command that writes configuration data
+// through the update or invoke APIs, which are the ones that take it.
+func addInheritedGuardFlag(cmd *cobra.Command) {
+	cmd.Flags().StringArrayVar(&changeInheritedGuards, "inherited-guard", nil, inheritedGuardFlagUsage)
+}
+
+// addPersistentInheritedGuardFlag is addInheritedGuardFlag for a command whose subcommands all
+// write configuration data.
+func addPersistentInheritedGuardFlag(cmd *cobra.Command) {
+	cmd.PersistentFlags().StringArrayVar(&changeInheritedGuards, "inherited-guard", nil, inheritedGuardFlagUsage)
+}
+
+// inheritedGuardsJSON is guardsJSON for --inherited-guard.
+func inheritedGuardsJSON() (string, error) {
+	if len(changeInheritedGuards) == 0 {
+		return "", nil
+	}
+	stamp, err := parseGuardStampFlag("inherited-guard", changeInheritedGuards)
+	if err != nil || len(stamp) == 0 {
+		return "", err
+	}
+	encoded, err := json.Marshal(stamp)
+	if err != nil {
+		return "", err
+	}
+	return string(encoded), nil
+}
+
 // guardsJSON renders the --guard flag for the wire, or "" when none was given. The guards travel
 // as a JSON query parameter rather than a repeated scalar for the reason the clearance does:
 // one grammar, parsed where it is written, rather than two that drift apart.
@@ -113,9 +156,16 @@ func guardsJSON() (string, error) {
 // Separate from changeGuards because they are stored and apply to every run, where the others
 // describe one operation.
 var (
-	triggerGuards []string
-	linkGuards    []string
+	triggerGuards    []string
+	linkGuards       []string
+	invocationGuards []string
 )
+
+// addInvocationGuardFlag registers --guard on an invocation command.
+func addInvocationGuardFlag(cmd *cobra.Command) {
+	cmd.Flags().StringArrayVar(&invocationGuards, "guard", nil,
+		"reason to record on the paths this invocation's functions write, as KEY=VALUE (repeatable). A later operation must be cleared for it before overwriting those paths, the invocation's next run included, so --clearance has to cover it. A trigger running the invocation can add its own, which win per key. Part of the invocation's Hash")
+}
 
 // addTriggerGuardFlag registers --guard on a trigger command.
 func addTriggerGuardFlag(cmd *cobra.Command) {

@@ -277,7 +277,7 @@ func displayBlameDetail(f *blame.Field) {
 	// The reasons first: they are what an operation about to write here has to know, and
 	// unlike the chain they are about the value now rather than about how it got here.
 	if len(f.Guards) > 0 {
-		tprintRaw(fmt.Sprintf("    %sguarded: %s%s", colorDim, blame.FormatGuards(f.Guards), colorReset))
+		tprintRaw(fmt.Sprintf("    %sguarded: %s%s", colorDim, blame.FormatFieldGuards(f.Guards, f.InheritedGuards), colorReset))
 	}
 	for _, conflict := range f.Conflicts {
 		tprintRaw(fmt.Sprintf("    %sconflict: %s%s", colorDim, formatBlameConflict(conflict, blameMaxValueWidth), colorReset))

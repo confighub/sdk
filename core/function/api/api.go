@@ -141,22 +141,6 @@ type FunctionInvocation struct {
 	// (bun:"-"), never part of an Invocation's identity hash, and so left out of the
 	// documents that describe a Trigger, Invocation, or Link as configuration.
 	Params map[string]any `json:",omitempty" bun:"-" entityDocument:"-" description:"Caller-supplied parameter values for expanding templated argument Values; transient, not persisted"`
-	// Clearance is the set of guarded reasons this invocation is cleared for. A path whose
-	// guards it does not cover is not written, and the withheld change is reported.
-	//
-	// Per invocation, so a stored Invocation can carry the clearance for the reasons its own
-	// function is meant to disturb, rather than every Trigger that runs it having to restate
-	// them. An execution combines it with the clearance of whatever drove it -- the Trigger,
-	// the Link, or the API call -- by union.
-	Clearance Clearance `json:",omitempty" mergeKey:"Key,Operator" description:"Classes of guarded reason this invocation is cleared for; combined by union with the clearance of whatever drove the execution"`
-	// Guards are the reasons this invocation states about the paths it writes, recorded on
-	// the Unit's path annotations so a later operation has to be cleared for them.
-	//
-	// Per invocation, so a stored Invocation names the reason its own function is run for:
-	// an invocation that maintains a field says so once, rather than every Trigger running it
-	// restating it. An execution combines it with the guards of whatever drove it, later
-	// winning per key.
-	Guards GuardStamp `json:",omitempty" description:"Guards to record on the paths this invocation writes, so a later operation must be cleared for them; combined with the guards of whatever drove the execution, later winning per key"`
 }
 
 type OtherDataSource string

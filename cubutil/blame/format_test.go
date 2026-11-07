@@ -147,3 +147,13 @@ func TestFormatConflictDismissal(t *testing.T) {
 		}
 	}
 }
+
+func TestFormatFieldGuardsMarksInheritedGuards(t *testing.T) {
+	got := FormatFieldGuards(map[string]string{"Scale": "RegionSpecific", "RunAsRoot": "LegacyImage"}, []string{"RunAsRoot"})
+	if want := "RunAsRoot=LegacyImage (inherited) Scale=RegionSpecific"; got != want {
+		t.Errorf("FormatFieldGuards = %q, want %q", got, want)
+	}
+	if got := FormatFieldGuards(nil, []string{"RunAsRoot"}); got != "" {
+		t.Errorf("FormatFieldGuards of no guards = %q, want empty", got)
+	}
+}

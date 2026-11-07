@@ -12659,6 +12659,17 @@ paths:
         required: false
         schema:
           type: string
+      - description: 'The guards this operation records on the paths it writes as
+          inherited guards, in the form guards takes: a clone of the Unit receives
+          them, and a merge carries them, and any later change to them, to the Units
+          downstream of it. Guards set through guards stay with the Unit they are
+          on. A key may not be in both. The clearance has to cover these as it covers
+          guards.'
+        in: query
+        name: inherited_guards
+        required: false
+        schema:
+          type: string
       - description: Must match ChangeSetID of affected Units unless in dry run mode;
           not valid when invoked on Revisions
         in: query
@@ -13472,7 +13483,7 @@ paths:
           An example conjunction is:
           `CreatedAt >= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.
 
-          Supported attributes for filtering on Invocation: Annotations, BackingUnitID, ChannelID, CreatedAt, DeleteGates, DisplayName, FunctionInvocations, Hash, HiddenReason, InvocationID, Labels, OrganizationID, Parameters, Permissions, Slug, SpaceID, ToolchainType, UpdatedAt, UpstreamInvocationID.
+          Supported attributes for filtering on Invocation: Annotations, BackingUnitID, ChannelID, Clearance, CreatedAt, DeleteGates, DisplayName, FunctionInvocations, Guards, Hash, HiddenReason, InvocationID, Labels, OrganizationID, Parameters, Permissions, Slug, SpaceID, ToolchainType, UpdatedAt, UpstreamInvocationID.
 
           The functions an Invocation calls are addressed with dot notation into `FunctionInvocations`: `FunctionInvocations.*.FunctionName = 'set-image'` matches an Invocation that calls set-image anywhere in its list, and `FunctionInvocations.0.FunctionName` addresses the first function it calls.
 
@@ -13695,7 +13706,7 @@ paths:
           An example conjunction is:
           `CreatedAt >= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.
 
-          Supported attributes for filtering on Invocation: Annotations, BackingUnitID, ChannelID, CreatedAt, DeleteGates, DisplayName, FunctionInvocations, Hash, HiddenReason, InvocationID, Labels, OrganizationID, Parameters, Permissions, Slug, SpaceID, ToolchainType, UpdatedAt, UpstreamInvocationID.
+          Supported attributes for filtering on Invocation: Annotations, BackingUnitID, ChannelID, Clearance, CreatedAt, DeleteGates, DisplayName, FunctionInvocations, Guards, Hash, HiddenReason, InvocationID, Labels, OrganizationID, Parameters, Permissions, Slug, SpaceID, ToolchainType, UpdatedAt, UpstreamInvocationID.
 
           The functions an Invocation calls are addressed with dot notation into `FunctionInvocations`: `FunctionInvocations.*.FunctionName = 'set-image'` matches an Invocation that calls set-image anywhere in its list, and `FunctionInvocations.0.FunctionName` addresses the first function it calls.
 
@@ -13950,7 +13961,7 @@ paths:
           An example conjunction is:
           `CreatedAt >= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.
 
-          Supported attributes for filtering on Invocation: Annotations, BackingUnitID, ChannelID, CreatedAt, DeleteGates, DisplayName, FunctionInvocations, Hash, HiddenReason, InvocationID, Labels, OrganizationID, Parameters, Permissions, Slug, SpaceID, ToolchainType, UpdatedAt, UpstreamInvocationID.
+          Supported attributes for filtering on Invocation: Annotations, BackingUnitID, ChannelID, Clearance, CreatedAt, DeleteGates, DisplayName, FunctionInvocations, Guards, Hash, HiddenReason, InvocationID, Labels, OrganizationID, Parameters, Permissions, Slug, SpaceID, ToolchainType, UpdatedAt, UpstreamInvocationID.
 
           The functions an Invocation calls are addressed with dot notation into `FunctionInvocations`: `FunctionInvocations.*.FunctionName = 'set-image'` matches an Invocation that calls set-image anywhere in its list, and `FunctionInvocations.0.FunctionName` addresses the first function it calls.
 
@@ -14093,6 +14104,15 @@ paths:
                   format: uuid
                   nullable: true
                   type: string
+                Clearance:
+                  description: Classes of guarded reason this Invocation's functions
+                    are cleared for; combined by union with the clearance of the Trigger
+                    or API call that runs it
+                  items:
+                    nullable: true
+                    type: object
+                  nullable: true
+                  type: array
                 DeleteGates:
                   additionalProperties:
                     nullable: true
@@ -14112,6 +14132,18 @@ paths:
                     type: object
                   nullable: true
                   type: array
+                Guards:
+                  additionalProperties:
+                    nullable: true
+                    type: string
+                  description: Guards to record on the paths this Invocation's functions
+                    write, so a later operation must be cleared for them; combined
+                    with the guards of a Trigger running it, the Trigger's winning
+                    per key. Add and overwrite only -- retiring a guard is the /guard
+                    API (cub unit set-guard --remove-guard). Clearance must cover
+                    them.
+                  nullable: true
+                  type: object
                 HiddenReason:
                   description: The reason the entity is hidden, if it is. A hidden
                     entity is left out of List and Search results, and of what bulk
@@ -14275,7 +14307,7 @@ paths:
           An example conjunction is:
           `CreatedAt >= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.
 
-          Supported attributes for filtering on Invocation: Annotations, BackingUnitID, ChannelID, CreatedAt, DeleteGates, DisplayName, FunctionInvocations, Hash, HiddenReason, InvocationID, Labels, OrganizationID, Parameters, Permissions, Slug, SpaceID, ToolchainType, UpdatedAt, UpstreamInvocationID.
+          Supported attributes for filtering on Invocation: Annotations, BackingUnitID, ChannelID, Clearance, CreatedAt, DeleteGates, DisplayName, FunctionInvocations, Guards, Hash, HiddenReason, InvocationID, Labels, OrganizationID, Parameters, Permissions, Slug, SpaceID, ToolchainType, UpdatedAt, UpstreamInvocationID.
 
           The functions an Invocation calls are addressed with dot notation into `FunctionInvocations`: `FunctionInvocations.*.FunctionName = 'set-image'` matches an Invocation that calls set-image anywhere in its list, and `FunctionInvocations.0.FunctionName` addresses the first function it calls.
 
@@ -14573,6 +14605,15 @@ paths:
                   format: uuid
                   nullable: true
                   type: string
+                Clearance:
+                  description: Classes of guarded reason this Invocation's functions
+                    are cleared for; combined by union with the clearance of the Trigger
+                    or API call that runs it
+                  items:
+                    nullable: true
+                    type: object
+                  nullable: true
+                  type: array
                 DeleteGates:
                   additionalProperties:
                     nullable: true
@@ -14592,6 +14633,18 @@ paths:
                     type: object
                   nullable: true
                   type: array
+                Guards:
+                  additionalProperties:
+                    nullable: true
+                    type: string
+                  description: Guards to record on the paths this Invocation's functions
+                    write, so a later operation must be cleared for them; combined
+                    with the guards of a Trigger running it, the Trigger's winning
+                    per key. Add and overwrite only -- retiring a guard is the /guard
+                    API (cub unit set-guard --remove-guard). Clearance must cover
+                    them.
+                  nullable: true
+                  type: object
                 HiddenReason:
                   description: The reason the entity is hidden, if it is. A hidden
                     entity is left out of List and Search results, and of what bulk
@@ -14760,7 +14813,7 @@ paths:
           An example conjunction is:
           `CreatedAt >= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.
 
-          Supported attributes for filtering on Invocation: Annotations, BackingUnitID, ChannelID, CreatedAt, DeleteGates, DisplayName, FunctionInvocations, Hash, HiddenReason, InvocationID, Labels, OrganizationID, Parameters, Permissions, Slug, SpaceID, ToolchainType, UpdatedAt, UpstreamInvocationID.
+          Supported attributes for filtering on Invocation: Annotations, BackingUnitID, ChannelID, Clearance, CreatedAt, DeleteGates, DisplayName, FunctionInvocations, Guards, Hash, HiddenReason, InvocationID, Labels, OrganizationID, Parameters, Permissions, Slug, SpaceID, ToolchainType, UpdatedAt, UpstreamInvocationID.
 
           The whole string must be query-encoded.
         in: query
@@ -29480,6 +29533,17 @@ paths:
         required: false
         schema:
           type: string
+      - description: 'The guards this operation records on the paths it writes as
+          inherited guards, in the form guards takes: a clone of the Unit receives
+          them, and a merge carries them, and any later change to them, to the Units
+          downstream of it. Guards set through guards stay with the Unit they are
+          on. A key may not be in both. The clearance has to cover these as it covers
+          guards.'
+        in: query
+        name: inherited_guards
+        required: false
+        schema:
+          type: string
       - description: Must match ChangeSetID of affected Units unless in dry run mode;
           not valid when invoked on Revisions
         in: query
@@ -29819,7 +29883,7 @@ paths:
           An example conjunction is:
           `CreatedAt >= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.
 
-          Supported attributes for filtering on Invocation: Annotations, BackingUnitID, ChannelID, CreatedAt, DeleteGates, DisplayName, FunctionInvocations, Hash, HiddenReason, InvocationID, Labels, OrganizationID, Parameters, Permissions, Slug, SpaceID, ToolchainType, UpdatedAt, UpstreamInvocationID.
+          Supported attributes for filtering on Invocation: Annotations, BackingUnitID, ChannelID, Clearance, CreatedAt, DeleteGates, DisplayName, FunctionInvocations, Guards, Hash, HiddenReason, InvocationID, Labels, OrganizationID, Parameters, Permissions, Slug, SpaceID, ToolchainType, UpdatedAt, UpstreamInvocationID.
 
           The functions an Invocation calls are addressed with dot notation into `FunctionInvocations`: `FunctionInvocations.*.FunctionName = 'set-image'` matches an Invocation that calls set-image anywhere in its list, and `FunctionInvocations.0.FunctionName` addresses the first function it calls.
 
@@ -30346,6 +30410,15 @@ paths:
                   format: uuid
                   nullable: true
                   type: string
+                Clearance:
+                  description: Classes of guarded reason this Invocation's functions
+                    are cleared for; combined by union with the clearance of the Trigger
+                    or API call that runs it
+                  items:
+                    nullable: true
+                    type: object
+                  nullable: true
+                  type: array
                 DeleteGates:
                   additionalProperties:
                     nullable: true
@@ -30365,6 +30438,18 @@ paths:
                     type: object
                   nullable: true
                   type: array
+                Guards:
+                  additionalProperties:
+                    nullable: true
+                    type: string
+                  description: Guards to record on the paths this Invocation's functions
+                    write, so a later operation must be cleared for them; combined
+                    with the guards of a Trigger running it, the Trigger's winning
+                    per key. Add and overwrite only -- retiring a guard is the /guard
+                    API (cub unit set-guard --remove-guard). Clearance must cover
+                    them.
+                  nullable: true
+                  type: object
                 HiddenReason:
                   description: The reason the entity is hidden, if it is. A hidden
                     entity is left out of List and Search results, and of what bulk
@@ -36154,6 +36239,17 @@ paths:
         required: false
         schema:
           type: string
+      - description: 'The guards this operation records on the paths it writes as
+          inherited guards, in the form guards takes: a clone of the Unit receives
+          them, and a merge carries them, and any later change to them, to the Units
+          downstream of it. Guards set through guards stay with the Unit they are
+          on. A key may not be in both. The clearance has to cover these as it covers
+          guards.'
+        in: query
+        name: inherited_guards
+        required: false
+        schema:
+          type: string
       - description: 'Merge the range as one rebased diff and record it as one Revision,
           instead of walking it. By default a merge replays: it takes the source''s
           Revisions in order and, where a Revision records function invocations that
@@ -36304,7 +36400,7 @@ paths:
           An example conjunction is:
           `CreatedAt >= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.
 
-          Supported attributes for filtering on Mutation: ChannelID, CreatedAt, FunctionInvocation.Arguments, FunctionInvocation.Clearance, FunctionInvocation.FunctionName, FunctionInvocation.Guards, FunctionInvocation.WhereResource, FunctionName, HiddenReason, InvocationID, InvocationParams, LinkID, MergeBaseRevisionNum, MergeEndRevisionNum, MergeSourceID, MutationID, MutationNum, OrganizationID, ReplayOutcome, ReplayReason, RestoredRevisionNum, RevisionID, RevisionNum, SpaceID, Subgroup, TriggerID, UnitID, UpdatedAt.
+          Supported attributes for filtering on Mutation: ChannelID, Clearance, CreatedAt, FunctionInvocation.Arguments, FunctionInvocation.FunctionName, FunctionInvocation.WhereResource, FunctionName, Guards, HiddenReason, InheritedGuards, InvocationID, InvocationParams, LinkID, MergeBaseRevisionNum, MergeEndRevisionNum, MergeSourceID, MutationID, MutationNum, OrganizationID, ReplayOutcome, ReplayReason, RestoredRevisionNum, RevisionID, RevisionNum, SpaceID, Subgroup, TriggerID, UnitID, UpdatedAt.
 
           Selects Mutations of this Unit whose paths the merge must not overwrite, unioned with the Protected values stored on the Unit's MutationSources.
 
@@ -36655,6 +36751,17 @@ paths:
         required: false
         schema:
           type: string
+      - description: 'The guards this operation records on the paths it writes as
+          inherited guards, in the form guards takes: a clone of the Unit receives
+          them, and a merge carries them, and any later change to them, to the Units
+          downstream of it. Guards set through guards stay with the Unit they are
+          on. A key may not be in both. The clearance has to cover these as it covers
+          guards.'
+        in: query
+        name: inherited_guards
+        required: false
+        schema:
+          type: string
       - description: 'Merge the range as one rebased diff and record it as one Revision,
           instead of walking it. By default a merge replays: it takes the source''s
           Revisions in order and, where a Revision records function invocations that
@@ -36805,7 +36912,7 @@ paths:
           An example conjunction is:
           `CreatedAt >= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.
 
-          Supported attributes for filtering on Mutation: ChannelID, CreatedAt, FunctionInvocation.Arguments, FunctionInvocation.Clearance, FunctionInvocation.FunctionName, FunctionInvocation.Guards, FunctionInvocation.WhereResource, FunctionName, HiddenReason, InvocationID, InvocationParams, LinkID, MergeBaseRevisionNum, MergeEndRevisionNum, MergeSourceID, MutationID, MutationNum, OrganizationID, ReplayOutcome, ReplayReason, RestoredRevisionNum, RevisionID, RevisionNum, SpaceID, Subgroup, TriggerID, UnitID, UpdatedAt.
+          Supported attributes for filtering on Mutation: ChannelID, Clearance, CreatedAt, FunctionInvocation.Arguments, FunctionInvocation.FunctionName, FunctionInvocation.WhereResource, FunctionName, Guards, HiddenReason, InheritedGuards, InvocationID, InvocationParams, LinkID, MergeBaseRevisionNum, MergeEndRevisionNum, MergeSourceID, MutationID, MutationNum, OrganizationID, ReplayOutcome, ReplayReason, RestoredRevisionNum, RevisionID, RevisionNum, SpaceID, Subgroup, TriggerID, UnitID, UpdatedAt.
 
           Selects Mutations of this Unit whose paths the merge must not overwrite, unioned with the Protected values stored on the Unit's MutationSources.
 
@@ -37353,6 +37460,17 @@ paths:
         required: false
         schema:
           type: string
+      - description: 'The guards this operation records on the paths it writes as
+          inherited guards, in the form guards takes: a clone of the Unit receives
+          them, and a merge carries them, and any later change to them, to the Units
+          downstream of it. Guards set through guards stay with the Unit they are
+          on. A key may not be in both. The clearance has to cover these as it covers
+          guards.'
+        in: query
+        name: inherited_guards
+        required: false
+        schema:
+          type: string
       - description: 'Merge base revision, which provides the base configuration data
           of the changes to merge. With merge_source, this is a revision of the merge
           source unit. With merge_external_source, this is a revision of the unit
@@ -37573,13 +37691,17 @@ paths:
       - Unit
   /space/{space_id}/unit/{unit_id}/guard:
     post:
-      description: 'Set or remove guards on the unit''s PathAnnotations. A guard names
-        a reason a path''s value is what it is, so a later operation can be required
-        to know about that reason before overwriting it. Nothing enforces guards yet:
-        setting one records the reason and changes no behavior. A guard may name a
-        path or resource the unit does not have, since it is policy about the configuration
+      description: Set or remove guards on the unit's PathAnnotations. A guard names
+        a reason a path's value is what it is, so a later operation can be required
+        to know about that reason before overwriting it. An operation that is not
+        cleared for the guards at a path does not write it, and reports what it withheld
+        as a conflict; editing the guards at a path that already has some needs a
+        clearance for them, and so does changing whether one is inherited. A guard
+        set through Set stays with this unit; one set through SetInherited is copied
+        to its clones and carried by merges to the units downstream. A guard may name
+        a path or resource the unit does not have, since it is policy about the configuration
         rather than a statement about its current contents. Creates a new revision
-        only if the guards actually change. Requires Edit permission.'
+        only if the guards actually change. Requires Edit permission.
       operationId: SetUnitGuard
       parameters:
       - description: Unique identifier for a space_id
@@ -37707,9 +37829,9 @@ paths:
           An example conjunction is:
           `CreatedAt >= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.
 
-          Supported attributes for filtering on Mutation: ChannelID, CreatedAt, FunctionInvocation.Arguments, FunctionInvocation.Clearance, FunctionInvocation.FunctionName, FunctionInvocation.Guards, FunctionInvocation.WhereResource, FunctionName, HiddenReason, InvocationID, InvocationParams, LinkID, MergeBaseRevisionNum, MergeEndRevisionNum, MergeSourceID, MutationID, MutationNum, OrganizationID, ReplayOutcome, ReplayReason, RestoredRevisionNum, RevisionID, RevisionNum, SpaceID, Subgroup, TriggerID, UnitID, UpdatedAt.
+          Supported attributes for filtering on Mutation: ChannelID, Clearance, CreatedAt, FunctionInvocation.Arguments, FunctionInvocation.FunctionName, FunctionInvocation.WhereResource, FunctionName, Guards, HiddenReason, InheritedGuards, InvocationID, InvocationParams, LinkID, MergeBaseRevisionNum, MergeEndRevisionNum, MergeSourceID, MutationID, MutationNum, OrganizationID, ReplayOutcome, ReplayReason, RestoredRevisionNum, RevisionID, RevisionNum, SpaceID, Subgroup, TriggerID, UnitID, UpdatedAt.
 
-          The function invoked is returned as a FunctionInvocation object, and `where` names its fields the same way: `FunctionInvocation.FunctionName`, `FunctionInvocation.Guards.<reason>`, and `FunctionInvocation.Arguments`, which is a list addressed with dot notation. `FunctionInvocation.Arguments.?ParameterName=container-image.Value LIKE 'nginx%'` reads the argument bound to a named parameter, `FunctionInvocation.Arguments.*.Value` matches any argument's value, and `FunctionInvocation.Arguments.0.Value` addresses the first argument. Arguments passed positionally have no ParameterName.
+          The function invoked is returned as a FunctionInvocation object, and `where` names its fields the same way: `FunctionInvocation.FunctionName` and `FunctionInvocation.Arguments`, which is a list addressed with dot notation. `FunctionInvocation.Arguments.?ParameterName=container-image.Value LIKE 'nginx%'` reads the argument bound to a named parameter, `FunctionInvocation.Arguments.*.Value` matches any argument's value, and `FunctionInvocation.Arguments.0.Value` addresses the first argument. Arguments passed positionally have no ParameterName. `Guards.<reason>` reads the guards the change recorded on the paths it wrote, as in `Guards.Link = 'TransformPaths'`, and `Clearance.*.Key = 'RunAsRoot'` finds the changes written under a clearance for that reason.
 
           The whole string must be query-encoded.
         in: query
@@ -46339,6 +46461,17 @@ paths:
         required: false
         schema:
           type: string
+      - description: 'The guards this operation records on the paths it writes as
+          inherited guards, in the form guards takes: a clone of the Unit receives
+          them, and a merge carries them, and any later change to them, to the Units
+          downstream of it. Guards set through guards stay with the Unit they are
+          on. A key may not be in both. The clearance has to cover these as it covers
+          guards.'
+        in: query
+        name: inherited_guards
+        required: false
+        schema:
+          type: string
       - description: 'Merge the range as one rebased diff and record it as one Revision,
           instead of walking it. By default a merge replays: it takes the source''s
           Revisions in order and, where a Revision records function invocations that
@@ -46489,7 +46622,7 @@ paths:
           An example conjunction is:
           `CreatedAt >= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.
 
-          Supported attributes for filtering on Mutation: ChannelID, CreatedAt, FunctionInvocation.Arguments, FunctionInvocation.Clearance, FunctionInvocation.FunctionName, FunctionInvocation.Guards, FunctionInvocation.WhereResource, FunctionName, HiddenReason, InvocationID, InvocationParams, LinkID, MergeBaseRevisionNum, MergeEndRevisionNum, MergeSourceID, MutationID, MutationNum, OrganizationID, ReplayOutcome, ReplayReason, RestoredRevisionNum, RevisionID, RevisionNum, SpaceID, Subgroup, TriggerID, UnitID, UpdatedAt.
+          Supported attributes for filtering on Mutation: ChannelID, Clearance, CreatedAt, FunctionInvocation.Arguments, FunctionInvocation.FunctionName, FunctionInvocation.WhereResource, FunctionName, Guards, HiddenReason, InheritedGuards, InvocationID, InvocationParams, LinkID, MergeBaseRevisionNum, MergeEndRevisionNum, MergeSourceID, MutationID, MutationNum, OrganizationID, ReplayOutcome, ReplayReason, RestoredRevisionNum, RevisionID, RevisionNum, SpaceID, Subgroup, TriggerID, UnitID, UpdatedAt.
 
           Selects Mutations of this Unit whose paths the merge must not overwrite, unioned with the Protected values stored on the Unit's MutationSources.
 
@@ -52314,6 +52447,14 @@ components:
             resource''s, which an operation writing here has to be cleared for.'
           type: object
           x-go-type-skip-optional-pointer: true
+        InheritedGuards:
+          description: 'The keys of Guards that are inherited: copied to the unit''s
+            clones and carried by merges to the units downstream of it. The others
+            stay with this unit.'
+          items:
+            type: string
+          type: array
+          x-go-type-skip-optional-pointer: true
         Needed:
           description: 'The unit''s needed paths that are the field: a value it is
             to take from an upstream unit through a NeedsProvides Link.'
@@ -56627,21 +56768,10 @@ components:
           nullable: true
           type: array
           x-go-type-skip-optional-pointer: true
-        Clearance:
-          allOf:
-          - $ref: '#/components/schemas/Clearance'
-          description: Classes of guarded reason this invocation is cleared for; combined
-            by union with the clearance of whatever drove the execution
         FunctionName:
           description: Function name
           type: string
           x-go-type-skip-optional-pointer: true
-        Guards:
-          allOf:
-          - $ref: '#/components/schemas/GuardStamp'
-          description: Guards to record on the paths this invocation writes, so a
-            later operation must be cleared for them; combined with the guards of
-            whatever drove the execution, later winning per key
         Params:
           additionalProperties: {}
           description: Caller-supplied parameter values for expanding templated argument
@@ -57117,12 +57247,12 @@ components:
     GuardDelta:
       properties:
         Path:
-          description: The path whose guards changed; empty for the resource as a
-            whole
+          description: The path whose inherited guards changed; empty for the resource
+            as a whole
           type: string
           x-go-type-skip-optional-pointer: true
         Remove:
-          description: Guard keys removed
+          description: Inherited guard keys removed
           items:
             type: string
           type: array
@@ -57130,7 +57260,7 @@ components:
         Set:
           additionalProperties:
             type: string
-          description: Guard keys added or changed, with their new values
+          description: Inherited guard keys added or changed, with their new values
           type: object
           x-go-type-skip-optional-pointer: true
       type: object
@@ -57172,6 +57302,14 @@ components:
             dataType: uuid
             expandable: true
             references: Channel
+        Clearance:
+          allOf:
+          - $ref: '#/components/schemas/Clearance'
+          description: Classes of guarded reason this Invocation's functions are cleared
+            for; combined by union with the clearance of the Trigger or API call that
+            runs it
+          x-confighub-where:
+            dataType: JSON
         CreatedAt:
           description: The timestamp when the entity was created in "2023-01-01T12:00:00Z"
             format.
@@ -57205,6 +57343,16 @@ components:
           x-go-type-skip-optional-pointer: true
         FunctionInvocations:
           $ref: '#/components/schemas/FunctionInvocationList'
+        Guards:
+          allOf:
+          - $ref: '#/components/schemas/GuardStamp'
+          description: Guards to record on the paths this Invocation's functions write,
+            so a later operation must be cleared for them; combined with the guards
+            of a Trigger running it, the Trigger's winning per key. Add and overwrite
+            only -- retiring a guard is the /guard API (cub unit set-guard --remove-guard).
+            Clearance must cover them.
+          x-confighub-where:
+            dataType: map[string]string
         Hash:
           description: SHA256 hash of the functions and their arguments encoded as
             hexadecimal.
@@ -57891,6 +58039,15 @@ components:
           x-confighub-where:
             dataType: uuid
             references: Channel
+        Clearance:
+          allOf:
+          - $ref: '#/components/schemas/Clearance'
+          description: The classes of guarded reason the change was filtered with.
+            On a function invocation that is the request's clearance together with
+            that of every Trigger and Invocation that wrote in the same execution;
+            on a Link's change, the Link's
+          x-confighub-where:
+            dataType: JSON
         CreatedAt:
           description: The timestamp when the entity was created in "2023-01-01T12:00:00Z"
             format.
@@ -57911,6 +58068,14 @@ components:
           allOf:
           - $ref: '#/components/schemas/FunctionInvocation'
           description: The function invoked if the change was made by a function.
+        Guards:
+          allOf:
+          - $ref: '#/components/schemas/GuardStamp'
+          description: 'The guards the change recorded on the paths it wrote: the
+            operation''s merged with those of the Trigger, Invocation, or Link that
+            produced it'
+          x-confighub-where:
+            dataType: map[string]string
         HiddenReason:
           description: The reason the entity is hidden, if it is. A hidden entity
             is left out of List and Search results, and of what bulk operations act
@@ -57923,6 +58088,13 @@ components:
           x-confighub-where:
             dataType: string
           x-go-type-skip-optional-pointer: true
+        InheritedGuards:
+          allOf:
+          - $ref: '#/components/schemas/GuardStamp'
+          description: The guards the change recorded as inherited on the paths it
+            wrote, which clones receive and merges carry to the units downstream
+          x-confighub-where:
+            dataType: map[string]string
         InvocationID:
           description: InvocationID is the identifier of the function invoked, if
             there is a corresponding Invocation.
@@ -58129,12 +58301,8 @@ components:
       x-confighub-where:
         FunctionInvocation.Arguments:
           dataType: JSON
-        FunctionInvocation.Clearance:
-          dataType: JSON
         FunctionInvocation.FunctionName:
           dataType: string
-        FunctionInvocation.Guards:
-          dataType: map[string]string
         FunctionInvocation.WhereResource:
           dataType: string
         FunctionName:
@@ -59755,10 +59923,23 @@ components:
             additionalProperties:
               type: string
             type: object
-          description: Guard key/value pairs to add or overwrite, by path. The empty
-            path addresses the resource as a whole. A list element is named by merge
-            key or by position, and * stands for every element or key there is; a
-            path that does not exist yet is kept as written
+          description: 'Guard key/value pairs to add or overwrite, by path, as guards
+            of this unit alone: clones and downstream units do not receive them, and
+            one that was inherited stops being. The empty path addresses the resource
+            as a whole. A list element is named by merge key or by position, and *
+            stands for every element or key there is; a path that does not exist yet
+            is kept as written'
+          type: object
+          x-go-type-skip-optional-pointer: true
+        SetInherited:
+          additionalProperties:
+            additionalProperties:
+              type: string
+            type: object
+          description: 'Guard key/value pairs to add or overwrite, by path, as inherited
+            guards: a clone of the unit receives them, and a merge carries them, and
+            any later change to them, to the units downstream of it. Named as in Set;
+            a key may not be in both at the same path'
           type: object
           x-go-type-skip-optional-pointer: true
       type: object
@@ -62912,9 +63093,9 @@ components:
             additionalProperties:
               type: string
             type: object
-          description: The path's own annotations other than guards and conflict dismissals,
-            by kind. The field's Guards are those that apply to it, its ancestors'
-            and its resource's included.
+          description: The path's own annotations other than guards, their inheritance
+            and conflict dismissals, by kind. The field's Guards are those that apply
+            to it, its ancestors' and its resource's included.
           type: object
           x-go-type-skip-optional-pointer: true
         Changes:

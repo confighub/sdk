@@ -52,7 +52,7 @@ func displayUnitPath(report *blame.PathReport) {
 		unitPathLine(0, "Protected", "yes: a local override, which a merge from upstream leaves alone")
 	}
 	if len(f.Guards) > 0 {
-		unitPathLine(0, "Guards", blame.FormatGuards(f.Guards))
+		unitPathLine(0, "Guards", blame.FormatFieldGuards(f.Guards, f.InheritedGuards))
 	}
 	kinds := make([]string, 0, len(report.Annotations))
 	for kind := range report.Annotations {

@@ -216,6 +216,7 @@ func init() {
 	functionDoCmd.Flags().BoolVar(&dryRun, "dry-run", false, "dry run mode: execute functions but skip updating configuration data")
 	addClearanceFlag(functionDoCmd)
 	addGuardFlag(functionDoCmd)
+	addInheritedGuardFlag(functionDoCmd)
 	functionDoCmd.Flags().BoolVar(&protectChange, "protect", false, "record the paths this change writes as protected local overrides, so a later merge from upstream does not overwrite them; by default a change claims nothing and each path keeps the protection it already has")
 	functionDoCmd.Flags().StringSliceVar(&functionTriggerIdentifiers, "trigger", []string{}, "execute triggers by UUID, slug, or space/slug (can be repeated or comma-separated)")
 	functionDoCmd.Flags().StringSliceVar(&functionInvocationIdentifiers, "invocation", []string{}, "execute invocations by UUID, slug, or space/slug (can be repeated or comma-separated)")
@@ -554,6 +555,8 @@ type invokeArgs struct {
 	// Guards names the reasons this invocation states about the paths it writes, so a later
 	// operation must be cleared for them.
 	Guards string
+	// InheritedGuards is --inherited-guard: guards recorded as inherited, so they travel downstream.
+	InheritedGuards string
 	// IncludeDiff asks for the Diff of what the invocation changes even when -o mutations was
 	// not given, for a command that shows it by default.
 	IncludeDiff bool
@@ -599,6 +602,9 @@ func invokeFunctionsOnUnits(invokeArgs *invokeArgs) (*[]goclientnew.FunctionInvo
 		}
 		if invokeArgs.Guards != "" {
 			newParams.Guards = &invokeArgs.Guards
+		}
+		if invokeArgs.InheritedGuards != "" {
+			newParams.InheritedGuards = &invokeArgs.InheritedGuards
 		}
 		if invokeArgs.ChangeSetID != uuid.Nil {
 			newParams.ChangeSetId = &invokeArgs.ChangeSetID
@@ -646,6 +652,9 @@ func invokeFunctionsOnUnits(invokeArgs *invokeArgs) (*[]goclientnew.FunctionInvo
 		}
 		if invokeArgs.Guards != "" {
 			newParams.Guards = &invokeArgs.Guards
+		}
+		if invokeArgs.InheritedGuards != "" {
+			newParams.InheritedGuards = &invokeArgs.InheritedGuards
 		}
 		if invokeArgs.ChangeSetID != uuid.Nil {
 			newParams.ChangeSetId = &invokeArgs.ChangeSetID
@@ -775,17 +784,22 @@ func runFunctionInvocations(cmd *cobra.Command, args []string, mode FunctionKind
 		if gerr != nil {
 			return gerr
 		}
+		inheritedGuards, ierr := inheritedGuardsJSON()
+		if ierr != nil {
+			return ierr
+		}
 		invokeArgs := &invokeArgs{
-			Where:        effectiveWhere,
-			FilterID:     filterID,
-			ResourceType: resourceType,
-			WhereData:    whereData,
-			DryRun:       dryRun,
-			Protect:      protectChange,
-			Clearance:    clearance,
-			Guards:       guards,
-			ChangeSetID:  changesetUUID,
-			Body:         newBody,
+			Where:           effectiveWhere,
+			FilterID:        filterID,
+			ResourceType:    resourceType,
+			WhereData:       whereData,
+			DryRun:          dryRun,
+			Protect:         protectChange,
+			Clearance:       clearance,
+			Guards:          guards,
+			InheritedGuards: inheritedGuards,
+			ChangeSetID:     changesetUUID,
+			Body:            newBody,
 		}
 		resp, err = invokeFunctionsOnUnits(invokeArgs)
 		if err != nil {

@@ -101,8 +101,8 @@ func unsupportedJSONPathSyntax(remaining string, attributeName string) error {
 // singleKeyForms gives the key form of each map keyed by one token. Labels, Annotations, Facts,
 // DeleteGates and DestroyGates take label keys, which permit dots and slashes, so a namespaced Fact
 // such as Cluster.KubernetesVersion is matched greedily up to the operator and needs no quoting.
-// Guards take the AttributeName character class, which is what api.ValidateAnnotationKey enforces
-// on the way in, so a dot ends a guard key.
+// Guards and InheritedGuards take the AttributeName character class, which is what
+// api.ValidateAnnotationKey enforces on the way in, so a dot ends a guard key.
 var singleKeyForms = map[string]*regexp.Regexp{
 	"Labels":              labelKeyPrefixRegexp,
 	"Annotations":         labelKeyPrefixRegexp,
@@ -110,6 +110,7 @@ var singleKeyForms = map[string]*regexp.Regexp{
 	deleteGatesAttribute:  labelKeyPrefixRegexp,
 	destroyGatesAttribute: labelKeyPrefixRegexp,
 	"Guards":              functionAttributeNameRegexp,
+	"InheritedGuards":     functionAttributeNameRegexp,
 }
 
 // parseSingleKeyMapKey parses <map>.<key> for a map keyed by one token, in the form

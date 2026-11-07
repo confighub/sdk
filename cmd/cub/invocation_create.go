@@ -120,6 +120,8 @@ func init() {
 	addStandardCreateFlags(invocationCreateCmd)
 	addFieldEditFlags(invocationCreateCmd, "Invocation")
 	addInvocationFunctionFlag(invocationCreateCmd)
+	addInvocationClearanceFlag(invocationCreateCmd)
+	addInvocationGuardFlag(invocationCreateCmd)
 	enableCreatePermissionFlag(invocationCreateCmd)
 	invocationCreateCmd.Flags().StringVar(&functionChannel, "channel", "", "channel whose client executes the invocation's functions")
 	invocationCreateCmd.Flags().StringArrayVar(&invocationDeclaredParameterFlags, "parameter", nil, "declare a parameter as name[:datatype[:required]] (datatype defaults to string, required defaults to true; can be repeated). Reference declared parameters from templated argument values via {{ .Params.<name> }}.")
@@ -282,6 +284,16 @@ func runSingleInvocationCreate(args []string) error {
 		// --parameter declares the whole parameter namespace. Without it, keep whatever the
 		// body supplied, so a Parameters list read from stdin or a file survives.
 		newBody.Parameters = declaredParams
+	}
+	clearance, guards, err := parseStandingPolicyFlags(invocationClearance, invocationGuards)
+	if err != nil {
+		return err
+	}
+	if clearance != nil {
+		newBody.Clearance = &clearance
+	}
+	if guards != nil {
+		newBody.Guards = &guards
 	}
 	// Create params with AllowExists if needed
 	params := &goclientnew.CreateInvocationParams{}

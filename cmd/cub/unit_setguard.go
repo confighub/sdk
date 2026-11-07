@@ -13,17 +13,17 @@ import (
 )
 
 var unitSetGuardCmd = &cobra.Command{
-	Use:   "set-guard <unit-slug> --guard <spec> [--remove-guard <spec> ...]",
+	Use:   "set-guard <unit-slug> --guard <spec> [--inherited-guard <spec> ...] [--remove-guard <spec> ...]",
 	Short: "Record the reasons a path's value is what it is",
 	Long: getCommandHelp(`Set or remove guards on a unit's path annotations.
 
 A guard names a class of reason a path holds the value it does, so that a later
 operation can be asked to know about that reason before overwriting it. The key
-names the class and is the matchable part; the value distinguishes cases within
-it. Two examples of the shape:
+names the class and is the matchable part; the value gives the specific reason.
+Two examples of the shape:
 
-  owner=transform-link          this field is maintained by a link
-  policy-exception=host-network this value breaks a default policy on purpose
+  Link=TransformPaths     this field is maintained by a link
+  RunAsRoot=LegacyImage   this value breaks a default policy because the image needs it
 
 A guard is enforced on every change to the unit's configuration data -- an
 edit, a function invocation, a trigger, a link, a merge: a change that is not
@@ -33,12 +33,21 @@ needs --clearance for those, on the same rule -- a clearance is the statement
 that the reasons are understood. Setting the first guard on a path needs none,
 since there is nothing yet to understand.
 
+A guard set with --guard stays with this unit. One set with --inherited-guard
+travels: a clone of the unit receives it, including a variant created with cub
+variant create, and a merge carries it, and any later change to it, to the units
+downstream. Use it for policy about the configuration that every variant has to
+honor, such as a value a mass change must not normalize away. Setting a guard
+again with the other flag changes whether it is inherited, which needs
+--clearance for it as changing its value does: it decides whether the units
+downstream have it.
+
 A guard may name a path -- or a resource -- the unit does not have. A guard is
 policy about the configuration rather than a statement about its current
 contents: guarding spec.template.spec.containers is as much about containers
 added next year as about the ones there now, and each of those inherits it.
 
-Each --guard takes RESOURCE_TYPE:RESOURCE_NAME:PATH=KEY=VALUE and each
+Each --guard and --inherited-guard takes RESOURCE_TYPE:RESOURCE_NAME:PATH=KEY=VALUE and each
 --remove-guard takes RESOURCE_TYPE:RESOURCE_NAME:PATH=KEY. Leave PATH empty to
 guard the resource as a whole. RESOURCE_TYPE may be left empty when the name
 alone picks out one of the unit's resources, and it matches in any API version;
@@ -53,8 +62,9 @@ revision. Setting guards creates a new revision only if they change; pass
 --change-desc to record why on it.
 
 A change can state its own reasons instead, without naming where: cub unit
-update --guard, cub function do --guard, and the Guards field on a link or a
-trigger take a bare KEY=VALUE and record it on the paths that change wrote --
+update --guard and --inherited-guard, cub function do --guard and
+--inherited-guard, and the Guards field on a link or a trigger take a bare
+KEY=VALUE and record it on the paths that change wrote --
 the guard analogue of --protect. Use this command to guard a path no change of
 yours is writing, and to remove a guard, which no change can do.
 
@@ -65,21 +75,26 @@ Examples:
 `+"```"+`
   # Say why this image is what it is: a link maintains it
   cub unit set-guard my-unit \
-    --guard "apps/v1/Deployment:default/myapp:spec.template.spec.containers.?name=app.image=owner=transform-link"
+    --guard "apps/v1/Deployment:default/myapp:spec.template.spec.containers.?name=app.image=Link=TransformPaths"
 
-  # Record a deliberate policy exception on the pod spec, and why
+  # Record on a base that its pod spec needs the host network, for every variant of it
   cub unit set-guard my-unit \
-    --guard "apps/v1/Deployment:default/myapp:spec.template.spec=policy-exception=host-network" \
-    --change-desc "The CNI agent needs the host network"
+    --inherited-guard "apps/v1/Deployment:default/myapp:spec.template.spec.hostNetwork=HostNetwork=PacketMonitor" \
+    --change-desc "The packet monitor needs the host network"
 
   # Say every container's image is maintained by a link, naming the resource by name alone
   cub unit set-guard my-unit \
-    --guard ":myapp:spec.template.spec.containers.*.image=owner=transform-link"
+    --guard ":myapp:spec.template.spec.containers.*.image=Link=TransformPaths"
+
+  # Stop an inherited guard reaching the units downstream, keeping it on this one
+  cub unit set-guard my-unit \
+    --guard "apps/v1/Deployment:default/myapp:spec.template.spec.hostNetwork=HostNetwork=PacketMonitor" \
+    --clearance "HostNetwork=PacketMonitor"
 
   # Retire a guard whose reason no longer applies, saying the reason is understood
   cub unit set-guard my-unit \
-    --remove-guard "apps/v1/Deployment:default/myapp:spec.template.spec=policy-exception" \
-    --clearance "policy-exception=host-network"
+    --remove-guard "apps/v1/Deployment:default/myapp:spec.template.spec.hostNetwork=HostNetwork" \
+    --clearance "HostNetwork=PacketMonitor"
 `+"```"+`
 `, ""),
 	Args: cobra.ExactArgs(1),
@@ -87,15 +102,18 @@ Examples:
 }
 
 var (
-	guardSpecs         []string
-	removeGuardSpecs   []string
-	setGuardClearance  []string
-	setGuardChangeDesc string
+	guardSpecs          []string
+	inheritedGuardSpecs []string
+	removeGuardSpecs    []string
+	setGuardClearance   []string
+	setGuardChangeDesc  string
 )
 
 func init() {
 	unitSetGuardCmd.Flags().StringArrayVar(&guardSpecs, "guard", nil,
-		"guard to set, as RESOURCE_TYPE:RESOURCE_NAME:PATH=KEY=VALUE (repeatable)")
+		"guard to set on this unit alone, as RESOURCE_TYPE:RESOURCE_NAME:PATH=KEY=VALUE (repeatable)")
+	unitSetGuardCmd.Flags().StringArrayVar(&inheritedGuardSpecs, "inherited-guard", nil,
+		"inherited guard to set, which clones receive and merges carry downstream, as RESOURCE_TYPE:RESOURCE_NAME:PATH=KEY=VALUE (repeatable)")
 	unitSetGuardCmd.Flags().StringArrayVar(&removeGuardSpecs, "remove-guard", nil,
 		"guard to remove, as RESOURCE_TYPE:RESOURCE_NAME:PATH=KEY (repeatable)")
 	unitSetGuardCmd.Flags().StringArrayVar(&setGuardClearance, "clearance", nil,
@@ -161,8 +179,8 @@ func cutLast(s, sep string) (before, after string, found bool) {
 }
 
 func unitSetGuardCmdRun(_ *cobra.Command, args []string) error {
-	if len(guardSpecs) == 0 && len(removeGuardSpecs) == 0 {
-		return fmt.Errorf("at least one --guard or --remove-guard is required")
+	if len(guardSpecs) == 0 && len(inheritedGuardSpecs) == 0 && len(removeGuardSpecs) == 0 {
+		return fmt.Errorf("at least one --guard, --inherited-guard or --remove-guard is required")
 	}
 
 	configUnit, err := resolveUnit(args[0], selectedSpaceID, "UnitID,SpaceID")
@@ -175,27 +193,35 @@ func unitSetGuardCmdRun(_ *cobra.Command, args []string) error {
 	type resourceKey struct{ resourceType, resourceName string }
 	order := []resourceKey{}
 	set := map[resourceKey]map[string]map[string]string{}
+	setInherited := map[resourceKey]map[string]map[string]string{}
 	remove := map[resourceKey]map[string][]string{}
 	keyFor := func(rt, rn string) resourceKey {
 		key := resourceKey{rt, rn}
 		if _, seen := set[key]; !seen {
 			set[key] = map[string]map[string]string{}
+			setInherited[key] = map[string]map[string]string{}
 			remove[key] = map[string][]string{}
 			order = append(order, key)
 		}
 		return key
 	}
 
-	for _, spec := range guardSpecs {
-		rt, rn, path, k, v, perr := parseGuardSpec("guard", spec, true)
-		if perr != nil {
-			return perr
+	for _, flagSpecs := range []struct {
+		flag  string
+		specs []string
+		into  map[resourceKey]map[string]map[string]string
+	}{{"guard", guardSpecs, set}, {"inherited-guard", inheritedGuardSpecs, setInherited}} {
+		for _, spec := range flagSpecs.specs {
+			rt, rn, path, k, v, perr := parseGuardSpec(flagSpecs.flag, spec, true)
+			if perr != nil {
+				return perr
+			}
+			key := keyFor(rt, rn)
+			if flagSpecs.into[key][path] == nil {
+				flagSpecs.into[key][path] = map[string]string{}
+			}
+			flagSpecs.into[key][path][k] = v
 		}
-		key := keyFor(rt, rn)
-		if set[key][path] == nil {
-			set[key][path] = map[string]string{}
-		}
-		set[key][path][k] = v
 	}
 	for _, spec := range removeGuardSpecs {
 		rt, rn, path, k, _, perr := parseGuardSpec("remove-guard", spec, false)
@@ -220,6 +246,9 @@ func unitSetGuardCmdRun(_ *cobra.Command, args []string) error {
 		}
 		if len(set[key]) > 0 {
 			guards.Set = set[key]
+		}
+		if len(setInherited[key]) > 0 {
+			guards.SetInherited = setInherited[key]
 		}
 		if len(remove[key]) > 0 {
 			guards.Remove = remove[key]

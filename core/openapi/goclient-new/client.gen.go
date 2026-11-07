@@ -2501,7 +2501,7 @@ type ClientInterface interface {
 
 	// SetUnitGuardWithBody Set path guards on a unit
 	//
-	// Set or remove guards on the unit's PathAnnotations. A guard names a reason a path's value is what it is, so a later operation can be required to know about that reason before overwriting it. Nothing enforces guards yet: setting one records the reason and changes no behavior. A guard may name a path or resource the unit does not have, since it is policy about the configuration rather than a statement about its current contents. Creates a new revision only if the guards actually change. Requires Edit permission.
+	// Set or remove guards on the unit's PathAnnotations. A guard names a reason a path's value is what it is, so a later operation can be required to know about that reason before overwriting it. An operation that is not cleared for the guards at a path does not write it, and reports what it withheld as a conflict; editing the guards at a path that already has some needs a clearance for them, and so does changing whether one is inherited. A guard set through Set stays with this unit; one set through SetInherited is copied to its clones and carried by merges to the units downstream. A guard may name a path or resource the unit does not have, since it is policy about the configuration rather than a statement about its current contents. Creates a new revision only if the guards actually change. Requires Edit permission.
 	//
 	// Takes any type of body and a specified content type.
 	//
@@ -2510,7 +2510,7 @@ type ClientInterface interface {
 
 	// SetUnitGuard Set path guards on a unit
 	//
-	// Set or remove guards on the unit's PathAnnotations. A guard names a reason a path's value is what it is, so a later operation can be required to know about that reason before overwriting it. Nothing enforces guards yet: setting one records the reason and changes no behavior. A guard may name a path or resource the unit does not have, since it is policy about the configuration rather than a statement about its current contents. Creates a new revision only if the guards actually change. Requires Edit permission.
+	// Set or remove guards on the unit's PathAnnotations. A guard names a reason a path's value is what it is, so a later operation can be required to know about that reason before overwriting it. An operation that is not cleared for the guards at a path does not write it, and reports what it withheld as a conflict; editing the guards at a path that already has some needs a clearance for them, and so does changing whether one is inherited. A guard set through Set stays with this unit; one set through SetInherited is copied to its clones and carried by merges to the units downstream. A guard may name a path or resource the unit does not have, since it is policy about the configuration rather than a statement about its current contents. Creates a new revision only if the guards actually change. Requires Edit permission.
 	//
 	// Takes a body of the `application/json` content type.
 	//
@@ -8879,7 +8879,7 @@ func (c *Client) GetUnitDiff(ctx context.Context, spaceId openapi_types.UUID, un
 
 // SetUnitGuardWithBody Set path guards on a unit
 //
-// Set or remove guards on the unit's PathAnnotations. A guard names a reason a path's value is what it is, so a later operation can be required to know about that reason before overwriting it. Nothing enforces guards yet: setting one records the reason and changes no behavior. A guard may name a path or resource the unit does not have, since it is policy about the configuration rather than a statement about its current contents. Creates a new revision only if the guards actually change. Requires Edit permission.
+// Set or remove guards on the unit's PathAnnotations. A guard names a reason a path's value is what it is, so a later operation can be required to know about that reason before overwriting it. An operation that is not cleared for the guards at a path does not write it, and reports what it withheld as a conflict; editing the guards at a path that already has some needs a clearance for them, and so does changing whether one is inherited. A guard set through Set stays with this unit; one set through SetInherited is copied to its clones and carried by merges to the units downstream. A guard may name a path or resource the unit does not have, since it is policy about the configuration rather than a statement about its current contents. Creates a new revision only if the guards actually change. Requires Edit permission.
 //
 // Takes any type of body and a specified content type.
 //
@@ -8898,7 +8898,7 @@ func (c *Client) SetUnitGuardWithBody(ctx context.Context, spaceId openapi_types
 
 // SetUnitGuard Set path guards on a unit
 //
-// Set or remove guards on the unit's PathAnnotations. A guard names a reason a path's value is what it is, so a later operation can be required to know about that reason before overwriting it. Nothing enforces guards yet: setting one records the reason and changes no behavior. A guard may name a path or resource the unit does not have, since it is policy about the configuration rather than a statement about its current contents. Creates a new revision only if the guards actually change. Requires Edit permission.
+// Set or remove guards on the unit's PathAnnotations. A guard names a reason a path's value is what it is, so a later operation can be required to know about that reason before overwriting it. An operation that is not cleared for the guards at a path does not write it, and reports what it withheld as a conflict; editing the guards at a path that already has some needs a clearance for them, and so does changing whether one is inherited. A guard set through Set stays with this unit; one set through SetInherited is copied to its clones and carried by merges to the units downstream. A guard may name a path or resource the unit does not have, since it is policy about the configuration rather than a statement about its current contents. Creates a new revision only if the guards actually change. Requires Edit permission.
 //
 // Takes a body of the `application/json` content type.
 //
@@ -18313,6 +18313,18 @@ func NewInvokeFunctionsOnOrgRequestWithBody(server string, params *InvokeFunctio
 		if params.Guards != nil {
 
 			if queryFrag, err := runtime.StyleParamWithOptions("form", true, "guards", *params.Guards, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationQuery, Type: "string", Format: ""}); err != nil {
+				return nil, err
+			} else {
+				for _, qp := range strings.Split(queryFrag, "&") {
+					rawQueryFragments = append(rawQueryFragments, qp)
+				}
+			}
+
+		}
+
+		if params.InheritedGuards != nil {
+
+			if queryFrag, err := runtime.StyleParamWithOptions("form", true, "inherited_guards", *params.InheritedGuards, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationQuery, Type: "string", Format: ""}); err != nil {
 				return nil, err
 			} else {
 				for _, qp := range strings.Split(queryFrag, "&") {
@@ -29884,6 +29896,18 @@ func NewInvokeFunctionsRequestWithBody(server string, spaceId openapi_types.UUID
 
 		}
 
+		if params.InheritedGuards != nil {
+
+			if queryFrag, err := runtime.StyleParamWithOptions("form", true, "inherited_guards", *params.InheritedGuards, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationQuery, Type: "string", Format: ""}); err != nil {
+				return nil, err
+			} else {
+				for _, qp := range strings.Split(queryFrag, "&") {
+					rawQueryFragments = append(rawQueryFragments, qp)
+				}
+			}
+
+		}
+
 		if params.ChangeSetId != nil {
 
 			if queryFrag, err := runtime.StyleParamWithOptions("form", true, "change_set_id", *params.ChangeSetId, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationQuery, Type: "string", Format: "uuid"}); err != nil {
@@ -34748,6 +34772,18 @@ func NewPatchUnitRequestWithBody(server string, spaceId openapi_types.UUID, unit
 
 		}
 
+		if params.InheritedGuards != nil {
+
+			if queryFrag, err := runtime.StyleParamWithOptions("form", true, "inherited_guards", *params.InheritedGuards, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationQuery, Type: "string", Format: ""}); err != nil {
+				return nil, err
+			} else {
+				for _, qp := range strings.Split(queryFrag, "&") {
+					rawQueryFragments = append(rawQueryFragments, qp)
+				}
+			}
+
+		}
+
 		if params.Squash != nil {
 
 			if queryFrag, err := runtime.StyleParamWithOptions("form", true, "squash", *params.Squash, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationQuery, Type: "boolean", Format: ""}); err != nil {
@@ -35096,6 +35132,18 @@ func NewUpdateUnitRequestWithBody(server string, spaceId openapi_types.UUID, uni
 		if params.Guards != nil {
 
 			if queryFrag, err := runtime.StyleParamWithOptions("form", true, "guards", *params.Guards, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationQuery, Type: "string", Format: ""}); err != nil {
+				return nil, err
+			} else {
+				for _, qp := range strings.Split(queryFrag, "&") {
+					rawQueryFragments = append(rawQueryFragments, qp)
+				}
+			}
+
+		}
+
+		if params.InheritedGuards != nil {
+
+			if queryFrag, err := runtime.StyleParamWithOptions("form", true, "inherited_guards", *params.InheritedGuards, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationQuery, Type: "string", Format: ""}); err != nil {
 				return nil, err
 			} else {
 				for _, qp := range strings.Split(queryFrag, "&") {
@@ -35677,6 +35725,18 @@ func NewUploadUnitDataRequestWithBody(server string, spaceId openapi_types.UUID,
 		if params.Guards != nil {
 
 			if queryFrag, err := runtime.StyleParamWithOptions("form", true, "guards", *params.Guards, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationQuery, Type: "string", Format: ""}); err != nil {
+				return nil, err
+			} else {
+				for _, qp := range strings.Split(queryFrag, "&") {
+					rawQueryFragments = append(rawQueryFragments, qp)
+				}
+			}
+
+		}
+
+		if params.InheritedGuards != nil {
+
+			if queryFrag, err := runtime.StyleParamWithOptions("form", true, "inherited_guards", *params.InheritedGuards, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationQuery, Type: "string", Format: ""}); err != nil {
 				return nil, err
 			} else {
 				for _, qp := range strings.Split(queryFrag, "&") {
@@ -41785,6 +41845,18 @@ func NewBulkPatchUnitsRequestWithBody(server string, params *BulkPatchUnitsParam
 
 		}
 
+		if params.InheritedGuards != nil {
+
+			if queryFrag, err := runtime.StyleParamWithOptions("form", true, "inherited_guards", *params.InheritedGuards, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationQuery, Type: "string", Format: ""}); err != nil {
+				return nil, err
+			} else {
+				for _, qp := range strings.Split(queryFrag, "&") {
+					rawQueryFragments = append(rawQueryFragments, qp)
+				}
+			}
+
+		}
+
 		if params.Squash != nil {
 
 			if queryFrag, err := runtime.StyleParamWithOptions("form", true, "squash", *params.Squash, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationQuery, Type: "boolean", Format: ""}); err != nil {
@@ -47638,7 +47710,7 @@ type ClientWithResponsesInterface interface {
 
 	// SetUnitGuardWithBodyWithResponse Set path guards on a unit
 	//
-	// Set or remove guards on the unit's PathAnnotations. A guard names a reason a path's value is what it is, so a later operation can be required to know about that reason before overwriting it. Nothing enforces guards yet: setting one records the reason and changes no behavior. A guard may name a path or resource the unit does not have, since it is policy about the configuration rather than a statement about its current contents. Creates a new revision only if the guards actually change. Requires Edit permission.
+	// Set or remove guards on the unit's PathAnnotations. A guard names a reason a path's value is what it is, so a later operation can be required to know about that reason before overwriting it. An operation that is not cleared for the guards at a path does not write it, and reports what it withheld as a conflict; editing the guards at a path that already has some needs a clearance for them, and so does changing whether one is inherited. A guard set through Set stays with this unit; one set through SetInherited is copied to its clones and carried by merges to the units downstream. A guard may name a path or resource the unit does not have, since it is policy about the configuration rather than a statement about its current contents. Creates a new revision only if the guards actually change. Requires Edit permission.
 	//
 	// Takes any type of body and a specified content type, and returns a wrapper object for the known response body format(s).
 	//
@@ -47647,7 +47719,7 @@ type ClientWithResponsesInterface interface {
 
 	// SetUnitGuardWithResponse Set path guards on a unit
 	//
-	// Set or remove guards on the unit's PathAnnotations. A guard names a reason a path's value is what it is, so a later operation can be required to know about that reason before overwriting it. Nothing enforces guards yet: setting one records the reason and changes no behavior. A guard may name a path or resource the unit does not have, since it is policy about the configuration rather than a statement about its current contents. Creates a new revision only if the guards actually change. Requires Edit permission.
+	// Set or remove guards on the unit's PathAnnotations. A guard names a reason a path's value is what it is, so a later operation can be required to know about that reason before overwriting it. An operation that is not cleared for the guards at a path does not write it, and reports what it withheld as a conflict; editing the guards at a path that already has some needs a clearance for them, and so does changing whether one is inherited. A guard set through Set stays with this unit; one set through SetInherited is copied to its clones and carried by merges to the units downstream. A guard may name a path or resource the unit does not have, since it is policy about the configuration rather than a statement about its current contents. Creates a new revision only if the guards actually change. Requires Edit permission.
 	//
 	// Takes a body of the `application/json` content type, and returns a wrapper object for the known response body format(s).
 	//
@@ -80116,7 +80188,7 @@ func (c *ClientWithResponses) GetUnitDiffWithResponse(ctx context.Context, space
 
 // SetUnitGuardWithBodyWithResponse Set path guards on a unit
 //
-// Set or remove guards on the unit's PathAnnotations. A guard names a reason a path's value is what it is, so a later operation can be required to know about that reason before overwriting it. Nothing enforces guards yet: setting one records the reason and changes no behavior. A guard may name a path or resource the unit does not have, since it is policy about the configuration rather than a statement about its current contents. Creates a new revision only if the guards actually change. Requires Edit permission.
+// Set or remove guards on the unit's PathAnnotations. A guard names a reason a path's value is what it is, so a later operation can be required to know about that reason before overwriting it. An operation that is not cleared for the guards at a path does not write it, and reports what it withheld as a conflict; editing the guards at a path that already has some needs a clearance for them, and so does changing whether one is inherited. A guard set through Set stays with this unit; one set through SetInherited is copied to its clones and carried by merges to the units downstream. A guard may name a path or resource the unit does not have, since it is policy about the configuration rather than a statement about its current contents. Creates a new revision only if the guards actually change. Requires Edit permission.
 //
 // Takes any type of body and a specified content type, and returns a wrapper object for the known response body format(s).
 //
@@ -80131,7 +80203,7 @@ func (c *ClientWithResponses) SetUnitGuardWithBodyWithResponse(ctx context.Conte
 
 // SetUnitGuardWithResponse Set path guards on a unit
 //
-// Set or remove guards on the unit's PathAnnotations. A guard names a reason a path's value is what it is, so a later operation can be required to know about that reason before overwriting it. Nothing enforces guards yet: setting one records the reason and changes no behavior. A guard may name a path or resource the unit does not have, since it is policy about the configuration rather than a statement about its current contents. Creates a new revision only if the guards actually change. Requires Edit permission.
+// Set or remove guards on the unit's PathAnnotations. A guard names a reason a path's value is what it is, so a later operation can be required to know about that reason before overwriting it. An operation that is not cleared for the guards at a path does not write it, and reports what it withheld as a conflict; editing the guards at a path that already has some needs a clearance for them, and so does changing whether one is inherited. A guard set through Set stays with this unit; one set through SetInherited is copied to its clones and carried by merges to the units downstream. A guard may name a path or resource the unit does not have, since it is policy about the configuration rather than a statement about its current contents. Creates a new revision only if the guards actually change. Requires Edit permission.
 //
 // Takes a body of the `application/json` content type, and returns a wrapper object for the known response body format(s).
 //

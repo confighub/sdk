@@ -83,6 +83,7 @@ func init() {
 	functionExecCmd.Flags().BoolVar(&protectChange, "protect", false, "record the paths this change writes as protected local overrides, so a later merge from upstream does not overwrite them; by default a change claims nothing and each path keeps the protection it already has")
 	addClearanceFlag(functionExecCmd)
 	addGuardFlag(functionExecCmd)
+	addInheritedGuardFlag(functionExecCmd)
 	functionExecCmd.Flags().StringSliceVar(&functionTriggerIdentifiers, "trigger", []string{}, "execute triggers by UUID, slug, or space/slug (can be repeated or comma-separated)")
 	functionExecCmd.Flags().StringSliceVar(&functionInvocationIdentifiers, "invocation", []string{}, "execute invocations by UUID, slug, or space/slug (can be repeated or comma-separated)")
 	functionExecCmd.Flags().BoolVar(&updateValidationResults, "update-validation-results", false, "update ValidationErrors and ValidationWarnings on units based on trigger results (requires --trigger)")
@@ -212,17 +213,22 @@ func executeFunctionsFromFile(functionsFile, whereClause string, unitIds []strin
 		if gerr != nil {
 			return nil, newBody, gerr
 		}
+		inheritedGuards, ierr := inheritedGuardsJSON()
+		if ierr != nil {
+			return nil, newBody, ierr
+		}
 		invokeArgs := &invokeArgs{
-			Where:        effectiveWhere,
-			FilterID:     filterID,
-			ResourceType: resourceType,
-			WhereData:    whereData,
-			DryRun:       dryRun,
-			Protect:      protectChange,
-			Clearance:    clearance,
-			Guards:       guards,
-			ChangeSetID:  changesetUUID,
-			Body:         newBody,
+			Where:           effectiveWhere,
+			FilterID:        filterID,
+			ResourceType:    resourceType,
+			WhereData:       whereData,
+			DryRun:          dryRun,
+			Protect:         protectChange,
+			Clearance:       clearance,
+			Guards:          guards,
+			InheritedGuards: inheritedGuards,
+			ChangeSetID:     changesetUUID,
+			Body:            newBody,
 		}
 		resp, err = invokeFunctionsOnUnits(invokeArgs)
 		if err != nil {

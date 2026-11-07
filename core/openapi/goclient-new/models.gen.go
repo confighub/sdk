@@ -2464,6 +2464,9 @@ type BlameField struct {
 	// Guards The guards on the field: its own, its ancestors' and its resource's, which an operation writing here has to be cleared for.
 	Guards map[string]string `json:"Guards,omitempty" yaml:"Guards,omitempty"`
 
+	// InheritedGuards The keys of Guards that are inherited: copied to the unit's clones and carried by merges to the units downstream of it. The others stay with this unit.
+	InheritedGuards []string `json:"InheritedGuards,omitempty" yaml:"InheritedGuards,omitempty"`
+
 	// Needed The unit's needed paths that are the field: a value it is to take from an upstream unit through a NeedsProvides Link.
 	Needed []BlameNeededPath `json:"Needed,omitempty" yaml:"Needed,omitempty"`
 
@@ -4829,14 +4832,8 @@ type FunctionInvocation struct {
 	// Arguments Function arguments
 	Arguments []FunctionArgument `json:"Arguments,omitempty" yaml:"Arguments,omitempty"`
 
-	// Clearance Classes of guarded reason this invocation is cleared for; combined by union with the clearance of whatever drove the execution
-	Clearance *Clearance `json:"Clearance,omitempty" yaml:"Clearance,omitempty"`
-
 	// FunctionName Function name
 	FunctionName string `json:"FunctionName,omitempty" yaml:"FunctionName,omitempty"`
-
-	// Guards Guards to record on the paths this invocation writes, so a later operation must be cleared for them; combined with the guards of whatever drove the execution, later winning per key
-	Guards *GuardStamp `json:"Guards,omitempty" yaml:"Guards,omitempty"`
 
 	// Params Caller-supplied parameter values for expanding templated argument Values; transient, not persisted
 	Params map[string]interface{} `json:"Params,omitempty" yaml:"Params,omitempty"`
@@ -5091,13 +5088,13 @@ type Group struct {
 
 // GuardDelta defines model for GuardDelta.
 type GuardDelta struct {
-	// Path The path whose guards changed; empty for the resource as a whole
+	// Path The path whose inherited guards changed; empty for the resource as a whole
 	Path string `json:"Path,omitempty" yaml:"Path,omitempty"`
 
-	// Remove Guard keys removed
+	// Remove Inherited guard keys removed
 	Remove []string `json:"Remove,omitempty" yaml:"Remove,omitempty"`
 
-	// Set Guard keys added or changed, with their new values
+	// Set Inherited guard keys added or changed, with their new values
 	Set map[string]string `json:"Set,omitempty" yaml:"Set,omitempty"`
 }
 
@@ -5117,6 +5114,9 @@ type Invocation struct {
 	// Example: 248df4b7-aa70-47b8-a036-33ac447e668d
 	ChannelID *openapi_types.UUID `json:"ChannelID,omitempty" yaml:"ChannelID,omitempty"`
 
+	// Clearance Classes of guarded reason this Invocation's functions are cleared for; combined by union with the clearance of the Trigger or API call that runs it
+	Clearance *Clearance `json:"Clearance,omitempty" yaml:"Clearance,omitempty"`
+
 	// CreatedAt The timestamp when the entity was created in "2023-01-01T12:00:00Z" format.
 	//
 	// Example: 2025-04-04T11:50:02.95102-07:00
@@ -5131,6 +5131,9 @@ type Invocation struct {
 	// EntityType The type of entity.
 	EntityType          string                  `json:"EntityType,omitempty" yaml:"EntityType,omitempty"`
 	FunctionInvocations *FunctionInvocationList `json:"FunctionInvocations" yaml:"FunctionInvocations"`
+
+	// Guards Guards to record on the paths this Invocation's functions write, so a later operation must be cleared for them; combined with the guards of a Trigger running it, the Trigger's winning per key. Add and overwrite only -- retiring a guard is the /guard API (cub unit set-guard --remove-guard). Clearance must cover them.
+	Guards *GuardStamp `json:"Guards,omitempty" yaml:"Guards,omitempty"`
 
 	// Hash SHA256 hash of the functions and their arguments encoded as hexadecimal.
 	Hash string `json:"Hash,omitempty" yaml:"Hash,omitempty"`
@@ -5431,6 +5434,9 @@ type Mutation struct {
 	// ChannelID Example: 248df4b7-aa70-47b8-a036-33ac447e668d
 	ChannelID *openapi_types.UUID `json:"ChannelID,omitempty" yaml:"ChannelID,omitempty"`
 
+	// Clearance The classes of guarded reason the change was filtered with. On a function invocation that is the request's clearance together with that of every Trigger and Invocation that wrote in the same execution; on a Link's change, the Link's
+	Clearance *Clearance `json:"Clearance,omitempty" yaml:"Clearance,omitempty"`
+
 	// CreatedAt The timestamp when the entity was created in "2023-01-01T12:00:00Z" format.
 	//
 	// Example: 2025-04-04T11:50:02.95102-07:00
@@ -5442,8 +5448,14 @@ type Mutation struct {
 	// FunctionInvocation The function invoked if the change was made by a function.
 	FunctionInvocation *FunctionInvocation `json:"FunctionInvocation,omitempty" yaml:"FunctionInvocation,omitempty"`
 
+	// Guards The guards the change recorded on the paths it wrote: the operation's merged with those of the Trigger, Invocation, or Link that produced it
+	Guards *GuardStamp `json:"Guards,omitempty" yaml:"Guards,omitempty"`
+
 	// HiddenReason The reason the entity is hidden, if it is. A hidden entity is left out of List and Search results, and of what bulk operations act on, unless the include_hidden parameter names its reason or is *, or the where parameter names the entity by Slug or ID. ConfigHub/YAML Units are created hidden with the reason BackingUnit unless given another.
 	HiddenReason string `json:"HiddenReason,omitempty" yaml:"HiddenReason,omitempty"`
+
+	// InheritedGuards The guards the change recorded as inherited on the paths it wrote, which clones receive and merges carry to the units downstream
+	InheritedGuards *GuardStamp `json:"InheritedGuards,omitempty" yaml:"InheritedGuards,omitempty"`
 
 	// InvocationID InvocationID is the identifier of the function invoked, if there is a corresponding Invocation.
 	//
@@ -6361,8 +6373,11 @@ type ResourceGuards struct {
 	// Resource The resource whose guards are being edited: ResourceName, its whole name (namespace/name) or a name it had before a rename, or ResourceNameWithoutScope, a name without its namespace that has to match one resource; ResourceType, in any API version, is optional. A resource the unit does not have yet is named by ResourceType and ResourceName.
 	Resource *ResourceInfo `json:"Resource,omitempty" yaml:"Resource,omitempty"`
 
-	// Set Guard key/value pairs to add or overwrite, by path. The empty path addresses the resource as a whole. A list element is named by merge key or by position, and * stands for every element or key there is; a path that does not exist yet is kept as written
+	// Set Guard key/value pairs to add or overwrite, by path, as guards of this unit alone: clones and downstream units do not receive them, and one that was inherited stops being. The empty path addresses the resource as a whole. A list element is named by merge key or by position, and * stands for every element or key there is; a path that does not exist yet is kept as written
 	Set map[string]map[string]string `json:"Set,omitempty" yaml:"Set,omitempty"`
+
+	// SetInherited Guard key/value pairs to add or overwrite, by path, as inherited guards: a clone of the unit receives them, and a merge carries them, and any later change to them, to the units downstream of it. Named as in Set; a key may not be in both at the same path
+	SetInherited map[string]map[string]string `json:"SetInherited,omitempty" yaml:"SetInherited,omitempty"`
 }
 
 // ResourceInfo defines model for ResourceInfo.
@@ -7858,7 +7873,7 @@ type UnitMutationSources struct {
 
 // UnitPathReport defines model for UnitPathReport.
 type UnitPathReport struct {
-	// Annotations The path's own annotations other than guards and conflict dismissals, by kind. The field's Guards are those that apply to it, its ancestors' and its resource's included.
+	// Annotations The path's own annotations other than guards, their inheritance and conflict dismissals, by kind. The field's Guards are those that apply to it, its ancestors' and its resource's included.
 	Annotations map[string]map[string]string `json:"Annotations,omitempty" yaml:"Annotations,omitempty"`
 
 	// Changes The field's chain: the changes that put the value here, from this unit out to where it was set, each with the Mutation and Revision it was read from.
@@ -14269,6 +14284,9 @@ type InvokeFunctionsOnOrgParams struct {
 	// Guards The guards this operation records on the paths it writes, as a JSON object of guard key to value -- the reasons those paths hold what they hold, so a later operation must be cleared for them before overwriting. The guard analogue of protect: protect claims the paths, this says why. It only ever adds and overwrites the keys it names -- retiring a guard is the /guard API (cub unit set-guard --remove-guard).
 	Guards *string `form:"guards,omitempty" json:"guards,omitempty" yaml:"guards,omitempty"`
 
+	// InheritedGuards The guards this operation records on the paths it writes as inherited guards, in the form guards takes: a clone of the Unit receives them, and a merge carries them, and any later change to them, to the Units downstream of it. Guards set through guards stay with the Unit they are on. A key may not be in both. The clearance has to cover these as it covers guards.
+	InheritedGuards *string `form:"inherited_guards,omitempty" json:"inherited_guards,omitempty" yaml:"inherited_guards,omitempty"`
+
 	// ChangeSetId Must match ChangeSetID of affected Units unless in dry run mode; not valid when invoked on Revisions
 	ChangeSetId *openapi_types.UUID `form:"change_set_id,omitempty" json:"change_set_id,omitempty" yaml:"change_set_id,omitempty"`
 
@@ -14553,7 +14571,7 @@ type BulkDeleteInvocationsParams struct {
 	// An example conjunction is:
 	// `CreatedAt >= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.
 	//
-	// Supported attributes for filtering on Invocation: Annotations, BackingUnitID, ChannelID, CreatedAt, DeleteGates, DisplayName, FunctionInvocations, Hash, HiddenReason, InvocationID, Labels, OrganizationID, Parameters, Permissions, Slug, SpaceID, ToolchainType, UpdatedAt, UpstreamInvocationID.
+	// Supported attributes for filtering on Invocation: Annotations, BackingUnitID, ChannelID, Clearance, CreatedAt, DeleteGates, DisplayName, FunctionInvocations, Guards, Hash, HiddenReason, InvocationID, Labels, OrganizationID, Parameters, Permissions, Slug, SpaceID, ToolchainType, UpdatedAt, UpstreamInvocationID.
 	//
 	// The functions an Invocation calls are addressed with dot notation into `FunctionInvocations`: `FunctionInvocations.*.FunctionName = 'set-image'` matches an Invocation that calls set-image anywhere in its list, and `FunctionInvocations.0.FunctionName` addresses the first function it calls.
 	//
@@ -14654,7 +14672,7 @@ type ListAllInvocationsParams struct {
 	// An example conjunction is:
 	// `CreatedAt >= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.
 	//
-	// Supported attributes for filtering on Invocation: Annotations, BackingUnitID, ChannelID, CreatedAt, DeleteGates, DisplayName, FunctionInvocations, Hash, HiddenReason, InvocationID, Labels, OrganizationID, Parameters, Permissions, Slug, SpaceID, ToolchainType, UpdatedAt, UpstreamInvocationID.
+	// Supported attributes for filtering on Invocation: Annotations, BackingUnitID, ChannelID, Clearance, CreatedAt, DeleteGates, DisplayName, FunctionInvocations, Guards, Hash, HiddenReason, InvocationID, Labels, OrganizationID, Parameters, Permissions, Slug, SpaceID, ToolchainType, UpdatedAt, UpstreamInvocationID.
 	//
 	// The functions an Invocation calls are addressed with dot notation into `FunctionInvocations`: `FunctionInvocations.*.FunctionName = 'set-image'` matches an Invocation that calls set-image anywhere in its list, and `FunctionInvocations.0.FunctionName` addresses the first function it calls.
 	//
@@ -14768,12 +14786,18 @@ type BulkPatchInvocationsApplicationMergePatchPlusJSONBody struct {
 	Annotations *map[string]*string `json:"Annotations,omitempty" yaml:"Annotations,omitempty"`
 	ChannelID   *openapi_types.UUID `json:"ChannelID,omitempty" yaml:"ChannelID,omitempty"`
 
+	// Clearance Classes of guarded reason this Invocation's functions are cleared for; combined by union with the clearance of the Trigger or API call that runs it
+	Clearance *[]*map[string]interface{} `json:"Clearance,omitempty" yaml:"Clearance,omitempty"`
+
 	// DeleteGates An optional set of gates that, if any is present, will block deletion
 	DeleteGates *map[string]*bool `json:"DeleteGates,omitempty" yaml:"DeleteGates,omitempty"`
 
 	// DisplayName Friendly name for the entity.
 	DisplayName         *string                    `json:"DisplayName,omitempty" yaml:"DisplayName,omitempty"`
 	FunctionInvocations *[]*map[string]interface{} `json:"FunctionInvocations,omitempty" yaml:"FunctionInvocations,omitempty"`
+
+	// Guards Guards to record on the paths this Invocation's functions write, so a later operation must be cleared for them; combined with the guards of a Trigger running it, the Trigger's winning per key. Add and overwrite only -- retiring a guard is the /guard API (cub unit set-guard --remove-guard). Clearance must cover them.
+	Guards *map[string]*string `json:"Guards,omitempty" yaml:"Guards,omitempty"`
 
 	// HiddenReason The reason the entity is hidden, if it is. A hidden entity is left out of List and Search results, and of what bulk operations act on, unless the include_hidden parameter names its reason or is *, or the where parameter names the entity by Slug or ID. ConfigHub/YAML Units are created hidden with the reason BackingUnit unless given another.
 	HiddenReason *string `json:"HiddenReason,omitempty" yaml:"HiddenReason,omitempty"`
@@ -14827,7 +14851,7 @@ type BulkPatchInvocationsParams struct {
 	// An example conjunction is:
 	// `CreatedAt >= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.
 	//
-	// Supported attributes for filtering on Invocation: Annotations, BackingUnitID, ChannelID, CreatedAt, DeleteGates, DisplayName, FunctionInvocations, Hash, HiddenReason, InvocationID, Labels, OrganizationID, Parameters, Permissions, Slug, SpaceID, ToolchainType, UpdatedAt, UpstreamInvocationID.
+	// Supported attributes for filtering on Invocation: Annotations, BackingUnitID, ChannelID, Clearance, CreatedAt, DeleteGates, DisplayName, FunctionInvocations, Guards, Hash, HiddenReason, InvocationID, Labels, OrganizationID, Parameters, Permissions, Slug, SpaceID, ToolchainType, UpdatedAt, UpstreamInvocationID.
 	//
 	// The functions an Invocation calls are addressed with dot notation into `FunctionInvocations`: `FunctionInvocations.*.FunctionName = 'set-image'` matches an Invocation that calls set-image anywhere in its list, and `FunctionInvocations.0.FunctionName` addresses the first function it calls.
 	//
@@ -14904,12 +14928,18 @@ type BulkCreateInvocationsApplicationMergePatchPlusJSONBody struct {
 	Annotations *map[string]*string `json:"Annotations,omitempty" yaml:"Annotations,omitempty"`
 	ChannelID   *openapi_types.UUID `json:"ChannelID,omitempty" yaml:"ChannelID,omitempty"`
 
+	// Clearance Classes of guarded reason this Invocation's functions are cleared for; combined by union with the clearance of the Trigger or API call that runs it
+	Clearance *[]*map[string]interface{} `json:"Clearance,omitempty" yaml:"Clearance,omitempty"`
+
 	// DeleteGates An optional set of gates that, if any is present, will block deletion
 	DeleteGates *map[string]*bool `json:"DeleteGates,omitempty" yaml:"DeleteGates,omitempty"`
 
 	// DisplayName Friendly name for the entity.
 	DisplayName         *string                    `json:"DisplayName,omitempty" yaml:"DisplayName,omitempty"`
 	FunctionInvocations *[]*map[string]interface{} `json:"FunctionInvocations,omitempty" yaml:"FunctionInvocations,omitempty"`
+
+	// Guards Guards to record on the paths this Invocation's functions write, so a later operation must be cleared for them; combined with the guards of a Trigger running it, the Trigger's winning per key. Add and overwrite only -- retiring a guard is the /guard API (cub unit set-guard --remove-guard). Clearance must cover them.
+	Guards *map[string]*string `json:"Guards,omitempty" yaml:"Guards,omitempty"`
 
 	// HiddenReason The reason the entity is hidden, if it is. A hidden entity is left out of List and Search results, and of what bulk operations act on, unless the include_hidden parameter names its reason or is *, or the where parameter names the entity by Slug or ID. ConfigHub/YAML Units are created hidden with the reason BackingUnit unless given another.
 	HiddenReason *string `json:"HiddenReason,omitempty" yaml:"HiddenReason,omitempty"`
@@ -14963,7 +14993,7 @@ type BulkCreateInvocationsParams struct {
 	// An example conjunction is:
 	// `CreatedAt >= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.
 	//
-	// Supported attributes for filtering on Invocation: Annotations, BackingUnitID, ChannelID, CreatedAt, DeleteGates, DisplayName, FunctionInvocations, Hash, HiddenReason, InvocationID, Labels, OrganizationID, Parameters, Permissions, Slug, SpaceID, ToolchainType, UpdatedAt, UpstreamInvocationID.
+	// Supported attributes for filtering on Invocation: Annotations, BackingUnitID, ChannelID, Clearance, CreatedAt, DeleteGates, DisplayName, FunctionInvocations, Guards, Hash, HiddenReason, InvocationID, Labels, OrganizationID, Parameters, Permissions, Slug, SpaceID, ToolchainType, UpdatedAt, UpstreamInvocationID.
 	//
 	// The functions an Invocation calls are addressed with dot notation into `FunctionInvocations`: `FunctionInvocations.*.FunctionName = 'set-image'` matches an Invocation that calls set-image anywhere in its list, and `FunctionInvocations.0.FunctionName` addresses the first function it calls.
 	//
@@ -15183,7 +15213,7 @@ type BulkMoveInvocationsParams struct {
 	// An example conjunction is:
 	// `CreatedAt >= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.
 	//
-	// Supported attributes for filtering on Invocation: Annotations, BackingUnitID, ChannelID, CreatedAt, DeleteGates, DisplayName, FunctionInvocations, Hash, HiddenReason, InvocationID, Labels, OrganizationID, Parameters, Permissions, Slug, SpaceID, ToolchainType, UpdatedAt, UpstreamInvocationID.
+	// Supported attributes for filtering on Invocation: Annotations, BackingUnitID, ChannelID, Clearance, CreatedAt, DeleteGates, DisplayName, FunctionInvocations, Guards, Hash, HiddenReason, InvocationID, Labels, OrganizationID, Parameters, Permissions, Slug, SpaceID, ToolchainType, UpdatedAt, UpstreamInvocationID.
 	//
 	// The whole string must be query-encoded.
 	Where *string `form:"where,omitempty" json:"where,omitempty" yaml:"where,omitempty"`
@@ -19852,6 +19882,9 @@ type InvokeFunctionsParams struct {
 	// Guards The guards this operation records on the paths it writes, as a JSON object of guard key to value -- the reasons those paths hold what they hold, so a later operation must be cleared for them before overwriting. The guard analogue of protect: protect claims the paths, this says why. It only ever adds and overwrites the keys it names -- retiring a guard is the /guard API (cub unit set-guard --remove-guard).
 	Guards *string `form:"guards,omitempty" json:"guards,omitempty" yaml:"guards,omitempty"`
 
+	// InheritedGuards The guards this operation records on the paths it writes as inherited guards, in the form guards takes: a clone of the Unit receives them, and a merge carries them, and any later change to them, to the Units downstream of it. Guards set through guards stay with the Unit they are on. A key may not be in both. The clearance has to cover these as it covers guards.
+	InheritedGuards *string `form:"inherited_guards,omitempty" json:"inherited_guards,omitempty" yaml:"inherited_guards,omitempty"`
+
 	// ChangeSetId Must match ChangeSetID of affected Units unless in dry run mode; not valid when invoked on Revisions
 	ChangeSetId *openapi_types.UUID `form:"change_set_id,omitempty" json:"change_set_id,omitempty" yaml:"change_set_id,omitempty"`
 
@@ -19990,7 +20023,7 @@ type ListInvocationsParams struct {
 	// An example conjunction is:
 	// `CreatedAt >= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.
 	//
-	// Supported attributes for filtering on Invocation: Annotations, BackingUnitID, ChannelID, CreatedAt, DeleteGates, DisplayName, FunctionInvocations, Hash, HiddenReason, InvocationID, Labels, OrganizationID, Parameters, Permissions, Slug, SpaceID, ToolchainType, UpdatedAt, UpstreamInvocationID.
+	// Supported attributes for filtering on Invocation: Annotations, BackingUnitID, ChannelID, Clearance, CreatedAt, DeleteGates, DisplayName, FunctionInvocations, Guards, Hash, HiddenReason, InvocationID, Labels, OrganizationID, Parameters, Permissions, Slug, SpaceID, ToolchainType, UpdatedAt, UpstreamInvocationID.
 	//
 	// The functions an Invocation calls are addressed with dot notation into `FunctionInvocations`: `FunctionInvocations.*.FunctionName = 'set-image'` matches an Invocation that calls set-image anywhere in its list, and `FunctionInvocations.0.FunctionName` addresses the first function it calls.
 	//
@@ -20138,12 +20171,18 @@ type PatchInvocationApplicationMergePatchPlusJSONBody struct {
 	Annotations *map[string]*string `json:"Annotations,omitempty" yaml:"Annotations,omitempty"`
 	ChannelID   *openapi_types.UUID `json:"ChannelID,omitempty" yaml:"ChannelID,omitempty"`
 
+	// Clearance Classes of guarded reason this Invocation's functions are cleared for; combined by union with the clearance of the Trigger or API call that runs it
+	Clearance *[]*map[string]interface{} `json:"Clearance,omitempty" yaml:"Clearance,omitempty"`
+
 	// DeleteGates An optional set of gates that, if any is present, will block deletion
 	DeleteGates *map[string]*bool `json:"DeleteGates,omitempty" yaml:"DeleteGates,omitempty"`
 
 	// DisplayName Friendly name for the entity.
 	DisplayName         *string                    `json:"DisplayName,omitempty" yaml:"DisplayName,omitempty"`
 	FunctionInvocations *[]*map[string]interface{} `json:"FunctionInvocations,omitempty" yaml:"FunctionInvocations,omitempty"`
+
+	// Guards Guards to record on the paths this Invocation's functions write, so a later operation must be cleared for them; combined with the guards of a Trigger running it, the Trigger's winning per key. Add and overwrite only -- retiring a guard is the /guard API (cub unit set-guard --remove-guard). Clearance must cover them.
+	Guards *map[string]*string `json:"Guards,omitempty" yaml:"Guards,omitempty"`
 
 	// HiddenReason The reason the entity is hidden, if it is. A hidden entity is left out of List and Search results, and of what bulk operations act on, unless the include_hidden parameter names its reason or is *, or the where parameter names the entity by Slug or ID. ConfigHub/YAML Units are created hidden with the reason BackingUnit unless given another.
 	HiddenReason *string `json:"HiddenReason,omitempty" yaml:"HiddenReason,omitempty"`
@@ -21594,6 +21633,9 @@ type PatchUnitParams struct {
 	// Guards The guards this operation records on the paths it writes, as a JSON object of guard key to value -- the reasons those paths hold what they hold, so a later operation must be cleared for them before overwriting. The guard analogue of protect: protect claims the paths, this says why. It only ever adds and overwrites the keys it names -- retiring a guard is the /guard API (cub unit set-guard --remove-guard).
 	Guards *string `form:"guards,omitempty" json:"guards,omitempty" yaml:"guards,omitempty"`
 
+	// InheritedGuards The guards this operation records on the paths it writes as inherited guards, in the form guards takes: a clone of the Unit receives them, and a merge carries them, and any later change to them, to the Units downstream of it. Guards set through guards stay with the Unit they are on. A key may not be in both. The clearance has to cover these as it covers guards.
+	InheritedGuards *string `form:"inherited_guards,omitempty" json:"inherited_guards,omitempty" yaml:"inherited_guards,omitempty"`
+
 	// Squash Merge the range as one rebased diff and record it as one Revision, instead of walking it. By default a merge replays: it takes the source's Revisions in order and, where a Revision records function invocations that can be re-executed, runs them against this Unit rather than rebasing their recorded paths onto it -- so a change lands where this Unit's own structure puts it -- and records each source Revision that has an effect here as a Revision of its own, carrying that Revision's change description, its own conflicts, and one Mutation per source Mutation. Squashing gives up both: the range arrives as a single rebased patch in a single Revision, which is what a merge did before replay existed. Accepted with upgrade, merge_source, and resolve of an UpgradeUnit or MergeUnits Link, and refused elsewhere, since there is no range to walk. A Link can ask for it standingly with its Squash field.
 	Squash *bool `form:"squash,omitempty" json:"squash,omitempty" yaml:"squash,omitempty"`
 
@@ -21655,7 +21697,7 @@ type PatchUnitParams struct {
 	// An example conjunction is:
 	// `CreatedAt >= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.
 	//
-	// Supported attributes for filtering on Mutation: ChannelID, CreatedAt, FunctionInvocation.Arguments, FunctionInvocation.Clearance, FunctionInvocation.FunctionName, FunctionInvocation.Guards, FunctionInvocation.WhereResource, FunctionName, HiddenReason, InvocationID, InvocationParams, LinkID, MergeBaseRevisionNum, MergeEndRevisionNum, MergeSourceID, MutationID, MutationNum, OrganizationID, ReplayOutcome, ReplayReason, RestoredRevisionNum, RevisionID, RevisionNum, SpaceID, Subgroup, TriggerID, UnitID, UpdatedAt.
+	// Supported attributes for filtering on Mutation: ChannelID, Clearance, CreatedAt, FunctionInvocation.Arguments, FunctionInvocation.FunctionName, FunctionInvocation.WhereResource, FunctionName, Guards, HiddenReason, InheritedGuards, InvocationID, InvocationParams, LinkID, MergeBaseRevisionNum, MergeEndRevisionNum, MergeSourceID, MutationID, MutationNum, OrganizationID, ReplayOutcome, ReplayReason, RestoredRevisionNum, RevisionID, RevisionNum, SpaceID, Subgroup, TriggerID, UnitID, UpdatedAt.
 	//
 	// Selects Mutations of this Unit whose paths the merge must not overwrite, unioned with the Protected values stored on the Unit's MutationSources.
 	//
@@ -21719,6 +21761,9 @@ type UpdateUnitParams struct {
 	// Guards The guards this operation records on the paths it writes, as a JSON object of guard key to value -- the reasons those paths hold what they hold, so a later operation must be cleared for them before overwriting. The guard analogue of protect: protect claims the paths, this says why. It only ever adds and overwrites the keys it names -- retiring a guard is the /guard API (cub unit set-guard --remove-guard).
 	Guards *string `form:"guards,omitempty" json:"guards,omitempty" yaml:"guards,omitempty"`
 
+	// InheritedGuards The guards this operation records on the paths it writes as inherited guards, in the form guards takes: a clone of the Unit receives them, and a merge carries them, and any later change to them, to the Units downstream of it. Guards set through guards stay with the Unit they are on. A key may not be in both. The clearance has to cover these as it covers guards.
+	InheritedGuards *string `form:"inherited_guards,omitempty" json:"inherited_guards,omitempty" yaml:"inherited_guards,omitempty"`
+
 	// Squash Merge the range as one rebased diff and record it as one Revision, instead of walking it. By default a merge replays: it takes the source's Revisions in order and, where a Revision records function invocations that can be re-executed, runs them against this Unit rather than rebasing their recorded paths onto it -- so a change lands where this Unit's own structure puts it -- and records each source Revision that has an effect here as a Revision of its own, carrying that Revision's change description, its own conflicts, and one Mutation per source Mutation. Squashing gives up both: the range arrives as a single rebased patch in a single Revision, which is what a merge did before replay existed. Accepted with upgrade, merge_source, and resolve of an UpgradeUnit or MergeUnits Link, and refused elsewhere, since there is no range to walk. A Link can ask for it standingly with its Squash field.
 	Squash *bool `form:"squash,omitempty" json:"squash,omitempty" yaml:"squash,omitempty"`
 
@@ -21780,7 +21825,7 @@ type UpdateUnitParams struct {
 	// An example conjunction is:
 	// `CreatedAt >= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.
 	//
-	// Supported attributes for filtering on Mutation: ChannelID, CreatedAt, FunctionInvocation.Arguments, FunctionInvocation.Clearance, FunctionInvocation.FunctionName, FunctionInvocation.Guards, FunctionInvocation.WhereResource, FunctionName, HiddenReason, InvocationID, InvocationParams, LinkID, MergeBaseRevisionNum, MergeEndRevisionNum, MergeSourceID, MutationID, MutationNum, OrganizationID, ReplayOutcome, ReplayReason, RestoredRevisionNum, RevisionID, RevisionNum, SpaceID, Subgroup, TriggerID, UnitID, UpdatedAt.
+	// Supported attributes for filtering on Mutation: ChannelID, Clearance, CreatedAt, FunctionInvocation.Arguments, FunctionInvocation.FunctionName, FunctionInvocation.WhereResource, FunctionName, Guards, HiddenReason, InheritedGuards, InvocationID, InvocationParams, LinkID, MergeBaseRevisionNum, MergeEndRevisionNum, MergeSourceID, MutationID, MutationNum, OrganizationID, ReplayOutcome, ReplayReason, RestoredRevisionNum, RevisionID, RevisionNum, SpaceID, Subgroup, TriggerID, UnitID, UpdatedAt.
 	//
 	// Selects Mutations of this Unit whose paths the merge must not overwrite, unioned with the Protected values stored on the Unit's MutationSources.
 	//
@@ -21872,6 +21917,9 @@ type UploadUnitDataParams struct {
 	// Guards The guards this operation records on the paths it writes, as a JSON object of guard key to value -- the reasons those paths hold what they hold, so a later operation must be cleared for them before overwriting. The guard analogue of protect: protect claims the paths, this says why. It only ever adds and overwrites the keys it names -- retiring a guard is the /guard API (cub unit set-guard --remove-guard).
 	Guards *string `form:"guards,omitempty" json:"guards,omitempty" yaml:"guards,omitempty"`
 
+	// InheritedGuards The guards this operation records on the paths it writes as inherited guards, in the form guards takes: a clone of the Unit receives them, and a merge carries them, and any later change to them, to the Units downstream of it. Guards set through guards stay with the Unit they are on. A key may not be in both. The clearance has to cover these as it covers guards.
+	InheritedGuards *string `form:"inherited_guards,omitempty" json:"inherited_guards,omitempty" yaml:"inherited_guards,omitempty"`
+
 	// MergeBase Merge base revision, which provides the base configuration data of the changes to merge. With merge_source, this is a revision of the merge source unit. With merge_external_source, this is a revision of the unit being updated and overrides the default selection of the latest MergeExternal revision. Supports: Named revisions ('HeadRevisionNum', 'LastReleasedRevisionNum'), direct revision number (e.g., '42'), or entity references ('Tag:uuid', 'ChangeSet:uuid', 'ChangeOrder:uuid', 'Revision:uuid'). Can be prefixed with 'Before:' to select the revision immediately before the specified one (e.g., 'Before:LastReleasedRevisionNum', 'Before:42'). When using Tag or ChangeSet references, the latest revision associated with that entity is selected. 'ChangeOrder:uuid' selects the revision the change order ended at on this Unit and 'Before:ChangeOrder:uuid' the one before it began, which is what undoes a promotion however many revisions it made.
 	MergeBase *string `form:"merge_base,omitempty" json:"merge_base,omitempty" yaml:"merge_base,omitempty"`
 
@@ -21947,9 +21995,9 @@ type ListExtendedMutationsParams struct {
 	// An example conjunction is:
 	// `CreatedAt >= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.
 	//
-	// Supported attributes for filtering on Mutation: ChannelID, CreatedAt, FunctionInvocation.Arguments, FunctionInvocation.Clearance, FunctionInvocation.FunctionName, FunctionInvocation.Guards, FunctionInvocation.WhereResource, FunctionName, HiddenReason, InvocationID, InvocationParams, LinkID, MergeBaseRevisionNum, MergeEndRevisionNum, MergeSourceID, MutationID, MutationNum, OrganizationID, ReplayOutcome, ReplayReason, RestoredRevisionNum, RevisionID, RevisionNum, SpaceID, Subgroup, TriggerID, UnitID, UpdatedAt.
+	// Supported attributes for filtering on Mutation: ChannelID, Clearance, CreatedAt, FunctionInvocation.Arguments, FunctionInvocation.FunctionName, FunctionInvocation.WhereResource, FunctionName, Guards, HiddenReason, InheritedGuards, InvocationID, InvocationParams, LinkID, MergeBaseRevisionNum, MergeEndRevisionNum, MergeSourceID, MutationID, MutationNum, OrganizationID, ReplayOutcome, ReplayReason, RestoredRevisionNum, RevisionID, RevisionNum, SpaceID, Subgroup, TriggerID, UnitID, UpdatedAt.
 	//
-	// The function invoked is returned as a FunctionInvocation object, and `where` names its fields the same way: `FunctionInvocation.FunctionName`, `FunctionInvocation.Guards.<reason>`, and `FunctionInvocation.Arguments`, which is a list addressed with dot notation. `FunctionInvocation.Arguments.?ParameterName=container-image.Value LIKE 'nginx%'` reads the argument bound to a named parameter, `FunctionInvocation.Arguments.*.Value` matches any argument's value, and `FunctionInvocation.Arguments.0.Value` addresses the first argument. Arguments passed positionally have no ParameterName.
+	// The function invoked is returned as a FunctionInvocation object, and `where` names its fields the same way: `FunctionInvocation.FunctionName` and `FunctionInvocation.Arguments`, which is a list addressed with dot notation. `FunctionInvocation.Arguments.?ParameterName=container-image.Value LIKE 'nginx%'` reads the argument bound to a named parameter, `FunctionInvocation.Arguments.*.Value` matches any argument's value, and `FunctionInvocation.Arguments.0.Value` addresses the first argument. Arguments passed positionally have no ParameterName. `Guards.<reason>` reads the guards the change recorded on the paths it wrote, as in `Guards.Link = 'TransformPaths'`, and `Clearance.*.Key = 'RunAsRoot'` finds the changes written under a clearance for that reason.
 	//
 	// The whole string must be query-encoded.
 	Where *string `form:"where,omitempty" json:"where,omitempty" yaml:"where,omitempty"`
@@ -25531,6 +25579,9 @@ type BulkPatchUnitsParams struct {
 	// Guards The guards this operation records on the paths it writes, as a JSON object of guard key to value -- the reasons those paths hold what they hold, so a later operation must be cleared for them before overwriting. The guard analogue of protect: protect claims the paths, this says why. It only ever adds and overwrites the keys it names -- retiring a guard is the /guard API (cub unit set-guard --remove-guard).
 	Guards *string `form:"guards,omitempty" json:"guards,omitempty" yaml:"guards,omitempty"`
 
+	// InheritedGuards The guards this operation records on the paths it writes as inherited guards, in the form guards takes: a clone of the Unit receives them, and a merge carries them, and any later change to them, to the Units downstream of it. Guards set through guards stay with the Unit they are on. A key may not be in both. The clearance has to cover these as it covers guards.
+	InheritedGuards *string `form:"inherited_guards,omitempty" json:"inherited_guards,omitempty" yaml:"inherited_guards,omitempty"`
+
 	// Squash Merge the range as one rebased diff and record it as one Revision, instead of walking it. By default a merge replays: it takes the source's Revisions in order and, where a Revision records function invocations that can be re-executed, runs them against this Unit rather than rebasing their recorded paths onto it -- so a change lands where this Unit's own structure puts it -- and records each source Revision that has an effect here as a Revision of its own, carrying that Revision's change description, its own conflicts, and one Mutation per source Mutation. Squashing gives up both: the range arrives as a single rebased patch in a single Revision, which is what a merge did before replay existed. Accepted with upgrade, merge_source, and resolve of an UpgradeUnit or MergeUnits Link, and refused elsewhere, since there is no range to walk. A Link can ask for it standingly with its Squash field.
 	Squash *bool `form:"squash,omitempty" json:"squash,omitempty" yaml:"squash,omitempty"`
 
@@ -25592,7 +25643,7 @@ type BulkPatchUnitsParams struct {
 	// An example conjunction is:
 	// `CreatedAt >= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.
 	//
-	// Supported attributes for filtering on Mutation: ChannelID, CreatedAt, FunctionInvocation.Arguments, FunctionInvocation.Clearance, FunctionInvocation.FunctionName, FunctionInvocation.Guards, FunctionInvocation.WhereResource, FunctionName, HiddenReason, InvocationID, InvocationParams, LinkID, MergeBaseRevisionNum, MergeEndRevisionNum, MergeSourceID, MutationID, MutationNum, OrganizationID, ReplayOutcome, ReplayReason, RestoredRevisionNum, RevisionID, RevisionNum, SpaceID, Subgroup, TriggerID, UnitID, UpdatedAt.
+	// Supported attributes for filtering on Mutation: ChannelID, Clearance, CreatedAt, FunctionInvocation.Arguments, FunctionInvocation.FunctionName, FunctionInvocation.WhereResource, FunctionName, Guards, HiddenReason, InheritedGuards, InvocationID, InvocationParams, LinkID, MergeBaseRevisionNum, MergeEndRevisionNum, MergeSourceID, MutationID, MutationNum, OrganizationID, ReplayOutcome, ReplayReason, RestoredRevisionNum, RevisionID, RevisionNum, SpaceID, Subgroup, TriggerID, UnitID, UpdatedAt.
 	//
 	// Selects Mutations of this Unit whose paths the merge must not overwrite, unioned with the Protected values stored on the Unit's MutationSources.
 	//

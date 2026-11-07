@@ -29,9 +29,22 @@ type AnnotationKind string
 
 const (
 	// AnnotationKindGuard: the reasons a path's value is what it is. An operation must be
-	// cleared for every one of them before it may write the path. Enforcement is a later
-	// stage; the kind is defined here because the table is keyed by kind from the start.
+	// cleared for every one of them before it may write the path.
 	AnnotationKindGuard AnnotationKind = "Guard"
+	// AnnotationKindGuardInherited: which of the guards at the same entry a clone and a merge
+	// carry to downstream Units. Each key names a Guard key beside it, and the value is always
+	// empty: the guard is the statement and this only says it travels.
+	//
+	// Most guards do not travel. One a Link or a Trigger stamps is about that Link or Trigger,
+	// and one protecting a variant's own value from upgrades is about that variant; carried
+	// downstream, each would be a reason nobody there has. What should travel is policy about
+	// the configuration itself -- a value a mass change must not normalize away -- which every
+	// variant of it has to honor.
+	//
+	// A marker rather than a second kind of guard, so that everything enforcing guards reads
+	// the Guard kind alone and treats an inherited guard exactly as a local one. Only what copies
+	// guards between Units reads this.
+	AnnotationKindGuardInherited AnnotationKind = "GuardInherited"
 	// AnnotationKindConflictDismissal: the merge conflicts at a path that are understood and
 	// expected, so that a merge reporting one again does not leave it outstanding. Each key
 	// names a conflict reason, alone or with a guard key (see ConflictDismissalKey). Recorded by
@@ -46,6 +59,7 @@ const (
 // rather than a convention.
 var registeredAnnotationKinds = map[AnnotationKind]struct{}{
 	AnnotationKindGuard:             {},
+	AnnotationKindGuardInherited:    {},
 	AnnotationKindConflictDismissal: {},
 }
 
@@ -178,11 +192,31 @@ func ValidatePathAnnotations(annotations PathAnnotations) error {
 				return err
 			}
 		}
-		total += len(entries)
+		if kind != AnnotationKindGuardInherited {
+			total += len(entries)
+		}
 	}
 	if total > MaxAnnotationsPerPath {
 		return fmt.Errorf("%d annotations on one path exceeds the maximum of %d",
 			total, MaxAnnotationsPerPath)
+	}
+	return validateGuardInheritedMarkers(annotations)
+}
+
+// validateGuardInheritedMarkers checks that every inheritance marker names a guard beside it and
+// carries no value. A marker without its guard would be a statement about nothing, and a value on
+// one would be a second copy of the guard's that could disagree with it. The markers are not
+// counted against MaxAnnotationsPerPath: each is a property of a guard that already is.
+func validateGuardInheritedMarkers(annotations PathAnnotations) error {
+	guards := annotations[AnnotationKindGuard]
+	for key, value := range annotations[AnnotationKindGuardInherited] {
+		if _, guarded := guards[key]; !guarded {
+			return fmt.Errorf("%s key %q names no guard at the same path",
+				AnnotationKindGuardInherited, key)
+		}
+		if value != "" {
+			return fmt.Errorf("%s key %q must have an empty value", AnnotationKindGuardInherited, key)
+		}
 	}
 	return nil
 }
@@ -292,6 +326,62 @@ func WithoutAnnotationKind(list PathAnnotationList, kind AnnotationKind) PathAnn
 	return kept
 }
 
+// InheritedGuards returns a copy of a table holding only its inherited guards, each with its
+// marker, and the entries left with nothing dropped. It is what a clone takes from the Unit it is
+// cloned from, and what a merge diffs to find the guard changes to carry downstream: the guards
+// that are policy about the configuration, and none of the ones about the source Unit itself --
+// its local guards and its conflict dismissals.
+func InheritedGuards(list PathAnnotationList) PathAnnotationList {
+	if list == nil {
+		return nil
+	}
+	cloned := ClonePathAnnotationList(list)
+	kept := cloned[:0]
+	for i := range cloned {
+		entry := cloned[i]
+		entry.ResourceAnnotations = inheritedGuardsOnly(entry.ResourceAnnotations)
+		for path, annotations := range entry.PathAnnotationMap {
+			if inherited := inheritedGuardsOnly(annotations); inherited != nil {
+				entry.PathAnnotationMap[path] = inherited
+			} else {
+				delete(entry.PathAnnotationMap, path)
+			}
+		}
+		if len(entry.PathAnnotationMap) == 0 {
+			entry.PathAnnotationMap = nil
+		}
+		if entry.ResourceAnnotations == nil && entry.PathAnnotationMap == nil {
+			continue
+		}
+		kept = append(kept, entry)
+	}
+	if len(kept) == 0 {
+		return nil
+	}
+	return kept
+}
+
+// inheritedGuardsOnly reduces one path's annotations to its inherited guards and their markers,
+// or nil when it has none.
+func inheritedGuardsOnly(annotations PathAnnotations) PathAnnotations {
+	markers := annotations[AnnotationKindGuardInherited]
+	if len(markers) == 0 {
+		return nil
+	}
+	guards := map[string]string{}
+	kept := map[string]string{}
+	for key := range markers {
+		if value, guarded := annotations[AnnotationKindGuard][key]; guarded {
+			guards[key] = value
+			kept[key] = ""
+		}
+	}
+	if len(guards) == 0 {
+		return nil
+	}
+	return PathAnnotations{AnnotationKindGuard: guards, AnnotationKindGuardInherited: kept}
+}
+
 // ClonePathAnnotations deep-copies one path's annotations, so an edit to the copy cannot reach
 // the original through the shared inner maps.
 func ClonePathAnnotations(annotations PathAnnotations) PathAnnotations {
@@ -351,10 +441,16 @@ func cloneResourceNameSet(names map[ResourceName]struct{}) map[ResourceName]stru
 //
 // The empty ResolvedPath addresses the resource as a whole, as it does nowhere else; a guard
 // there covers every path in the resource that has no more specific entry.
+//
+// Set and SetInherited write the same guards and differ in whether they travel: a guard set
+// through Set stays with this Unit, and one set through SetInherited is carried to its clones and,
+// by merges, to every downstream Unit. Each writes whether the guard is inherited as well as its
+// value, so re-setting an inherited guard through Set makes it local again.
 type ResourceGuards struct {
-	Resource ResourceInfo                       `description:"The resource whose guards are being edited: ResourceName, its whole name (namespace/name) or a name it had before a rename, or ResourceNameWithoutScope, a name without its namespace that has to match one resource; ResourceType, in any API version, is optional. A resource the unit does not have yet is named by ResourceType and ResourceName."`
-	Set      map[ResolvedPath]map[string]string `json:",omitempty" description:"Guard key/value pairs to add or overwrite, by path. The empty path addresses the resource as a whole. A list element is named by merge key or by position, and * stands for every element or key there is; a path that does not exist yet is kept as written"`
-	Remove   map[ResolvedPath][]string          `json:",omitempty" description:"Guard keys to remove, by path, named as in Set; * also matches the paths guarded that the data no longer has. Removing a key that is not there is not an error"`
+	Resource     ResourceInfo                       `description:"The resource whose guards are being edited: ResourceName, its whole name (namespace/name) or a name it had before a rename, or ResourceNameWithoutScope, a name without its namespace that has to match one resource; ResourceType, in any API version, is optional. A resource the unit does not have yet is named by ResourceType and ResourceName."`
+	Set          map[ResolvedPath]map[string]string `json:",omitempty" description:"Guard key/value pairs to add or overwrite, by path, as guards of this unit alone: clones and downstream units do not receive them, and one that was inherited stops being. The empty path addresses the resource as a whole. A list element is named by merge key or by position, and * stands for every element or key there is; a path that does not exist yet is kept as written"`
+	SetInherited map[ResolvedPath]map[string]string `json:",omitempty" description:"Guard key/value pairs to add or overwrite, by path, as inherited guards: a clone of the unit receives them, and a merge carries them, and any later change to them, to the units downstream of it. Named as in Set; a key may not be in both at the same path"`
+	Remove       map[ResolvedPath][]string          `json:",omitempty" description:"Guard keys to remove, by path, named as in Set; * also matches the paths guarded that the data no longer has. Removing a key that is not there is not an error"`
 }
 
 // ValidateResourceGuards checks the edits a request is asking for: every key and value legal,
@@ -368,6 +464,17 @@ func ValidateResourceGuards(guards []ResourceGuards) error {
 		for path, entries := range guards[i].Set {
 			if err := ValidateUserPathAnnotations(PathAnnotations{AnnotationKindGuard: entries}); err != nil {
 				return fmt.Errorf("resource %s path %s: %w", guards[i].Resource.ResourceName, path, err)
+			}
+		}
+		for path, entries := range guards[i].SetInherited {
+			if err := ValidateUserPathAnnotations(PathAnnotations{AnnotationKindGuard: entries}); err != nil {
+				return fmt.Errorf("resource %s path %s: %w", guards[i].Resource.ResourceName, path, err)
+			}
+			for key := range entries {
+				if _, local := guards[i].Set[path][key]; local {
+					return fmt.Errorf("resource %s path %s: guard %q is set both as inherited and not",
+						guards[i].Resource.ResourceName, path, key)
+				}
 			}
 		}
 		for path, keys := range guards[i].Remove {
@@ -444,6 +551,29 @@ func MergeGuardStamps(earlier, later GuardStamp) GuardStamp {
 // thing it is about, and a guard on something absent is inert rather than wrong.
 func SetGuards(identifier ResourceIdentifier, table PathAnnotationList, guards []ResourceGuards,
 	canonicalizePath func(ResolvedPath) ResolvedPath) PathAnnotationList {
+	return setGuards(identifier, table, guards, canonicalizePath, markLocal)
+}
+
+// StampGuards is SetGuards for the guards a change records on what it wrote: Set leaves whether
+// each guard is inherited as it was, where SetGuards makes it local. A stamp only adds and
+// overwrites, and making an inherited guard local would retract it from every Unit downstream --
+// a decision about policy that belongs to set-guard, as removing a guard does.
+func StampGuards(identifier ResourceIdentifier, table PathAnnotationList, guards []ResourceGuards,
+	canonicalizePath func(ResolvedPath) ResolvedPath) PathAnnotationList {
+	return setGuards(identifier, table, guards, canonicalizePath, keepInheritance)
+}
+
+// guardInheritance says what writing a guard does to whether it is inherited.
+type guardInheritance int
+
+const (
+	keepInheritance guardInheritance = iota
+	markLocal
+	markInherited
+)
+
+func setGuards(identifier ResourceIdentifier, table PathAnnotationList, guards []ResourceGuards,
+	canonicalizePath func(ResolvedPath) ResolvedPath, local guardInheritance) PathAnnotationList {
 	for i := range guards {
 		edit := &guards[i]
 		position, found := findResourceAnnotations(identifier, table, edit.Resource)
@@ -454,15 +584,10 @@ func SetGuards(identifier ResourceIdentifier, table PathAnnotationList, guards [
 		entry := &table[position]
 
 		for path, entries := range edit.Set {
-			target := annotationsForPath(entry, canonicalizePath(path))
-			guardEntries, ok := target[AnnotationKindGuard]
-			if !ok {
-				guardEntries = map[string]string{}
-				target[AnnotationKindGuard] = guardEntries
-			}
-			for key, value := range entries {
-				guardEntries[key] = value
-			}
+			setGuardEntries(annotationsForPath(entry, canonicalizePath(path)), entries, local)
+		}
+		for path, entries := range edit.SetInherited {
+			setGuardEntries(annotationsForPath(entry, canonicalizePath(path)), entries, markInherited)
 		}
 
 		for path, keys := range edit.Remove {
@@ -479,10 +604,43 @@ func SetGuards(identifier ResourceIdentifier, table PathAnnotationList, guards [
 			}
 			for _, key := range keys {
 				delete(guardEntries, key)
+				delete(target[AnnotationKindGuardInherited], key)
 			}
 		}
 	}
 	return table
+}
+
+// setGuardEntries writes guards into one path's annotations, marking each inherited, local, or
+// leaving that as it was. Reports whether anything changed.
+func setGuardEntries(target PathAnnotations, entries map[string]string, inheritance guardInheritance) bool {
+	changed := false
+	guards, ok := target[AnnotationKindGuard]
+	if !ok {
+		guards = map[string]string{}
+		target[AnnotationKindGuard] = guards
+	}
+	for key, value := range entries {
+		if existing, present := guards[key]; !present || existing != value {
+			guards[key] = value
+			changed = true
+		}
+		markers := target[AnnotationKindGuardInherited]
+		_, marked := markers[key]
+		switch {
+		case inheritance == markInherited && !marked:
+			if markers == nil {
+				markers = map[string]string{}
+				target[AnnotationKindGuardInherited] = markers
+			}
+			markers[key] = ""
+			changed = true
+		case inheritance == markLocal && marked:
+			delete(markers, key)
+			changed = true
+		}
+	}
+	return changed
 }
 
 // annotationsForPath returns the PathAnnotations to write into for a path, creating the maps as
@@ -742,16 +900,56 @@ func (r *ResourcePathAnnotations) GuardsForPath(path ResolvedPath) map[string]st
 	return effective
 }
 
+// InheritedGuardKeysForPath returns, in order, the keys of GuardsForPath(path) that are
+// inherited: those whose value comes from an entry that marks the key inherited. Nearer wins
+// here as it does on the value, so a path that names a key of its own decides whether that key,
+// at that path, is inherited.
+func (r *ResourcePathAnnotations) InheritedGuardKeysForPath(path ResolvedPath) []string {
+	if r == nil {
+		return nil
+	}
+	decided := map[string]bool{}
+	var inherited []string
+	add := func(annotations PathAnnotations) {
+		for key := range annotations[AnnotationKindGuard] {
+			if decided[key] {
+				continue
+			}
+			decided[key] = true
+			if _, marked := annotations[AnnotationKindGuardInherited][key]; marked {
+				inherited = append(inherited, key)
+			}
+		}
+	}
+	remaining := string(path)
+	for {
+		add(r.PathAnnotationMap[ResolvedPath(remaining)])
+		lastDot := strings.LastIndex(remaining, ".")
+		if lastDot < 0 {
+			break
+		}
+		remaining = remaining[:lastDot]
+	}
+	add(r.ResourceAnnotations)
+	slices.Sort(inherited)
+	return inherited
+}
+
 // GuardDelta is one change to the guards at one path: keys to set, and keys to remove.
 //
 // The direction matters, which is why a removal is a list of keys rather than an absent entry.
 // Guards propagate by diff rather than by union, and applying a diff is what lets a *removal*
 // travel: when a workload no longer needs hostNetwork and the base drops the exception, the
 // variants drop it too, instead of accumulating stale guards nobody can account for.
+//
+// A delta is always about inherited guards, since those are the only ones that travel: what it
+// sets arrives inherited, so it travels on from there, and what it removes is removed only where
+// it had arrived as inherited -- a downstream's own guard with the same key is that Unit's
+// decision, not the upstream's to retract.
 type GuardDelta struct {
-	Path   ResolvedPath      `json:",omitempty" description:"The path whose guards changed; empty for the resource as a whole"`
-	Set    map[string]string `json:",omitempty" description:"Guard keys added or changed, with their new values"`
-	Remove []string          `json:",omitempty" description:"Guard keys removed"`
+	Path   ResolvedPath      `json:",omitempty" description:"The path whose inherited guards changed; empty for the resource as a whole"`
+	Set    map[string]string `json:",omitempty" description:"Inherited guard keys added or changed, with their new values"`
+	Remove []string          `json:",omitempty" description:"Inherited guard keys removed"`
 }
 
 // IsEmpty reports whether a delta says nothing.
@@ -765,15 +963,18 @@ type ResourceGuardDiff struct {
 	Deltas   []GuardDelta
 }
 
-// DiffGuards computes the guard changes between two annotation tables -- the source's, at the
-// base and end of the range a merge is carrying.
+// DiffInheritedGuards computes the changes to inherited guards between two annotation tables --
+// the source's, at the base and end of the range a merge is carrying.
 //
-// Only guards are diffed. Other annotation kinds do not propagate yet, and folding them in here
-// silently would be a decision made by omission rather than on purpose.
+// Only inherited guards are diffed: a local guard is about the source Unit and does not travel,
+// and other annotation kinds do not propagate at all. A guard that stops being inherited inside
+// the range reads as removed, which is what it is to the Units downstream: it has stopped being
+// policy for them, though the source keeps it.
 //
 // Resources are matched by name and alias, so a rename inside the range does not read as one
 // resource losing all its guards and another gaining them.
-func DiffGuards(identifier ResourceIdentifier, base, end PathAnnotationList) []ResourceGuardDiff {
+func DiffInheritedGuards(identifier ResourceIdentifier, base, end PathAnnotationList) []ResourceGuardDiff {
+	base, end = InheritedGuards(base), InheritedGuards(end)
 	var diffs []ResourceGuardDiff
 	baseIndex := annotationIndex(identifier, base)
 	endIndex := annotationIndex(identifier, end)
@@ -862,18 +1063,7 @@ func ApplyGuardDelta(identifier ResourceIdentifier, table PathAnnotationList, re
 
 	changed := false
 	if len(delta.Set) > 0 {
-		target := annotationsForPath(entry, delta.Path)
-		guards, ok := target[AnnotationKindGuard]
-		if !ok {
-			guards = map[string]string{}
-			target[AnnotationKindGuard] = guards
-		}
-		for key, value := range delta.Set {
-			if existing, present := guards[key]; !present || existing != value {
-				guards[key] = value
-				changed = true
-			}
-		}
+		changed = setGuardEntries(annotationsForPath(entry, delta.Path), delta.Set, markInherited)
 	}
 	if len(delta.Remove) > 0 {
 		var target PathAnnotations
@@ -883,15 +1073,30 @@ func ApplyGuardDelta(identifier ResourceIdentifier, table PathAnnotationList, re
 			target = entry.PathAnnotationMap[delta.Path]
 		}
 		if guards, ok := target[AnnotationKindGuard]; ok {
-			for _, key := range delta.Remove {
-				if _, present := guards[key]; present {
-					delete(guards, key)
-					changed = true
-				}
+			for _, key := range RemovedGuardKeys(target, delta) {
+				delete(guards, key)
+				delete(target[AnnotationKindGuardInherited], key)
+				changed = true
 			}
 		}
 	}
 	return table, changed
+}
+
+// RemovedGuardKeys returns the keys a delta's Remove takes out of one path's annotations: those
+// present there as inherited guards.
+func RemovedGuardKeys(target PathAnnotations, delta *GuardDelta) []string {
+	var removed []string
+	for _, key := range delta.Remove {
+		if _, present := target[AnnotationKindGuard][key]; !present {
+			continue
+		}
+		if _, marked := target[AnnotationKindGuardInherited][key]; !marked {
+			continue
+		}
+		removed = append(removed, key)
+	}
+	return removed
 }
 
 // CheckGuardStampCleared refuses guards a change would record that its own clearance does not
