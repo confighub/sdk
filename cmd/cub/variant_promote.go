@@ -450,6 +450,11 @@ func displayPromoteResult(result *goclientnew.PromoteResult) {
 			}
 			displayPromoteSpaceSummary(space, result.ChangeOrderID != nil, dryRun)
 		}
+		for j := range space.Units {
+			if unit := &space.Units[j]; unit.Error == nil {
+				displayWriteConflicts(space.SpaceSlug, unit.Slug, unit.Conflicts, dryRun)
+			}
+		}
 		if shouldDisplayMutations() {
 			displayPromoteSpaceMutations(space, result.ChangeOrderID != nil)
 		}

@@ -817,23 +817,8 @@ func runFunctionInvocations(cmd *cobra.Command, args []string, mode FunctionKind
 	if !renderFunctionResponse(resp, hasMultipleFunctions(newBody)) {
 		outputFunctionInvocationResponse(resp)
 	}
-	if wait {
-		printAwaitingTriggers()
-		// Wait one at a time
-		for _, resp := range *resp {
-			// A Unit the invocation failed on has nothing of this invocation's to await.
-			if invocationFailed(&resp) {
-				continue
-			}
-			unitDetails, err := resolveUnit(resp.UnitID.String(), resp.SpaceID.String(), "*")
-			if err != nil {
-				return err
-			}
-			err = awaitTriggersRemoval(unitDetails.Unit)
-			if err != nil {
-				return err
-			}
-		}
+	if err := awaitInvocationTriggers(resp); err != nil {
+		return err
 	}
 
 	// Display mutations if requested

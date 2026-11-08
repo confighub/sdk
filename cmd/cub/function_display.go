@@ -148,6 +148,52 @@ func invocationFailed(respMsg *goclientnew.FunctionInvocationsResponse) bool {
 	return !respMsg.Success || respMsg.Error != nil
 }
 
+// invocationChangedData reports whether an invocation changed the configuration data of the Unit
+// or Revision one response is for, or on a dry run would. Mutators names the functions that
+// proposed a change, but the guards decide what of it lands: a write they withheld entirely
+// comes back with its conflicts and no new mutations.
+func invocationChangedData(respMsg *goclientnew.FunctionInvocationsResponse) bool {
+	if len(respMsg.Mutators) == 0 {
+		return false
+	}
+	withheldEntirely := !respMsg.HasNewMutations && respMsg.Conflicts != nil && len(*respMsg.Conflicts) > 0
+	return !withheldEntirely
+}
+
+// awaitInvocationTriggers waits for the triggers of the Units an invocation wrote, when the
+// command waits, and reports the validation errors and warnings they leave. The command reports
+// what it changed, so it waits only on a Unit whose data the write changed: a dry run wrote
+// nothing, and neither did an invocation that failed, read or validated without changing
+// anything, or had its every change withheld by guards. Those have no triggers running, and
+// their validation results are whatever an earlier change left.
+func awaitInvocationTriggers(respMsgs *[]goclientnew.FunctionInvocationsResponse) error {
+	if !wait || dryRun {
+		return nil
+	}
+	var written []*goclientnew.FunctionInvocationsResponse
+	for i := range *respMsgs {
+		respMsg := &(*respMsgs)[i]
+		if !invocationFailed(respMsg) && respMsg.RevisionID == uuid.Nil && invocationChangedData(respMsg) {
+			written = append(written, respMsg)
+		}
+	}
+	if len(written) == 0 {
+		return nil
+	}
+	printAwaitingTriggers()
+	// One at a time.
+	for _, respMsg := range written {
+		unitDetails, err := resolveUnit(respMsg.UnitID.String(), respMsg.SpaceID.String(), "*")
+		if err != nil {
+			return err
+		}
+		if err := awaitTriggersRemoval(unitDetails.Unit); err != nil {
+			return err
+		}
+	}
+	return nil
+}
+
 // failedInvocationsError is the error a command returns when the invocation failed on some of
 // the Units or Revisions it reached, after their responses have been displayed. Nil when none
 // failed.
@@ -185,11 +231,13 @@ func outputFunctionInvocationResponse(respMsgs *[]goclientnew.FunctionInvocation
 		}
 		// A failed invocation changed nothing, whatever data its functions proposed.
 		if !failed && (dataOnly || (!quiet && !outputOnly && !outputValuesOnly && !outputRaw)) {
-			if dataOnly || len(respMsg.Mutators) > 0 {
+			if dataOnly || invocationChangedData(respMsg) {
 				// Don't use detailView to print the data because it pads the entire width with spaces.
 				if !dataOnly {
 					if verbose {
 						tprintRaw("CONFIGDATA\n---------\n")
+					} else if dryRun {
+						tprintRaw("Config data would change")
 					} else {
 						tprintRaw("Config data changed")
 					}
@@ -202,8 +250,19 @@ func outputFunctionInvocationResponse(respMsgs *[]goclientnew.FunctionInvocation
 					}
 				}
 			} else if !dataOnly && len(respMsg.Outputs) == 0 {
-				tprintRaw("Config data not changed")
+				if dryRun {
+					tprintRaw("Config data would not change")
+				} else {
+					tprintRaw("Config data not changed")
+				}
 			}
+		}
+		if !failed && !quiet && !outputOnly && !dataOnly && !outputValuesOnly && !outputRaw && respMsg.RevisionID == uuid.Nil {
+			space := respMsg.SpaceSlug
+			if space == "" {
+				space = respMsg.SpaceID.String()
+			}
+			displayWriteConflicts(space, respMsg.UnitSlug, respMsg.Conflicts, dryRun)
 		}
 		if (outputOnly || (!quiet && !dataOnly && !outputValuesOnly)) && len(respMsg.Outputs) != 0 {
 			// Don't use detailView to print the output because it pads the entire width with spaces.

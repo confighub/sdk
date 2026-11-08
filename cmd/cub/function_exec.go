@@ -257,19 +257,8 @@ func functionExecCommandRun(cmd *cobra.Command, args []string) error {
 	if !renderFunctionResponse(resp, hasMultipleFunctions(execBody)) {
 		outputFunctionInvocationResponse(resp)
 	}
-	if wait {
-		printAwaitingTriggers()
-		// Wait one at a time
-		for _, resp := range *resp {
-			unitDetails, err := resolveUnit(resp.UnitID.String(), resp.SpaceID.String(), "*")
-			if err != nil {
-				return err
-			}
-			err = awaitTriggersRemoval(unitDetails.Unit)
-			if err != nil {
-				return err
-			}
-		}
+	if err := awaitInvocationTriggers(resp); err != nil {
+		return err
 	}
 
 	// Display mutations if requested

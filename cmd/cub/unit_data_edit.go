@@ -18,7 +18,11 @@ var unitDataEditCmd = &cobra.Command{
 	Short: "Edit the config data of a unit in your system's editor",
 	Long: getCommandHelp(`Open the config data of a unit, as 'cub unit data' shows it, in the editor named by
 the EDITOR environment variable, or vi if it is not set. When the editor exits, the changes are
-saved as a new revision. If the data was not changed, no update is made.`, ""),
+saved as a new revision. If the data was not changed, no update is made.
+
+A guarded path the edit changes is written only if --clearance covers its guards. The edit is
+saved without the changes it does not cover, and those are listed as conflicts, which
+'cub unit conflicts --apply' applies.`, ""),
 	Args: cobra.ExactArgs(1),
 	RunE: unitDataEditCmdRun,
 }
@@ -26,6 +30,7 @@ saved as a new revision. If the data was not changed, no update is made.`, ""),
 func init() {
 	enableWaitFlag(unitDataEditCmd)
 	unitDataEditCmd.Flags().StringVar(&changesetSlug, "changeset", "", "changeset to associate the unit with")
+	addClearanceFlag(unitDataEditCmd)
 	enableOptionalSpace(unitDataEditCmd)
 	unitCmd.AddCommand(unitDataEditCmd)
 }
@@ -84,8 +89,16 @@ func unitDataEditCmdRun(cmd *cobra.Command, args []string) error {
 	if etag != "" {
 		editParams.IfMatch = &etag
 	}
-	if _, err := putUnitData(spaceID, currentUnit.Unit.UnitID, string(updatedContent), editParams); err != nil {
+	clearance, err := clearanceJSON()
+	if err != nil {
 		return keptEdit(path, err)
+	}
+	if clearance != "" {
+		editParams.Clearance = &clearance
+	}
+	writeResult, err := putUnitData(spaceID, currentUnit.Unit.UnitID, string(updatedContent), editParams)
+	if err != nil {
+		return keptEdit(path, withClearanceFlags(err))
 	}
 	// The Unit holds the edit now, so the file is no longer the only copy of it.
 	os.Remove(path)
@@ -100,5 +113,12 @@ func unitDataEditCmdRun(cmd *cobra.Command, args []string) error {
 		}
 	}
 	displayUpdateResults(unitDetails, "unit", args[0], unitDetails.Unit.UnitID.String(), displayExtendedUnitDetails)
+	if writeResult != nil {
+		space := spaceID.String()
+		if unitDetails.Space != nil {
+			space = unitDetails.Space.Slug
+		}
+		displayWriteConflicts(space, unitDetails.Unit.Slug, writeResult.Conflicts, false)
+	}
 	return nil
 }

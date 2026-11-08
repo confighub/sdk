@@ -307,19 +307,8 @@ func RegisterFunctionsAsCobraCommands() {
 					if !renderFunctionResponse(respMsgs, hasMultipleFunctions(newBody)) {
 						outputFunctionInvocationResponse(respMsgs)
 					}
-					if wait {
-						printAwaitingTriggers()
-						// Wait one at a time
-						for _, respMsg := range *respMsgs {
-							unitDetails, err := resolveUnit(respMsg.UnitID.String(), respMsg.SpaceID.String(), "*") // get all fields for now
-							if err != nil {
-								return err
-							}
-							err = awaitTriggersRemoval(unitDetails.Unit)
-							if err != nil {
-								return err
-							}
-						}
+					if err := awaitInvocationTriggers(respMsgs); err != nil {
+						return err
 					}
 
 					// Display mutations if requested

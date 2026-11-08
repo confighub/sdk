@@ -5088,14 +5088,20 @@ type Group struct {
 
 // GuardDelta defines model for GuardDelta.
 type GuardDelta struct {
-	// Path The path whose inherited guards changed; empty for the resource as a whole
+	// Path The path whose guards changed; empty for the resource as a whole
 	Path string `json:"Path,omitempty" yaml:"Path,omitempty"`
 
 	// Remove Inherited guard keys removed
 	Remove []string `json:"Remove,omitempty" yaml:"Remove,omitempty"`
 
+	// RemoveLocal Guard keys removed that stay with the Unit, not inherited; a restore taking out guards the restored Revision did not have
+	RemoveLocal []string `json:"RemoveLocal,omitempty" yaml:"RemoveLocal,omitempty"`
+
 	// Set Inherited guard keys added or changed, with their new values
 	Set map[string]string `json:"Set,omitempty" yaml:"Set,omitempty"`
+
+	// SetLocal Guard keys added or changed as guards that stay with the Unit, with their new values; a restore putting back the Unit's own guards
+	SetLocal map[string]string `json:"SetLocal,omitempty" yaml:"SetLocal,omitempty"`
 }
 
 // GuardStamp defines model for GuardStamp.
@@ -5434,7 +5440,7 @@ type Mutation struct {
 	// ChannelID Example: 248df4b7-aa70-47b8-a036-33ac447e668d
 	ChannelID *openapi_types.UUID `json:"ChannelID,omitempty" yaml:"ChannelID,omitempty"`
 
-	// Clearance The classes of guarded reason the change was filtered with. On a function invocation that is the request's clearance together with that of every Trigger and Invocation that wrote in the same execution; on a Link's change, the Link's
+	// Clearance The classes of guarded reason the change was filtered with. On a function invocation that is the request's clearance together with that of every Trigger and Invocation that wrote in the same execution; on a Link's change, the Link's; on an apply of withheld conflicts, the request's
 	Clearance *Clearance `json:"Clearance,omitempty" yaml:"Clearance,omitempty"`
 
 	// CreatedAt The timestamp when the entity was created in "2023-01-01T12:00:00Z" format.
@@ -7620,6 +7626,9 @@ type UnitConflictsRequest struct {
 	// Action Apply re-applies the withheld change; Dismiss drops the conflict without changing the configuration data; Undismiss removes dismissals recorded with Permanent
 	Action string `json:"Action,omitempty" yaml:"Action,omitempty"`
 
+	// Clearance With Apply, the classes of guarded reason the applied changes are cleared for, as a list of {Key, Operator, Values} requirements. A withheld value is written only where the guards at its path admit this clearance, and a withheld guard change only where the guards already at its path do; the request is refused otherwise. Not taken by Dismiss or Undismiss, which write no configuration data and no guards.
+	Clearance *Clearance `json:"Clearance,omitempty" yaml:"Clearance,omitempty"`
+
 	// DryRun Report what the request would do without writing anything. The response carries the Unit as it would be.
 	DryRun bool `json:"DryRun,omitempty" yaml:"DryRun,omitempty"`
 
@@ -7661,8 +7670,10 @@ type UnitCreateOrUpdateResponse struct {
 	ChangeSetClose *ChangeSetCloseResult `json:"ChangeSetClose,omitempty" yaml:"ChangeSetClose,omitempty"`
 
 	// ConfigData The configuration the operation produced; returned when include names ConfigData.
-	ConfigData string                `json:"ConfigData,omitempty" yaml:"ConfigData,omitempty"`
-	Conflicts  *MutationConflictList `json:"Conflicts,omitempty" yaml:"Conflicts,omitempty"`
+	ConfigData string `json:"ConfigData,omitempty" yaml:"ConfigData,omitempty"`
+
+	// Conflicts What this write could not apply: for an upgrade, merge or resolve, each change it withheld, and for any write, each value whose guards its clearance did not cover (Guarded) and each guard change it was not cleared to make (GuardWithheld). For a dry run, what it would withhold. Unit.Conflicts lists every conflict outstanding on the Unit, including those earlier operations left.
+	Conflicts *MutationConflictList `json:"Conflicts,omitempty" yaml:"Conflicts,omitempty"`
 
 	// Diff What the operation changed, or on a dry run would change, path by path with the values on both sides; returned when include names Diff.
 	Diff  *ConfigDiff                  `json:"Diff,omitempty" yaml:"Diff,omitempty"`

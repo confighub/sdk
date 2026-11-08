@@ -836,6 +836,13 @@ func unitUpdateCmdRun(cmd *cobra.Command, args []string) error {
 	// Display results
 
 	displayUpdateResults(unitDetails, "unit", args[0], unitDetails.UnitID.String(), displayUnitDetails)
+	if writeResult != nil {
+		space := selectedSpaceSlug
+		if space == "" {
+			space = unitDetails.SpaceID.String()
+		}
+		displayWriteConflicts(space, args[0], writeResult.Conflicts, dryRun)
+	}
 
 	// Display what the update changed, or would change, if requested.
 	if shouldDisplayMutations() {
@@ -1126,6 +1133,11 @@ func runBulkUnitUpdate() error {
 	}
 
 	bulkErr := handleBulkCreateOrUpdateResponse(responses, statusCode, "update", "")
+	for i := range *responses {
+		if response := &(*responses)[i]; response.Error == nil && response.Unit != nil {
+			displayWriteConflicts(response.Unit.SpaceID.String(), response.Unit.Slug, response.Conflicts, dryRun)
+		}
+	}
 
 	// Display mutations if requested, for the units that were updated successfully
 	if shouldDisplayMutations() {

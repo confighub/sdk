@@ -57247,8 +57247,8 @@ components:
     GuardDelta:
       properties:
         Path:
-          description: The path whose inherited guards changed; empty for the resource
-            as a whole
+          description: The path whose guards changed; empty for the resource as a
+            whole
           type: string
           x-go-type-skip-optional-pointer: true
         Remove:
@@ -57257,10 +57257,24 @@ components:
             type: string
           type: array
           x-go-type-skip-optional-pointer: true
+        RemoveLocal:
+          description: Guard keys removed that stay with the Unit, not inherited;
+            a restore taking out guards the restored Revision did not have
+          items:
+            type: string
+          type: array
+          x-go-type-skip-optional-pointer: true
         Set:
           additionalProperties:
             type: string
           description: Inherited guard keys added or changed, with their new values
+          type: object
+          x-go-type-skip-optional-pointer: true
+        SetLocal:
+          additionalProperties:
+            type: string
+          description: Guard keys added or changed as guards that stay with the Unit,
+            with their new values; a restore putting back the Unit's own guards
           type: object
           x-go-type-skip-optional-pointer: true
       type: object
@@ -58045,7 +58059,8 @@ components:
           description: The classes of guarded reason the change was filtered with.
             On a function invocation that is the request's clearance together with
             that of every Trigger and Invocation that wrote in the same execution;
-            on a Link's change, the Link's
+            on a Link's change, the Link's; on an apply of withheld conflicts, the
+            request's
           x-confighub-where:
             dataType: JSON
         CreatedAt:
@@ -62650,6 +62665,15 @@ components:
             recorded with Permanent
           type: string
           x-go-type-skip-optional-pointer: true
+        Clearance:
+          allOf:
+          - $ref: '#/components/schemas/Clearance'
+          description: With Apply, the classes of guarded reason the applied changes
+            are cleared for, as a list of {Key, Operator, Values} requirements. A
+            withheld value is written only where the guards at its path admit this
+            clearance, and a withheld guard change only where the guards already at
+            its path do; the request is refused otherwise. Not taken by Dismiss or
+            Undismiss, which write no configuration data and no guards.
         DryRun:
           description: Report what the request would do without writing anything.
             The response carries the Unit as it would be.
@@ -62725,7 +62749,14 @@ components:
           type: string
           x-go-type-skip-optional-pointer: true
         Conflicts:
-          $ref: '#/components/schemas/MutationConflictList'
+          allOf:
+          - $ref: '#/components/schemas/MutationConflictList'
+          description: 'What this write could not apply: for an upgrade, merge or
+            resolve, each change it withheld, and for any write, each value whose
+            guards its clearance did not cover (Guarded) and each guard change it
+            was not cleared to make (GuardWithheld). For a dry run, what it would
+            withhold. Unit.Conflicts lists every conflict outstanding on the Unit,
+            including those earlier operations left.'
         Diff:
           allOf:
           - $ref: '#/components/schemas/ConfigDiff'

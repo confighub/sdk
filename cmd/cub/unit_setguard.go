@@ -258,7 +258,7 @@ func unitSetGuardCmdRun(_ *cobra.Command, args []string) error {
 
 	res, err := cubClientNew.SetUnitGuardWithResponse(ctx, configUnit.Unit.SpaceID, configUnit.Unit.UnitID, body)
 	if cubapi.IsAPIError(err, res) {
-		return cubapi.InterpretErrorGeneric(err, res)
+		return withClearanceFlags(cubapi.InterpretErrorGeneric(err, res))
 	}
 
 	// The unit's PathAnnotations are what -o and --verbose ask for; by default the command

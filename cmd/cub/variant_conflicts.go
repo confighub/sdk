@@ -14,7 +14,7 @@ import (
 )
 
 var variantConflictsCmd = &cobra.Command{
-	Use:         "conflicts <variant> [--apply | --dismiss [--permanent]] [--reason REASON] [--path PATH] [--resource <kind>/[<namespace>/]<name>] [--guard KEY[=VALUE]]...",
+	Use:         "conflicts <variant> [--apply [--clearance CLEARANCE]... | --dismiss [--permanent]] [--reason REASON] [--path PATH] [--resource <kind>/[<namespace>/]<name>] [--guard KEY[=VALUE]]...",
 	Short:       "Show, apply, or dismiss a variant's outstanding merge conflicts",
 	Annotations: map[string]string{"OrgLevel": ""},
 	Long: getCommandHelp(`Work with the parts of the last promote's patch that were not applied, across a
@@ -38,6 +38,9 @@ names one resource the way the function verbs do, as <kind>/<name> or
 conflicts": a list element by position or merge key, * for any one element or key, and
 the guards a conflict was withheld by. Both take --dry-run, which reports what would be
 done and writes nothing.
+
+Applying a Guarded or GuardWithheld conflict needs a --clearance covering the guards at its
+path, as "cub unit conflicts" explains; without one the apply is refused.
 
 --dismiss --permanent also records the selection on the unit holding the resource, so a
 later promote reporting a conflict it covers leaves it dismissed rather than outstanding.
@@ -76,6 +79,7 @@ var variantConflictsArgs struct {
 	path      string
 	resource  string
 	guards    []string
+	clearance []string
 }
 
 func init() {
@@ -93,6 +97,8 @@ func init() {
 		"select conflicts withheld only by these guards, as key or key=value (repeatable)")
 	variantConflictsCmd.Flags().StringVar(&variantConflictsArgs.resource, "resource", "",
 		"select conflicts on one resource, as <kind>/<name> or <kind>/<namespace>/<name>")
+	variantConflictsCmd.Flags().StringArrayVar(&variantConflictsArgs.clearance, "clearance", nil,
+		"with --apply, class of guarded reason the applied changes are cleared for, as KEY, KEY=VALUE[;VALUE...], KEY!=VALUE[;VALUE...], or !KEY (repeatable). An apply writing a guarded path this does not cover is refused")
 	variantConflictsCmd.Flags().BoolVar(&dryRun, "dry-run", false,
 		"dry run mode: report what --apply or --dismiss would do without writing anything")
 	enableWaitFlag(variantConflictsCmd)
@@ -113,6 +119,9 @@ func variantConflictsCmdRun(_ *cobra.Command, args []string) error {
 	a := variantConflictsArgs
 	if a.apply && a.dismiss {
 		return fmt.Errorf("--apply and --dismiss are mutually exclusive")
+	}
+	if len(a.clearance) > 0 && !a.apply {
+		return fmt.Errorf("--clearance says what applied changes are cleared for, so it goes with --apply")
 	}
 	selecting := a.reason != "" || a.path != "" || a.resource != "" || len(a.guards) > 0
 	if selecting && !a.apply && !a.dismiss {
@@ -184,6 +193,13 @@ func variantConflictsCmdRun(_ *cobra.Command, args []string) error {
 	body := goclientnew.UnitConflictsRequest{Action: "Dismiss", DryRun: dryRun, Permanent: a.permanent}
 	if a.apply {
 		body.Action = "Apply"
+		clearance, err := parseClearanceSpecs(a.clearance)
+		if err != nil {
+			return err
+		}
+		if len(clearance) > 0 {
+			body.Clearance = &clearance
+		}
 	}
 	if selector != nil {
 		body.Select = []goclientnew.UnitConflictSelector{*selector}
@@ -194,7 +210,7 @@ func variantConflictsCmdRun(_ *cobra.Command, args []string) error {
 	for _, c := range conflicted {
 		res, err := cubClientNew.ResolveUnitConflictsWithResponse(ctx, c.unit.SpaceID, c.unit.UnitID, body)
 		if cubapi.IsAPIError(err, res) {
-			return cubapi.InterpretErrorGeneric(err, res)
+			return withClearanceFlags(cubapi.InterpretErrorGeneric(err, res))
 		}
 		resp := res.JSON200
 		if resp == nil {

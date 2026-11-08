@@ -431,6 +431,7 @@ func variantUploadCmdRun(cmd *cobra.Command, args []string) error {
 		tprint("Pulled %s (%s)", req.Source.Ref, result.SourceDigest)
 	}
 	reportUploadResult(result)
+	displayUploadConflicts(result, a.dryRun)
 	if shouldDisplayMutations() {
 		displayUploadDiffs(result)
 	}
@@ -871,6 +872,20 @@ func reportUploadResult(result *goclientnew.UploadResult) {
 			tprint("target lives in the cluster, e.g. a Secret created out-of-band):")
 			for _, u := range c.UnmatchedReferences {
 				tprint("  - %s -> %s %q", u.FromUnit, u.TargetType, u.TargetName)
+			}
+		}
+	}
+}
+
+// displayUploadConflicts prints what the upload could not apply to each Unit it wrote, or on a
+// dry run would not.
+func displayUploadConflicts(result *goclientnew.UploadResult, dryRun bool) {
+	for _, c := range result.Components {
+		for _, s := range c.Spaces {
+			for i := range s.Units {
+				if u := &s.Units[i]; u.Error == nil {
+					displayWriteConflicts(s.SpaceSlug, u.Slug, u.Conflicts, dryRun)
+				}
 			}
 		}
 	}

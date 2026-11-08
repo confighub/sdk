@@ -802,3 +802,82 @@ func TestCheckGuardStampCleared(t *testing.T) {
 		})
 	}
 }
+
+// guardsAt returns the guards, and which are inherited, at one path of a one-resource table.
+func guardsAt(list api.PathAnnotationList, path api.ResolvedPath) (map[string]string, map[string]string) {
+	if len(list) == 0 {
+		return nil, nil
+	}
+	annotations := list[0].PathAnnotationMap[path]
+	return annotations[api.AnnotationKindGuard], annotations[api.AnnotationKindGuardInherited]
+}
+
+// A restore to a Revision from before a guard was set would remove the guard. Removing it is a
+// guard edit, checked against the guards the path has now, so without a clearance covering them
+// the path keeps its guard and the removal is reported; with one, the guard goes.
+func TestRestoreGuardsWithholdsAnUnclearedRemoval(t *testing.T) {
+	current := localTable("ns/web", map[api.ResolvedPath]map[string]string{
+		"spec.replicas": {"Scale": "RegionSpecific"},
+	})
+	restored := localTable("ns/web", map[api.ResolvedPath]map[string]string{})
+
+	result, withheld := api.RestoreGuards(k8s, current, restored, nil)
+	guards, _ := guardsAt(result, "spec.replicas")
+	assert.Equal(t, map[string]string{"Scale": "RegionSpecific"}, guards)
+	require.Len(t, withheld, 1)
+	require.Len(t, withheld[0].Deltas, 1)
+	assert.Equal(t, []string{"Scale"}, withheld[0].Deltas[0].RemoveLocal)
+
+	// The withheld change, applied later as a conflict is, makes the restore's change.
+	applied, changed := api.ApplyGuardDelta(k8s, api.ClonePathAnnotationList(result),
+		withheld[0].Resource, &withheld[0].Deltas[0])
+	assert.True(t, changed)
+	guards, _ = guardsAt(applied, "spec.replicas")
+	assert.Empty(t, guards)
+
+	cleared := api.Clearance{{Key: "Scale", Operator: api.ClearanceOperatorIn, Values: []string{"RegionSpecific"}}}
+	result, withheld = api.RestoreGuards(k8s, current, restored, cleared)
+	guards, _ = guardsAt(result, "spec.replicas")
+	assert.Empty(t, guards)
+	assert.Empty(t, withheld)
+}
+
+// A path with no guards now needs no clearance to be given the restored Revision's, and a guard
+// whose inheritance alone the restore changes is a change to the path's guards like any other.
+func TestRestoreGuardsAddsFreelyAndChecksInheritance(t *testing.T) {
+	current := table("ns/web", map[api.ResolvedPath]map[string]string{
+		"spec.replicas": {"Scale": "RegionSpecific"},
+	})
+	restored := localTable("ns/web", map[api.ResolvedPath]map[string]string{
+		"spec.replicas":                  {"Scale": "RegionSpecific"},
+		"spec.template.spec.hostNetwork": {"policy-exception": "host-network"},
+	})
+
+	result, withheld := api.RestoreGuards(k8s, current, restored, nil)
+	guards, inherited := guardsAt(result, "spec.template.spec.hostNetwork")
+	assert.Equal(t, map[string]string{"policy-exception": "host-network"}, guards)
+	assert.Empty(t, inherited)
+	// Made local by the restore, but not cleared for it: still inherited.
+	guards, inherited = guardsAt(result, "spec.replicas")
+	assert.Equal(t, map[string]string{"Scale": "RegionSpecific"}, guards)
+	assert.Contains(t, inherited, "Scale")
+	require.Len(t, withheld, 1)
+	assert.Equal(t, map[string]string{"Scale": "RegionSpecific"}, withheld[0].Deltas[0].SetLocal)
+}
+
+func TestDiffGuardsCoversLocalAndInherited(t *testing.T) {
+	base := localTable("ns/web", map[api.ResolvedPath]map[string]string{
+		"spec.replicas": {"owner": "platform", "Scale": "RegionSpecific"},
+	})
+	end := table("ns/web", map[api.ResolvedPath]map[string]string{
+		"spec.replicas": {"owner": "platform"},
+	})
+	diffs := api.DiffGuards(k8s, base, end)
+	require.Len(t, diffs, 1)
+	require.Len(t, diffs[0].Deltas, 1)
+	delta := diffs[0].Deltas[0]
+	assert.Equal(t, map[string]string{"owner": "platform"}, delta.Set, "made inherited")
+	assert.Equal(t, []string{"Scale"}, delta.RemoveLocal)
+	assert.Empty(t, delta.Remove)
+	assert.Empty(t, delta.SetLocal)
+}

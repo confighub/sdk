@@ -6,6 +6,7 @@ package main
 import (
 	"encoding/json"
 	"fmt"
+	"slices"
 	"strings"
 
 	"github.com/spf13/cobra"
@@ -208,4 +209,71 @@ func addInvocationClearanceFlag(cmd *cobra.Command) {
 func addTriggerClearanceFlag(cmd *cobra.Command) {
 	cmd.Flags().StringArrayVar(&triggerClearance, "clearance", nil,
 		"class of guarded reason this trigger's function is cleared for, as KEY, KEY=VALUE[;VALUE...], KEY!=VALUE[;VALUE...], or !KEY to refuse any path carrying KEY (repeatable). Part of the trigger's Hash, unlike --protect: changing it changes what a re-run lands")
+}
+
+// clearanceErrorPhrase introduces the clearance a refusal names as the one that would cover what
+// it refused. The server spells it as the request body does, as JSON.
+const clearanceErrorPhrase = "a Clearance of "
+
+// withClearanceFlags rewrites the clearance a server refusal names into the --clearance flags
+// that state it, so the error says what to type rather than what to send. An error naming none
+// is returned as it is.
+func withClearanceFlags(err error) error {
+	if err == nil {
+		return nil
+	}
+	message := err.Error()
+	start := strings.Index(message, clearanceErrorPhrase)
+	if start < 0 {
+		return err
+	}
+	rest := message[start+len(clearanceErrorPhrase):]
+	decoder := json.NewDecoder(strings.NewReader(rest))
+	var clearance goclientnew.Clearance
+	if decodeErr := decoder.Decode(&clearance); decodeErr != nil || len(clearance) == 0 {
+		return err
+	}
+	flags := make([]string, 0, len(clearance))
+	for _, requirement := range clearance {
+		flags = append(flags, fmt.Sprintf("--clearance %q", formatClearance(&goclientnew.Clearance{requirement})))
+	}
+	return fmt.Errorf("%s%s%s", message[:start], strings.Join(flags, " "), rest[decoder.InputOffset():])
+}
+
+// clearanceCoveringGuards is the narrowest clearance admitting the guards that withheld the
+// given conflicts: per key, In the values the conflicts name, or Exists for a guard with no
+// value. A guard the change forbade itself with DoesNotExist is left out, since no added
+// requirement allows it.
+func clearanceCoveringGuards(conflicts []goclientnew.MutationConflict) goclientnew.Clearance {
+	values := map[string][]string{}
+	var keys []string
+	for _, conflict := range conflicts {
+		guards := conflict.Guards
+		if len(guards) == 0 && conflict.Guard != nil {
+			guards = []goclientnew.WithheldGuard{*conflict.Guard}
+		}
+		for _, guard := range guards {
+			if guard.Precondition || guard.Key == "" {
+				continue
+			}
+			if _, seen := values[guard.Key]; !seen {
+				keys = append(keys, guard.Key)
+				values[guard.Key] = nil
+			}
+			if guard.Value != "" && !slices.Contains(values[guard.Key], guard.Value) {
+				values[guard.Key] = append(values[guard.Key], guard.Value)
+			}
+		}
+	}
+	slices.Sort(keys)
+	clearance := goclientnew.Clearance{}
+	for _, key := range keys {
+		if len(values[key]) == 0 {
+			clearance = append(clearance, goclientnew.ClearanceRequirement{Key: key, Operator: string(api.ClearanceOperatorExists)})
+			continue
+		}
+		slices.Sort(values[key])
+		clearance = append(clearance, goclientnew.ClearanceRequirement{Key: key, Operator: string(api.ClearanceOperatorIn), Values: values[key]})
+	}
+	return clearance
 }

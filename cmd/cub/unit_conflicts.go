@@ -16,7 +16,7 @@ import (
 )
 
 var unitConflictsCmd = &cobra.Command{
-	Use:   "conflicts <unit-slug> [--apply | --dismiss [--permanent] | --undismiss] [--reason REASON] [--path PATH] [--resource NAME] [--resource-type TYPE] [--guard KEY[=VALUE]]...",
+	Use:   "conflicts <unit-slug> [--apply [--clearance CLEARANCE]... | --dismiss [--permanent] | --undismiss] [--reason REASON] [--path PATH] [--resource NAME] [--resource-type TYPE] [--guard KEY[=VALUE]]...",
 	Short: "Show, apply, or dismiss a unit's outstanding merge conflicts",
 	Long: getCommandHelp(`Work with the parts of the last merge's patch that were not applied.
 
@@ -32,13 +32,20 @@ carrying a guard -- a recorded reason its value is what it is -- that the merge
 was not cleared for. The conflict names the guard, so the report says which
 reason stopped it rather than only that something did.
 
+Applying a Guarded conflict writes the guarded path, so it needs what the merge
+lacked: a --clearance covering the guards there, given as for any change. Without
+one the apply is refused, and the error names the clearance that would allow it.
+The clearance is recorded on the change, so a guard overridden this way can be
+found later like any other.
+
 GuardWithheld is the other half, and is about a guard rather than a value: the
 source changed the guards at a path and this merge was not cleared for the
 guards this unit already has there, so the guard change did not propagate.
 Reported because a base that adds a policy exception and a variant that
 silently does not receive it is exactly the failure guards exist to prevent,
 and the data merging cleanly would otherwise hide it. Applying one writes the
-guard change rather than any configuration data.
+guard change rather than any configuration data, and needs a --clearance for
+the guards already at the path, as "cub unit set-guard" would.
 
 ExclusiveWithheld is one of those, for a change that could not be made because
 this unit owns a field mutually exclusive with it -- the source switched a
@@ -53,8 +60,9 @@ response of the request that ran it. The next merge replaces them with its own,
 and a merge that lands cleanly clears them.
 
 With no flags this lists the outstanding conflicts, and the dismissals recorded
-with --permanent. --apply replays the changes they withheld, with every path
-eligible so nothing filters them out a second time. --dismiss drops them without
+with --permanent. --apply replays the changes they withheld, with protection and
+subtraction set aside so neither filters them out a second time; guards still
+apply, and --clearance says which the applied changes are cleared for. --dismiss drops them without
 touching the configuration data. Both act on every outstanding conflict unless
 --reason, --path, --resource, --resource-type, or --guard narrows the selection,
 and both take --dry-run, which reports what the request would do and writes
@@ -101,6 +109,10 @@ Examples:
   # Apply the upstream changes that were withheld because this unit owns the path
   cub unit conflicts my-unit --apply --reason Subtracted
 
+  # Take the upstream's replica count over the guard that withheld it
+  cub unit conflicts my-unit --apply --reason Guarded --path spec.replicas \
+    --clearance Scale=RegionSpecific
+
   # Accept the current state and stop reporting them
   cub unit conflicts my-unit --dismiss
 
@@ -143,6 +155,7 @@ var (
 	conflictsResourceName string
 	conflictsResourceType string
 	conflictsGuards       []string
+	conflictsClearance    []string
 )
 
 // conflictReasonsHelp lists the reasons a conflict can have, for flag help.
@@ -174,6 +187,8 @@ func init() {
 		"select conflicts on resources of this type, such as apps/v1/Deployment, in any API version")
 	unitConflictsCmd.Flags().StringArrayVar(&conflictsGuards, "guard", nil,
 		"select conflicts withheld only by these guards, as key or key=value (repeatable)")
+	unitConflictsCmd.Flags().StringArrayVar(&conflictsClearance, "clearance", nil,
+		"with --apply, class of guarded reason the applied changes are cleared for, as KEY, KEY=VALUE[;VALUE...], KEY!=VALUE[;VALUE...], or !KEY (repeatable). An apply writing a guarded path this does not cover is refused")
 	unitConflictsCmd.Flags().BoolVar(&dryRun, "dry-run", false,
 		"dry run mode: report what --apply or --dismiss would do without writing anything")
 	enableWaitFlag(unitConflictsCmd)
@@ -191,6 +206,9 @@ func unitConflictsCmdRun(_ *cobra.Command, args []string) error {
 	}
 	if actions > 1 {
 		return fmt.Errorf("--apply, --dismiss, and --undismiss are mutually exclusive")
+	}
+	if len(conflictsClearance) > 0 && !conflictsApply {
+		return fmt.Errorf("--clearance says what applied changes are cleared for, so it goes with --apply")
 	}
 	if conflictsPermanent && !conflictsDismiss {
 		return fmt.Errorf("--permanent records what --dismiss dismisses, so it goes with --dismiss")
@@ -223,6 +241,15 @@ func unitConflictsCmdRun(_ *cobra.Command, args []string) error {
 		body.Action = "Undismiss"
 	}
 	body.DryRun = dryRun
+	if len(conflictsClearance) > 0 {
+		clearance, err := parseClearanceSpecs(conflictsClearance)
+		if err != nil {
+			return err
+		}
+		if len(clearance) > 0 {
+			body.Clearance = &clearance
+		}
+	}
 	if selecting {
 		selector := goclientnew.UnitConflictSelector{
 			Reason:       conflictsReason,
@@ -241,7 +268,7 @@ func unitConflictsCmdRun(_ *cobra.Command, args []string) error {
 
 	res, err := cubClientNew.ResolveUnitConflictsWithResponse(ctx, configUnit.Unit.SpaceID, configUnit.Unit.UnitID, body)
 	if cubapi.IsAPIError(err, res) {
-		return cubapi.InterpretErrorGeneric(err, res)
+		return withClearanceFlags(cubapi.InterpretErrorGeneric(err, res))
 	}
 	resp := res.JSON200
 	if resp == nil {

@@ -942,19 +942,24 @@ func (r *ResourcePathAnnotations) InheritedGuardKeysForPath(path ResolvedPath) [
 // travel: when a workload no longer needs hostNetwork and the base drops the exception, the
 // variants drop it too, instead of accumulating stale guards nobody can account for.
 //
-// A delta is always about inherited guards, since those are the only ones that travel: what it
+// A merge's delta is about inherited guards, since those are the only ones that travel: what it
 // sets arrives inherited, so it travels on from there, and what it removes is removed only where
 // it had arrived as inherited -- a downstream's own guard with the same key is that Unit's
 // decision, not the upstream's to retract.
+//
+// A restore puts back a Unit's own guards too, so its delta also says what it sets and removes
+// as local guards (SetLocal, RemoveLocal).
 type GuardDelta struct {
-	Path   ResolvedPath      `json:",omitempty" description:"The path whose inherited guards changed; empty for the resource as a whole"`
-	Set    map[string]string `json:",omitempty" description:"Inherited guard keys added or changed, with their new values"`
-	Remove []string          `json:",omitempty" description:"Inherited guard keys removed"`
+	Path        ResolvedPath      `json:",omitempty" description:"The path whose guards changed; empty for the resource as a whole"`
+	Set         map[string]string `json:",omitempty" description:"Inherited guard keys added or changed, with their new values"`
+	Remove      []string          `json:",omitempty" description:"Inherited guard keys removed"`
+	SetLocal    map[string]string `json:",omitempty" description:"Guard keys added or changed as guards that stay with the Unit, with their new values; a restore putting back the Unit's own guards"`
+	RemoveLocal []string          `json:",omitempty" description:"Guard keys removed that stay with the Unit, not inherited; a restore taking out guards the restored Revision did not have"`
 }
 
 // IsEmpty reports whether a delta says nothing.
 func (d *GuardDelta) IsEmpty() bool {
-	return d == nil || (len(d.Set) == 0 && len(d.Remove) == 0)
+	return d == nil || (len(d.Set) == 0 && len(d.Remove) == 0 && len(d.SetLocal) == 0 && len(d.RemoveLocal) == 0)
 }
 
 // ResourceGuardDiff is one resource's guard changes over a range.
@@ -1048,6 +1053,154 @@ func diffResourceGuards(base, end *ResourcePathAnnotations) []GuardDelta {
 	return deltas
 }
 
+// DiffGuards computes every guard change between two annotation tables, local and inherited: what
+// a restore from end's Revision back over base would change. A key whose value or inheritance
+// differs is set with end's; a key end does not have is removed, as inherited or local as base
+// held it.
+func DiffGuards(identifier ResourceIdentifier, base, end PathAnnotationList) []ResourceGuardDiff {
+	var diffs []ResourceGuardDiff
+	baseIndex := annotationIndex(identifier, base)
+	endIndex := annotationIndex(identifier, end)
+	for i := range end {
+		endEntry := &end[i]
+		var baseEntry *ResourcePathAnnotations
+		if position, found := baseIndex.Find(endEntry.Resource, endEntry.AliasesWithoutScopes); found {
+			baseEntry = &base[position]
+		}
+		if deltas := diffAllResourceGuards(baseEntry, endEntry); len(deltas) > 0 {
+			diffs = append(diffs, ResourceGuardDiff{Resource: endEntry.Resource, Deltas: deltas})
+		}
+	}
+	for i := range base {
+		baseEntry := &base[i]
+		if _, found := endIndex.Find(baseEntry.Resource, baseEntry.AliasesWithoutScopes); found {
+			continue
+		}
+		if deltas := diffAllResourceGuards(baseEntry, &ResourcePathAnnotations{Resource: baseEntry.Resource}); len(deltas) > 0 {
+			diffs = append(diffs, ResourceGuardDiff{Resource: baseEntry.Resource, Deltas: deltas})
+		}
+	}
+	return diffs
+}
+
+// diffAllResourceGuards computes the per-path deltas, local and inherited, between two entries
+// for the same resource.
+func diffAllResourceGuards(base, end *ResourcePathAnnotations) []GuardDelta {
+	var deltas []GuardDelta
+	appendDelta := func(path ResolvedPath, baseAnnotations, endAnnotations PathAnnotations) {
+		if delta := diffPathGuards(path, baseAnnotations, endAnnotations); !delta.IsEmpty() {
+			deltas = append(deltas, delta)
+		}
+	}
+	var baseResource PathAnnotations
+	var baseByPath map[ResolvedPath]PathAnnotations
+	if base != nil {
+		baseResource, baseByPath = base.ResourceAnnotations, base.PathAnnotationMap
+	}
+	appendDelta("", baseResource, end.ResourceAnnotations)
+	for path, annotations := range end.PathAnnotationMap {
+		appendDelta(path, baseByPath[path], annotations)
+	}
+	for path, annotations := range baseByPath {
+		if _, stillThere := end.PathAnnotationMap[path]; !stillThere {
+			appendDelta(path, annotations, nil)
+		}
+	}
+	slices.SortFunc(deltas, func(a, b GuardDelta) int { return strings.Compare(string(a.Path), string(b.Path)) })
+	return deltas
+}
+
+// diffPathGuards is the delta that turns one path's guards, base, into end's, inheritance
+// included.
+func diffPathGuards(path ResolvedPath, base, end PathAnnotations) GuardDelta {
+	delta := GuardDelta{Path: path}
+	inherited := func(annotations PathAnnotations, key string) bool {
+		_, marked := annotations[AnnotationKindGuardInherited][key]
+		return marked
+	}
+	set := func(into *map[string]string, key, value string) {
+		if *into == nil {
+			*into = map[string]string{}
+		}
+		(*into)[key] = value
+	}
+	for key, value := range end[AnnotationKindGuard] {
+		endInherited := inherited(end, key)
+		if baseValue, present := base[AnnotationKindGuard][key]; present && baseValue == value &&
+			inherited(base, key) == endInherited {
+			continue
+		}
+		if endInherited {
+			set(&delta.Set, key, value)
+		} else {
+			set(&delta.SetLocal, key, value)
+		}
+	}
+	for key := range base[AnnotationKindGuard] {
+		if _, present := end[AnnotationKindGuard][key]; present {
+			continue
+		}
+		if inherited(base, key) {
+			delta.Remove = append(delta.Remove, key)
+		} else {
+			delta.RemoveLocal = append(delta.RemoveLocal, key)
+		}
+	}
+	slices.Sort(delta.Remove)
+	slices.Sort(delta.RemoveLocal)
+	return delta
+}
+
+// pathAnnotationsAt returns one path's annotations in an entry, or the resource's own for the
+// empty path; nil when the entry has none there.
+func pathAnnotationsAt(entry *ResourcePathAnnotations, path ResolvedPath) PathAnnotations {
+	if entry == nil {
+		return nil
+	}
+	if path == "" {
+		return entry.ResourceAnnotations
+	}
+	return entry.PathAnnotationMap[path]
+}
+
+// RestoreGuards returns the annotation table a restore leaves, and the guard changes it withheld.
+//
+// The annotations go back with the data they annotate, so the table is restored's, except where
+// that would change a path's guards without the restore being cleared for them. Changing the
+// guards at a path is a guard edit, and an edit is checked against the guards the path has before
+// it: a restore to a Revision from before a guard was set would otherwise remove the guard, and,
+// with the data filtered by the guards it brings back, write the value under it in the same step.
+// A path whose guards are withheld keeps the guards it has now, and the change it would have made
+// is returned, for the caller to report as a conflict that can be applied later.
+func RestoreGuards(identifier ResourceIdentifier, current, restored PathAnnotationList, clearance Clearance) (PathAnnotationList, []ResourceGuardDiff) {
+	result := ClonePathAnnotationList(restored)
+	var withheld []ResourceGuardDiff
+	for _, diff := range DiffGuards(identifier, current, restored) {
+		var currentEntry *ResourcePathAnnotations
+		if position, found := findResourceAnnotations(identifier, current, diff.Resource); found {
+			currentEntry = &current[position]
+		}
+		var kept []GuardDelta
+		for _, delta := range diff.Deltas {
+			now := pathAnnotationsAt(currentEntry, delta.Path)[AnnotationKindGuard]
+			if admitted, _ := clearance.Admits(now); len(now) == 0 || admitted {
+				continue
+			}
+			kept = append(kept, delta)
+			var restoredAnnotations PathAnnotations
+			if position, found := findResourceAnnotations(identifier, result, diff.Resource); found {
+				restoredAnnotations = pathAnnotationsAt(&result[position], delta.Path)
+			}
+			back := diffPathGuards(delta.Path, restoredAnnotations, pathAnnotationsAt(currentEntry, delta.Path))
+			result, _ = ApplyGuardDelta(identifier, result, diff.Resource, &back)
+		}
+		if len(kept) > 0 {
+			withheld = append(withheld, ResourceGuardDiff{Resource: diff.Resource, Deltas: kept})
+		}
+	}
+	return result, withheld
+}
+
 // ApplyGuardDelta applies one delta to a table entry, creating the entry if the resource has
 // none. Returns whether anything changed.
 func ApplyGuardDelta(identifier ResourceIdentifier, table PathAnnotationList, resource ResourceInfo, delta *GuardDelta) (PathAnnotationList, bool) {
@@ -1064,6 +1217,27 @@ func ApplyGuardDelta(identifier ResourceIdentifier, table PathAnnotationList, re
 	changed := false
 	if len(delta.Set) > 0 {
 		changed = setGuardEntries(annotationsForPath(entry, delta.Path), delta.Set, markInherited)
+	}
+	if len(delta.SetLocal) > 0 {
+		changed = setGuardEntries(annotationsForPath(entry, delta.Path), delta.SetLocal, markLocal) || changed
+	}
+	if len(delta.RemoveLocal) > 0 {
+		var target PathAnnotations
+		if delta.Path == "" {
+			target = entry.ResourceAnnotations
+		} else {
+			target = entry.PathAnnotationMap[delta.Path]
+		}
+		for _, key := range delta.RemoveLocal {
+			if _, present := target[AnnotationKindGuard][key]; !present {
+				continue
+			}
+			if _, marked := target[AnnotationKindGuardInherited][key]; marked {
+				continue
+			}
+			delete(target[AnnotationKindGuard], key)
+			changed = true
+		}
 	}
 	if len(delta.Remove) > 0 {
 		var target PathAnnotations
