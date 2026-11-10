@@ -23,9 +23,9 @@ type StatusRow struct {
 // Status lists the Units guardrail Triggers have marked, warnings and gates
 // alike, sorted by space and unit.
 //
-// It reports what any Trigger attached, not only this pack's: a Unit does not
-// record which rule warned it, and a tool that filtered to its own rules would
-// under-report a Unit that is blocked for some other reason entirely.
+// It reports what any Trigger attached, not only this pack's: a tool that
+// filtered to its own rules would under-report a Unit that is blocked for some
+// other reason entirely. Enforcement reports the same verdicts rule by rule.
 func Status(ctx context.Context, client *cubapi.Client) ([]StatusRow, error) {
 	marked, err := cubapi.ListMarkedUnits(ctx, client, cubapi.DefaultToolchainType)
 	if err != nil {

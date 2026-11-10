@@ -49,3 +49,26 @@ const (
 // in a policy Space, which a Space or Target opts into by listing the group in its WhereTrigger,
 // as in "Space.Slug = 'confighub-system' AND Labels.Pack IN ('basic', 'rbac')".
 const PackLabel = "Pack"
+
+// Annotations on a validating Trigger that track the enforcement of the policy it checks. A policy
+// starts in audit (Warn true), is fixed or excepted until few or no ValidationWarnings are left,
+// and is then enforced (Warn false). Where it stands is computed, not stored: a Trigger no Space
+// or Target selects has not been rolled out, and one that is selected is in audit or enforced by
+// its Warn. These record only what cannot be computed.
+const (
+	// TriggerPriorityAnnotation is how urgent the policy is: TriggerPriorityHigh, Medium or Low.
+	// A Trigger without it has no priority.
+	TriggerPriorityAnnotation = "Priority"
+	// TriggerEnforcedByAnnotation is when the policy is due to be enforced, in RFC 3339, as
+	// every time in the API is written.
+	TriggerEnforcedByAnnotation = "EnforcedBy"
+	// TriggerEnforcedAtAnnotation is when the Trigger was last changed to enforce, in RFC 3339.
+	TriggerEnforcedAtAnnotation = "EnforcedAt"
+)
+
+// TriggerPriorityAnnotation values.
+const (
+	TriggerPriorityHigh   = "High"
+	TriggerPriorityMedium = "Medium"
+	TriggerPriorityLow    = "Low"
+)

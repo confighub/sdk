@@ -41,6 +41,12 @@ type Change struct {
 	// the values on both sides -- on a dry run, what it would do -- returned as
 	// [UnitOutcome.Diff].
 	Diff bool
+	// Guards are recorded on the paths the change writes, so a later change has to be cleared
+	// for them before overwriting those paths, this one included: Clearance has to cover them.
+	Guards goclientnew.GuardStamp
+	// Clearance is the guarded reasons the change is cleared for. A path whose guards it does
+	// not cover is not written, and the withheld change is reported as a conflict.
+	Clearance goclientnew.Clearance
 }
 
 // DryRun reports whether this is a preview (no Description).
@@ -239,6 +245,23 @@ func invoke(ctx context.Context, c *Client, sel Selector, ch Change, req goclien
 		params.DryRun = &dryRun
 	}
 	params.Include = ch.include()
+	// Guards and clearance travel as JSON query parameters.
+	if len(ch.Guards) > 0 {
+		encoded, err := json.Marshal(ch.Guards)
+		if err != nil {
+			return nil, err
+		}
+		guards := string(encoded)
+		params.Guards = &guards
+	}
+	if len(ch.Clearance) > 0 {
+		encoded, err := json.Marshal(ch.Clearance)
+		if err != nil {
+			return nil, err
+		}
+		clearance := string(encoded)
+		params.Clearance = &clearance
+	}
 
 	res, err := c.API.InvokeFunctionsOnOrgWithResponse(ctx, params, req)
 	if IsAPIError(err, res) {

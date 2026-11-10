@@ -5,9 +5,12 @@ package main
 
 import (
 	"bytes"
+	"encoding/json"
 	"fmt"
+	"time"
 
 	"github.com/cockroachdb/errors"
+	"github.com/confighub/sdk/core/constants"
 	"github.com/confighub/sdk/core/cubapi"
 	goclientnew "github.com/confighub/sdk/core/openapi/goclient-new"
 	"github.com/google/uuid"
@@ -33,6 +36,18 @@ Once a named argument is used, all subsequent arguments must be named. Use "--" 
 Example with named arguments:
 `+"```"+`
   cub trigger update --space my-space my-trigger Mutation Kubernetes/YAML -- set-annotation --annotation-key=cloned --annotation-value=true
+`+"```"+`
+
+Enforcing a validating trigger's policy:
+
+A validating trigger starts in audit, with --warn, so that what fails it gets ValidationWarnings, and
+enforced with --unwarn once few or none are left. --priority and --enforced-by record how urgent the policy is
+and when it is due to be enforced, in the Priority and EnforcedBy annotations. --unwarn records when the trigger
+was enforced in its EnforcedAt annotation, and --warn removes it. A validating trigger created without --warn
+is enforced from its creation, which 'cub trigger create' records the same way.
+`+"```"+`
+  cub trigger update --space confighub-system --patch workload-runs-nonroot --priority High --enforced-by 2026-12-31
+  cub trigger update --space confighub-system --patch workload-runs-nonroot --unwarn
 `+"```"+`
 
 Bulk update with --patch:
@@ -105,6 +120,7 @@ func init() {
 	triggerUpdateCmd.Flags().StringVar(&triggerWhereUnit, "where-unit-field", "", "filter expression to restrict which Units this trigger applies to (its WhereUnit). It takes what --where does on unit list, attributes of what a unit refers to included, as in \"Space.Labels.Environment = 'prod'\"")
 	triggerUpdateCmd.Flags().StringVar(&triggerUnitFilter, "unit-filter", "", "filter entity (slug or UUID) to restrict which Units this trigger applies to")
 	triggerUpdateCmd.Flags().StringVar(&triggerWhereResource, "where-resource", "", "metadata path expression to restrict which resources the trigger operates on")
+	addTriggerEnforcementFlags(triggerUpdateCmd)
 	triggerUpdateCmd.Flags().StringVar(&triggerOtherDataSource, "other-data-source", "", "source of additional data to pass to the function (e.g., LastReleasedRevisionNum); defaults to the sources the function expects")
 	addBackingUnitFlags(triggerUpdateCmd, "Trigger", false, false)
 	addFromBackingUnitsFlags(triggerUpdateCmd, "Trigger", false)
@@ -188,9 +204,17 @@ func runBulkTriggerUpdate() error {
 	// Add space constraint to the where clause only if not org level
 	effectiveWhere = addSpaceIDToWhereClause(effectiveWhere, selectedSpaceID)
 
-	enhancer, err := triggerPatchEnhancer()
+	enhancer, err := triggerPatchEnhancer(false)
 	if err != nil {
 		return err
+	}
+	// The patch enforces every Trigger it matches, so which of them it newly enforces is read
+	// before it, for EnforcedAt to record when.
+	var newlyEnforced []goclientnew.UUID
+	if unwarnTrigger && !dryRun {
+		if newlyEnforced, err = warningTriggerIDs(effectiveWhere, filterID); err != nil {
+			return err
+		}
 	}
 
 	// Build patch data using consolidated function
@@ -224,14 +248,83 @@ func runBulkTriggerUpdate() error {
 		return cubapi.InterpretErrorGeneric(err, bulkRes)
 	}
 
+	if err := stampEnforcedAt(newlyEnforced, bulkRes.JSON200, bulkRes.JSON207); err != nil {
+		return err
+	}
+
 	// Handle the response
 	return handleBulkTriggerCreateOrUpdateResponse(bulkRes.JSON200, bulkRes.JSON207, bulkRes.StatusCode(), "update", effectiveWhere)
+}
+
+// warningTriggerIDs returns the Triggers a bulk update matches that warn.
+func warningTriggerIDs(where, filterID string) ([]goclientnew.UUID, error) {
+	triggers, err := cubapi.ListTriggers(ctx, cubClient, cubapi.NewWhere(where).And("Warn = true"), cubapi.ListOpts{
+		Select:        "TriggerID",
+		Filter:        filterID,
+		IncludeHidden: includeHidden,
+	})
+	if err != nil {
+		return nil, err
+	}
+	ids := make([]goclientnew.UUID, 0, len(triggers))
+	for _, t := range triggers {
+		if t.Trigger != nil {
+			ids = append(ids, t.Trigger.TriggerID)
+		}
+	}
+	return ids, nil
+}
+
+// stampEnforcedAt records now as EnforcedAt on those of candidates the bulk update succeeded on.
+func stampEnforcedAt(candidates []goclientnew.UUID, responses200, responses207 *[]goclientnew.TriggerCreateOrUpdateResponse) error {
+	if len(candidates) == 0 {
+		return nil
+	}
+	updated := map[goclientnew.UUID]bool{}
+	for _, responses := range []*[]goclientnew.TriggerCreateOrUpdateResponse{responses200, responses207} {
+		if responses == nil {
+			continue
+		}
+		for _, r := range *responses {
+			if r.Error == nil && r.Trigger != nil {
+				updated[r.Trigger.TriggerID] = true
+			}
+		}
+	}
+	var ids []goclientnew.UUID
+	for _, id := range candidates {
+		if updated[id] {
+			ids = append(ids, id)
+		}
+	}
+	if len(ids) == 0 {
+		return nil
+	}
+	where := cubapi.NewWhere("").In("TriggerID", ids)
+	if err := where.Err(); err != nil {
+		return err
+	}
+	body, err := json.Marshal(map[string]any{
+		"Annotations": map[string]string{constants.TriggerEnforcedAtAnnotation: cubapi.FormatEnforcementTime(time.Now())},
+	})
+	if err != nil {
+		return err
+	}
+	whereStr := where.String()
+	res, err := cubClientNew.BulkPatchTriggersWithBodyWithResponse(ctx,
+		&goclientnew.BulkPatchTriggersParams{Where: &whereStr, IncludeHidden: includeHiddenParam(), WithBackingUnits: withBackingUnitsParam()},
+		"application/merge-patch+json", bytes.NewReader(body))
+	if cubapi.IsAPIError(err, res) {
+		return fmt.Errorf("record %s on the enforced triggers: %w", constants.TriggerEnforcedAtAnnotation, cubapi.InterpretErrorGeneric(err, res))
+	}
+	return nil
 }
 
 func triggerUpdateCmdRun(cmd *cobra.Command, args []string) error {
 	if err := applyTriggerPackFlag(); err != nil {
 		return err
 	}
+	readTriggerEnforcementFlags(cmd)
 	isBulkPatchMode := checkTriggerConflictingArgs(args)
 
 	if isBulkPatchMode {
@@ -246,7 +339,7 @@ func triggerUpdateCmdRun(cmd *cobra.Command, args []string) error {
 	spaceID := currentTrigger.Trigger.SpaceID
 
 	if triggerPatch {
-		flagFields, err := triggerPatchEnhancer()
+		flagFields, err := triggerPatchEnhancer(currentTrigger.Trigger.Warn)
 		if err != nil {
 			return err
 		}
@@ -322,6 +415,11 @@ func triggerUpdateCmdRun(cmd *cobra.Command, args []string) error {
 	} else if enableTrigger {
 		currentTrigger.Trigger.Disabled = false
 	}
+	enforcement, err := triggerEnforcementAnnotations(currentTrigger.Trigger.Warn)
+	if err != nil {
+		return err
+	}
+	applyEnforcementAnnotations(&currentTrigger.Trigger.Annotations, enforcement)
 	if warnTrigger {
 		currentTrigger.Trigger.Warn = true
 	} else if unwarnTrigger {
@@ -430,7 +528,10 @@ func checkSingleTriggerUpdateArgs(args []string) error {
 // triggerPatchEnhancer returns the enhancer that adds the fields the trigger flags set to a patch,
 // for a patch of one trigger and a bulk patch alike. It resolves and parses the flags first, so
 // that a flag naming nothing, or a malformed one, is refused rather than left out of the patch.
-func triggerPatchEnhancer() (PatchEnhancer, error) {
+//
+// wasWarn says whether the Trigger patched warned before, so that enforcing it records when; a
+// bulk patch, which does not know, passes false and stamps the Triggers it enforced itself.
+func triggerPatchEnhancer(wasWarn bool) (PatchEnhancer, error) {
 	var channelID *uuid.UUID
 	if functionChannel != "" {
 		id, err := resolveChannelID(functionChannel)
@@ -459,8 +560,13 @@ func triggerPatchEnhancer() (PatchEnhancer, error) {
 	if err != nil {
 		return nil, err
 	}
+	enforcement, err := triggerEnforcementAnnotations(wasWarn)
+	if err != nil {
+		return nil, err
+	}
 
 	return func(patchMap map[string]interface{}) {
+		patchEnforcementAnnotations(patchMap, enforcement)
 		if disableTrigger {
 			patchMap["Disabled"] = true
 		} else if enableTrigger {

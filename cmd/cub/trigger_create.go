@@ -45,7 +45,8 @@ with back-off until the trigger has run.
 A validating trigger whose function fails records a ValidationError on the unit, which blocks
 publishing a Release of it, promoting past a stage that requires Validated, and closing a
 ChangeSet whose workflow requires it, until the configuration or the trigger is fixed. With --warn, a
-failure records a ValidationWarning instead, which blocks nothing.
+failure records a ValidationWarning instead, which blocks nothing. A validating trigger created without
+--warn is enforced from its creation, which is recorded in its EnforcedAt annotation.
 
 Events:
 
@@ -164,6 +165,7 @@ func init() {
 	triggerCreateCmd.Flags().StringVar(&triggerWhereUnit, "where-unit-field", "", "filter expression to restrict which Units this trigger applies to (its WhereUnit). It takes what --where does on unit list, attributes of what a unit refers to included, as in \"Space.Labels.Environment = 'prod'\"")
 	triggerCreateCmd.Flags().StringVar(&triggerUnitFilter, "unit-filter", "", "filter entity (slug or UUID) to restrict which Units this trigger applies to")
 	triggerCreateCmd.Flags().StringVar(&triggerWhereResource, "where-resource", "", "metadata path expression to restrict which resources the trigger operates on")
+	addTriggerEnforcementFlags(triggerCreateCmd)
 	triggerCreateCmd.Flags().StringVar(&triggerOtherDataSource, "other-data-source", "", "source of additional data to pass to the function (e.g., LastReleasedRevisionNum); defaults to the sources the function expects")
 
 	addBackingUnitFlags(triggerCreateCmd, "Trigger", false, true)
@@ -241,6 +243,7 @@ func checkTriggerCreateConflictingArgs(args []string) (bool, error) {
 }
 
 func triggerCreateCmdRun(cmd *cobra.Command, args []string) error {
+	readTriggerEnforcementFlags(cmd)
 	isBulkCreateMode, err := checkTriggerCreateConflictingArgs(args)
 	if err != nil {
 		return err
@@ -266,6 +269,11 @@ func runSingleTriggerCreate(args []string) error {
 	if err != nil {
 		return err
 	}
+	enforcement, err := triggerEnforcementAnnotations(false)
+	if err != nil {
+		return err
+	}
+	applyEnforcementAnnotations(&newBody.Annotations, enforcement)
 	err = setLabels(&newBody.Labels)
 	if err != nil {
 		return err
@@ -368,6 +376,9 @@ func runSingleTriggerCreate(args []string) error {
 	if err := applyFieldEdits("Trigger", &newBody); err != nil {
 		return err
 	}
+	if err := stampEnforcedAtOnCreate(spaceID, params, &newBody); err != nil {
+		return err
+	}
 	triggerRes, err := cubClientNew.CreateTriggerWithResponse(ctx, spaceID, params, newBody)
 	if cubapi.IsAPIError(err, triggerRes) {
 		return cubapi.InterpretErrorGeneric(err, triggerRes)
@@ -400,8 +411,15 @@ func runBulkTriggerCreate() error {
 	// Add space constraint to the where clause only if not org level
 	effectiveWhere = addSpaceIDToWhereClause(effectiveWhere, selectedSpaceID)
 
-	// Build patch data using consolidated function (no entity-specific fields for trigger)
-	patchJSON, err := BuildPatchDataWithPermissions(nil, permissionFlag)
+	enforcement, err := triggerEnforcementAnnotations(false)
+	if err != nil {
+		return err
+	}
+	var enhancer PatchEnhancer
+	if len(enforcement) > 0 {
+		enhancer = func(patchMap map[string]interface{}) { patchEnforcementAnnotations(patchMap, enforcement) }
+	}
+	patchJSON, err := BuildPatchDataWithPermissions(enhancer, permissionFlag)
 	if err != nil {
 		return err
 	}

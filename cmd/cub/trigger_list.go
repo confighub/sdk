@@ -4,7 +4,6 @@
 package main
 
 import (
-	"fmt"
 	"strconv"
 
 	"github.com/confighub/sdk/core/constants"
@@ -17,7 +16,7 @@ import (
 var triggerListCmd = &cobra.Command{
 	Use:   "list",
 	Short: "List triggers",
-	Long: getCommandHelp(`List triggers you have access to in a space or across all spaces. The output includes slugs, space slugs, the pack each belongs to (its `+constants.PackLabel+` label), channel slugs, events, whether each validates, is disabled, or only warns, toolchain types, function names, and the number of arguments.
+	Long: getCommandHelp(`List triggers you have access to in a space or across all spaces. The output includes slugs, space slugs, the pack each belongs to (its `+constants.PackLabel+` label), whether each validates, is disabled, or only warns, the priority of a validating trigger's policy (its `+constants.TriggerPriorityAnnotation+` annotation), and the invocation it runs, if any. What a trigger runs is shown with --columns, as in --columns Name,Event,ToolchainType,Channel.Slug,FunctionName,Arguments, and by trigger get.
 
 Examples:
 `+"```"+`
@@ -73,7 +72,9 @@ Examples:
 }
 
 // Default columns to display when no custom columns are specified
-var defaultTriggerColumns = []string{"Trigger.Slug", "Space.Slug", "Trigger.Labels", "Channel.Slug", "Trigger.Event", "Trigger.Validating", "Trigger.Disabled", "Trigger.Warn", "Trigger.ToolchainType", "Trigger.FunctionName", "Trigger.Arguments", "Invocation.Slug"}
+// What a trigger runs (event, config type, channel, function and arguments) is left to
+// --columns and trigger get; the list shows what each is for and how far it is enforced.
+var defaultTriggerColumns = []string{"Trigger.Slug", "Space.Slug", "Trigger.Labels", "Trigger.Validating", "Trigger.Disabled", "Trigger.Warn", "Trigger.Annotations", "Invocation.Slug"}
 
 // triggerListInclude is the Include parameter for trigger list queries (the
 // related entities expanded into each ExtendedTrigger).
@@ -89,8 +90,9 @@ var triggerAliases = map[string]string{
 	"ID":   "Trigger.TriggerID",
 }
 
-// Trigger custom column dependencies: Pack comes from Labels.Pack.
-var triggerCustomColumnDependencies = map[string][]string{"Pack": {"Labels"}}
+// Trigger custom column dependencies: Pack comes from Labels.Pack, and Priority from
+// Annotations.Priority and Validating.
+var triggerCustomColumnDependencies = map[string][]string{"Pack": {"Labels"}, "Priority": {"Annotations", "Validating"}}
 
 // triggerCustomColumns are the columns the default table computes rather than
 // reads.
@@ -101,6 +103,24 @@ var triggerCustomColumns = map[string]func(any) string{
 		}
 		return ""
 	},
+	"Priority": func(obj any) string {
+		if t, ok := obj.(*goclientnew.ExtendedTrigger); ok && t.Trigger != nil {
+			return triggerPriorityColumn(t.Trigger)
+		}
+		return ""
+	},
+}
+
+// triggerPriorityColumn is a validating trigger's priority, Unspecified when it has none, and
+// nothing for a trigger that does not validate, which has no policy to enforce.
+func triggerPriorityColumn(trigger *goclientnew.Trigger) string {
+	if !trigger.Validating {
+		return ""
+	}
+	if p, err := cubapi.ParseTriggerPriority(trigger.Annotations[constants.TriggerPriorityAnnotation]); err == nil && p != "" {
+		return p
+	}
+	return cubapi.TriggerPriorityUnspecified
 }
 
 func init() {
@@ -144,14 +164,10 @@ func displayTriggerList(triggers []*goclientnew.ExtendedTrigger) {
 	}
 	table := tableView()
 	if !noheader {
-		table.SetHeader([]string{"Name", "Space", "Pack", "Channel", "Event", "Validating", "Disabled", "Warn", "Toolchain-Type", "Function-Name", "Num-Args", "Invocation"})
+		table.SetHeader([]string{"Name", "Space", "Pack", "Validating", "Disabled", "Warn", "Priority", "Invocation"})
 	}
 	for _, t := range triggers {
 		trigger := t.Trigger
-		channelSlug := ""
-		if t.Channel != nil {
-			channelSlug = t.Channel.Slug
-		}
 		spaceSlug := t.Trigger.SpaceID.String()
 		if t.Space != nil {
 			spaceSlug = t.Space.Slug
@@ -166,14 +182,10 @@ func displayTriggerList(triggers []*goclientnew.ExtendedTrigger) {
 			trigger.Slug,
 			spaceSlug,
 			trigger.Labels[constants.PackLabel],
-			channelSlug,
-			trigger.Event,
 			strconv.FormatBool(trigger.Validating),
 			strconv.FormatBool(trigger.Disabled),
 			strconv.FormatBool(trigger.Warn),
-			trigger.ToolchainType,
-			trigger.FunctionName,
-			fmt.Sprintf("%d", len(trigger.Arguments)),
+			triggerPriorityColumn(trigger),
 			invocationSlug,
 		})
 	}

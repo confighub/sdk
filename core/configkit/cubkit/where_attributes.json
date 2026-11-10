@@ -1909,6 +1909,9 @@
       "ValidationErrors": {
         "dataType": "map[string]bool"
       },
+      "ValidationPassed": {
+        "dataType": "map[string]bool"
+      },
       "ValidationResults": {
         "dataType": "JSON"
       },

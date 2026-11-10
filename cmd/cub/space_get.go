@@ -125,11 +125,11 @@ func displaySpaceDetails(spaceDetails *goclientnew.Space) {
 	displayExtendedSpaceDetails(extendedSpace)
 }
 
-func totalCountMap(counts map[string]int) int {
+func totalCountMap(counts map[string]int64) int64 {
 	if len(counts) == 0 {
 		return 0
 	}
-	total := 0
+	var total int64
 	for _, count := range counts {
 		total += count
 	}

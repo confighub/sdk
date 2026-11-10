@@ -84,7 +84,11 @@ func exceptionWhereResource(rule string) string {
 // A rule that is not a CEL expression at all -- schema validation, say -- sets
 // Function and Arguments instead.
 type Rule struct {
-	Slug        string
+	Slug string
+	// DisplayName is the rule's Trigger's name where a person reads it, such as on
+	// the Validation page: what the rule checks, in a few words. Empty leaves the
+	// Trigger's as it is.
+	DisplayName string
 	Description string
 	Expression  string
 
@@ -122,9 +126,9 @@ type Pack struct {
 	// Space's selection lists to opt into these rules.
 	Group string
 	// Rules are the policies. They install with Warn=true: advisory
-	// ValidationWarnings, never blocking, until someone promotes one with
-	// `cub trigger update <slug> --space <policy-space> --unwarn`, which
-	// installing again leaves in place.
+	// ValidationWarnings, never blocking, until someone enforces one with
+	// `guardrails update <rule> --enforce`, which installing again leaves in
+	// place.
 	Rules []Rule
 }
 
@@ -239,6 +243,26 @@ type Plan struct {
 	// so that a rule the install adds runs there too.
 	AlreadyWired []Wiring `json:"alreadyWired"`
 	Skipped      []Skip   `json:"skipped"`
+	// Priority and EnforcedBy, when set, are written to every rule's Trigger as
+	// its enforcement annotations; empty leaves what a Trigger has.
+	Priority   string `json:"priority,omitempty"`
+	EnforcedBy string `json:"enforcedBy,omitempty"`
+}
+
+// enforcementAnnotations are the annotations the plan writes on each rule's
+// Trigger, nil when none.
+func (p Plan) enforcementAnnotations() map[string]string {
+	annotations := map[string]string{}
+	if p.Priority != "" {
+		annotations[constants.TriggerPriorityAnnotation] = p.Priority
+	}
+	if p.EnforcedBy != "" {
+		annotations[constants.TriggerEnforcedByAnnotation] = p.EnforcedBy
+	}
+	if len(annotations) == 0 {
+		return nil
+	}
+	return annotations
 }
 
 // BuildPlan works out which Spaces holding Kubernetes/YAML Units this pack
@@ -405,6 +429,7 @@ func (p Pack) Execute(ctx context.Context, client *cubapi.Client, policySpace st
 		if _, err := cubapi.EnsureTrigger(ctx, client, goclientnew.Trigger{
 			SpaceID:       ps.SpaceID,
 			Slug:          r.Slug,
+			DisplayName:   r.DisplayName,
 			Description:   r.Description,
 			Event:         "Mutation",
 			ToolchainType: "Kubernetes/YAML",
@@ -413,6 +438,8 @@ func (p Pack) Execute(ctx context.Context, client *cubapi.Client, policySpace st
 			WhereResource: exceptionWhereResource(r.Slug),
 			Warn:          warn,
 			Labels:        r.labels(p.Group),
+			// Merged into what the Trigger has, so a rerun without them keeps them.
+			Annotations: plan.enforcementAnnotations(),
 		}); err != nil {
 			return fmt.Errorf("create trigger %s: %w", r.Slug, err)
 		}
