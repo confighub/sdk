@@ -1648,6 +1648,24 @@ resourceTypes:
       - spec.oidcGoogle.forwardHeaders.*
 
 
+  - type: karpenter.k8s.aws/v1/EC2NodeClass
+    scope: Cluster
+
+  - type: karpenter.k8s.aws/v1beta1/EC2NodeClass
+    scope: Cluster
+
+  - type: karpenter.sh/v1/NodeClaim
+    scope: Cluster
+
+  - type: karpenter.sh/v1/NodePool
+    scope: Cluster
+
+  - type: karpenter.sh/v1beta1/NodeClaim
+    scope: Cluster
+
+  - type: karpenter.sh/v1beta1/NodePool
+    scope: Cluster
+
   - type: kyverno.io/v1/ClusterPolicy
     scope: Cluster
 

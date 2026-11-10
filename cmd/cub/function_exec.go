@@ -86,7 +86,7 @@ func init() {
 	addInheritedGuardFlag(functionExecCmd)
 	functionExecCmd.Flags().StringSliceVar(&functionTriggerIdentifiers, "trigger", []string{}, "execute triggers by UUID, slug, or space/slug (can be repeated or comma-separated)")
 	functionExecCmd.Flags().StringSliceVar(&functionInvocationIdentifiers, "invocation", []string{}, "execute invocations by UUID, slug, or space/slug (can be repeated or comma-separated)")
-	functionExecCmd.Flags().BoolVar(&updateValidationResults, "update-validation-results", false, "update ValidationErrors and ValidationWarnings on units based on trigger results (requires --trigger)")
+	functionExecCmd.Flags().BoolVar(&updateValidationResults, "update-validation-results", false, "update ValidationErrors and ValidationWarnings on units based on trigger results, with the ValidationResults behind them (requires --trigger)")
 	enableWhereFlag(functionExecCmd)
 	enableFilterFlag(functionExecCmd)
 	addStandardDisplayFlags(functionExecCmd)

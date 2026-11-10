@@ -220,7 +220,7 @@ func init() {
 	functionDoCmd.Flags().BoolVar(&protectChange, "protect", false, "record the paths this change writes as protected local overrides, so a later merge from upstream does not overwrite them; by default a change claims nothing and each path keeps the protection it already has")
 	functionDoCmd.Flags().StringSliceVar(&functionTriggerIdentifiers, "trigger", []string{}, "execute triggers by UUID, slug, or space/slug (can be repeated or comma-separated)")
 	functionDoCmd.Flags().StringSliceVar(&functionInvocationIdentifiers, "invocation", []string{}, "execute invocations by UUID, slug, or space/slug (can be repeated or comma-separated)")
-	functionDoCmd.Flags().BoolVar(&updateValidationResults, "update-validation-results", false, "update ValidationErrors and ValidationWarnings on units based on trigger results (requires --trigger)")
+	functionDoCmd.Flags().BoolVar(&updateValidationResults, "update-validation-results", false, "update ValidationErrors and ValidationWarnings on units based on trigger results, with the ValidationResults behind them (requires --trigger)")
 	functionDoCmd.Flags().BoolVar(&updateValidationResults, "update-apply-gates", false, "deprecated alias for --update-validation-results")
 	_ = functionDoCmd.Flags().MarkDeprecated("update-apply-gates", "use --update-validation-results")
 	addIncludeContextFlags(functionDoCmd.Flags())

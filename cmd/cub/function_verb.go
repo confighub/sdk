@@ -259,7 +259,7 @@ func registerFunctionVerbFlags(cmd *cobra.Command) {
 	addInheritedGuardFlag(cmd)
 	cmd.Flags().StringSliceVar(&functionTriggerIdentifiers, "trigger", []string{}, "execute triggers by UUID, slug, or space/slug (can be repeated or comma-separated)")
 	cmd.Flags().StringSliceVar(&functionInvocationIdentifiers, "invocation", []string{}, "execute invocations by UUID, slug, or space/slug (can be repeated or comma-separated)")
-	cmd.Flags().BoolVar(&updateValidationResults, "update-validation-results", false, "update ValidationErrors and ValidationWarnings on units based on trigger results (requires --trigger)")
+	cmd.Flags().BoolVar(&updateValidationResults, "update-validation-results", false, "update ValidationErrors and ValidationWarnings on units based on trigger results, with the ValidationResults behind them (requires --trigger)")
 	cmd.Flags().BoolVar(&updateValidationResults, "update-apply-gates", false, "deprecated alias for --update-validation-results")
 	_ = cmd.Flags().MarkDeprecated("update-apply-gates", "use --update-validation-results")
 	enableWhereFlag(cmd)

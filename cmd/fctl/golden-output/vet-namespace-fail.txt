@@ -1,0 +1,26 @@
+SUCCESS    true    
+OUTPUT
+------
+[
+  {
+    "Passed": false,
+    "Index": 0,
+    "FunctionName": "vet-namespace",
+    "Details": [
+      "v1/Service my-service sets no metadata.namespace"
+    ],
+    "FailedAttributes": [
+      {
+        "ResourceName": "/my-service",
+        "ResourceNameWithoutScope": "my-service",
+        "ResourceType": "v1/Service",
+        "ResourceCategory": "Resource",
+        "Path": "metadata.namespace",
+        "AttributeName": "namespace-name-reference",
+        "DataType": "string",
+        "Value": null,
+        "Index": 0
+      }
+    ]
+  }
+]

@@ -45,6 +45,38 @@ func registerMetadataFunctions(fh handler.FunctionRegistry, rp *k8skit.K8sResour
 	}); err != nil {
 		slog.Error("failed to register function", "error", err)
 	}
+	if err := fh.RegisterFunction("vet-namespace", &handler.FunctionRegistration{
+		FunctionSignature: api.FunctionSignature{
+			FunctionName: "vet-namespace",
+			Parameters: []api.FunctionParameter{
+				{
+					ParameterName: "cluster-scoped-types",
+					Required:      false,
+					Description:   "Additional Kubernetes resource types to treat as cluster-scoped, which need no namespace, as a comma-separated list of apiVersion/Kind (e.g. \"example.com/v1/Foo,example.com/v1/Bar\")",
+					DataType:      api.DataTypeStringArray,
+					Example:       "example.com/v1/Foo,example.com/v1/Bar",
+				},
+			},
+			OutputInfo: &api.FunctionOutput{
+				ResultName:  "passed",
+				Description: "True if every namespaced resource sets metadata.namespace, false otherwise",
+				OutputType:  api.OutputTypeValidationResult,
+				Schema:      &api.ValidationResultListSchema,
+			},
+			Mutating:              false,
+			Validating:            true,
+			Hermetic:              true,
+			Idempotent:            true,
+			Description:           "Validates that every resource not known to be cluster-scoped, from ConfigHub's resource types or cluster-scoped-types, sets metadata.namespace, reporting each one that does not as a failed attribute. A placeholder namespace counts as set; vet-placeholders reports it. To fix a failure, set-namespace sets the namespace of every namespaced resource, and ensure-namespaces adds a placeholder namespace to fill in later.",
+			FunctionType:          api.FunctionTypeCustom,
+			AffectedResourceTypes: []api.ResourceType{api.ResourceTypeAny},
+		},
+		Function: func(fArgs handler.FunctionImplementationArguments) (gaby.Container, any, error) {
+			return k8sFnVetNamespace(rp, fArgs.Options, fArgs.ParsedData, fArgs.Arguments)
+		},
+	}); err != nil {
+		slog.Error("failed to register function", "error", err)
+	}
 	// NOTE: set-namespace does not set the name of Namespace resources
 	// TODO: use OpenAPI schemas to determine namespaced vs cluster scope
 	// TODO: skip local config units
@@ -362,7 +394,9 @@ func makeK8sFnEnsureNamespaces(rp *k8skit.K8sResourceProviderType) handler.Funct
 	}
 }
 
-func k8sFnEnsureNamespaces(rp *k8skit.K8sResourceProviderType, options *api.FunctionOptions, parsedData gaby.Container, args []api.FunctionArgument) (gaby.Container, any, error) {
+// clusterScopedTypesArgument returns the types the cluster-scoped-types argument names, keyed
+// without the API version: a type names its kind in every version. It is nil when there are none.
+func clusterScopedTypesArgument(rp *k8skit.K8sResourceProviderType, args []api.FunctionArgument) (map[api.ResourceType]bool, error) {
 	var extraClusterScoped map[api.ResourceType]bool
 	for _, arg := range args {
 		if arg.ParameterName != "cluster-scoped-types" {
@@ -370,29 +404,45 @@ func k8sFnEnsureNamespaces(rp *k8skit.K8sResourceProviderType, options *api.Func
 		}
 		types, err := api.ParseStringArrayCSV(arg.Value)
 		if err != nil {
-			return parsedData, nil, fmt.Errorf("cluster-scoped-types: %w", err)
+			return nil, fmt.Errorf("cluster-scoped-types: %w", err)
 		}
 		if len(types) > 0 {
 			extraClusterScoped = make(map[api.ResourceType]bool, len(types))
 			for _, t := range types {
-				// Keyed without the API version: a type names its kind in every version.
 				extraClusterScoped[rp.RemoveAPIVersionFromResourceType(api.ResourceType(t))] = true
 			}
 		}
 	}
+	return extraClusterScoped, nil
+}
 
-	_, err := yamlkit.VisitResourcesFiltered(parsedData, nil, rp, options, func(doc *gaby.YamlDoc, output any, index int, resourceInfo *api.ResourceInfo) (any, []error) {
-		nameSegments := strings.Split(string(resourceInfo.ResourceName), "/")
-		if len(nameSegments) != 2 {
-			return output, []error{fmt.Errorf("improperly formatted resource name %s", string(resourceInfo.ResourceName))}
+// needsNamespace reports whether a resource lacks the namespace it should have: it sets none, and
+// its type is neither known to be cluster-scoped nor named in extraClusterScoped.
+func needsNamespace(rp *k8skit.K8sResourceProviderType, resourceInfo *api.ResourceInfo, extraClusterScoped map[api.ResourceType]bool) (bool, error) {
+	nameSegments := strings.Split(string(resourceInfo.ResourceName), "/")
+	if len(nameSegments) != 2 {
+		return false, fmt.Errorf("improperly formatted resource name %s", string(resourceInfo.ResourceName))
+	}
+	if nameSegments[0] != "" {
+		return false, nil
+	}
+	return !k8skit.IsResourceTypeClusterScoped(resourceInfo.ResourceType) &&
+		!extraClusterScoped[rp.RemoveAPIVersionFromResourceType(resourceInfo.ResourceType)], nil
+}
+
+func k8sFnEnsureNamespaces(rp *k8skit.K8sResourceProviderType, options *api.FunctionOptions, parsedData gaby.Container, args []api.FunctionArgument) (gaby.Container, any, error) {
+	extraClusterScoped, err := clusterScopedTypesArgument(rp, args)
+	if err != nil {
+		return parsedData, nil, err
+	}
+
+	_, err = yamlkit.VisitResourcesFiltered(parsedData, nil, rp, options, func(doc *gaby.YamlDoc, output any, index int, resourceInfo *api.ResourceInfo) (any, []error) {
+		needs, err := needsNamespace(rp, resourceInfo, extraClusterScoped)
+		if err != nil {
+			return output, []error{err}
 		}
-		if nameSegments[0] == "" {
-			// No namespace. Check whether it should have one.
-			if k8skit.IsResourceTypeClusterScoped(resourceInfo.ResourceType) || extraClusterScoped[rp.RemoveAPIVersionFromResourceType(resourceInfo.ResourceType)] {
-				return output, nil
-			}
-			_, err := doc.SetP(yamlkit.PlaceHolderBlockApplyString, ".metadata.namespace")
-			if err != nil {
+		if needs {
+			if _, err := doc.SetP(yamlkit.PlaceHolderBlockApplyString, ".metadata.namespace"); err != nil {
 				return output, []error{err}
 			}
 		}
@@ -402,6 +452,51 @@ func k8sFnEnsureNamespaces(rp *k8skit.K8sResourceProviderType, options *api.Func
 		return parsedData, nil, err
 	}
 	return parsedData, nil, nil
+}
+
+// k8sFnVetNamespace is the implementation of vet-namespace: it fails each resource
+// ensure-namespaces would give a namespace, at metadata.namespace.
+func k8sFnVetNamespace(rp *k8skit.K8sResourceProviderType, options *api.FunctionOptions, parsedData gaby.Container, args []api.FunctionArgument) (gaby.Container, any, error) {
+	extraClusterScoped, err := clusterScopedTypesArgument(rp, args)
+	if err != nil {
+		return parsedData, api.ValidationResultFalse, err
+	}
+
+	details := []string{}
+	failedAttributes := api.AttributeValueList{}
+	_, err = yamlkit.VisitResourcesFiltered(parsedData, nil, rp, options, func(doc *gaby.YamlDoc, output any, index int, resourceInfo *api.ResourceInfo) (any, []error) {
+		needs, err := needsNamespace(rp, resourceInfo, extraClusterScoped)
+		if err != nil {
+			return output, []error{err}
+		}
+		if !needs {
+			return output, nil
+		}
+		details = append(details, fmt.Sprintf("%s %s sets no metadata.namespace", resourceInfo.ResourceType, resourceInfo.ResourceNameWithoutScope))
+		// Whatever is there -- nothing, null or an empty string -- is what has to change.
+		value, _, _ := yamlkit.YamlSafePathGetValueAnyType(doc, "metadata.namespace", true)
+		failedAttributes = append(failedAttributes, api.AttributeValue{
+			AttributeInfo: api.AttributeInfo{
+				AttributeIdentifier: api.AttributeIdentifier{
+					ResourceInfo: *resourceInfo,
+					Path:         "metadata.namespace",
+				},
+				AttributeMetadata: api.AttributeMetadata{AttributeName: AttributeNameNamespaceNameReference, DataType: api.DataTypeString},
+			},
+			Value: value,
+		})
+		return output, nil
+	})
+	if err != nil {
+		return parsedData, api.ValidationResultFalse, err
+	}
+	if len(failedAttributes) == 0 {
+		return parsedData, api.ValidationResultTrue, nil
+	}
+	result := api.ValidationResultFalse
+	result.Details = details
+	result.FailedAttributes = failedAttributes
+	return parsedData, result, nil
 }
 
 func makeK8sFnSetNamespace(rp *k8skit.K8sResourceProviderType) handler.FunctionImplementation {
@@ -440,7 +535,6 @@ const dnsSvcSuffixPattern = `(\.svc(?:[.:/]|$))`
 //     the snapshot taken in step 1.
 func k8sFnSetNamespace(rp *k8skit.K8sResourceProviderType, options *api.FunctionOptions, parsedData gaby.Container, args []api.FunctionArgument) (gaby.Container, any, error) {
 	var newNamespace, explicitOldNamespace string
-	var extraClusterScoped map[api.ResourceType]bool
 	for _, arg := range args {
 		switch arg.ParameterName {
 		case "namespace-name", "":
@@ -453,19 +547,11 @@ func k8sFnSetNamespace(rp *k8skit.K8sResourceProviderType, options *api.Function
 			if s, ok := arg.Value.(string); ok {
 				explicitOldNamespace = s
 			}
-		case "cluster-scoped-types":
-			types, err := api.ParseStringArrayCSV(arg.Value)
-			if err != nil {
-				return parsedData, nil, errors.Wrap(err, "set-namespace: cluster-scoped-types")
-			}
-			if len(types) > 0 {
-				extraClusterScoped = make(map[api.ResourceType]bool, len(types))
-				for _, t := range types {
-					// Keyed without the API version: a type names its kind in every version.
-					extraClusterScoped[rp.RemoveAPIVersionFromResourceType(api.ResourceType(t))] = true
-				}
-			}
 		}
+	}
+	extraClusterScoped, err := clusterScopedTypesArgument(rp, args)
+	if err != nil {
+		return parsedData, nil, errors.Wrap(err, "set-namespace")
 	}
 	if newNamespace == "" {
 		return parsedData, nil, errors.New("set-namespace: namespace-name is required")
@@ -500,7 +586,7 @@ func k8sFnSetNamespace(rp *k8skit.K8sResourceProviderType, options *api.Function
 	}
 
 	var dnsErrs []error
-	_, err := yamlkit.VisitResourcesFiltered(parsedData, nil, rp, options, func(doc *gaby.YamlDoc, output any, index int, resourceInfo *api.ResourceInfo) (any, []error) {
+	_, err = yamlkit.VisitResourcesFiltered(parsedData, nil, rp, options, func(doc *gaby.YamlDoc, output any, index int, resourceInfo *api.ResourceInfo) (any, []error) {
 		oldNS := explicitOldNamespace
 		if oldNS == "" {
 			oldNS = oldNamespaces[index]

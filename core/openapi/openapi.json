@@ -59960,7 +59960,7 @@
           },
           "UpdateValidationResults": {
             "type": "boolean",
-            "description": "UpdateValidationResults indicates that the results of Trigger execution should be used to update ValidationErrors and ValidationWarnings on the affected Units. Requires Triggers to be specified.",
+            "description": "UpdateValidationResults indicates that the results of Trigger execution should be used to update ValidationErrors and ValidationWarnings on the affected Units, and the ValidationResults that say why each gate failed. Requires Triggers to be specified.",
             "x-go-type-skip-optional-pointer": true
           },
           "WhereResource": {

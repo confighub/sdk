@@ -4880,7 +4880,7 @@ type FunctionInvocationsRequest struct {
 	// Deprecated: this property has been marked as deprecated upstream, but no `x-deprecated-reason` was set
 	UpdateApplyGates bool `json:"UpdateApplyGates,omitempty" yaml:"UpdateApplyGates,omitempty"`
 
-	// UpdateValidationResults UpdateValidationResults indicates that the results of Trigger execution should be used to update ValidationErrors and ValidationWarnings on the affected Units. Requires Triggers to be specified.
+	// UpdateValidationResults UpdateValidationResults indicates that the results of Trigger execution should be used to update ValidationErrors and ValidationWarnings on the affected Units, and the ValidationResults that say why each gate failed. Requires Triggers to be specified.
 	UpdateValidationResults bool `json:"UpdateValidationResults,omitempty" yaml:"UpdateValidationResults,omitempty"`
 
 	// WhereResource WhereResource restricts which resources functions operate on using ConfigHub metadata path expressions (ConfigHub.ResourceName, ConfigHub.ResourceNameWithoutScope, ConfigHub.ResourceType, ConfigHub.ResourceCategory).
