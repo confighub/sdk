@@ -146,8 +146,8 @@ func displayExtendedTriggerDetails(extendedTrigger *goclientnew.ExtendedTrigger)
 	if trigger.WhereResource != "" {
 		view.Append([]string{"Where Resource", trigger.WhereResource})
 	}
-	if trigger.OtherDataSource != "" {
-		view.Append([]string{"Other Data Source", trigger.OtherDataSource})
+	if len(trigger.OtherUnitIDs) > 0 {
+		view.Append([]string{"Other Units", formatOtherUnits(trigger.OtherUnitIDs)})
 	}
 	view.Render()
 }
@@ -210,8 +210,8 @@ func displayTriggerDetails(trigger *goclientnew.Trigger) {
 	if trigger.WhereResource != "" {
 		view.Append([]string{"Where Resource", trigger.WhereResource})
 	}
-	if trigger.OtherDataSource != "" {
-		view.Append([]string{"Other Data Source", trigger.OtherDataSource})
+	if len(trigger.OtherUnitIDs) > 0 {
+		view.Append([]string{"Other Units", formatOtherUnits(trigger.OtherUnitIDs)})
 	}
 	view.Render()
 }

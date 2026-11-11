@@ -149,6 +149,7 @@ var (
 	conflictsApply        bool
 	conflictsDismiss      bool
 	conflictsPermanent    bool
+	conflictsChangeSet    string
 	conflictsUndismiss    bool
 	conflictsReason       string
 	conflictsPath         string
@@ -189,6 +190,7 @@ func init() {
 		"select conflicts withheld only by these guards, as key or key=value (repeatable)")
 	unitConflictsCmd.Flags().StringArrayVar(&conflictsClearance, "clearance", nil,
 		"with --apply, class of guarded reason the applied changes are cleared for, as KEY, KEY=VALUE[;VALUE...], KEY!=VALUE[;VALUE...], or !KEY (repeatable). An apply writing a guarded path this does not cover is refused")
+	unitConflictsCmd.Flags().StringVar(&conflictsChangeSet, "changeset", "", changeSetFlagHelp)
 	unitConflictsCmd.Flags().BoolVar(&dryRun, "dry-run", false,
 		"dry run mode: report what --apply or --dismiss would do without writing anything")
 	enableWaitFlag(unitConflictsCmd)
@@ -241,6 +243,9 @@ func unitConflictsCmdRun(_ *cobra.Command, args []string) error {
 		body.Action = "Undismiss"
 	}
 	body.DryRun = dryRun
+	if body.ChangeSetID, err = resolveOptionalChangeSetID(conflictsChangeSet, configUnit.Unit.SpaceID.String()); err != nil {
+		return err
+	}
 	if len(conflictsClearance) > 0 {
 		clearance, err := parseClearanceSpecs(conflictsClearance)
 		if err != nil {

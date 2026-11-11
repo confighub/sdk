@@ -565,9 +565,6 @@
         "dataType": "uuid",
         "references": "Unit"
       },
-      "ChangeWorkflowRequired": {
-        "dataType": "bool"
-      },
       "ComponentID": {
         "dataType": "uuid"
       },
@@ -593,6 +590,12 @@
       },
       "Permissions": {
         "dataType": "map[string]map[string]map[uuid]bool"
+      },
+      "RequireChangeTracking": {
+        "dataType": "bool"
+      },
+      "RequireChangeWorkflow": {
+        "dataType": "bool"
       },
       "Slug": {
         "dataType": "string"
@@ -798,6 +801,10 @@
         "dataType": "uuid",
         "references": "Organization",
         "expandable": true
+      },
+      "OtherUnitIDs": {
+        "dataType": "map[string]uuid",
+        "references": "Unit"
       },
       "Parameters": {
         "dataType": "JSON"
@@ -1734,8 +1741,9 @@
         "references": "Organization",
         "expandable": true
       },
-      "OtherDataSource": {
-        "dataType": "string"
+      "OtherUnitIDs": {
+        "dataType": "map[string]uuid",
+        "references": "Unit"
       },
       "Permissions": {
         "dataType": "map[string]map[string]map[uuid]bool"

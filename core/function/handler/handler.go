@@ -150,9 +150,14 @@ func (fh *FunctionHandler) InvokeCore(ctx context.Context, functionInvocation *a
 	if needsOtherData && len(functionInvocation.OtherData) > 0 {
 		parsedOtherData = make(map[api.OtherDataSource]gaby.Container, len(functionInvocation.OtherData))
 		for source, data := range functionInvocation.OtherData {
-			otherYAML, err := fh.GetConverter().NativeToYAML([]byte(data))
-			if err != nil {
-				return nil, errors.Wrapf(err, "failed to convert OtherData[%s] to YAML", source)
+			otherYAML := []byte(data)
+			// Data from a Unit of another toolchain has been converted to YAML by the sender,
+			// since this handler can convert only its own toolchain's.
+			if _, converted := functionInvocation.OtherDataToolchainTypes[source]; !converted {
+				otherYAML, err = fh.GetConverter().NativeToYAML(otherYAML)
+				if err != nil {
+					return nil, errors.Wrapf(err, "failed to convert OtherData[%s] to YAML", source)
+				}
 			}
 			parsed, err := gaby.ParseAll(otherYAML)
 			if err != nil {
@@ -737,6 +742,11 @@ func (fh *FunctionHandler) RegisterFunction(functionName string, registration *F
 	_, existing := fh.functionMap[functionName]
 	if existing {
 		return fmt.Errorf("function %s already registered", functionName)
+	}
+	for _, key := range registration.OtherDataExpected {
+		if err := api.ValidateOtherDataKey(string(key)); err != nil {
+			return fmt.Errorf("function %s: %w", functionName, err)
+		}
 	}
 	if registration.OutputInfo != nil && registration.OutputInfo.OutputType == api.OutputTypeValidationResult {
 		registration.Validating = true

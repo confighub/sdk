@@ -124,6 +124,7 @@ func init() {
 	addInvocationGuardFlag(invocationCreateCmd)
 	enableCreatePermissionFlag(invocationCreateCmd)
 	invocationCreateCmd.Flags().StringVar(&functionChannel, "channel", "", "channel whose client executes the invocation's functions")
+	addStoredOtherDataFlags(invocationCreateCmd, "invocation", false)
 	invocationCreateCmd.Flags().StringArrayVar(&invocationDeclaredParameterFlags, "parameter", nil, "declare a parameter as name[:datatype[:required]] (datatype defaults to string, required defaults to true; can be repeated). Reference declared parameters from templated argument values via {{ .Params.<name> }}.")
 	enableWhereFlag(invocationCreateCmd)
 	enableFilterFlag(invocationCreateCmd)
@@ -295,6 +296,11 @@ func runSingleInvocationCreate(args []string) error {
 	if guards != nil {
 		newBody.Guards = &guards
 	}
+	otherUnits, err := parseOtherUnitFlags(selectedSpaceID, false)
+	if err != nil {
+		return err
+	}
+	newBody.OtherUnitIDs = applyOtherUnits(newBody.OtherUnitIDs, otherUnits)
 	// Create params with AllowExists if needed
 	params := &goclientnew.CreateInvocationParams{}
 	params.WithBackingUnits = withBackingUnitsParam()

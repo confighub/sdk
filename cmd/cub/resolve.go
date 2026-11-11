@@ -273,6 +273,23 @@ func resolveChangeSetIDIn(spaceID string, ref string) (uuid.UUID, error) {
 	return changeSet.ChangeSet.ChangeSetID, nil
 }
 
+// changeSetFlagHelp is the help of --changeset on the commands whose write is refused for a unit in
+// a changeset unless it names that changeset.
+const changeSetFlagHelp = "changeset open on the unit, as <slug> or <space>/<slug>; a changeset locks the units it is open on, so a write that creates a revision of one has to name it"
+
+// resolveOptionalChangeSetID resolves a --changeset value, looking a bare slug up in spaceID. It
+// returns nil when the flag was not given.
+func resolveOptionalChangeSetID(ref string, spaceID string) (*uuid.UUID, error) {
+	if ref == "" {
+		return nil, nil
+	}
+	changeSetID, err := resolveChangeSetIDIn(spaceID, ref)
+	if err != nil {
+		return nil, err
+	}
+	return &changeSetID, nil
+}
+
 func resolveChangeOrderID(ref string) (uuid.UUID, error) {
 	return resolveChangeOrderIDIn(defaultSpaceID(), ref)
 }
@@ -316,7 +333,6 @@ func resolveAttributeID(ref string) (uuid.UUID, error) {
 	}
 	return attribute.Attribute.AttributeID, nil
 }
-
 
 // The plural helpers resolve a list of references, which is what the flags that
 // accept several of them (--trigger, --invocation, cub k8s --target) need.

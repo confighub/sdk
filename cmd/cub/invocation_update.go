@@ -74,6 +74,7 @@ func init() {
 	addInvocationGuardFlag(invocationUpdateCmd)
 	enableUpdatePermissionFlag(invocationUpdateCmd)
 	invocationUpdateCmd.Flags().StringVar(&functionChannel, "channel", "", "channel whose client executes the invocation's functions")
+	addStoredOtherDataFlags(invocationUpdateCmd, "invocation", true)
 	invocationUpdateCmd.Flags().StringArrayVar(&invocationDeclaredParameterFlags, "parameter", nil, "replace the declared parameters with the ones given, each as name[:datatype[:required]] (datatype defaults to string, required defaults to true; can be repeated). Reference declared parameters from templated argument values via {{ .Params.<name> }}.")
 	invocationUpdateCmd.Flags().BoolVar(&invocationPatch, "patch", false, "use patch API for individual or bulk operations")
 	enableWhereFlag(invocationUpdateCmd)
@@ -160,6 +161,10 @@ func runBulkInvocationUpdate() error {
 	if err != nil {
 		return err
 	}
+	otherUnits, err := parseOtherUnitFlags(selectedSpaceID, true)
+	if err != nil {
+		return err
+	}
 
 	// Create enhancer function for invocation-specific fields
 	enhancer := func(patchMap map[string]interface{}) {
@@ -170,6 +175,7 @@ func runBulkInvocationUpdate() error {
 			patchMap["Parameters"] = declaredParams
 		}
 		addInvocationPolicyToPatch(patchMap, clearance, guards)
+		addOtherDataToPatch(patchMap, otherUnits)
 	}
 
 	// Build patch data using consolidated function
@@ -266,6 +272,10 @@ func invocationUpdateCmdRun(cmd *cobra.Command, args []string) error {
 		if err != nil {
 			return err
 		}
+		otherUnits, err := parseOtherUnitFlags(spaceID.String(), true)
+		if err != nil {
+			return err
+		}
 
 		// Build patch data using BuildPatchData with invocation enhancer
 		invocationEnhancer := func(patchData map[string]interface{}) {
@@ -277,6 +287,7 @@ func invocationUpdateCmdRun(cmd *cobra.Command, args []string) error {
 				patchData["Parameters"] = declaredParams
 			}
 			addInvocationPolicyToPatch(patchData, clearance, guards)
+			addOtherDataToPatch(patchData, otherUnits)
 
 			// Add function details from args
 			patchData["ToolchainType"] = args[1]
@@ -376,6 +387,11 @@ func invocationUpdateCmdRun(cmd *cobra.Command, args []string) error {
 	if guards != nil {
 		currentInvocation.Guards = &guards
 	}
+	otherUnits, err := parseOtherUnitFlags(spaceID.String(), true)
+	if err != nil {
+		return err
+	}
+	currentInvocation.OtherUnitIDs = applyOtherUnits(currentInvocation.OtherUnitIDs, otherUnits)
 	if err := applyFieldEdits("Invocation", currentInvocation); err != nil {
 		return err
 	}

@@ -99,6 +99,7 @@ var (
 	unprotectSpecs          []string
 	unprotectAll            bool
 	setProtectionChangeDesc string
+	setProtectionChangeSet  string
 )
 
 func init() {
@@ -108,6 +109,7 @@ func init() {
 		"path to re-open to merges, as RESOURCE_TYPE:RESOURCE_NAME:PATH, or a whole resource as RESOURCE_TYPE:RESOURCE_NAME; RESOURCE_TYPE may be empty (repeatable)")
 	unitSetProtectionCmd.Flags().BoolVar(&unprotectAll, "unprotect-all", false,
 		"re-open every protected path of the unit to merges, before applying --protect and --unprotect")
+	unitSetProtectionCmd.Flags().StringVar(&setProtectionChangeSet, "changeset", "", changeSetFlagHelp)
 	unitSetProtectionCmd.Flags().StringVar(&setProtectionChangeDesc, "change-desc", "",
 		"change description recorded on the revision the edit creates")
 	addStandardDisplayFlags(unitSetProtectionCmd)
@@ -177,6 +179,9 @@ func unitSetProtectionCmdRun(_ *cobra.Command, args []string) error {
 	}
 
 	body := goclientnew.UnitProtectionRequest{UnprotectAll: unprotectAll, ChangeDescription: setProtectionChangeDesc}
+	if body.ChangeSetID, err = resolveOptionalChangeSetID(setProtectionChangeSet, configUnit.Unit.SpaceID.String()); err != nil {
+		return err
+	}
 	for _, key := range order {
 		resourceType := key.resourceType
 		resourceName := key.resourceName

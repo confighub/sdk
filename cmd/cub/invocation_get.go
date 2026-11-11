@@ -97,6 +97,9 @@ func displayExtendedInvocationDetails(extendedInvocation *goclientnew.ExtendedIn
 		view.Append([]string{fmt.Sprintf("Parameter %d (%s)", i, p.ParameterName), detail})
 	}
 	appendFunctionInvocationRows(view, invocationDetails.FunctionInvocations)
+	if len(invocationDetails.OtherUnitIDs) > 0 {
+		view.Append([]string{"Other Units", formatOtherUnits(invocationDetails.OtherUnitIDs)})
+	}
 	if invocationDetails.Hash != "" {
 		view.Append([]string{"Hash", invocationDetails.Hash})
 	}

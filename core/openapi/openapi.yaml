@@ -57,7 +57,7 @@ paths:
           An example conjunction is:
           `CreatedAt >= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.
 
-          Supported attributes for filtering on Component: AllowedChangeWorkflowIDs, Annotations, BackingUnitID, ChangeWorkflowRequired, ComponentID, CreatedAt, DeleteGates, DisplayName, HiddenReason, Labels, OrganizationID, Permissions, Slug, UpdatedAt, UpstreamComponentID.
+          Supported attributes for filtering on Component: AllowedChangeWorkflowIDs, Annotations, BackingUnitID, ComponentID, CreatedAt, DeleteGates, DisplayName, HiddenReason, Labels, OrganizationID, Permissions, RequireChangeTracking, RequireChangeWorkflow, Slug, UpdatedAt, UpstreamComponentID.
 
           The whole string must be query-encoded.
         in: query
@@ -279,7 +279,7 @@ paths:
           An example conjunction is:
           `CreatedAt >= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.
 
-          Supported attributes for filtering on Component: AllowedChangeWorkflowIDs, Annotations, BackingUnitID, ChangeWorkflowRequired, ComponentID, CreatedAt, DeleteGates, DisplayName, HiddenReason, Labels, OrganizationID, Permissions, Slug, UpdatedAt, UpstreamComponentID.
+          Supported attributes for filtering on Component: AllowedChangeWorkflowIDs, Annotations, BackingUnitID, ComponentID, CreatedAt, DeleteGates, DisplayName, HiddenReason, Labels, OrganizationID, Permissions, RequireChangeTracking, RequireChangeWorkflow, Slug, UpdatedAt, UpstreamComponentID.
 
           The whole string must be query-encoded.
         in: query
@@ -431,10 +431,6 @@ paths:
                     to attach information to entities.
                   nullable: true
                   type: object
-                ChangeWorkflowRequired:
-                  description: ""
-                  nullable: true
-                  type: boolean
                 DeleteGates:
                   additionalProperties:
                     nullable: true
@@ -472,6 +468,14 @@ paths:
                   description: ""
                   nullable: true
                   type: object
+                RequireChangeTracking:
+                  description: ""
+                  nullable: true
+                  type: boolean
+                RequireChangeWorkflow:
+                  description: ""
+                  nullable: true
+                  type: boolean
                 Slug:
                   description: Unique URL-safe identifier for the entity.
                   nullable: true
@@ -9998,7 +10002,7 @@ paths:
           An example conjunction is:
           `CreatedAt >= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.
 
-          Supported attributes for filtering on Component: AllowedChangeWorkflowIDs, Annotations, BackingUnitID, ChangeWorkflowRequired, ComponentID, CreatedAt, DeleteGates, DisplayName, HiddenReason, Labels, OrganizationID, Permissions, Slug, UpdatedAt, UpstreamComponentID.
+          Supported attributes for filtering on Component: AllowedChangeWorkflowIDs, Annotations, BackingUnitID, ComponentID, CreatedAt, DeleteGates, DisplayName, HiddenReason, Labels, OrganizationID, Permissions, RequireChangeTracking, RequireChangeWorkflow, Slug, UpdatedAt, UpstreamComponentID.
 
           The whole string must be query-encoded.
         in: query
@@ -10130,7 +10134,7 @@ paths:
 
           Field names are case-sensitive and PascalCase, as in the JSON encoding. Sort direction defaults to ASC when the 'DIRECTION:' prefix is omitted.
 
-          Supported attributes for ordering Component: BackingUnitID, ChangeWorkflowRequired, ComponentID, CreatedAt, DisplayName, HiddenReason, OrganizationID, Slug, UpdatedAt, UpstreamComponentID.
+          Supported attributes for ordering Component: BackingUnitID, ComponentID, CreatedAt, DisplayName, HiddenReason, OrganizationID, RequireChangeTracking, RequireChangeWorkflow, Slug, UpdatedAt, UpstreamComponentID.
 
           Example: 'DESC:CreatedAt' or 'DisplayName,DESC:CreatedAt'.
 
@@ -10141,7 +10145,7 @@ paths:
         name: order_by
         required: false
         schema:
-          pattern: ^\s*(?:(?:[Aa][Ss][Cc]|[Dd][Ee][Ss][Cc])\s*:\s*)?(BackingUnitID|ChangeWorkflowRequired|ComponentID|CreatedAt|DisplayName|HiddenReason|OrganizationID|Slug|UpdatedAt|UpstreamComponentID)\s*(?:,\s*(?:(?:[Aa][Ss][Cc]|[Dd][Ee][Ss][Cc])\s*:\s*)?(?:BackingUnitID|ChangeWorkflowRequired|ComponentID|CreatedAt|DisplayName|HiddenReason|OrganizationID|Slug|UpdatedAt|UpstreamComponentID)\s*)*$
+          pattern: ^\s*(?:(?:[Aa][Ss][Cc]|[Dd][Ee][Ss][Cc])\s*:\s*)?(BackingUnitID|ComponentID|CreatedAt|DisplayName|HiddenReason|OrganizationID|RequireChangeTracking|RequireChangeWorkflow|Slug|UpdatedAt|UpstreamComponentID)\s*(?:,\s*(?:(?:[Aa][Ss][Cc]|[Dd][Ee][Ss][Cc])\s*:\s*)?(?:BackingUnitID|ComponentID|CreatedAt|DisplayName|HiddenReason|OrganizationID|RequireChangeTracking|RequireChangeWorkflow|Slug|UpdatedAt|UpstreamComponentID)\s*)*$
           type: string
       - description: |-
           The token from the ConfigHub-Continue header of the previous page, to return the Component entities after it.
@@ -10262,7 +10266,9 @@ paths:
           description: The Component a set of Variants make up. Each Variant is a
             Space naming the Component with ComponentID. The Component decides which
             ChangeWorkflows promotions and releases of its Variants, and ChangeSets
-            opened on their Units, may use, and whether one is required.
+            opened on their Units, may use, whether one is required, and whether changes
+            to the configuration of their Units have to be made in a ChangeSet or
+            under a ChangeOrder.
         "400":
           content:
             application/json:
@@ -10508,10 +10514,6 @@ paths:
                     to attach information to entities.
                   nullable: true
                   type: object
-                ChangeWorkflowRequired:
-                  description: ""
-                  nullable: true
-                  type: boolean
                 DeleteGates:
                   additionalProperties:
                     nullable: true
@@ -10549,6 +10551,14 @@ paths:
                   description: ""
                   nullable: true
                   type: object
+                RequireChangeTracking:
+                  description: ""
+                  nullable: true
+                  type: boolean
+                RequireChangeWorkflow:
+                  description: ""
+                  nullable: true
+                  type: boolean
                 Slug:
                   description: Unique URL-safe identifier for the entity.
                   nullable: true
@@ -10568,7 +10578,9 @@ paths:
           description: The Component a set of Variants make up. Each Variant is a
             Space naming the Component with ComponentID. The Component decides which
             ChangeWorkflows promotions and releases of its Variants, and ChangeSets
-            opened on their Units, may use, and whether one is required.
+            opened on their Units, may use, whether one is required, and whether changes
+            to the configuration of their Units have to be made in a ChangeSet or
+            under a ChangeOrder.
         "400":
           content:
             application/json:
@@ -10649,7 +10661,9 @@ paths:
           description: The Component a set of Variants make up. Each Variant is a
             Space naming the Component with ComponentID. The Component decides which
             ChangeWorkflows promotions and releases of its Variants, and ChangeSets
-            opened on their Units, may use, and whether one is required.
+            opened on their Units, may use, whether one is required, and whether changes
+            to the configuration of their Units have to be made in a ChangeSet or
+            under a ChangeOrder.
         "400":
           content:
             application/json:
@@ -10793,7 +10807,9 @@ paths:
           description: The Component a set of Variants make up. Each Variant is a
             Space naming the Component with ComponentID. The Component decides which
             ChangeWorkflows promotions and releases of its Variants, and ChangeSets
-            opened on their Units, may use, and whether one is required.
+            opened on their Units, may use, whether one is required, and whether changes
+            to the configuration of their Units have to be made in a ChangeSet or
+            under a ChangeOrder.
         "400":
           content:
             application/json:
@@ -12699,11 +12715,15 @@ paths:
         required: false
         schema:
           type: string
-      - description: 'Source of additional configuration data to pass to functions
-          that need it (e.g., vet-immutable). Supports named revision specifiers:
-          LastReleasedRevisionNum, HeadRevisionNum. Can be prefixed with ''Before:''
-          (e.g., Before:HeadRevisionNum). May be repeated for multiple sources. Without
-          it, each function is passed the sources its signature lists in OtherDataExpected.'
+      - description: Additional configuration data to pass as OtherData to the functions
+          the request names, and to the invocations that name none of their own; triggers
+          pass what they name. Either a revision of each Unit, named LastReleasedRevisionNum
+          or HeadRevisionNum, optionally prefixed with 'Before:' (e.g., Before:HeadRevisionNum),
+          which the functions read under that name, or another Unit, as Unit:<key>:<unit-id>,
+          whose head data the functions read under <key> (e.g., Unit:policy:<unit-id>
+          for vet-validating-admission-policy); the caller needs View permission on
+          it. May be repeated or comma-separated. A function passed no revision is
+          passed the revisions its signature lists in OtherDataExpected.
         in: query
         name: other_data_source
         required: false
@@ -13483,7 +13503,7 @@ paths:
           An example conjunction is:
           `CreatedAt >= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.
 
-          Supported attributes for filtering on Invocation: Annotations, BackingUnitID, ChannelID, Clearance, CreatedAt, DeleteGates, DisplayName, FunctionInvocations, Guards, Hash, HiddenReason, InvocationID, Labels, OrganizationID, Parameters, Permissions, Slug, SpaceID, ToolchainType, UpdatedAt, UpstreamInvocationID.
+          Supported attributes for filtering on Invocation: Annotations, BackingUnitID, ChannelID, Clearance, CreatedAt, DeleteGates, DisplayName, FunctionInvocations, Guards, Hash, HiddenReason, InvocationID, Labels, OrganizationID, OtherUnitIDs, Parameters, Permissions, Slug, SpaceID, ToolchainType, UpdatedAt, UpstreamInvocationID.
 
           The functions an Invocation calls are addressed with dot notation into `FunctionInvocations`: `FunctionInvocations.*.FunctionName = 'set-image'` matches an Invocation that calls set-image anywhere in its list, and `FunctionInvocations.0.FunctionName` addresses the first function it calls.
 
@@ -13706,7 +13726,7 @@ paths:
           An example conjunction is:
           `CreatedAt >= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.
 
-          Supported attributes for filtering on Invocation: Annotations, BackingUnitID, ChannelID, Clearance, CreatedAt, DeleteGates, DisplayName, FunctionInvocations, Guards, Hash, HiddenReason, InvocationID, Labels, OrganizationID, Parameters, Permissions, Slug, SpaceID, ToolchainType, UpdatedAt, UpstreamInvocationID.
+          Supported attributes for filtering on Invocation: Annotations, BackingUnitID, ChannelID, Clearance, CreatedAt, DeleteGates, DisplayName, FunctionInvocations, Guards, Hash, HiddenReason, InvocationID, Labels, OrganizationID, OtherUnitIDs, Parameters, Permissions, Slug, SpaceID, ToolchainType, UpdatedAt, UpstreamInvocationID.
 
           The functions an Invocation calls are addressed with dot notation into `FunctionInvocations`: `FunctionInvocations.*.FunctionName = 'set-image'` matches an Invocation that calls set-image anywhere in its list, and `FunctionInvocations.0.FunctionName` addresses the first function it calls.
 
@@ -13961,7 +13981,7 @@ paths:
           An example conjunction is:
           `CreatedAt >= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.
 
-          Supported attributes for filtering on Invocation: Annotations, BackingUnitID, ChannelID, Clearance, CreatedAt, DeleteGates, DisplayName, FunctionInvocations, Guards, Hash, HiddenReason, InvocationID, Labels, OrganizationID, Parameters, Permissions, Slug, SpaceID, ToolchainType, UpdatedAt, UpstreamInvocationID.
+          Supported attributes for filtering on Invocation: Annotations, BackingUnitID, ChannelID, Clearance, CreatedAt, DeleteGates, DisplayName, FunctionInvocations, Guards, Hash, HiddenReason, InvocationID, Labels, OrganizationID, OtherUnitIDs, Parameters, Permissions, Slug, SpaceID, ToolchainType, UpdatedAt, UpstreamInvocationID.
 
           The functions an Invocation calls are addressed with dot notation into `FunctionInvocations`: `FunctionInvocations.*.FunctionName = 'set-image'` matches an Invocation that calls set-image anywhere in its list, and `FunctionInvocations.0.FunctionName` addresses the first function it calls.
 
@@ -14162,6 +14182,14 @@ paths:
                     and filtering them.
                   nullable: true
                   type: object
+                OtherUnitIDs:
+                  additionalProperties:
+                    format: uuid
+                    nullable: true
+                    type: string
+                  description: ""
+                  nullable: true
+                  type: object
                 Parameters:
                   description: ""
                   items:
@@ -14307,7 +14335,7 @@ paths:
           An example conjunction is:
           `CreatedAt >= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.
 
-          Supported attributes for filtering on Invocation: Annotations, BackingUnitID, ChannelID, Clearance, CreatedAt, DeleteGates, DisplayName, FunctionInvocations, Guards, Hash, HiddenReason, InvocationID, Labels, OrganizationID, Parameters, Permissions, Slug, SpaceID, ToolchainType, UpdatedAt, UpstreamInvocationID.
+          Supported attributes for filtering on Invocation: Annotations, BackingUnitID, ChannelID, Clearance, CreatedAt, DeleteGates, DisplayName, FunctionInvocations, Guards, Hash, HiddenReason, InvocationID, Labels, OrganizationID, OtherUnitIDs, Parameters, Permissions, Slug, SpaceID, ToolchainType, UpdatedAt, UpstreamInvocationID.
 
           The functions an Invocation calls are addressed with dot notation into `FunctionInvocations`: `FunctionInvocations.*.FunctionName = 'set-image'` matches an Invocation that calls set-image anywhere in its list, and `FunctionInvocations.0.FunctionName` addresses the first function it calls.
 
@@ -14663,6 +14691,14 @@ paths:
                     and filtering them.
                   nullable: true
                   type: object
+                OtherUnitIDs:
+                  additionalProperties:
+                    format: uuid
+                    nullable: true
+                    type: string
+                  description: ""
+                  nullable: true
+                  type: object
                 Parameters:
                   description: ""
                   items:
@@ -14813,7 +14849,7 @@ paths:
           An example conjunction is:
           `CreatedAt >= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.
 
-          Supported attributes for filtering on Invocation: Annotations, BackingUnitID, ChannelID, Clearance, CreatedAt, DeleteGates, DisplayName, FunctionInvocations, Guards, Hash, HiddenReason, InvocationID, Labels, OrganizationID, Parameters, Permissions, Slug, SpaceID, ToolchainType, UpdatedAt, UpstreamInvocationID.
+          Supported attributes for filtering on Invocation: Annotations, BackingUnitID, ChannelID, Clearance, CreatedAt, DeleteGates, DisplayName, FunctionInvocations, Guards, Hash, HiddenReason, InvocationID, Labels, OrganizationID, OtherUnitIDs, Parameters, Permissions, Slug, SpaceID, ToolchainType, UpdatedAt, UpstreamInvocationID.
 
           The whole string must be query-encoded.
         in: query
@@ -29573,11 +29609,15 @@ paths:
         required: false
         schema:
           type: string
-      - description: 'Source of additional configuration data to pass to functions
-          that need it (e.g., vet-immutable). Supports named revision specifiers:
-          LastReleasedRevisionNum, HeadRevisionNum. Can be prefixed with ''Before:''
-          (e.g., Before:HeadRevisionNum). May be repeated for multiple sources. Without
-          it, each function is passed the sources its signature lists in OtherDataExpected.'
+      - description: Additional configuration data to pass as OtherData to the functions
+          the request names, and to the invocations that name none of their own; triggers
+          pass what they name. Either a revision of each Unit, named LastReleasedRevisionNum
+          or HeadRevisionNum, optionally prefixed with 'Before:' (e.g., Before:HeadRevisionNum),
+          which the functions read under that name, or another Unit, as Unit:<key>:<unit-id>,
+          whose head data the functions read under <key> (e.g., Unit:policy:<unit-id>
+          for vet-validating-admission-policy); the caller needs View permission on
+          it. May be repeated or comma-separated. A function passed no revision is
+          passed the revisions its signature lists in OtherDataExpected.
         in: query
         name: other_data_source
         required: false
@@ -29883,7 +29923,7 @@ paths:
           An example conjunction is:
           `CreatedAt >= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.
 
-          Supported attributes for filtering on Invocation: Annotations, BackingUnitID, ChannelID, Clearance, CreatedAt, DeleteGates, DisplayName, FunctionInvocations, Guards, Hash, HiddenReason, InvocationID, Labels, OrganizationID, Parameters, Permissions, Slug, SpaceID, ToolchainType, UpdatedAt, UpstreamInvocationID.
+          Supported attributes for filtering on Invocation: Annotations, BackingUnitID, ChannelID, Clearance, CreatedAt, DeleteGates, DisplayName, FunctionInvocations, Guards, Hash, HiddenReason, InvocationID, Labels, OrganizationID, OtherUnitIDs, Parameters, Permissions, Slug, SpaceID, ToolchainType, UpdatedAt, UpstreamInvocationID.
 
           The functions an Invocation calls are addressed with dot notation into `FunctionInvocations`: `FunctionInvocations.*.FunctionName = 'set-image'` matches an Invocation that calls set-image anywhere in its list, and `FunctionInvocations.0.FunctionName` addresses the first function it calls.
 
@@ -30466,6 +30506,14 @@ paths:
                   description: An optional map of Label key/value pairs to specify
                     identifying attributes of entities for the purpose of grouping
                     and filtering them.
+                  nullable: true
+                  type: object
+                OtherUnitIDs:
+                  additionalProperties:
+                    format: uuid
+                    nullable: true
+                    type: string
+                  description: ""
                   nullable: true
                   type: object
                 Parameters:
@@ -34514,7 +34562,7 @@ paths:
           An example conjunction is:
           `CreatedAt >= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.
 
-          Supported attributes for filtering on Trigger: Annotations, Arguments, BackingUnitID, ChannelID, Clearance, CreatedAt, DeleteGates, Description, Disabled, DisplayName, Event, FunctionName, Guards, Hash, HiddenReason, InvocationID, Labels, OrganizationID, OtherDataSource, Permissions, Protect, Slug, SpaceID, ToolchainType, TriggerID, UnitFilterID, UpdatedAt, UpstreamTriggerID, Validating, Warn, WhereResource, WhereUnit.
+          Supported attributes for filtering on Trigger: Annotations, Arguments, BackingUnitID, ChannelID, Clearance, CreatedAt, DeleteGates, Description, Disabled, DisplayName, Event, FunctionName, Guards, Hash, HiddenReason, InvocationID, Labels, OrganizationID, OtherUnitIDs, Permissions, Protect, Slug, SpaceID, ToolchainType, TriggerID, UnitFilterID, UpdatedAt, UpstreamTriggerID, Validating, Warn, WhereResource, WhereUnit.
 
           A Trigger returns the function it invokes inline rather than in a FunctionInvocation object, so `where` names FunctionName and Arguments directly. The arguments are addressed with dot notation into `Arguments`, which is a list: `Arguments.?ParameterName=attribute-name.Value = 'owner'` reads the argument bound to a named parameter, `Arguments.*.Value` matches any argument's value, and `Arguments.0.Value` addresses the first argument. Arguments passed positionally have no ParameterName.
 
@@ -34648,7 +34696,7 @@ paths:
 
           Field names are case-sensitive and PascalCase, as in the JSON encoding. Sort direction defaults to ASC when the 'DIRECTION:' prefix is omitted.
 
-          Supported attributes for ordering Trigger: BackingUnitID, ChannelID, CreatedAt, Description, Disabled, DisplayName, Event, FunctionName, Hash, HiddenReason, InvocationID, OrganizationID, OtherDataSource, Protect, Slug, SpaceID, ToolchainType, TriggerID, UnitFilterID, UpdatedAt, UpstreamTriggerID, Validating, Warn, WhereResource, WhereUnit.
+          Supported attributes for ordering Trigger: BackingUnitID, ChannelID, CreatedAt, Description, Disabled, DisplayName, Event, FunctionName, Hash, HiddenReason, InvocationID, OrganizationID, Protect, Slug, SpaceID, ToolchainType, TriggerID, UnitFilterID, UpdatedAt, UpstreamTriggerID, Validating, Warn, WhereResource, WhereUnit.
 
           Example: 'DESC:CreatedAt' or 'DisplayName,DESC:CreatedAt'.
 
@@ -34659,7 +34707,7 @@ paths:
         name: order_by
         required: false
         schema:
-          pattern: ^\s*(?:(?:[Aa][Ss][Cc]|[Dd][Ee][Ss][Cc])\s*:\s*)?(BackingUnitID|ChannelID|CreatedAt|Description|Disabled|DisplayName|Event|FunctionName|Hash|HiddenReason|InvocationID|OrganizationID|OtherDataSource|Protect|Slug|SpaceID|ToolchainType|TriggerID|UnitFilterID|UpdatedAt|UpstreamTriggerID|Validating|Warn|WhereResource|WhereUnit)\s*(?:,\s*(?:(?:[Aa][Ss][Cc]|[Dd][Ee][Ss][Cc])\s*:\s*)?(?:BackingUnitID|ChannelID|CreatedAt|Description|Disabled|DisplayName|Event|FunctionName|Hash|HiddenReason|InvocationID|OrganizationID|OtherDataSource|Protect|Slug|SpaceID|ToolchainType|TriggerID|UnitFilterID|UpdatedAt|UpstreamTriggerID|Validating|Warn|WhereResource|WhereUnit)\s*)*$
+          pattern: ^\s*(?:(?:[Aa][Ss][Cc]|[Dd][Ee][Ss][Cc])\s*:\s*)?(BackingUnitID|ChannelID|CreatedAt|Description|Disabled|DisplayName|Event|FunctionName|Hash|HiddenReason|InvocationID|OrganizationID|Protect|Slug|SpaceID|ToolchainType|TriggerID|UnitFilterID|UpdatedAt|UpstreamTriggerID|Validating|Warn|WhereResource|WhereUnit)\s*(?:,\s*(?:(?:[Aa][Ss][Cc]|[Dd][Ee][Ss][Cc])\s*:\s*)?(?:BackingUnitID|ChannelID|CreatedAt|Description|Disabled|DisplayName|Event|FunctionName|Hash|HiddenReason|InvocationID|OrganizationID|Protect|Slug|SpaceID|ToolchainType|TriggerID|UnitFilterID|UpdatedAt|UpstreamTriggerID|Validating|Warn|WhereResource|WhereUnit)\s*)*$
           type: string
       - description: |-
           The token from the ConfigHub-Continue header of the previous page, to return the Trigger entities after it.
@@ -35127,10 +35175,14 @@ paths:
                     and filtering them.
                   nullable: true
                   type: object
-                OtherDataSource:
+                OtherUnitIDs:
+                  additionalProperties:
+                    format: uuid
+                    nullable: true
+                    type: string
                   description: ""
                   nullable: true
-                  type: string
+                  type: object
                 Permissions:
                   additionalProperties:
                     nullable: true
@@ -44161,7 +44213,7 @@ paths:
           An example conjunction is:
           `CreatedAt >= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.
 
-          Supported attributes for filtering on Trigger: Annotations, Arguments, BackingUnitID, ChannelID, Clearance, CreatedAt, DeleteGates, Description, Disabled, DisplayName, Event, FunctionName, Guards, Hash, HiddenReason, InvocationID, Labels, OrganizationID, OtherDataSource, Permissions, Protect, Slug, SpaceID, ToolchainType, TriggerID, UnitFilterID, UpdatedAt, UpstreamTriggerID, Validating, Warn, WhereResource, WhereUnit.
+          Supported attributes for filtering on Trigger: Annotations, Arguments, BackingUnitID, ChannelID, Clearance, CreatedAt, DeleteGates, Description, Disabled, DisplayName, Event, FunctionName, Guards, Hash, HiddenReason, InvocationID, Labels, OrganizationID, OtherUnitIDs, Permissions, Protect, Slug, SpaceID, ToolchainType, TriggerID, UnitFilterID, UpdatedAt, UpstreamTriggerID, Validating, Warn, WhereResource, WhereUnit.
 
           A Trigger returns the function it invokes inline rather than in a FunctionInvocation object, so `where` names FunctionName and Arguments directly. The arguments are addressed with dot notation into `Arguments`, which is a list: `Arguments.?ParameterName=attribute-name.Value = 'owner'` reads the argument bound to a named parameter, `Arguments.*.Value` matches any argument's value, and `Arguments.0.Value` addresses the first argument. Arguments passed positionally have no ParameterName.
 
@@ -44384,7 +44436,7 @@ paths:
           An example conjunction is:
           `CreatedAt >= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.
 
-          Supported attributes for filtering on Trigger: Annotations, Arguments, BackingUnitID, ChannelID, Clearance, CreatedAt, DeleteGates, Description, Disabled, DisplayName, Event, FunctionName, Guards, Hash, HiddenReason, InvocationID, Labels, OrganizationID, OtherDataSource, Permissions, Protect, Slug, SpaceID, ToolchainType, TriggerID, UnitFilterID, UpdatedAt, UpstreamTriggerID, Validating, Warn, WhereResource, WhereUnit.
+          Supported attributes for filtering on Trigger: Annotations, Arguments, BackingUnitID, ChannelID, Clearance, CreatedAt, DeleteGates, Description, Disabled, DisplayName, Event, FunctionName, Guards, Hash, HiddenReason, InvocationID, Labels, OrganizationID, OtherUnitIDs, Permissions, Protect, Slug, SpaceID, ToolchainType, TriggerID, UnitFilterID, UpdatedAt, UpstreamTriggerID, Validating, Warn, WhereResource, WhereUnit.
 
           A Trigger returns the function it invokes inline rather than in a FunctionInvocation object, so `where` names FunctionName and Arguments directly. The arguments are addressed with dot notation into `Arguments`, which is a list: `Arguments.?ParameterName=attribute-name.Value = 'owner'` reads the argument bound to a named parameter, `Arguments.*.Value` matches any argument's value, and `Arguments.0.Value` addresses the first argument. Arguments passed positionally have no ParameterName.
 
@@ -44518,7 +44570,7 @@ paths:
 
           Field names are case-sensitive and PascalCase, as in the JSON encoding. Sort direction defaults to ASC when the 'DIRECTION:' prefix is omitted.
 
-          Supported attributes for ordering Trigger: BackingUnitID, ChannelID, CreatedAt, Description, Disabled, DisplayName, Event, FunctionName, Hash, HiddenReason, InvocationID, OrganizationID, OtherDataSource, Protect, Slug, SpaceID, ToolchainType, TriggerID, UnitFilterID, UpdatedAt, UpstreamTriggerID, Validating, Warn, WhereResource, WhereUnit.
+          Supported attributes for ordering Trigger: BackingUnitID, ChannelID, CreatedAt, Description, Disabled, DisplayName, Event, FunctionName, Hash, HiddenReason, InvocationID, OrganizationID, Protect, Slug, SpaceID, ToolchainType, TriggerID, UnitFilterID, UpdatedAt, UpstreamTriggerID, Validating, Warn, WhereResource, WhereUnit.
 
           Example: 'DESC:CreatedAt' or 'DisplayName,DESC:CreatedAt'.
 
@@ -44529,7 +44581,7 @@ paths:
         name: order_by
         required: false
         schema:
-          pattern: ^\s*(?:(?:[Aa][Ss][Cc]|[Dd][Ee][Ss][Cc])\s*:\s*)?(BackingUnitID|ChannelID|CreatedAt|Description|Disabled|DisplayName|Event|FunctionName|Hash|HiddenReason|InvocationID|OrganizationID|OtherDataSource|Protect|Slug|SpaceID|ToolchainType|TriggerID|UnitFilterID|UpdatedAt|UpstreamTriggerID|Validating|Warn|WhereResource|WhereUnit)\s*(?:,\s*(?:(?:[Aa][Ss][Cc]|[Dd][Ee][Ss][Cc])\s*:\s*)?(?:BackingUnitID|ChannelID|CreatedAt|Description|Disabled|DisplayName|Event|FunctionName|Hash|HiddenReason|InvocationID|OrganizationID|OtherDataSource|Protect|Slug|SpaceID|ToolchainType|TriggerID|UnitFilterID|UpdatedAt|UpstreamTriggerID|Validating|Warn|WhereResource|WhereUnit)\s*)*$
+          pattern: ^\s*(?:(?:[Aa][Ss][Cc]|[Dd][Ee][Ss][Cc])\s*:\s*)?(BackingUnitID|ChannelID|CreatedAt|Description|Disabled|DisplayName|Event|FunctionName|Hash|HiddenReason|InvocationID|OrganizationID|Protect|Slug|SpaceID|ToolchainType|TriggerID|UnitFilterID|UpdatedAt|UpstreamTriggerID|Validating|Warn|WhereResource|WhereUnit)\s*(?:,\s*(?:(?:[Aa][Ss][Cc]|[Dd][Ee][Ss][Cc])\s*:\s*)?(?:BackingUnitID|ChannelID|CreatedAt|Description|Disabled|DisplayName|Event|FunctionName|Hash|HiddenReason|InvocationID|OrganizationID|Protect|Slug|SpaceID|ToolchainType|TriggerID|UnitFilterID|UpdatedAt|UpstreamTriggerID|Validating|Warn|WhereResource|WhereUnit)\s*)*$
           type: string
       - description: |-
           The token from the ConfigHub-Continue header of the previous page, to return the Trigger entities after it.
@@ -44638,7 +44690,7 @@ paths:
           An example conjunction is:
           `CreatedAt >= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.
 
-          Supported attributes for filtering on Trigger: Annotations, Arguments, BackingUnitID, ChannelID, Clearance, CreatedAt, DeleteGates, Description, Disabled, DisplayName, Event, FunctionName, Guards, Hash, HiddenReason, InvocationID, Labels, OrganizationID, OtherDataSource, Permissions, Protect, Slug, SpaceID, ToolchainType, TriggerID, UnitFilterID, UpdatedAt, UpstreamTriggerID, Validating, Warn, WhereResource, WhereUnit.
+          Supported attributes for filtering on Trigger: Annotations, Arguments, BackingUnitID, ChannelID, Clearance, CreatedAt, DeleteGates, Description, Disabled, DisplayName, Event, FunctionName, Guards, Hash, HiddenReason, InvocationID, Labels, OrganizationID, OtherUnitIDs, Permissions, Protect, Slug, SpaceID, ToolchainType, TriggerID, UnitFilterID, UpdatedAt, UpstreamTriggerID, Validating, Warn, WhereResource, WhereUnit.
 
           A Trigger returns the function it invokes inline rather than in a FunctionInvocation object, so `where` names FunctionName and Arguments directly. The arguments are addressed with dot notation into `Arguments`, which is a list: `Arguments.?ParameterName=attribute-name.Value = 'owner'` reads the argument bound to a named parameter, `Arguments.*.Value` matches any argument's value, and `Arguments.0.Value` addresses the first argument. Arguments passed positionally have no ParameterName.
 
@@ -44859,10 +44911,14 @@ paths:
                     and filtering them.
                   nullable: true
                   type: object
-                OtherDataSource:
+                OtherUnitIDs:
+                  additionalProperties:
+                    format: uuid
+                    nullable: true
+                    type: string
                   description: ""
                   nullable: true
-                  type: string
+                  type: object
                 Permissions:
                   additionalProperties:
                     nullable: true
@@ -45024,7 +45080,7 @@ paths:
           An example conjunction is:
           `CreatedAt >= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.
 
-          Supported attributes for filtering on Trigger: Annotations, Arguments, BackingUnitID, ChannelID, Clearance, CreatedAt, DeleteGates, Description, Disabled, DisplayName, Event, FunctionName, Guards, Hash, HiddenReason, InvocationID, Labels, OrganizationID, OtherDataSource, Permissions, Protect, Slug, SpaceID, ToolchainType, TriggerID, UnitFilterID, UpdatedAt, UpstreamTriggerID, Validating, Warn, WhereResource, WhereUnit.
+          Supported attributes for filtering on Trigger: Annotations, Arguments, BackingUnitID, ChannelID, Clearance, CreatedAt, DeleteGates, Description, Disabled, DisplayName, Event, FunctionName, Guards, Hash, HiddenReason, InvocationID, Labels, OrganizationID, OtherUnitIDs, Permissions, Protect, Slug, SpaceID, ToolchainType, TriggerID, UnitFilterID, UpdatedAt, UpstreamTriggerID, Validating, Warn, WhereResource, WhereUnit.
 
           A Trigger returns the function it invokes inline rather than in a FunctionInvocation object, so `where` names FunctionName and Arguments directly. The arguments are addressed with dot notation into `Arguments`, which is a list: `Arguments.?ParameterName=attribute-name.Value = 'owner'` reads the argument bound to a named parameter, `Arguments.*.Value` matches any argument's value, and `Arguments.0.Value` addresses the first argument. Arguments passed positionally have no ParameterName.
 
@@ -45399,10 +45455,14 @@ paths:
                     and filtering them.
                   nullable: true
                   type: object
-                OtherDataSource:
+                OtherUnitIDs:
+                  additionalProperties:
+                    format: uuid
+                    nullable: true
+                    type: string
                   description: ""
                   nullable: true
-                  type: string
+                  type: object
                 Permissions:
                   additionalProperties:
                     nullable: true
@@ -45572,7 +45632,7 @@ paths:
           An example conjunction is:
           `CreatedAt >= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.
 
-          Supported attributes for filtering on Trigger: Annotations, Arguments, BackingUnitID, ChannelID, Clearance, CreatedAt, DeleteGates, Description, Disabled, DisplayName, Event, FunctionName, Guards, Hash, HiddenReason, InvocationID, Labels, OrganizationID, OtherDataSource, Permissions, Protect, Slug, SpaceID, ToolchainType, TriggerID, UnitFilterID, UpdatedAt, UpstreamTriggerID, Validating, Warn, WhereResource, WhereUnit.
+          Supported attributes for filtering on Trigger: Annotations, Arguments, BackingUnitID, ChannelID, Clearance, CreatedAt, DeleteGates, Description, Disabled, DisplayName, Event, FunctionName, Guards, Hash, HiddenReason, InvocationID, Labels, OrganizationID, OtherUnitIDs, Permissions, Protect, Slug, SpaceID, ToolchainType, TriggerID, UnitFilterID, UpdatedAt, UpstreamTriggerID, Validating, Warn, WhereResource, WhereUnit.
 
           The whole string must be query-encoded.
         in: query
@@ -51750,6 +51810,18 @@ components:
             counts rejects them.
           type: integer
           x-go-type-skip-optional-pointer: true
+        CountedOnPreviouslyReleased:
+          description: How many of the Revisions it counts on have the content the
+            Space's latest Release already bundles for their Unit.
+          type: integer
+          x-go-type-skip-optional-pointer: true
+        CoversNew:
+          description: It covers a Revision evaluated whose content the Space's latest
+            Release does not already bundle, so it is a decision on what is being
+            promoted or released. Every Attestation an entry or Final gate finds covers
+            one.
+          type: boolean
+          x-go-type-skip-optional-pointer: true
         CreatedAt:
           example: 2006-01-02T15:04:05Z07:00
           format: date-time
@@ -51806,6 +51878,11 @@ components:
             gate''s progress toward Required.'
           type: integer
           x-go-type-skip-optional-pointer: true
+        PreviouslyReleased:
+          description: For a release gate, how many of the Revisions evaluated have
+            the content the Space's latest Release already bundles for their Unit.
+          type: integer
+          x-go-type-skip-optional-pointer: true
         Required:
           description: 'How many distinct attesters each Revision needs: Count, or
             the number of FromGroupIDs with DistinctGroups.'
@@ -51847,6 +51924,11 @@ components:
         Counted:
           description: Distinct attesters counted on this Revision.
           type: integer
+          x-go-type-skip-optional-pointer: true
+        PreviouslyReleased:
+          description: 'The Space''s latest Release already bundles this content for
+            the Unit: it was released without what the prerequisite asks for.'
+          type: boolean
           x-go-type-skip-optional-pointer: true
         Reason:
           description: AttestationsMissing or AttestationRejected.
@@ -55024,7 +55106,8 @@ components:
       description: The Component a set of Variants make up. Each Variant is a Space
         naming the Component with ComponentID. The Component decides which ChangeWorkflows
         promotions and releases of its Variants, and ChangeSets opened on their Units,
-        may use, and whether one is required.
+        may use, whether one is required, and whether changes to the configuration
+        of their Units have to be made in a ChangeSet or under a ChangeOrder.
       properties:
         AllowedChangeWorkflowIDs:
           description: 'The set of ChangeWorkflows that can be used for promotions
@@ -55058,14 +55141,6 @@ components:
           x-confighub-where:
             dataType: uuid
             references: Unit
-        ChangeWorkflowRequired:
-          description: Whether a ChangeWorkflow must be used for promotions and releases
-            of this component's Variants, and by ChangeSets opened on their Units.
-            Changing it requires Manage permission on the component. (optional)
-          type: boolean
-          x-confighub-where:
-            dataType: bool
-          x-go-type-skip-optional-pointer: true
         ComponentID:
           description: Unique identifier for a component.
           example: 248df4b7-aa70-47b8-a036-33ac447e668d
@@ -55147,6 +55222,29 @@ components:
           description: Permissions to access this component.
           x-confighub-where:
             dataType: map[string]map[string]map[uuid]bool
+        RequireChangeTracking:
+          description: 'Whether a change to the configuration of a Unit in one of
+            this component''s Variants has to be made in a ChangeSet open on the Unit,
+            or under a ChangeOrder: creating a Unit, writing its data, updating it
+            with a restore, upgrade, merge or resolve, invoking functions on it, uploading,
+            promoting and demoting. A write under a ChangeOrder is one that names
+            it: a promotion or demotion of it, an upgrade, resolve or restore with
+            change_order, or an invocation with change_order. A backing Unit refreshed
+            from its entity and a resolve made by the resolve queue are exempt, and
+            their Revisions belong to the ChangeSet open on the Unit, if any. Changing
+            it requires Manage permission on the component. (optional)'
+          type: boolean
+          x-confighub-where:
+            dataType: bool
+          x-go-type-skip-optional-pointer: true
+        RequireChangeWorkflow:
+          description: Whether a ChangeWorkflow must be used for promotions and releases
+            of this component's Variants, and by ChangeSets opened on their Units.
+            Changing it requires Manage permission on the component. (optional)
+          type: boolean
+          x-confighub-where:
+            dataType: bool
+          x-go-type-skip-optional-pointer: true
         Slug:
           description: Unique URL-safe identifier for the entity.
           maxLength: 128
@@ -57109,8 +57207,10 @@ components:
             dataType: bool
           x-go-type-skip-optional-pointer: true
         OtherDataExpected:
-          description: If non-empty, specification of what source(s) are expected
-            in OtherData; if empty, OtherData is not used
+          description: 'The keys of the OtherData the function reads, if any: a revision
+            specifier such as LastReleasedRevisionNum, which a caller that names no
+            revision is passed, or a key such as schema under which the caller passes
+            another Unit. Letters, digits, ''-'' and ''_''.'
           items:
             type: string
           type: array
@@ -57421,6 +57521,19 @@ components:
             references: Organization
           x-go-type-skip-optional-pointer: true
           x-omitzero: true
+        OtherUnitIDs:
+          additionalProperties:
+            $ref: '#/components/schemas/UUID'
+          description: Other Units to pass to the invocation's functions as OtherData,
+            by the key the functions read each under, such as policy for vet-validating-admission-policy.
+            Each Unit's head data is passed, and a Unit named here cannot be deleted
+            while the invocation names it. Naming a Unit requires Use permission on
+            it. A trigger that runs the invocation takes them from here.
+          type: object
+          x-confighub-where:
+            dataType: map[string]uuid
+            references: Unit
+          x-go-type-skip-optional-pointer: true
         Parameters:
           items:
             $ref: '#/components/schemas/FunctionParameter'
@@ -61308,7 +61421,7 @@ components:
             An example conjunction is:
             `CreatedAt >= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.
 
-            Supported attributes for filtering on Trigger: Annotations, Arguments, BackingUnitID, ChannelID, Clearance, CreatedAt, DeleteGates, Description, Disabled, DisplayName, Event, FunctionName, Guards, Hash, HiddenReason, InvocationID, Labels, OrganizationID, OtherDataSource, Permissions, Protect, Slug, SpaceID, ToolchainType, TriggerID, UnitFilterID, UpdatedAt, UpstreamTriggerID, Validating, Warn, WhereResource, WhereUnit.
+            Supported attributes for filtering on Trigger: Annotations, Arguments, BackingUnitID, ChannelID, Clearance, CreatedAt, DeleteGates, Description, Disabled, DisplayName, Event, FunctionName, Guards, Hash, HiddenReason, InvocationID, Labels, OrganizationID, OtherUnitIDs, Permissions, Protect, Slug, SpaceID, ToolchainType, TriggerID, UnitFilterID, UpdatedAt, UpstreamTriggerID, Validating, Warn, WhereResource, WhereUnit.
 
             The whole string must be query-encoded.
           type: string
@@ -61765,7 +61878,7 @@ components:
             An example conjunction is:
             `CreatedAt >= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.
 
-            Supported attributes for filtering on Trigger: Annotations, Arguments, BackingUnitID, ChannelID, Clearance, CreatedAt, DeleteGates, Description, Disabled, DisplayName, Event, FunctionName, Guards, Hash, HiddenReason, InvocationID, Labels, OrganizationID, OtherDataSource, Permissions, Protect, Slug, SpaceID, ToolchainType, TriggerID, UnitFilterID, UpdatedAt, UpstreamTriggerID, Validating, Warn, WhereResource, WhereUnit.
+            Supported attributes for filtering on Trigger: Annotations, Arguments, BackingUnitID, ChannelID, Clearance, CreatedAt, DeleteGates, Description, Disabled, DisplayName, Event, FunctionName, Guards, Hash, HiddenReason, InvocationID, Labels, OrganizationID, OtherUnitIDs, Permissions, Protect, Slug, SpaceID, ToolchainType, TriggerID, UnitFilterID, UpdatedAt, UpstreamTriggerID, Validating, Warn, WhereResource, WhereUnit.
 
             The whole string must be query-encoded.
           type: string
@@ -61957,15 +62070,18 @@ components:
             references: Organization
           x-go-type-skip-optional-pointer: true
           x-omitzero: true
-        OtherDataSource:
-          description: Specifies the source of additional configuration data to pass
-            to functions that need it (e.g., vet-immutable needs a baseline revision
-            to compare against). Uses revision specifier format such as LastReleasedRevisionNum
-            or Before:HeadRevisionNum. When empty, the function is passed the sources
-            its signature lists in OtherDataExpected.
-          type: string
+        OtherUnitIDs:
+          additionalProperties:
+            $ref: '#/components/schemas/UUID'
+          description: Other Units to pass to the trigger's function as OtherData,
+            by the key the function reads each under, such as policy for vet-validating-admission-policy.
+            Each Unit's head data is passed, and a Unit named here cannot be deleted
+            while the trigger names it. Naming a Unit requires Use permission on it.
+            Empty on a trigger that references an Invocation, which takes the Invocation's.
+          type: object
           x-confighub-where:
-            dataType: string
+            dataType: map[string]uuid
+            references: Unit
           x-go-type-skip-optional-pointer: true
         Permissions:
           allOf:
@@ -62679,6 +62795,13 @@ components:
             recorded with Permanent
           type: string
           x-go-type-skip-optional-pointer: true
+        ChangeSetID:
+          description: 'The ChangeSet open on the Unit, which a request that creates
+            a Revision of a Unit in a ChangeSet has to name: a ChangeSet locks the
+            Units it is open on.'
+          example: 248df4b7-aa70-47b8-a036-33ac447e668d
+          format: uuid
+          type: string
         Clearance:
           allOf:
           - $ref: '#/components/schemas/Clearance'
@@ -63039,6 +63162,13 @@ components:
             path guards".
           type: string
           x-go-type-skip-optional-pointer: true
+        ChangeSetID:
+          description: 'The ChangeSet open on the Unit, which a request that creates
+            a Revision of a Unit in a ChangeSet has to name: a ChangeSet locks the
+            Units it is open on.'
+          example: 248df4b7-aa70-47b8-a036-33ac447e668d
+          format: uuid
+          type: string
         Clearance:
           allOf:
           - $ref: '#/components/schemas/Clearance'
@@ -63197,6 +63327,13 @@ components:
             path protection".
           type: string
           x-go-type-skip-optional-pointer: true
+        ChangeSetID:
+          description: 'The ChangeSet open on the Unit, which a request that creates
+            a Revision of a Unit in a ChangeSet has to name: a ChangeSet locks the
+            Units it is open on.'
+          example: 248df4b7-aa70-47b8-a036-33ac447e668d
+          format: uuid
+          type: string
         ResourceProtection:
           description: Per-resource Protected edits to apply to the Unit's MutationSources
           items:

@@ -107,6 +107,7 @@ var (
 	removeGuardSpecs    []string
 	setGuardClearance   []string
 	setGuardChangeDesc  string
+	setGuardChangeSet   string
 )
 
 func init() {
@@ -118,6 +119,7 @@ func init() {
 		"guard to remove, as RESOURCE_TYPE:RESOURCE_NAME:PATH=KEY (repeatable)")
 	unitSetGuardCmd.Flags().StringArrayVar(&setGuardClearance, "clearance", nil,
 		"class of guarded reason this edit is cleared for, as KEY, KEY=VALUE[;VALUE...], KEY!=VALUE[;VALUE...], or !KEY (repeatable). Required to edit a path that already carries guards")
+	unitSetGuardCmd.Flags().StringVar(&setGuardChangeSet, "changeset", "", changeSetFlagHelp)
 	unitSetGuardCmd.Flags().StringVar(&setGuardChangeDesc, "change-desc", "",
 		"change description recorded on the revision the edit creates")
 	addStandardDisplayFlags(unitSetGuardCmd)
@@ -233,6 +235,9 @@ func unitSetGuardCmdRun(_ *cobra.Command, args []string) error {
 	}
 
 	body := goclientnew.UnitGuardRequest{ChangeDescription: setGuardChangeDesc}
+	if body.ChangeSetID, err = resolveOptionalChangeSetID(setGuardChangeSet, configUnit.Unit.SpaceID.String()); err != nil {
+		return err
+	}
 	if len(setGuardClearance) > 0 {
 		clearance, err := parseClearanceSpecs(setGuardClearance)
 		if err != nil {

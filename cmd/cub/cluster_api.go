@@ -417,9 +417,9 @@ func clusterWhereTriggerForSpace(spaceID uuid.UUID) string {
 // carries the confighubplaceholder sentinel cannot reach the cluster.
 //
 // Kubernetes/YAML is the only toolchain worth gating here. A Trigger matches one
-// ToolchainType, AppConfig Units are forced to ProviderNone and can never carry a
+// ToolchainType, AppConfig Units are Unreleasable by default and don't have a
 // Target, and ConfigHub/YAML is the ConfigHub bridge's own format — so nothing
-// else can be bound to the cluster's OCI target in the first place.
+// else is likely to be bound to the cluster's OCI target in the first place.
 //
 // The Description is what the UI shows when hovering the gate, so it says how to
 // clear it rather than just what failed.

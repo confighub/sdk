@@ -166,7 +166,7 @@ func init() {
 	triggerCreateCmd.Flags().StringVar(&triggerUnitFilter, "unit-filter", "", "filter entity (slug or UUID) to restrict which Units this trigger applies to")
 	triggerCreateCmd.Flags().StringVar(&triggerWhereResource, "where-resource", "", "metadata path expression to restrict which resources the trigger operates on")
 	addTriggerEnforcementFlags(triggerCreateCmd)
-	triggerCreateCmd.Flags().StringVar(&triggerOtherDataSource, "other-data-source", "", "source of additional data to pass to the function (e.g., LastReleasedRevisionNum); defaults to the sources the function expects")
+	addStoredOtherDataFlags(triggerCreateCmd, "trigger", false)
 
 	addBackingUnitFlags(triggerCreateCmd, "Trigger", false, true)
 	addFromBackingUnitsFlags(triggerCreateCmd, "Trigger", true)
@@ -338,9 +338,11 @@ func runSingleTriggerCreate(args []string) error {
 	if triggerWhereResource != "" {
 		newBody.WhereResource = triggerWhereResource
 	}
-	if triggerOtherDataSource != "" {
-		newBody.OtherDataSource = triggerOtherDataSource
+	otherUnits, err := parseOtherUnitFlags(selectedSpaceID, false)
+	if err != nil {
+		return err
 	}
+	newBody.OtherUnitIDs = applyOtherUnits(nil, otherUnits)
 
 	// TODO: update with overriden string type TriggerEvent
 	// params.Trigger.Event = models.ModelsTriggerEvent(args[1])

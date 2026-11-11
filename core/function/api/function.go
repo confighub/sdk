@@ -90,7 +90,7 @@ type FunctionSignature struct {
 	Parameters         []FunctionParameter     `description:"Function parameters, in order"`
 	RequiredParameters int                     `description:"Number of required parameters"`
 	VarArgs            bool                    `description:"Last parameter may be repeated"`
-	OtherDataExpected  []OtherDataSource       `json:",omitempty" description:"If non-empty, specification of what source(s) are expected in OtherData; if empty, OtherData is not used"`
+	OtherDataExpected  []OtherDataSource       `json:",omitempty" description:"The keys of the OtherData the function reads, if any: a revision specifier such as LastReleasedRevisionNum, which a caller that names no revision is passed, or a key such as schema under which the caller passes another Unit. Letters, digits, '-' and '_'."`
 	OutputInfo         *FunctionOutput         `description:"Output description"`
 	Mutating           bool                    `description:"May change the configuration data"`
 	Validating         bool                    `description:"Returns ValidationResult"`

@@ -103,7 +103,7 @@ func registerDefaultingFunctions(fh handler.FunctionRegistry, rp *k8skit.K8sReso
 			Mutating:              true,
 			Hermetic:              true,
 			Idempotent:            true,
-			Description:           "Set security context defaults for pods (seccomp, runAsNonRoot, runAsUser, runAsGroup, fsGroup) and containers (readOnlyRootFilesystem, allowPrivilegeEscalation, privileged), where they are missing or hold a placeholder. With readOnlyRootFilesystem true, every path a container writes to needs a volume mounted there, such as an emptyDir set with set-container-volume-mount-path",
+			Description:           "Set security context defaults for pods (seccomp, runAsNonRoot, runAsUser, runAsGroup, fsGroup) and containers (readOnlyRootFilesystem, allowPrivilegeEscalation, privileged), where they are missing or hold a placeholder. A container that is privileged or adds the SYS_ADMIN capability gets allowPrivilegeEscalation true, since either one grants the escalation anyway (Kubernetes rejects false beside privileged or CAP_SYS_ADMIN). With readOnlyRootFilesystem true, every path a container writes to needs a volume mounted there, such as an emptyDir set with set-container-volume-mount-path",
 			FunctionType:          api.FunctionTypePathVisitor,
 			AttributeName:         attributeNamePodContainerSecurityCtxDefaults,
 			AffectedResourceTypes: yamlkit.ResourceTypesForAttribute(attributeNamePodContainerSecurityCtxDefaults, rp),
@@ -111,7 +111,10 @@ func registerDefaultingFunctions(fh handler.FunctionRegistry, rp *k8skit.K8sReso
 		Function: func(fArgs handler.FunctionImplementationArguments) (gaby.Container, any, error) {
 			resourceTypeToPaths := yamlkit.GetPathRegistryForAttributeName(rp, attributeNamePodContainerSecurityCtxDefaults)
 			err := yamlkit.UpdatePathsSetterArgument(fArgs.ParsedData, resourceTypeToPaths, []any{}, rp, true, fArgs.Options)
-			return fArgs.ParsedData, nil, err
+			if err != nil {
+				return fArgs.ParsedData, nil, err
+			}
+			return allowPrivilegeEscalationWhereGranted(rp, fArgs.Options, fArgs.ParsedData)
 		},
 	}); err != nil {
 		slog.Error("failed to register function", "error", err)
@@ -367,4 +370,53 @@ func setContainerProbeDefaults(containerDoc *gaby.YamlDoc, paths probePaths) []e
 	}
 
 	return multiErrs
+}
+
+// allowPrivilegeEscalationWhereGranted sets allowPrivilegeEscalation true on every container
+// that is privileged or adds SYS_ADMIN, which the security context defaults set false wherever
+// it was missing. Either one grants the escalation the field would deny, so false there only
+// claims a restriction the container does not have. Kubernetes goes further for privileged and
+// for the CAP_SYS_ADMIN spelling, and rejects false beside them.
+func allowPrivilegeEscalationWhereGranted(rp *k8skit.K8sResourceProviderType, options *api.FunctionOptions, parsedData gaby.Container) (gaby.Container, any, error) {
+	_, err := yamlkit.VisitResourcesFiltered(parsedData, nil, rp, options, func(doc *gaby.YamlDoc, output any, index int, resourceInfo *api.ResourceInfo) (any, []error) {
+		var multiErrs []error
+		for _, containersPath := range k8skit.ContainerArrayPaths(resourceInfo.ResourceType) {
+			containers, found, err := yamlkit.YamlSafePathGetDoc(doc, api.ResolvedPath(containersPath), true)
+			if err != nil {
+				multiErrs = append(multiErrs, err)
+				continue
+			}
+			if !found {
+				continue
+			}
+			for _, container := range containers.Children() {
+				if !containerGrantsPrivilegeEscalation(container) {
+					continue
+				}
+				if allowed, ok := container.Path("securityContext.allowPrivilegeEscalation").Data().(bool); ok && allowed {
+					continue
+				}
+				if _, err := container.SetP(true, "securityContext.allowPrivilegeEscalation"); err != nil {
+					multiErrs = append(multiErrs, err)
+				}
+			}
+		}
+		return output, multiErrs
+	})
+	return parsedData, nil, err
+}
+
+// containerGrantsPrivilegeEscalation reports whether a container is privileged or adds
+// SYS_ADMIN. Kubernetes validation checks for the CAP_SYS_ADMIN spelling, and container
+// runtimes accept SYS_ADMIN for the same capability, so both are matched.
+func containerGrantsPrivilegeEscalation(container *gaby.YamlDoc) bool {
+	if privileged, ok := container.Path("securityContext.privileged").Data().(bool); ok && privileged {
+		return true
+	}
+	for _, capability := range container.Path("securityContext.capabilities.add").Children() {
+		if name, ok := capability.Data().(string); ok && (name == "CAP_SYS_ADMIN" || name == "SYS_ADMIN") {
+			return true
+		}
+	}
+	return false
 }

@@ -402,6 +402,35 @@ The response `Outputs` field is a map from `OutputType` to the corresponding out
 
 Functions just need to return the configuration data and output of the right format, and the handler takes care of the rest.
 
+### Configuration besides the Unit: OtherData
+
+A function that reads configuration other than the Unit it runs on is passed it as `OtherData`, by
+key, rather than as an argument holding a whole document. It lists the keys it reads in its
+signature's `OtherDataExpected`, and reads each from `FunctionImplementationArguments.ParsedOtherData`,
+parsed as `ParsedData` is. A key is letters, digits, `-` and `_`, at most 64 of them;
+`RegisterFunction` refuses others. The caller says where the data under each key comes from:
+
+- **Another revision of the same Unit**, keyed by its revision specifier: `LastReleasedRevisionNum`
+  or `HeadRevisionNum`. `vet-immutable` compares against one. A function is passed the revisions it
+  lists in `OtherDataExpected`; a Unit that has no such revision yet, such as one never released,
+  is passed nothing under it, and the function decides what that means. A one-off request can name
+  another revision instead, with `other_data_source` (`cub function do --other-data-source`),
+  optionally prefixed with `Before:`.
+- **Another Unit**, under a key the function reads it by. `vet-jsonschema-from-unit` reads the JSON
+  Schema it validates against from `schema`, and `vet-validating-admission-policy` reads
+  ValidatingAdmissionPolicies from `policy`. A Trigger or Invocation names the Units in its
+  `OtherUnitIDs`, `cub` with `--other-unit key=unit`, and the function invocation APIs with
+  `other_data_source=Unit:<key>:<unit-id>`. Nothing is passed under such a key unless the caller
+  names a Unit, so a function that needs one fails without it.
+
+Each function is passed exactly what its own Trigger or Invocation names, or what the request names
+for the functions it carries, so two Triggers can pass different Units under one key, and a
+function never sees what another one was passed.
+
+A Unit of another toolchain than the one the function runs on is sent already converted to YAML,
+and listed in the request's `OtherDataToolchainTypes`, since a handler can convert only its own
+toolchain's data. `fctl do --other-data key=file` passes a file under a key, for testing.
+
 ### Resource filtering with WhereResource
 
 The `WhereResource` field on `FunctionInvocationRequest` restricts which resources within a Unit's configuration data a function operates on. It accepts relational expressions that are evaluated per-resource.

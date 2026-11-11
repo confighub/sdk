@@ -85,20 +85,19 @@ Examples:
 }
 
 var (
-	disableTrigger         bool
-	enableTrigger          bool
-	warnTrigger            bool
-	unwarnTrigger          bool
-	protectTrigger         bool
-	unprotectTrigger       bool
-	triggerPatch           bool
-	triggerIdentifiers     []string
-	invocationSlug         string
-	triggerDescription     string
-	triggerWhereUnit       string
-	triggerUnitFilter      string
-	triggerWhereResource   string
-	triggerOtherDataSource string
+	disableTrigger       bool
+	enableTrigger        bool
+	warnTrigger          bool
+	unwarnTrigger        bool
+	protectTrigger       bool
+	unprotectTrigger     bool
+	triggerPatch         bool
+	triggerIdentifiers   []string
+	invocationSlug       string
+	triggerDescription   string
+	triggerWhereUnit     string
+	triggerUnitFilter    string
+	triggerWhereResource string
 )
 
 func init() {
@@ -125,7 +124,7 @@ func init() {
 	triggerUpdateCmd.Flags().StringVar(&triggerUnitFilter, "unit-filter", "", "filter entity (slug or UUID) to restrict which Units this trigger applies to")
 	triggerUpdateCmd.Flags().StringVar(&triggerWhereResource, "where-resource", "", "metadata path expression to restrict which resources the trigger operates on")
 	addTriggerEnforcementFlags(triggerUpdateCmd)
-	triggerUpdateCmd.Flags().StringVar(&triggerOtherDataSource, "other-data-source", "", "source of additional data to pass to the function (e.g., LastReleasedRevisionNum); defaults to the sources the function expects")
+	addStoredOtherDataFlags(triggerUpdateCmd, "trigger", true)
 	addBackingUnitFlags(triggerUpdateCmd, "Trigger", false, false)
 	addFromBackingUnitsFlags(triggerUpdateCmd, "Trigger", false)
 	triggerCmd.AddCommand(triggerUpdateCmd)
@@ -498,9 +497,11 @@ func triggerUpdateCmdRun(cmd *cobra.Command, args []string) error {
 	if triggerWhereResource != "" {
 		currentTrigger.Trigger.WhereResource = triggerWhereResource
 	}
-	if triggerOtherDataSource != "" {
-		currentTrigger.Trigger.OtherDataSource = triggerOtherDataSource
+	otherUnits, err := parseOtherUnitFlags(currentTrigger.Trigger.SpaceID.String(), true)
+	if err != nil {
+		return err
 	}
+	currentTrigger.Trigger.OtherUnitIDs = applyOtherUnits(currentTrigger.Trigger.OtherUnitIDs, otherUnits)
 	if err := applyFieldEdits("Trigger", currentTrigger.Trigger); err != nil {
 		return err
 	}
@@ -568,6 +569,10 @@ func triggerPatchEnhancer(wasWarn bool) (PatchEnhancer, error) {
 	if err != nil {
 		return nil, err
 	}
+	otherUnits, err := parseOtherUnitFlags(selectedSpaceID, true)
+	if err != nil {
+		return nil, err
+	}
 	enforcement, err := triggerEnforcementAnnotations(wasWarn)
 	if err != nil {
 		return nil, err
@@ -619,9 +624,7 @@ func triggerPatchEnhancer(wasWarn bool) (PatchEnhancer, error) {
 		if triggerWhereResource != "" {
 			patchMap["WhereResource"] = triggerWhereResource
 		}
-		if triggerOtherDataSource != "" {
-			patchMap["OtherDataSource"] = triggerOtherDataSource
-		}
+		addOtherDataToPatch(patchMap, otherUnits)
 	}, nil
 }
 

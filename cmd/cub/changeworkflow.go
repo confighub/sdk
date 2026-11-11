@@ -25,7 +25,7 @@ give it the same shape of rollout, which "cub changeworkflow create" does in bul
 
 The component plays no part in which Spaces a stage selects. The Component named by the ComponentID
 of the change order's Space decides only which workflows it may be promoted under, with its
-AllowedChangeWorkflowIDs and ChangeWorkflowRequired.
+AllowedChangeWorkflowIDs and RequireChangeWorkflow.
 
 "cub changeorder create --change-workflow" names the workflow a change order is promoted under.
 

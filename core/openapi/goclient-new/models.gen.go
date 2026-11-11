@@ -2087,6 +2087,12 @@ type AttestationGateEntry struct {
 	// CountedOn How many of the Revisions evaluated it counts on. A Fail that counts rejects them.
 	CountedOn int `json:"CountedOn,omitempty" yaml:"CountedOn,omitempty"`
 
+	// CountedOnPreviouslyReleased How many of the Revisions it counts on have the content the Space's latest Release already bundles for their Unit.
+	CountedOnPreviouslyReleased int `json:"CountedOnPreviouslyReleased,omitempty" yaml:"CountedOnPreviouslyReleased,omitempty"`
+
+	// CoversNew It covers a Revision evaluated whose content the Space's latest Release does not already bundle, so it is a decision on what is being promoted or released. Every Attestation an entry or Final gate finds covers one.
+	CoversNew bool `json:"CoversNew,omitempty" yaml:"CoversNew,omitempty"`
+
 	// CreatedAt Example: 2006-01-02T15:04:05Z07:00
 	CreatedAt time.Time `json:"CreatedAt,omitempty,omitzero" yaml:"CreatedAt,omitempty"`
 
@@ -2117,6 +2123,9 @@ type AttestationGateResult struct {
 	// Counted The fewest attesters counted on any Revision evaluated: the gate's progress toward Required.
 	Counted int `json:"Counted,omitempty" yaml:"Counted,omitempty"`
 
+	// PreviouslyReleased For a release gate, how many of the Revisions evaluated have the content the Space's latest Release already bundles for their Unit.
+	PreviouslyReleased int `json:"PreviouslyReleased,omitempty" yaml:"PreviouslyReleased,omitempty"`
+
 	// Required How many distinct attesters each Revision needs: Count, or the number of FromGroupIDs with DistinctGroups.
 	Required int `json:"Required,omitempty" yaml:"Required,omitempty"`
 
@@ -2143,6 +2152,9 @@ type AttestationGateRevision struct {
 
 	// Counted Distinct attesters counted on this Revision.
 	Counted int `json:"Counted,omitempty" yaml:"Counted,omitempty"`
+
+	// PreviouslyReleased The Space's latest Release already bundles this content for the Unit: it was released without what the prerequisite asks for.
+	PreviouslyReleased bool `json:"PreviouslyReleased,omitempty" yaml:"PreviouslyReleased,omitempty"`
 
 	// Reason AttestationsMissing or AttestationRejected.
 	Reason      string `json:"Reason,omitempty" yaml:"Reason,omitempty"`
@@ -3681,7 +3693,7 @@ type CommandSignature struct {
 	Returns     *Schema                `json:"Returns,omitempty" yaml:"Returns,omitempty"`
 }
 
-// Component The Component a set of Variants make up. Each Variant is a Space naming the Component with ComponentID. The Component decides which ChangeWorkflows promotions and releases of its Variants, and ChangeSets opened on their Units, may use, and whether one is required.
+// Component The Component a set of Variants make up. Each Variant is a Space naming the Component with ComponentID. The Component decides which ChangeWorkflows promotions and releases of its Variants, and ChangeSets opened on their Units, may use, whether one is required, and whether changes to the configuration of their Units have to be made in a ChangeSet or under a ChangeOrder.
 type Component struct {
 	// AllowedChangeWorkflowIDs The set of ChangeWorkflows that can be used for promotions and releases of this component's Variants, and for ChangeSets opened on their Units: a ChangeOrder or ChangeSet is governed by one workflow, which every component it reaches has to allow. Changing it requires Manage permission on the component. (optional)
 	AllowedChangeWorkflowIDs []UUID `json:"AllowedChangeWorkflowIDs,omitempty" yaml:"AllowedChangeWorkflowIDs,omitempty"`
@@ -3691,9 +3703,6 @@ type Component struct {
 
 	// BackingUnitID Example: 248df4b7-aa70-47b8-a036-33ac447e668d
 	BackingUnitID *openapi_types.UUID `json:"BackingUnitID,omitempty" yaml:"BackingUnitID,omitempty"`
-
-	// ChangeWorkflowRequired Whether a ChangeWorkflow must be used for promotions and releases of this component's Variants, and by ChangeSets opened on their Units. Changing it requires Manage permission on the component. (optional)
-	ChangeWorkflowRequired bool `json:"ChangeWorkflowRequired,omitempty" yaml:"ChangeWorkflowRequired,omitempty"`
 
 	// ComponentID Unique identifier for a component.
 	//
@@ -3728,6 +3737,12 @@ type Component struct {
 	// Permissions Permissions to access this component.
 	Permissions *Permissions `json:"Permissions,omitempty" yaml:"Permissions,omitempty"`
 
+	// RequireChangeTracking Whether a change to the configuration of a Unit in one of this component's Variants has to be made in a ChangeSet open on the Unit, or under a ChangeOrder: creating a Unit, writing its data, updating it with a restore, upgrade, merge or resolve, invoking functions on it, uploading, promoting and demoting. A write under a ChangeOrder is one that names it: a promotion or demotion of it, an upgrade, resolve or restore with change_order, or an invocation with change_order. A backing Unit refreshed from its entity and a resolve made by the resolve queue are exempt, and their Revisions belong to the ChangeSet open on the Unit, if any. Changing it requires Manage permission on the component. (optional)
+	RequireChangeTracking bool `json:"RequireChangeTracking,omitempty" yaml:"RequireChangeTracking,omitempty"`
+
+	// RequireChangeWorkflow Whether a ChangeWorkflow must be used for promotions and releases of this component's Variants, and by ChangeSets opened on their Units. Changing it requires Manage permission on the component. (optional)
+	RequireChangeWorkflow bool `json:"RequireChangeWorkflow,omitempty" yaml:"RequireChangeWorkflow,omitempty"`
+
 	// Slug Unique URL-safe identifier for the entity.
 	Slug string `json:"Slug" yaml:"Slug"`
 
@@ -3745,7 +3760,7 @@ type Component struct {
 
 // ComponentCreateOrUpdateResponse defines model for ComponentCreateOrUpdateResponse.
 type ComponentCreateOrUpdateResponse struct {
-	// Component The Component a set of Variants make up. Each Variant is a Space naming the Component with ComponentID. The Component decides which ChangeWorkflows promotions and releases of its Variants, and ChangeSets opened on their Units, may use, and whether one is required.
+	// Component The Component a set of Variants make up. Each Variant is a Space naming the Component with ComponentID. The Component decides which ChangeWorkflows promotions and releases of its Variants, and ChangeSets opened on their Units, may use, whether one is required, and whether changes to the configuration of their Units have to be made in a ChangeSet or under a ChangeOrder.
 	Component *Component     `json:"Component,omitempty" yaml:"Component,omitempty"`
 	Error     *ResponseError `json:"Error,omitempty" yaml:"Error,omitempty"`
 }
@@ -4196,7 +4211,7 @@ type ExtendedCommandRun struct {
 
 // ExtendedComponent defines model for ExtendedComponent.
 type ExtendedComponent struct {
-	// Component The Component a set of Variants make up. Each Variant is a Space naming the Component with ComponentID. The Component decides which ChangeWorkflows promotions and releases of its Variants, and ChangeSets opened on their Units, may use, and whether one is required.
+	// Component The Component a set of Variants make up. Each Variant is a Space naming the Component with ComponentID. The Component decides which ChangeWorkflows promotions and releases of its Variants, and ChangeSets opened on their Units, may use, whether one is required, and whether changes to the configuration of their Units have to be made in a ChangeSet or under a ChangeOrder.
 	Component *Component     `json:"Component,omitempty" yaml:"Component,omitempty"`
 	Error     *ResponseError `json:"Error,omitempty" yaml:"Error,omitempty"`
 
@@ -4498,7 +4513,7 @@ type ExtendedSpace struct {
 	AttributeFilter *Filter     `json:"AttributeFilter,omitempty" yaml:"AttributeFilter,omitempty"`
 	Attributes      []Attribute `json:"Attributes,omitempty" yaml:"Attributes,omitempty"`
 
-	// Component The Component a set of Variants make up. Each Variant is a Space naming the Component with ComponentID. The Component decides which ChangeWorkflows promotions and releases of its Variants, and ChangeSets opened on their Units, may use, and whether one is required.
+	// Component The Component a set of Variants make up. Each Variant is a Space naming the Component with ComponentID. The Component decides which ChangeWorkflows promotions and releases of its Variants, and ChangeSets opened on their Units, may use, whether one is required, and whether changes to the configuration of their Units have to be made in a ChangeSet or under a ChangeOrder.
 	Component      *Component     `json:"Component,omitempty" yaml:"Component,omitempty"`
 	Error          *ResponseError `json:"Error,omitempty" yaml:"Error,omitempty"`
 	GatedUnitCount int64          `json:"GatedUnitCount,omitempty" yaml:"GatedUnitCount,omitempty"`
@@ -5025,7 +5040,7 @@ type FunctionSignature struct {
 	// Mutating May change the configuration data
 	Mutating bool `json:"Mutating,omitempty" yaml:"Mutating,omitempty"`
 
-	// OtherDataExpected If non-empty, specification of what source(s) are expected in OtherData; if empty, OtherData is not used
+	// OtherDataExpected The keys of the OtherData the function reads, if any: a revision specifier such as LastReleasedRevisionNum, which a caller that names no revision is passed, or a key such as schema under which the caller passes another Unit. Letters, digits, '-' and '_'.
 	OtherDataExpected []string `json:"OtherDataExpected,omitempty" yaml:"OtherDataExpected,omitempty"`
 
 	// OutputInfo Output description
@@ -5158,8 +5173,11 @@ type Invocation struct {
 	// OrganizationID Unique identifier for an organization.
 	//
 	// Example: 248df4b7-aa70-47b8-a036-33ac447e668d
-	OrganizationID openapi_types.UUID  `json:"OrganizationID,omitempty,omitzero" yaml:"OrganizationID,omitempty"`
-	Parameters     []FunctionParameter `json:"Parameters,omitempty" yaml:"Parameters,omitempty"`
+	OrganizationID openapi_types.UUID `json:"OrganizationID,omitempty,omitzero" yaml:"OrganizationID,omitempty"`
+
+	// OtherUnitIDs Other Units to pass to the invocation's functions as OtherData, by the key the functions read each under, such as policy for vet-validating-admission-policy. Each Unit's head data is passed, and a Unit named here cannot be deleted while the invocation names it. Naming a Unit requires Use permission on it. A trigger that runs the invocation takes them from here.
+	OtherUnitIDs map[string]UUID     `json:"OtherUnitIDs,omitempty" yaml:"OtherUnitIDs,omitempty"`
+	Parameters   []FunctionParameter `json:"Parameters,omitempty" yaml:"Parameters,omitempty"`
 
 	// Permissions Permissions to access this invocation.
 	Permissions *Permissions `json:"Permissions,omitempty" yaml:"Permissions,omitempty"`
@@ -7028,7 +7046,7 @@ type Space struct {
 	// An example conjunction is:
 	// `CreatedAt >= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.
 	//
-	// Supported attributes for filtering on Trigger: Annotations, Arguments, BackingUnitID, ChannelID, Clearance, CreatedAt, DeleteGates, Description, Disabled, DisplayName, Event, FunctionName, Guards, Hash, HiddenReason, InvocationID, Labels, OrganizationID, OtherDataSource, Permissions, Protect, Slug, SpaceID, ToolchainType, TriggerID, UnitFilterID, UpdatedAt, UpstreamTriggerID, Validating, Warn, WhereResource, WhereUnit.
+	// Supported attributes for filtering on Trigger: Annotations, Arguments, BackingUnitID, ChannelID, Clearance, CreatedAt, DeleteGates, Description, Disabled, DisplayName, Event, FunctionName, Guards, Hash, HiddenReason, InvocationID, Labels, OrganizationID, OtherUnitIDs, Permissions, Protect, Slug, SpaceID, ToolchainType, TriggerID, UnitFilterID, UpdatedAt, UpstreamTriggerID, Validating, Warn, WhereResource, WhereUnit.
 	//
 	// The whole string must be query-encoded.
 	WhereTrigger string `json:"WhereTrigger,omitempty" yaml:"WhereTrigger,omitempty"`
@@ -7247,7 +7265,7 @@ type Target struct {
 	// An example conjunction is:
 	// `CreatedAt >= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.
 	//
-	// Supported attributes for filtering on Trigger: Annotations, Arguments, BackingUnitID, ChannelID, Clearance, CreatedAt, DeleteGates, Description, Disabled, DisplayName, Event, FunctionName, Guards, Hash, HiddenReason, InvocationID, Labels, OrganizationID, OtherDataSource, Permissions, Protect, Slug, SpaceID, ToolchainType, TriggerID, UnitFilterID, UpdatedAt, UpstreamTriggerID, Validating, Warn, WhereResource, WhereUnit.
+	// Supported attributes for filtering on Trigger: Annotations, Arguments, BackingUnitID, ChannelID, Clearance, CreatedAt, DeleteGates, Description, Disabled, DisplayName, Event, FunctionName, Guards, Hash, HiddenReason, InvocationID, Labels, OrganizationID, OtherUnitIDs, Permissions, Protect, Slug, SpaceID, ToolchainType, TriggerID, UnitFilterID, UpdatedAt, UpstreamTriggerID, Validating, Warn, WhereResource, WhereUnit.
 	//
 	// The whole string must be query-encoded.
 	WhereTrigger string `json:"WhereTrigger,omitempty" yaml:"WhereTrigger,omitempty"`
@@ -7337,8 +7355,8 @@ type Trigger struct {
 	// Example: 248df4b7-aa70-47b8-a036-33ac447e668d
 	OrganizationID openapi_types.UUID `json:"OrganizationID,omitempty,omitzero" yaml:"OrganizationID,omitempty"`
 
-	// OtherDataSource Specifies the source of additional configuration data to pass to functions that need it (e.g., vet-immutable needs a baseline revision to compare against). Uses revision specifier format such as LastReleasedRevisionNum or Before:HeadRevisionNum. When empty, the function is passed the sources its signature lists in OtherDataExpected.
-	OtherDataSource string `json:"OtherDataSource,omitempty" yaml:"OtherDataSource,omitempty"`
+	// OtherUnitIDs Other Units to pass to the trigger's function as OtherData, by the key the function reads each under, such as policy for vet-validating-admission-policy. Each Unit's head data is passed, and a Unit named here cannot be deleted while the trigger names it. Naming a Unit requires Use permission on it. Empty on a trigger that references an Invocation, which takes the Invocation's.
+	OtherUnitIDs map[string]UUID `json:"OtherUnitIDs,omitempty" yaml:"OtherUnitIDs,omitempty"`
 
 	// Permissions Permissions to access this trigger.
 	Permissions *Permissions `json:"Permissions,omitempty" yaml:"Permissions,omitempty"`
@@ -7629,6 +7647,11 @@ type UnitConflictsRequest struct {
 	// Action Apply re-applies the withheld change; Dismiss drops the conflict without changing the configuration data; Undismiss removes dismissals recorded with Permanent
 	Action string `json:"Action,omitempty" yaml:"Action,omitempty"`
 
+	// ChangeSetID The ChangeSet open on the Unit, which a request that creates a Revision of a Unit in a ChangeSet has to name: a ChangeSet locks the Units it is open on.
+	//
+	// Example: 248df4b7-aa70-47b8-a036-33ac447e668d
+	ChangeSetID *openapi_types.UUID `json:"ChangeSetID,omitempty" yaml:"ChangeSetID,omitempty"`
+
 	// Clearance With Apply, the classes of guarded reason the applied changes are cleared for, as a list of {Key, Operator, Values} requirements. A withheld value is written only where the guards at its path admit this clearance, and a withheld guard change only where the guards already at its path do; the request is refused otherwise. Not taken by Dismiss or Undismiss, which write no configuration data and no guards.
 	Clearance *Clearance `json:"Clearance,omitempty" yaml:"Clearance,omitempty"`
 
@@ -7826,6 +7849,11 @@ type UnitGuardRequest struct {
 	// ChangeDescription Recorded on the Revision the edit creates. Defaults to "Set path guards".
 	ChangeDescription string `json:"ChangeDescription,omitempty" yaml:"ChangeDescription,omitempty"`
 
+	// ChangeSetID The ChangeSet open on the Unit, which a request that creates a Revision of a Unit in a ChangeSet has to name: a ChangeSet locks the Units it is open on.
+	//
+	// Example: 248df4b7-aa70-47b8-a036-33ac447e668d
+	ChangeSetID *openapi_types.UUID `json:"ChangeSetID,omitempty" yaml:"ChangeSetID,omitempty"`
+
 	// Clearance The classes of reason this edit is cleared for; required to edit a path that already carries guards
 	Clearance *Clearance `json:"Clearance,omitempty" yaml:"Clearance,omitempty"`
 
@@ -7916,6 +7944,11 @@ type UnitPathReport struct {
 type UnitProtectionRequest struct {
 	// ChangeDescription Recorded on the Revision the edit creates. Defaults to "Set path protection".
 	ChangeDescription string `json:"ChangeDescription,omitempty" yaml:"ChangeDescription,omitempty"`
+
+	// ChangeSetID The ChangeSet open on the Unit, which a request that creates a Revision of a Unit in a ChangeSet has to name: a ChangeSet locks the Units it is open on.
+	//
+	// Example: 248df4b7-aa70-47b8-a036-33ac447e668d
+	ChangeSetID *openapi_types.UUID `json:"ChangeSetID,omitempty" yaml:"ChangeSetID,omitempty"`
 
 	// ResourceProtection Per-resource Protected edits to apply to the Unit's MutationSources
 	ResourceProtection []ResourceProtection `json:"ResourceProtection,omitempty" yaml:"ResourceProtection,omitempty"`
@@ -8603,7 +8636,7 @@ type BulkDeleteComponentsParams struct {
 	// An example conjunction is:
 	// `CreatedAt >= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.
 	//
-	// Supported attributes for filtering on Component: AllowedChangeWorkflowIDs, Annotations, BackingUnitID, ChangeWorkflowRequired, ComponentID, CreatedAt, DeleteGates, DisplayName, HiddenReason, Labels, OrganizationID, Permissions, Slug, UpdatedAt, UpstreamComponentID.
+	// Supported attributes for filtering on Component: AllowedChangeWorkflowIDs, Annotations, BackingUnitID, ComponentID, CreatedAt, DeleteGates, DisplayName, HiddenReason, Labels, OrganizationID, Permissions, RequireChangeTracking, RequireChangeWorkflow, Slug, UpdatedAt, UpstreamComponentID.
 	//
 	// The whole string must be query-encoded.
 	Where *string `form:"where,omitempty" json:"where,omitempty" yaml:"where,omitempty"`
@@ -8671,8 +8704,7 @@ type BulkPatchComponentsApplicationMergePatchPlusJSONBody struct {
 	AllowedChangeWorkflowIDs *[]*openapi_types.UUID `json:"AllowedChangeWorkflowIDs,omitempty" yaml:"AllowedChangeWorkflowIDs,omitempty"`
 
 	// Annotations An optional map of Annotation key/value pairs for tools to attach information to entities.
-	Annotations            *map[string]*string `json:"Annotations,omitempty" yaml:"Annotations,omitempty"`
-	ChangeWorkflowRequired *bool               `json:"ChangeWorkflowRequired,omitempty" yaml:"ChangeWorkflowRequired,omitempty"`
+	Annotations *map[string]*string `json:"Annotations,omitempty" yaml:"Annotations,omitempty"`
 
 	// DeleteGates An optional set of gates that, if any is present, will block deletion
 	DeleteGates *map[string]*bool `json:"DeleteGates,omitempty" yaml:"DeleteGates,omitempty"`
@@ -8684,8 +8716,10 @@ type BulkPatchComponentsApplicationMergePatchPlusJSONBody struct {
 	HiddenReason *string `json:"HiddenReason,omitempty" yaml:"HiddenReason,omitempty"`
 
 	// Labels An optional map of Label key/value pairs to specify identifying attributes of entities for the purpose of grouping and filtering them.
-	Labels      *map[string]*string                 `json:"Labels,omitempty" yaml:"Labels,omitempty"`
-	Permissions *map[string]*map[string]interface{} `json:"Permissions,omitempty" yaml:"Permissions,omitempty"`
+	Labels                *map[string]*string                 `json:"Labels,omitempty" yaml:"Labels,omitempty"`
+	Permissions           *map[string]*map[string]interface{} `json:"Permissions,omitempty" yaml:"Permissions,omitempty"`
+	RequireChangeTracking *bool                               `json:"RequireChangeTracking,omitempty" yaml:"RequireChangeTracking,omitempty"`
+	RequireChangeWorkflow *bool                               `json:"RequireChangeWorkflow,omitempty" yaml:"RequireChangeWorkflow,omitempty"`
 
 	// Slug Unique URL-safe identifier for the entity.
 	Slug *string `json:"Slug,omitempty" yaml:"Slug,omitempty"`
@@ -8730,7 +8764,7 @@ type BulkPatchComponentsParams struct {
 	// An example conjunction is:
 	// `CreatedAt >= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.
 	//
-	// Supported attributes for filtering on Component: AllowedChangeWorkflowIDs, Annotations, BackingUnitID, ChangeWorkflowRequired, ComponentID, CreatedAt, DeleteGates, DisplayName, HiddenReason, Labels, OrganizationID, Permissions, Slug, UpdatedAt, UpstreamComponentID.
+	// Supported attributes for filtering on Component: AllowedChangeWorkflowIDs, Annotations, BackingUnitID, ComponentID, CreatedAt, DeleteGates, DisplayName, HiddenReason, Labels, OrganizationID, Permissions, RequireChangeTracking, RequireChangeWorkflow, Slug, UpdatedAt, UpstreamComponentID.
 	//
 	// The whole string must be query-encoded.
 	Where *string `form:"where,omitempty" json:"where,omitempty" yaml:"where,omitempty"`
@@ -13300,7 +13334,7 @@ type ListComponentsParams struct {
 	// An example conjunction is:
 	// `CreatedAt >= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.
 	//
-	// Supported attributes for filtering on Component: AllowedChangeWorkflowIDs, Annotations, BackingUnitID, ChangeWorkflowRequired, ComponentID, CreatedAt, DeleteGates, DisplayName, HiddenReason, Labels, OrganizationID, Permissions, Slug, UpdatedAt, UpstreamComponentID.
+	// Supported attributes for filtering on Component: AllowedChangeWorkflowIDs, Annotations, BackingUnitID, ComponentID, CreatedAt, DeleteGates, DisplayName, HiddenReason, Labels, OrganizationID, Permissions, RequireChangeTracking, RequireChangeWorkflow, Slug, UpdatedAt, UpstreamComponentID.
 	//
 	// The whole string must be query-encoded.
 	Where *string `form:"where,omitempty" json:"where,omitempty" yaml:"where,omitempty"`
@@ -13386,7 +13420,7 @@ type ListComponentsParams struct {
 	//
 	// Field names are case-sensitive and PascalCase, as in the JSON encoding. Sort direction defaults to ASC when the 'DIRECTION:' prefix is omitted.
 	//
-	// Supported attributes for ordering Component: BackingUnitID, ChangeWorkflowRequired, ComponentID, CreatedAt, DisplayName, HiddenReason, OrganizationID, Slug, UpdatedAt, UpstreamComponentID.
+	// Supported attributes for ordering Component: BackingUnitID, ComponentID, CreatedAt, DisplayName, HiddenReason, OrganizationID, RequireChangeTracking, RequireChangeWorkflow, Slug, UpdatedAt, UpstreamComponentID.
 	//
 	// Example: 'DESC:CreatedAt' or 'DisplayName,DESC:CreatedAt'.
 	//
@@ -13448,8 +13482,7 @@ type PatchComponentApplicationMergePatchPlusJSONBody struct {
 	AllowedChangeWorkflowIDs *[]*openapi_types.UUID `json:"AllowedChangeWorkflowIDs,omitempty" yaml:"AllowedChangeWorkflowIDs,omitempty"`
 
 	// Annotations An optional map of Annotation key/value pairs for tools to attach information to entities.
-	Annotations            *map[string]*string `json:"Annotations,omitempty" yaml:"Annotations,omitempty"`
-	ChangeWorkflowRequired *bool               `json:"ChangeWorkflowRequired,omitempty" yaml:"ChangeWorkflowRequired,omitempty"`
+	Annotations *map[string]*string `json:"Annotations,omitempty" yaml:"Annotations,omitempty"`
 
 	// DeleteGates An optional set of gates that, if any is present, will block deletion
 	DeleteGates *map[string]*bool `json:"DeleteGates,omitempty" yaml:"DeleteGates,omitempty"`
@@ -13461,8 +13494,10 @@ type PatchComponentApplicationMergePatchPlusJSONBody struct {
 	HiddenReason *string `json:"HiddenReason,omitempty" yaml:"HiddenReason,omitempty"`
 
 	// Labels An optional map of Label key/value pairs to specify identifying attributes of entities for the purpose of grouping and filtering them.
-	Labels      *map[string]*string                 `json:"Labels,omitempty" yaml:"Labels,omitempty"`
-	Permissions *map[string]*map[string]interface{} `json:"Permissions,omitempty" yaml:"Permissions,omitempty"`
+	Labels                *map[string]*string                 `json:"Labels,omitempty" yaml:"Labels,omitempty"`
+	Permissions           *map[string]*map[string]interface{} `json:"Permissions,omitempty" yaml:"Permissions,omitempty"`
+	RequireChangeTracking *bool                               `json:"RequireChangeTracking,omitempty" yaml:"RequireChangeTracking,omitempty"`
+	RequireChangeWorkflow *bool                               `json:"RequireChangeWorkflow,omitempty" yaml:"RequireChangeWorkflow,omitempty"`
 
 	// Slug Unique URL-safe identifier for the entity.
 	Slug *string `json:"Slug,omitempty" yaml:"Slug,omitempty"`
@@ -14310,7 +14345,7 @@ type InvokeFunctionsOnOrgParams struct {
 	// Subgroup User-defined category for the Mutation. Must be alphanumeric, at most 64 characters. The prefix 'ConfigHub' is reserved.
 	Subgroup *string `form:"subgroup,omitempty" json:"subgroup,omitempty" yaml:"subgroup,omitempty"`
 
-	// OtherDataSource Source of additional configuration data to pass to functions that need it (e.g., vet-immutable). Supports named revision specifiers: LastReleasedRevisionNum, HeadRevisionNum. Can be prefixed with 'Before:' (e.g., Before:HeadRevisionNum). May be repeated for multiple sources. Without it, each function is passed the sources its signature lists in OtherDataExpected.
+	// OtherDataSource Additional configuration data to pass as OtherData to the functions the request names, and to the invocations that name none of their own; triggers pass what they name. Either a revision of each Unit, named LastReleasedRevisionNum or HeadRevisionNum, optionally prefixed with 'Before:' (e.g., Before:HeadRevisionNum), which the functions read under that name, or another Unit, as Unit:<key>:<unit-id>, whose head data the functions read under <key> (e.g., Unit:policy:<unit-id> for vet-validating-admission-policy); the caller needs View permission on it. May be repeated or comma-separated. A function passed no revision is passed the revisions its signature lists in OtherDataExpected.
 	OtherDataSource *string `form:"other_data_source,omitempty" json:"other_data_source,omitempty" yaml:"other_data_source,omitempty"`
 
 	// Where The specified string is an expression for the purpose of filtering
@@ -14585,7 +14620,7 @@ type BulkDeleteInvocationsParams struct {
 	// An example conjunction is:
 	// `CreatedAt >= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.
 	//
-	// Supported attributes for filtering on Invocation: Annotations, BackingUnitID, ChannelID, Clearance, CreatedAt, DeleteGates, DisplayName, FunctionInvocations, Guards, Hash, HiddenReason, InvocationID, Labels, OrganizationID, Parameters, Permissions, Slug, SpaceID, ToolchainType, UpdatedAt, UpstreamInvocationID.
+	// Supported attributes for filtering on Invocation: Annotations, BackingUnitID, ChannelID, Clearance, CreatedAt, DeleteGates, DisplayName, FunctionInvocations, Guards, Hash, HiddenReason, InvocationID, Labels, OrganizationID, OtherUnitIDs, Parameters, Permissions, Slug, SpaceID, ToolchainType, UpdatedAt, UpstreamInvocationID.
 	//
 	// The functions an Invocation calls are addressed with dot notation into `FunctionInvocations`: `FunctionInvocations.*.FunctionName = 'set-image'` matches an Invocation that calls set-image anywhere in its list, and `FunctionInvocations.0.FunctionName` addresses the first function it calls.
 	//
@@ -14686,7 +14721,7 @@ type ListAllInvocationsParams struct {
 	// An example conjunction is:
 	// `CreatedAt >= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.
 	//
-	// Supported attributes for filtering on Invocation: Annotations, BackingUnitID, ChannelID, Clearance, CreatedAt, DeleteGates, DisplayName, FunctionInvocations, Guards, Hash, HiddenReason, InvocationID, Labels, OrganizationID, Parameters, Permissions, Slug, SpaceID, ToolchainType, UpdatedAt, UpstreamInvocationID.
+	// Supported attributes for filtering on Invocation: Annotations, BackingUnitID, ChannelID, Clearance, CreatedAt, DeleteGates, DisplayName, FunctionInvocations, Guards, Hash, HiddenReason, InvocationID, Labels, OrganizationID, OtherUnitIDs, Parameters, Permissions, Slug, SpaceID, ToolchainType, UpdatedAt, UpstreamInvocationID.
 	//
 	// The functions an Invocation calls are addressed with dot notation into `FunctionInvocations`: `FunctionInvocations.*.FunctionName = 'set-image'` matches an Invocation that calls set-image anywhere in its list, and `FunctionInvocations.0.FunctionName` addresses the first function it calls.
 	//
@@ -14817,9 +14852,10 @@ type BulkPatchInvocationsApplicationMergePatchPlusJSONBody struct {
 	HiddenReason *string `json:"HiddenReason,omitempty" yaml:"HiddenReason,omitempty"`
 
 	// Labels An optional map of Label key/value pairs to specify identifying attributes of entities for the purpose of grouping and filtering them.
-	Labels      *map[string]*string                 `json:"Labels,omitempty" yaml:"Labels,omitempty"`
-	Parameters  *[]*map[string]interface{}          `json:"Parameters,omitempty" yaml:"Parameters,omitempty"`
-	Permissions *map[string]*map[string]interface{} `json:"Permissions,omitempty" yaml:"Permissions,omitempty"`
+	Labels       *map[string]*string                 `json:"Labels,omitempty" yaml:"Labels,omitempty"`
+	OtherUnitIDs *map[string]*openapi_types.UUID     `json:"OtherUnitIDs,omitempty" yaml:"OtherUnitIDs,omitempty"`
+	Parameters   *[]*map[string]interface{}          `json:"Parameters,omitempty" yaml:"Parameters,omitempty"`
+	Permissions  *map[string]*map[string]interface{} `json:"Permissions,omitempty" yaml:"Permissions,omitempty"`
 
 	// Slug Unique URL-safe identifier for the entity.
 	Slug          *string `json:"Slug,omitempty" yaml:"Slug,omitempty"`
@@ -14865,7 +14901,7 @@ type BulkPatchInvocationsParams struct {
 	// An example conjunction is:
 	// `CreatedAt >= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.
 	//
-	// Supported attributes for filtering on Invocation: Annotations, BackingUnitID, ChannelID, Clearance, CreatedAt, DeleteGates, DisplayName, FunctionInvocations, Guards, Hash, HiddenReason, InvocationID, Labels, OrganizationID, Parameters, Permissions, Slug, SpaceID, ToolchainType, UpdatedAt, UpstreamInvocationID.
+	// Supported attributes for filtering on Invocation: Annotations, BackingUnitID, ChannelID, Clearance, CreatedAt, DeleteGates, DisplayName, FunctionInvocations, Guards, Hash, HiddenReason, InvocationID, Labels, OrganizationID, OtherUnitIDs, Parameters, Permissions, Slug, SpaceID, ToolchainType, UpdatedAt, UpstreamInvocationID.
 	//
 	// The functions an Invocation calls are addressed with dot notation into `FunctionInvocations`: `FunctionInvocations.*.FunctionName = 'set-image'` matches an Invocation that calls set-image anywhere in its list, and `FunctionInvocations.0.FunctionName` addresses the first function it calls.
 	//
@@ -14959,9 +14995,10 @@ type BulkCreateInvocationsApplicationMergePatchPlusJSONBody struct {
 	HiddenReason *string `json:"HiddenReason,omitempty" yaml:"HiddenReason,omitempty"`
 
 	// Labels An optional map of Label key/value pairs to specify identifying attributes of entities for the purpose of grouping and filtering them.
-	Labels      *map[string]*string                 `json:"Labels,omitempty" yaml:"Labels,omitempty"`
-	Parameters  *[]*map[string]interface{}          `json:"Parameters,omitempty" yaml:"Parameters,omitempty"`
-	Permissions *map[string]*map[string]interface{} `json:"Permissions,omitempty" yaml:"Permissions,omitempty"`
+	Labels       *map[string]*string                 `json:"Labels,omitempty" yaml:"Labels,omitempty"`
+	OtherUnitIDs *map[string]*openapi_types.UUID     `json:"OtherUnitIDs,omitempty" yaml:"OtherUnitIDs,omitempty"`
+	Parameters   *[]*map[string]interface{}          `json:"Parameters,omitempty" yaml:"Parameters,omitempty"`
+	Permissions  *map[string]*map[string]interface{} `json:"Permissions,omitempty" yaml:"Permissions,omitempty"`
 
 	// Slug Unique URL-safe identifier for the entity.
 	Slug          *string `json:"Slug,omitempty" yaml:"Slug,omitempty"`
@@ -15007,7 +15044,7 @@ type BulkCreateInvocationsParams struct {
 	// An example conjunction is:
 	// `CreatedAt >= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.
 	//
-	// Supported attributes for filtering on Invocation: Annotations, BackingUnitID, ChannelID, Clearance, CreatedAt, DeleteGates, DisplayName, FunctionInvocations, Guards, Hash, HiddenReason, InvocationID, Labels, OrganizationID, Parameters, Permissions, Slug, SpaceID, ToolchainType, UpdatedAt, UpstreamInvocationID.
+	// Supported attributes for filtering on Invocation: Annotations, BackingUnitID, ChannelID, Clearance, CreatedAt, DeleteGates, DisplayName, FunctionInvocations, Guards, Hash, HiddenReason, InvocationID, Labels, OrganizationID, OtherUnitIDs, Parameters, Permissions, Slug, SpaceID, ToolchainType, UpdatedAt, UpstreamInvocationID.
 	//
 	// The functions an Invocation calls are addressed with dot notation into `FunctionInvocations`: `FunctionInvocations.*.FunctionName = 'set-image'` matches an Invocation that calls set-image anywhere in its list, and `FunctionInvocations.0.FunctionName` addresses the first function it calls.
 	//
@@ -15227,7 +15264,7 @@ type BulkMoveInvocationsParams struct {
 	// An example conjunction is:
 	// `CreatedAt >= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.
 	//
-	// Supported attributes for filtering on Invocation: Annotations, BackingUnitID, ChannelID, Clearance, CreatedAt, DeleteGates, DisplayName, FunctionInvocations, Guards, Hash, HiddenReason, InvocationID, Labels, OrganizationID, Parameters, Permissions, Slug, SpaceID, ToolchainType, UpdatedAt, UpstreamInvocationID.
+	// Supported attributes for filtering on Invocation: Annotations, BackingUnitID, ChannelID, Clearance, CreatedAt, DeleteGates, DisplayName, FunctionInvocations, Guards, Hash, HiddenReason, InvocationID, Labels, OrganizationID, OtherUnitIDs, Parameters, Permissions, Slug, SpaceID, ToolchainType, UpdatedAt, UpstreamInvocationID.
 	//
 	// The whole string must be query-encoded.
 	Where *string `form:"where,omitempty" json:"where,omitempty" yaml:"where,omitempty"`
@@ -19908,7 +19945,7 @@ type InvokeFunctionsParams struct {
 	// Subgroup User-defined category for the Mutation. Must be alphanumeric, at most 64 characters. The prefix 'ConfigHub' is reserved.
 	Subgroup *string `form:"subgroup,omitempty" json:"subgroup,omitempty" yaml:"subgroup,omitempty"`
 
-	// OtherDataSource Source of additional configuration data to pass to functions that need it (e.g., vet-immutable). Supports named revision specifiers: LastReleasedRevisionNum, HeadRevisionNum. Can be prefixed with 'Before:' (e.g., Before:HeadRevisionNum). May be repeated for multiple sources. Without it, each function is passed the sources its signature lists in OtherDataExpected.
+	// OtherDataSource Additional configuration data to pass as OtherData to the functions the request names, and to the invocations that name none of their own; triggers pass what they name. Either a revision of each Unit, named LastReleasedRevisionNum or HeadRevisionNum, optionally prefixed with 'Before:' (e.g., Before:HeadRevisionNum), which the functions read under that name, or another Unit, as Unit:<key>:<unit-id>, whose head data the functions read under <key> (e.g., Unit:policy:<unit-id> for vet-validating-admission-policy); the caller needs View permission on it. May be repeated or comma-separated. A function passed no revision is passed the revisions its signature lists in OtherDataExpected.
 	OtherDataSource *string `form:"other_data_source,omitempty" json:"other_data_source,omitempty" yaml:"other_data_source,omitempty"`
 
 	// Where The specified string is an expression for the purpose of filtering
@@ -20037,7 +20074,7 @@ type ListInvocationsParams struct {
 	// An example conjunction is:
 	// `CreatedAt >= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.
 	//
-	// Supported attributes for filtering on Invocation: Annotations, BackingUnitID, ChannelID, Clearance, CreatedAt, DeleteGates, DisplayName, FunctionInvocations, Guards, Hash, HiddenReason, InvocationID, Labels, OrganizationID, Parameters, Permissions, Slug, SpaceID, ToolchainType, UpdatedAt, UpstreamInvocationID.
+	// Supported attributes for filtering on Invocation: Annotations, BackingUnitID, ChannelID, Clearance, CreatedAt, DeleteGates, DisplayName, FunctionInvocations, Guards, Hash, HiddenReason, InvocationID, Labels, OrganizationID, OtherUnitIDs, Parameters, Permissions, Slug, SpaceID, ToolchainType, UpdatedAt, UpstreamInvocationID.
 	//
 	// The functions an Invocation calls are addressed with dot notation into `FunctionInvocations`: `FunctionInvocations.*.FunctionName = 'set-image'` matches an Invocation that calls set-image anywhere in its list, and `FunctionInvocations.0.FunctionName` addresses the first function it calls.
 	//
@@ -20202,9 +20239,10 @@ type PatchInvocationApplicationMergePatchPlusJSONBody struct {
 	HiddenReason *string `json:"HiddenReason,omitempty" yaml:"HiddenReason,omitempty"`
 
 	// Labels An optional map of Label key/value pairs to specify identifying attributes of entities for the purpose of grouping and filtering them.
-	Labels      *map[string]*string                 `json:"Labels,omitempty" yaml:"Labels,omitempty"`
-	Parameters  *[]*map[string]interface{}          `json:"Parameters,omitempty" yaml:"Parameters,omitempty"`
-	Permissions *map[string]*map[string]interface{} `json:"Permissions,omitempty" yaml:"Permissions,omitempty"`
+	Labels       *map[string]*string                 `json:"Labels,omitempty" yaml:"Labels,omitempty"`
+	OtherUnitIDs *map[string]*openapi_types.UUID     `json:"OtherUnitIDs,omitempty" yaml:"OtherUnitIDs,omitempty"`
+	Parameters   *[]*map[string]interface{}          `json:"Parameters,omitempty" yaml:"Parameters,omitempty"`
+	Permissions  *map[string]*map[string]interface{} `json:"Permissions,omitempty" yaml:"Permissions,omitempty"`
 
 	// Slug Unique URL-safe identifier for the entity.
 	Slug          *string `json:"Slug,omitempty" yaml:"Slug,omitempty"`
@@ -21164,7 +21202,7 @@ type ListTriggersParams struct {
 	// An example conjunction is:
 	// `CreatedAt >= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.
 	//
-	// Supported attributes for filtering on Trigger: Annotations, Arguments, BackingUnitID, ChannelID, Clearance, CreatedAt, DeleteGates, Description, Disabled, DisplayName, Event, FunctionName, Guards, Hash, HiddenReason, InvocationID, Labels, OrganizationID, OtherDataSource, Permissions, Protect, Slug, SpaceID, ToolchainType, TriggerID, UnitFilterID, UpdatedAt, UpstreamTriggerID, Validating, Warn, WhereResource, WhereUnit.
+	// Supported attributes for filtering on Trigger: Annotations, Arguments, BackingUnitID, ChannelID, Clearance, CreatedAt, DeleteGates, Description, Disabled, DisplayName, Event, FunctionName, Guards, Hash, HiddenReason, InvocationID, Labels, OrganizationID, OtherUnitIDs, Permissions, Protect, Slug, SpaceID, ToolchainType, TriggerID, UnitFilterID, UpdatedAt, UpstreamTriggerID, Validating, Warn, WhereResource, WhereUnit.
 	//
 	// A Trigger returns the function it invokes inline rather than in a FunctionInvocation object, so `where` names FunctionName and Arguments directly. The arguments are addressed with dot notation into `Arguments`, which is a list: `Arguments.?ParameterName=attribute-name.Value = 'owner'` reads the argument bound to a named parameter, `Arguments.*.Value` matches any argument's value, and `Arguments.0.Value` addresses the first argument. Arguments passed positionally have no ParameterName.
 	//
@@ -21252,7 +21290,7 @@ type ListTriggersParams struct {
 	//
 	// Field names are case-sensitive and PascalCase, as in the JSON encoding. Sort direction defaults to ASC when the 'DIRECTION:' prefix is omitted.
 	//
-	// Supported attributes for ordering Trigger: BackingUnitID, ChannelID, CreatedAt, Description, Disabled, DisplayName, Event, FunctionName, Hash, HiddenReason, InvocationID, OrganizationID, OtherDataSource, Protect, Slug, SpaceID, ToolchainType, TriggerID, UnitFilterID, UpdatedAt, UpstreamTriggerID, Validating, Warn, WhereResource, WhereUnit.
+	// Supported attributes for ordering Trigger: BackingUnitID, ChannelID, CreatedAt, Description, Disabled, DisplayName, Event, FunctionName, Hash, HiddenReason, InvocationID, OrganizationID, Protect, Slug, SpaceID, ToolchainType, TriggerID, UnitFilterID, UpdatedAt, UpstreamTriggerID, Validating, Warn, WhereResource, WhereUnit.
 	//
 	// Example: 'DESC:CreatedAt' or 'DisplayName,DESC:CreatedAt'.
 	//
@@ -21336,10 +21374,10 @@ type PatchTriggerApplicationMergePatchPlusJSONBody struct {
 	InvocationID *openapi_types.UUID `json:"InvocationID,omitempty" yaml:"InvocationID,omitempty"`
 
 	// Labels An optional map of Label key/value pairs to specify identifying attributes of entities for the purpose of grouping and filtering them.
-	Labels          *map[string]*string                 `json:"Labels,omitempty" yaml:"Labels,omitempty"`
-	OtherDataSource *string                             `json:"OtherDataSource,omitempty" yaml:"OtherDataSource,omitempty"`
-	Permissions     *map[string]*map[string]interface{} `json:"Permissions,omitempty" yaml:"Permissions,omitempty"`
-	Protect         *bool                               `json:"Protect,omitempty" yaml:"Protect,omitempty"`
+	Labels       *map[string]*string                 `json:"Labels,omitempty" yaml:"Labels,omitempty"`
+	OtherUnitIDs *map[string]*openapi_types.UUID     `json:"OtherUnitIDs,omitempty" yaml:"OtherUnitIDs,omitempty"`
+	Permissions  *map[string]*map[string]interface{} `json:"Permissions,omitempty" yaml:"Permissions,omitempty"`
+	Protect      *bool                               `json:"Protect,omitempty" yaml:"Protect,omitempty"`
 
 	// Slug Unique URL-safe identifier for the entity.
 	Slug          *string             `json:"Slug,omitempty" yaml:"Slug,omitempty"`
@@ -24452,7 +24490,7 @@ type BulkDeleteTriggersParams struct {
 	// An example conjunction is:
 	// `CreatedAt >= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.
 	//
-	// Supported attributes for filtering on Trigger: Annotations, Arguments, BackingUnitID, ChannelID, Clearance, CreatedAt, DeleteGates, Description, Disabled, DisplayName, Event, FunctionName, Guards, Hash, HiddenReason, InvocationID, Labels, OrganizationID, OtherDataSource, Permissions, Protect, Slug, SpaceID, ToolchainType, TriggerID, UnitFilterID, UpdatedAt, UpstreamTriggerID, Validating, Warn, WhereResource, WhereUnit.
+	// Supported attributes for filtering on Trigger: Annotations, Arguments, BackingUnitID, ChannelID, Clearance, CreatedAt, DeleteGates, Description, Disabled, DisplayName, Event, FunctionName, Guards, Hash, HiddenReason, InvocationID, Labels, OrganizationID, OtherUnitIDs, Permissions, Protect, Slug, SpaceID, ToolchainType, TriggerID, UnitFilterID, UpdatedAt, UpstreamTriggerID, Validating, Warn, WhereResource, WhereUnit.
 	//
 	// A Trigger returns the function it invokes inline rather than in a FunctionInvocation object, so `where` names FunctionName and Arguments directly. The arguments are addressed with dot notation into `Arguments`, which is a list: `Arguments.?ParameterName=attribute-name.Value = 'owner'` reads the argument bound to a named parameter, `Arguments.*.Value` matches any argument's value, and `Arguments.0.Value` addresses the first argument. Arguments passed positionally have no ParameterName.
 	//
@@ -24553,7 +24591,7 @@ type ListAllTriggersParams struct {
 	// An example conjunction is:
 	// `CreatedAt >= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.
 	//
-	// Supported attributes for filtering on Trigger: Annotations, Arguments, BackingUnitID, ChannelID, Clearance, CreatedAt, DeleteGates, Description, Disabled, DisplayName, Event, FunctionName, Guards, Hash, HiddenReason, InvocationID, Labels, OrganizationID, OtherDataSource, Permissions, Protect, Slug, SpaceID, ToolchainType, TriggerID, UnitFilterID, UpdatedAt, UpstreamTriggerID, Validating, Warn, WhereResource, WhereUnit.
+	// Supported attributes for filtering on Trigger: Annotations, Arguments, BackingUnitID, ChannelID, Clearance, CreatedAt, DeleteGates, Description, Disabled, DisplayName, Event, FunctionName, Guards, Hash, HiddenReason, InvocationID, Labels, OrganizationID, OtherUnitIDs, Permissions, Protect, Slug, SpaceID, ToolchainType, TriggerID, UnitFilterID, UpdatedAt, UpstreamTriggerID, Validating, Warn, WhereResource, WhereUnit.
 	//
 	// A Trigger returns the function it invokes inline rather than in a FunctionInvocation object, so `where` names FunctionName and Arguments directly. The arguments are addressed with dot notation into `Arguments`, which is a list: `Arguments.?ParameterName=attribute-name.Value = 'owner'` reads the argument bound to a named parameter, `Arguments.*.Value` matches any argument's value, and `Arguments.0.Value` addresses the first argument. Arguments passed positionally have no ParameterName.
 	//
@@ -24641,7 +24679,7 @@ type ListAllTriggersParams struct {
 	//
 	// Field names are case-sensitive and PascalCase, as in the JSON encoding. Sort direction defaults to ASC when the 'DIRECTION:' prefix is omitted.
 	//
-	// Supported attributes for ordering Trigger: BackingUnitID, ChannelID, CreatedAt, Description, Disabled, DisplayName, Event, FunctionName, Hash, HiddenReason, InvocationID, OrganizationID, OtherDataSource, Protect, Slug, SpaceID, ToolchainType, TriggerID, UnitFilterID, UpdatedAt, UpstreamTriggerID, Validating, Warn, WhereResource, WhereUnit.
+	// Supported attributes for ordering Trigger: BackingUnitID, ChannelID, CreatedAt, Description, Disabled, DisplayName, Event, FunctionName, Hash, HiddenReason, InvocationID, OrganizationID, Protect, Slug, SpaceID, ToolchainType, TriggerID, UnitFilterID, UpdatedAt, UpstreamTriggerID, Validating, Warn, WhereResource, WhereUnit.
 	//
 	// Example: 'DESC:CreatedAt' or 'DisplayName,DESC:CreatedAt'.
 	//
@@ -24691,10 +24729,10 @@ type BulkPatchTriggersApplicationMergePatchPlusJSONBody struct {
 	InvocationID *openapi_types.UUID `json:"InvocationID,omitempty" yaml:"InvocationID,omitempty"`
 
 	// Labels An optional map of Label key/value pairs to specify identifying attributes of entities for the purpose of grouping and filtering them.
-	Labels          *map[string]*string                 `json:"Labels,omitempty" yaml:"Labels,omitempty"`
-	OtherDataSource *string                             `json:"OtherDataSource,omitempty" yaml:"OtherDataSource,omitempty"`
-	Permissions     *map[string]*map[string]interface{} `json:"Permissions,omitempty" yaml:"Permissions,omitempty"`
-	Protect         *bool                               `json:"Protect,omitempty" yaml:"Protect,omitempty"`
+	Labels       *map[string]*string                 `json:"Labels,omitempty" yaml:"Labels,omitempty"`
+	OtherUnitIDs *map[string]*openapi_types.UUID     `json:"OtherUnitIDs,omitempty" yaml:"OtherUnitIDs,omitempty"`
+	Permissions  *map[string]*map[string]interface{} `json:"Permissions,omitempty" yaml:"Permissions,omitempty"`
+	Protect      *bool                               `json:"Protect,omitempty" yaml:"Protect,omitempty"`
 
 	// Slug Unique URL-safe identifier for the entity.
 	Slug          *string             `json:"Slug,omitempty" yaml:"Slug,omitempty"`
@@ -24746,7 +24784,7 @@ type BulkPatchTriggersParams struct {
 	// An example conjunction is:
 	// `CreatedAt >= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.
 	//
-	// Supported attributes for filtering on Trigger: Annotations, Arguments, BackingUnitID, ChannelID, Clearance, CreatedAt, DeleteGates, Description, Disabled, DisplayName, Event, FunctionName, Guards, Hash, HiddenReason, InvocationID, Labels, OrganizationID, OtherDataSource, Permissions, Protect, Slug, SpaceID, ToolchainType, TriggerID, UnitFilterID, UpdatedAt, UpstreamTriggerID, Validating, Warn, WhereResource, WhereUnit.
+	// Supported attributes for filtering on Trigger: Annotations, Arguments, BackingUnitID, ChannelID, Clearance, CreatedAt, DeleteGates, Description, Disabled, DisplayName, Event, FunctionName, Guards, Hash, HiddenReason, InvocationID, Labels, OrganizationID, OtherUnitIDs, Permissions, Protect, Slug, SpaceID, ToolchainType, TriggerID, UnitFilterID, UpdatedAt, UpstreamTriggerID, Validating, Warn, WhereResource, WhereUnit.
 	//
 	// A Trigger returns the function it invokes inline rather than in a FunctionInvocation object, so `where` names FunctionName and Arguments directly. The arguments are addressed with dot notation into `Arguments`, which is a list: `Arguments.?ParameterName=attribute-name.Value = 'owner'` reads the argument bound to a named parameter, `Arguments.*.Value` matches any argument's value, and `Arguments.0.Value` addresses the first argument. Arguments passed positionally have no ParameterName.
 	//
@@ -24847,10 +24885,10 @@ type BulkCreateTriggersApplicationMergePatchPlusJSONBody struct {
 	InvocationID *openapi_types.UUID `json:"InvocationID,omitempty" yaml:"InvocationID,omitempty"`
 
 	// Labels An optional map of Label key/value pairs to specify identifying attributes of entities for the purpose of grouping and filtering them.
-	Labels          *map[string]*string                 `json:"Labels,omitempty" yaml:"Labels,omitempty"`
-	OtherDataSource *string                             `json:"OtherDataSource,omitempty" yaml:"OtherDataSource,omitempty"`
-	Permissions     *map[string]*map[string]interface{} `json:"Permissions,omitempty" yaml:"Permissions,omitempty"`
-	Protect         *bool                               `json:"Protect,omitempty" yaml:"Protect,omitempty"`
+	Labels       *map[string]*string                 `json:"Labels,omitempty" yaml:"Labels,omitempty"`
+	OtherUnitIDs *map[string]*openapi_types.UUID     `json:"OtherUnitIDs,omitempty" yaml:"OtherUnitIDs,omitempty"`
+	Permissions  *map[string]*map[string]interface{} `json:"Permissions,omitempty" yaml:"Permissions,omitempty"`
+	Protect      *bool                               `json:"Protect,omitempty" yaml:"Protect,omitempty"`
 
 	// Slug Unique URL-safe identifier for the entity.
 	Slug          *string             `json:"Slug,omitempty" yaml:"Slug,omitempty"`
@@ -24902,7 +24940,7 @@ type BulkCreateTriggersParams struct {
 	// An example conjunction is:
 	// `CreatedAt >= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.
 	//
-	// Supported attributes for filtering on Trigger: Annotations, Arguments, BackingUnitID, ChannelID, Clearance, CreatedAt, DeleteGates, Description, Disabled, DisplayName, Event, FunctionName, Guards, Hash, HiddenReason, InvocationID, Labels, OrganizationID, OtherDataSource, Permissions, Protect, Slug, SpaceID, ToolchainType, TriggerID, UnitFilterID, UpdatedAt, UpstreamTriggerID, Validating, Warn, WhereResource, WhereUnit.
+	// Supported attributes for filtering on Trigger: Annotations, Arguments, BackingUnitID, ChannelID, Clearance, CreatedAt, DeleteGates, Description, Disabled, DisplayName, Event, FunctionName, Guards, Hash, HiddenReason, InvocationID, Labels, OrganizationID, OtherUnitIDs, Permissions, Protect, Slug, SpaceID, ToolchainType, TriggerID, UnitFilterID, UpdatedAt, UpstreamTriggerID, Validating, Warn, WhereResource, WhereUnit.
 	//
 	// A Trigger returns the function it invokes inline rather than in a FunctionInvocation object, so `where` names FunctionName and Arguments directly. The arguments are addressed with dot notation into `Arguments`, which is a list: `Arguments.?ParameterName=attribute-name.Value = 'owner'` reads the argument bound to a named parameter, `Arguments.*.Value` matches any argument's value, and `Arguments.0.Value` addresses the first argument. Arguments passed positionally have no ParameterName.
 	//
@@ -25122,7 +25160,7 @@ type BulkMoveTriggersParams struct {
 	// An example conjunction is:
 	// `CreatedAt >= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.
 	//
-	// Supported attributes for filtering on Trigger: Annotations, Arguments, BackingUnitID, ChannelID, Clearance, CreatedAt, DeleteGates, Description, Disabled, DisplayName, Event, FunctionName, Guards, Hash, HiddenReason, InvocationID, Labels, OrganizationID, OtherDataSource, Permissions, Protect, Slug, SpaceID, ToolchainType, TriggerID, UnitFilterID, UpdatedAt, UpstreamTriggerID, Validating, Warn, WhereResource, WhereUnit.
+	// Supported attributes for filtering on Trigger: Annotations, Arguments, BackingUnitID, ChannelID, Clearance, CreatedAt, DeleteGates, Description, Disabled, DisplayName, Event, FunctionName, Guards, Hash, HiddenReason, InvocationID, Labels, OrganizationID, OtherUnitIDs, Permissions, Protect, Slug, SpaceID, ToolchainType, TriggerID, UnitFilterID, UpdatedAt, UpstreamTriggerID, Validating, Warn, WhereResource, WhereUnit.
 	//
 	// The whole string must be query-encoded.
 	Where *string `form:"where,omitempty" json:"where,omitempty" yaml:"where,omitempty"`

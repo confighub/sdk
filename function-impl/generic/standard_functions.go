@@ -56,6 +56,7 @@ func RegisterStandardFunctions(fh handler.FunctionRegistry, converter configkit.
 	registerReset(fh, converter, resourceProvider)
 	registerReplicate(fh, converter, resourceProvider)
 	registerVetJSONSchema(fh, converter, resourceProvider)
+	registerVetJSONSchemaFromUnit(fh, resourceProvider)
 	registerSetStarlark(fh, converter, resourceProvider)
 	registerVetStarlark(fh, converter, resourceProvider)
 	registerGetStarlark(fh, converter, resourceProvider)

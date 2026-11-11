@@ -140,6 +140,9 @@ resourceTypes:
     - path: ToolchainType
     resource-name:
     - optional: true
+      path: OtherUnits.*
+      target: Unit
+    - optional: true
       path: Channel
       target: Channel
   listTypes:
@@ -156,6 +159,7 @@ resourceTypes:
   - Parameters.*.Schema.patternProperties.*
   - Parameters.*.Schema.dependencies.*
   - Guards.*
+  - OtherUnits.*
   - Permissions.*
   - Permissions.*.UserIDs.*
   - Permissions.*.GroupIDs.*
@@ -290,6 +294,9 @@ resourceTypes:
     - optional: true
       path: UnitFilter
       target: Filter
+    - optional: true
+      path: OtherUnits.*
+      target: Unit
     where-expression:
     - dataType: string
       path: WhereUnit
@@ -303,6 +310,7 @@ resourceTypes:
   - Labels.*
   - Annotations.*
   - Guards.*
+  - OtherUnits.*
   - Permissions.*
   - Permissions.*.UserIDs.*
   - Permissions.*.GroupIDs.*

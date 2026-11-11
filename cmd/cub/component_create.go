@@ -17,14 +17,15 @@ import (
 var componentCreateArgs struct {
 	permissions            []string
 	allowedChangeWorkflows []string
-	changeWorkflowRequired bool
+	requireChangeWorkflow  bool
+	requireChangeTracking  bool
 }
 
 var componentCreateCmd = &cobra.Command{
 	Use:   "create <name>",
 	Short: "Create a component",
 	Args:  cobra.ExactArgs(1),
-	Long: getCommandHelp(`Create a Component entity, which decides which ChangeWorkflows promotions and releases of its Variants may use, and whether one is required.
+	Long: getCommandHelp(`Create a Component entity, which decides which ChangeWorkflows promotions and releases of its Variants may use, whether one is required, and whether changes to the configuration of the Variants' Units have to be made in a ChangeSet or under a ChangeOrder.
 
 ChangeWorkflows are addressed as <space>/<slug> or by UUID.
 
@@ -34,9 +35,12 @@ Examples:
   cub component create my-app
 
   # Create a component that requires one of two ChangeWorkflows to promote and release
-  cub component create my-app --change-workflow-required \
+  cub component create my-app --require-change-workflow \
     --allowed-change-workflow platform/standard-rollout \
     --allowed-change-workflow platform/hotfix
+
+  # Create a component whose variants' units change only in a ChangeSet or under a ChangeOrder
+  cub component create my-app --require-change-tracking
 
   # Create a component from a JSON definition
   cub component create my-app --from-stdin < component.json
@@ -50,9 +54,28 @@ func init() {
 	addFieldEditFlags(componentCreateCmd, "Component")
 	componentCreateCmd.Flags().StringSliceVar(&componentCreateArgs.permissions, "permission", []string{}, permissionCreateHelp)
 	componentCreateCmd.Flags().StringSliceVar(&componentCreateArgs.allowedChangeWorkflows, "allowed-change-workflow", []string{}, "ChangeWorkflow, as <space>/<slug> or UUID, that promotions, releases, and changesets opened on the variants' units may use (can be repeated or comma-separated)")
-	componentCreateCmd.Flags().BoolVar(&componentCreateArgs.changeWorkflowRequired, "change-workflow-required", false, "require a ChangeWorkflow to promote and release, and to open a changeset on the variants' units")
+	componentCreateCmd.Flags().BoolVar(&componentCreateArgs.requireChangeWorkflow, "require-change-workflow", false, "require a ChangeWorkflow to promote and release, and to open a changeset on the variants' units")
+	componentCreateCmd.Flags().BoolVar(&componentCreateArgs.requireChangeTracking, "require-change-tracking", false, requireChangeTrackingHelp)
+	addDeprecatedChangeWorkflowRequiredFlag(componentCreateCmd, &componentCreateArgs.requireChangeWorkflow)
 	addBackingUnitFlags(componentCreateCmd, "Component", true, true)
 	componentCmd.AddCommand(componentCreateCmd)
+}
+
+// requireChangeTrackingHelp is the help of --require-change-tracking on create and update.
+const requireChangeTrackingHelp = "require changes to the configuration of the variants' units to be made in a changeset open on the unit or under a change order"
+
+// addDeprecatedChangeWorkflowRequiredFlag keeps --change-workflow-required, the name
+// --require-change-workflow had before the field it sets was renamed RequireChangeWorkflow, working
+// for the scripts that use it. It sets the same value.
+func addDeprecatedChangeWorkflowRequiredFlag(cmd *cobra.Command, value *bool) {
+	cmd.Flags().BoolVar(value, "change-workflow-required", false, "require a ChangeWorkflow; use --require-change-workflow")
+	_ = cmd.Flags().MarkDeprecated("change-workflow-required", "use --require-change-workflow")
+}
+
+// requireChangeWorkflowChanged reports whether --require-change-workflow, or its deprecated name,
+// was given.
+func requireChangeWorkflowChanged(cmd *cobra.Command) bool {
+	return cmd.Flags().Changed("require-change-workflow") || cmd.Flags().Changed("change-workflow-required")
 }
 
 // parseAllowedChangeWorkflows resolves --allowed-change-workflow values into the
@@ -127,8 +150,11 @@ func componentCreateCmdRun(cmd *cobra.Command, args []string) error {
 	if len(added) > 0 {
 		newBody.AllowedChangeWorkflowIDs = applyAllowedChangeWorkflows(newBody.AllowedChangeWorkflowIDs, added, nil)
 	}
-	if cmd.Flags().Changed("change-workflow-required") {
-		newBody.ChangeWorkflowRequired = componentCreateArgs.changeWorkflowRequired
+	if requireChangeWorkflowChanged(cmd) {
+		newBody.RequireChangeWorkflow = componentCreateArgs.requireChangeWorkflow
+	}
+	if cmd.Flags().Changed("require-change-tracking") {
+		newBody.RequireChangeTracking = componentCreateArgs.requireChangeTracking
 	}
 
 	// Even if slug was set in stdin, we override it with the one from args

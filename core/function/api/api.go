@@ -143,6 +143,10 @@ type FunctionInvocation struct {
 	Params map[string]any `json:",omitempty" bun:"-" entityDocument:"-" description:"Caller-supplied parameter values for expanding templated argument Values; transient, not persisted"`
 }
 
+// OtherDataSource is a key of a function invocation's OtherData: a revision specifier, such as
+// LastReleasedRevisionNum, for data from another revision of the Unit the function runs on, or a
+// key the function chooses, such as schema, for data from another Unit. A function lists the keys
+// it reads in its signature's OtherDataExpected. See other_data.go.
 type OtherDataSource string
 
 type FunctionInvocationList []FunctionInvocation
@@ -153,7 +157,11 @@ type FunctionInvocationList []FunctionInvocation
 type FunctionInvocationRequest struct {
 	FunctionContext
 	ConfigData string                     `description:"Configuration data of the Unit to operate on"`
-	OtherData  map[OtherDataSource]string `description:"Additional configuration data by source, such as from another revision (e.g., LastReleasedRevisionNum, Before:HeadRevisionNum). If provided, must be of the same ToolchainType as ConfigData. Changes are discarded."`
+	OtherData  map[OtherDataSource]string `description:"Additional configuration data by key: another revision of the Unit, keyed by its revision specifier (e.g., LastReleasedRevisionNum, Before:HeadRevisionNum), or another Unit, keyed as the caller named it (e.g., schema). Of the same ToolchainType as ConfigData unless OtherDataToolchainTypes says otherwise. Changes are discarded."`
+	// OtherDataToolchainTypes says which OtherData came from a Unit of another ToolchainType than
+	// ConfigData's. A handler converts only its own toolchain's data, so the sender has already
+	// converted those entries to YAML, the form every function reads.
+	OtherDataToolchainTypes map[OtherDataSource]workerapi.ToolchainType `json:",omitempty" description:"The ToolchainType of each OtherData entry read from a Unit of another ToolchainType than ConfigData's. Those entries have already been converted to YAML."`
 	FunctionInvocationOptions
 	FunctionInvocations FunctionInvocationList `description:"List of functions to invoke and their arguments"`
 }

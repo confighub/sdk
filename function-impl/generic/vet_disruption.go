@@ -121,9 +121,9 @@ func registerVetDisruption(fh handler.FunctionRegistry, converter configkit.Conf
 //     with nothing applied there is nothing to disrupt — creating a resource is not replacing one —
 //     and failing here would deadlock the unit, since it could never be applied to acquire the
 //     baseline that would let it pass.
-//   - A baseline was supplied, but under a source this function cannot interpret. That is a
-//     misconfiguration (a Trigger whose OtherDataSource does not match), and returning "passed"
-//     would credit a validator that never actually ran. It is an error.
+//   - A baseline was supplied, but under a source this function cannot interpret, such as a
+//     revision a caller named in other_data_source. That is a misconfiguration, and returning
+//     "passed" would credit a validator that never actually ran. It is an error.
 func GenericVetDisruption(
 	resourceProvider yamlkit.ResourceProvider,
 	parsedData gaby.Container,
@@ -140,7 +140,7 @@ func GenericVetDisruption(
 	if !ok {
 		return api.ValidationResult{}, fmt.Errorf(
 			"vet-disruption: other data was supplied but none of %v is present (found %v); "+
-				"set the Trigger's OtherDataSource to LastReleasedRevisionNum",
+				"leave other_data_source unset to pass it the baseline it expects",
 			disruptionOtherDataPreference, otherDataKeys(parsedOtherData))
 	}
 

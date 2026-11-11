@@ -16,7 +16,8 @@ import (
 var componentUpdateArgs struct {
 	permissions            []string
 	allowedChangeWorkflows []string
-	changeWorkflowRequired bool
+	requireChangeWorkflow  bool
+	requireChangeTracking  bool
 }
 
 var componentUpdateCmd = &cobra.Command{
@@ -25,8 +26,8 @@ var componentUpdateCmd = &cobra.Command{
 	Args:  cobra.MaximumNArgs(1),
 	Long: getCommandHelp(`Update a Component entity.
 
-Changing which ChangeWorkflows a component allows, whether one is required, or its permissions
-requires Manage permission on the component. ChangeWorkflows are addressed as <space>/<slug> or by
+Changing which ChangeWorkflows a component allows, whether one is required, whether changes have
+to be tracked, or its permissions requires Manage permission on the component. ChangeWorkflows are addressed as <space>/<slug> or by
 UUID; prefix one with '-' to stop allowing it.
 
 Examples:
@@ -37,7 +38,11 @@ Examples:
     --allowed-change-workflow -platform/hotfix
 
   # Stop requiring a ChangeWorkflow to promote and release
-  cub component update --patch my-app --change-workflow-required=false
+  cub component update --patch my-app --require-change-workflow=false
+
+  # Require every change to the configuration of the variants' units to be made in a ChangeSet
+  # or under a ChangeOrder
+  cub component update --patch my-app --require-change-tracking
 
   # Replace the component from a JSON definition
   cub component update my-app --from-stdin --replace < component.json
@@ -57,7 +62,9 @@ func init() {
 	componentUpdateCmd.Flags().BoolVar(&isPatch, "patch", false, "use patch API")
 	componentUpdateCmd.Flags().StringSliceVar(&componentUpdateArgs.permissions, "permission", []string{}, permissionUpdateHelp)
 	componentUpdateCmd.Flags().StringSliceVar(&componentUpdateArgs.allowedChangeWorkflows, "allowed-change-workflow", []string{}, "ChangeWorkflow, as <space>/<slug> or UUID, to allow, or -<ChangeWorkflow> to stop allowing (can be repeated or comma-separated)")
-	componentUpdateCmd.Flags().BoolVar(&componentUpdateArgs.changeWorkflowRequired, "change-workflow-required", false, "require a ChangeWorkflow to promote and release, and to open a changeset on the variants' units")
+	componentUpdateCmd.Flags().BoolVar(&componentUpdateArgs.requireChangeWorkflow, "require-change-workflow", false, "require a ChangeWorkflow to promote and release, and to open a changeset on the variants' units")
+	componentUpdateCmd.Flags().BoolVar(&componentUpdateArgs.requireChangeTracking, "require-change-tracking", false, requireChangeTrackingHelp)
+	addDeprecatedChangeWorkflowRequiredFlag(componentUpdateCmd, &componentUpdateArgs.requireChangeWorkflow)
 	enableWhereFlag(componentUpdateCmd)
 	addBackingUnitFlags(componentUpdateCmd, "Component", true, false)
 	addFromBackingUnitsFlags(componentUpdateCmd, "Component", false)
@@ -95,7 +102,8 @@ func componentUpdateCmdRun(cmd *cobra.Command, args []string) error {
 	if err != nil {
 		return err
 	}
-	requiredChanged := cmd.Flags().Changed("change-workflow-required")
+	requiredChanged := requireChangeWorkflowChanged(cmd)
+	trackingChanged := cmd.Flags().Changed("require-change-tracking")
 
 	if isPatch {
 		componentEnhancer := func(patchMap map[string]interface{}) {
@@ -104,7 +112,10 @@ func componentUpdateCmdRun(cmd *cobra.Command, args []string) error {
 				patchMap["AllowedChangeWorkflowIDs"] = applyAllowedChangeWorkflows(currentComponent.AllowedChangeWorkflowIDs, added, removed)
 			}
 			if requiredChanged {
-				patchMap["ChangeWorkflowRequired"] = componentUpdateArgs.changeWorkflowRequired
+				patchMap["RequireChangeWorkflow"] = componentUpdateArgs.requireChangeWorkflow
+			}
+			if trackingChanged {
+				patchMap["RequireChangeTracking"] = componentUpdateArgs.requireChangeTracking
 			}
 		}
 		patchData, err := BuildPatchDataWithPermissions(componentEnhancer, componentUpdateArgs.permissions)
@@ -157,7 +168,10 @@ func componentUpdateCmdRun(cmd *cobra.Command, args []string) error {
 		newBody.AllowedChangeWorkflowIDs = applyAllowedChangeWorkflows(newBody.AllowedChangeWorkflowIDs, added, removed)
 	}
 	if requiredChanged {
-		newBody.ChangeWorkflowRequired = componentUpdateArgs.changeWorkflowRequired
+		newBody.RequireChangeWorkflow = componentUpdateArgs.requireChangeWorkflow
+	}
+	if trackingChanged {
+		newBody.RequireChangeTracking = componentUpdateArgs.requireChangeTracking
 	}
 
 	if err := applyFieldEdits("Component", newBody); err != nil {
@@ -185,8 +199,11 @@ func runBulkComponentUpdate(cmd *cobra.Command) error {
 		return errors.New("--allowed-change-workflow updates one component at a time")
 	}
 	enhancer := func(patchMap map[string]interface{}) {
-		if cmd.Flags().Changed("change-workflow-required") {
-			patchMap["ChangeWorkflowRequired"] = componentUpdateArgs.changeWorkflowRequired
+		if requireChangeWorkflowChanged(cmd) {
+			patchMap["RequireChangeWorkflow"] = componentUpdateArgs.requireChangeWorkflow
+		}
+		if cmd.Flags().Changed("require-change-tracking") {
+			patchMap["RequireChangeTracking"] = componentUpdateArgs.requireChangeTracking
 		}
 	}
 	patchData, err := BuildPatchDataWithPermissions(enhancer, componentUpdateArgs.permissions)

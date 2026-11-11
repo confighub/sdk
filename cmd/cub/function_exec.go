@@ -99,7 +99,7 @@ func init() {
 	functionExecCmd.Flags().StringVar(&outputJQ, "output-jq", "", "apply jq to output JSON")
 	_ = functionExecCmd.Flags().MarkDeprecated("output-jq", "use --show output -o jq=<expr>")
 	functionExecCmd.Flags().StringVar(&functionToolchainType, "toolchain", "Kubernetes/YAML", "Toolchain type for the function invocations")
-	functionExecCmd.Flags().StringVar(&functionOtherDataSource, "other-data-source", "", "additional data source to pass to functions (e.g., LastReleasedRevisionNum); defaults to the sources each function expects")
+	addFunctionOtherDataFlags(functionExecCmd.Flags())
 	addIncludeContextFlags(functionExecCmd.Flags())
 	functionCmd.AddCommand(functionExecCmd)
 }

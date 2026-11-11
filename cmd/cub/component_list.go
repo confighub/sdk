@@ -40,7 +40,10 @@ Examples:
   cub component list -o name
 
   # List components that require a ChangeWorkflow
-  cub component list --where "ChangeWorkflowRequired = true"
+  cub component list --where "RequireChangeWorkflow = true"
+
+  # List components whose changes have to be made in a ChangeSet or under a ChangeOrder
+  cub component list --where "RequireChangeTracking = true"
 
   # List components whose own Owner label is "platform". This matches only the
   # Component's label, not an owner the Owner column reads from its spaces.
@@ -64,7 +67,7 @@ label.`
 }
 
 // Default columns to display when no custom columns are specified
-var defaultComponentColumns = []string{"Component.Slug", "Component.ChangeWorkflowRequired", "Component.AllowedChangeWorkflowIDs", "Component.Labels"}
+var defaultComponentColumns = []string{"Component.Slug", "Component.RequireChangeWorkflow", "Component.RequireChangeTracking", "Component.AllowedChangeWorkflowIDs", "Component.Labels"}
 
 // componentBaseSelectFields are the fields always returned by component list queries.
 var componentBaseSelectFields = []string{"Slug", "ComponentID", "OrganizationID"}
@@ -163,7 +166,7 @@ func displayComponentEntityList(components []*goclientnew.ExtendedComponent) {
 	failOnError(err)
 	table := tableView()
 	if !noheader {
-		table.SetHeader([]string{"Name", "Workflow-Required", "#Allowed-Workflows", "Owner", "Variants"})
+		table.SetHeader([]string{"Name", "Require-Workflow", "Require-Tracking", "#Allowed-Workflows", "Owner", "Variants"})
 	}
 	rows := make([][]string, 0, len(components))
 	for _, c := range components {
@@ -171,13 +174,14 @@ func displayComponentEntityList(components []*goclientnew.ExtendedComponent) {
 		spaces := byComponent[component.ComponentID]
 		rows = append(rows, []string{
 			component.Slug,
-			fmt.Sprintf("%t", component.ChangeWorkflowRequired),
+			fmt.Sprintf("%t", component.RequireChangeWorkflow),
+			fmt.Sprintf("%t", component.RequireChangeTracking),
 			fmt.Sprintf("%d", len(component.AllowedChangeWorkflowIDs)),
 			componentOwner(component.Labels, spaces),
 			strings.Join(variantNames(spaces), ", "),
 		})
 	}
-	width := lastColumnWidth(rows, []string{"Name", "Workflow-Required", "#Allowed-Workflows", "Owner", "Variants"}, terminalWidth())
+	width := lastColumnWidth(rows, []string{"Name", "Require-Workflow", "Require-Tracking", "#Allowed-Workflows", "Owner", "Variants"}, terminalWidth())
 	for _, row := range rows {
 		row[len(row)-1] = wrapList(row[len(row)-1], width)
 		table.Append(row)

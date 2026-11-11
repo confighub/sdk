@@ -186,7 +186,6 @@ func addIncludeContextFlags(flags *pflag.FlagSet) {
 var revisionIdentifier string
 var functionChangesetSlug string
 var functionToolchainType string
-var functionOtherDataSource string
 
 // Set by `cub invocation get/set/vet` to execute a single parameterized
 // Invocation: the identifier of the Invocation and the values supplied for its
@@ -234,7 +233,7 @@ func init() {
 	functionDoCmd.Flags().StringVar(&whereResource, "where-resource", "", "filter which resources the function operates on")
 	addResourceFlag(functionDoCmd)
 	functionDoCmd.Flags().StringVar(&functionToolchainType, "toolchain", "Kubernetes/YAML", "Toolchain type for the function invocations")
-	functionDoCmd.Flags().StringVar(&functionOtherDataSource, "other-data-source", "", "additional data source to pass to functions (e.g., LastReleasedRevisionNum); defaults to the sources each function expects")
+	addFunctionOtherDataFlags(functionDoCmd.Flags())
 	functionCmd.AddCommand(functionDoCmd)
 }
 
@@ -520,9 +519,11 @@ func invokeFunctionsOnRevisionID(spaceID, unitID, revisionID uuid.UUID, body goc
 		dryRunStr := "true"
 		newParams.DryRun = &dryRunStr
 	}
-	if functionOtherDataSource != "" {
-		newParams.OtherDataSource = &functionOtherDataSource
+	otherDataSource, err := otherDataSourceParam(spaceID.String())
+	if err != nil {
+		return nil, err
 	}
+	newParams.OtherDataSource = otherDataSource
 
 	funcRes, err := cubClientNew.InvokeFunctionsWithResponse(ctx, spaceID, newParams, body)
 	if cubapi.IsAPIError(err, funcRes) {
@@ -609,9 +610,11 @@ func invokeFunctionsOnUnits(invokeArgs *invokeArgs) (*[]goclientnew.FunctionInvo
 		if invokeArgs.ChangeSetID != uuid.Nil {
 			newParams.ChangeSetId = &invokeArgs.ChangeSetID
 		}
-		if functionOtherDataSource != "" {
-			newParams.OtherDataSource = &functionOtherDataSource
+		otherDataSource, err := otherDataSourceParam("")
+		if err != nil {
+			return nil, err
 		}
+		newParams.OtherDataSource = otherDataSource
 		funcRes, err := cubClientNew.InvokeFunctionsOnOrgWithResponse(ctx, newParams, *invokeArgs.Body)
 		if cubapi.IsAPIError(err, funcRes) {
 			return nil, errors.Wrap(cubapi.InterpretErrorGeneric(err, funcRes), "failed to invoke function(s) on org")
@@ -659,9 +662,11 @@ func invokeFunctionsOnUnits(invokeArgs *invokeArgs) (*[]goclientnew.FunctionInvo
 		if invokeArgs.ChangeSetID != uuid.Nil {
 			newParams.ChangeSetId = &invokeArgs.ChangeSetID
 		}
-		if functionOtherDataSource != "" {
-			newParams.OtherDataSource = &functionOtherDataSource
+		otherDataSource, err := otherDataSourceParam(selectedSpaceID)
+		if err != nil {
+			return nil, err
 		}
+		newParams.OtherDataSource = otherDataSource
 		funcRes, err := cubClientNew.InvokeFunctionsWithResponse(ctx, uuid.MustParse(selectedSpaceID), newParams, *invokeArgs.Body)
 		if cubapi.IsAPIError(err, funcRes) {
 			return nil, errors.Wrap(cubapi.InterpretErrorGeneric(err, funcRes), "failed to invoke function(s) on space "+selectedSpaceID)

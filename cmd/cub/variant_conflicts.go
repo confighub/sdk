@@ -80,6 +80,7 @@ var variantConflictsArgs struct {
 	resource  string
 	guards    []string
 	clearance []string
+	changeSet string
 }
 
 func init() {
@@ -99,6 +100,7 @@ func init() {
 		"select conflicts on one resource, as <kind>/<name> or <kind>/<namespace>/<name>")
 	variantConflictsCmd.Flags().StringArrayVar(&variantConflictsArgs.clearance, "clearance", nil,
 		"with --apply, class of guarded reason the applied changes are cleared for, as KEY, KEY=VALUE[;VALUE...], KEY!=VALUE[;VALUE...], or !KEY (repeatable). An apply writing a guarded path this does not cover is refused")
+	variantConflictsCmd.Flags().StringVar(&variantConflictsArgs.changeSet, "changeset", "", changeSetFlagHelp)
 	variantConflictsCmd.Flags().BoolVar(&dryRun, "dry-run", false,
 		"dry run mode: report what --apply or --dismiss would do without writing anything")
 	enableWaitFlag(variantConflictsCmd)
@@ -191,6 +193,9 @@ func variantConflictsCmdRun(_ *cobra.Command, args []string) error {
 	}
 
 	body := goclientnew.UnitConflictsRequest{Action: "Dismiss", DryRun: dryRun, Permanent: a.permanent}
+	if body.ChangeSetID, err = resolveOptionalChangeSetID(a.changeSet, space.Space.SpaceID.String()); err != nil {
+		return err
+	}
 	if a.apply {
 		body.Action = "Apply"
 		clearance, err := parseClearanceSpecs(a.clearance)

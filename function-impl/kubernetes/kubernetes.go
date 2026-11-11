@@ -49,8 +49,8 @@ func attributeDescriptors() map[api.AttributeName]yamlkit.AttributeDescriptor {
 		// A hostname is declared at each path holding one; the subdomain and the domain within
 		// it are registered at a suffix of that path, through a regexp accessor that splits the value.
 		api.AttributeNameHostname: {
-			DataType:         api.DataTypeString,
-			DescribePaths:    true,
+			DataType:      api.DataTypeString,
+			DescribePaths: true,
 			Derived: []yamlkit.DerivedAttribute{
 				{AttributeName: api.AttributeNameSubdomain, PathSuffix: "#subdomain"},
 				{AttributeName: api.AttributeNameDomain, PathSuffix: "#domain"},
@@ -79,12 +79,12 @@ func attributeDescriptors() map[api.AttributeName]yamlkit.AttributeDescriptor {
 		// The container attributes. Each is declared on the Containers shape at the element it
 		// selects, so a setter writes through the path it is registered at.
 		api.AttributeNameContainerName: {
-			DataType:         api.DataTypeString,
-			DescribePaths:    true,
+			DataType:      api.DataTypeString,
+			DescribePaths: true,
 		},
 		api.AttributeNameContainerImage: {
-			DataType:         api.DataTypeString,
-			DescribePaths:    true,
+			DataType:      api.DataTypeString,
+			DescribePaths: true,
 		},
 		api.AttributeNameContainerRepositoryURI: {
 			DataType:               api.DataTypeString,
@@ -99,8 +99,8 @@ func attributeDescriptors() map[api.AttributeName]yamlkit.AttributeDescriptor {
 			DescribePaths:          true,
 		},
 		attributeNameEnvValue: {
-			DataType:         api.DataTypeString,
-			DescribePaths:    true,
+			DataType:      api.DataTypeString,
+			DescribePaths: true,
 		},
 		// No getter or setter: set-container-resources is not a path setter. It takes an
 		// operation (all, cap or floor) alongside the cpu and memory to set, and decides per
@@ -117,8 +117,8 @@ func attributeDescriptors() map[api.AttributeName]yamlkit.AttributeDescriptor {
 		},
 
 		attributeNameReplicas: {
-			DataType:         api.DataTypeInt,
-			DescribePaths:    true,
+			DataType:      api.DataTypeInt,
+			DescribePaths: true,
 		},
 	}
 }
@@ -149,4 +149,5 @@ func RegisterFunctions(rp *k8skit.K8sResourceProviderType, fh handler.FunctionRe
 	registerConfigMapHashAnnotations(fh, rp)
 	registerPodSecurityFunctions(fh, rp)
 	registerVetEnv(fh, rp)
+	registerVetValidatingAdmissionPolicy(fh, rp)
 }

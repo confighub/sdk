@@ -4,6 +4,7 @@
 package main
 
 import (
+	"fmt"
 	"sort"
 	"strings"
 
@@ -15,7 +16,7 @@ var componentGetCmd = &cobra.Command{
 	Use:   "get <name or id>",
 	Short: "Get details about a component",
 	Args:  cobra.ExactArgs(1),
-	Long: getCommandHelp(`Get detailed information about a Component entity, including which ChangeWorkflows its promotions and releases may use and whether one is required.
+	Long: getCommandHelp(`Get detailed information about a Component entity, including which ChangeWorkflows its promotions and releases may use, whether one is required, and whether changes to its variants must be tracked by a ChangeSet or ChangeOrder.
 
 The Owner row is the Component's own Owner label when it has one. Otherwise it is the Owner label
 all of the Component's spaces share with one value, and it is empty when they disagree, when one of
@@ -91,11 +92,8 @@ func renderComponentEntityDetails(component *goclientnew.Component, owner *strin
 	view.Append([]string{"Annotations", annotationsToString(component.Annotations)})
 	view.Append([]string{"Permissions", permissionsToString(component.Permissions, expanded)})
 	view.Append([]string{"Allowed ChangeWorkflows", allowedChangeWorkflowIDsToString(component.AllowedChangeWorkflowIDs)})
-	changeWorkflowRequired := "false"
-	if component.ChangeWorkflowRequired {
-		changeWorkflowRequired = "true"
-	}
-	view.Append([]string{"ChangeWorkflow Required", changeWorkflowRequired})
+	view.Append([]string{"Require ChangeWorkflow", fmt.Sprintf("%t", component.RequireChangeWorkflow)})
+	view.Append([]string{"Require Change Tracking", fmt.Sprintf("%t", component.RequireChangeTracking)})
 	view.Append([]string{"Organization ID", component.OrganizationID.String()})
 	view.Render()
 }
