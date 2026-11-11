@@ -270,11 +270,12 @@ type EnforcementChange struct {
 	// Fields are the changed fields, as "<field>: <old> -> <new>".
 	Fields    []string `json:"fields"`
 	Committed bool     `json:"committed"`
-	// Refreshed are the Spaces and Targets whose Trigger lists were refreshed
-	// so their Units are evaluated under the rule's new Warn.
-	Refreshed []string `json:"refreshed,omitempty"`
+	// Reevaluated is how many Units the rule was run on again, those it failed, so that each
+	// failure moved between the Unit's warnings and the gates that block its release.
+	Reevaluated int `json:"reevaluated,omitempty"`
 
 	spaceID, triggerID goclientnew.UUID
+	toolchain          string
 	patch              map[string]any
 }
 
@@ -284,7 +285,7 @@ func PlanEnforcementUpdate(ctx context.Context, client *cubapi.Client, policySpa
 	var changes []EnforcementChange
 	for _, rule := range rules {
 		et, err := cubapi.ResolveTrigger(ctx, client, cubapi.NewRef(policySpace, rule),
-			cubapi.ResolveOpts{Select: "TriggerID,SpaceID,Slug,Annotations,Warn,Validating"})
+			cubapi.ResolveOpts{Select: "TriggerID,SpaceID,Slug,ToolchainType,Annotations,Warn,Validating"})
 		if err != nil {
 			return nil, fmt.Errorf("rule %s: %w", rule, err)
 		}
@@ -302,7 +303,7 @@ func PlanEnforcementUpdate(ctx context.Context, client *cubapi.Client, policySpa
 // planEnforcementChange is what update changes on one rule's Trigger, and false when it would
 // leave the Trigger as it is.
 func planEnforcementChange(rule string, t *goclientnew.Trigger, update EnforcementUpdate, now time.Time) (EnforcementChange, bool) {
-	c := EnforcementChange{Rule: rule, spaceID: t.SpaceID, triggerID: t.TriggerID, patch: map[string]any{}}
+	c := EnforcementChange{Rule: rule, spaceID: t.SpaceID, triggerID: t.TriggerID, toolchain: t.ToolchainType, patch: map[string]any{}}
 	annotations := map[string]any{}
 	setAnnotation := func(key, value string) {
 		old := t.Annotations[key]
@@ -346,11 +347,11 @@ func orNone(s string) string {
 
 // ExecuteEnforcementUpdate applies the changes PlanEnforcementUpdate worked out.
 //
-// A rule enforced or returned to audit has its selections refreshed too. A
-// Space or Target re-evaluates its Units when the Triggers it selects change,
-// but a change to a Trigger refreshes only the Space the Trigger is in, so
-// without this the Units it checks would keep their old verdicts -- warnings
-// that are not blocking -- until each of them next changed.
+// A rule enforced or returned to audit is run again on the Units it fails, so that each failure
+// moves between the Unit's warnings and the gates that block its release; a Unit it passes has
+// neither, so nothing about it changes. Without the run the failing Units would keep their old
+// verdicts until each of them next changed, since a change to a Trigger re-evaluates only the
+// Units of its own Space.
 func ExecuteEnforcementUpdate(ctx context.Context, client *cubapi.Client, changes []EnforcementChange) error {
 	for i := range changes {
 		c := &changes[i]
@@ -365,7 +366,7 @@ func ExecuteEnforcementUpdate(ctx context.Context, client *cubapi.Client, change
 		}
 		c.Committed = true
 		if _, warnChanged := c.patch["Warn"]; warnChanged {
-			if c.Refreshed, err = refreshSelections(ctx, client, c.triggerID); err != nil {
+			if c.Reevaluated, err = reevaluateFailing(ctx, client, c.triggerID, c.toolchain); err != nil {
 				return fmt.Errorf("re-evaluate %s: %w", c.Rule, err)
 			}
 		}
@@ -373,40 +374,42 @@ func ExecuteEnforcementUpdate(ctx context.Context, client *cubapi.Client, change
 	return nil
 }
 
-// refreshSelections re-lists the Triggers of every Space and Target that
-// selects trigger, which re-evaluates their Units, and returns their names.
-func refreshSelections(ctx context.Context, client *cubapi.Client, trigger goclientnew.UUID) ([]string, error) {
-	selects := cubapi.Where{}.And("TriggerIDs ? '" + trigger.String() + "'")
-	spaces, err := cubapi.ListSpaces(ctx, client, selects, cubapi.ListOpts{Select: "SpaceID,Slug"})
+// evaluateChunk is how many Units one evaluation names, so a rule failing across a fleet makes
+// several requests rather than one whose filter is too long.
+const evaluateChunk = 100
+
+// reevaluateFailing runs trigger again on the Units it fails, recording the new verdicts, and
+// returns how many it ran on.
+func reevaluateFailing(ctx context.Context, client *cubapi.Client, trigger goclientnew.UUID, toolchain string) (int, error) {
+	units, err := cubapi.ListUnits(ctx, client, cubapi.Where{}.Eq("ToolchainType", toolchain),
+		cubapi.ListOpts{Select: "UnitID,ValidationErrors,ValidationWarnings,ValidationTriggerIDs"})
 	if err != nil {
-		return nil, err
+		return 0, fmt.Errorf("list units: %w", err)
 	}
-	targets, err := cubapi.ListTargets(ctx, client, selects, cubapi.ListOpts{Select: "TargetID,SpaceID,SpaceSlug,Slug"})
-	if err != nil {
-		return nil, err
+	var failing []string
+	for _, eu := range units {
+		if eu.Unit != nil && unitVerdicts(eu.Unit)[trigger] != verdictPassed {
+			failing = append(failing, "'"+eu.Unit.UnitID.String()+"'")
+		}
 	}
-	var refreshed []string
-	for _, es := range spaces {
-		if es.Space == nil {
-			continue
+	var failed []string
+	for start := 0; start < len(failing); start += evaluateChunk {
+		chunk := failing[start:min(start+evaluateChunk, len(failing))]
+		res, err := cubapi.EvaluateTriggers(ctx, client, []goclientnew.UUID{trigger}, cubapi.Selector{
+			Where:         "UnitID IN (" + strings.Join(chunk, ", ") + ")",
+			ToolchainType: toolchain,
+		})
+		if err != nil {
+			return 0, err
 		}
-		w := Wiring{Space: es.Space.Slug, spaceID: es.Space.SpaceID}
-		if err := patchSelection(ctx, client, w, map[string]any{}); err != nil {
-			return refreshed, fmt.Errorf("refresh %s: %w", w.Name(), err)
+		for _, o := range res.Failed() {
+			failed = append(failed, o.SpaceSlug+"/"+o.UnitSlug+": "+o.Error)
 		}
-		refreshed = append(refreshed, w.Name())
 	}
-	for _, et := range targets {
-		if et.Target == nil {
-			continue
-		}
-		w := Wiring{Space: et.Target.SpaceSlug, Target: et.Target.Slug, spaceID: et.Target.SpaceID, targetID: et.Target.TargetID}
-		if err := patchSelection(ctx, client, w, map[string]any{}); err != nil {
-			return refreshed, fmt.Errorf("refresh %s: %w", w.Name(), err)
-		}
-		refreshed = append(refreshed, w.Name())
+	if len(failed) > 0 {
+		return len(failing), fmt.Errorf("not evaluated on %d Unit(s): %s", len(failed), strings.Join(failed, "; "))
 	}
-	return refreshed, nil
+	return len(failing), nil
 }
 
 // UpdateCmd is `guardrails update`: a rule's priority, the date it is due to be
@@ -428,9 +431,8 @@ func UpdateCmd(preflight Preflight) *cobra.Command {
                   ` + constants.TriggerEnforcedAtAnnotation + ` annotation
   --audit         make it warn again, and remove ` + constants.TriggerEnforcedAtAnnotation + `
 
-Enforcing a rule, or returning it to audit, refreshes the Trigger lists of the
-Spaces and Targets that select it, so their Units are evaluated again: what it
-warned on becomes blocked, or the reverse. 'guardrails status --by-rule' shows how many
+Enforcing a rule, or returning it to audit, runs it again on the Units it fails,
+so what it warned on becomes blocked, or the reverse. 'guardrails status --by-rule' shows how many
 Units each rule still warns on, which is what enforcing it would block.
 
 Dry-run by default: it prints what would change. Re-run with --commit to apply.`,
@@ -508,8 +510,8 @@ func printEnforcementChanges(cmd *cobra.Command, changes []EnforcementChange, co
 	}
 	for _, c := range changes {
 		cliutil.Fprintln(out, fmt.Sprintf("%s %s: %s", verb, c.Rule, strings.Join(c.Fields, "; ")))
-		if len(c.Refreshed) > 0 {
-			cliutil.Fprintln(out, fmt.Sprintf("  re-evaluating the Units of %d Space(s) and Target(s) that select it", len(c.Refreshed)))
+		if c.Reevaluated > 0 {
+			cliutil.Fprintln(out, fmt.Sprintf("  ran it again on the %d Unit(s) it fails", c.Reevaluated))
 		}
 	}
 	if !commit {

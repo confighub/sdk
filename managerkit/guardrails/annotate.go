@@ -20,8 +20,10 @@ import (
 
 	"github.com/confighub/sdk/cliutil"
 	"github.com/confighub/sdk/core/cubapi"
+	goclientnew "github.com/confighub/sdk/core/openapi/goclient-new"
 
 	"github.com/confighub/sdk/managerkit"
+	"github.com/confighub/sdk/managerkit/write"
 )
 
 // Target is one Unit to annotate.
@@ -52,6 +54,9 @@ type Result struct {
 	Detail    string `json:"detail,omitempty"`
 	OK        bool   `json:"ok"`
 	Error     string `json:"error,omitempty"`
+	// Withheld is what the Unit's guards kept the annotation from writing, or on a dry run
+	// would keep it from writing. A Unit with any is not counted as annotated.
+	Withheld []goclientnew.MutationConflict `json:"withheld,omitempty"`
 }
 
 // AnnotateSpec is the tool-specific half of an annotate command.
@@ -79,7 +84,7 @@ func (s AnnotateSpec) noun() string {
 func (p Pack) AnnotateCmd(preflight Preflight, spec AnnotateSpec) *cobra.Command {
 	var output, clusterFilter string
 	var filter cliutil.QueryFlags
-	var commit cliutil.CommitFlags
+	var commit write.CommitFlags
 
 	cmd := &cobra.Command{
 		Use:   "annotate",
@@ -87,7 +92,7 @@ func (p Pack) AnnotateCmd(preflight Preflight, spec AnnotateSpec) *cobra.Command
 		Long:  spec.Long,
 		Args:  cobra.NoArgs,
 		RunE: func(cmd *cobra.Command, args []string) error {
-			changeDesc, dryRun, err := commit.Validate("annotate Units with " + p.Group + " guardrail findings")
+			change, err := commit.Change("annotate Units with " + p.Group + " guardrail findings")
 			if err != nil {
 				return err
 			}
@@ -104,17 +109,41 @@ func (p Pack) AnnotateCmd(preflight Preflight, spec AnnotateSpec) *cobra.Command
 				return err
 			}
 
+			// Each Unit is annotated by a write of its own, so the ChangeSet is opened on all of
+			// them first: all of them or none, rather than up to the first one another
+			// ChangeSet holds.
+			if change.ChangeSet != "" {
+				ids, err := targetUnitIDs(cmd.Context(), client, targets)
+				if err != nil {
+					return err
+				}
+				if _, err := change.OpenChangeSetOnUnits(cmd.Context(), client, ids); err != nil {
+					return err
+				}
+			}
+
 			results := make([]Result, 0, len(targets))
+			var writes []*cubapi.Result
 			for _, t := range targets {
 				r := Result{
 					Cluster: t.Cluster, Namespace: t.Namespace, Space: t.Space,
 					Unit: t.UnitSlug, Value: t.Value, Detail: t.Detail,
 				}
-				if !dryRun {
-					err := Annotate(cmd.Context(), client, t.SpaceID, t.UnitSlug, spec.Key, t.Value, changeDesc)
-					r.OK = err == nil
-					if err != nil {
-						r.Error = err.Error()
+				// A dry run asks the server too, so it reports what guards would withhold.
+				res, err := Annotate(cmd.Context(), client, t.SpaceID, t.UnitSlug, spec.Key, t.Value, change)
+				if err != nil {
+					r.Error = err.Error()
+				} else {
+					writes = append(writes, res)
+					r.OK = true
+					for _, o := range res.Outcomes {
+						if !o.Success {
+							r.OK, r.Error = false, o.Error
+						}
+						r.Withheld = append(r.Withheld, o.Conflicts...)
+					}
+					if len(r.Withheld) > 0 {
+						r.OK = false
 					}
 				}
 				results = append(results, r)
@@ -124,7 +153,8 @@ func (p Pack) AnnotateCmd(preflight Preflight, spec AnnotateSpec) *cobra.Command
 			if done, err := managerkit.Render(cmd.OutOrStdout(), output, results); done || err != nil {
 				return err
 			}
-			printAnnotate(cmd, results, spec.noun(), dryRun)
+			printAnnotate(cmd, results, spec.noun(), change.DryRun())
+			write.WriteWithheld(cmd.OutOrStdout(), write.Summarize("annotate", "", change.DryRun(), writes...))
 			return nil
 		},
 	}
@@ -181,13 +211,46 @@ func printAnnotate(cmd *cobra.Command, results []Result, noun string, dryRun boo
 		if r.Error != "" {
 			line += "  ERROR: " + r.Error
 		}
+		if len(r.Withheld) > 0 {
+			line += fmt.Sprintf("  WITHHELD: %d path(s)", len(r.Withheld))
+		}
 		cliutil.Fprintln(out, line)
+	}
+	annotated := 0
+	for _, r := range results {
+		if r.OK {
+			annotated++
+		}
 	}
 	if dryRun {
 		cliutil.Fprintln(out, fmt.Sprintf(
-			"\nDry run — %d %s(s) would be annotated. Re-run with --commit --change-desc \"…\".",
-			len(results), noun))
+			"\nDry run — %d of %d %s(s) would be annotated. Re-run with --commit --change-desc \"…\".",
+			annotated, len(results), noun))
 		return
 	}
-	cliutil.Fprintln(out, fmt.Sprintf("\nAnnotated %d %s(s).", len(results), noun))
+	cliutil.Fprintln(out, fmt.Sprintf("\nAnnotated %d of %d %s(s).", annotated, len(results), noun))
+}
+
+// targetUnitIDs are the IDs of the targets' Units, which a target names by Space and slug.
+func targetUnitIDs(ctx context.Context, client *cubapi.Client, targets []Target) ([]goclientnew.UUID, error) {
+	slugsBySpace := map[string][]string{}
+	for _, t := range targets {
+		slugsBySpace[t.SpaceID] = append(slugsBySpace[t.SpaceID], t.UnitSlug)
+	}
+	var ids []goclientnew.UUID
+	for spaceID, slugs := range slugsBySpace {
+		for start := 0; start < len(slugs); start += 100 {
+			where := cubapi.Where{}.Eq("SpaceID", spaceID).InStrings("Slug", slugs[start:min(start+100, len(slugs))])
+			units, err := cubapi.ListUnits(ctx, client, where, cubapi.ListOpts{Select: "UnitID"})
+			if err != nil {
+				return nil, err
+			}
+			for _, eu := range units {
+				if eu.Unit != nil {
+					ids = append(ids, eu.Unit.UnitID)
+				}
+			}
+		}
+	}
+	return ids, nil
 }

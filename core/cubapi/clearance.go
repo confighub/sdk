@@ -5,6 +5,7 @@ package cubapi
 
 import (
 	"fmt"
+	"slices"
 	"strings"
 
 	api "github.com/confighub/sdk/core/function/api"
@@ -126,4 +127,66 @@ func ParseGuards(flag string, specs []string) (goclientnew.GuardStamp, error) {
 		stamp[key] = value
 	}
 	return stamp, nil
+}
+
+// FormatClearance renders a Clearance back in the same four forms the --clearance flag takes,
+// so what is displayed is what would be typed to set it again.
+func FormatClearance(clearance *goclientnew.Clearance) string {
+	if clearance == nil || len(*clearance) == 0 {
+		return ""
+	}
+	specs := make([]string, 0, len(*clearance))
+	for _, requirement := range *clearance {
+		switch api.ClearanceOperator(requirement.Operator) {
+		case api.ClearanceOperatorExists:
+			specs = append(specs, requirement.Key)
+		case api.ClearanceOperatorDoesNotExist:
+			specs = append(specs, "!"+requirement.Key)
+		case api.ClearanceOperatorIn:
+			specs = append(specs, requirement.Key+"="+strings.Join(requirement.Values, ClearanceValueSeparator))
+		case api.ClearanceOperatorNotIn:
+			specs = append(specs, requirement.Key+"!="+strings.Join(requirement.Values, ClearanceValueSeparator))
+		default:
+			specs = append(specs, fmt.Sprintf("%s %s %v", requirement.Key, requirement.Operator, requirement.Values))
+		}
+	}
+	return strings.Join(specs, " ")
+}
+
+// ClearanceCoveringGuards is the narrowest clearance admitting the guards that withheld the
+// given conflicts: per key, In the values the conflicts name, or Exists for a guard with no
+// value. A guard the change forbade itself with DoesNotExist is left out, since no added
+// requirement allows it.
+func ClearanceCoveringGuards(conflicts []goclientnew.MutationConflict) goclientnew.Clearance {
+	values := map[string][]string{}
+	var keys []string
+	for _, conflict := range conflicts {
+		guards := conflict.Guards
+		if len(guards) == 0 && conflict.Guard != nil {
+			guards = []goclientnew.WithheldGuard{*conflict.Guard}
+		}
+		for _, guard := range guards {
+			if guard.Precondition || guard.Key == "" {
+				continue
+			}
+			if _, seen := values[guard.Key]; !seen {
+				keys = append(keys, guard.Key)
+				values[guard.Key] = nil
+			}
+			if guard.Value != "" && !slices.Contains(values[guard.Key], guard.Value) {
+				values[guard.Key] = append(values[guard.Key], guard.Value)
+			}
+		}
+	}
+	slices.Sort(keys)
+	clearance := goclientnew.Clearance{}
+	for _, key := range keys {
+		if len(values[key]) == 0 {
+			clearance = append(clearance, goclientnew.ClearanceRequirement{Key: key, Operator: string(api.ClearanceOperatorExists)})
+			continue
+		}
+		slices.Sort(values[key])
+		clearance = append(clearance, goclientnew.ClearanceRequirement{Key: key, Operator: string(api.ClearanceOperatorIn), Values: values[key]})
+	}
+	return clearance
 }

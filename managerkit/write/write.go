@@ -87,6 +87,10 @@ type Outcome struct {
 	// run would do, in the order they ran. An invocation that changed nothing
 	// adds none.
 	Diffs []goclientnew.ConfigDiff `json:"diffs,omitempty"`
+	// Withheld is what the change did not write to the Unit, or on a dry run would not, with
+	// the reason: above all each path whose guards the change's clearance did not cover. The
+	// rest of the change is written, so a Unit can be both mutated and withheld from.
+	Withheld []goclientnew.MutationConflict `json:"withheld,omitempty"`
 
 	// succeeded is every contributing invocation's Success, ANDed. It decides
 	// whether a mutation counts as committed. It is not the same question as
@@ -141,6 +145,7 @@ func ReportMutations(cmd *cobra.Command, command, space string, dryRun bool, out
 	cliutil.Fprintln(cmd.OutOrStdout(), fmt.Sprintf("\n%s: %d of %d Unit(s) %s%s",
 		command, rep.Mutated, len(rep.Outcomes), verb, DryRunSuffix(dryRun)))
 	WriteDiffs(cmd.OutOrStdout(), command, rep)
+	WriteWithheld(cmd.OutOrStdout(), rep)
 	if rep.Committed > 0 {
 		cliutil.Fprintln(cmd.OutOrStdout(), "\n"+ReleaseNote(space))
 	}
@@ -168,6 +173,45 @@ func WriteDiffs(w io.Writer, command string, rep Report) {
 		}
 	}
 	WriteUnitDiffs(w, command, diffs)
+}
+
+// WriteWithheld writes, per Unit, what rep's change did not write, or on a dry run would not,
+// and the --clearance that would let it. A write the guards held back is otherwise easy to read
+// as complete: the Unit still counts as changed when the rest of the change was written.
+func WriteWithheld(w io.Writer, rep Report) {
+	for _, o := range rep.Outcomes {
+		if len(o.Withheld) == 0 {
+			continue
+		}
+		label := o.Unit
+		if o.Space != "" {
+			label = o.Space + "/" + o.Unit
+		}
+		verb := "Withheld"
+		if rep.DryRun {
+			verb = "Would withhold"
+		}
+		cliutil.Fprintln(w, fmt.Sprintf("\n%s %d change(s) on %s:", verb, len(o.Withheld), label))
+		tw := tabwriter.NewWriter(w, 0, 2, 2, ' ', 0)
+		fmt.Fprintln(tw, "REASON\tRESOURCE\tPATH")
+		for _, c := range o.Withheld {
+			resource := ""
+			if c.Resource != nil {
+				resource = c.Resource.ResourceName
+			}
+			fmt.Fprintf(tw, "%s\t%s\t%s\n", c.Reason, cliutil.Dash(resource), c.Path)
+		}
+		_ = tw.Flush()
+		clearance := cubapi.ClearanceCoveringGuards(o.Withheld)
+		if len(clearance) == 0 {
+			continue
+		}
+		flags := make([]string, 0, len(clearance))
+		for _, requirement := range clearance {
+			flags = append(flags, fmt.Sprintf("--clearance %q", cubapi.FormatClearance(&goclientnew.Clearance{requirement})))
+		}
+		cliutil.Fprintln(w, "To write them, run it again with "+strings.Join(flags, " ")+".")
+	}
 }
 
 // UnitDiff is what a change did to one Unit, or on a dry run would do. A command
@@ -237,6 +281,7 @@ func Summarize(command, space string, dryRun bool, results ...*cubapi.Result) Re
 			if o.Diff != nil && len(o.Diff.Resources) > 0 {
 				out.Diffs = append(out.Diffs, *o.Diff)
 			}
+			out.Withheld = append(out.Withheld, o.Conflicts...)
 		}
 	}
 	// Sorted by where the Unit is, not by the id rows were keyed on.

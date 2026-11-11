@@ -157,7 +157,7 @@ func (l Library) paramHelp() string {
 func (l Library) applyCmd() *cobra.Command {
 	var profilesSpace, output string
 	var params []string
-	var commit cliutil.CommitFlags
+	var commit write.CommitFlags
 	cmd := &cobra.Command{
 		Use:   "apply <profile> <space>/<unit>",
 		Short: fmt.Sprintf("Apply %s to %s (dry-run unless --commit)", article(l.noun()), l.Target),
@@ -173,7 +173,7 @@ Dry-run unless --commit --change-desc; never bypasses ValidationErrors.`,
 			if err != nil {
 				return err
 			}
-			changeDesc, dryRun, err := commit.Validate(
+			change, err := commit.Change(
 				fmt.Sprintf("apply %s %s to %s", l.noun(), profileSlug, args[1]))
 			if err != nil {
 				return err
@@ -192,11 +192,11 @@ Dry-run unless --commit --change-desc; never bypasses ValidationErrors.`,
 				return err
 			}
 			res, err := cubapi.InvokeStoredInvocation(ctx, client, inv.InvocationID, paramMap,
-				ref.Selector(), write.Change(changeDesc, dryRun))
+				ref.Selector(), change)
 			if err != nil {
 				return err
 			}
-			return write.ReportMutations(cmd, "profile apply "+profileSlug, ref.SpaceSlug, dryRun, output, res)
+			return write.ReportMutations(cmd, "profile apply "+profileSlug, ref.SpaceSlug, change.DryRun(), output, res)
 		},
 	}
 	managerkit.AddOutputFlag(cmd, &output)
@@ -212,7 +212,7 @@ func (l Library) FleetEditCommand() *cobra.Command {
 	var profilesSpace, output, profileSlug string
 	var filter cliutil.QueryFlags
 	var params []string
-	var commit cliutil.CommitFlags
+	var commit write.CommitFlags
 	cmd := &cobra.Command{
 		Use:   "fleet-edit --profile <slug> [--where …]",
 		Short: fmt.Sprintf("Apply %s across a selector of Units (bulk, dry-run unless --commit)", article(l.noun())),
@@ -237,7 +237,7 @@ Dry-run unless --commit --change-desc.%s`,
 			if err != nil {
 				return err
 			}
-			changeDesc, dryRun, err := commit.Validate(fmt.Sprintf("fleet-edit: apply %s %s", l.noun(), profileSlug))
+			change, err := commit.Change(fmt.Sprintf("fleet-edit: apply %s %s", l.noun(), profileSlug))
 			if err != nil {
 				return err
 			}
@@ -266,11 +266,11 @@ Dry-run unless --commit --change-desc.%s`,
 			}
 			sel := cubapi.Selector{Where: where.String(), WhereData: l.FleetEdit.WhereData}
 			res, err := cubapi.InvokeStoredInvocation(ctx, client, inv.InvocationID, paramMap, sel,
-				write.Change(changeDesc, dryRun))
+				change)
 			if err != nil {
 				return err
 			}
-			return write.ReportMutations(cmd, "fleet-edit "+profileSlug, "", dryRun, output, res)
+			return write.ReportMutations(cmd, "fleet-edit "+profileSlug, "", change.DryRun(), output, res)
 		},
 	}
 	managerkit.AddOutputFlag(cmd, &output)

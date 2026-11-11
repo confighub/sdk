@@ -23,7 +23,19 @@ func ResolveUnitLinks(ctx context.Context, c *Client, spaceID, unitID goclientne
 	}
 	unit := *current.JSON200.Unit
 	unit.LastChangeDescription = ch.Description
-	res, err := c.API.UpdateUnitWithResponse(ctx, spaceID, unitID, &goclientnew.UpdateUnitParams{Resolve: &resolve}, unit)
+	gp, err := ch.GuardParams()
+	if err != nil {
+		return nil, err
+	}
+	params := &goclientnew.UpdateUnitParams{Resolve: &resolve,
+		Guards: gp.Guards, InheritedGuards: gp.InheritedGuards, Clearance: gp.Clearance}
+	if params.ChangeSetId, err = ch.OpenChangeSetOnUnits(ctx, c, []goclientnew.UUID{unitID}); err != nil {
+		return nil, err
+	}
+	if params.ChangeSetId != nil {
+		unit.ChangeSetID = params.ChangeSetId
+	}
+	res, err := c.API.UpdateUnitWithResponse(ctx, spaceID, unitID, params, unit)
 	if IsAPIError(err, res) {
 		return nil, InterpretErrorGeneric(err, res)
 	}

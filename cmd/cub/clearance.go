@@ -6,13 +6,11 @@ package main
 import (
 	"encoding/json"
 	"fmt"
-	"slices"
 	"strings"
 
 	"github.com/spf13/cobra"
 
 	"github.com/confighub/sdk/core/cubapi"
-	"github.com/confighub/sdk/core/function/api"
 	goclientnew "github.com/confighub/sdk/core/openapi/goclient-new"
 )
 
@@ -31,28 +29,9 @@ import (
 // The values of one requirement are separated by semicolons, which is what separates the items
 // of a list inside a flag value throughout cub. They have to be quoted in a shell.
 
-// formatClearance renders a Clearance back in the same four forms the --clearance flag takes,
-// so what is displayed is what would be typed to set it again.
+// formatClearance is cubapi.FormatClearance, named for its callers here.
 func formatClearance(clearance *goclientnew.Clearance) string {
-	if clearance == nil || len(*clearance) == 0 {
-		return ""
-	}
-	specs := make([]string, 0, len(*clearance))
-	for _, requirement := range *clearance {
-		switch api.ClearanceOperator(requirement.Operator) {
-		case api.ClearanceOperatorExists:
-			specs = append(specs, requirement.Key)
-		case api.ClearanceOperatorDoesNotExist:
-			specs = append(specs, "!"+requirement.Key)
-		case api.ClearanceOperatorIn:
-			specs = append(specs, requirement.Key+"="+strings.Join(requirement.Values, clearanceValueSeparator))
-		case api.ClearanceOperatorNotIn:
-			specs = append(specs, requirement.Key+"!="+strings.Join(requirement.Values, clearanceValueSeparator))
-		default:
-			specs = append(specs, fmt.Sprintf("%s %s %v", requirement.Key, requirement.Operator, requirement.Values))
-		}
-	}
-	return strings.Join(specs, " ")
+	return cubapi.FormatClearance(clearance)
 }
 
 // parseClearanceSpecs turns the --clearance flag values into a Clearance; see
@@ -159,40 +138,7 @@ func withClearanceFlags(err error) error {
 	return fmt.Errorf("%s%s%s", message[:start], strings.Join(flags, " "), rest[decoder.InputOffset():])
 }
 
-// clearanceCoveringGuards is the narrowest clearance admitting the guards that withheld the
-// given conflicts: per key, In the values the conflicts name, or Exists for a guard with no
-// value. A guard the change forbade itself with DoesNotExist is left out, since no added
-// requirement allows it.
+// clearanceCoveringGuards is cubapi.ClearanceCoveringGuards, named for its callers here.
 func clearanceCoveringGuards(conflicts []goclientnew.MutationConflict) goclientnew.Clearance {
-	values := map[string][]string{}
-	var keys []string
-	for _, conflict := range conflicts {
-		guards := conflict.Guards
-		if len(guards) == 0 && conflict.Guard != nil {
-			guards = []goclientnew.WithheldGuard{*conflict.Guard}
-		}
-		for _, guard := range guards {
-			if guard.Precondition || guard.Key == "" {
-				continue
-			}
-			if _, seen := values[guard.Key]; !seen {
-				keys = append(keys, guard.Key)
-				values[guard.Key] = nil
-			}
-			if guard.Value != "" && !slices.Contains(values[guard.Key], guard.Value) {
-				values[guard.Key] = append(values[guard.Key], guard.Value)
-			}
-		}
-	}
-	slices.Sort(keys)
-	clearance := goclientnew.Clearance{}
-	for _, key := range keys {
-		if len(values[key]) == 0 {
-			clearance = append(clearance, goclientnew.ClearanceRequirement{Key: key, Operator: string(api.ClearanceOperatorExists)})
-			continue
-		}
-		slices.Sort(values[key])
-		clearance = append(clearance, goclientnew.ClearanceRequirement{Key: key, Operator: string(api.ClearanceOperatorIn), Values: values[key]})
-	}
-	return clearance
+	return cubapi.ClearanceCoveringGuards(conflicts)
 }

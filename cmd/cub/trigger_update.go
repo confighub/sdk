@@ -29,6 +29,10 @@ patches only the fields the flags set:
 `+"```"+`
   cub trigger update --space my-space --patch my-trigger --label owner=platform --warn
 `+"```"+`
+A patch that names the function replaces its arguments with the ones given, so naming it with none clears them:
+`+"```"+`
+  cub trigger update --space my-space --patch my-trigger Mutation Kubernetes/YAML vet-placeholders
+`+"```"+`
 
 Function arguments can be provided as positional arguments or as named arguments using --argumentname=value syntax.
 Once a named argument is used, all subsequent arguments must be named. Use "--" to separate command flags from function arguments when using named function arguments.
@@ -352,9 +356,13 @@ func triggerUpdateCmdRun(cmd *cobra.Command, args []string) error {
 			patchData["ToolchainType"] = args[2]
 			if invocationSlug == "" {
 				patchData["FunctionName"] = args[3]
-				if len(args) > 4 {
-					patchData["Arguments"] = parseFunctionArguments(args[4:])
+				// The function's arguments are the ones given, none when none are: kept, the
+				// previous function's would be passed to one that may not take them.
+				arguments := parseFunctionArguments(args[4:])
+				if arguments == nil {
+					arguments = []goclientnew.FunctionArgument{}
 				}
+				patchData["Arguments"] = arguments
 			}
 		}
 

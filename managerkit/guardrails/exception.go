@@ -152,8 +152,7 @@ any other.`,
 
 func exceptionAddCmd(preflight Preflight, rules []string) *cobra.Command {
 	var output, rule, reason, resource string
-	var guards, clearance []string
-	var commit cliutil.CommitFlags
+	var commit write.CommitFlags
 	cmd := &cobra.Command{
 		Use:   "add <space>/<unit> --rule <rule> --reason <why>",
 		Short: "Except a resource from a guardrail rule",
@@ -185,7 +184,7 @@ Rules:
 			if strings.TrimSpace(reason) == "" {
 				return fmt.Errorf("--reason is required: it records why the resource is excepted")
 			}
-			changeDesc, dryRun, err := commit.Validate(fmt.Sprintf("except %s from %s: %s", args[0], rule, reason))
+			change, err := commit.Change(fmt.Sprintf("except %s from %s: %s", args[0], rule, reason))
 			if err != nil {
 				return err
 			}
@@ -216,30 +215,24 @@ Rules:
 					WhereResource: where,
 				})
 			}
-			change, err := guardedChange(changeDesc, dryRun, guards, clearance)
-			if err != nil {
-				return err
-			}
 			res, err := cubapi.InvokeFunctions(cmd.Context(), client, fns, ref.Selector(), change)
 			if err != nil {
 				return err
 			}
-			return write.ReportMutations(cmd, "exception add", ref.SpaceSlug, dryRun, output, res)
+			return write.ReportMutations(cmd, "exception add", ref.SpaceSlug, change.DryRun(), output, res)
 		},
 	}
 	managerkit.AddOutputFlag(cmd, &output)
 	cmd.Flags().StringVar(&rule, "rule", "", "the rule to except the resource from (required)")
 	cmd.Flags().StringVar(&reason, "reason", "", "why the resource is excepted, recorded as the annotation's value (required)")
 	cmd.Flags().StringVar(&resource, "resource", "", "the resource, as <type>/[<namespace>/]<name>, such as apps/v1/Deployment/shop/web; required when the Unit holds more than one")
-	bindGuardFlags(cmd, &guards, &clearance)
 	commit.Bind(cmd)
 	return cmd
 }
 
 func exceptionRemoveCmd(preflight Preflight, rules []string) *cobra.Command {
 	var output, rule, resource string
-	var guards, clearance []string
-	var commit cliutil.CommitFlags
+	var commit write.CommitFlags
 	cmd := &cobra.Command{
 		Use:   "remove <space>/<unit> --rule <rule>",
 		Short: "Remove a resource's exception from a guardrail rule",
@@ -256,7 +249,7 @@ Rules:
 			if err := checkRule(rule, rules); err != nil {
 				return err
 			}
-			changeDesc, dryRun, err := commit.Validate(fmt.Sprintf("remove the exception of %s from %s", args[0], rule))
+			change, err := commit.Change(fmt.Sprintf("remove the exception of %s from %s", args[0], rule))
 			if err != nil {
 				return err
 			}
@@ -308,21 +301,16 @@ Rules:
 					WhereResource: where,
 				})
 			}
-			change, err := guardedChange(changeDesc, dryRun, guards, clearance)
-			if err != nil {
-				return err
-			}
 			res, err := cubapi.InvokeFunctions(cmd.Context(), client, fns, ref.Selector(), change)
 			if err != nil {
 				return err
 			}
-			return write.ReportMutations(cmd, "exception remove", ref.SpaceSlug, dryRun, output, res)
+			return write.ReportMutations(cmd, "exception remove", ref.SpaceSlug, change.DryRun(), output, res)
 		},
 	}
 	managerkit.AddOutputFlag(cmd, &output)
 	cmd.Flags().StringVar(&rule, "rule", "", "the rule whose exception to remove (required)")
 	cmd.Flags().StringVar(&resource, "resource", "", "only this resource, as <type>/[<namespace>/]<name>, such as apps/v1/Deployment/shop/web")
-	bindGuardFlags(cmd, &guards, &clearance)
 	commit.Bind(cmd)
 	return cmd
 }
@@ -606,43 +594,4 @@ func resourceRef(resourceType, resourceName string) string {
 // kindOf is the kind of a Kubernetes ResourceType, apiVersion/kind.
 func kindOf(resourceType string) string {
 	return resourceType[strings.LastIndex(resourceType, "/")+1:]
-}
-
-// bindGuardFlags registers --guard and --clearance on an exception command.
-func bindGuardFlags(cmd *cobra.Command, guards, clearance *[]string) {
-	cmd.Flags().StringArrayVar(guards, "guard", nil,
-		"reason to record on the exception annotation, as KEY=VALUE (repeatable), such as Override=External; the change is cleared for it too")
-	cmd.Flags().StringArrayVar(clearance, "clearance", nil,
-		"guarded reason the change is cleared for (repeatable): KEY, KEY=VALUE[;VALUE...], KEY!=VALUE[;VALUE...], or !KEY")
-}
-
-// guardedChange is the change an exception command makes: guards recorded on what it writes, and
-// a clearance that covers them, since a change has to be cleared for the guards it records.
-func guardedChange(changeDesc string, dryRun bool, guardSpecs, clearanceSpecs []string) (cubapi.Change, error) {
-	change := write.Change(changeDesc, dryRun)
-	guards, err := cubapi.ParseGuards("guard", guardSpecs)
-	if err != nil {
-		return change, err
-	}
-	clearance, err := cubapi.ParseClearance(clearanceSpecs)
-	if err != nil {
-		return change, err
-	}
-	keys := make([]string, 0, len(guards))
-	for key := range guards {
-		keys = append(keys, key)
-	}
-	sort.Strings(keys)
-	for _, key := range keys {
-		clearance = append(clearance, goclientnew.ClearanceRequirement{
-			Key: key, Operator: string(api.ClearanceOperatorIn), Values: []string{guards[key]},
-		})
-	}
-	if len(guards) > 0 {
-		change.Guards = guards
-	}
-	if len(clearance) > 0 {
-		change.Clearance = clearance
-	}
-	return change, nil
 }

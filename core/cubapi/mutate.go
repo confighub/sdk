@@ -44,13 +44,58 @@ type Change struct {
 	// Guards are recorded on the paths the change writes, so a later change has to be cleared
 	// for them before overwriting those paths, this one included: Clearance has to cover them.
 	Guards goclientnew.GuardStamp
+	// InheritedGuards are recorded the same way, and also travel: a clone of the Unit receives
+	// them, and a merge carries them to the Units downstream.
+	InheritedGuards goclientnew.GuardStamp
 	// Clearance is the guarded reasons the change is cleared for. A path whose guards it does
 	// not cover is not written, and the withheld change is reported as a conflict.
 	Clearance goclientnew.Clearance
+	// ChangeSet names the ChangeSet to make the change in, by space/slug or UUID. A commit opens
+	// it on the Units the change selects, all of them or none, so their revisions are recorded
+	// in it; it stays open on them for review, and none of its revisions can be released until
+	// it is closed.
+	ChangeSet string
 }
 
 // DryRun reports whether this is a preview (no Description).
 func (ch Change) DryRun() bool { return ch.Description == "" }
+
+// GuardParams are a Change's guards and clearance as the query parameters every endpoint that
+// writes a Unit's configuration takes them in: JSON, and nil where the Change has none.
+type GuardParams struct {
+	Guards          *string
+	InheritedGuards *string
+	Clearance       *string
+}
+
+// GuardParams encodes ch's guards and clearance for a request. A caller writing a Unit through
+// an endpoint this package does not wrap copies them onto that endpoint's parameters, so the
+// write is held to the same guards as one this package makes.
+func (ch Change) GuardParams() (GuardParams, error) {
+	var gp GuardParams
+	encode := func(v any, n int) (*string, error) {
+		if n == 0 {
+			return nil, nil
+		}
+		encoded, err := json.Marshal(v)
+		if err != nil {
+			return nil, err
+		}
+		s := string(encoded)
+		return &s, nil
+	}
+	var err error
+	if gp.Guards, err = encode(ch.Guards, len(ch.Guards)); err != nil {
+		return gp, err
+	}
+	if gp.InheritedGuards, err = encode(ch.InheritedGuards, len(ch.InheritedGuards)); err != nil {
+		return gp, err
+	}
+	if gp.Clearance, err = encode(ch.Clearance, len(ch.Clearance)); err != nil {
+		return gp, err
+	}
+	return gp, nil
+}
 
 // include is the request's include for what ch asks the server to return.
 func (ch Change) include() *string {
@@ -160,6 +205,17 @@ type UnitOutcome struct {
 	// Outputs holds function output types mapped to embedded-JSON output data
 	// (e.g. the result of a read-only function like get-resources).
 	Outputs map[string]string
+	// Conflicts are what the change did not write, or on a dry run would not: above all each
+	// path whose guards [Change.Clearance] did not cover. The rest of the change is written.
+	Conflicts []goclientnew.MutationConflict
+}
+
+// conflictList is the conflicts of a response, nil when there are none.
+func conflictList(list *goclientnew.MutationConflictList) []goclientnew.MutationConflict {
+	if list == nil || len(*list) == 0 {
+		return nil
+	}
+	return *list
 }
 
 // Result aggregates the per-unit outcomes of a mutation.
@@ -223,7 +279,24 @@ func baseRequest(sel Selector, ch Change) goclientnew.FunctionInvocationsRequest
 	}
 }
 
+// EvaluateTriggers runs validating Triggers on the Units sel selects and records what they find
+// on each Unit, as its own Triggers do when it changes: each failure in ValidationErrors, or in
+// ValidationWarnings for a Trigger that warns, with the ValidationResults behind it, and each pass
+// clearing the gate. Running a Trigger again is how its Units take a change to it -- to its Warn,
+// say -- since a change to a Trigger re-evaluates only the Units of its own Space. It changes no
+// configuration, so it has no dry run. sel.ToolchainType has to be the Triggers'.
+func EvaluateTriggers(ctx context.Context, c *Client, triggers []goclientnew.UUID, sel Selector) (*Result, error) {
+	req := baseRequest(sel, Change{})
+	req.Triggers = triggers
+	req.UpdateValidationResults = true
+	return invokeRequest(ctx, c, sel, Change{}, false, req)
+}
+
 func invoke(ctx context.Context, c *Client, sel Selector, ch Change, req goclientnew.FunctionInvocationsRequest) (*Result, error) {
+	return invokeRequest(ctx, c, sel, ch, ch.DryRun(), req)
+}
+
+func invokeRequest(ctx context.Context, c *Client, sel Selector, ch Change, dryRun bool, req goclientnew.FunctionInvocationsRequest) (*Result, error) {
 	params := &goclientnew.InvokeFunctionsOnOrgParams{}
 	if sel.Where != "" {
 		params.Where = &sel.Where
@@ -240,27 +313,20 @@ func invoke(ctx context.Context, c *Client, sel Selector, ch Change, req goclien
 	if sel.ExecutorSpace != "" {
 		params.ExecutorSpace = &sel.ExecutorSpace
 	}
-	if ch.DryRun() {
-		dryRun := "true"
-		params.DryRun = &dryRun
+	if dryRun {
+		dryRunParam := "true"
+		params.DryRun = &dryRunParam
 	}
 	params.Include = ch.include()
-	// Guards and clearance travel as JSON query parameters.
-	if len(ch.Guards) > 0 {
-		encoded, err := json.Marshal(ch.Guards)
-		if err != nil {
-			return nil, err
-		}
-		guards := string(encoded)
-		params.Guards = &guards
+	gp, err := ch.GuardParams()
+	if err != nil {
+		return nil, err
 	}
-	if len(ch.Clearance) > 0 {
-		encoded, err := json.Marshal(ch.Clearance)
-		if err != nil {
-			return nil, err
-		}
-		clearance := string(encoded)
-		params.Clearance = &clearance
+	params.Guards, params.InheritedGuards, params.Clearance = gp.Guards, gp.InheritedGuards, gp.Clearance
+	opening := Selector{Where: sel.Where, WhereData: sel.WhereData, ResourceType: sel.ResourceType,
+		IncludeHidden: sel.IncludeHidden, ToolchainType: sel.toolchain()}
+	if params.ChangeSetId, err = ch.OpenChangeSet(ctx, c, opening); err != nil {
+		return nil, err
 	}
 
 	res, err := c.API.InvokeFunctionsOnOrgWithResponse(ctx, params, req)
@@ -271,7 +337,7 @@ func invoke(ctx context.Context, c *Client, sel Selector, ch Change, req goclien
 	if responses == nil {
 		responses = res.JSON207 // partial success/failure
 	}
-	out := &Result{DryRun: ch.DryRun()}
+	out := &Result{DryRun: dryRun}
 	if responses != nil {
 		for i := range *responses {
 			fr := &(*responses)[i]
@@ -286,6 +352,7 @@ func invoke(ctx context.Context, c *Client, sel Selector, ch Change, req goclien
 				Mutations:    fr.Mutations,
 				Outputs:      fr.Outputs,
 				Diff:         fr.Diff,
+				Conflicts:    conflictList(fr.Conflicts),
 			})
 		}
 	}
@@ -307,6 +374,14 @@ func UpgradeUnits(ctx context.Context, c *Client, where string, ch Change) (*Res
 		params.DryRun = &dryRun
 	}
 	params.Include = ch.include()
+	gp, err := ch.GuardParams()
+	if err != nil {
+		return nil, err
+	}
+	params.Guards, params.InheritedGuards, params.Clearance = gp.Guards, gp.InheritedGuards, gp.Clearance
+	if params.ChangeSetId, err = ch.OpenChangeSet(ctx, c, Selector{Where: where}); err != nil {
+		return nil, err
+	}
 
 	// On commit, record the change description via a merge patch; on dry-run the
 	// patch is empty.
@@ -331,7 +406,7 @@ func UpgradeUnits(ctx context.Context, c *Client, where string, ch Change) (*Res
 	if responses != nil {
 		for i := range *responses {
 			ur := &(*responses)[i]
-			oc := UnitOutcome{Success: ur.Error == nil, Error: errString(ur.Error), Diff: ur.Diff}
+			oc := UnitOutcome{Success: ur.Error == nil, Error: errString(ur.Error), Diff: ur.Diff, Conflicts: conflictList(ur.Conflicts)}
 			if ur.Unit != nil {
 				oc.UnitID = ur.Unit.UnitID.String()
 				oc.SpaceID = ur.Unit.SpaceID.String()

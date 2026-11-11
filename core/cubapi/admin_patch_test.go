@@ -184,3 +184,37 @@ func bytesContainsNull(b []byte) bool {
 	}
 	return walk(m)
 }
+
+// A Trigger described with a function states the function's arguments, an empty list when it takes
+// none, so that patching it replaces the arguments of the function it ran before. Without a
+// function, the description says nothing about either.
+func TestTriggerMergePatchStatesTheFunctionsArguments(t *testing.T) {
+	b, err := triggerMergePatch(goclientnew.Trigger{Slug: "rule", FunctionName: "vet-namespace"})
+	if err != nil {
+		t.Fatalf("triggerMergePatch: %v", err)
+	}
+	m := patchMap(t, b)
+	if args, ok := m["Arguments"].([]any); !ok || len(args) != 0 {
+		t.Errorf("patch[Arguments] = %#v, want an empty list", m["Arguments"])
+	}
+	if m["FunctionName"] != "vet-namespace" || m["Slug"] != "rule" {
+		t.Errorf("patch lost the described fields: %v", m)
+	}
+
+	b, err = triggerMergePatch(goclientnew.Trigger{Slug: "rule", FunctionName: "vet-cel",
+		Arguments: Arguments([]api.FunctionArgument{{ParameterName: "expression", Value: "true"}})})
+	if err != nil {
+		t.Fatalf("triggerMergePatch: %v", err)
+	}
+	if args, ok := patchMap(t, b)["Arguments"].([]any); !ok || len(args) != 1 {
+		t.Errorf("patch[Arguments] = %#v, want the one argument", patchMap(t, b)["Arguments"])
+	}
+
+	b, err = triggerMergePatch(goclientnew.Trigger{Slug: "rule", Warn: true})
+	if err != nil {
+		t.Fatalf("triggerMergePatch: %v", err)
+	}
+	if _, ok := patchMap(t, b)["Arguments"]; ok {
+		t.Errorf("a description without a function claims its arguments: %s", b)
+	}
+}

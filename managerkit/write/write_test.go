@@ -221,3 +221,81 @@ func TestSummarizeTolerantOfNilResults(t *testing.T) {
 		t.Errorf("nil results = %+v", rep)
 	}
 }
+
+// The flags a mutating command takes become one Change: a dry run without --commit, the guards
+// to record, and a clearance that covers them as well as what --clearance names, so a second
+// run is not withheld from the paths the first one guarded.
+func TestCommitFlagsChange(t *testing.T) {
+	c := CommitFlags{Guards: []string{"Override=External"}, InheritedGuards: []string{"Policy=PSS"}, Clearance: []string{"Link"}, ChangeSet: " platform/hardening "}
+	ch, err := c.Change("summary")
+	if err != nil {
+		t.Fatal(err)
+	}
+	if !ch.DryRun() || !ch.Diff {
+		t.Errorf("without --commit the change is a dry run asking for diffs, got %+v", ch)
+	}
+	if ch.ChangeSet != "platform/hardening" {
+		t.Errorf("ChangeSet = %q, want platform/hardening", ch.ChangeSet)
+	}
+	if ch.Guards["Override"] != "External" || ch.InheritedGuards["Policy"] != "PSS" {
+		t.Errorf("guards not recorded: %+v %+v", ch.Guards, ch.InheritedGuards)
+	}
+	var got []string
+	for _, r := range ch.Clearance {
+		got = append(got, r.Key+" "+r.Operator+" "+strings.Join(r.Values, ";"))
+	}
+	want := []string{"Link Exists ", "Override In External", "Policy In PSS"}
+	if strings.Join(got, "|") != strings.Join(want, "|") {
+		t.Errorf("clearance = %q, want %q", got, want)
+	}
+
+	c.Commit = true
+	if _, err := c.Change("summary"); err == nil || !strings.Contains(err.Error(), "--change-desc") {
+		t.Errorf("--commit without --change-desc was accepted: %v", err)
+	}
+	c.ChangeDesc = "why"
+	if ch, err = c.Change("summary"); err != nil || ch.DryRun() || ch.Description != "why" {
+		t.Errorf("--commit --change-desc did not commit: %+v %v", ch, err)
+	}
+
+	if _, err := (CommitFlags{Guards: []string{"NoValue"}}).Change("summary"); err == nil {
+		t.Error("a guard without =VALUE was accepted")
+	}
+	if ch, _ := (CommitFlags{}).Change("summary"); ch.Guards != nil || ch.Clearance != nil {
+		t.Errorf("no flags should mean no guards or clearance, got %+v", ch)
+	}
+}
+
+// What the guards held back is reported per Unit with the clearance that would let it through,
+// even though the rest of the change was written and the Unit counts as changed.
+func TestReportMutationsShowsWithheld(t *testing.T) {
+	op := goclientnew.Delete
+	res := &cubapi.Result{Outcomes: []cubapi.UnitOutcome{{
+		UnitID: uuid.NewString(), SpaceSlug: "prod", UnitSlug: "web", Success: true, HasMutations: true,
+		Conflicts: []goclientnew.MutationConflict{{
+			Reason:   "Guarded",
+			Path:     "spec.template.spec.securityContext.seccompProfile",
+			Resource: &goclientnew.ResourceInfo{ResourceName: "shop/web"},
+			Guards:   []goclientnew.WithheldGuard{{Key: "Owner", Value: "Platform"}},
+			Source:   &goclientnew.MutationInfo{MutationType: &op},
+		}},
+	}}}
+	rep := Summarize("harden", "prod", false, res)
+	if len(rep.Outcomes) != 1 || len(rep.Outcomes[0].Withheld) != 1 || !rep.Outcomes[0].Mutated {
+		t.Fatalf("withheld conflict not kept on a mutated Unit: %+v", rep.Outcomes)
+	}
+	var out bytes.Buffer
+	WriteWithheld(&out, rep)
+	for _, want := range []string{"Withheld 1 change(s) on prod/web", "Guarded", "shop/web",
+		"spec.template.spec.securityContext.seccompProfile", `--clearance "Owner=Platform"`} {
+		if !strings.Contains(out.String(), want) {
+			t.Errorf("missing %q in:\n%s", want, out.String())
+		}
+	}
+	rep.DryRun = true
+	out.Reset()
+	WriteWithheld(&out, rep)
+	if !strings.Contains(out.String(), "Would withhold 1 change(s)") {
+		t.Errorf("dry run should say what it would withhold:\n%s", out.String())
+	}
+}

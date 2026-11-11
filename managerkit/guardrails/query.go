@@ -51,18 +51,20 @@ func Status(ctx context.Context, client *cubapi.Client) ([]StatusRow, error) {
 	return rows, nil
 }
 
-// Annotate writes one annotation onto a Unit's resources.
+// Annotate writes one annotation onto a Unit's resources, as change describes: on commit, with
+// the guards and clearance it carries, or on a dry run, what writing it would do. The result
+// reports what the guards withheld.
 //
 // It is the producing half of annotate-then-validate: a manager cannot attach an
 // ValidationWarning itself -- only a failed Trigger can -- so a finding that no
 // single resource can express is written as an annotation, and a rule in the
 // pack warns for as long as the annotation is there.
-func Annotate(ctx context.Context, client *cubapi.Client, spaceID, unitSlug, key, value, changeDesc string) error {
+func Annotate(ctx context.Context, client *cubapi.Client, spaceID, unitSlug, key, value string, change cubapi.Change) (*cubapi.Result, error) {
 	where := cubapi.Where{}.Eq("SpaceID", spaceID).Slug(unitSlug)
 	if err := where.Err(); err != nil {
-		return err
+		return nil, err
 	}
-	_, err := cubapi.InvokeFunction(ctx, client,
+	return cubapi.InvokeFunction(ctx, client,
 		api.FunctionInvocation{
 			FunctionName: "set-annotation",
 			Arguments: []api.FunctionArgument{
@@ -71,8 +73,7 @@ func Annotate(ctx context.Context, client *cubapi.Client, spaceID, unitSlug, key
 			},
 		},
 		cubapi.Selector{Where: where.String()},
-		cubapi.Change{Description: changeDesc})
-	return err
+		change)
 }
 
 // KubernetesSpaces is the set of Space slugs holding at least one

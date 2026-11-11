@@ -213,7 +213,7 @@ func EnsureTrigger(ctx context.Context, c *Client, trigger goclientnew.Trigger) 
 		}
 		return res.JSON200, nil
 	}
-	patch, err := mergePatch[goclientnew.PatchTriggerApplicationMergePatchPlusJSONBody](trigger)
+	patch, err := triggerMergePatch(trigger)
 	if err != nil {
 		return nil, err
 	}
@@ -229,6 +229,23 @@ func EnsureTrigger(ctx context.Context, c *Client, trigger goclientnew.Trigger) 
 		func(r goclientnew.TriggerCreateOrUpdateResponse) (*goclientnew.Trigger, *goclientnew.ResponseError) {
 			return r.Trigger, r.Error
 		})
+}
+
+// triggerMergePatch is the merge patch of a Trigger's description. A description that names a
+// function states the function's whole invocation, so its Arguments go in the patch even when
+// there are none: left out, a merge patch would keep the arguments of the function the Trigger
+// ran before, which the new one may not take.
+func triggerMergePatch(trigger goclientnew.Trigger) ([]byte, error) {
+	patch, err := mergePatch[goclientnew.PatchTriggerApplicationMergePatchPlusJSONBody](trigger)
+	if err != nil || trigger.FunctionName == "" || len(trigger.Arguments) > 0 {
+		return patch, err
+	}
+	var m map[string]any
+	if err := json.Unmarshal(patch, &m); err != nil {
+		return nil, fmt.Errorf("cubapi: reread the patch of trigger %s: %w", trigger.Slug, err)
+	}
+	m["Arguments"] = []any{}
+	return json.Marshal(m)
 }
 
 // EnsureInvocation creates a stored Invocation in invocation.SpaceID or patches
