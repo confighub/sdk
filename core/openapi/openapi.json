@@ -75,10 +75,10 @@
           {
             "name": "include",
             "in": "query",
-            "description": "Include clause for expanding related entities in the response for Component.\nThe attribute names are case-sensitive, PascalCase, and\nexpected in a comma-separated list format as in the JSON encoding.\n\nSupported attributes for Component are OrganizationID, Permissions.\n\nThe whole string must be query-encoded.",
+            "description": "Include clause for expanding related entities in the response for Component.\nThe attribute names are case-sensitive, PascalCase, and\nexpected in a comma-separated list format as in the JSON encoding.\n\nSupported attributes for Component are AllowedChangeWorkflowIDs, OrganizationID, Permissions.\n\nThe whole string must be query-encoded.",
             "required": false,
             "schema": {
-              "pattern": "^\\s*(OrganizationID|Permissions)\\s*(?:,\\s*(?:OrganizationID|Permissions)\\s*)*$",
+              "pattern": "^\\s*(AllowedChangeWorkflowIDs|OrganizationID|Permissions)\\s*(?:,\\s*(?:AllowedChangeWorkflowIDs|OrganizationID|Permissions)\\s*)*$",
               "type": "string"
             }
           },
@@ -277,10 +277,10 @@
           {
             "name": "include",
             "in": "query",
-            "description": "Include clause for expanding related entities in the response for Component.\nThe attribute names are case-sensitive, PascalCase, and\nexpected in a comma-separated list format as in the JSON encoding.\n\nSupported attributes for Component are OrganizationID, Permissions.\n\nThe whole string must be query-encoded.",
+            "description": "Include clause for expanding related entities in the response for Component.\nThe attribute names are case-sensitive, PascalCase, and\nexpected in a comma-separated list format as in the JSON encoding.\n\nSupported attributes for Component are AllowedChangeWorkflowIDs, OrganizationID, Permissions.\n\nThe whole string must be query-encoded.",
             "required": false,
             "schema": {
-              "pattern": "^\\s*(OrganizationID|Permissions)\\s*(?:,\\s*(?:OrganizationID|Permissions)\\s*)*$",
+              "pattern": "^\\s*(AllowedChangeWorkflowIDs|OrganizationID|Permissions)\\s*(?:,\\s*(?:AllowedChangeWorkflowIDs|OrganizationID|Permissions)\\s*)*$",
               "type": "string"
             }
           },
@@ -9073,10 +9073,10 @@
           {
             "name": "include",
             "in": "query",
-            "description": "Include clause for expanding related entities in the response for Component.\nThe attribute names are case-sensitive, PascalCase, and\nexpected in a comma-separated list format as in the JSON encoding.\n\nSupported attributes for Component are OrganizationID, Permissions.\n\nThe whole string must be query-encoded.",
+            "description": "Include clause for expanding related entities in the response for Component.\nThe attribute names are case-sensitive, PascalCase, and\nexpected in a comma-separated list format as in the JSON encoding.\n\nSupported attributes for Component are AllowedChangeWorkflowIDs, OrganizationID, Permissions.\n\nThe whole string must be query-encoded.",
             "required": false,
             "schema": {
-              "pattern": "^\\s*(OrganizationID|Permissions)\\s*(?:,\\s*(?:OrganizationID|Permissions)\\s*)*$",
+              "pattern": "^\\s*(AllowedChangeWorkflowIDs|OrganizationID|Permissions)\\s*(?:,\\s*(?:AllowedChangeWorkflowIDs|OrganizationID|Permissions)\\s*)*$",
               "type": "string"
             }
           },
@@ -9500,10 +9500,10 @@
           {
             "name": "include",
             "in": "query",
-            "description": "Include clause for expanding related entities in the response for Component.\nThe attribute names are case-sensitive, PascalCase, and\nexpected in a comma-separated list format as in the JSON encoding.\n\nSupported attributes for Component are OrganizationID, Permissions.\n\nThe whole string must be query-encoded.",
+            "description": "Include clause for expanding related entities in the response for Component.\nThe attribute names are case-sensitive, PascalCase, and\nexpected in a comma-separated list format as in the JSON encoding.\n\nSupported attributes for Component are AllowedChangeWorkflowIDs, OrganizationID, Permissions.\n\nThe whole string must be query-encoded.",
             "required": false,
             "schema": {
-              "pattern": "^\\s*(OrganizationID|Permissions)\\s*(?:,\\s*(?:OrganizationID|Permissions)\\s*)*$",
+              "pattern": "^\\s*(AllowedChangeWorkflowIDs|OrganizationID|Permissions)\\s*(?:,\\s*(?:AllowedChangeWorkflowIDs|OrganizationID|Permissions)\\s*)*$",
               "type": "string"
             }
           },
@@ -14913,7 +14913,7 @@
           "Link"
         ],
         "summary": "Bulk create (copy) multiple links",
-        "description": "Copy existing links with retargeted From and/or To units. Select source links via where/filter, then retarget using reverse, from_downstream_where (optionally with to_downstream_where), or where_space/filter_space parameters.",
+        "description": "Copy existing links with retargeted From and/or To units. Select source links via where/filter, then retarget using reverse, from_downstream_where (optionally with to_downstream_where), or where_space/filter_space parameters. With from_refs, create the NeedsProvides links the configuration of the Kubernetes/YAML units where_unit and filter_unit select calls for instead; with from_backing_units, create links from the ConfigHub/YAML units they select.",
         "operationId": "BulkCreateLinks",
         "parameters": [
           {
@@ -14998,6 +14998,15 @@
             }
           },
           {
+            "name": "from_refs",
+            "in": "query",
+            "description": "Create the NeedsProvides links between the Kubernetes/YAML units where_unit and filter_unit select that their configuration calls for, as upload infers them: from the references a resource makes to another, the Namespace a resource is in, the CRD that defines its type, and the label selectors that select a workload's pods. Links are inferred among the units of one space, and among those of spaces with the same ReleaseTargetID. A resource that names no namespace, or names the placeholder, is in its space's Namespace label, and in a namespace of the space's own if it has none. Each link is created in its from unit's space, with AutoUpdate, and the request body is applied to it, which can set its labels, annotations, delete gates and AutoUpdate but not its UpdateType. No link is created between two units that have a NeedsProvides link between them already, in either direction, and none that would close a cycle among the links created. Units of other toolchains are passed over. Takes none of the parameters that select links to copy or where the copies go.",
+            "required": false,
+            "schema": {
+              "type": "boolean"
+            }
+          },
+          {
             "name": "with_backing_units",
             "in": "query",
             "description": "Give each Link written a backing Unit if it has none: a ConfigHub/YAML Unit holding the Link's configuration, which is then kept in step with it.",
@@ -15018,7 +15027,7 @@
           {
             "name": "where_unit",
             "in": "query",
-            "description": "The specified string is an expression for the purpose of filtering\nthe list of Units returned. The expression syntax was inspired by SQL.\nIt supports conjunctions using `AND` of relational expressions of the form *attribute*\n*operator* *attribute_or_literal*. The attribute names are case-sensitive and PascalCase,\nas in the JSON encoding.\nStrings support the following operators: `\u003c`, `\u003e`, `\u003c=`, `\u003e=`, `=`, `!=`, `LIKE`, `NOT LIKE`, `ILIKE`, `~~`, `!~~`, `~`, `~*`, `!~`, `!~*`, `IN`, `NOT IN`.\nString pattern operators: `LIKE` and `~~` for pattern matching with `%` and `_` wildcards,\n`ILIKE` for case-insensitive pattern matching, `NOT LIKE` and `!~~` for negated pattern matching.\nString regex operators: `~` for regex matching, `~*` for case-insensitive regex,\n`!~` and `!~*` for regex not matching (case-sensitive and insensitive).\nIntegers support the following operators: `\u003c`, `\u003e`, `\u003c=`, `\u003e=`, `=`, `!=`, `IN`, `NOT IN`.\nUUIDs and boolean attributes support equality and inequality only.\nUUID and time literals must be quoted as string literals.\nString literals are quoted with single quotes, such as `'string'`.\nTime literals use the same form as when serialized as JSON,\nsuch as: `CreatedAt \u003e '2025-02-18T23:16:34'`.\nInteger and boolean literals are also supported for attributes of those types.\nArrays support the `?` operator to to match any element of the array,\nas in `FromLinkID ? '7c61626f-ddbe-41af-93f6-b69f4ab6d308'`.\nArrays can perform LEN() to check for length, as in `LEN(FromLinkID) \u003e 0`.\nAn attribute naming a list of other entities can be filtered on their attributes with a `*` segment,\nas in `FromLink.*.Slug = 'upgrade-app'`, which holds when any element satisfies it.\nWithout the `*` such a reference is an error, since it names no single value to compare.\nMap support the dot notation to specify a particular map key, as in `Labels.tier = 'Backend'`.\nMaps support `IS NULL` and `IS NOT NULL` with dot notation to check for key absence or presence,\nas in `Labels.tier IS NULL` (key doesn't exist) or `Labels.tier IS NOT NULL` (key exists).\nComparison results can be tested with `IS TRUE`, `IS FALSE`, `IS NOT TRUE`, and `IS NOT FALSE`.\nThese are useful for nullable columns: `MergeSourceID = '\u003cuuid\u003e' IS NOT FALSE` matches rows where MergeSourceID equals the value OR is NULL.\nThe `IN` and `NOT IN` operators accept a comma-separated list of values in parentheses,\nsuch as `Slug IN ('slugone', 'slugtwo')` or `Labels.environment IN ('prod', 'staging')`.\nConjunctions are supported using the `AND` operator.\nAn example conjunction is:\n`CreatedAt \u003e= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.\n\nSupported attributes for filtering on Unit: Annotations, ApplyGates, ApplyWarnings, ChangeSetID, Conflicts, CreatedAt, DataHash, DeleteGates, DestroyGates, DisplayName, FromLinkID, HeadRevisionID, HeadRevisionNum, HeadUnitEventNum, HiddenReason, Labels, LastChangeDescription, LastReleasedRevisionNum, LinkFindings, MutationSources, NeededPaths, OrganizationID, Permissions, ProvidedPaths, Slug, SpaceID, TargetID, ToolchainType, UnitID, Unreleasable, UpdatedAt, UpstreamRevisionNum, UpstreamSpaceID, UpstreamUnitID, ValidationErrors, ValidationPassed, ValidationResults, ValidationTriggerIDs, ValidationWarnings, ValueTriggerIDs, Values.\n\nThe Units to create entities from, with from_backing_units.\n\nThe whole string must be query-encoded.",
+            "description": "The specified string is an expression for the purpose of filtering\nthe list of Units returned. The expression syntax was inspired by SQL.\nIt supports conjunctions using `AND` of relational expressions of the form *attribute*\n*operator* *attribute_or_literal*. The attribute names are case-sensitive and PascalCase,\nas in the JSON encoding.\nStrings support the following operators: `\u003c`, `\u003e`, `\u003c=`, `\u003e=`, `=`, `!=`, `LIKE`, `NOT LIKE`, `ILIKE`, `~~`, `!~~`, `~`, `~*`, `!~`, `!~*`, `IN`, `NOT IN`.\nString pattern operators: `LIKE` and `~~` for pattern matching with `%` and `_` wildcards,\n`ILIKE` for case-insensitive pattern matching, `NOT LIKE` and `!~~` for negated pattern matching.\nString regex operators: `~` for regex matching, `~*` for case-insensitive regex,\n`!~` and `!~*` for regex not matching (case-sensitive and insensitive).\nIntegers support the following operators: `\u003c`, `\u003e`, `\u003c=`, `\u003e=`, `=`, `!=`, `IN`, `NOT IN`.\nUUIDs and boolean attributes support equality and inequality only.\nUUID and time literals must be quoted as string literals.\nString literals are quoted with single quotes, such as `'string'`.\nTime literals use the same form as when serialized as JSON,\nsuch as: `CreatedAt \u003e '2025-02-18T23:16:34'`.\nInteger and boolean literals are also supported for attributes of those types.\nArrays support the `?` operator to to match any element of the array,\nas in `FromLinkID ? '7c61626f-ddbe-41af-93f6-b69f4ab6d308'`.\nArrays can perform LEN() to check for length, as in `LEN(FromLinkID) \u003e 0`.\nAn attribute naming a list of other entities can be filtered on their attributes with a `*` segment,\nas in `FromLink.*.Slug = 'upgrade-app'`, which holds when any element satisfies it.\nWithout the `*` such a reference is an error, since it names no single value to compare.\nMap support the dot notation to specify a particular map key, as in `Labels.tier = 'Backend'`.\nMaps support `IS NULL` and `IS NOT NULL` with dot notation to check for key absence or presence,\nas in `Labels.tier IS NULL` (key doesn't exist) or `Labels.tier IS NOT NULL` (key exists).\nComparison results can be tested with `IS TRUE`, `IS FALSE`, `IS NOT TRUE`, and `IS NOT FALSE`.\nThese are useful for nullable columns: `MergeSourceID = '\u003cuuid\u003e' IS NOT FALSE` matches rows where MergeSourceID equals the value OR is NULL.\nThe `IN` and `NOT IN` operators accept a comma-separated list of values in parentheses,\nsuch as `Slug IN ('slugone', 'slugtwo')` or `Labels.environment IN ('prod', 'staging')`.\nConjunctions are supported using the `AND` operator.\nAn example conjunction is:\n`CreatedAt \u003e= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.\n\nSupported attributes for filtering on Unit: Annotations, ApplyGates, ApplyWarnings, ChangeSetID, Conflicts, CreatedAt, DataHash, DeleteGates, DestroyGates, DisplayName, FromLinkID, HeadRevisionID, HeadRevisionNum, HeadUnitEventNum, HiddenReason, Labels, LastChangeDescription, LastReleasedRevisionNum, LinkFindings, MutationSources, NeededPaths, OrganizationID, Permissions, ProvidedPaths, Slug, SpaceID, TargetID, ToolchainType, UnitID, Unreleasable, UpdatedAt, UpstreamRevisionNum, UpstreamSpaceID, UpstreamUnitID, ValidationErrors, ValidationPassed, ValidationResults, ValidationTriggerIDs, ValidationWarnings, ValueTriggerIDs, Values.\n\nThe Units to create entities from, with from_backing_units, or to create links between, with from_refs.\n\nThe whole string must be query-encoded.",
             "required": false,
             "schema": {
               "type": "string"
@@ -15027,7 +15036,7 @@
           {
             "name": "filter_unit",
             "in": "query",
-            "description": "A Filter, by ID, over the Units to create entities from, with from_backing_units.",
+            "description": "A Filter, by ID, over the Units to create entities from, with from_backing_units, or to create links between, with from_refs.",
             "required": false,
             "schema": {
               "type": "string"
@@ -57708,7 +57717,8 @@
             "description": "The set of ChangeWorkflows that can be used for promotions and releases of this component's Variants, and for ChangeSets opened on their Units: a ChangeOrder or ChangeSet is governed by one workflow, which every component it reaches has to allow. Changing it requires Manage permission on the component. (optional)",
             "x-confighub-where": {
               "dataType": "[]uuid",
-              "references": "ChangeWorkflow"
+              "references": "ChangeWorkflow",
+              "expandable": true
             },
             "x-go-type-skip-optional-pointer": true
           },
@@ -58749,6 +58759,13 @@
       "ExtendedComponent": {
         "type": "object",
         "properties": {
+          "AllowedChangeWorkflows": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/ChangeWorkflow"
+            },
+            "x-go-type-skip-optional-pointer": true
+          },
           "Component": {
             "$ref": "#/components/schemas/Component"
           },

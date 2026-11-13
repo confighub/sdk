@@ -116,7 +116,7 @@ what to do with them: Include (the default) merges them first, as revisions that
 the change order; Skip leaves them out, as though the unit had already merged them; Error
 refuses, naming the unit, the link, and each revision. A unit it covers but has no changes for is marked and not
 changed: its start and end tags land on the same revision. That is what lets
-"cub release publish --revision ChangeOrder:<slug>" pin every unit of the space. Three things
+"cub release publish --revision ChangeOrder:<slug>" pin every unit of the space. Four things
 follow from what a change order is:
 
   - Units are cloned first, at the revision the change order starts from, and then upgraded
@@ -129,6 +129,12 @@ follow from what a change order is:
   - Promoting is idempotent. A unit already carrying the change order's end tag has taken the
     change and is passed over, so running a promotion that landed partway again finishes it. An
     aborted change order is not promoted anywhere.
+  - The change order is the record of the promotion: its tags mark what each space took, and
+    it carries the change's description and approvals. A changeset adds nothing to that, so a
+    promotion with --change-order needs no --changeset, unless the variant's units are already
+    in a changeset that is to stay open: every write to a unit in an open changeset has to name
+    it, so pass that one. Otherwise a changeset belongs where the change is first made, before
+    the change order exists.
 
 A change order with UpdateType Invoke propagates differently and reads the same. Its change is one
 invocation, run in each space rather than merged from an upstream: nothing is cloned, and the
@@ -203,7 +209,7 @@ Examples:
 
 func init() {
 	variantPromoteCmd.Flags().StringVar(&variantPromoteArgs.changeDescription, "change-desc", "", "change description recorded on the upgraded and cloned units")
-	variantPromoteCmd.Flags().StringVar(&variantPromoteArgs.changesetSlug, "changeset", "", "changeset to associate the upgraded and cloned units with")
+	variantPromoteCmd.Flags().StringVar(&variantPromoteArgs.changesetSlug, "changeset", "", "changeset to associate the upgraded and cloned units with. With --change-order, whose tags record the promotion, it is needed only when the units are already in an open changeset, which every write to them has to name")
 	variantPromoteCmd.Flags().StringVar(&variantPromoteArgs.changeorderSlug, "change-order", "", "change order to promote instead of everything the upstream has reached: it supplies the range, units it does not cover are passed over, a unit that has merged past where it starts is an error, and one short of it is handled as --prior-revisions says. A bare slug resolves in the upstream space of the space being promoted, or in the selected space otherwise. Units the variant does not have yet are cloned at the change order's start and then upgraded through it; ones created upstream after the change order was fixed are outside it and are not cloned, and --verbose lists them")
 	variantPromoteCmd.Flags().StringVar(&variantPromoteArgs.targetStage, "target-stage", "", "stage of the change order's ChangeWorkflow to promote into, promoting every variant the stage selects: it requires --change-order, the gates of the stage before are checked once for the whole stage, and a variant that fails is reported without stopping the ones after it. A space or --where-space narrows the stage. Without it, --change-order alone advances the change into the first stage it has not reached")
 	variantPromoteCmd.Flags().StringVar(&variantPromoteArgs.whereSpace, "where-space", "", "where expression selecting the spaces to promote, instead of naming one")

@@ -556,7 +556,8 @@
     "Component": {
       "AllowedChangeWorkflowIDs": {
         "dataType": "[]uuid",
-        "references": "ChangeWorkflow"
+        "references": "ChangeWorkflow",
+        "expandable": true
       },
       "Annotations": {
         "dataType": "map[string]string"

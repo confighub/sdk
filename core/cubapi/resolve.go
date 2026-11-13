@@ -253,6 +253,7 @@ const (
 	linkGetInclude           = "SpaceID,ToSpaceID,FromUnitID,ToUnitID"
 	channelGetInclude        = "SpaceID,Permissions"
 	commandRunGetInclude     = "SpaceID,ChannelID"
+	componentGetInclude      = "Permissions,AllowedChangeWorkflowIDs"
 )
 
 // ResolveSpace looks up one space by slug or UUID. A space is not itself
@@ -286,7 +287,7 @@ func ResolveSpace(ctx context.Context, c *Client, ref Ref, opts ResolveOpts,
 // organization-level, so ResolveOpts.Space is ignored.
 func ResolveComponent(ctx context.Context, c *Client, ref Ref, opts ResolveOpts) (*goclientnew.ExtendedComponent, error) {
 	r := resolver[goclientnew.ExtendedComponent]{
-		entity: "component", idField: "ComponentID", include: "Permissions", orgLevel: true,
+		entity: "component", idField: "ComponentID", include: componentGetInclude, orgLevel: true,
 		list: ListComponents,
 		slugOf: func(e *goclientnew.ExtendedComponent) string {
 			if e.Component == nil {

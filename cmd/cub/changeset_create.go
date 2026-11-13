@@ -28,7 +28,11 @@ func getChangeSetCreateHelp() string {
 
 SINGLE CHANGESET CREATION:
 
-Create a new changeset to record an entity changeset specification.
+Create a changeset to bound and lock a change where it is made, such as several edits in a base.
+To promote the change, close the changeset and create a change order that ends at its end tag
+(cub changeorder create --end-tag <space>/<changeset>-end). The change order records the change
+in each space it is promoted into, so those spaces need no changeset of their own, unless their
+units are already in one that is still open, which the promotion then names with --changeset.
 
 Examples:
 ` + "```" + `

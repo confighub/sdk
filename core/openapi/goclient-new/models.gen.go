@@ -4234,6 +4234,8 @@ type ExtendedCommandRun struct {
 
 // ExtendedComponent defines model for ExtendedComponent.
 type ExtendedComponent struct {
+	AllowedChangeWorkflows []ChangeWorkflow `json:"AllowedChangeWorkflows,omitempty" yaml:"AllowedChangeWorkflows,omitempty"`
+
 	// Component The Component a set of Variants make up. Each Variant is a Space naming the Component with ComponentID. The Component decides which ChangeWorkflows promotions and releases of its Variants, and ChangeSets opened on their Units, may use, whether one is required, and whether changes to the configuration of their Units have to be made in a ChangeSet or under a ChangeOrder.
 	Component *Component     `json:"Component,omitempty" yaml:"Component,omitempty"`
 	Error     *ResponseError `json:"Error,omitempty" yaml:"Error,omitempty"`
@@ -8716,7 +8718,7 @@ type BulkDeleteComponentsParams struct {
 	// The attribute names are case-sensitive, PascalCase, and
 	// expected in a comma-separated list format as in the JSON encoding.
 	//
-	// Supported attributes for Component are OrganizationID, Permissions.
+	// Supported attributes for Component are AllowedChangeWorkflowIDs, OrganizationID, Permissions.
 	//
 	// The whole string must be query-encoded.
 	Include *string `form:"include,omitempty" json:"include,omitempty" yaml:"include,omitempty"`
@@ -8844,7 +8846,7 @@ type BulkPatchComponentsParams struct {
 	// The attribute names are case-sensitive, PascalCase, and
 	// expected in a comma-separated list format as in the JSON encoding.
 	//
-	// Supported attributes for Component are OrganizationID, Permissions.
+	// Supported attributes for Component are AllowedChangeWorkflowIDs, OrganizationID, Permissions.
 	//
 	// The whole string must be query-encoded.
 	Include *string `form:"include,omitempty" json:"include,omitempty" yaml:"include,omitempty"`
@@ -13405,7 +13407,7 @@ type ListComponentsParams struct {
 	// The attribute names are case-sensitive, PascalCase, and
 	// expected in a comma-separated list format as in the JSON encoding.
 	//
-	// Supported attributes for Component are OrganizationID, Permissions.
+	// Supported attributes for Component are AllowedChangeWorkflowIDs, OrganizationID, Permissions.
 	//
 	// The whole string must be query-encoded.
 	Include *string `form:"include,omitempty" json:"include,omitempty" yaml:"include,omitempty"`
@@ -13493,7 +13495,7 @@ type GetComponentParams struct {
 	// The attribute names are case-sensitive, PascalCase, and
 	// expected in a comma-separated list format as in the JSON encoding.
 	//
-	// Supported attributes for Component are OrganizationID, Permissions.
+	// Supported attributes for Component are AllowedChangeWorkflowIDs, OrganizationID, Permissions.
 	//
 	// The whole string must be query-encoded.
 	Include *string `form:"include,omitempty" json:"include,omitempty" yaml:"include,omitempty"`
@@ -16003,6 +16005,9 @@ type BulkCreateLinksParams struct {
 	// ConfigHub/YAML Units, which hold the configuration of entities, are hidden with the HiddenReason `BackingUnit`.
 	IncludeHidden *string `form:"include_hidden,omitempty" json:"include_hidden,omitempty" yaml:"include_hidden,omitempty"`
 
+	// FromRefs Create the NeedsProvides links between the Kubernetes/YAML units where_unit and filter_unit select that their configuration calls for, as upload infers them: from the references a resource makes to another, the Namespace a resource is in, the CRD that defines its type, and the label selectors that select a workload's pods. Links are inferred among the units of one space, and among those of spaces with the same ReleaseTargetID. A resource that names no namespace, or names the placeholder, is in its space's Namespace label, and in a namespace of the space's own if it has none. Each link is created in its from unit's space, with AutoUpdate, and the request body is applied to it, which can set its labels, annotations, delete gates and AutoUpdate but not its UpdateType. No link is created between two units that have a NeedsProvides link between them already, in either direction, and none that would close a cycle among the links created. Units of other toolchains are passed over. Takes none of the parameters that select links to copy or where the copies go.
+	FromRefs *bool `form:"from_refs,omitempty" json:"from_refs,omitempty" yaml:"from_refs,omitempty"`
+
 	// WithBackingUnits Give each Link written a backing Unit if it has none: a ConfigHub/YAML Unit holding the Link's configuration, which is then kept in step with it.
 	WithBackingUnits *bool `form:"with_backing_units,omitempty" json:"with_backing_units,omitempty" yaml:"with_backing_units,omitempty"`
 
@@ -16045,12 +16050,12 @@ type BulkCreateLinksParams struct {
 	//
 	// Supported attributes for filtering on Unit: Annotations, ApplyGates, ApplyWarnings, ChangeSetID, Conflicts, CreatedAt, DataHash, DeleteGates, DestroyGates, DisplayName, FromLinkID, HeadRevisionID, HeadRevisionNum, HeadUnitEventNum, HiddenReason, Labels, LastChangeDescription, LastReleasedRevisionNum, LinkFindings, MutationSources, NeededPaths, OrganizationID, Permissions, ProvidedPaths, Slug, SpaceID, TargetID, ToolchainType, UnitID, Unreleasable, UpdatedAt, UpstreamRevisionNum, UpstreamSpaceID, UpstreamUnitID, ValidationErrors, ValidationPassed, ValidationResults, ValidationTriggerIDs, ValidationWarnings, ValueTriggerIDs, Values.
 	//
-	// The Units to create entities from, with from_backing_units.
+	// The Units to create entities from, with from_backing_units, or to create links between, with from_refs.
 	//
 	// The whole string must be query-encoded.
 	WhereUnit *string `form:"where_unit,omitempty" json:"where_unit,omitempty" yaml:"where_unit,omitempty"`
 
-	// FilterUnit A Filter, by ID, over the Units to create entities from, with from_backing_units.
+	// FilterUnit A Filter, by ID, over the Units to create entities from, with from_backing_units, or to create links between, with from_refs.
 	FilterUnit *string `form:"filter_unit,omitempty" json:"filter_unit,omitempty" yaml:"filter_unit,omitempty"`
 
 	// PatchExisting With from_backing_units, patch a Link a selected Unit already backs with what the Unit holds that it has not taken yet, as a bulk patch with from_backing_units does, rather than report that the Unit backs it. The request body is applied after it. Without it, such a Unit is an error, or with allow_exists the Link is returned as it is.

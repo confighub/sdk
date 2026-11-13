@@ -5,10 +5,14 @@ package main
 
 import (
 	"fmt"
+	"slices"
 	"sort"
 	"strings"
 
+	"github.com/cockroachdb/errors"
+	"github.com/confighub/sdk/core/cubapi"
 	goclientnew "github.com/confighub/sdk/core/openapi/goclient-new"
+	"github.com/google/uuid"
 	"github.com/spf13/cobra"
 )
 
@@ -59,25 +63,68 @@ func displayExtendedComponentDetails(extendedComponent *goclientnew.ExtendedComp
 	spaces, err := componentSpaces(component.ComponentID)
 	failOnError(err)
 	owner := componentOwner(component.Labels, spaces)
-	renderComponentEntityDetails(component, &owner, extendedComponent.Permissions)
+	allowed, err := allowedChangeWorkflowNames(component.AllowedChangeWorkflowIDs, extendedComponent.AllowedChangeWorkflows)
+	failOnError(err)
+	renderComponentEntityDetails(component, &owner, extendedComponent.Permissions, allowed)
 }
 
-func allowedChangeWorkflowIDsToString(allowed []goclientnew.UUID) string {
-	ids := make([]string, 0, len(allowed))
-	for _, id := range allowed {
-		ids = append(ids, id.String())
+// allowedChangeWorkflowNames names the ChangeWorkflows a Component allows as <space>/<slug>, the
+// form --allowed-change-workflow takes, sorted. expanded are the ChangeWorkflows the server
+// returned for the IDs; an ID none of them is stays an ID.
+func allowedChangeWorkflowNames(allowed []goclientnew.UUID, expanded []goclientnew.ChangeWorkflow) (string, error) {
+	byID := make(map[uuid.UUID]*goclientnew.ChangeWorkflow, len(expanded))
+	var spaceIDs []uuid.UUID
+	for i := range expanded {
+		byID[expanded[i].ChangeWorkflowID] = &expanded[i]
+		if !slices.Contains(spaceIDs, expanded[i].SpaceID) {
+			spaceIDs = append(spaceIDs, expanded[i].SpaceID)
+		}
 	}
-	sort.Strings(ids)
-	return strings.Join(ids, ", ")
+	spaceSlugs := make(map[uuid.UUID]string, len(spaceIDs))
+	if len(spaceIDs) > 0 {
+		spaces, err := cubapi.ListSpaces(ctx, cubClient, cubapi.NewWhere("").In("SpaceID", spaceIDs),
+			cubapi.ListOpts{Select: "SpaceID,Slug"})
+		if err != nil {
+			return "", errors.Wrap(err, "failed to list the spaces of the allowed changeworkflows")
+		}
+		for _, space := range spaces {
+			spaceSlugs[space.Space.SpaceID] = space.Space.Slug
+		}
+	}
+	names := make([]string, 0, len(allowed))
+	for _, id := range allowed {
+		changeWorkflow, ok := byID[id]
+		if !ok {
+			names = append(names, id.String())
+			continue
+		}
+		if spaceSlug, ok := spaceSlugs[changeWorkflow.SpaceID]; ok {
+			names = append(names, spaceSlug+"/"+changeWorkflow.Slug)
+		} else {
+			names = append(names, changeWorkflow.SpaceID.String()+"/"+changeWorkflow.Slug)
+		}
+	}
+	sort.Strings(names)
+	return strings.Join(names, ", "), nil
 }
 
+// displayComponentEntityDetails renders the Component a create, update or edit returns. That
+// carries only the IDs of the ChangeWorkflows it allows, so the Component is read back for them.
 func displayComponentEntityDetails(component *goclientnew.Component) {
-	renderComponentEntityDetails(component, nil, nil)
+	var expanded []goclientnew.ChangeWorkflow
+	if len(component.AllowedChangeWorkflowIDs) > 0 {
+		extendedComponent, err := resolveComponent(component.ComponentID.String(), "ComponentID,AllowedChangeWorkflowIDs")
+		failOnError(err)
+		expanded = extendedComponent.AllowedChangeWorkflows
+	}
+	allowed, err := allowedChangeWorkflowNames(component.AllowedChangeWorkflowIDs, expanded)
+	failOnError(err)
+	renderComponentEntityDetails(component, nil, nil, allowed)
 }
 
 // renderComponentEntityDetails prints the Component, with an Owner row when owner is given:
 // get reads the Component's spaces to work it out, and create and update do not.
-func renderComponentEntityDetails(component *goclientnew.Component, owner *string, expanded *goclientnew.ExtendedPermissions) {
+func renderComponentEntityDetails(component *goclientnew.Component, owner *string, expanded *goclientnew.ExtendedPermissions, allowedChangeWorkflows string) {
 	view := tableView()
 	view.Append([]string{"ID", component.ComponentID.String()})
 	view.Append([]string{"Name", component.Slug})
@@ -91,7 +138,7 @@ func renderComponentEntityDetails(component *goclientnew.Component, owner *strin
 	view.Append([]string{"Delete Gates", deleteGatesToString(component.DeleteGates)})
 	view.Append([]string{"Annotations", annotationsToString(component.Annotations)})
 	view.Append([]string{"Permissions", permissionsToString(component.Permissions, expanded)})
-	view.Append([]string{"Allowed ChangeWorkflows", allowedChangeWorkflowIDsToString(component.AllowedChangeWorkflowIDs)})
+	view.Append([]string{"Allowed ChangeWorkflows", allowedChangeWorkflows})
 	view.Append([]string{"Require ChangeWorkflow", fmt.Sprintf("%t", component.RequireChangeWorkflow)})
 	view.Append([]string{"Require Change Tracking", fmt.Sprintf("%t", component.RequireChangeTracking)})
 	view.Append([]string{"Organization ID", component.OrganizationID.String()})

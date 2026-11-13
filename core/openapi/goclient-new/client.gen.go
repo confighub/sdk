@@ -891,7 +891,7 @@ type ClientInterface interface {
 
 	// BulkCreateLinksWithBody Bulk create (copy) multiple links
 	//
-	// Copy existing links with retargeted From and/or To units. Select source links via where/filter, then retarget using reverse, from_downstream_where (optionally with to_downstream_where), or where_space/filter_space parameters.
+	// Copy existing links with retargeted From and/or To units. Select source links via where/filter, then retarget using reverse, from_downstream_where (optionally with to_downstream_where), or where_space/filter_space parameters. With from_refs, create the NeedsProvides links the configuration of the Kubernetes/YAML units where_unit and filter_unit select calls for instead; with from_backing_units, create links from the ConfigHub/YAML units they select.
 	//
 	// Takes any type of body and a specified content type.
 	//
@@ -900,7 +900,7 @@ type ClientInterface interface {
 
 	// BulkCreateLinksWithApplicationMergePatchPlusJSONBody Bulk create (copy) multiple links
 	//
-	// Copy existing links with retargeted From and/or To units. Select source links via where/filter, then retarget using reverse, from_downstream_where (optionally with to_downstream_where), or where_space/filter_space parameters.
+	// Copy existing links with retargeted From and/or To units. Select source links via where/filter, then retarget using reverse, from_downstream_where (optionally with to_downstream_where), or where_space/filter_space parameters. With from_refs, create the NeedsProvides links the configuration of the Kubernetes/YAML units where_unit and filter_unit select calls for instead; with from_backing_units, create links from the ConfigHub/YAML units they select.
 	//
 	// Takes a body of the `application/merge-patch+json` content type.
 	//
@@ -4949,7 +4949,7 @@ func (c *Client) BulkPatchLinksWithApplicationMergePatchPlusJSONBody(ctx context
 
 // BulkCreateLinksWithBody Bulk create (copy) multiple links
 //
-// Copy existing links with retargeted From and/or To units. Select source links via where/filter, then retarget using reverse, from_downstream_where (optionally with to_downstream_where), or where_space/filter_space parameters.
+// Copy existing links with retargeted From and/or To units. Select source links via where/filter, then retarget using reverse, from_downstream_where (optionally with to_downstream_where), or where_space/filter_space parameters. With from_refs, create the NeedsProvides links the configuration of the Kubernetes/YAML units where_unit and filter_unit select calls for instead; with from_backing_units, create links from the ConfigHub/YAML units they select.
 //
 // Takes any type of body and a specified content type.
 //
@@ -4968,7 +4968,7 @@ func (c *Client) BulkCreateLinksWithBody(ctx context.Context, params *BulkCreate
 
 // BulkCreateLinksWithApplicationMergePatchPlusJSONBody Bulk create (copy) multiple links
 //
-// Copy existing links with retargeted From and/or To units. Select source links via where/filter, then retarget using reverse, from_downstream_where (optionally with to_downstream_where), or where_space/filter_space parameters.
+// Copy existing links with retargeted From and/or To units. Select source links via where/filter, then retarget using reverse, from_downstream_where (optionally with to_downstream_where), or where_space/filter_space parameters. With from_refs, create the NeedsProvides links the configuration of the Kubernetes/YAML units where_unit and filter_unit select calls for instead; with from_backing_units, create links from the ConfigHub/YAML units they select.
 //
 // Takes a body of the `application/merge-patch+json` content type.
 //
@@ -20396,6 +20396,18 @@ func NewBulkCreateLinksRequestWithBody(server string, params *BulkCreateLinksPar
 		if params.IncludeHidden != nil {
 
 			if queryFrag, err := runtime.StyleParamWithOptions("form", true, "include_hidden", *params.IncludeHidden, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationQuery, Type: "string", Format: ""}); err != nil {
+				return nil, err
+			} else {
+				for _, qp := range strings.Split(queryFrag, "&") {
+					rawQueryFragments = append(rawQueryFragments, qp)
+				}
+			}
+
+		}
+
+		if params.FromRefs != nil {
+
+			if queryFrag, err := runtime.StyleParamWithOptions("form", true, "from_refs", *params.FromRefs, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationQuery, Type: "boolean", Format: ""}); err != nil {
 				return nil, err
 			} else {
 				for _, qp := range strings.Split(queryFrag, "&") {
@@ -45914,7 +45926,7 @@ type ClientWithResponsesInterface interface {
 
 	// BulkCreateLinksWithBodyWithResponse Bulk create (copy) multiple links
 	//
-	// Copy existing links with retargeted From and/or To units. Select source links via where/filter, then retarget using reverse, from_downstream_where (optionally with to_downstream_where), or where_space/filter_space parameters.
+	// Copy existing links with retargeted From and/or To units. Select source links via where/filter, then retarget using reverse, from_downstream_where (optionally with to_downstream_where), or where_space/filter_space parameters. With from_refs, create the NeedsProvides links the configuration of the Kubernetes/YAML units where_unit and filter_unit select calls for instead; with from_backing_units, create links from the ConfigHub/YAML units they select.
 	//
 	// Takes any type of body and a specified content type, and returns a wrapper object for the known response body format(s).
 	//
@@ -45923,7 +45935,7 @@ type ClientWithResponsesInterface interface {
 
 	// BulkCreateLinksWithApplicationMergePatchPlusJSONBodyWithResponse Bulk create (copy) multiple links
 	//
-	// Copy existing links with retargeted From and/or To units. Select source links via where/filter, then retarget using reverse, from_downstream_where (optionally with to_downstream_where), or where_space/filter_space parameters.
+	// Copy existing links with retargeted From and/or To units. Select source links via where/filter, then retarget using reverse, from_downstream_where (optionally with to_downstream_where), or where_space/filter_space parameters. With from_refs, create the NeedsProvides links the configuration of the Kubernetes/YAML units where_unit and filter_unit select calls for instead; with from_backing_units, create links from the ConfigHub/YAML units they select.
 	//
 	// Takes a body of the `application/merge-patch+json` content type, and returns a wrapper object for the known response body format(s).
 	//
@@ -77000,7 +77012,7 @@ func (c *ClientWithResponses) BulkPatchLinksWithApplicationMergePatchPlusJSONBod
 
 // BulkCreateLinksWithBodyWithResponse Bulk create (copy) multiple links
 //
-// Copy existing links with retargeted From and/or To units. Select source links via where/filter, then retarget using reverse, from_downstream_where (optionally with to_downstream_where), or where_space/filter_space parameters.
+// Copy existing links with retargeted From and/or To units. Select source links via where/filter, then retarget using reverse, from_downstream_where (optionally with to_downstream_where), or where_space/filter_space parameters. With from_refs, create the NeedsProvides links the configuration of the Kubernetes/YAML units where_unit and filter_unit select calls for instead; with from_backing_units, create links from the ConfigHub/YAML units they select.
 //
 // Takes any type of body and a specified content type, and returns a wrapper object for the known response body format(s).
 //
@@ -77015,7 +77027,7 @@ func (c *ClientWithResponses) BulkCreateLinksWithBodyWithResponse(ctx context.Co
 
 // BulkCreateLinksWithApplicationMergePatchPlusJSONBodyWithResponse Bulk create (copy) multiple links
 //
-// Copy existing links with retargeted From and/or To units. Select source links via where/filter, then retarget using reverse, from_downstream_where (optionally with to_downstream_where), or where_space/filter_space parameters.
+// Copy existing links with retargeted From and/or To units. Select source links via where/filter, then retarget using reverse, from_downstream_where (optionally with to_downstream_where), or where_space/filter_space parameters. With from_refs, create the NeedsProvides links the configuration of the Kubernetes/YAML units where_unit and filter_unit select calls for instead; with from_backing_units, create links from the ConfigHub/YAML units they select.
 //
 // Takes a body of the `application/merge-patch+json` content type, and returns a wrapper object for the known response body format(s).
 //

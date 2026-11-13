@@ -106,6 +106,31 @@ Single Link Examples:
     --manual-binding 'example.com/v1/Subnet:/public-2:spec.routeTableRef.name=example.com/v1/RouteTable:/public-rt:metadata.name'
 `+"```"+`
 
+BULK LINK CREATION FROM REFERENCES:
+
+With --from-refs, links are not copied but inferred, as upload infers them, from the
+configuration of the Kubernetes/YAML units --where-unit, --filter-unit and --space select: from
+the references a resource makes to another (a ConfigMap a Deployment mounts, the ServiceAccount
+a RoleBinding names), the Namespace a resource is in, the CRD that defines a resource's type, and
+the label selectors that select a workload's pods. Links are inferred among the units of one
+space, and among those of spaces released to the same target. A resource that names no namespace,
+or names the placeholder, is taken to be in its space's Namespace label; in a space without one,
+it is taken to share a namespace only with the other resources of its space.
+
+Each link is a NeedsProvides link with --auto-update, created in its from unit's space. The other
+flags set its labels, annotations, delete gates and auto-update, but not its update type. No link
+is created between two units that have a NeedsProvides link between them already, in either
+direction, so running it again creates only the links that are missing.
+
+Bulk Create From References Examples:
+`+"```"+`
+  # Link the units of a space to one another
+  cub link create --space my-app --from-refs
+
+  # Link the units of every space released to the target prod-east, labeled for later selection
+  cub link create --from-refs --where-unit "Target.Slug = 'prod-east'" --label linked-by=refs
+`+"```"+`
+
 Bulk Create (Copy) Examples:
 `+"```"+`
   # Copy outgoing links from prod-v1 units to their downstream copies in prod-v2
@@ -147,6 +172,8 @@ func init() {
 	linkCreateCmd.Flags().StringSliceVar(&linkCreateArgs.destSpaces, "dest-space", []string{}, "spaces to copy links to, between the units of the same slugs there (can be repeated or comma-separated)")
 	linkCreateCmd.Flags().StringVar(&linkCreateArgs.whereSpace, "where-space", "", "where expression selecting spaces to copy links to, between the units of the same slugs there")
 	linkCreateCmd.Flags().StringVar(&linkCreateArgs.filterSpace, "filter-space", "", "filter entity containing WHERE expression to select spaces to copy links to (slug or UUID)")
+	linkCreateCmd.Flags().BoolVar(&backingUnitArgs.fromRefs, "from-refs", false,
+		"create the NeedsProvides links between the Kubernetes/YAML units --where-unit, --filter-unit and --space select that their resources' references, namespaces, CRDs and label selectors call for, as upload infers them")
 	addBackingUnitFlags(linkCreateCmd, "Link", false, true)
 	addFromBackingUnitsFlags(linkCreateCmd, "Link", true)
 
@@ -157,10 +184,22 @@ func checkLinkCreateConflictingArgs(cmd *cobra.Command, args []string) (bool, er
 	// Determine if bulk create mode: no positional args and has bulk-specific flags
 	toSpaces := len(linkCreateArgs.destSpaces) > 0 || linkCreateArgs.whereSpace != "" || linkCreateArgs.filterSpace != ""
 	hasBulkFlags := where != "" || filter != "" || len(linkCreateArgs.linkSlugs) > 0 || linkCreateArgs.reverse || linkCreateArgs.fromDownstreamWhere != "" || linkCreateArgs.toDownstreamWhere != "" ||
-		toSpaces || backingUnitArgs.fromBackingUnits
+		toSpaces || backingUnitArgs.fromBackingUnits || backingUnitArgs.fromRefs
 	isBulkCreateMode := len(args) == 0 && hasBulkFlags
 
-	if isBulkCreateMode && backingUnitArgs.fromBackingUnits {
+	if len(args) > 0 && backingUnitArgs.fromRefs {
+		return false, errors.New("--from-refs creates links between the units --where-unit, --filter-unit and --space select, and takes no positional arguments")
+	}
+	if isBulkCreateMode && backingUnitArgs.fromRefs {
+		// The Links are inferred from Units, not copied from Links.
+		if len(linkCreateArgs.linkSlugs) > 0 || where != "" || filter != "" || linkCreateArgs.reverse || linkCreateArgs.fromDownstreamWhere != "" ||
+			linkCreateArgs.toDownstreamWhere != "" || toSpaces || backingUnitArgs.fromBackingUnits || backingUnitArgs.patchExisting {
+			return false, errors.New("--from-refs creates links between the units --where-unit and --filter-unit select; it takes none of --link, --where, --filter, --reverse, --from-downstream-where, --to-downstream-where, --dest-space, --where-space, --filter-space, --from-backing-units and --patch-existing")
+		}
+		if linkMakeCurrent {
+			return false, errors.New("--make-current is not supported with --from-refs; new links start with no merged revisions")
+		}
+	} else if isBulkCreateMode && backingUnitArgs.fromBackingUnits {
 		// The Links are made from Units, not copied from Links.
 		if len(linkCreateArgs.linkSlugs) > 0 || linkCreateArgs.reverse || linkCreateArgs.fromDownstreamWhere != "" || linkCreateArgs.toDownstreamWhere != "" || toSpaces {
 			return false, errors.New("--from-backing-units creates links from units; it takes none of --link, --reverse, --from-downstream-where, --to-downstream-where, --dest-space, --where-space and --filter-space")
@@ -205,7 +244,7 @@ func checkLinkCreateConflictingArgs(cmd *cobra.Command, args []string) (bool, er
 		}
 	} else {
 		// No args and no bulk flags
-		return false, errors.New("provide positional arguments for single create, or --where/--filter with --reverse/--from-downstream-where/--dest-space/--where-space/--filter-space for bulk create")
+		return false, errors.New("provide positional arguments for single create, --where/--filter with --reverse/--from-downstream-where/--dest-space/--where-space/--filter-space for bulk create, or --from-refs or --from-backing-units")
 	}
 
 	if err := validateLinkFieldFlags(cmd); err != nil {
@@ -336,6 +375,9 @@ func runSingleLinkCreate(cmd *cobra.Command, args []string) error {
 }
 
 func runBulkLinkCreate(cmd *cobra.Command) error {
+	if backingUnitArgs.fromRefs {
+		return runLinkCreateFromRefs(cmd)
+	}
 	if backingUnitArgs.fromBackingUnits {
 		return runLinkCreateFromBackingUnits(cmd)
 	}
@@ -417,6 +459,33 @@ func runLinkCreateFromBackingUnits(cmd *cobra.Command) error {
 	}
 	return handleBulkLinkUpdateResponse(bulkRes.JSON200, bulkRes.JSON207, bulkRes.StatusCode(), "create",
 		fmt.Sprintf("from backing units: %s", backingUnitArgs.whereUnit))
+}
+
+// runLinkCreateFromRefs creates the NeedsProvides links between the Kubernetes/YAML units
+// --where-unit, --filter-unit and --space select that their configuration calls for.
+func runLinkCreateFromRefs(cmd *cobra.Command) error {
+	patchJSON, err := BuildPatchDataWithPermissions(linkFieldsEnhancer(cmd), permissionFlag)
+	if err != nil {
+		return err
+	}
+	fromRefs := true
+	params := &goclientnew.BulkCreateLinksParams{FromRefs: &fromRefs}
+	if params.WhereUnit, params.FilterUnit, err = unitSelectionParams(selectedSpaceID, "--from-refs", "create links between"); err != nil {
+		return err
+	}
+	params.WithBackingUnits = withBackingUnitsParam()
+	params.DryRun = dryRunParam()
+	bulkRes, err := cubClientNew.BulkCreateLinksWithBodyWithResponse(ctx, params, "application/merge-patch+json",
+		bytes.NewReader(patchJSON))
+	if cubapi.IsAPIError(err, bulkRes) {
+		return cubapi.InterpretErrorGeneric(err, bulkRes)
+	}
+	selection := backingUnitArgs.filterUnit
+	if params.WhereUnit != nil {
+		selection = *params.WhereUnit
+	}
+	return handleBulkLinkUpdateResponse(bulkRes.JSON200, bulkRes.JSON207, bulkRes.StatusCode(), "create",
+		fmt.Sprintf("from refs: %s", selection))
 }
 
 // callBulkCreateLinks issues a BulkCreateLinks API call. Source links are

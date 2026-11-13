@@ -23,6 +23,9 @@ var backingUnitArgs struct {
 	whereUnit        string
 	filterUnit       string
 	patchExisting    bool
+	// fromRefs is link create's --from-refs, which also selects Units with --where-unit and
+	// --filter-unit.
+	fromRefs bool
 }
 
 // addBackingUnitFlags adds --with-backing-units to a command that creates or updates entities, and
@@ -71,9 +74,12 @@ func addFromBackingUnitsFlags(cmd *cobra.Command, entityName string, create bool
 		if backingUnitArgs.withBackingUnits && backingUnitArgs.fromBackingUnits {
 			return errors.New("--with-backing-units and --from-backing-units cannot be used together: an entity written from a Unit has that Unit as its backing Unit already")
 		}
-		if (backingUnitArgs.whereUnit != "" || backingUnitArgs.filterUnit != "") && !backingUnitArgs.fromBackingUnits {
-			if entityName == "Trigger" {
+		if (backingUnitArgs.whereUnit != "" || backingUnitArgs.filterUnit != "") && !backingUnitArgs.fromBackingUnits && !backingUnitArgs.fromRefs {
+			switch entityName {
+			case "Trigger":
 				return errors.New("--where-unit and --filter-unit select backing units, with --from-backing-units; a trigger's own WhereUnit is --where-unit-field")
+			case "Link":
+				return errors.New("--where-unit and --filter-unit are only used with --from-backing-units or --from-refs")
 			}
 			return errors.New("--where-unit and --filter-unit are only used with --from-backing-units")
 		}
@@ -179,6 +185,13 @@ func fromBackingUnitsCreateParams(spaceID string) (whereUnit, filterUnit *string
 	if !backingUnitArgs.fromBackingUnits {
 		return nil, nil, nil
 	}
+	return unitSelectionParams(spaceID, "--from-backing-units", "create from")
+}
+
+// unitSelectionParams are the where_unit and filter_unit that --where-unit, --filter-unit and
+// spaceID, the space the command selects, select Units with for the flag, which needs one of them
+// to select the Units to do what it does with.
+func unitSelectionParams(spaceID, flag, does string) (whereUnit, filterUnit *string, err error) {
 	whereExpression := backingUnitArgs.whereUnit
 	if spaceID != "" {
 		whereExpression = addSpaceIDToWhereClause(whereExpression, spaceID)
@@ -188,7 +201,7 @@ func fromBackingUnitsCreateParams(spaceID string) (whereUnit, filterUnit *string
 		return nil, nil, err
 	}
 	if whereExpression == "" && filterID == "" {
-		return nil, nil, errors.New("--from-backing-units needs --where-unit, --filter-unit or --space to select the Units to create from")
+		return nil, nil, fmt.Errorf("%s needs --where-unit, --filter-unit or --space to select the Units to %s", flag, does)
 	}
 	if whereExpression != "" {
 		whereUnit = &whereExpression
