@@ -17,7 +17,9 @@ kubectl does; they show configuration, not live cluster state. "source", "refres
 "collect" reach out to a cluster: to trace a live resource back to its Unit, to bring a
 resource's cluster-side changes back into that Unit, and to record cluster facts on a
 Target. "crd-spec" reads neither, taking a CustomResourceDefinition file and writing the
-resource-type spec that teaches ConfigHub how to address a custom resource's fields.`, ""),
+resource-type spec that teaches ConfigHub how to address a custom resource's fields.
+"appconfig extract" moves the files ConfigMaps hold into AppConfig units that links write
+back into them.`, ""),
 }
 
 func init() {

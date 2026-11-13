@@ -417,6 +417,20 @@ var referenceResolvers = map[string]func(ref string) (uuid.UUID, error){
 		}
 		return space.Space.SpaceID, nil
 	},
+	"User": func(ref string) (uuid.UUID, error) {
+		user, err := resolveUserCore(ref)
+		if err != nil {
+			return uuid.Nil, err
+		}
+		return user.UserID, nil
+	},
+	"Group": func(ref string) (uuid.UUID, error) {
+		group, err := resolveGroup(ref, "GroupID")
+		if err != nil {
+			return uuid.Nil, err
+		}
+		return group.Group.GroupID, nil
+	},
 }
 
 // documentReference is a field of an entity's document that names another entity, where the
@@ -466,6 +480,131 @@ type resolvedEdit struct {
 	fieldEdit
 	segments []pathSegment
 	value    any
+	// replacesSet says the edit sets which IDs a set holds, which the entity holds as an object
+	// of IDs to true, so it has to replace the object rather than add to it.
+	replacesSet bool
+}
+
+// nestedReference is what a document schema says of a field inside an object that names other
+// entities (cubkit.NestedReferenceKeyword), and whether it holds a list of names or one.
+type nestedReference struct {
+	cubkit.NestedReference
+	list bool
+}
+
+func nestedReferenceOf(schema map[string]any) *nestedReference {
+	declared, ok := schema[cubkit.NestedReferenceKeyword]
+	if !ok {
+		return nil
+	}
+	data, err := json.Marshal(declared)
+	if err != nil {
+		return nil
+	}
+	reference := &nestedReference{list: jsonSchemaType(schema) == "array"}
+	if json.Unmarshal(data, &reference.NestedReference) != nil || reference.Field == "" {
+		return nil
+	}
+	return reference
+}
+
+// held is what the entity holds for the names a nested reference is given: an ID, a list of them,
+// or for a set, an object of them to true.
+func (reference *nestedReference) held(names []string) (any, error) {
+	ids := make([]any, 0, len(names))
+	for _, name := range names {
+		if name = strings.TrimSpace(name); name == "" {
+			continue
+		}
+		id, err := resolveReference(reference.Target, name)
+		if err != nil {
+			return nil, err
+		}
+		ids = append(ids, id)
+	}
+	switch {
+	case !reference.list:
+		if len(ids) != 1 {
+			return nil, errors.Newf("it names one %s", reference.Target)
+		}
+		return ids[0], nil
+	case reference.Set:
+		members := make(map[string]any, len(ids))
+		for _, id := range ids {
+			members[id.(string)] = true
+		}
+		return members, nil
+	}
+	return ids, nil
+}
+
+// entityShape turns a value in a document's shape into the entity's: each nested reference in it
+// renamed to the entity's field and its names resolved. It reports whether it set a set.
+func entityShape(root, schema map[string]any, value any) (any, bool, error) {
+	schema = derefSchema(root, schema)
+	replacesSet := false
+	switch value := value.(type) {
+	case map[string]any:
+		properties, _ := schema["properties"].(map[string]any)
+		additional, _ := schema["additionalProperties"].(map[string]any)
+		keys := make([]string, 0, len(value))
+		for key := range value {
+			keys = append(keys, key)
+		}
+		sort.Strings(keys)
+		for _, key := range keys {
+			property, ok := properties[key].(map[string]any)
+			if !ok {
+				property = additional
+			}
+			if property == nil {
+				continue
+			}
+			if reference := nestedReferenceOf(property); reference != nil {
+				var names []string
+				switch given := value[key].(type) {
+				case string:
+					names = []string{given}
+				case []any:
+					for _, element := range given {
+						names = append(names, fmt.Sprint(element))
+					}
+				default:
+					return nil, false, errors.Newf("%s names entities, so it holds names, not %v", key, given)
+				}
+				held, err := reference.held(names)
+				if err != nil {
+					return nil, false, errors.Wrapf(err, "%s", key)
+				}
+				delete(value, key)
+				value[reference.Field] = held
+				replacesSet = replacesSet || reference.Set
+				continue
+			}
+			converted, set, err := entityShape(root, property, value[key])
+			if err != nil {
+				return nil, false, err
+			}
+			value[key] = converted
+			replacesSet = replacesSet || set
+		}
+		return value, replacesSet, nil
+	case []any:
+		items, _ := schema["items"].(map[string]any)
+		if items == nil {
+			return value, false, nil
+		}
+		for i := range value {
+			converted, set, err := entityShape(root, items, value[i])
+			if err != nil {
+				return nil, false, err
+			}
+			value[i] = converted
+			replacesSet = replacesSet || set
+		}
+		return value, replacesSet, nil
+	}
+	return value, false, nil
 }
 
 // resolveFieldEdit checks an edit against the entity type's document schema and converts its
@@ -482,6 +621,26 @@ func resolveFieldEdit(entityType string, edit fieldEdit) (*resolvedEdit, error) 
 	}
 	resolved := &resolvedEdit{fieldEdit: edit, segments: segments}
 
+	// A field inside an object that names entities is the entity's field of their IDs. It is set
+	// whole, since a path into it would address a name the entity does not hold.
+	var nested *nestedReference
+	for i := range segments {
+		if segments[i].isIndex || segments[i].associative {
+			continue
+		}
+		_, segmentSchema, err := fieldSchema(entityType, segments[:i+1])
+		if err != nil {
+			return nil, wrap(err)
+		}
+		if reference := nestedReferenceOf(segmentSchema); reference != nil {
+			if i < len(segments)-1 {
+				return nil, wrap(errors.Newf("%s names entities, so it is set whole", segments[i].name))
+			}
+			segments[i].name = reference.Field
+			nested = reference
+		}
+	}
+
 	reference, isReference := documentReferences(entityType)[segments[0].name]
 	if isReference {
 		// A Link's Units are its arguments, and the to-Unit's Space goes with it.
@@ -493,9 +652,28 @@ func resolveFieldEdit(entityType string, edit fieldEdit) (*resolvedEdit, error) 
 	switch {
 	case edit.unset:
 		return resolved, nil
+	case nested != nil:
+		names := []string{edit.value}
+		if nested.list {
+			names = strings.Split(edit.value, listValueSeparator)
+		}
+		resolved.value, err = nested.held(names)
+		if err != nil {
+			return nil, wrap(err)
+		}
+		resolved.replacesSet = nested.Set
+		return resolved, nil
 	case edit.members != nil, edit.replace != nil:
 		if jsonSchemaType(schema) != "array" {
 			return nil, wrap(errors.New("it is not a list"))
+		}
+		if edit.replace != nil {
+			replaced, set, err := entityShape(root, schema, edit.replace)
+			if err != nil {
+				return nil, wrap(err)
+			}
+			resolved.replace, _ = replaced.([]any)
+			resolved.replacesSet = set
 		}
 		return resolved, nil
 	case isReference && reference.list && len(segments) == 1:
@@ -534,6 +712,10 @@ func resolveFieldEdit(entityType string, edit fieldEdit) (*resolvedEdit, error) 
 		if _, has := element[last.key]; !has {
 			element[last.key] = last.value
 		}
+	}
+	value, resolved.replacesSet, err = entityShape(root, schema, value)
+	if err != nil {
+		return nil, wrap(err)
 	}
 	resolved.value = value
 	return resolved, nil
@@ -737,6 +919,10 @@ func withFieldEdits(enhancer PatchEnhancer) (PatchEnhancer, error) {
 		if edit.members != nil {
 			return nil, errors.Newf("%s keeps the elements a list already has, which a patch cannot do: it replaces a list whole. "+
 				"Update one %s without --patch instead", edit.flag, entityType)
+		}
+		if r.replacesSet {
+			return nil, errors.Newf("%s %s says which Users, Groups or other entities a set holds, which a patch cannot do: "+
+				"it adds to a set rather than replacing it. Update one %s without --patch instead", edit.flag, edit.path, entityType)
 		}
 		resolved = append(resolved, r)
 	}

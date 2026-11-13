@@ -1270,7 +1270,7 @@ func TestMergeCorpusOpaqueStrings(t *testing.T) {
 			upstream:   embedded(2, "nginx:1.21"),
 			downstream: embedded(5, "nginx:1.19"),
 			want: map[string]string{
-				"data.settings~1json": `{"image":"nginx:1.21","replicas":5}`,
+				"data.settings~1json": `{"image": "nginx:1.21", "replicas": 5}`,
 			},
 			// Subtraction removes the upstream's change: both sides changed the one
 			// path, which is the whole document.

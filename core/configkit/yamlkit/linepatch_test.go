@@ -383,3 +383,30 @@ func TestPatchMutations_JSONStructuralThreeWayMerge(t *testing.T) {
 	require.NoError(t, err)
 	assert.Equal(t, 9090, port)
 }
+
+func TestApplyScalarPatch_JSONKeepsTheTargetsLayout(t *testing.T) {
+	// A Grafana dashboard as a ConfigMap holds it: indented, keys in the author's order, a
+	// trailing newline, HTML in a description, and a float written with its decimal point.
+	base := "{\n  \"title\": \"App\",\n  \"description\": \"<b>errors</b> & warnings\",\n  \"version\": 1.0,\n  \"panels\": [\n    {\n      \"id\": 1\n    }\n  ]\n}\n"
+	upstream := strings.Replace(base, `"title": "App"`, `"title": "App (prod)"`, 1)
+	downstream := strings.Replace(base, `"id": 1`, `"id": 2`, 1)
+
+	patch := ComputeScalarPatch(base, upstream)
+	require.True(t, strings.HasPrefix(patch, "{"), "expected a structural patch, got: %s", patch)
+
+	result, ok := ApplyScalarPatch(downstream, patch)
+	require.True(t, ok)
+	assert.Equal(t, strings.Replace(downstream, `"title": "App"`, `"title": "App (prod)"`, 1), result,
+		"only the patched value changes; order, indentation, escaping, numbers and the final newline are the target's")
+
+	compact := `{"b":1,"a":2}`
+	result, ok = ApplyScalarPatch(compact, ComputeScalarPatch(compact, `{"b":1,"a":3}`))
+	require.True(t, ok)
+	assert.Equal(t, `{"b":1,"a":3}`, result, "a target on one line stays on one line")
+
+	spaced := `{"debug": false, "name": "a, b: c"}` + "\n"
+	result, ok = ApplyScalarPatch(spaced, ComputeScalarPatch(spaced, `{"debug": true, "name": "a, b: c"}`+"\n"))
+	require.True(t, ok)
+	assert.Equal(t, `{"debug": true, "name": "a, b: c"}`+"\n", result,
+		"a target on one line keeps the spaces after its separators, and its strings as they are")
+}

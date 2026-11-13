@@ -423,6 +423,19 @@ cub k8s collect --space $SPACE --kube-context kind-kind my-target
 cub k8s collect --kube-context kind-kind --dry-run
 ```
 
+`cub k8s appconfig extract` works on Units, not a cluster: it moves the files a ConfigMap
+holds in its data into AppConfig Units of their own, and links the ConfigMap's
+Unit to each with an Insert Link that writes the file back into its data key. The rest of
+the ConfigMap, its labels included, is left as it is, and the data key is guarded with
+`Link=Insert`, so an upgrade from upstream no longer overwrites it. Data that is guarded
+already needs `--clearance` for its guards, and a ConfigMap of variables
+(`confighub.com/ConfigMapFormat: KeyValue`) is refused.
+
+```
+# Move a Grafana dashboard's JSON out of its ConfigMap into an AppConfig/JSON Unit
+cub k8s appconfig extract --space $SPACE dashboard-my-app
+```
+
 `cub k8s refresh` finds the Unit from the ConfigHub annotations on the live resource, strips
 everything that is cluster state rather than configuration, diffs what is left against the
 Unit's `LastReleasedRevisionNum` — the revision last published in a Release — and patches

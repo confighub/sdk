@@ -1273,6 +1273,36 @@ func RemovedGuardKeys(target PathAnnotations, delta *GuardDelta) []string {
 	return removed
 }
 
+// GuardKeyLink is the guard key that says a Link maintains a path. Its value is the Link's
+// UpdateType (Link=Insert, Link=Upsert, Link=TransformPaths), so a clearance can name the kinds of
+// Link whose writes it understands.
+const GuardKeyLink = "Link"
+
+// GuardKeyTrigger is the guard key that says a Trigger maintains a path. Its value names what the
+// Trigger does, such as the function it runs (Trigger=set-hash).
+const GuardKeyTrigger = "Trigger"
+
+// ClearanceAdmitting returns the clearance, extended if it has to be to admit the guard
+// key=value: by adding value to its In requirement on key, or else by adding one. The clearance
+// passed in is not modified.
+func ClearanceAdmitting(clearance Clearance, key, value string) Clearance {
+	if admitted, _ := clearance.Admits(map[string]string{key: value}); admitted {
+		return clearance
+	}
+	extended := make(Clearance, len(clearance), len(clearance)+1)
+	for i, requirement := range clearance {
+		requirement.Values = slices.Clone(requirement.Values)
+		extended[i] = requirement
+	}
+	for i := range extended {
+		if extended[i].Key == key && extended[i].Operator == ClearanceOperatorIn {
+			extended[i].Values = append(extended[i].Values, value)
+			return extended
+		}
+	}
+	return append(extended, ClearanceRequirement{Key: key, Operator: ClearanceOperatorIn, Values: []string{value}})
+}
+
 // CheckGuardStampCleared refuses guards a change would record that its own clearance does not
 // cover. A change is withheld by every guard it is not cleared for, its own included, so a stamp
 // the change is not cleared for stops it the next time it writes the same path: the next

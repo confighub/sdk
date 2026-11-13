@@ -232,13 +232,15 @@ type AttributeInfo struct {
 	AttributeMetadata
 }
 
-// Attribute details used for needs/provides matching.
+// Attribute details used for needs/provides matching. BoundLinkID and BoundProvidedProperties
+// record what one Unit's needed path was bound to, which is state rather than a declaration, so a
+// ConfigHub/YAML document of an entity holding these details leaves them out (entityDocument:"-").
 type AttributeNeedsProvidesDetails struct {
 	ProvidedProperties      map[string]string `json:",omitempty" description:"Key/value properties describing what this provided value offers, for matching"`
 	NeededRequired          map[string]string `json:",omitempty" description:"Required properties that a provided value must have in order to match"`
 	NeededPreferred         map[string]string `json:",omitempty" description:"Preferred properties for matching; more matches produce a stronger match preference"`
-	BoundLinkID             uuid.UUID         `json:",omitempty,omitzero" description:"ID of the Link that bound this needed path to a provided value"`
-	BoundProvidedProperties map[string]string `json:",omitempty" description:"ProvidedProperties of the provided path that was bound to this needed path, for cross-link score comparison"`
+	BoundLinkID             uuid.UUID         `json:",omitempty,omitzero" entityDocument:"-" description:"ID of the Link that bound this needed path to a provided value"`
+	BoundProvidedProperties map[string]string `json:",omitempty" entityDocument:"-" description:"ProvidedProperties of the provided path that was bound to this needed path, for cross-link score comparison"`
 	IsNeeded                bool              `json:",omitempty" description:"Whether this attribute is a needed value"`
 	IsProvided              bool              `json:",omitempty" description:"Whether this attribute is a provided value"`
 }

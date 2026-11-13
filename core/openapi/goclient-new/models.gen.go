@@ -2435,6 +2435,18 @@ type Binding struct {
 // BindingList defines model for BindingList.
 type BindingList = []Binding
 
+// BlameConfigComments defines model for BlameConfigComments.
+type BlameConfigComments struct {
+	// Foot The comment on the lines below the field.
+	Foot string `json:"Foot,omitempty" yaml:"Foot,omitempty"`
+
+	// Head The comment on the lines above the field. On the row about a resource as a whole, the comment above the resource's document separator.
+	Head string `json:"Head,omitempty" yaml:"Head,omitempty"`
+
+	// Line The comment at the end of the field's line.
+	Line string `json:"Line,omitempty" yaml:"Line,omitempty"`
+}
+
 // BlameConflictDismissal defines model for BlameConflictDismissal.
 type BlameConflictDismissal struct {
 	// Guard For a dismissal of what one guard withheld, the guard's key.
@@ -2702,6 +2714,17 @@ type BlamePathChange struct {
 
 	// Value The value the change recorded for the field. Returned in History.
 	Value string `json:"Value,omitempty" yaml:"Value,omitempty"`
+}
+
+// BlameReviewThread defines model for BlameReviewThread.
+type BlameReviewThread struct {
+	// ChangeOrderID The ChangeOrder the thread was made in review of, if any; the report's Names names it, unless it cannot be read.
+	//
+	// Example: 248df4b7-aa70-47b8-a036-33ac447e668d
+	ChangeOrderID openapi_types.UUID `json:"ChangeOrderID,omitempty,omitzero" yaml:"ChangeOrderID,omitempty"`
+
+	// Comments The comment that started the thread, then its replies, replies to replies included, oldest first. Hidden comments are left out; a thread whose first comment is hidden still has its replies. The report's Names names each comment's author by UserID, unless the author cannot be read.
+	Comments []ReviewComment `json:"Comments,omitempty" yaml:"Comments,omitempty"`
 }
 
 // BlameValidation defines model for BlameValidation.
@@ -7921,6 +7944,9 @@ type UnitPathReport struct {
 	// Changes The field's chain: the changes that put the value here, from this unit out to where it was set, each with the Mutation and Revision it was read from.
 	Changes []BlamePathChange `json:"Changes,omitempty" yaml:"Changes,omitempty"`
 
+	// ConfigComments The comments the unit's configuration has about the field: above it, at the end of its line, and below it. Absent when it has none.
+	ConfigComments *BlameConfigComments `json:"ConfigComments,omitempty" yaml:"ConfigComments,omitempty"`
+
 	// ConflictDismissals Every conflict dismissal covering the field, each with the Path it is recorded at: the field's, a pattern naming it, or empty for one on its resource as a whole.
 	ConflictDismissals []BlameConflictDismissal `json:"ConflictDismissals,omitempty" yaml:"ConflictDismissals,omitempty"`
 
@@ -7930,7 +7956,7 @@ type UnitPathReport struct {
 	// History Every change this unit recorded to the field, oldest first; returned when history is requested.
 	History []BlamePathChange `json:"History,omitempty" yaml:"History,omitempty"`
 
-	// Names Names, as space/slug, of the Units and Targets the report's records refer to by ID alone: the other unit of each conflict, each Link's upstream unit, each merge source, and each Release's Target.
+	// Names Names of the entities the report's records refer to by ID alone: as space/slug, the other unit of each conflict, each Link's upstream unit and each merge source; by slug, or space/slug in another Space, each Release's Target and the ReviewThread's ChangeOrder; and by username, the author of each comment of the ReviewThread.
 	Names map[string]string `json:"Names,omitempty" yaml:"Names,omitempty"`
 
 	// ReleaseMessage ReleaseState in words, naming the revisions.
@@ -7938,6 +7964,12 @@ type UnitPathReport struct {
 
 	// ReleaseState Whether the unit's last Release includes the value: Released, NeverReleased, ChangedSinceRelease, or NothingToRelease in a Space with no release Target. Absent for a field the unit does not have.
 	ReleaseState string `json:"ReleaseState,omitempty" yaml:"ReleaseState,omitempty"`
+
+	// ReviewThread The thread of ReviewComments about the field that was commented in most recently: those naming its resource and path, the path as written or naming the same element. Absent when there is none.
+	ReviewThread *BlameReviewThread `json:"ReviewThread,omitempty" yaml:"ReviewThread,omitempty"`
+
+	// ReviewThreads How many threads of ReviewComments are about the field, ReviewThread among them.
+	ReviewThreads int `json:"ReviewThreads,omitempty" yaml:"ReviewThreads,omitempty"`
 }
 
 // UnitProtectionRequest defines model for UnitProtectionRequest.
@@ -8090,7 +8122,7 @@ type UploadEntityResult struct {
 
 // UploadLinkResult defines model for UploadLinkResult.
 type UploadLinkResult struct {
-	// Action Create or Unchanged.
+	// Action Create, Update (a Link an earlier upload created that is cleared for less than it now needs: a Link from a carrier's placeholder Unit is cleared for the Link=Upsert guard of the ConfigMaps rendered into it), or Unchanged.
 	Action   string         `json:"Action,omitempty" yaml:"Action,omitempty"`
 	Error    *ResponseError `json:"Error,omitempty" yaml:"Error,omitempty"`
 	FromUnit string         `json:"FromUnit,omitempty" yaml:"FromUnit,omitempty"`
@@ -8240,7 +8272,7 @@ type UploadSpaceResult struct {
 
 // UploadTriggerResult defines model for UploadTriggerResult.
 type UploadTriggerResult struct {
-	// Action Create (in the Space, which runs the Triggers defined in it), Unchanged (the Space already runs a Mutation Trigger with the function, or one with the slug is in the Space), or Missing (the Space selects its Triggers from elsewhere, and none it selects runs the function).
+	// Action Create (in the Space, which runs the Triggers defined in it), Update (a Trigger of the pack that an earlier upload created in the Space, which gets the guards and clearance the pack now states), Unchanged (the Space already runs a Mutation Trigger with the function, or one with the slug is in the Space), or Missing (the Space selects its Triggers from elsewhere, and none it selects runs the function).
 	Action string         `json:"Action,omitempty" yaml:"Action,omitempty"`
 	Error  *ResponseError `json:"Error,omitempty" yaml:"Error,omitempty"`
 

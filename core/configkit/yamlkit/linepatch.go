@@ -4,6 +4,7 @@
 package yamlkit
 
 import (
+	"bytes"
 	"encoding/json"
 	"log/slog"
 	"strings"
@@ -11,6 +12,7 @@ import (
 	"github.com/confighub/sdk/core/function/api"
 	"github.com/confighub/sdk/core/third_party/gaby"
 	dmp "github.com/sergi/go-diff/diffmatchpatch"
+	"sigs.k8s.io/kustomize/kyaml/yaml"
 )
 
 // Patch format constants used as the "format" field in structural patches.
@@ -125,7 +127,13 @@ func applyStructuralPatch(target, patchStr string) (string, bool) {
 	var err error
 	switch patch.Format {
 	case PatchFormatJSON:
-		targetDoc, err = gaby.ParseJSON([]byte(target))
+		// Read as YAML, which JSON is, so that the document keeps its keys in the order the
+		// target has them. ParseJSON reads it through a map. JSON that YAML does not take, an
+		// escaped "/" for one, is read as JSON and loses its order.
+		targetDoc, err = gaby.ParseYAML([]byte(target))
+		if err != nil {
+			targetDoc, err = gaby.ParseJSON([]byte(target))
+		}
 	case PatchFormatYAML:
 		targetDoc, err = gaby.ParseYAML([]byte(target))
 	default:
@@ -172,24 +180,176 @@ func applyStructuralPatch(target, patchStr string) (string, bool) {
 	}
 
 	// Reserialize in the original format.
-	var out []byte
-	switch patch.Format {
-	case PatchFormatJSON:
-		out, err = targetDoc.MarshalJSON()
-	case PatchFormatYAML:
-		out, err = targetDoc.MarshalYAML()
+	if patch.Format == PatchFormatJSON {
+		out, err := jsonLaidOutLike(target, targetDoc)
+		if err != nil {
+			return target, false
+		}
+		return out, true
 	}
+	out, err := targetDoc.MarshalYAML()
 	if err != nil {
 		return target, false
 	}
+	return string(out), true
+}
 
-	result := string(out)
-	// For JSON, trim trailing newline to match typical JSON string values.
-	if patch.Format == PatchFormatJSON {
-		result = strings.TrimRight(result, "\n")
+// jsonLaidOutLike writes doc as JSON laid out the way target is: in the order the document has its
+// keys, indented as target's lines are indented, all on one line when target is, with a space
+// after its colons and commas when target has one, and ending in a newline when target does. A patch changes values, so the rest of the text should read as it
+// did: an embedded JSON file that came back compact, with its keys sorted, would show every line
+// of it as changed.
+func jsonLaidOutLike(target string, doc *gaby.YamlDoc) (string, error) {
+	var compact bytes.Buffer
+	if err := writeJSONNode(&compact, doc.YNode()); err != nil {
+		return "", err
 	}
+	out := compact.String()
+	if indent := jsonIndentation(target); indent != "" {
+		var indented bytes.Buffer
+		if err := json.Indent(&indented, compact.Bytes(), "", indent); err != nil {
+			return "", err
+		}
+		out = indented.String()
+	} else if colonSpace, commaSpace := jsonSeparatorSpacing(target); colonSpace || commaSpace {
+		out = spaceJSONSeparators(out, colonSpace, commaSpace)
+	}
+	if strings.HasSuffix(target, "\n") {
+		out += "\n"
+	}
+	return out, nil
+}
 
-	return result, true
+// jsonIndentation is the indentation of the first indented line of a JSON text, and empty when no
+// line is indented.
+func jsonIndentation(text string) string {
+	lines := strings.Split(text, "\n")
+	for _, line := range lines[1:] {
+		trimmed := strings.TrimLeft(line, " \t")
+		if trimmed != "" && len(trimmed) < len(line) {
+			return line[:len(line)-len(trimmed)]
+		}
+	}
+	return ""
+}
+
+// jsonSeparatorSpacing reports whether a JSON text on one line follows its colons, and its
+// commas, with a space, as {"a": 1, "b": 2} does, outside its strings.
+func jsonSeparatorSpacing(text string) (colonSpace, commaSpace bool) {
+	inString, escaped := false, false
+	for i := 0; i+1 < len(text); i++ {
+		c := text[i]
+		switch {
+		case escaped:
+			escaped = false
+		case inString && c == '\\':
+			escaped = true
+		case c == '"':
+			inString = !inString
+		case !inString && c == ':' && text[i+1] == ' ':
+			colonSpace = true
+		case !inString && c == ',' && text[i+1] == ' ':
+			commaSpace = true
+		}
+	}
+	return colonSpace, commaSpace
+}
+
+// spaceJSONSeparators puts a space after each colon, and each comma, of compact JSON that is not
+// in a string.
+func spaceJSONSeparators(compact string, colonSpace, commaSpace bool) string {
+	var out strings.Builder
+	inString, escaped := false, false
+	for i := 0; i < len(compact); i++ {
+		c := compact[i]
+		out.WriteByte(c)
+		switch {
+		case escaped:
+			escaped = false
+		case inString && c == '\\':
+			escaped = true
+		case c == '"':
+			inString = !inString
+		case !inString && c == ':' && colonSpace, !inString && c == ',' && commaSpace:
+			out.WriteByte(' ')
+		}
+	}
+	return out.String()
+}
+
+// writeJSONNode writes a YAML node as compact JSON, keeping the order of the keys of its
+// mappings and writing numbers as the text has them, which encoding/json, given the decoded
+// values, does not: it sorts the keys of a map, and writes 1.0 as 1. Characters HTML treats
+// specially are written as they are, not escaped.
+func writeJSONNode(buf *bytes.Buffer, node *yaml.Node) error {
+	switch node.Kind {
+	case yaml.DocumentNode:
+		if len(node.Content) == 0 {
+			buf.WriteString("null")
+			return nil
+		}
+		return writeJSONNode(buf, node.Content[0])
+	case yaml.AliasNode:
+		return writeJSONNode(buf, node.Alias)
+	case yaml.MappingNode:
+		buf.WriteByte('{')
+		for i := 0; i+1 < len(node.Content); i += 2 {
+			if i > 0 {
+				buf.WriteByte(',')
+			}
+			if err := writeJSONValue(buf, node.Content[i].Value); err != nil {
+				return err
+			}
+			buf.WriteByte(':')
+			if err := writeJSONNode(buf, node.Content[i+1]); err != nil {
+				return err
+			}
+		}
+		buf.WriteByte('}')
+		return nil
+	case yaml.SequenceNode:
+		buf.WriteByte('[')
+		for i, item := range node.Content {
+			if i > 0 {
+				buf.WriteByte(',')
+			}
+			if err := writeJSONNode(buf, item); err != nil {
+				return err
+			}
+		}
+		buf.WriteByte(']')
+		return nil
+	}
+	switch node.ShortTag() {
+	case yaml.NodeTagString:
+		return writeJSONValue(buf, node.Value)
+	case yaml.NodeTagNull:
+		buf.WriteString("null")
+		return nil
+	case yaml.NodeTagInt, yaml.NodeTagFloat, yaml.NodeTagBool:
+		if json.Valid([]byte(node.Value)) {
+			buf.WriteString(node.Value)
+			return nil
+		}
+	}
+	// A scalar JSON has no literal for, such as a YAML hexadecimal integer, is written as the
+	// value it decodes to.
+	var value any
+	if err := node.Decode(&value); err != nil {
+		return err
+	}
+	return writeJSONValue(buf, value)
+}
+
+func writeJSONValue(buf *bytes.Buffer, value any) error {
+	encoder := json.NewEncoder(buf)
+	encoder.SetEscapeHTML(false)
+	if err := encoder.Encode(value); err != nil {
+		return err
+	}
+	// Encode ends every value with a newline.
+	buf.Truncate(buf.Len() - 1)
+	return nil
 }
 
 // ComputeLinePatch computes a line-level diff between two multi-line strings and returns

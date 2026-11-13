@@ -3,7 +3,8 @@
 
 // Package collect gathers facts about a Kubernetes cluster (its version, the
 // resource types it serves, its storage and ingress classes, the managed
-// service it runs on, and its nodes' zones and labels) and stores them on a
+// service it runs on, its nodes' zones and labels, and what enforces
+// NetworkPolicy) and stores them on a
 // ConfigHub Target, under the reserved "Cluster." fact prefix.
 //
 // It is shared by "cub k8s collect" and the bots that run in a cluster, so
@@ -41,6 +42,13 @@ const FactPrefix = "Cluster."
 // keeps the one a Target already has when the caller does not.
 const NameFact = FactPrefix + "Name"
 
+// NetworkPolicyEnforcerFact names what enforces NetworkPolicy in the cluster:
+// "cilium", "calico", "antrea" or "aws-vpc-cni", or "" when the cluster is known
+// to enforce none. It is left out when that cannot be told, since a
+// NetworkPolicy is accepted by every cluster and enforced only by a network
+// plugin that implements it.
+const NetworkPolicyEnforcerFact = FactPrefix + "NetworkPolicyEnforcer"
+
 const defaultStorageClassAnnotation = "storageclass.kubernetes.io/is-default-class"
 
 var (
@@ -48,6 +56,7 @@ var (
 	storageClassGVR = schema.GroupVersionResource{Group: "storage.k8s.io", Version: "v1", Resource: "storageclasses"}
 	ingressClassGVR = schema.GroupVersionResource{Group: "networking.k8s.io", Version: "v1", Resource: "ingressclasses"}
 	nodeGVR         = schema.GroupVersionResource{Version: "v1", Resource: "nodes"}
+	configMapGVR    = schema.GroupVersionResource{Version: "v1", Resource: "configmaps"}
 )
 
 // zoneLabel is the well-known node label naming the zone a node is in.
@@ -63,7 +72,9 @@ const aksClusterLabel = "kubernetes.azure.com/cluster"
 // It needs discovery, and list on CustomResourceDefinitions, StorageClasses
 // and IngressClasses. It also lists Nodes; without permission to, it leaves
 // out the facts read from them, including Cluster.Distribution unless the
-// server version alone names the service.
+// server version alone names the service. On a cluster running the Amazon VPC
+// CNI's network policy agent, it gets the amazon-vpc-cni ConfigMap in
+// kube-system; without permission to, it leaves out [NetworkPolicyEnforcerFact].
 func Facts(ctx context.Context, restConfig *rest.Config) (map[string]string, error) {
 	discoveryClient, err := discovery.NewDiscoveryClientForConfig(restConfig)
 	if err != nil {
@@ -181,7 +192,65 @@ func facts(ctx context.Context, discoveryClient discovery.DiscoveryInterface, dy
 		facts[FactPrefix+"Distribution"] = d
 	}
 
+	enforcer, known, err := networkPolicyEnforcer(ctx, dynamicClient, crdGVKs)
+	if err != nil {
+		return nil, err
+	}
+	if known {
+		facts[NetworkPolicyEnforcerFact] = enforcer
+	}
+
 	return facts, nil
+}
+
+// policyEnforcingCRDGroups are the API groups of the CRDs of network plugins
+// that enforce NetworkPolicy whenever they run, with the plugin's name. A
+// plugin's CRDs can outlive it -- Helm leaves a chart's CRDs behind, and
+// Cilium's agent creates its own -- so a cluster moved off one of these
+// plugins still reports it.
+var policyEnforcingCRDGroups = []struct{ group, enforcer string }{
+	{"cilium.io", "cilium"},
+	{"crd.projectcalico.org", "calico"},
+	{"crd.antrea.io", "antrea"},
+}
+
+// The Amazon VPC CNI installs its PolicyEndpoint CRD whether or not it enforces
+// NetworkPolicy; whether it does is set in its ConfigMap, which the EKS add-on's
+// enableNetworkPolicy configuration writes.
+const (
+	vpcCNIPolicyEndpointGVK = "networking.k8s.aws/v1alpha1/PolicyEndpoint"
+	vpcCNINamespace         = "kube-system"
+	vpcCNIConfigMap         = "amazon-vpc-cni"
+	vpcCNIPolicyKey         = "enable-network-policy-controller"
+)
+
+// networkPolicyEnforcer names what enforces NetworkPolicy in the cluster, from
+// the CRDs it serves, crdGVKs, and for the Amazon VPC CNI, its ConfigMap. known
+// is false when that cannot be told: no recognized plugin's CRDs are served
+// (a plugin such as k3s's embedded one has none), or the VPC CNI's ConfigMap
+// cannot be read.
+func networkPolicyEnforcer(ctx context.Context, dynamicClient dynamic.Interface, crdGVKs map[string]bool) (enforcer string, known bool, err error) {
+	for _, p := range policyEnforcingCRDGroups {
+		for gvk := range crdGVKs {
+			if strings.HasPrefix(gvk, p.group+"/") {
+				return p.enforcer, true, nil
+			}
+		}
+	}
+	if !crdGVKs[vpcCNIPolicyEndpointGVK] {
+		return "", false, nil
+	}
+	cm, err := dynamicClient.Resource(configMapGVR).Namespace(vpcCNINamespace).Get(ctx, vpcCNIConfigMap, metav1.GetOptions{})
+	if apierrors.IsForbidden(err) || apierrors.IsNotFound(err) {
+		return "", false, nil
+	}
+	if err != nil {
+		return "", false, fmt.Errorf("failed to get ConfigMap %s/%s: %w", vpcCNINamespace, vpcCNIConfigMap, err)
+	}
+	if v, _, _ := unstructured.NestedString(cm.Object, "data", vpcCNIPolicyKey); v == "true" {
+		return "aws-vpc-cni", true, nil
+	}
+	return "", true, nil
 }
 
 // nodeListPageSize bounds each page of the Node list.

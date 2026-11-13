@@ -27,7 +27,7 @@ var changeworkflowCreateCmd = &cobra.Command{
 	Long:        getChangeWorkflowCreateHelp(),
 	Args:        cobra.MaximumNArgs(1), // Allow 0 args for bulk mode
 	RunE:        changeworkflowCreateCmdRun,
-	Annotations: map[string]string{"OrgLevel": ""},
+	Annotations: map[string]string{"OrgLevel": "", componentScopeAnnotation: ""},
 }
 
 func getChangeWorkflowCreateHelp() string {
@@ -61,6 +61,33 @@ satisfy for the rollout to read as completed, which no promotion can gate becaus
 A rollout whose stages gate differently from one another sets each stage's gates with
 --stage-prerequisites, and which Spaces it selects with --stage-where-space.
 
+When a change is promoted one Space at a time down a clone lineage, the stages can be worked out
+instead: --stage-per-space makes a stage for each Space an UpgradeUnit change order created in
+--space would propagate into, which is every Space downstream of it over UpgradeUnit links.
+--component (or the Component of --variant <component>/<variant>) and --where-space-field narrow
+those to the Spaces they select (ANDed), as they do on "cub changeorder create", so the same flags
+given to both select the same Spaces. A change order
+propagates hop by hop, so every selected Space has to be reachable from --space through other
+selected Spaces; one that is not -- because a Space in between was left out, or it is not
+downstream of --space -- is refused. --space itself gets no stage, since a change order
+created in it already has the change. Each stage is named for its Space's slug and selects that
+Space by ID. A Space goes after every Space it takes changes from; beyond that, bases go first
+(the word "base" in the slug or Stage label, or no release target), then Spaces whose slug, Stage
+or Environment label has the word "nonprod", "preprod", "test", "staging" or "preview", then the
+rest, and last those with "prod", "production" or "public". Words are matched whole and in any
+case, split at punctuation, digits and case changes, so "prod-use2" and "ProdUse2" say prod but
+"products" and "latest" say nothing, and "non-prod" and "pre_prod" are read as nonprod and preprod.
+A Space saying both, like "prod-test", goes with the test Spaces. Within each group, Spaces are
+ordered by slug. --prerequisites gates the stages as it does with --stage, except that Healthy,
+which a Space with no release target can never pass, is left off a stage after such a Space, and
+off the final stage when the last Space is one.
+
+--allow-on-component adds the workflow to the allowed ChangeWorkflows of the Component that
+--component, or --variant <component>/<variant>, names, once the workflow is created. A Component
+that allows none allows any, so the first one it allows is the only one a change order or
+ChangeSet reaching its Spaces may name. Creating the workflow in one of its Spaces does not by
+itself allow it there.
+
 A workflow with no stages governs ChangeSets rather than ChangeOrders: its Final prerequisites
 must hold in every Space the ChangeSet was opened in for the ChangeSet to close ("cub changeset
 create --change-workflow"). Create one with --final-prerequisites and no --stage, declaring any
@@ -76,6 +103,15 @@ Single Examples:
   cub changeworkflow create --space workflows myapp-main-line \
     --stage dev --stage staging --stage prod \
     --prerequisites Released,Healthy
+
+  # A stage for each of my-app's Spaces downstream of its base, in promotion order, and allow
+  # the workflow on my-app
+  cub changeworkflow create --variant my-app/base myapp-upgrades \
+    --stage-per-space --prerequisites Released,Healthy --allow-on-component
+
+  # The same, leaving out the Spaces of one region
+  cub changeworkflow create --space myapp-base myapp-upgrades --component my-app \
+    --stage-per-space --where-space-field "Labels.Region != 'euw1'"
 
   # From a file, or from stdin with --from-stdin
   cub changeworkflow create --space workflows myapp-main-line --filename workflow.yaml
@@ -156,8 +192,11 @@ var changeworkflowCreateLists *changeWorkflowListFlags
 
 var changeworkflowCreateArgs struct {
 	// Single create specific flags
-	stages        []string
-	prerequisites []string
+	stages           []string
+	prerequisites    []string
+	stagePerSpace    bool
+	whereSpaceField  string
+	allowOnComponent bool
 	// Bulk create specific flags
 	changeworkflowSlugs []string
 	destSpaces          []string
@@ -177,6 +216,9 @@ func init() {
 
 	// Single create specific flags
 	changeworkflowCreateCmd.Flags().StringSliceVar(&changeworkflowCreateArgs.stages, "stage", nil, "name of one stage of the workflow (can be repeated or comma-separated), given in the order a change is promoted through them. A stage selects the Spaces labeled \"Labels."+changeWorkflowStageLabel+" = '<name>'\", which is what \"cub variant create --stage\" sets; --stage-where-space selects a stage's Spaces some other way")
+	changeworkflowCreateCmd.Flags().BoolVar(&changeworkflowCreateArgs.stagePerSpace, "stage-per-space", false, "make a stage for each Space an UpgradeUnit change order created in --space would propagate into, ordered so that each comes after the Spaces it takes from, bases before test Spaces before production; --component and --where-space-field narrow which Spaces")
+	changeworkflowCreateCmd.Flags().BoolVar(&changeworkflowCreateArgs.allowOnComponent, "allow-on-component", false, "add the workflow to the allowed ChangeWorkflows of the Component --component, or --variant <component>/<variant>, names. A Component that allows none allows any, so the first it allows becomes the only one")
+	changeworkflowCreateCmd.Flags().StringVar(&changeworkflowCreateArgs.whereSpaceField, "where-space-field", "", "where expression over Spaces narrowing which get a stage with --stage-per-space, ANDed with --component, as on \"cub changeorder create\"")
 	changeworkflowCreateCmd.Flags().StringSliceVar(&changeworkflowCreateArgs.prerequisites, "prerequisites", nil, "gates given to every stage after the first and to the final stage (can be repeated or comma-separated): "+strings.Join(knownPrerequisites, ", ")+". A stage's gates are checked over every Space of the stage before it, and the first stage's over the change order's own space, which is why the first stage is not given them. A custom prerequisite is declared with --custom-prerequisite and gated on by name")
 
 	// Bulk create specific flags
@@ -226,8 +268,13 @@ func checkChangeWorkflowCreateConflictingArgs(args []string) (bool, error) {
 
 		// A bulk create clones workflows that already exist, so there is nothing here for a
 		// workflow of its own to be part of.
-		if len(changeworkflowCreateArgs.stages) > 0 || len(changeworkflowCreateArgs.prerequisites) > 0 {
-			return false, errors.New("--stage and --prerequisites can only be used with single ChangeWorkflow creation")
+		if len(changeworkflowCreateArgs.stages) > 0 || len(changeworkflowCreateArgs.prerequisites) > 0 ||
+			changeworkflowCreateArgs.stagePerSpace || changeworkflowCreateArgs.whereSpaceField != "" ||
+			changeworkflowCreateArgs.allowOnComponent {
+			return false, errors.New("--stage, --stage-per-space, --where-space-field, --allow-on-component and --prerequisites can only be used with single ChangeWorkflow creation")
+		}
+		if componentFlag != "" && variantFlag == "" {
+			return false, errors.New("--component can only be used with single ChangeWorkflow creation")
 		}
 	} else {
 		// Single create mode validation
@@ -241,8 +288,15 @@ func checkChangeWorkflowCreateConflictingArgs(args []string) (bool, error) {
 		}
 
 		if err := checkChangeWorkflowDefinition(flagPopulateModelFromStdin || flagFilename != "",
-			changeworkflowCreateArgs.stages, changeworkflowCreateArgs.prerequisites,
-			changeworkflowCreateLists.given()); err != nil {
+			changeworkflowCreateArgs.stages, changeworkflowCreateArgs.stagePerSpace,
+			changeworkflowCreateArgs.prerequisites, changeworkflowCreateLists.given()); err != nil {
+			return false, err
+		}
+		if changeworkflowCreateArgs.whereSpaceField != "" && !changeworkflowCreateArgs.stagePerSpace {
+			return false, errors.New("--where-space-field selects the Spaces --stage-per-space makes stages of, so it needs --stage-per-space")
+		}
+		if err := checkChangeWorkflowComponent(scopedComponent(), componentFlag != "" && variantFlag == "",
+			changeworkflowCreateArgs.stagePerSpace, changeworkflowCreateArgs.allowOnComponent); err != nil {
 			return false, err
 		}
 	}
@@ -267,23 +321,41 @@ func checkChangeWorkflowCreateConflictingArgs(args []string) (bool, error) {
 	return isBulkCreateMode, nil
 }
 
+// checkChangeWorkflowComponent checks that a Component given to a single create is used, and that
+// one is given where it is needed. component is the one the command is scoped to; standalone is
+// whether --component was given without --variant, where it qualifies nothing, so selecting the
+// Spaces --stage-per-space makes stages of and naming the Component --allow-on-component writes
+// are all it can do.
+func checkChangeWorkflowComponent(component string, standalone, stagePerSpace, allowOnComponent bool) error {
+	if allowOnComponent && component == "" {
+		return errors.New("--allow-on-component needs the Component to allow the workflow on: pass --component, or --variant <component>/<variant>")
+	}
+	if standalone && !stagePerSpace && !allowOnComponent {
+		return errors.New("--component selects the Spaces --stage-per-space makes stages of, or names the Component --allow-on-component allows the workflow on, so it needs one of them")
+	}
+	return nil
+}
+
 // checkChangeWorkflowDefinition checks that a single create says what the workflow is, one way.
-// --stage and --prerequisites build the stages, and a file is the whole workflow; they answer the
-// same question, so giving both leaves no way to tell which was meant. The other list flags edit
+// --stage or --stage-per-space, with --prerequisites, build the stages, and a file is the whole
+// workflow; they answer the same question, so giving two leaves no way to tell which was meant. The other list flags edit
 // whichever of the two built the workflow, and on their own describe a workflow with no stages,
 // which governs ChangeSets: its Final prerequisites, and the declarations they name. Giving
 // nothing at all would create a workflow that gates nothing.
-func checkChangeWorkflowDefinition(fromFile bool, stages, prerequisites []string, listsGiven bool) error {
-	fromStageFlags := len(stages) > 0 || len(prerequisites) > 0
+func checkChangeWorkflowDefinition(fromFile bool, stages []string, stagePerSpace bool, prerequisites []string, listsGiven bool) error {
+	fromStageFlags := len(stages) > 0 || stagePerSpace || len(prerequisites) > 0
 	if fromFile && fromStageFlags {
-		return errors.New("--filename/--from-stdin and --stage/--prerequisites are mutually exclusive: the file is the workflow")
+		return errors.New("--filename/--from-stdin and --stage/--stage-per-space/--prerequisites are mutually exclusive: the file is the workflow")
+	}
+	if stagePerSpace && len(stages) > 0 {
+		return errors.New("--stage and --stage-per-space are mutually exclusive: --stage-per-space works the stages out from the Spaces")
 	}
 	if !fromFile && !fromStageFlags && !listsGiven {
 		return errors.New("a ChangeWorkflow needs stages, or, to govern ChangeSets, Final prerequisites: name them with --stage or --final-prerequisites, or give the whole workflow with --filename (or --from-stdin)")
 	}
 	// --prerequisites gates the hops between stages, so there have to be some; the gates of a
 	// workflow with none are its Final prerequisites.
-	if len(prerequisites) > 0 && len(stages) == 0 {
+	if len(prerequisites) > 0 && len(stages) == 0 && !stagePerSpace {
 		return errors.New("--prerequisites needs at least one --stage; a workflow with no stages, which governs ChangeSets, is gated with --final-prerequisites")
 	}
 	return nil
@@ -374,9 +446,34 @@ func runSingleChangeWorkflowCreate(args []string) error {
 		return err
 	}
 
-	if len(changeworkflowCreateArgs.stages) > 0 {
-		stages, final, err := changeWorkflowStagesFromFlags(
-			changeworkflowCreateArgs.stages, changeworkflowCreateArgs.prerequisites)
+	// Resolved before anything is created, so a Component that cannot be found does not leave a
+	// workflow behind that it was meant to be allowed on.
+	var component *goclientnew.Component
+	if ref := scopedComponent(); ref != "" {
+		resolved, err := resolveComponent(ref, "*")
+		if err != nil {
+			return errors.Wrap(err, "failed to parse component")
+		}
+		component = resolved.Component
+	}
+
+	stageNames := changeworkflowCreateArgs.stages
+	if changeworkflowCreateArgs.stagePerSpace {
+		var componentID *uuid.UUID
+		if component != nil {
+			componentID = &component.ComponentID
+		}
+		stages, final, err := changeWorkflowStagesPerSpace(spaceID, selectedSpaceSlug,
+			changeworkflowCreateArgs.whereSpaceField, componentID, changeworkflowCreateArgs.prerequisites)
+		if err != nil {
+			return err
+		}
+		newBody.Stages = stages
+		newBody.Final = final
+		stageNames = nil
+	}
+	if len(stageNames) > 0 {
+		stages, final, err := changeWorkflowStagesFromFlags(stageNames, changeworkflowCreateArgs.prerequisites)
 		if err != nil {
 			return err
 		}
@@ -410,6 +507,43 @@ func runSingleChangeWorkflowCreate(args []string) error {
 	changeWorkflowDetails := changeWorkflowRes.JSON200
 	displayCreateResults(changeWorkflowDetails, "changeworkflow", args[0],
 		changeWorkflowDetails.ChangeWorkflowID.String(), displayChangeWorkflowDetails)
+	if changeworkflowCreateArgs.stagePerSpace && !quiet && !isAlternativeOutput() {
+		names := make([]string, len(changeWorkflowDetails.Stages))
+		for i, stage := range changeWorkflowDetails.Stages {
+			names[i] = stage.Name
+		}
+		tprint("Stages, in promotion order: %s", strings.Join(names, ", "))
+	}
+	if changeworkflowCreateArgs.allowOnComponent {
+		if dryRun {
+			if !quiet && !isAlternativeOutput() {
+				tprint("Dry run: would allow changeworkflow %s on component %s", changeWorkflowDetails.Slug, component.Slug)
+			}
+			return nil
+		}
+		return allowChangeWorkflowOnComponent(component, changeWorkflowDetails)
+	}
+	return nil
+}
+
+// allowChangeWorkflowOnComponent adds the workflow to the Component's allowed ChangeWorkflows. The
+// whole Component is written back with the Version it was read at, so a concurrent change to the
+// set is refused rather than overwritten.
+func allowChangeWorkflowOnComponent(component *goclientnew.Component, workflow *goclientnew.ChangeWorkflow) error {
+	if slices.Contains(component.AllowedChangeWorkflowIDs, workflow.ChangeWorkflowID) {
+		return nil
+	}
+	component.AllowedChangeWorkflowIDs = applyAllowedChangeWorkflows(component.AllowedChangeWorkflowIDs,
+		[]uuid.UUID{workflow.ChangeWorkflowID}, nil)
+	res, err := cubClientNew.UpdateComponentWithResponse(ctx, component.ComponentID, &goclientnew.UpdateComponentParams{}, *component)
+	if cubapi.IsAPIError(err, res) {
+		return errors.Wrapf(cubapi.InterpretErrorGeneric(err, res),
+			"created ChangeWorkflow %s, but could not allow it on component %s; allow it with \"cub component update %s --allowed-change-workflow %s/%s\"",
+			workflow.Slug, component.Slug, component.Slug, selectedSpaceSlug, workflow.Slug)
+	}
+	if !quiet && !isAlternativeOutput() {
+		tprint("Allowed changeworkflow %s on component %s", workflow.Slug, component.Slug)
+	}
 	return nil
 }
 

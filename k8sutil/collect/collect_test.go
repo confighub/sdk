@@ -174,3 +174,52 @@ func TestPatch(t *testing.T) {
 	collected[NameFact] = "prod-us"
 	assert.Equal(t, "prod-us", Patch(current, collected)[NameFact], "a collected name replaces the existing one")
 }
+
+func TestNetworkPolicyEnforcer(t *testing.T) {
+	vpcCNIConfig := func(enabled string) *unstructured.Unstructured {
+		cm := object("v1", "ConfigMap", vpcCNIConfigMap, map[string]any{
+			"data": map[string]any{vpcCNIPolicyKey: enabled, "warm-ip-target": "1"},
+		})
+		cm.SetNamespace(vpcCNINamespace)
+		return cm
+	}
+	cases := []struct {
+		name    string
+		crds    []string
+		objects []runtime.Object
+		want    string
+		known   bool
+	}{
+		{"cilium", []string{"cilium.io/v2/CiliumNetworkPolicy"}, nil, "cilium", true},
+		{"calico", []string{"crd.projectcalico.org/v1/NetworkPolicy"}, nil, "calico", true},
+		{"antrea", []string{"crd.antrea.io/v1beta1/ClusterNetworkPolicy"}, nil, "antrea", true},
+		// Cilium chained onto the VPC CNI enforces, whatever the VPC CNI's setting.
+		{"cilium over vpc-cni", []string{vpcCNIPolicyEndpointGVK, "cilium.io/v2/CiliumNetworkPolicy"}, []runtime.Object{vpcCNIConfig("false")}, "cilium", true},
+		{"vpc-cni enabled", []string{vpcCNIPolicyEndpointGVK}, []runtime.Object{vpcCNIConfig("true")}, "aws-vpc-cni", true},
+		{"vpc-cni disabled", []string{vpcCNIPolicyEndpointGVK}, []runtime.Object{vpcCNIConfig("false")}, "", true},
+		{"vpc-cni without its ConfigMap", []string{vpcCNIPolicyEndpointGVK}, nil, "", false},
+		{"no recognized plugin", []string{"example.com/v1/Widget"}, nil, "", false},
+	}
+	for _, c := range cases {
+		t.Run(c.name, func(t *testing.T) {
+			crdGVKs := map[string]bool{}
+			for _, g := range c.crds {
+				crdGVKs[g] = true
+			}
+			dyn := fakedynamic.NewSimpleDynamicClient(runtime.NewScheme(), c.objects...)
+			got, known, err := networkPolicyEnforcer(context.Background(), dyn, crdGVKs)
+			require.NoError(t, err)
+			assert.Equal(t, c.want, got)
+			assert.Equal(t, c.known, known)
+		})
+	}
+
+	// Without permission to read the VPC CNI's ConfigMap, enforcement is unknown.
+	dyn := fakedynamic.NewSimpleDynamicClient(runtime.NewScheme(), vpcCNIConfig("true"))
+	dyn.PrependReactor("get", "configmaps", func(k8stesting.Action) (bool, runtime.Object, error) {
+		return true, nil, apierrors.NewForbidden(configMapGVR.GroupResource(), vpcCNIConfigMap, nil)
+	})
+	_, known, err := networkPolicyEnforcer(context.Background(), dyn, map[string]bool{vpcCNIPolicyEndpointGVK: true})
+	require.NoError(t, err)
+	assert.False(t, known)
+}

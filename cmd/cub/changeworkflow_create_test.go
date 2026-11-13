@@ -19,6 +19,7 @@ func TestCheckChangeWorkflowDefinition(t *testing.T) {
 		name          string
 		fromFile      bool
 		stages        []string
+		stagePerSpace bool
 		prerequisites []string
 		listsGiven    bool
 		wantErr       string
@@ -31,14 +32,60 @@ func TestCheckChangeWorkflowDefinition(t *testing.T) {
 		{name: "a file and stages", fromFile: true, stages: []string{"dev"}, wantErr: "mutually exclusive"},
 		{name: "prerequisites without stages", prerequisites: []string{"Validated"}, listsGiven: true,
 			wantErr: "--prerequisites needs at least one --stage"},
+		{name: "a stage per space", stagePerSpace: true, prerequisites: []string{"Released"}},
+		{name: "a stage per space and stages", stagePerSpace: true, stages: []string{"dev"}, wantErr: "mutually exclusive"},
+		{name: "a file and a stage per space", fromFile: true, stagePerSpace: true, wantErr: "mutually exclusive"},
 	}
 	for _, test := range tests {
-		err := checkChangeWorkflowDefinition(test.fromFile, test.stages, test.prerequisites, test.listsGiven)
+		err := checkChangeWorkflowDefinition(test.fromFile, test.stages, test.stagePerSpace, test.prerequisites, test.listsGiven)
 		switch {
 		case test.wantErr == "" && err != nil:
 			t.Errorf("%s: unexpected error %v", test.name, err)
 		case test.wantErr != "" && (err == nil || !strings.Contains(err.Error(), test.wantErr)):
 			t.Errorf("%s: error = %v, want one containing %q", test.name, err, test.wantErr)
+		}
+	}
+}
+
+func TestCheckChangeWorkflowComponent(t *testing.T) {
+	tests := []struct {
+		name                             string
+		component                        string
+		standalone, stagePerSpace, allow bool
+		wantErr                          string
+	}{
+		{name: "nothing"},
+		{name: "--component qualifying --variant", component: "my-app"},
+		{name: "--component selecting Spaces", component: "my-app", standalone: true, stagePerSpace: true},
+		{name: "--component to allow on", component: "my-app", standalone: true, allow: true},
+		{name: "--variant <component>/<variant> to allow on", component: "my-app", allow: true},
+		{name: "--component doing nothing", component: "my-app", standalone: true, wantErr: "needs one of them"},
+		{name: "allowing on no Component", allow: true, wantErr: "--allow-on-component needs the Component"},
+	}
+	for _, test := range tests {
+		err := checkChangeWorkflowComponent(test.component, test.standalone, test.stagePerSpace, test.allow)
+		switch {
+		case test.wantErr == "" && err != nil:
+			t.Errorf("%s: unexpected error %v", test.name, err)
+		case test.wantErr != "" && (err == nil || !strings.Contains(err.Error(), test.wantErr)):
+			t.Errorf("%s: error = %v, want one containing %q", test.name, err, test.wantErr)
+		}
+	}
+}
+
+// The qualified --variant names the same Component --component does.
+func TestScopedComponent(t *testing.T) {
+	defer func(component, variant string) { componentFlag, variantFlag = component, variant }(componentFlag, variantFlag)
+	for _, test := range []struct{ component, variant, want string }{
+		{"", "", ""},
+		{"", "base", ""},
+		{"", "my-app/base", "my-app"},
+		{"my-app", "base", "my-app"},
+		{"my-app", "", "my-app"},
+	} {
+		componentFlag, variantFlag = test.component, test.variant
+		if got := scopedComponent(); got != test.want {
+			t.Errorf("scopedComponent() with --component %q --variant %q = %q, want %q", test.component, test.variant, got, test.want)
 		}
 	}
 }

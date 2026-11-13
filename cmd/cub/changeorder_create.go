@@ -62,7 +62,7 @@ Examples:
     --where-space-field "Labels.Region = 'use2'"
 
   # --component also names the Component of --variant, so this one resides in my-app's base
-  # and is headed for my-app's spaces
+  # and is headed for my-app's spaces; --variant my-app/base says the same
   cub changeorder create --variant base --component my-app bump-base-image
 
   # Create one governed by a change workflow. The workflow says in what order the spaces the
@@ -262,7 +262,7 @@ func checkChangeOrderCreateConflictingArgs(args []string) (bool, error) {
 // over Spaces, which the server evaluates into its in-scope spaces.
 func changeOrderCreateHasSpaceSelection() bool {
 	return changeorderCreateArgs.whereSpaceField != "" || changeorderCreateArgs.spaceFilter != "" ||
-		componentFlag != ""
+		scopedComponent() != ""
 }
 
 // resolveChangeWorkflowForChangeOrder resolves --change-workflow to the ChangeWorkflow governing
@@ -381,8 +381,8 @@ func runSingleChangeOrderCreate(args []string) error {
 	if changeorderCreateArgs.whereSpaceField != "" {
 		newBody.WhereSpace = changeorderCreateArgs.whereSpaceField
 	}
-	if componentFlag != "" {
-		componentID, err := resolveComponentID(componentFlag)
+	if component := scopedComponent(); component != "" {
+		componentID, err := resolveComponentID(component)
 		if err != nil {
 			return errors.Wrap(err, "failed to parse component")
 		}

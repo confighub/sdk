@@ -20,8 +20,9 @@ var unitPathCmd = &cobra.Command{
 	Short: "Show everything recorded about one field of a unit",
 	Long: getCommandHelp(`Show everything ConfigHub records about one field of a unit's configuration: its value,
 whether it is protected, the guards and other annotations on it, the conflicts and link
-findings about it, whether a link needs or provides it, and every change from this unit out
-to where the value was set -- each with its whole mutation and revision rather than the one
+findings about it, whether a link needs or provides it, the comments written beside it in the
+configuration, the latest thread of review comments about it, and every change from this unit
+out to where the value was set -- each with its whole mutation and revision rather than the one
 line 'cub unit blame' has room for.
 
 Name the field by the REF 'cub unit blame' printed for it, or any unambiguous prefix of at
@@ -29,6 +30,10 @@ least four characters of one, or by its path. A path that more than one resource
 --resource. A path that holds other fields, such as a container, lists the fields under it
 with their REFs. A field the unit does not have, which blame lists with the A flag because a
 conflict names it, is reported with the conflicts about it.
+
+The review thread is the one about the field's resource and path that was commented in most
+recently, with its replies; 'cub review-comment list' lists every comment on the unit, and
+'cub review-comment create --reply-to' answers one.
 
 For each change it shows:
   - the mutation: the function and its arguments, the link with its update type and

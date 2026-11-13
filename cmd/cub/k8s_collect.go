@@ -23,9 +23,11 @@ var k8sCollectCmd = &cobra.Command{
 	Use:   "collect [<target-slug-or-id>]",
 	Short: "Collect facts from a Kubernetes cluster and store them on a Target",
 	Long: getCommandHelp(`Collect facts about a Kubernetes cluster (version, CRDs, storage classes,
-ingress classes, the managed service it runs on, and its nodes' zones and label keys)
-and store them on a Target under the reserved "Cluster." fact prefix. Without
-permission to list Nodes, the facts read from them are left out.
+ingress classes, the managed service it runs on, its nodes' zones and label keys,
+and what enforces NetworkPolicy) and store them on a Target under the reserved
+"Cluster." fact prefix. Without permission to list Nodes, the facts read from them
+are left out. Without permission to get the amazon-vpc-cni ConfigMap in kube-system,
+Cluster.NetworkPolicyEnforcer is left out on clusters running the Amazon VPC CNI.
 
 Collection owns the "Cluster." namespace: it (re)writes those facts and removes stale
 ones, while leaving user-defined facts (any key outside the prefix) untouched.

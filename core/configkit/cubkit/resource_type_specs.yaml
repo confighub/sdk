@@ -9,6 +9,11 @@ resourceTypes:
     immutable:
     - path: ToolchainType
     - path: DataType
+  listTypes:
+  - path: Permissions.*.Users
+    type: set
+  - path: Permissions.*.Groups
+    type: set
   mapKeyPaths:
   - DeleteGates.*
   - Labels.*
@@ -17,19 +22,15 @@ resourceTypes:
   - ResourceTypePaths.*.Paths.*.Details.ProvidedProperties.*
   - ResourceTypePaths.*.Paths.*.Details.NeededRequired.*
   - ResourceTypePaths.*.Paths.*.Details.NeededPreferred.*
-  - ResourceTypePaths.*.Paths.*.Details.BoundProvidedProperties.*
   - ResourceTypePaths.*.Paths.*.TypeExceptions.*
   - ResourceTypePaths.*.ProvidedProperties.*
   - ResourceTypePaths.*.NeededRequired.*
   - ResourceTypePaths.*.NeededPreferred.*
-  - ResourceTypePaths.*.BoundProvidedProperties.*
   - Parameters.*.Schema.definitions.*
   - Parameters.*.Schema.properties.*
   - Parameters.*.Schema.patternProperties.*
   - Parameters.*.Schema.dependencies.*
   - Permissions.*
-  - Permissions.*.UserIDs.*
-  - Permissions.*.GroupIDs.*
   mergeKeys:
   - key: ParameterName
     path: Parameters
@@ -46,17 +47,19 @@ resourceTypes:
     type: set
   - path: Stages.*.ReleasePrerequisites
     type: set
-  - path: AttestationPrerequisites.*.FromUserIDs
+  - path: AttestationPrerequisites.*.FromUsers
     type: set
-  - path: AttestationPrerequisites.*.FromGroupIDs
+  - path: AttestationPrerequisites.*.FromGroups
+    type: set
+  - path: Permissions.*.Users
+    type: set
+  - path: Permissions.*.Groups
     type: set
   mapKeyPaths:
   - DeleteGates.*
   - Labels.*
   - Annotations.*
   - Permissions.*
-  - Permissions.*.UserIDs.*
-  - Permissions.*.GroupIDs.*
   mergeKeys:
   - key: Name
     path: Stages
@@ -68,6 +71,10 @@ resourceTypes:
   type: ChangeWorkflow
 - applyPriority: 500
   listTypes:
+  - path: Permissions.*.Users
+    type: set
+  - path: Permissions.*.Groups
+    type: set
   - path: Commands.*.Options.*.Choices
     type: atomic
   - path: Subscriptions
@@ -77,8 +84,6 @@ resourceTypes:
   - Labels.*
   - Annotations.*
   - Permissions.*
-  - Permissions.*.UserIDs.*
-  - Permissions.*.GroupIDs.*
   - Commands.*
   - Commands.*.Options.*.Schema.definitions.*
   - Commands.*.Options.*.Schema.properties.*
@@ -103,13 +108,15 @@ resourceTypes:
   listTypes:
   - path: AllowedChangeWorkflows
     type: set
+  - path: Permissions.*.Users
+    type: set
+  - path: Permissions.*.Groups
+    type: set
   mapKeyPaths:
   - DeleteGates.*
   - Labels.*
   - Annotations.*
   - Permissions.*
-  - Permissions.*.UserIDs.*
-  - Permissions.*.GroupIDs.*
   scope: Organization
   type: Component
 - applyPriority: 200
@@ -125,13 +132,16 @@ resourceTypes:
       path: Where
       prefixes: true
       selects: '@From'
+  listTypes:
+  - path: Permissions.*.Users
+    type: set
+  - path: Permissions.*.Groups
+    type: set
   mapKeyPaths:
   - DeleteGates.*
   - Labels.*
   - Annotations.*
   - Permissions.*
-  - Permissions.*.UserIDs.*
-  - Permissions.*.GroupIDs.*
   scope: Space
   type: Filter
 - applyPriority: 200
@@ -150,6 +160,10 @@ resourceTypes:
     type: atomic
   - path: Clearance.*.Values
     type: set
+  - path: Permissions.*.Users
+    type: set
+  - path: Permissions.*.Groups
+    type: set
   mapKeyPaths:
   - DeleteGates.*
   - Labels.*
@@ -161,8 +175,6 @@ resourceTypes:
   - Guards.*
   - OtherUnits.*
   - Permissions.*
-  - Permissions.*.UserIDs.*
-  - Permissions.*.GroupIDs.*
   mergeKeys:
   - key: ParameterName
     path: Parameters
@@ -196,14 +208,16 @@ resourceTypes:
     type: set
   - path: DownstreamSetters.*.Parameters
     type: set
+  - path: Permissions.*.Users
+    type: set
+  - path: Permissions.*.Groups
+    type: set
   mapKeyPaths:
   - DeleteGates.*
   - Labels.*
   - Annotations.*
   - Guards.*
   - Permissions.*
-  - Permissions.*.UserIDs.*
-  - Permissions.*.GroupIDs.*
   mergeKeys:
   - extraKeys:
     - Operator
@@ -252,13 +266,16 @@ resourceTypes:
       path: WhereAttribute
       prefixes: true
       selects: Attribute
+  listTypes:
+  - path: Permissions.*.Users
+    type: set
+  - path: Permissions.*.Groups
+    type: set
   mapKeyPaths:
   - DeleteGates.*
   - Labels.*
   - Annotations.*
   - Permissions.*
-  - Permissions.*.UserIDs.*
-  - Permissions.*.GroupIDs.*
   scope: Organization
   type: Space
 - applyPriority: 400
@@ -272,13 +289,16 @@ resourceTypes:
       path: WhereTrigger
       prefixes: true
       selects: Trigger
+  listTypes:
+  - path: Permissions.*.Users
+    type: set
+  - path: Permissions.*.Groups
+    type: set
   mapKeyPaths:
   - DeleteGates.*
   - Labels.*
   - Annotations.*
   - Permissions.*
-  - Permissions.*.UserIDs.*
-  - Permissions.*.GroupIDs.*
   - Facts.*
   scope: Space
   type: Target
@@ -305,6 +325,10 @@ resourceTypes:
   listTypes:
   - path: Clearance.*.Values
     type: set
+  - path: Permissions.*.Users
+    type: set
+  - path: Permissions.*.Groups
+    type: set
   mapKeyPaths:
   - DeleteGates.*
   - Labels.*
@@ -312,8 +336,6 @@ resourceTypes:
   - Guards.*
   - OtherUnits.*
   - Permissions.*
-  - Permissions.*.UserIDs.*
-  - Permissions.*.GroupIDs.*
   mergeKeys:
   - key: ParameterName
     path: Arguments
@@ -329,13 +351,16 @@ resourceTypes:
     - optional: true
       path: Filter
       target: Filter
+  listTypes:
+  - path: Permissions.*.Users
+    type: set
+  - path: Permissions.*.Groups
+    type: set
   mapKeyPaths:
   - DeleteGates.*
   - Labels.*
   - Annotations.*
   - Permissions.*
-  - Permissions.*.UserIDs.*
-  - Permissions.*.GroupIDs.*
   mergeKeys:
   - key: Name
     path: Columns

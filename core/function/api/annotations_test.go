@@ -881,3 +881,23 @@ func TestDiffGuardsCoversLocalAndInherited(t *testing.T) {
 	assert.Empty(t, delta.Remove)
 	assert.Empty(t, delta.SetLocal)
 }
+
+func TestClearanceAdmittingExtendsOnlyWhatItHasTo(t *testing.T) {
+	admits := func(c api.Clearance, value string) bool {
+		ok, _ := c.Admits(map[string]string{api.GuardKeyLink: value})
+		return ok
+	}
+
+	added := api.ClearanceAdmitting(nil, api.GuardKeyLink, "Insert")
+	assert.Equal(t, api.Clearance{{Key: api.GuardKeyLink, Operator: api.ClearanceOperatorIn, Values: []string{"Insert"}}}, added)
+
+	original := api.Clearance{{Key: api.GuardKeyLink, Operator: api.ClearanceOperatorIn, Values: []string{"TransformPaths"}}}
+	extended := api.ClearanceAdmitting(original, api.GuardKeyLink, "Upsert")
+	assert.Equal(t, []string{"TransformPaths", "Upsert"}, extended[0].Values, "the requirement on the key takes the value")
+	assert.Equal(t, []string{"TransformPaths"}, original[0].Values, "the clearance passed in is left alone")
+	assert.True(t, admits(extended, "Upsert"))
+	assert.True(t, admits(extended, "TransformPaths"))
+
+	exists := api.Clearance{{Key: api.GuardKeyLink, Operator: api.ClearanceOperatorExists}}
+	assert.Equal(t, exists, api.ClearanceAdmitting(exists, api.GuardKeyLink, "Upsert"), "already admitted")
+}

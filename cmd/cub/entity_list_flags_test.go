@@ -35,7 +35,7 @@ func TestListFlagsAreMadeFromTheSchema(t *testing.T) {
 	for path, want := range map[string][]string{
 		"view create":           {"column", "column-data-type", "column-type", "column-group-by", "column-order-by-direction"},
 		"view update":           {"column", "column-data-type", "column-type", "column-group-by", "column-order-by-direction"},
-		"changeworkflow create": {"stage", "stage-where-space", "stage-prerequisites", "stage-release-prerequisites", "final-prerequisites", "custom-prerequisite", "custom-prerequisite-description", "attestation-prerequisite", "attestation-prerequisite-count", "attestation-prerequisite-type", "attestation-prerequisite-from-user-ids", "attestation-prerequisite-max-age", "attestation-prerequisite-allow-authors", "attestation-prerequisite-ignore-fail"},
+		"changeworkflow create": {"stage", "stage-where-space", "stage-prerequisites", "stage-release-prerequisites", "final-prerequisites", "custom-prerequisite", "custom-prerequisite-description", "attestation-prerequisite", "attestation-prerequisite-count", "attestation-prerequisite-type", "attestation-prerequisite-from-users", "attestation-prerequisite-from-groups", "attestation-prerequisite-max-age", "attestation-prerequisite-allow-authors", "attestation-prerequisite-ignore-fail"},
 		"changeworkflow update": {"stage", "stage-where-space", "stage-prerequisites", "stage-release-prerequisites", "final-prerequisites", "custom-prerequisite", "attestation-prerequisite", "attestation-prerequisite-count"},
 		"link create":           {"upstream-path", "downstream-path", "manual-binding", "upstream-getter", "downstream-setter"},
 		"link update":           {"upstream-path", "downstream-path", "manual-binding", "upstream-getter", "downstream-setter"},

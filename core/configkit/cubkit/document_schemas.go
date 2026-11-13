@@ -20,6 +20,23 @@ import (
 //go:embed document_schemas.json
 var documentSchemasJSON []byte
 
+// NestedReferenceKeyword marks, in a document schema, a field inside an object that names other
+// entities, such as the Users of a grant in Permissions or the Space of a Channel's subscription,
+// where the entity holds their IDs. Its value is a NestedReference, which says how to turn the
+// names a document holds into what the entity holds.
+const NestedReferenceKeyword = "x-entityReference"
+
+// NestedReference is what NestedReferenceKeyword says of a field.
+type NestedReference struct {
+	// Field is the field's name in the entity, such as UserIDs for a document's Users.
+	Field string `json:"field"`
+	// Target is the type of entity the names refer to.
+	Target string `json:"target"`
+	// Set says the entity holds the IDs as an object of IDs to true, where the document holds a
+	// list of names.
+	Set bool `json:"set,omitempty"`
+}
+
 type documentSchemaFile struct {
 	Documents   map[api.ResourceType]map[string]any `json:"documents"`
 	Definitions map[string]any                      `json:"definitions"`

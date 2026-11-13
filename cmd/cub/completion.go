@@ -240,7 +240,7 @@ var refArgKinds = map[string][]*refKind{
 	"serviceaccount token create": {kindServiceAccount}, "serviceaccount token list": {kindServiceAccount}, "serviceaccount token revoke": {kindServiceAccount},
 	"review-comment get": {kindUnit}, "review-comment list": {kindUnit}, "review-comment create": {kindUnit},
 	"review-comment update": {kindUnit}, "review-comment delete": {kindUnit},
-	"k8s collect":     {kindTarget},
+	"k8s collect": {kindTarget}, "k8s appconfig extract": {kindUnit},
 	"link get":        {kindLink},
 	"link delete":     {kindLink},
 	"link create":     {nil, kindUnit, kindUnit, kindSpace},

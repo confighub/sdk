@@ -249,7 +249,9 @@ func runBulkChannelUpdate(enhancer func(map[string]interface{})) error {
 	if err != nil {
 		return fmt.Errorf("failed to build patch data: %w", err)
 	}
-	params := &goclientnew.BulkPatchChannelsParams{Where: &where}
+	// A Channel is in a Space, so the selection is within the one --space names.
+	effectiveWhere := addSpaceIDToWhereClause(where, selectedSpaceID)
+	params := &goclientnew.BulkPatchChannelsParams{Where: &effectiveWhere}
 	params.IncludeHidden = includeHiddenParam()
 	params.WithBackingUnits = withBackingUnitsParam()
 	params.FromBackingUnits = fromBackingUnitsParam()
@@ -260,7 +262,7 @@ func runBulkChannelUpdate(enhancer func(map[string]interface{})) error {
 		return cubapi.InterpretErrorGeneric(err, bulkRes)
 	}
 	return displayBulkGenericCreateOrUpdateResults(
-		bulkRes.JSON200, bulkRes.JSON207, bulkRes.StatusCode(), "channel", "update", where,
+		bulkRes.JSON200, bulkRes.JSON207, bulkRes.StatusCode(), "channel", "update", effectiveWhere,
 		func(r *goclientnew.ChannelCreateOrUpdateResponse) *goclientnew.ResponseError { return r.Error },
 		func(r *goclientnew.ChannelCreateOrUpdateResponse) string {
 			if r.Channel != nil {

@@ -1093,14 +1093,14 @@ func extractCommentsFromMapping(node *yaml.Node) error {
 		if keyNode.HeadComment != "" {
 			entries = append(entries, commentEntry{
 				commentKey: commentKeyPrefix + "head$" + key,
-				text:       strings.TrimPrefix(strings.TrimPrefix(keyNode.HeadComment, "# "), "#"),
+				text:       commentKeyText(keyNode.HeadComment),
 			})
 			keyNode.HeadComment = ""
 		}
 		if keyNode.LineComment != "" {
 			entries = append(entries, commentEntry{
 				commentKey: commentKeyPrefix + "line$" + key,
-				text:       strings.TrimPrefix(strings.TrimPrefix(keyNode.LineComment, "# "), "#"),
+				text:       commentKeyText(keyNode.LineComment),
 			})
 			keyNode.LineComment = ""
 		}
@@ -1111,7 +1111,7 @@ func extractCommentsFromMapping(node *yaml.Node) error {
 			if !hasCommentEntry(entries, commentKeyPrefix+"line$"+key) {
 				entries = append(entries, commentEntry{
 					commentKey: commentKeyPrefix + "line$" + key,
-					text:       strings.TrimPrefix(strings.TrimPrefix(valueNode.LineComment, "# "), "#"),
+					text:       commentKeyText(valueNode.LineComment),
 				})
 			}
 			valueNode.LineComment = ""
@@ -1119,7 +1119,7 @@ func extractCommentsFromMapping(node *yaml.Node) error {
 		if valueNode.FootComment != "" {
 			entries = append(entries, commentEntry{
 				commentKey: commentKeyPrefix + "foot$" + key,
-				text:       strings.TrimPrefix(strings.TrimPrefix(valueNode.FootComment, "# "), "#"),
+				text:       commentKeyText(valueNode.FootComment),
 			})
 			valueNode.FootComment = ""
 		}
@@ -1165,6 +1165,60 @@ func extractCommentsFromMapping(node *yaml.Node) error {
 	}
 
 	return nil
+}
+
+// commentKeyText is the text a $comment$ key holds for a YAML comment: its lines without their
+// comment markers, as the comment keys of the other formats hold theirs. A marker is a "#" and the
+// space after it, if there is one, so "## Heading" is "# Heading". A line that is only a marker is
+// an empty line of the text.
+func commentKeyText(comment string) string {
+	lines := strings.Split(comment, "\n")
+	for i, line := range lines {
+		line = strings.TrimLeft(line, " \t")
+		lines[i] = strings.TrimPrefix(strings.TrimPrefix(line, "# "), "#")
+	}
+	return strings.Join(lines, "\n")
+}
+
+// yamlComment is the YAML comment for the text a $comment$ key holds, each of its lines marked.
+//
+// Keys once held a comment with only its first line's marker removed, and such text is still
+// stored -- a value a Unit records as what set a path, or a withheld change. It is recognized by
+// every line after the first being marked, or empty, and only its first line is marked. Text
+// written since is read the same way only when every line after its first began with "##", which
+// loses one "#" from each of those lines.
+func yamlComment(text string) string {
+	lines := strings.Split(text, "\n")
+	if markedAfterFirstLine(lines) {
+		return "# " + text
+	}
+	for i, line := range lines {
+		switch {
+		case line == "":
+			lines[i] = "#"
+		case strings.HasPrefix(line, "#"):
+			// A line that began "##", as a heading in a comment does.
+			lines[i] = "#" + line
+		default:
+			lines[i] = "# " + line
+		}
+	}
+	return strings.Join(lines, "\n")
+}
+
+// markedAfterFirstLine reports whether the lines after the first all carry a comment marker or are
+// empty, and at least one carries a marker.
+func markedAfterFirstLine(lines []string) bool {
+	marked := false
+	for _, line := range lines[1:] {
+		switch {
+		case strings.HasPrefix(line, "#"):
+			marked = true
+		case line != "":
+			return false
+		}
+	}
+	return marked
 }
 
 // commentEntry is used during ExtractCommentsToKeys to collect comment key-value pairs.
@@ -1246,11 +1300,11 @@ func injectCommentsIntoMapping(node *yaml.Node) error {
 				if ci.targetKey == keyNode.Value {
 					switch ci.commentType {
 					case "head":
-						keyNode.HeadComment = "# " + ci.text
+						keyNode.HeadComment = yamlComment(ci.text)
 					case "line":
-						keyNode.LineComment = "# " + ci.text
+						keyNode.LineComment = yamlComment(ci.text)
 					case "foot":
-						valueNode.FootComment = "# " + ci.text
+						valueNode.FootComment = yamlComment(ci.text)
 					}
 				}
 			}

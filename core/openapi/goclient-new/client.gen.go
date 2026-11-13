@@ -2536,7 +2536,7 @@ type ClientInterface interface {
 
 	// GetUnitPath Get everything recorded about one field of a Unit
 	//
-	// Returns everything recorded about one field of a Unit's configuration: the field as the Unit's blame reports it, its own annotations, whether the Unit's last Release includes its value, and each change from this Unit out to where the value was set with the Mutation and Revision it was read from. With history, it also returns every change the Unit recorded to the field. A field that names nothing is a 404; one that names several fields, or a value holding several, is a 400 whose message lists them.
+	// Returns everything recorded about one field of a Unit's configuration: the field as the Unit's blame reports it, its own annotations, whether the Unit's last Release includes its value, each change from this Unit out to where the value was set with the Mutation and Revision it was read from, the comments the configuration has about the field, and the latest thread of ReviewComments about it. With history, it also returns every change the Unit recorded to the field. A field that names nothing is a 404; one that names several fields, or a value holding several, is a 400 whose message lists them.
 	//
 	// Corresponds with GET /space/{space_id}/unit/{unit_id}/path (the `GetUnitPath` operationId).
 	GetUnitPath(ctx context.Context, spaceId openapi_types.UUID, unitId openapi_types.UUID, params *GetUnitPathParams, reqEditors ...RequestEditorFn) (*http.Response, error)
@@ -8964,7 +8964,7 @@ func (c *Client) GetUnitMutationSources(ctx context.Context, spaceId openapi_typ
 
 // GetUnitPath Get everything recorded about one field of a Unit
 //
-// Returns everything recorded about one field of a Unit's configuration: the field as the Unit's blame reports it, its own annotations, whether the Unit's last Release includes its value, and each change from this Unit out to where the value was set with the Mutation and Revision it was read from. With history, it also returns every change the Unit recorded to the field. A field that names nothing is a 404; one that names several fields, or a value holding several, is a 400 whose message lists them.
+// Returns everything recorded about one field of a Unit's configuration: the field as the Unit's blame reports it, its own annotations, whether the Unit's last Release includes its value, each change from this Unit out to where the value was set with the Mutation and Revision it was read from, the comments the configuration has about the field, and the latest thread of ReviewComments about it. With history, it also returns every change the Unit recorded to the field. A field that names nothing is a 404; one that names several fields, or a value holding several, is a 400 whose message lists them.
 //
 // Corresponds with GET /space/{space_id}/unit/{unit_id}/path (the `GetUnitPath` operationId).
 func (c *Client) GetUnitPath(ctx context.Context, spaceId openapi_types.UUID, unitId openapi_types.UUID, params *GetUnitPathParams, reqEditors ...RequestEditorFn) (*http.Response, error) {
@@ -47751,7 +47751,7 @@ type ClientWithResponsesInterface interface {
 
 	// GetUnitPathWithResponse Get everything recorded about one field of a Unit
 	//
-	// Returns everything recorded about one field of a Unit's configuration: the field as the Unit's blame reports it, its own annotations, whether the Unit's last Release includes its value, and each change from this Unit out to where the value was set with the Mutation and Revision it was read from. With history, it also returns every change the Unit recorded to the field. A field that names nothing is a 404; one that names several fields, or a value holding several, is a 400 whose message lists them.
+	// Returns everything recorded about one field of a Unit's configuration: the field as the Unit's blame reports it, its own annotations, whether the Unit's last Release includes its value, each change from this Unit out to where the value was set with the Mutation and Revision it was read from, the comments the configuration has about the field, and the latest thread of ReviewComments about it. With history, it also returns every change the Unit recorded to the field. A field that names nothing is a 404; one that names several fields, or a value holding several, is a 400 whose message lists them.
 	//
 	// Returns a wrapper object for the known response body format(s).
 	//
@@ -80259,7 +80259,7 @@ func (c *ClientWithResponses) GetUnitMutationSourcesWithResponse(ctx context.Con
 
 // GetUnitPathWithResponse Get everything recorded about one field of a Unit
 //
-// Returns everything recorded about one field of a Unit's configuration: the field as the Unit's blame reports it, its own annotations, whether the Unit's last Release includes its value, and each change from this Unit out to where the value was set with the Mutation and Revision it was read from. With history, it also returns every change the Unit recorded to the field. A field that names nothing is a 404; one that names several fields, or a value holding several, is a 400 whose message lists them.
+// Returns everything recorded about one field of a Unit's configuration: the field as the Unit's blame reports it, its own annotations, whether the Unit's last Release includes its value, each change from this Unit out to where the value was set with the Mutation and Revision it was read from, the comments the configuration has about the field, and the latest thread of ReviewComments about it. With history, it also returns every change the Unit recorded to the field. A field that names nothing is a 404; one that names several fields, or a value holding several, is a 400 whose message lists them.
 //
 // Returns a wrapper object for the known response body format(s).
 //

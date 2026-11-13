@@ -167,6 +167,20 @@ const spaceOptionalAnnotation = "SpaceOptional"
 // --variant there.
 const componentScopeAnnotation = "ComponentScope"
 
+// scopedComponent is the Component a command marked componentScopeAnnotation is scoped to: the
+// one --component names, or the one --variant <component>/<variant> qualifies its variant with.
+// The two spellings name the same variant, so they have to scope the command alike. Empty when
+// neither names one. spacePreRunE has already checked that they agree.
+func scopedComponent() string {
+	if componentFlag != "" {
+		return componentFlag
+	}
+	if component, _, qualified := strings.Cut(variantFlag, "/"); qualified {
+		return component
+	}
+	return ""
+}
+
 // enableOptionalSpace marks a command as able to run without a space.
 //
 // It is for the commands that take an entity reference and resolve it: a UUID

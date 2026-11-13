@@ -30,7 +30,7 @@ var referenceOperandCommands = []string{
 	"review-comment get", "review-comment list", "review-comment create",
 	"attestation get", "attestation revoke",
 	"unit-event get",
-	"k8s collect",
+	"k8s collect", "k8s appconfig extract",
 	"changeorder rename", "changeset rename", "changeworkflow rename", "filter rename", "invocation rename",
 	"link rename", "tag rename", "target rename", "trigger rename", "unit rename", "view rename",
 }

@@ -306,3 +306,62 @@ func TestFieldEditFlagsCoverTheDocumentTypes(t *testing.T) {
 		}
 	}
 }
+
+// A field inside an object that names entities, such as an attestation prerequisite's FromUsers or
+// the Users of a grant, is named in the document and held by the entity as IDs under its own
+// field; a set of them is an object of IDs to true, which an edit replaces.
+func TestFieldEditResolvesNestedReferences(t *testing.T) {
+	alice, bob, ops, events := uuid.New(), uuid.New(), uuid.New(), uuid.New()
+	previous := referenceResolvers
+	referenceResolvers = map[string]func(string) (uuid.UUID, error){
+		"User": func(ref string) (uuid.UUID, error) {
+			return map[string]uuid.UUID{"alice@example.com": alice, "bob@example.com": bob}[ref], nil
+		},
+		"Group":  func(string) (uuid.UUID, error) { return ops, nil },
+		"Space":  func(string) (uuid.UUID, error) { return events, nil },
+		"Target": func(string) (uuid.UUID, error) { return uuid.New(), nil },
+	}
+	t.Cleanup(func() { referenceResolvers = previous })
+
+	useFieldEditFlags(t, nil, nil, fieldEdit{path: elementPath("AttestationPrerequisites", "Name", "reviewed") + ".FromUsers",
+		value: "alice@example.com;bob@example.com", flag: "--attestation-prerequisite-from-users", mustExist: true})
+	workflow := &goclientnew.ChangeWorkflow{AttestationPrerequisites: []goclientnew.ChangeWorkflowAttestationPrerequisite{{Name: "reviewed"}}}
+	if err := applyFieldEdits("ChangeWorkflow", workflow); err != nil {
+		t.Fatal(err)
+	}
+	if got := workflow.AttestationPrerequisites[0].FromUserIDs; !reflect.DeepEqual(got, []uuid.UUID{alice, bob}) {
+		t.Errorf("FromUserIDs is %v", got)
+	}
+
+	useFieldEditFlags(t, []string{"Permissions.Manage.Users=alice@example.com", "Permissions.View.Groups=ops"}, nil)
+	filter := &goclientnew.Filter{Permissions: &goclientnew.Permissions{"Manage": {UserIDs: map[string]bool{bob.String(): true}}}}
+	if err := applyFieldEdits("Filter", filter); err != nil {
+		t.Fatal(err)
+	}
+	want := goclientnew.Permissions{"Manage": {UserIDs: map[string]bool{alice.String(): true}}, "View": {GroupIDs: map[string]bool{ops.String(): true}}}
+	if filter.Permissions == nil || !reflect.DeepEqual(*filter.Permissions, want) {
+		t.Errorf("Permissions are %s, want %s", asJSON(t, filter.Permissions), asJSON(t, want))
+	}
+
+	useFieldEditFlags(t, []string{`Subscriptions=[{"Space": "events", "EventTypes": ["release.published"]}]`}, nil)
+	channel := &goclientnew.Channel{}
+	if err := applyFieldEdits("Channel", channel); err != nil {
+		t.Fatal(err)
+	}
+	if len(channel.Subscriptions) != 1 || channel.Subscriptions[0].SpaceID == nil || *channel.Subscriptions[0].SpaceID != events {
+		t.Errorf("Subscriptions are %s", asJSON(t, channel.Subscriptions))
+	}
+
+	useFieldEditFlags(t, []string{"Permissions.Manage.Users.0=alice@example.com"}, nil)
+	if err := applyFieldEdits("Filter", filter); err == nil || !strings.Contains(err.Error(), "set whole") {
+		t.Errorf("a path into a set of names was accepted: %v", err)
+	}
+
+	previousPath := runningCommandPath
+	runningCommandPath = filterUpdateCmd.CommandPath()
+	t.Cleanup(func() { runningCommandPath = previousPath })
+	useFieldEditFlags(t, []string{"Permissions.Manage.Users=alice@example.com"}, nil)
+	if _, err := BuildPatchDataWithPermissions(nil, nil); err == nil || !strings.Contains(err.Error(), "without --patch") {
+		t.Errorf("a patch replacing a set was accepted: %v", err)
+	}
+}

@@ -84,6 +84,12 @@ func displayUnitPath(report *blame.PathReport) {
 	for _, finding := range f.Findings {
 		unitPathLine(0, "Finding", formatBlameFinding(finding))
 	}
+	if comments := report.ConfigComments; comments != nil {
+		unitPathValue(0, "Comment above", comments.Head)
+		unitPathValue(0, "Line comment", comments.Line)
+		unitPathValue(0, "Comment below", comments.Foot)
+	}
+	displayUnitPathReviewThread(report)
 
 	tprintRaw("")
 	switch {
@@ -142,6 +148,35 @@ func displayUnitPath(report *blame.PathReport) {
 			})
 		}
 		table.Render()
+	}
+}
+
+// displayUnitPathReviewThread prints the latest thread of review comments about the field: each
+// comment's author, when it was made and the revision it is about, then its text.
+func displayUnitPathReviewThread(report *blame.PathReport) {
+	thread := report.ReviewThread
+	if thread == nil || len(thread.Comments) == 0 {
+		return
+	}
+	heading := "Review thread"
+	if report.ReviewThreads > 1 {
+		heading = fmt.Sprintf("Latest of %d review threads", report.ReviewThreads)
+	}
+	if thread.ChangeOrderID != uuid.Nil {
+		heading += ", in the review of ChangeOrder " + pathReportName(report.Names, thread.ChangeOrderID)
+	}
+	tprintRaw("")
+	tprintRaw(heading + ":")
+	for _, comment := range thread.Comments {
+		tprintRaw("")
+		about := fmt.Sprintf("  %s, revision %d", pathReportName(report.Names, comment.UserID), comment.RevisionNum)
+		if !comment.CreatedAt.IsZero() {
+			about += ", " + blameAgo(comment.CreatedAt)
+		}
+		tprintRaw(about + ", " + comment.ReviewCommentID.String())
+		for _, line := range strings.Split(strings.TrimRight(comment.Text, "\n"), "\n") {
+			tprintRaw("    " + line)
+		}
 	}
 }
 

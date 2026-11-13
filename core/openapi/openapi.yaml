@@ -38267,11 +38267,12 @@ paths:
     get:
       description: 'Returns everything recorded about one field of a Unit''s configuration:
         the field as the Unit''s blame reports it, its own annotations, whether the
-        Unit''s last Release includes its value, and each change from this Unit out
-        to where the value was set with the Mutation and Revision it was read from.
-        With history, it also returns every change the Unit recorded to the field.
-        A field that names nothing is a 404; one that names several fields, or a value
-        holding several, is a 400 whose message lists them.'
+        Unit''s last Release includes its value, each change from this Unit out to
+        where the value was set with the Mutation and Revision it was read from, the
+        comments the configuration has about the field, and the latest thread of ReviewComments
+        about it. With history, it also returns every change the Unit recorded to
+        the field. A field that names nothing is a 404; one that names several fields,
+        or a value holding several, is a 400 whose message lists them.'
       operationId: GetUnitPath
       parameters:
       - description: Unique identifier for a space_id
@@ -52447,6 +52448,22 @@ components:
       items:
         $ref: '#/components/schemas/Binding'
       type: array
+    BlameConfigComments:
+      properties:
+        Foot:
+          description: The comment on the lines below the field.
+          type: string
+          x-go-type-skip-optional-pointer: true
+        Head:
+          description: The comment on the lines above the field. On the row about
+            a resource as a whole, the comment above the resource's document separator.
+          type: string
+          x-go-type-skip-optional-pointer: true
+        Line:
+          description: The comment at the end of the field's line.
+          type: string
+          x-go-type-skip-optional-pointer: true
+      type: object
     BlameConflictDismissal:
       properties:
         Guard:
@@ -52900,6 +52917,27 @@ components:
         Value:
           description: The value the change recorded for the field. Returned in History.
           type: string
+          x-go-type-skip-optional-pointer: true
+      type: object
+    BlameReviewThread:
+      properties:
+        ChangeOrderID:
+          description: The ChangeOrder the thread was made in review of, if any; the
+            report's Names names it, unless it cannot be read.
+          example: 248df4b7-aa70-47b8-a036-33ac447e668d
+          format: uuid
+          type: string
+          x-go-type-skip-optional-pointer: true
+          x-omitzero: true
+        Comments:
+          description: The comment that started the thread, then its replies, replies
+            to replies included, oldest first. Hidden comments are left out; a thread
+            whose first comment is hidden still has its replies. The report's Names
+            names each comment's author by UserID, unless the author cannot be read.
+          items:
+            $ref: '#/components/schemas/ReviewComment'
+          nullable: true
+          type: array
           x-go-type-skip-optional-pointer: true
       type: object
     BlameValidation:
@@ -63281,6 +63319,11 @@ components:
             $ref: '#/components/schemas/BlamePathChange'
           type: array
           x-go-type-skip-optional-pointer: true
+        ConfigComments:
+          allOf:
+          - $ref: '#/components/schemas/BlameConfigComments'
+          description: 'The comments the unit''s configuration has about the field:
+            above it, at the end of its line, and below it. Absent when it has none.'
         ConflictDismissals:
           description: 'Every conflict dismissal covering the field, each with the
             Path it is recorded at: the field''s, a pattern naming it, or empty for
@@ -63304,9 +63347,11 @@ components:
         Names:
           additionalProperties:
             type: string
-          description: 'Names, as space/slug, of the Units and Targets the report''s
-            records refer to by ID alone: the other unit of each conflict, each Link''s
-            upstream unit, each merge source, and each Release''s Target.'
+          description: 'Names of the entities the report''s records refer to by ID
+            alone: as space/slug, the other unit of each conflict, each Link''s upstream
+            unit and each merge source; by slug, or space/slug in another Space, each
+            Release''s Target and the ReviewThread''s ChangeOrder; and by username,
+            the author of each comment of the ReviewThread.'
           type: object
           x-go-type-skip-optional-pointer: true
         ReleaseMessage:
@@ -63318,6 +63363,17 @@ components:
             NeverReleased, ChangedSinceRelease, or NothingToRelease in a Space with
             no release Target. Absent for a field the unit does not have.'
           type: string
+          x-go-type-skip-optional-pointer: true
+        ReviewThread:
+          allOf:
+          - $ref: '#/components/schemas/BlameReviewThread'
+          description: 'The thread of ReviewComments about the field that was commented
+            in most recently: those naming its resource and path, the path as written
+            or naming the same element. Absent when there is none.'
+        ReviewThreads:
+          description: How many threads of ReviewComments are about the field, ReviewThread
+            among them.
+          type: integer
           x-go-type-skip-optional-pointer: true
       type: object
     UnitProtectionRequest:
@@ -63588,7 +63644,10 @@ components:
     UploadLinkResult:
       properties:
         Action:
-          description: Create or Unchanged.
+          description: 'Create, Update (a Link an earlier upload created that is cleared
+            for less than it now needs: a Link from a carrier''s placeholder Unit
+            is cleared for the Link=Upsert guard of the ConfigMaps rendered into it),
+            or Unchanged.'
           type: string
           x-go-type-skip-optional-pointer: true
         Error:
@@ -63834,9 +63893,11 @@ components:
       properties:
         Action:
           description: Create (in the Space, which runs the Triggers defined in it),
-            Unchanged (the Space already runs a Mutation Trigger with the function,
-            or one with the slug is in the Space), or Missing (the Space selects its
-            Triggers from elsewhere, and none it selects runs the function).
+            Update (a Trigger of the pack that an earlier upload created in the Space,
+            which gets the guards and clearance the pack now states), Unchanged (the
+            Space already runs a Mutation Trigger with the function, or one with the
+            slug is in the Space), or Missing (the Space selects its Triggers from
+            elsewhere, and none it selects runs the function).
           type: string
           x-go-type-skip-optional-pointer: true
         Error:

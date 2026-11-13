@@ -111,7 +111,10 @@ hold several sources and hand-written Units side by side.
 
 Rendered Secrets are never uploaded — apply them out-of-band. AppConfig ConfigMaps
 (carrying the confighub.com/toolchain annotation) are expanded into an AppConfig data
-Unit, a render-configmap Invocation, a placeholder Unit, and an Upsert link. A file
+Unit, a render-configmap Invocation, a placeholder Unit, and an Upsert link. The link
+guards the ConfigMaps it renders with Link=Upsert, so another change to them, such as an
+upgrade, has to be cleared for that; the placeholder's Needs/Provides links and the
+prune-configmaps Trigger are cleared for it. A file
 holding application configuration rather than Kubernetes resources — a .properties,
 .env, .toml, or .ini file, or YAML or JSON with no apiVersion and kind — becomes one
 unreleasable AppConfig Unit, named by its configHub.configName or else by its path
@@ -811,8 +814,11 @@ func reportUploadResult(result *goclientnew.UploadResult) {
 					tprint("  link FAILED %s -> %s: %s", l.FromUnit, l.ToUnit, errString(l.Error))
 					continue
 				}
-				if l.Action == "Create" {
+				switch l.Action {
+				case "Create":
 					tprint("  linked    %s -> %s (%s)", l.FromUnit, l.ToUnit, l.Reason)
+				case "Update":
+					tprint("  updated   link %s -> %s (%s)", l.FromUnit, l.ToUnit, l.Reason)
 				}
 			}
 			var missing []goclientnew.UploadTriggerResult
@@ -822,6 +828,8 @@ func reportUploadResult(result *goclientnew.UploadResult) {
 					tprint("  trigger FAILED %s: %s", t.Slug, errString(t.Error))
 				case t.Action == "Create":
 					tprint("  trigger   %s (%s)", t.Slug, t.Function)
+				case t.Action == "Update":
+					tprint("  updated   trigger %s (%s)", t.Slug, t.Function)
 				case t.Action == "Missing":
 					missing = append(missing, t)
 				}

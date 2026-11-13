@@ -508,6 +508,15 @@ replicas: 3 # Line comment on replicas
 paused: false
 `,
 		},
+		{
+			name: "multi-line head comment with a bare marker line",
+			input: `# First line
+#
+# Third line
+## Fourth line
+field: value
+`,
+		},
 	}
 
 	for _, tt := range tests {
@@ -533,6 +542,39 @@ paused: false
 				t.Errorf("Round-trip failed:\n  want: %q\n  got:  %q", tt.input, result)
 			}
 		})
+	}
+}
+
+// A comment key holds every line of a comment without its marker, as the comment keys of the other
+// formats do, so a diff shows the text of each line alike.
+func TestExtractCommentsToKeysUnmarksEveryLine(t *testing.T) {
+	doc, err := ParseYAML([]byte("# one\n#\n# three\nfield: value # line\n"))
+	if err != nil {
+		t.Fatalf("Failed to parse: %v", err)
+	}
+	if err := doc.ExtractCommentsToKeys(); err != nil {
+		t.Fatal(err)
+	}
+	if got := doc.Path("$comment$head$field").Data(); got != "one\n\nthree" {
+		t.Errorf("head comment key: want %q, got %q", "one\n\nthree", got)
+	}
+	if got := doc.Path("$comment$line$field").Data(); got != "line" {
+		t.Errorf("line comment key: want %q, got %q", "line", got)
+	}
+}
+
+// Comment keys extracted before every line was unmarked had only the first line's marker removed,
+// and are still stored. They are written back as the comment they came from.
+func TestInjectCommentsFromKeysReadsFirstLineOnlyText(t *testing.T) {
+	doc, err := ParseYAML([]byte("$comment$head$field: |-\n  one\n  #\n  # three\nfield: value\n"))
+	if err != nil {
+		t.Fatalf("Failed to parse: %v", err)
+	}
+	if err := doc.InjectCommentsFromKeys(); err != nil {
+		t.Fatal(err)
+	}
+	if want, got := "# one\n#\n# three\nfield: value\n", doc.String(); got != want {
+		t.Errorf("want %q, got %q", want, got)
 	}
 }
 
