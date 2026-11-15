@@ -31,7 +31,8 @@ cleared for the reasons at a path does not overwrite it, and reports what it
 withheld as a conflict. Editing the guards at a path that already carries some
 needs --clearance for those, on the same rule -- a clearance is the statement
 that the reasons are understood. Setting the first guard on a path needs none,
-since there is nothing yet to understand.
+since there is nothing yet to understand. Without --clearance, an edit is cleared
+for Override guards, which hold values against merges rather than edits.
 
 A guard set with --guard stays with this unit. One set with --inherited-guard
 travels: a clone of the unit receives it, including a variant created with cub
@@ -118,7 +119,7 @@ func init() {
 	unitSetGuardCmd.Flags().StringArrayVar(&removeGuardSpecs, "remove-guard", nil,
 		"guard to remove, as RESOURCE_TYPE:RESOURCE_NAME:PATH=KEY (repeatable)")
 	unitSetGuardCmd.Flags().StringArrayVar(&setGuardClearance, "clearance", nil,
-		"class of guarded reason this edit is cleared for, as KEY, KEY=VALUE[;VALUE...], KEY!=VALUE[;VALUE...], or !KEY (repeatable). Required to edit a path that already carries guards")
+		"class of guarded reason this edit is cleared for, as KEY, KEY=VALUE[;VALUE...], KEY!=VALUE[;VALUE...], or !KEY (repeatable). Required to edit a path that already carries guards"+clearanceDefaultUsage)
 	unitSetGuardCmd.Flags().StringVar(&setGuardChangeSet, "changeset", "", changeSetFlagHelp)
 	unitSetGuardCmd.Flags().StringVar(&setGuardChangeDesc, "change-desc", "",
 		"change description recorded on the revision the edit creates")
@@ -238,11 +239,12 @@ func unitSetGuardCmdRun(_ *cobra.Command, args []string) error {
 	if body.ChangeSetID, err = resolveOptionalChangeSetID(setGuardChangeSet, configUnit.Unit.SpaceID.String()); err != nil {
 		return err
 	}
-	if len(setGuardClearance) > 0 {
-		clearance, err := parseClearanceSpecs(setGuardClearance)
-		if err != nil {
-			return err
-		}
+	clearance, err := cubapi.OperationClearance(setGuardClearance, false)
+	if err != nil {
+		return err
+	}
+	sentClearance = clearance
+	if len(clearance) > 0 {
 		body.Clearance = &clearance
 	}
 	for _, key := range order {

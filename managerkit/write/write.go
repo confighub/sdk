@@ -107,6 +107,9 @@ type Report struct {
 	Outcomes  []Outcome `json:"outcomes"`
 	Mutated   int       `json:"mutated"`
 	Committed int       `json:"committed"`
+	// sent is the clearance the change was sent with, for the --clearance WriteWithheld
+	// suggests.
+	sent goclientnew.Clearance
 }
 
 // ReportMutations renders one or more cubapi function Results as JSON or a
@@ -202,7 +205,7 @@ func WriteWithheld(w io.Writer, rep Report) {
 			fmt.Fprintf(tw, "%s\t%s\t%s\n", c.Reason, cliutil.Dash(resource), c.Path)
 		}
 		_ = tw.Flush()
-		clearance := cubapi.ClearanceCoveringGuards(o.Withheld)
+		clearance := cubapi.ClearanceToRetry(o.Withheld, rep.sent)
 		if len(clearance) == 0 {
 			continue
 		}
@@ -258,9 +261,13 @@ func WriteUnitDiffs(w io.Writer, command string, diffs []UnitDiff) {
 func Summarize(command, space string, dryRun bool, results ...*cubapi.Result) Report {
 	byUnit := map[string]*Outcome{}
 	var order []string
+	var sent goclientnew.Clearance
 	for _, res := range results {
 		if res == nil {
 			continue
+		}
+		if sent == nil {
+			sent = res.Clearance
 		}
 		for _, o := range res.Outcomes {
 			out, ok := byUnit[o.UnitID]
@@ -296,7 +303,7 @@ func Summarize(command, space string, dryRun bool, results ...*cubapi.Result) Re
 		return order[i] < order[j]
 	})
 
-	rep := Report{Command: command, Space: space, DryRun: dryRun}
+	rep := Report{Command: command, Space: space, DryRun: dryRun, sent: sent}
 	for _, id := range order {
 		out := byUnit[id]
 		rep.Outcomes = append(rep.Outcomes, *out)

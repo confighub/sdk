@@ -89,7 +89,7 @@ func unitDataEditCmdRun(cmd *cobra.Command, args []string) error {
 	if etag != "" {
 		editParams.IfMatch = &etag
 	}
-	clearance, err := clearanceJSON()
+	clearance, err := clearanceJSON(false)
 	if err != nil {
 		return keptEdit(path, err)
 	}

@@ -22,7 +22,7 @@ import (
 // A value a tool writes into a Unit whose configuration is uploaded from somewhere else, such as
 // a rendered chart, is lost the next time it is uploaded unless it is guarded, as in
 // --guard Override=External; and a Unit that is already guarded is written only where
-// --clearance covers its guards.
+// --clearance covers its guards, which without the flag are its Override guards.
 type CommitFlags struct {
 	cliutil.CommitFlags
 	Guards          []string
@@ -44,7 +44,7 @@ func (c *CommitFlags) Bind(cmd *cobra.Command) {
 	f.StringVar(&c.ChangeSet, "changeset", "",
 		"ChangeSet to make the change in, as space/slug or UUID, so it can be reviewed as one: a commit opens it on the Units the change selects, all of them or none, and leaves it open; its revisions cannot be released until it is closed, as with 'cub variant changeset close'")
 	f.StringArrayVar(&c.Clearance, "clearance", nil,
-		"guarded reason the change is cleared for (repeatable): KEY, KEY=VALUE[;VALUE...], KEY!=VALUE[;VALUE...], or !KEY. A path whose guards it does not cover is left as it is, and reported")
+		"guarded reason the change is cleared for (repeatable): KEY, KEY=VALUE[;VALUE...], KEY!=VALUE[;VALUE...], or !KEY. A path whose guards it does not cover is left as it is, and reported. Without it the change is cleared for Override guards, whatever their value; a clearance given replaces that, and --clearance '' clears nothing")
 }
 
 // Change validates the flags and returns the change they describe: a dry run unless --commit,
@@ -54,6 +54,10 @@ func (c *CommitFlags) Bind(cmd *cobra.Command) {
 // The clearance includes each guard being recorded, because a change has to be cleared for the
 // guards on a path before overwriting it: without that, running a command a second time would
 // withhold the very paths the first run guarded.
+//
+// The Change is for invoking functions, which is not a merge, so without --clearance its
+// clearance is cubapi.DefaultClearance. Do not pass it to cubapi.UpgradeUnits or another merge,
+// which would then be cleared for Override guards; build that Change's clearance separately.
 func (c CommitFlags) Change(summary string) (cubapi.Change, error) {
 	changeDesc, dryRun, err := c.Validate(summary)
 	if err != nil {
@@ -68,7 +72,9 @@ func (c CommitFlags) Change(summary string) (cubapi.Change, error) {
 	if err != nil {
 		return cubapi.Change{}, err
 	}
-	clearance, err := cubapi.ParseClearance(c.Clearance)
+	// A manager tool's change runs functions, so it is not a merge: without --clearance it is
+	// cleared for the default, which the guards recorded add to as they would to one given.
+	clearance, err := cubapi.OperationClearance(c.Clearance, false)
 	if err != nil {
 		return cubapi.Change{}, err
 	}
@@ -80,9 +86,9 @@ func (c CommitFlags) Change(summary string) (cubapi.Change, error) {
 	if len(inherited) > 0 {
 		change.InheritedGuards = inherited
 	}
-	if len(clearance) > 0 {
-		change.Clearance = clearance
-	}
+	// Set even when empty: --clearance '' is a change cleared for nothing, which a nil
+	// Clearance would not say.
+	change.Clearance = clearance
 	change.ChangeSet = strings.TrimSpace(c.ChangeSet)
 	return change, nil
 }

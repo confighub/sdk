@@ -71,7 +71,8 @@ type EnforcementRow struct {
 	Spaces  int `json:"spaces"`
 	Targets int `json:"targets"`
 	// Passed, Warnings and Errors count the Units by the rule's last verdict
-	// on their head Revision.
+	// on their head Revision. A Unit holding none of the resources the rule's
+	// WhereResource selects is not checked by it, and is not counted.
 	Passed   int `json:"passed"`
 	Warnings int `json:"warnings"`
 	Errors   int `json:"errors"`
@@ -366,7 +367,7 @@ func ExecuteEnforcementUpdate(ctx context.Context, client *cubapi.Client, change
 		}
 		c.Committed = true
 		if _, warnChanged := c.patch["Warn"]; warnChanged {
-			if c.Reevaluated, err = reevaluateFailing(ctx, client, c.triggerID, c.toolchain); err != nil {
+			if c.Reevaluated, err = reevaluateFailing(ctx, client, c.triggerID, []goclientnew.UUID{c.triggerID}, c.toolchain); err != nil {
 				return fmt.Errorf("re-evaluate %s: %w", c.Rule, err)
 			}
 		}
@@ -378,9 +379,9 @@ func ExecuteEnforcementUpdate(ctx context.Context, client *cubapi.Client, change
 // several requests rather than one whose filter is too long.
 const evaluateChunk = 100
 
-// reevaluateFailing runs trigger again on the Units it fails, recording the new verdicts, and
-// returns how many it ran on.
-func reevaluateFailing(ctx context.Context, client *cubapi.Client, trigger goclientnew.UUID, toolchain string) (int, error) {
+// reevaluateFailing runs triggers on the Units that trigger fails, recording the new verdicts,
+// and returns how many it ran on.
+func reevaluateFailing(ctx context.Context, client *cubapi.Client, trigger goclientnew.UUID, triggers []goclientnew.UUID, toolchain string) (int, error) {
 	units, err := cubapi.ListUnits(ctx, client, cubapi.Where{}.Eq("ToolchainType", toolchain),
 		cubapi.ListOpts{Select: "UnitID,ValidationErrors,ValidationWarnings,ValidationTriggerIDs"})
 	if err != nil {
@@ -395,7 +396,7 @@ func reevaluateFailing(ctx context.Context, client *cubapi.Client, trigger gocli
 	var failed []string
 	for start := 0; start < len(failing); start += evaluateChunk {
 		chunk := failing[start:min(start+evaluateChunk, len(failing))]
-		res, err := cubapi.EvaluateTriggers(ctx, client, []goclientnew.UUID{trigger}, cubapi.Selector{
+		res, err := cubapi.EvaluateTriggers(ctx, client, triggers, cubapi.Selector{
 			Where:         "UnitID IN (" + strings.Join(chunk, ", ") + ")",
 			ToolchainType: toolchain,
 		})
@@ -413,10 +414,12 @@ func reevaluateFailing(ctx context.Context, client *cubapi.Client, trigger gocli
 }
 
 // UpdateCmd is `guardrails update`: a rule's priority, the date it is due to be
-// enforced, and whether it is.
-func UpdateCmd(preflight Preflight) *cobra.Command {
+// enforced, and whether it is; and, given the packs, separating a check into a
+// rule of its own.
+func UpdateCmd(preflight Preflight, packs ...Pack) *cobra.Command {
 	var policySpace, output, priority, enforcedBy string
 	var enforce, audit, commit bool
+	var separate []string
 	cmd := &cobra.Command{
 		Use:   "update <rule>... [--priority <p>] [--enforced-by <date>] [--enforce | --audit]",
 		Short: "Set a guardrail rule's priority and enforcement date, or enforce it (dry-run by default)",
@@ -440,6 +443,12 @@ Dry-run by default: it prints what would change. Re-run with --commit to apply.`
 			"  guardrails update workload-runs-nonroot --enforce --commit",
 		Args: cobra.MinimumNArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
+			if len(separate) > 0 {
+				if priority != "" || enforcedBy != "" || enforce || audit || len(args) != 1 {
+					return fmt.Errorf("--separate takes one rule, and no other change")
+				}
+				return runSeparate(cmd, preflight, policySpace, packs, args[0], separate, commit, output)
+			}
 			var update EnforcementUpdate
 			// An empty value is a flag not given; - removes the annotation.
 			if priority != "" {
@@ -494,8 +503,53 @@ Dry-run by default: it prints what would change. Re-run with --commit to apply.`
 	cmd.Flags().BoolVar(&enforce, "enforce", false, "make the rule block, and record when")
 	cmd.Flags().BoolVar(&audit, "audit", false, "make the rule warn rather than block")
 	cmd.Flags().BoolVar(&commit, "commit", false, "apply the change (default is dry-run)")
+	if slices.ContainsFunc(packs, func(p Pack) bool { return len(p.Checks) > 0 }) {
+		cmd.Use = "update <rule>... [--priority <p>] [--enforced-by <date>] [--enforce | --audit] | update <rule> --separate <check>"
+		cmd.Long += `
+
+--separate moves checks out of a rule into rules of their own, each named by
+its check, to stage them ahead of the rest of the rule: to enforce one while the
+others are audited. Each new rule starts at the rule's stage, priority and
+dates, and skips the resources excepted from the rule as well as its own.
+Installing the pack again leaves a separated check in its own rule.`
+		cmd.Example += "\n  guardrails update workload-pod-security-baseline --separate privileged --commit"
+		cmd.Flags().StringSliceVar(&separate, "separate", nil, "checks to move out of the rule into rules of their own")
+	}
 	managerkit.AddOutputFlag(cmd, &output)
 	return cmd
+}
+
+// runSeparate is `guardrails update <rule> --separate <check>`.
+func runSeparate(cmd *cobra.Command, preflight Preflight, policySpace string, packs []Pack, rule string, checks []string, commit bool, output string) error {
+	client, err := preflight(cmd.Context())
+	if err != nil {
+		return err
+	}
+	sep, err := PlanSeparation(cmd.Context(), client, policySpace, packs, rule, checks)
+	if err != nil {
+		return err
+	}
+	if commit {
+		if err := ExecuteSeparation(cmd.Context(), client, &sep); err != nil {
+			return err
+		}
+	}
+	if done, err := managerkit.Render(cmd.OutOrStdout(), output, sep); done || err != nil {
+		return err
+	}
+	out := cmd.OutOrStdout()
+	verb := "Would separate"
+	if sep.Committed {
+		verb = "Separated"
+	}
+	cliutil.Fprintln(out, fmt.Sprintf("%s from %s into rules of their own: %s", verb, sep.Rule, strings.Join(sep.Checks, ", ")))
+	if sep.Reevaluated > 0 {
+		cliutil.Fprintln(out, fmt.Sprintf("  ran the rules again on the %d Unit(s) %s fails", sep.Reevaluated, sep.Rule))
+	}
+	if !sep.Committed {
+		cliutil.Fprintln(out, "\nNothing changed. Re-run with --commit to apply.")
+	}
+	return nil
 }
 
 func printEnforcementChanges(cmd *cobra.Command, changes []EnforcementChange, commit bool) {

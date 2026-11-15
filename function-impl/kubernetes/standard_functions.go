@@ -60,10 +60,10 @@ func registerStandardFunctions(fh handler.FunctionRegistry, rp *k8skit.K8sResour
 				Schema:      &api.ValidationResultListSchema,
 			},
 			Mutating:              false,
-			Validating:            true,
+			Validating:            false,
 			Hermetic:              true,
 			Idempotent:            true,
-			Description:           `Returns true if all terms of the conjunction of relational expressions evaluate to true for at least one matching path of a resource of the specified type`,
+			Description:           `Returns true if all terms of the conjunction of relational expressions evaluate to true for at least one matching path of a resource of the specified type. It filters rather than validates, though it returns the same output type.`,
 			FunctionType:          api.FunctionTypeCustom,
 			AffectedResourceTypes: []api.ResourceType{api.ResourceTypeAny},
 		},
@@ -79,7 +79,7 @@ func registerStandardFunctions(fh handler.FunctionRegistry, rp *k8skit.K8sResour
 				{
 					ParameterName: "kubernetes-version",
 					Required:      false,
-					Description:   "Kubernetes version to validate against, matching a version in https://github.com/yannh/kubernetes-json-schema/",
+					Description:   "Kubernetes version to validate against, matching a version in https://github.com/yannh/kubernetes-json-schema/. Omitted, the minor version of the cluster the Unit's Target represents, from its Cluster.KubernetesVersion fact, or without one, the latest",
 					DataType:      api.DataTypeString,
 					Example:       "1.30.0",
 					ValueConstraints: api.ValueConstraints{
@@ -113,7 +113,7 @@ func registerStandardFunctions(fh handler.FunctionRegistry, rp *k8skit.K8sResour
 				{
 					ParameterName: "kubernetes-version",
 					Required:      false,
-					Description:   "Kubernetes version to validate against, matching a version in https://github.com/yannh/kubernetes-json-schema/",
+					Description:   "Kubernetes version to validate against, matching a version in https://github.com/yannh/kubernetes-json-schema/. Omitted, the minor version of the cluster the Unit's Target represents, from its Cluster.KubernetesVersion fact, or without one, the latest",
 					DataType:      api.DataTypeString,
 					Example:       "1.30.0",
 					ValueConstraints: api.ValueConstraints{
@@ -298,11 +298,32 @@ func k8sFnResourceWhereMatch(rp *k8skit.K8sResourceProviderType, options *api.Fu
 
 func makeK8sFnVetSchemas(rp *k8skit.K8sResourceProviderType) handler.FunctionImplementation {
 	return func(fArgs handler.FunctionImplementationArguments) (gaby.Container, any, error) {
-		return k8sFnVetSchemas(rp, fArgs.Options, fArgs.ParsedData, fArgs.Arguments)
+		return k8sFnVetSchemas(rp, fArgs.Options, fArgs.FunctionContext, fArgs.ParsedData, fArgs.Arguments)
 	}
 }
 
-func k8sFnVetSchemas(rp *k8skit.K8sResourceProviderType, options *api.FunctionOptions, parsedData gaby.Container, args []api.FunctionArgument) (gaby.Container, any, error) {
+// kubernetesVersionFact is the Target fact holding the version of the cluster it represents.
+const kubernetesVersionFact = "Cluster.KubernetesVersion"
+
+var kubernetesMinorVersion = regexp.MustCompile(`^v?(\d+)\.(\d+)(\.|$)`)
+
+// targetSchemaVersion is the schema version to validate a Unit against for its Target's cluster:
+// the cluster's minor version, as <major>.<minor>.0. Schemas are not published for every patch
+// release, and kubeconform skips a resource whose schema it cannot fetch, so the patch release
+// itself would leave everything unchecked; and schemas do not change within a minor version. It
+// is empty when the Target has no version fact, or one that is not a version.
+func targetSchemaVersion(functionContext *api.FunctionContext) string {
+	if functionContext == nil {
+		return ""
+	}
+	match := kubernetesMinorVersion.FindStringSubmatch(functionContext.TargetFacts[kubernetesVersionFact])
+	if match == nil {
+		return ""
+	}
+	return match[1] + "." + match[2] + ".0"
+}
+
+func k8sFnVetSchemas(rp *k8skit.K8sResourceProviderType, options *api.FunctionOptions, functionContext *api.FunctionContext, parsedData gaby.Container, args []api.FunctionArgument) (gaby.Container, any, error) {
 	// Where the schemas are is declared in the resource-type specs, not written here. See
 	// https://github.com/yannh/kubeconform/blob/master/pkg/validator/validator.go for the
 	// template syntax.
@@ -318,6 +339,11 @@ func k8sFnVetSchemas(rp *k8skit.K8sResourceProviderType, options *api.FunctionOp
 		if ok && kubeVersion != "" {
 			opts.KubernetesVersion = kubeVersion
 		}
+	}
+	// Without a version, the configuration is checked against the API of the cluster it is
+	// released to, when its Target says which version that is.
+	if opts.KubernetesVersion == "" {
+		opts.KubernetesVersion = targetSchemaVersion(functionContext)
 	}
 	v, err := validator.New(schemaLocations, opts)
 	if err != nil {

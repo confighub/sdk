@@ -10,6 +10,7 @@ descriptor	container-repository-uri	{"AttributeName":"container-repository-uri",
 descriptor	container-resources	{"AttributeName":"container-resources","AttributeGroup":null}
 descriptor	container-resources-defaults	{"AttributeName":"container-resources-defaults","AttributeGroup":null}
 descriptor	default-name	{"AttributeName":"default-name","AttributeGroup":null}
+descriptor	deprecated	{"AttributeName":"deprecated","AttributeGroup":null}
 descriptor	domain	{"AttributeName":"domain","AttributeGroup":null}
 descriptor	env-value	{"AttributeName":"env-value","AttributeGroup":null}
 descriptor	hostname	{"AttributeName":"hostname","AttributeGroup":null}
@@ -437,6 +438,22 @@ path	default-name	v1/Service	metadata.labels.app	{"Path":"metadata.labels.app","
 path	default-name	v1/Service	metadata.labels.app.kubernetes.io/name	{"Path":"metadata.labels.app~1kubernetes~1io/name","AttributeName":"app-label","DataType":"string"}
 path	default-name	v1/Service	spec.selector.app	{"Path":"spec.selector.app","AttributeName":"app-label","DataType":"string"}
 path	default-name	v1/Service	spec.selector.app.kubernetes.io/name	{"Path":"spec.selector.app~1kubernetes~1io/name","AttributeName":"app-label","DataType":"string"}
+path	deprecated	actions.github.com/v1alpha1/AutoscalingListener	spec.template.spec.serviceAccount	{"Path":"spec.template.spec.serviceAccount","AttributeName":"deprecated","DataType":"YAML"}
+path	deprecated	actions.github.com/v1alpha1/AutoscalingRunnerSet	spec.listenerTemplate.spec.serviceAccount	{"Path":"spec.listenerTemplate.spec.serviceAccount","AttributeName":"deprecated","DataType":"YAML"}
+path	deprecated	actions.github.com/v1alpha1/AutoscalingRunnerSet	spec.template.spec.serviceAccount	{"Path":"spec.template.spec.serviceAccount","AttributeName":"deprecated","DataType":"YAML"}
+path	deprecated	apps/v1/DaemonSet	spec.template.spec.serviceAccount	{"Path":"spec.template.spec.serviceAccount","AttributeName":"deprecated","DataType":"YAML"}
+path	deprecated	apps/v1/Deployment	spec.template.spec.serviceAccount	{"Path":"spec.template.spec.serviceAccount","AttributeName":"deprecated","DataType":"YAML"}
+path	deprecated	apps/v1/ReplicaSet	spec.template.spec.serviceAccount	{"Path":"spec.template.spec.serviceAccount","AttributeName":"deprecated","DataType":"YAML"}
+path	deprecated	apps/v1/StatefulSet	spec.template.spec.serviceAccount	{"Path":"spec.template.spec.serviceAccount","AttributeName":"deprecated","DataType":"YAML"}
+path	deprecated	argoproj.io/v1alpha1/Rollout	spec.template.spec.serviceAccount	{"Path":"spec.template.spec.serviceAccount","AttributeName":"deprecated","DataType":"YAML"}
+path	deprecated	batch/v1/CronJob	spec.jobTemplate.spec.template.spec.serviceAccount	{"Path":"spec.jobTemplate.spec.template.spec.serviceAccount","AttributeName":"deprecated","DataType":"YAML"}
+path	deprecated	batch/v1/Job	spec.template.spec.serviceAccount	{"Path":"spec.template.spec.serviceAccount","AttributeName":"deprecated","DataType":"YAML"}
+path	deprecated	networking.k8s.io/v1/Ingress	metadata.annotations.kubernetes.io/ingress.class	{"Path":"metadata.annotations.kubernetes~1io/ingress~1class","AttributeName":"deprecated","DataType":"YAML"}
+path	deprecated	serving.knative.dev/v1/Service	spec.template.spec.serviceAccount	{"Path":"spec.template.spec.serviceAccount","AttributeName":"deprecated","DataType":"YAML"}
+path	deprecated	v1/PersistentVolumeClaim	metadata.annotations.volume.beta.kubernetes.io/storage-class	{"Path":"metadata.annotations.volume~1beta~1kubernetes~1io/storage-class","AttributeName":"deprecated","DataType":"YAML"}
+path	deprecated	v1/Pod	spec.serviceAccount	{"Path":"spec.serviceAccount","AttributeName":"deprecated","DataType":"YAML"}
+path	deprecated	v1/PodTemplate	template.spec.serviceAccount	{"Path":"template.spec.serviceAccount","AttributeName":"deprecated","DataType":"YAML"}
+path	deprecated	v1/ReplicationController	spec.template.spec.serviceAccount	{"Path":"spec.template.spec.serviceAccount","AttributeName":"deprecated","DataType":"YAML"}
 path	domain	cert-manager.io/v1/Certificate	spec.commonName#domain	{"Path":"spec.commonName#domain","AttributeName":"domain","DataType":"string","Details":{"IsNeeded":true},"EmbeddedAccessorType":"Regexp","EmbeddedAccessorConfig":"^(?P\u003csubdomain\u003e[a-z0-9](?:[-a-z0-9]{0,61}[a-z0-9])?)\\.(?P\u003cdomain\u003e[a-z0-9](?:[-a-z0-9]{0,61}[a-z0-9])?(?:\\.[a-z0-9](?:[-a-z0-9]{0,61}[a-z0-9])?){0,9})$"}
 path	domain	cert-manager.io/v1/Certificate	spec.dnsNames.*	{"Path":"spec.dnsNames.*#domain","AttributeName":"domain","DataType":"string","Details":{"IsNeeded":true},"EmbeddedAccessorType":"Regexp","EmbeddedAccessorConfig":"^(?P\u003csubdomain\u003e[a-z0-9](?:[-a-z0-9]{0,61}[a-z0-9])?)\\.(?P\u003cdomain\u003e[a-z0-9](?:[-a-z0-9]{0,61}[a-z0-9])?(?:\\.[a-z0-9](?:[-a-z0-9]{0,61}[a-z0-9])?){0,9})$"}
 path	domain	externaldns.k8s.io/v1alpha1/DNSEndpoint	spec.endpoints.*.dnsName#domain	{"Path":"spec.endpoints.*.dnsName#domain","AttributeName":"domain","DataType":"string","Details":{"IsNeeded":true},"EmbeddedAccessorType":"Regexp","EmbeddedAccessorConfig":"^(?P\u003csubdomain\u003e[a-z0-9](?:[-a-z0-9]{0,61}[a-z0-9])?)\\.(?P\u003cdomain\u003e[a-z0-9](?:[-a-z0-9]{0,61}[a-z0-9])?(?:\\.[a-z0-9](?:[-a-z0-9]{0,61}[a-z0-9])?){0,9})$"}

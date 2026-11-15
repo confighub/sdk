@@ -1282,6 +1282,12 @@ const GuardKeyLink = "Link"
 // Trigger does, such as the function it runs (Trigger=set-hash).
 const GuardKeyTrigger = "Trigger"
 
+// GuardKeyOverride is the guard key that says a path holds a value set on purpose over the one a
+// merge would bring: Override=External over the configuration a Unit is uploaded from,
+// Override=Upstream over its upstream Unit's. It keeps merges from replacing the value, as
+// protection does, so clients clear it by default for a change that is not a merge.
+const GuardKeyOverride = "Override"
+
 // ClearanceAdmitting returns the clearance, extended if it has to be to admit the guard
 // key=value: by adding value to its In requirement on key, or else by adding one. The clearance
 // passed in is not modified.

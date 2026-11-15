@@ -7,6 +7,7 @@ import (
 	"fmt"
 	"strings"
 
+	"github.com/confighub/sdk/core/cubapi"
 	"github.com/confighub/sdk/core/function/api"
 	goclientnew "github.com/confighub/sdk/core/openapi/goclient-new"
 )
@@ -38,17 +39,15 @@ func displayWriteConflicts(space, unit string, conflicts *goclientnew.MutationCo
 			guarded++
 		}
 	}
-	var flags []string
-	for _, requirement := range clearanceCoveringGuards(withheld) {
-		flags = append(flags, fmt.Sprintf("--clearance %q", formatClearance(&goclientnew.Clearance{requirement})))
-	}
-	clearance := strings.Join(flags, " ")
 	if dryRun {
-		if clearance != "" {
+		// The change is run again, so the clearance restates the default it was sent with.
+		if clearance := clearanceFlags(clearanceToRetry(withheld)); clearance != "" {
 			tprint("Pass %s to clear their guards.", clearance)
 		}
 		return
 	}
+	// Applying the conflicts writes only what was withheld, so what covers their guards is enough.
+	clearance := clearanceFlags(cubapi.ClearanceCoveringGuards(withheld))
 	conflictsCmd := fmt.Sprintf("cub unit conflicts --space %s %s", space, unit)
 	switch {
 	case guarded == len(withheld) && clearance != "":
@@ -59,4 +58,13 @@ func displayWriteConflicts(space, unit string, conflicts *goclientnew.MutationCo
 	default:
 		tprint("Review them with: %s", conflictsCmd)
 	}
+}
+
+// clearanceFlags renders a clearance as the --clearance flags that state it, one per requirement.
+func clearanceFlags(clearance goclientnew.Clearance) string {
+	flags := make([]string, 0, len(clearance))
+	for _, requirement := range clearance {
+		flags = append(flags, fmt.Sprintf("--clearance %q", formatClearance(&goclientnew.Clearance{requirement})))
+	}
+	return strings.Join(flags, " ")
 }

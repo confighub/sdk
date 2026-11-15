@@ -26,6 +26,7 @@ attribute	actions.github.com/v1alpha1/AutoscalingListener	container-resources-de
 attribute	actions.github.com/v1alpha1/AutoscalingListener	container-resources-defaults	spec.template.spec.ephemeralContainers.*.resources.requests.memory	string
 attribute	actions.github.com/v1alpha1/AutoscalingListener	container-resources-defaults	spec.template.spec.initContainers.*.resources.requests.cpu	string
 attribute	actions.github.com/v1alpha1/AutoscalingListener	container-resources-defaults	spec.template.spec.initContainers.*.resources.requests.memory	string
+attribute	actions.github.com/v1alpha1/AutoscalingListener	deprecated	spec.template.spec.serviceAccount	
 attribute	actions.github.com/v1alpha1/AutoscalingListener	env-value	spec.template.spec.containers.?name:container-name=%s.env.?name:env-var=%s.value	
 attribute	actions.github.com/v1alpha1/AutoscalingListener	env-value	spec.template.spec.ephemeralContainers.?name:container-name=%s.env.?name:env-var=%s.value	
 attribute	actions.github.com/v1alpha1/AutoscalingListener	env-value	spec.template.spec.initContainers.?name:container-name=%s.env.?name:env-var=%s.value	
@@ -122,6 +123,8 @@ attribute	actions.github.com/v1alpha1/AutoscalingRunnerSet	container-resources-d
 attribute	actions.github.com/v1alpha1/AutoscalingRunnerSet	container-resources-defaults	spec.template.spec.ephemeralContainers.*.resources.requests.memory	string
 attribute	actions.github.com/v1alpha1/AutoscalingRunnerSet	container-resources-defaults	spec.template.spec.initContainers.*.resources.requests.cpu	string
 attribute	actions.github.com/v1alpha1/AutoscalingRunnerSet	container-resources-defaults	spec.template.spec.initContainers.*.resources.requests.memory	string
+attribute	actions.github.com/v1alpha1/AutoscalingRunnerSet	deprecated	spec.listenerTemplate.spec.serviceAccount	
+attribute	actions.github.com/v1alpha1/AutoscalingRunnerSet	deprecated	spec.template.spec.serviceAccount	
 attribute	actions.github.com/v1alpha1/AutoscalingRunnerSet	env-value	spec.listenerTemplate.spec.containers.?name:container-name=%s.env.?name:env-var=%s.value	
 attribute	actions.github.com/v1alpha1/AutoscalingRunnerSet	env-value	spec.listenerTemplate.spec.ephemeralContainers.?name:container-name=%s.env.?name:env-var=%s.value	
 attribute	actions.github.com/v1alpha1/AutoscalingRunnerSet	env-value	spec.listenerTemplate.spec.initContainers.?name:container-name=%s.env.?name:env-var=%s.value	
@@ -245,6 +248,7 @@ attribute	apps/v1/DaemonSet	container-resources-defaults	spec.template.spec.ephe
 attribute	apps/v1/DaemonSet	container-resources-defaults	spec.template.spec.ephemeralContainers.*.resources.requests.memory	string
 attribute	apps/v1/DaemonSet	container-resources-defaults	spec.template.spec.initContainers.*.resources.requests.cpu	string
 attribute	apps/v1/DaemonSet	container-resources-defaults	spec.template.spec.initContainers.*.resources.requests.memory	string
+attribute	apps/v1/DaemonSet	deprecated	spec.template.spec.serviceAccount	
 attribute	apps/v1/DaemonSet	env-value	spec.template.spec.containers.?name:container-name=%s.env.?name:env-var=%s.value	
 attribute	apps/v1/DaemonSet	env-value	spec.template.spec.ephemeralContainers.?name:container-name=%s.env.?name:env-var=%s.value	
 attribute	apps/v1/DaemonSet	env-value	spec.template.spec.initContainers.?name:container-name=%s.env.?name:env-var=%s.value	
@@ -315,6 +319,7 @@ attribute	apps/v1/Deployment	container-resources-defaults	spec.template.spec.eph
 attribute	apps/v1/Deployment	container-resources-defaults	spec.template.spec.ephemeralContainers.*.resources.requests.memory	string
 attribute	apps/v1/Deployment	container-resources-defaults	spec.template.spec.initContainers.*.resources.requests.cpu	string
 attribute	apps/v1/Deployment	container-resources-defaults	spec.template.spec.initContainers.*.resources.requests.memory	string
+attribute	apps/v1/Deployment	deprecated	spec.template.spec.serviceAccount	
 attribute	apps/v1/Deployment	env-value	spec.template.spec.containers.?name:container-name=%s.env.?name:env-var=%s.value	
 attribute	apps/v1/Deployment	env-value	spec.template.spec.ephemeralContainers.?name:container-name=%s.env.?name:env-var=%s.value	
 attribute	apps/v1/Deployment	env-value	spec.template.spec.initContainers.?name:container-name=%s.env.?name:env-var=%s.value	
@@ -386,6 +391,7 @@ attribute	apps/v1/ReplicaSet	container-resources-defaults	spec.template.spec.eph
 attribute	apps/v1/ReplicaSet	container-resources-defaults	spec.template.spec.ephemeralContainers.*.resources.requests.memory	string
 attribute	apps/v1/ReplicaSet	container-resources-defaults	spec.template.spec.initContainers.*.resources.requests.cpu	string
 attribute	apps/v1/ReplicaSet	container-resources-defaults	spec.template.spec.initContainers.*.resources.requests.memory	string
+attribute	apps/v1/ReplicaSet	deprecated	spec.template.spec.serviceAccount	
 attribute	apps/v1/ReplicaSet	env-value	spec.template.spec.containers.?name:container-name=%s.env.?name:env-var=%s.value	
 attribute	apps/v1/ReplicaSet	env-value	spec.template.spec.ephemeralContainers.?name:container-name=%s.env.?name:env-var=%s.value	
 attribute	apps/v1/ReplicaSet	env-value	spec.template.spec.initContainers.?name:container-name=%s.env.?name:env-var=%s.value	
@@ -457,6 +463,7 @@ attribute	apps/v1/StatefulSet	container-resources-defaults	spec.template.spec.ep
 attribute	apps/v1/StatefulSet	container-resources-defaults	spec.template.spec.ephemeralContainers.*.resources.requests.memory	string
 attribute	apps/v1/StatefulSet	container-resources-defaults	spec.template.spec.initContainers.*.resources.requests.cpu	string
 attribute	apps/v1/StatefulSet	container-resources-defaults	spec.template.spec.initContainers.*.resources.requests.memory	string
+attribute	apps/v1/StatefulSet	deprecated	spec.template.spec.serviceAccount	
 attribute	apps/v1/StatefulSet	env-value	spec.template.spec.containers.?name:container-name=%s.env.?name:env-var=%s.value	
 attribute	apps/v1/StatefulSet	env-value	spec.template.spec.ephemeralContainers.?name:container-name=%s.env.?name:env-var=%s.value	
 attribute	apps/v1/StatefulSet	env-value	spec.template.spec.initContainers.?name:container-name=%s.env.?name:env-var=%s.value	
@@ -538,6 +545,7 @@ attribute	argoproj.io/v1alpha1/Rollout	container-resources-defaults	spec.templat
 attribute	argoproj.io/v1alpha1/Rollout	container-resources-defaults	spec.template.spec.ephemeralContainers.*.resources.requests.memory	string
 attribute	argoproj.io/v1alpha1/Rollout	container-resources-defaults	spec.template.spec.initContainers.*.resources.requests.cpu	string
 attribute	argoproj.io/v1alpha1/Rollout	container-resources-defaults	spec.template.spec.initContainers.*.resources.requests.memory	string
+attribute	argoproj.io/v1alpha1/Rollout	deprecated	spec.template.spec.serviceAccount	
 attribute	argoproj.io/v1alpha1/Rollout	env-value	spec.template.spec.containers.?name:container-name=%s.env.?name:env-var=%s.value	
 attribute	argoproj.io/v1alpha1/Rollout	env-value	spec.template.spec.ephemeralContainers.?name:container-name=%s.env.?name:env-var=%s.value	
 attribute	argoproj.io/v1alpha1/Rollout	env-value	spec.template.spec.initContainers.?name:container-name=%s.env.?name:env-var=%s.value	
@@ -620,6 +628,7 @@ attribute	batch/v1/CronJob	container-resources-defaults	spec.jobTemplate.spec.te
 attribute	batch/v1/CronJob	container-resources-defaults	spec.jobTemplate.spec.template.spec.ephemeralContainers.*.resources.requests.memory	string
 attribute	batch/v1/CronJob	container-resources-defaults	spec.jobTemplate.spec.template.spec.initContainers.*.resources.requests.cpu	string
 attribute	batch/v1/CronJob	container-resources-defaults	spec.jobTemplate.spec.template.spec.initContainers.*.resources.requests.memory	string
+attribute	batch/v1/CronJob	deprecated	spec.jobTemplate.spec.template.spec.serviceAccount	
 attribute	batch/v1/CronJob	env-value	spec.jobTemplate.spec.template.spec.containers.?name:container-name=%s.env.?name:env-var=%s.value	
 attribute	batch/v1/CronJob	env-value	spec.jobTemplate.spec.template.spec.ephemeralContainers.?name:container-name=%s.env.?name:env-var=%s.value	
 attribute	batch/v1/CronJob	env-value	spec.jobTemplate.spec.template.spec.initContainers.?name:container-name=%s.env.?name:env-var=%s.value	
@@ -689,6 +698,7 @@ attribute	batch/v1/Job	container-resources-defaults	spec.template.spec.ephemeral
 attribute	batch/v1/Job	container-resources-defaults	spec.template.spec.ephemeralContainers.*.resources.requests.memory	string
 attribute	batch/v1/Job	container-resources-defaults	spec.template.spec.initContainers.*.resources.requests.cpu	string
 attribute	batch/v1/Job	container-resources-defaults	spec.template.spec.initContainers.*.resources.requests.memory	string
+attribute	batch/v1/Job	deprecated	spec.template.spec.serviceAccount	
 attribute	batch/v1/Job	env-value	spec.template.spec.containers.?name:container-name=%s.env.?name:env-var=%s.value	
 attribute	batch/v1/Job	env-value	spec.template.spec.ephemeralContainers.?name:container-name=%s.env.?name:env-var=%s.value	
 attribute	batch/v1/Job	env-value	spec.template.spec.initContainers.?name:container-name=%s.env.?name:env-var=%s.value	
@@ -894,6 +904,7 @@ attribute	networking.istio.io/v1/VirtualService	resource-name	spec.http.*.mirror
 attribute	networking.istio.io/v1/VirtualService	resource-name	spec.http.*.route.*.destination.host		v1/Service
 attribute	networking.istio.io/v1/VirtualService	resource-name	spec.tcp.*.route.*.destination.host		v1/Service
 attribute	networking.istio.io/v1/VirtualService	resource-name	spec.tls.*.route.*.destination.host		v1/Service
+attribute	networking.k8s.io/v1/Ingress	deprecated	metadata.annotations.kubernetes~1io/ingress~1class	
 attribute	networking.k8s.io/v1/Ingress	hostname	spec.rules.*.host	
 attribute	networking.k8s.io/v1/Ingress	hostname	spec.tls.*.hosts.*	
 attribute	networking.k8s.io/v1/Ingress	resource-name	metadata.annotations.ingress~1kubernetes~1io/auth-secret		v1/Secret
@@ -972,6 +983,7 @@ attribute	serving.knative.dev/v1/Service	container-resources-defaults	spec.templ
 attribute	serving.knative.dev/v1/Service	container-resources-defaults	spec.template.spec.ephemeralContainers.*.resources.requests.memory	string
 attribute	serving.knative.dev/v1/Service	container-resources-defaults	spec.template.spec.initContainers.*.resources.requests.cpu	string
 attribute	serving.knative.dev/v1/Service	container-resources-defaults	spec.template.spec.initContainers.*.resources.requests.memory	string
+attribute	serving.knative.dev/v1/Service	deprecated	spec.template.spec.serviceAccount	
 attribute	serving.knative.dev/v1/Service	env-value	spec.template.spec.containers.?name:container-name=%s.env.?name:env-var=%s.value	
 attribute	serving.knative.dev/v1/Service	env-value	spec.template.spec.ephemeralContainers.?name:container-name=%s.env.?name:env-var=%s.value	
 attribute	serving.knative.dev/v1/Service	env-value	spec.template.spec.initContainers.?name:container-name=%s.env.?name:env-var=%s.value	
@@ -1043,6 +1055,7 @@ attribute	v1/PersistentVolume	immutable	spec.storageClassName
 attribute	v1/PersistentVolume	immutable	spec.volumeMode	
 attribute	v1/PersistentVolume	resource-name	spec.azureFile.secretName		v1/Secret
 attribute	v1/PersistentVolume	resource-name	spec.storageClassName		storage.k8s.io/v1/StorageClass
+attribute	v1/PersistentVolumeClaim	deprecated	metadata.annotations.volume~1beta~1kubernetes~1io/storage-class	
 attribute	v1/PersistentVolumeClaim	immutable	spec.accessModes	
 attribute	v1/PersistentVolumeClaim	immutable	spec.dataSource	
 attribute	v1/PersistentVolumeClaim	immutable	spec.dataSourceRef	
@@ -1078,6 +1091,7 @@ attribute	v1/Pod	container-resources-defaults	spec.ephemeralContainers.*.resourc
 attribute	v1/Pod	container-resources-defaults	spec.ephemeralContainers.*.resources.requests.memory	string
 attribute	v1/Pod	container-resources-defaults	spec.initContainers.*.resources.requests.cpu	string
 attribute	v1/Pod	container-resources-defaults	spec.initContainers.*.resources.requests.memory	string
+attribute	v1/Pod	deprecated	spec.serviceAccount	
 attribute	v1/Pod	env-value	spec.containers.?name:container-name=%s.env.?name:env-var=%s.value	
 attribute	v1/Pod	env-value	spec.ephemeralContainers.?name:container-name=%s.env.?name:env-var=%s.value	
 attribute	v1/Pod	env-value	spec.initContainers.?name:container-name=%s.env.?name:env-var=%s.value	
@@ -1180,6 +1194,7 @@ attribute	v1/PodTemplate	container-resources-defaults	template.spec.ephemeralCon
 attribute	v1/PodTemplate	container-resources-defaults	template.spec.ephemeralContainers.*.resources.requests.memory	string
 attribute	v1/PodTemplate	container-resources-defaults	template.spec.initContainers.*.resources.requests.cpu	string
 attribute	v1/PodTemplate	container-resources-defaults	template.spec.initContainers.*.resources.requests.memory	string
+attribute	v1/PodTemplate	deprecated	template.spec.serviceAccount	
 attribute	v1/PodTemplate	env-value	template.spec.containers.?name:container-name=%s.env.?name:env-var=%s.value	
 attribute	v1/PodTemplate	env-value	template.spec.ephemeralContainers.?name:container-name=%s.env.?name:env-var=%s.value	
 attribute	v1/PodTemplate	env-value	template.spec.initContainers.?name:container-name=%s.env.?name:env-var=%s.value	
@@ -1248,6 +1263,7 @@ attribute	v1/ReplicationController	container-resources-defaults	spec.template.sp
 attribute	v1/ReplicationController	container-resources-defaults	spec.template.spec.ephemeralContainers.*.resources.requests.memory	string
 attribute	v1/ReplicationController	container-resources-defaults	spec.template.spec.initContainers.*.resources.requests.cpu	string
 attribute	v1/ReplicationController	container-resources-defaults	spec.template.spec.initContainers.*.resources.requests.memory	string
+attribute	v1/ReplicationController	deprecated	spec.template.spec.serviceAccount	
 attribute	v1/ReplicationController	env-value	spec.template.spec.containers.?name:container-name=%s.env.?name:env-var=%s.value	
 attribute	v1/ReplicationController	env-value	spec.template.spec.ephemeralContainers.?name:container-name=%s.env.?name:env-var=%s.value	
 attribute	v1/ReplicationController	env-value	spec.template.spec.initContainers.?name:container-name=%s.env.?name:env-var=%s.value	

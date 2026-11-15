@@ -122,7 +122,7 @@ func TestK8sFnVetSchemas_ValidResource(t *testing.T) {
 	docs, err := gaby.ParseAll([]byte(vetSchemasValidDeployment))
 	require.NoError(t, err)
 
-	_, output, err := k8sFnVetSchemas(testResourceProvider, nil, docs, nil)
+	_, output, err := k8sFnVetSchemas(testResourceProvider, nil, nil, docs, nil)
 	require.NoError(t, err)
 
 	vr, ok := output.(api.ValidationResult)
@@ -135,7 +135,7 @@ func TestK8sFnVetSchemas_InvalidField(t *testing.T) {
 	docs, err := gaby.ParseAll([]byte(vetSchemasInvalidField))
 	require.NoError(t, err)
 
-	_, output, err := k8sFnVetSchemas(testResourceProvider, nil, docs, nil)
+	_, output, err := k8sFnVetSchemas(testResourceProvider, nil, nil, docs, nil)
 	require.NoError(t, err)
 
 	vr, ok := output.(api.ValidationResult)
@@ -158,7 +158,7 @@ func TestK8sFnVetSchemas_InvalidNestedField(t *testing.T) {
 	docs, err := gaby.ParseAll([]byte(vetSchemasInvalidNestedField))
 	require.NoError(t, err)
 
-	_, output, err := k8sFnVetSchemas(testResourceProvider, nil, docs, nil)
+	_, output, err := k8sFnVetSchemas(testResourceProvider, nil, nil, docs, nil)
 	require.NoError(t, err)
 
 	vr, ok := output.(api.ValidationResult)
@@ -180,7 +180,7 @@ func TestK8sFnVetSchemas_MultipleInvalidResources(t *testing.T) {
 	docs, err := gaby.ParseAll([]byte(vetSchemasMultipleInvalid))
 	require.NoError(t, err)
 
-	_, output, err := k8sFnVetSchemas(testResourceProvider, nil, docs, nil)
+	_, output, err := k8sFnVetSchemas(testResourceProvider, nil, nil, docs, nil)
 	require.NoError(t, err)
 
 	vr, ok := output.(api.ValidationResult)
@@ -204,7 +204,7 @@ func TestK8sFnVetSchemas_DeprecatedAPIFields(t *testing.T) {
 	// networking.k8s.io/v1 Ingress requires backend.service instead of backend.serviceName/servicePort.
 	args := stringArgsToFunctionArgs([]string{"1.30.0"})
 
-	_, output, err := k8sFnVetSchemas(testResourceProvider, nil, docs, args)
+	_, output, err := k8sFnVetSchemas(testResourceProvider, nil, nil, docs, args)
 	require.NoError(t, err)
 
 	vr, ok := output.(api.ValidationResult)
@@ -231,10 +231,29 @@ func TestK8sFnVetSchemas_KubernetesVersion(t *testing.T) {
 
 	args := stringArgsToFunctionArgs([]string{"1.26.12"})
 
-	_, output, err := k8sFnVetSchemas(testResourceProvider, nil, docs, args)
+	_, output, err := k8sFnVetSchemas(testResourceProvider, nil, nil, docs, args)
 	require.NoError(t, err)
 
 	vr, ok := output.(api.ValidationResult)
 	require.True(t, ok)
 	assert.True(t, vr.Passed)
+}
+
+func TestTargetSchemaVersion(t *testing.T) {
+	facts := func(version string) *api.FunctionContext {
+		return &api.FunctionContext{TargetFacts: map[string]string{kubernetesVersionFact: version}}
+	}
+	for version, want := range map[string]string{
+		"1.31.2":            "1.31.0",
+		"v1.33.5":           "1.33.0",
+		"1.32":              "1.32.0",
+		"v1.30.4-eks-a1b2c": "1.30.0",
+		"":                  "",
+		"latest":            "",
+		"1.31x":             "",
+	} {
+		assert.Equal(t, want, targetSchemaVersion(facts(version)), version)
+	}
+	assert.Equal(t, "", targetSchemaVersion(nil))
+	assert.Equal(t, "", targetSchemaVersion(&api.FunctionContext{}))
 }

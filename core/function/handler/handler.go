@@ -189,7 +189,9 @@ func (fh *FunctionHandler) InvokeCore(ctx context.Context, functionInvocation *a
 			continue
 		}
 
-		isFilter := f.Validating && numFilters > 0
+		// A filter is any function returning a ValidationResult, validating or not: where-filter
+		// answers whether the data matches, which is not a judgment of it.
+		isFilter := numFilters > 0 && f.OutputInfo != nil && f.OutputInfo.OutputType == api.OutputTypeValidationResult
 		if isFilter {
 			numFilters--
 		}
@@ -274,7 +276,7 @@ func (fh *FunctionHandler) InvokeCore(ctx context.Context, functionInvocation *a
 		if err == nil && isFilter {
 			validationResult, ok := functionOutput.(api.ValidationResult)
 			if !ok {
-				err = errors.New("validating functions must return type ValidationResult")
+				err = errors.New("filter functions must return type ValidationResult")
 			} else if !validationResult.Passed {
 				invocationInfo += ": " + "did not pass"
 				slog.Info(invocationInfo)
@@ -748,10 +750,19 @@ func (fh *FunctionHandler) RegisterFunction(functionName string, registration *F
 			return fmt.Errorf("function %s: %w", functionName, err)
 		}
 	}
-	if registration.OutputInfo != nil && registration.OutputInfo.OutputType == api.OutputTypeValidationResult {
-		registration.Validating = true
-	} else if registration.Validating {
-		return fmt.Errorf("output type %s not valid for validating functions", string(registration.OutputInfo.OutputType))
+	// A validating function returns a ValidationResult, but a function returning one need not
+	// be validating: where-filter's says whether the data matches, not whether it is valid.
+	if registration.Validating && (registration.OutputInfo == nil || registration.OutputInfo.OutputType != api.OutputTypeValidationResult) {
+		outputType := "none"
+		if registration.OutputInfo != nil {
+			outputType = string(registration.OutputInfo.OutputType)
+		}
+		return fmt.Errorf("function %s: output type %s not valid for validating functions", functionName, outputType)
+	}
+	for _, part := range registration.Include {
+		if err := api.ValidateFunctionContextPart(part); err != nil {
+			return fmt.Errorf("function %s: %w", functionName, err)
+		}
 	}
 	fh.functionMap[functionName] = registration
 	return nil

@@ -205,7 +205,7 @@ func executeFunctionsFromFile(functionsFile, whereClause string, unitIds []strin
 			return resp, newBody, err
 		}
 	} else {
-		clearance, cerr := clearanceJSON()
+		clearance, cerr := clearanceJSON(false)
 		if cerr != nil {
 			return nil, newBody, cerr
 		}

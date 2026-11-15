@@ -7,6 +7,7 @@ import (
 	"bytes"
 	"errors"
 	"fmt"
+	"slices"
 	"strconv"
 	"strings"
 	"time"
@@ -238,7 +239,8 @@ func init() {
 	unitUpdateCmd.Flags().StringVar(&resolve, "resolve", "", "resolve links from this unit: Link:* for every link that can resolve, Link:<uuid> or Link:<slug> for one, just <slug> (e.g. space/link-name), or Link:<where expression> to select among them (e.g. \"Link:UpdateType = 'MergeUnits'\") -- the form to use in a bulk operation, where a uuid cannot be. An AutoUpdate link can be resolved by hand and does nothing when it is already level with its source")
 	unitUpdateCmd.Flags().BoolVar(&isUpgrade, "upgrade", false, "upgrade the unit to the latest version of its upstream unit")
 	unitUpdateCmd.Flags().BoolVar(&protectChange, "protect", false, "record the paths this change writes as protected local overrides, so a later merge from upstream does not overwrite them; by default a change claims nothing and each path keeps the protection it already has. Refused on the merges protection holds paths against: --upgrade, --merge-source other than Self, --merge-external-source, and --resolve of an UpgradeUnit or MergeUnits link")
-	addClearanceFlag(unitUpdateCmd)
+	unitUpdateCmd.Flags().StringArrayVar(&changeClearance, "clearance", nil, clearanceFlagUsage+
+		". Without it, an update that does not merge -- an edit, a restore, or a --resolve that reaches no UpgradeUnit or MergeUnits link of the units updated -- is cleared for Override guards, whatever their value; --upgrade, --merge-source, --merge-external-source, and a --resolve that reaches such a link are cleared for nothing. A clearance given replaces that, and --clearance '' clears nothing")
 	addGuardFlag(unitUpdateCmd)
 	addInheritedGuardFlag(unitUpdateCmd)
 	unitUpdateCmd.Flags().BoolVar(&squashMerge, "squash", false, "merge the range as one rebased diff in one revision instead of walking it: by default a merge re-runs the upstream's recorded function invocations against this unit where it can, so each change lands where this unit's own structure puts it, and records one revision per upstream revision that has an effect here; only valid with --upgrade, --merge-source, or --resolve")
@@ -601,7 +603,13 @@ func unitUpdateCmdRun(cmd *cobra.Command, args []string) error {
 	if protectChange {
 		newParams.Protect = &protectChange
 	}
-	clearance, err := clearanceJSON()
+	merge, err := unitUpdateMerges(func() ([]goclientnew.UUID, error) {
+		return []goclientnew.UUID{currentUnit.UnitID}, nil
+	})
+	if err != nil {
+		return err
+	}
+	clearance, err := clearanceJSON(merge)
 	if err != nil {
 		return err
 	}
@@ -1055,7 +1063,28 @@ func runBulkUnitUpdate() error {
 	if protectChange {
 		params.Protect = &protectChange
 	}
-	clearance, err := clearanceJSON()
+	// The server selects the units, so a resolve's links are looked up from the same selection.
+	merge, err := unitUpdateMerges(func() ([]goclientnew.UUID, error) {
+		units, err := cubapi.ListUnits(ctx, cubClient, cubapi.NewWhere(effectiveWhere), cubapi.ListOpts{
+			Select:        "UnitID",
+			Filter:        filterID,
+			IncludeHidden: includeHidden,
+		})
+		if err != nil {
+			return nil, err
+		}
+		ids := make([]goclientnew.UUID, 0, len(units))
+		for _, unit := range units {
+			if unit.Unit != nil {
+				ids = append(ids, unit.Unit.UnitID)
+			}
+		}
+		return ids, nil
+	})
+	if err != nil {
+		return err
+	}
+	clearance, err := clearanceJSON(merge)
 	if err != nil {
 		return err
 	}
@@ -1631,6 +1660,55 @@ func changeOrderBoundaryTagID(spaceID string, identifier string, isBeforeModifie
 func looksLikeWhereExpression(identifier string) bool {
 	return strings.ContainsAny(identifier, " =<>~!'()")
 }
+
+// unitUpdateMerges reports whether the update merges, which decides whether it is sent with
+// the default clearance when --clearance is not given (see cubapi.OperationClearance): an upgrade,
+// a merge from a source unit or an external one, or a resolve that reaches an UpgradeUnit or
+// MergeUnits link of one of the units updated does; a restore, a resolve of other links, and an
+// edit do not. unitIDs returns the units updated, and is called only for a resolve with no
+// --clearance, since a clearance given is sent as it is either way.
+func unitUpdateMerges(unitIDs func() ([]goclientnew.UUID, error)) (bool, error) {
+	if isUpgrade || mergeSource != "" || mergeExternalSource != "" {
+		return true, nil
+	}
+	if resolve == "" || len(changeClearance) > 0 {
+		return false, nil
+	}
+	resolveFormatted, err := formatResolveParameter(resolve)
+	if err != nil {
+		return false, err
+	}
+	where := cubapi.NewWhere("").InStrings("UpdateType", cubapi.MergeUpdateTypes())
+	if selection := strings.TrimPrefix(resolveFormatted, "Link:"); selection != "*" {
+		if _, err := uuid.Parse(selection); err == nil {
+			where = where.And(fmt.Sprintf("LinkID = '%s'", selection))
+		} else {
+			where = where.And(selection)
+		}
+	}
+	ids, err := unitIDs()
+	if err != nil {
+		return false, fmt.Errorf("failed to find the units to resolve: %w", err)
+	}
+	// In chunks, so a large selection stays within the length of a query string.
+	for chunk := range slices.Chunk(ids, resolveLinkLookupChunk) {
+		links, err := cubapi.ListLinks(ctx, cubClient, where.In("FromUnitID", chunk), cubapi.ListOpts{
+			Select:        "LinkID",
+			IncludeHidden: "*",
+			Limit:         1,
+		})
+		if err != nil {
+			return false, fmt.Errorf("failed to find the links --resolve selects: %w", err)
+		}
+		if len(links) > 0 {
+			return true, nil
+		}
+	}
+	return false, nil
+}
+
+// resolveLinkLookupChunk is how many units unitUpdateMerges names in one link query.
+const resolveLinkLookupChunk = 100
 
 func formatResolveParameter(resolve string) (string, error) {
 	// Check for "Link:*" wildcard

@@ -25,8 +25,8 @@ import (
 // policy question, so it belongs in a Trigger a Space opts into, as vet-no-merge-conflicts does
 // for merges.
 //
-// The findings arrive in the FunctionContext: always for a Trigger, and for a direct invocation
-// that asks (FunctionInvocationOptions.IncludeLinkFindings).
+// The findings arrive in the FunctionContext, which the server fills only for the functions
+// whose signatures include LinkFindings.
 func registerVetNoLinkFindings(fh handler.FunctionRegistry, _ configkit.ConfigConverter, resourceProvider yamlkit.ResourceProvider) {
 	if err := fh.RegisterFunction("vet-no-link-findings", &handler.FunctionRegistration{
 		FunctionSignature: api.FunctionSignature{
@@ -49,6 +49,7 @@ func registerVetNoLinkFindings(fh handler.FunctionRegistry, _ configkit.ConfigCo
 			},
 			Mutating:              false,
 			Validating:            true,
+			Include:               []api.FunctionContextPart{api.FunctionContextLinkFindings},
 			Hermetic:              true,
 			Idempotent:            true,
 			Description:           "Returns true if the resolves of the unit's links found everything the links name",

@@ -179,6 +179,48 @@ spec:
 	assert.Equal(t, yamlkit.ScopeCluster, specs[1].Spec.Scope)
 }
 
+// A version the CRD deprecates, as kubebuilder's deprecatedversion marker writes one, is a
+// deprecated type, with its warning.
+func TestCRDSpecReadsDeprecatedVersions(t *testing.T) {
+	const deprecated = `apiVersion: apiextensions.k8s.io/v1
+kind: CustomResourceDefinition
+metadata: {name: widgets.example.com}
+spec:
+  group: example.com
+  names: {kind: Widget}
+  scope: Namespaced
+  versions:
+    - name: v1beta1
+      deprecated: true
+      deprecationWarning: "example.com/v1beta1 Widget is deprecated; use example.com/v1 Widget"
+      schema: {openAPIV3Schema: {type: object}}
+    - name: v1alpha1
+      deprecated: true
+    - name: v1
+      schema: {openAPIV3Schema: {type: object}}
+`
+	specs, err := SpecsFromCRD([]byte(deprecated), DefaultCRDSpecOptions())
+	require.NoError(t, err)
+	require.Len(t, specs, 3)
+	assert.True(t, specs[0].Spec.Deprecated)
+	assert.Equal(t, "example.com/v1beta1 Widget is deprecated; use example.com/v1 Widget", specs[0].Spec.DeprecationWarning)
+	assert.True(t, specs[1].Spec.Deprecated, "a version with no schema is still deprecated")
+	assert.Empty(t, specs[1].Spec.DeprecationWarning)
+	assert.False(t, specs[2].Spec.Deprecated)
+
+	set := yamlkit.SpecSet{ToolchainType: "Kubernetes/YAML"}
+	for _, spec := range specs {
+		set.ResourceTypes = append(set.ResourceTypes, spec.Spec)
+	}
+	compiled, err := yamlkit.CompileSpecSets(set)
+	require.NoError(t, err)
+	isDeprecated, warning := compiled.DeprecationOf("Kubernetes/YAML", "example.com/v1beta1/Widget")
+	assert.True(t, isDeprecated)
+	assert.Contains(t, warning, "use example.com/v1 Widget")
+	isDeprecated, _ = compiled.DeprecationOf("Kubernetes/YAML", "example.com/v1/Widget")
+	assert.False(t, isDeprecated)
+}
+
 func TestCRDSpecRejectsADocumentWithNoCRD(t *testing.T) {
 	_, err := SpecsFromCRD([]byte("apiVersion: v1\nkind: ConfigMap\nmetadata: {name: x}\n"), DefaultCRDSpecOptions())
 	require.Error(t, err)

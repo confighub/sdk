@@ -82,6 +82,19 @@
 #                    do not have them, while still adding subjects[*].namespace to every
 #                    ServiceAccount subject of a binding that does.
 
+#   deprecated       Fields the API has superseded, each declared with `replacement:`, the field
+#                    that takes its place. Setting one without its replacement relies on what the
+#                    API server may stop accepting. Read by vet-correctness.
+#
+# A type that is deprecated, or a version of it, declares `deprecated: true`, and a
+# `deprecationWarning:` saying what to use instead, as a CRD declares a deprecated version. Read by
+# vet-correctness's deprecated-api check.
+#
+# A type also declares `nameFormat:`, the syntax of its names as the API server validates them:
+# dns1123-subdomain (the default), dns1123-label, dns1035-label, or path-segment. And an exclusive
+# group declares `required: true` when one of its members has to be set. Both are read by
+# vet-correctness.
+
 toolchainType: Kubernetes/YAML
 
 # Where a type's JSON schema is fetched from, most authoritative first, as the templates
@@ -225,6 +238,9 @@ shapes:
       - {path: resourceClaims.*, members: [resourceClaimName, resourceClaimTemplateName]}
 
     attributes:
+      # Superseded fields, each with the field that replaces it.
+      deprecated:
+        - {path: serviceAccount, replacement: serviceAccountName}
       # Written by set-automount-service-account-token.
       automount-service-account-token:
         - {path: automountServiceAccountToken, dataType: bool, default: false}
@@ -629,6 +645,7 @@ resourceTypes:
   # ---------------------------------------------------------------------------------------
   - type: v1/Service
     scope: Namespaced
+    nameFormat: dns1035-label
     applyPriority: 400
     mergeKeys:
       - {path: spec.ports, key: port, extraKeys: [protocol]}
@@ -656,9 +673,10 @@ resourceTypes:
       resource-name:
         - {path: imagePullSecrets.*.name, target: v1/Secret}
 
-  # Deprecated but still in the spec.
   - type: v1/ComponentStatus
     scope: Cluster
+    deprecated: true
+    deprecationWarning: v1 ComponentStatus is deprecated in v1.19+
     mergeKeys:
       - {path: conditions, key: type}
 
@@ -826,6 +844,7 @@ resourceTypes:
   - type: rbac.authorization.k8s.io/v1/ClusterRoleBinding
     scope: Cluster
     similarityClass: rolebinding
+    nameFormat: path-segment
     applyPriority: 110
     attributes:
       namespace-name-reference:
@@ -840,6 +859,7 @@ resourceTypes:
   - type: rbac.authorization.k8s.io/v1/RoleBinding
     scope: Namespaced
     similarityClass: rolebinding
+    nameFormat: path-segment
     applyPriority: 210
     attributes:
       namespace-name-reference:
@@ -894,6 +914,8 @@ resourceTypes:
     scope: Namespaced
     applyPriority: 310
     attributes:
+      deprecated:
+        - {path: metadata.annotations.volume~1beta~1kubernetes~1io/storage-class, replacement: spec.storageClassName}
       resource-name:
         - {path: spec.storageClassName, target: storage.k8s.io/v1/StorageClass}
         - {path: spec.volumeName, target: v1/PersistentVolume}
@@ -942,6 +964,10 @@ resourceTypes:
   - type: policy/v1/PodDisruptionBudget
     scope: Namespaced
     applyPriority: 610
+    exclusiveFields:
+      # A budget states the pods that must stay up or the pods that may go, and the API server
+      # accepts one or neither; with neither it protects nothing.
+      - {path: spec, members: [maxUnavailable, minAvailable], required: true}
     attributes:
       pod-label-selector:
         - {path: spec.selector.matchLabels}
@@ -953,6 +979,8 @@ resourceTypes:
     scope: Namespaced
     applyPriority: 410
     attributes:
+      deprecated:
+        - {path: metadata.annotations.kubernetes~1io/ingress~1class, replacement: spec.ingressClassName}
       resource-name:
         - {path: metadata.annotations.ingress~1kubernetes~1io/auth-secret, target: v1/Secret}
         - {path: metadata.annotations.nginx~1ingress~1kubernetes~1io/auth-secret, target: v1/Secret}
@@ -1511,6 +1539,7 @@ resourceTypes:
   - type: rbac.authorization.k8s.io/v1/ClusterRole
     scope: Cluster
     similarityClass: role
+    nameFormat: path-segment
     applyPriority: 100
     attributes:
       resource-name:
@@ -1521,6 +1550,7 @@ resourceTypes:
   - type: rbac.authorization.k8s.io/v1/Role
     scope: Namespaced
     similarityClass: role
+    nameFormat: path-segment
     applyPriority: 200
     attributes:
       resource-name:
@@ -1813,4 +1843,5 @@ resourceTypes:
 
   - type: v1/Namespace
     scope: Cluster
+    nameFormat: dns1123-label
     applyPriority: 20

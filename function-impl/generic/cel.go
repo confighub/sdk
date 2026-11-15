@@ -180,7 +180,7 @@ func registerVetCEL(fh handler.FunctionRegistry, converter configkit.ConfigConve
 				{
 					ParameterName: "expression",
 					Required:      true,
-					Description:   "CEL expression to validate each resource. The current resource is available as 'r' (alias 'object'). Must return a bool (true=pass), or a map with 'passed' (bool), 'details' (list of strings), and optionally 'failed_attributes' (list of maps). The 'params' dict and 'functionContext' map (ConfigHub metadata, e.g. functionContext.TargetID) are also available.",
+					Description:   "CEL expression to validate each resource. The current resource is available as 'r' (alias 'object'). Must return a bool (true=pass), or a map with 'passed' (bool), 'details' (list of strings), and optionally 'issues' (list of maps with Identifier and Message, naming the check each finding fails) and 'failed_attributes' (list of maps with ResourceName, ResourceType, Path, Value, and optionally Score and Issues). The 'params' dict and 'functionContext' map (ConfigHub metadata, e.g. functionContext.TargetID) are also available.",
 					DataType:      api.DataTypeCEL,
 					Example:       `r.kind != 'Deployment' || r.spec.replicas <= 10`,
 				},
@@ -267,7 +267,9 @@ func GenericFnVetCEL(resourceProvider yamlkit.ResourceProvider, options *api.Fun
 			overallResult.Passed = false
 		}
 		overallResult.Details = append(overallResult.Details, vr.Details...)
+		overallResult.Issues = append(overallResult.Issues, vr.Issues...)
 		overallResult.FailedAttributes = append(overallResult.FailedAttributes, vr.FailedAttributes...)
+		overallResult.MaxScore = api.ScoreMax(overallResult.MaxScore, vr.MaxScore)
 		return output, nil
 	})
 	if err != nil {
@@ -278,7 +280,10 @@ func GenericFnVetCEL(resourceProvider yamlkit.ResourceProvider, options *api.Fun
 }
 
 // parseCELValidationResult converts a CEL result value to a ValidationResult.
-// Accepts bool or map with "passed", "details", "failed_attributes" keys.
+// Accepts bool or map with "passed", "details", "issues", "failed_attributes" keys.
+// An issue is a map with Identifier and Message, which is how one expression reports
+// several checks: each finding names the check it fails. A failed attribute may carry
+// its own Issues, and a Score, the highest of which is the result's MaxScore.
 func parseCELValidationResult(val ref.Val, resourceInfo *api.ResourceInfo) api.ValidationResult {
 	goVal := CelToGo(val)
 
@@ -315,18 +320,48 @@ func parseCELValidationResult(val ref.Val, resourceInfo *api.ResourceInfo) api.V
 		}
 	}
 
+	vr.Issues = celIssues(m["issues"])
+
 	if failedAttrs, ok := m["failed_attributes"]; ok {
 		if attrList, ok := failedAttrs.([]any); ok {
 			for _, attr := range attrList {
 				if attrMap, ok := attr.(map[string]any); ok {
 					av := celMapToAttributeValue(attrMap)
 					vr.FailedAttributes = append(vr.FailedAttributes, av)
+					vr.MaxScore = api.ScoreMax(vr.MaxScore, av.Score)
 				}
 			}
 		}
 	}
 
 	return vr
+}
+
+// celIssues converts a list of maps with Identifier and Message to Issues. Anything else
+// in the list is not an issue, and is left out.
+func celIssues(v any) []api.Issue {
+	list, ok := v.([]any)
+	if !ok {
+		return nil
+	}
+	var issues []api.Issue
+	for _, item := range list {
+		m, ok := item.(map[string]any)
+		if !ok {
+			continue
+		}
+		var issue api.Issue
+		if id, ok := m["Identifier"]; ok {
+			issue.Identifier = fmt.Sprintf("%v", id)
+		}
+		if msg, ok := m["Message"]; ok {
+			issue.Message = fmt.Sprintf("%v", msg)
+		}
+		if issue.Identifier != "" || issue.Message != "" {
+			issues = append(issues, issue)
+		}
+	}
+	return issues
 }
 
 func celMapToAttributeValue(m map[string]any) api.AttributeValue {
@@ -349,6 +384,14 @@ func celMapToAttributeValue(m map[string]any) api.AttributeValue {
 	if v, ok := m["DataType"]; ok {
 		av.DataType = api.DataType(fmt.Sprintf("%v", v))
 	}
+	if v, ok := m["Score"]; ok {
+		// A score that is not one of the names is no score, rather than a failure of the
+		// whole result: the finding still stands.
+		if score, err := api.ParseScore(fmt.Sprintf("%v", v)); err == nil {
+			av.Score = score
+		}
+	}
+	av.Issues = celIssues(m["Issues"])
 	return av
 }
 

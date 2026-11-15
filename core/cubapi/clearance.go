@@ -38,6 +38,88 @@ func ParseClearance(specs []string) (goclientnew.Clearance, error) {
 	return clearance, nil
 }
 
+// DefaultClearance is the clearance a client sends with a change that is not a merge when none is
+// specified: cleared for Override guards, whatever their value. An Override guard keeps a merge --
+// an upgrade, a promotion, an upload, a merge from a source -- from replacing a value someone set
+// on purpose, as protection does, and like protection it does not stand in the way of the next
+// edit by hand. Each call returns a new Clearance, so a caller may extend it.
+func DefaultClearance() goclientnew.Clearance {
+	return goclientnew.Clearance{{
+		Key:      api.GuardKeyOverride,
+		Operator: string(api.ClearanceOperatorExists),
+	}}
+}
+
+// OperationClearance is the clearance to send with one change, from its --clearance flag values:
+// what they say when any are given, and otherwise DefaultClearance for a change that is not a
+// merge and none for one that is. A clearance given replaces the default rather than adding to
+// it, so a change given an empty clearance is cleared for nothing.
+func OperationClearance(specs []string, merge bool) (goclientnew.Clearance, error) {
+	if len(specs) > 0 {
+		return ParseClearance(specs)
+	}
+	if merge {
+		return nil, nil
+	}
+	return DefaultClearance(), nil
+}
+
+// MergeUpdateTypes are the UpdateTypes of a Link or ChangeOrder that merge: UpgradeUnit and
+// MergeUnits take their change from Revisions of a source Unit, where the others resolve or run
+// an Invocation. A change that resolves Links or promotes a ChangeOrder of one of them is a merge,
+// for OperationClearance.
+func MergeUpdateTypes() []string {
+	return []string{"UpgradeUnit", "MergeUnits"}
+}
+
+// IsMergeUpdateType reports whether updateType is one of MergeUpdateTypes.
+func IsMergeUpdateType(updateType string) bool {
+	return slices.Contains(MergeUpdateTypes(), updateType)
+}
+
+// ClearanceToRetry is the clearance to suggest for running a change again so that it writes
+// what the guards withheld from it: what covers those guards (ClearanceCoveringGuards), with the
+// default restated where sent, the clearance the change was sent with, relied on it
+// (RestateDefaultClearance). Empty when no guard withheld anything.
+func ClearanceToRetry(conflicts []goclientnew.MutationConflict, sent goclientnew.Clearance) goclientnew.Clearance {
+	return RestateDefaultClearance(ClearanceCoveringGuards(conflicts), sent)
+}
+
+// RestateDefaultClearance is clearance, a clearance to suggest adding to a change, after the
+// requirements of DefaultClearance that sent, the clearance the change was sent with, has. A
+// clearance given replaces the default, so a change that relied on it has to state it to be run
+// again without withholding what it wrote the first time. An empty clearance is returned as it
+// is: there is nothing to suggest.
+func RestateDefaultClearance(clearance, sent goclientnew.Clearance) goclientnew.Clearance {
+	if len(clearance) == 0 {
+		return clearance
+	}
+	var restated goclientnew.Clearance
+	for _, requirement := range DefaultClearance() {
+		if slices.ContainsFunc(sent, func(r goclientnew.ClearanceRequirement) bool { return sameRequirement(r, requirement) }) {
+			restated = append(restated, requirement)
+		}
+	}
+	return MergeClearances(restated, clearance)
+}
+
+// MergeClearances is the requirements of first followed by those of second that first does not
+// already state. Requirements of one key are alternatives, so the result clears what either does.
+func MergeClearances(first, second goclientnew.Clearance) goclientnew.Clearance {
+	merged := slices.Clone(first)
+	for _, requirement := range second {
+		if !slices.ContainsFunc(merged, func(r goclientnew.ClearanceRequirement) bool { return sameRequirement(r, requirement) }) {
+			merged = append(merged, requirement)
+		}
+	}
+	return merged
+}
+
+// sameRequirement reports whether two requirements say the same thing.
+func sameRequirement(a, b goclientnew.ClearanceRequirement) bool {
+	return a.Key == b.Key && a.Operator == b.Operator && slices.Equal(a.Values, b.Values)
+}
+
 // ParseClearanceRequirement parses one requirement of ParseClearance.
 func ParseClearanceRequirement(spec string) (goclientnew.ClearanceRequirement, error) {
 	malformed := func() (goclientnew.ClearanceRequirement, error) {

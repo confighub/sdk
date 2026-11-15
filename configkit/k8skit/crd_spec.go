@@ -117,14 +117,22 @@ func specsFromOneCRD(crd map[string]any, options CRDSpecOptions) ([]CRDSpec, err
 		}
 		schema := mapAt(mapAt(version, "schema"), "openAPIV3Schema")
 		resourceType := api.ResourceType(group + "/" + name + "/" + kind)
+		var generated CRDSpec
 		if len(schema) == 0 {
-			specs = append(specs, CRDSpec{
+			generated = CRDSpec{
 				Spec:  yamlkit.ResourceTypeSpec{Type: resourceType, Scope: scope},
 				Notes: []string{"version " + name + " declares no schema, so only its scope could be read"},
-			})
-			continue
+			}
+		} else {
+			generated = specFromSchema(resourceType, scope, schema, options)
 		}
-		specs = append(specs, specFromSchema(resourceType, scope, schema, options))
+		// A version the CRD deprecates, as kubebuilder's deprecatedversion marker declares one,
+		// is a deprecated type, since the version is part of the type.
+		if deprecated, _ := version["deprecated"].(bool); deprecated {
+			generated.Spec.Deprecated = true
+			generated.Spec.DeprecationWarning = stringAt(version, "deprecationWarning")
+		}
+		specs = append(specs, generated)
 	}
 	return specs, nil
 }

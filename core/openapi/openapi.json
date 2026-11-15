@@ -60046,16 +60046,6 @@
           "FunctionInvocations": {
             "$ref": "#/components/schemas/FunctionInvocationList"
           },
-          "IncludeConflicts": {
-            "type": "boolean",
-            "description": "Put the Unit's outstanding merge conflicts in the FunctionContext, for functions that reason about them. A request that runs Triggers gets them regardless",
-            "x-go-type-skip-optional-pointer": true
-          },
-          "IncludeLinkFindings": {
-            "type": "boolean",
-            "description": "Put what the resolves of the Unit's Links could not do in the FunctionContext, for functions that reason about it. A request that runs Triggers gets them regardless",
-            "x-go-type-skip-optional-pointer": true
-          },
           "Invocations": {
             "type": "array",
             "items": {
@@ -60398,6 +60388,14 @@
             },
             "x-go-type-skip-optional-pointer": true
           },
+          "Include": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            },
+            "description": "Parts of the FunctionContext passed only to the functions that read them: Conflicts, the Unit's outstanding merge conflicts, and LinkFindings, what the resolves of its Links could not do",
+            "x-go-type-skip-optional-pointer": true
+          },
           "Mutating": {
             "type": "boolean",
             "description": "May change the configuration data",
@@ -60461,7 +60459,7 @@
           },
           "Validating": {
             "type": "boolean",
-            "description": "Returns ValidationResult",
+            "description": "Returns a ValidationResult judging the resources selected, passing when none is selected unless it judges something it declares in Include",
             "x-confighub-where": {
               "dataType": "bool"
             },

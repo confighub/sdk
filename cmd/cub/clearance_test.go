@@ -9,6 +9,7 @@ import (
 	"strings"
 	"testing"
 
+	"github.com/confighub/sdk/core/cubapi"
 	"github.com/confighub/sdk/core/function/api"
 	goclientnew "github.com/confighub/sdk/core/openapi/goclient-new"
 )
@@ -77,6 +78,17 @@ func TestWithClearanceFlags(t *testing.T) {
 	if withClearanceFlags(nil) != nil {
 		t.Error("withClearanceFlags(nil) is not nil")
 	}
+
+	// A request sent with the default clearance is told to state it again, since a clearance
+	// given replaces it.
+	sentClearance = cubapi.DefaultClearance()
+	defer func() { sentClearance = nil }()
+	got = withClearanceFlags(refusal).Error()
+	want = `web at spec.replicas carries the guard Scale=RegionSpecific, which the request is not cleared for: ` +
+		`--clearance "Override" --clearance "Scale=RegionSpecific;Zonal" --clearance "owner" would cover it`
+	if got != want {
+		t.Errorf("withClearanceFlags after the default:\n got %s\nwant %s", got, want)
+	}
 }
 
 func TestClearanceCoveringGuards(t *testing.T) {
@@ -87,8 +99,8 @@ func TestClearanceCoveringGuards(t *testing.T) {
 		{Reason: "Guarded", Guards: []goclientnew.WithheldGuard{{Key: "RunAsRoot", Value: "LegacyImage", Precondition: true}}},
 		{Reason: "GuardWithheld", Guards: []goclientnew.WithheldGuard{{Key: "reviewed"}}},
 	}
-	got := formatClearance(new(clearanceCoveringGuards(conflicts)))
+	got := formatClearance(new(cubapi.ClearanceCoveringGuards(conflicts)))
 	if want := "Scale=RegionSpecific;Zonal owner=local reviewed"; got != want {
-		t.Errorf("clearanceCoveringGuards = %q, want %q", got, want)
+		t.Errorf("ClearanceCoveringGuards = %q, want %q", got, want)
 	}
 }

@@ -65,3 +65,28 @@ resourceTypes:
 
 	assert.True(t, compiled.IsMapKeyPath(workerapi.ToolchainKubernetesYAML, runnerSet, "spec.template.metadata.labels.*"))
 }
+
+// Every type's name format is one the checks know, and the declarations land where they are read.
+func TestNameFormatsAndCorrectnessDeclarations(t *testing.T) {
+	set, err := BuiltinSpecSet()
+	require.NoError(t, err)
+	for _, spec := range set.ResourceTypes {
+		if spec.NameFormat != "" {
+			assert.Contains(t, NameFormats, spec.NameFormat, "%s", spec.Type)
+		}
+	}
+	assert.Equal(t, NameFormatDNS1123Label, NameFormatOf("v1/Namespace"))
+	assert.Equal(t, NameFormatDNS1035Label, NameFormatOf("v1/Service"))
+	assert.Equal(t, NameFormatPathSegment, NameFormatOf("rbac.authorization.k8s.io/v1/Role"))
+	assert.Equal(t, NameFormatDNS1123Subdomain, NameFormatOf("apps/v1/Deployment"))
+
+	required := RequiredExclusiveFields("policy/v1/PodDisruptionBudget")
+	require.Contains(t, required, "spec")
+	assert.Equal(t, []string{"maxUnavailable", "minAvailable"}, required["spec"].Members)
+	assert.Empty(t, RequiredExclusiveFields("apps/v1/Deployment"))
+
+	deprecated := DeprecatedPaths("apps/v1/Deployment")
+	require.Len(t, deprecated, 1)
+	assert.Equal(t, "spec.template.spec.serviceAccount", deprecated[0].Path)
+	assert.Equal(t, "spec.template.spec.serviceAccountName", deprecated[0].Replacement)
+}

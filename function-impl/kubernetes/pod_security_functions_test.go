@@ -5,6 +5,7 @@ package kubernetes
 
 import (
 	"fmt"
+	"slices"
 	"strings"
 	"testing"
 
@@ -118,7 +119,7 @@ func vetPodSecurity(t *testing.T, data, level, version string) api.ValidationRes
 	t.Helper()
 	docs, err := gaby.ParseAll([]byte(data))
 	require.NoError(t, err)
-	_, output, err := k8sFnVetPodSecurityStandard(testResourceProvider, docs, level, version, nil)
+	_, output, err := k8sFnVetPodSecurityStandard(testResourceProvider, docs, level, version, nil, nil)
 	require.NoError(t, err)
 	vr, ok := output.(api.ValidationResult)
 	require.True(t, ok)
@@ -161,7 +162,8 @@ func TestVetPodSecurityStandard_Levels(t *testing.T) {
 	for _, issue := range fa.Issues {
 		identifiers = append(identifiers, issue.Identifier)
 	}
-	assert.Contains(t, identifiers, "runAsNonRoot != true")
+	assert.Contains(t, identifiers, "runAsNonRoot")
+	assert.Contains(t, identifiers, "allowPrivilegeEscalation")
 
 	// privileged allows everything.
 	vr = vetPodSecurity(t, podSecurityPrivilegedDaemonSet, "privileged", "latest")
@@ -219,9 +221,9 @@ func TestVetPodSecurityStandard_PlaceholderQuantities(t *testing.T) {
 func TestVetPodSecurityStandard_InvalidArguments(t *testing.T) {
 	docs, err := gaby.ParseAll([]byte(podSecurityPlainDeployment))
 	require.NoError(t, err)
-	_, _, err = k8sFnVetPodSecurityStandard(testResourceProvider, docs, "strict", "latest", nil)
+	_, _, err = k8sFnVetPodSecurityStandard(testResourceProvider, docs, "strict", "latest", nil, nil)
 	assert.ErrorContains(t, err, `invalid level "strict"`)
-	_, _, err = k8sFnVetPodSecurityStandard(testResourceProvider, docs, "baseline", "1.30", nil)
+	_, _, err = k8sFnVetPodSecurityStandard(testResourceProvider, docs, "baseline", "1.30", nil, nil)
 	assert.ErrorContains(t, err, `invalid version "1.30"`)
 }
 
@@ -286,4 +288,70 @@ func TestVetPodSecurityStandard_InvalidWorkloadLabel(t *testing.T) {
 		assert.Equal(t, api.ResolvedPath(tc.path), vr.FailedAttributes[0].Path)
 		assert.Equal(t, api.ResourceName("/web"), vr.FailedAttributes[0].ResourceName)
 	}
+}
+
+func vetPodSecurityChecks(t *testing.T, data, level, include, exclude string) api.ValidationResult {
+	t.Helper()
+	docs, err := gaby.ParseAll([]byte(data))
+	require.NoError(t, err)
+	selected, err := selectPodSecurityChecks(include, exclude)
+	require.NoError(t, err)
+	_, output, err := k8sFnVetPodSecurityStandard(testResourceProvider, docs, level, "latest", selected, nil)
+	require.NoError(t, err)
+	vr, ok := output.(api.ValidationResult)
+	require.True(t, ok)
+	return vr
+}
+
+func issueIdentifiers(vr api.ValidationResult) []string {
+	var ids []string
+	for _, fa := range vr.FailedAttributes {
+		for _, issue := range fa.Issues {
+			ids = append(ids, issue.Identifier)
+		}
+	}
+	slices.Sort(ids)
+	return ids
+}
+
+// A rule can run some of a level's checks, so that each can be staged on its own.
+func TestVetPodSecurityStandard_SelectedChecks(t *testing.T) {
+	all := issueIdentifiers(vetPodSecurityChecks(t, podSecurityPrivilegedDaemonSet, "baseline", "", ""))
+	require.Contains(t, all, "privileged")
+	require.Contains(t, all, "hostNamespaces")
+
+	vr := vetPodSecurityChecks(t, podSecurityPrivilegedDaemonSet, "baseline", "privileged", "")
+	assert.False(t, vr.Passed)
+	assert.Equal(t, []string{"privileged"}, issueIdentifiers(vr))
+
+	vr = vetPodSecurityChecks(t, podSecurityPrivilegedDaemonSet, "baseline", "", "privileged, hostNamespaces")
+	ids := issueIdentifiers(vr)
+	assert.NotContains(t, ids, "privileged")
+	assert.NotContains(t, ids, "hostNamespaces")
+	assert.Len(t, ids, len(all)-2)
+
+	// Selecting only the restricted checks at the restricted level runs none of baseline's.
+	restrictedOnly := "restrictedVolumes,allowPrivilegeEscalation,runAsNonRoot,runAsUser,seccompProfile_restricted,capabilities_restricted"
+	vr = vetPodSecurityChecks(t, podSecurityPrivilegedDaemonSet, "restricted", restrictedOnly, "")
+	for _, id := range issueIdentifiers(vr) {
+		assert.Contains(t, restrictedOnly, id)
+	}
+
+	// A check the level does not include is not run: no restricted check fails at baseline.
+	vr = vetPodSecurityChecks(t, podSecurityPlainDeployment, "baseline", "runAsNonRoot", "")
+	assert.True(t, vr.Passed, issueMessages(vr))
+}
+
+// With both selected, the restricted seccomp check overrides the baseline one, as in admission,
+// so a missing profile is reported once.
+func TestVetPodSecurityStandard_SelectedChecksKeepOverrides(t *testing.T) {
+	vr := vetPodSecurityChecks(t, podSecurityPlainDeployment, "restricted", "seccompProfile_baseline,seccompProfile_restricted", "")
+	assert.Equal(t, []string{"seccompProfile_restricted"}, issueIdentifiers(vr))
+}
+
+func TestVetPodSecurityStandard_UnknownCheck(t *testing.T) {
+	_, err := selectPodSecurityChecks("privileged,nonsense", "")
+	assert.ErrorContains(t, err, `check: unknown check "nonsense"`)
+	_, err = selectPodSecurityChecks("", "nonsense")
+	assert.ErrorContains(t, err, `exclude-check: unknown check "nonsense"`)
 }

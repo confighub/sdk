@@ -174,13 +174,14 @@ var updateValidationResults bool
 var functionIncludeConflicts bool
 var functionIncludeLinkFindings bool
 
-// addIncludeContextFlags registers the flags that put what the server knows about each unit,
-// beyond its configuration, into the functions' context. Every command that sends a function
-// invocation request takes them: newFunctionInvocationsRequest reads them for all of them, and a
-// validating function such as vet-no-link-findings is most often run by function vet.
+// addIncludeContextFlags registers deprecated flags that do nothing: a function that reads a
+// unit's merge conflicts or link findings declares it in its signature, and receives them. They
+// are kept so that scripts passing them still run.
 func addIncludeContextFlags(flags *pflag.FlagSet) {
-	flags.BoolVar(&functionIncludeConflicts, "include-conflicts", false, "pass each unit's outstanding merge conflicts to the functions, for functions that reason about them (e.g. vet-no-merge-conflicts); triggers run with --trigger always get them")
-	flags.BoolVar(&functionIncludeLinkFindings, "include-link-findings", false, "pass what the resolves of each unit's links could not do to the functions, for functions that reason about it (e.g. vet-no-link-findings); triggers run with --trigger always get them")
+	flags.BoolVar(&functionIncludeConflicts, "include-conflicts", false, "no longer needed")
+	flags.BoolVar(&functionIncludeLinkFindings, "include-link-findings", false, "no longer needed")
+	_ = flags.MarkDeprecated("include-conflicts", "functions that read merge conflicts receive them without it")
+	_ = flags.MarkDeprecated("include-link-findings", "functions that read link findings receive them without it")
 }
 
 var revisionIdentifier string
@@ -261,8 +262,6 @@ func newFunctionInvocationsRequest() *goclientnew.FunctionInvocationsRequest {
 	req.ChangeDescription = changeDescription
 	req.UpdateValidationResults = updateValidationResults
 	req.WhereResource = whereResource
-	req.IncludeConflicts = functionIncludeConflicts
-	req.IncludeLinkFindings = functionIncludeLinkFindings
 	req.ToolchainType = functionToolchainType
 	if functionChannel != "" {
 		channel, err := resolveChannel(functionChannel, selectedSpaceID, idSelect("ChannelID"))
@@ -781,7 +780,7 @@ func runFunctionInvocations(cmd *cobra.Command, args []string, mode FunctionKind
 			return err
 		}
 	} else {
-		clearance, cerr := clearanceJSON()
+		clearance, cerr := clearanceJSON(false)
 		if cerr != nil {
 			return cerr
 		}

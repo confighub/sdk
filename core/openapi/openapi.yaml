@@ -56970,18 +56970,6 @@ components:
           type: string
         FunctionInvocations:
           $ref: '#/components/schemas/FunctionInvocationList'
-        IncludeConflicts:
-          description: Put the Unit's outstanding merge conflicts in the FunctionContext,
-            for functions that reason about them. A request that runs Triggers gets
-            them regardless
-          type: boolean
-          x-go-type-skip-optional-pointer: true
-        IncludeLinkFindings:
-          description: Put what the resolves of the Unit's Links could not do in the
-            FunctionContext, for functions that reason about it. A request that runs
-            Triggers gets them regardless
-          type: boolean
-          x-go-type-skip-optional-pointer: true
         Invocations:
           description: 'Invocations is a list of Invocation IDs to execute. The invocations
             must be within the same Organization. Invocations will be executed after
@@ -57267,6 +57255,14 @@ components:
           x-confighub-where:
             dataType: bool
           x-go-type-skip-optional-pointer: true
+        Include:
+          description: 'Parts of the FunctionContext passed only to the functions
+            that read them: Conflicts, the Unit''s outstanding merge conflicts, and
+            LinkFindings, what the resolves of its Links could not do'
+          items:
+            type: string
+          type: array
+          x-go-type-skip-optional-pointer: true
         Mutating:
           description: May change the configuration data
           type: boolean
@@ -57316,7 +57312,9 @@ components:
             dataType: string
           x-go-type-skip-optional-pointer: true
         Validating:
-          description: Returns ValidationResult
+          description: Returns a ValidationResult judging the resources selected,
+            passing when none is selected unless it judges something it declares in
+            Include
           type: boolean
           x-confighub-where:
             dataType: bool

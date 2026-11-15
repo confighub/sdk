@@ -125,7 +125,10 @@ spec:
 	result = vetVAP(t, replicaLimitPolicy+fmt.Sprintf(binding, "Deny", "prod"))
 	assert.False(t, result.Passed)
 	assert.Equal(t, []string{"apps/v1/Deployment prod/big"}, failedResources(result))
-	assert.Equal(t, "replica-limit/replica-limit-dev", result.FailedAttributes[0].Issues[0].Identifier)
+	// The Issue names the policy, which is what a rule selects and an exception names; the
+	// details say which binding applied it.
+	assert.Equal(t, "replica-limit", result.FailedAttributes[0].Issues[0].Identifier)
+	assert.Contains(t, strings.Join(result.Details, "\n"), "replica-limit/replica-limit-dev")
 
 	// A binding that only warns reports what it finds without failing.
 	result = vetVAP(t, replicaLimitPolicy+fmt.Sprintf(binding, "Warn", "prod"))
@@ -207,4 +210,170 @@ func TestVAPNeedsAPolicy(t *testing.T) {
 	require.NoError(t, err)
 	_, _, err = VetValidatingAdmissionPolicy(testResourceProvider, api.NewFunctionOptions(), docs, nil)
 	assert.ErrorContains(t, err, "pass a Unit holding one as OtherData policy")
+}
+
+func vetVAPWith(t *testing.T, data string, inputs AdmissionPolicyInputs) (api.ValidationResult, error) {
+	t.Helper()
+	docs, err := gaby.ParseAll([]byte(data))
+	require.NoError(t, err)
+	_, output, err := VetValidatingAdmissionPolicyWith(testResourceProvider, api.NewFunctionOptions(), docs, inputs)
+	if err != nil {
+		return api.ValidationResult{}, err
+	}
+	result, ok := output.(api.ValidationResult)
+	require.True(t, ok)
+	return result, nil
+}
+
+func parseDocs(t *testing.T, data string) gaby.Container {
+	t.Helper()
+	docs, err := gaby.ParseAll([]byte(data))
+	require.NoError(t, err)
+	return docs
+}
+
+// noLoadBalancerPolicy denies LoadBalancer Services, a second policy beside replicaLimitPolicy.
+const noLoadBalancerPolicy = `---
+apiVersion: admissionregistration.k8s.io/v1
+kind: ValidatingAdmissionPolicy
+metadata:
+  name: no-load-balancer
+spec:
+  matchConstraints:
+    resourceRules:
+    - apiGroups: [""]
+      apiVersions: ["v1"]
+      operations: ["CREATE", "UPDATE"]
+      resources: ["services"]
+  validations:
+  - expression: object.spec.type != 'LoadBalancer'
+    message: no LoadBalancer Services
+`
+
+func issueIDs(result api.ValidationResult) []string {
+	var ids []string
+	for _, fa := range result.FailedAttributes {
+		for _, issue := range fa.Issues {
+			ids = append(ids, issue.Identifier)
+		}
+	}
+	return ids
+}
+
+// One Unit of policies can serve several rules, each evaluating some of them.
+func TestVAPSelectPolicies(t *testing.T) {
+	policies := parseDocs(t, replicaLimitPolicy+noLoadBalancerPolicy)
+
+	result, err := vetVAPWith(t, vapDeployments, AdmissionPolicyInputs{Policy: policies})
+	require.NoError(t, err)
+	assert.ElementsMatch(t, []string{"replica-limit", "no-load-balancer"}, issueIDs(result))
+
+	result, err = vetVAPWith(t, vapDeployments, AdmissionPolicyInputs{Policy: policies, Include: []string{"no-load-balancer"}})
+	require.NoError(t, err)
+	assert.Equal(t, []string{"no-load-balancer"}, issueIDs(result))
+
+	result, err = vetVAPWith(t, vapDeployments, AdmissionPolicyInputs{Policy: policies, Exclude: []string{"no-load-balancer"}})
+	require.NoError(t, err)
+	assert.Equal(t, []string{"replica-limit"}, issueIDs(result))
+
+	_, err = vetVAPWith(t, vapDeployments, AdmissionPolicyInputs{Policy: policies, Include: []string{"replica-limt"}})
+	assert.ErrorContains(t, err, `no ValidatingAdmissionPolicy named "replica-limt"`)
+
+	assert.Equal(t, []string{"a", "b"}, splitNames(" a, ,b,"))
+}
+
+// Params kept in a Unit of their own are found when the policy Unit has none.
+func TestVAPParamsUnit(t *testing.T) {
+	policy := `apiVersion: admissionregistration.k8s.io/v1
+kind: ValidatingAdmissionPolicy
+metadata:
+  name: replica-limit
+spec:
+  paramKind:
+    apiVersion: v1
+    kind: ConfigMap
+  matchConstraints:
+    resourceRules:
+    - apiGroups: ["apps"]
+      apiVersions: ["v1"]
+      operations: ["CREATE", "UPDATE"]
+      resources: ["deployments"]
+  validations:
+  - expression: object.spec.replicas <= int(params.data.max)
+    messageExpression: "'replicas must be at most ' + params.data.max"
+---
+apiVersion: admissionregistration.k8s.io/v1
+kind: ValidatingAdmissionPolicyBinding
+metadata:
+  name: replica-limit
+spec:
+  policyName: replica-limit
+  validationActions: [Deny]
+  paramRef:
+    name: limits
+    namespace: policy
+    parameterNotFoundAction: Deny
+`
+	params := `apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: limits
+  namespace: policy
+data:
+  max: "%s"
+`
+	inputs := AdmissionPolicyInputs{Policy: parseDocs(t, policy), Params: parseDocs(t, fmt.Sprintf(params, "5"))}
+	result, err := vetVAPWith(t, vapDeployments, inputs)
+	require.NoError(t, err)
+	assert.Equal(t, []string{"apps/v1/Deployment prod/big"}, failedResources(result))
+	assert.Equal(t, "replicas must be at most 5", result.FailedAttributes[0].Issues[0].Message)
+
+	inputs.Params = parseDocs(t, fmt.Sprintf(params, "20"))
+	result, err = vetVAPWith(t, vapDeployments, inputs)
+	require.NoError(t, err)
+	assert.True(t, result.Passed, "%v", result.Details)
+
+	// Params in the policy Unit come first.
+	inputs.Policy = parseDocs(t, policy+"---\n"+fmt.Sprintf(params, "1"))
+	result, err = vetVAPWith(t, vapDeployments, inputs)
+	require.NoError(t, err)
+	assert.ElementsMatch(t, []string{"apps/v1/Deployment prod/big", "apps/v1/Deployment dev/small"}, failedResources(result))
+}
+
+// A resource in the last released revision is evaluated as an update of it, with oldObject, so a
+// policy about what may change works as it does at admission.
+func TestVAPOldObjectFromReleasedRevision(t *testing.T) {
+	policy := `apiVersion: admissionregistration.k8s.io/v1
+kind: ValidatingAdmissionPolicy
+metadata:
+  name: replicas-halve
+spec:
+  matchConstraints:
+    resourceRules:
+    - apiGroups: ["apps"]
+      apiVersions: ["v1"]
+      operations: ["UPDATE"]
+      resources: ["deployments"]
+  validations:
+  - expression: object.spec.replicas * 2 >= oldObject.spec.replicas
+    messageExpression: "'replicas may not drop from ' + string(oldObject.spec.replicas) + ' to ' + string(object.spec.replicas)"
+`
+	released := strings.Replace(vapDeployments, "replicas: 2", "replicas: 8", 1)
+	inputs := AdmissionPolicyInputs{Policy: parseDocs(t, policy), Released: parseDocs(t, released)}
+	result, err := vetVAPWith(t, vapDeployments, inputs)
+	require.NoError(t, err)
+	assert.Equal(t, []string{"apps/v1/Deployment dev/small"}, failedResources(result))
+	assert.Equal(t, "replicas may not drop from 8 to 2", result.FailedAttributes[0].Issues[0].Message)
+
+	// A resource the released revision does not have is created, which an UPDATE policy does
+	// not match; nor does it match anything in a Unit never released.
+	inputs.Released = parseDocs(t, strings.Replace(released, "name: small", "name: other", 1))
+	result, err = vetVAPWith(t, vapDeployments, inputs)
+	require.NoError(t, err)
+	assert.True(t, result.Passed, "%v", result.Details)
+
+	inputs.Released = nil
+	result, err = vetVAPWith(t, vapDeployments, inputs)
+	require.NoError(t, err)
+	assert.True(t, result.Passed, "%v", result.Details)
 }

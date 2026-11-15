@@ -91,6 +91,9 @@ type ExclusiveFieldGroup struct {
 	Members       []string          `json:"members"`
 	Discriminator string            `json:"discriminator,omitempty"`
 	AllowedMember map[string]string `json:"allowedMember,omitempty"`
+	// Required says one member has to be set, not merely at most one. It says nothing to a
+	// merge, and is read by the functions that check configuration.
+	Required bool `json:"required,omitempty"`
 }
 
 // AttributePath is one location of an attribute within a resource type or shape, relative to
@@ -155,6 +158,11 @@ type AttributePath struct {
 	// Prefixes says the expression may name attributes of what the selected type's references
 	// name, by prefix: a ConfigHub Filter of Units may say UpstreamUnit.Slug.
 	Prefixes bool `json:"prefixes,omitempty"`
+
+	// Replacement is the path that supersedes this one, for a path declared as deprecated:
+	// setting this path without the replacement relies on what the API server may stop
+	// accepting. It is relative to the same root as the path.
+	Replacement string `json:"replacement,omitempty"`
 }
 
 // ShapeEmbed places a shape at a path within a type or another shape. Shape is the shape's
@@ -234,6 +242,17 @@ type ResourceTypeSpec struct {
 	// together; lower goes first. A pointer, because zero is a usable priority and "unset" has
 	// to be distinguishable from it.
 	ApplyPriority *int `json:"applyPriority,omitempty"`
+
+	// NameFormat is the syntax the type's names have, in the toolchain's own terms. Empty is
+	// the toolchain's default.
+	NameFormat string `json:"nameFormat,omitempty"`
+
+	// Deprecated says the type is deprecated: this version of it, since a version is part of
+	// the type, and its successor is another version or another type. DeprecationWarning is
+	// what to tell someone using it, such as the version to move to; empty is a generic
+	// warning. Both are what a Kubernetes CRD says of a version it serves.
+	Deprecated         bool   `json:"deprecated,omitempty"`
+	DeprecationWarning string `json:"deprecationWarning,omitempty"`
 
 	// Schema is where this type's schema is, for a type the set's SchemaLocations do not
 	// address. Two values are special: empty means "try the set's locations", and "none"
@@ -328,6 +347,9 @@ type typeFacts struct {
 	similarityClass string
 	applyPriority   *int
 	schema          string
+	nameFormat      string
+	deprecated      bool
+	deprecation     string
 }
 
 // CompileSpecSets compiles spec sets into one immutable snapshot. Shapes are resolved across
@@ -385,6 +407,12 @@ func CompileSpecSets(sets ...SpecSet) (*CompiledSpecs, error) {
 			if spec.Schema != "" {
 				facts.schema = spec.Schema
 			}
+			if spec.NameFormat != "" {
+				facts.nameFormat = spec.NameFormat
+			}
+			if spec.Deprecated {
+				facts.deprecated, facts.deprecation = true, spec.DeprecationWarning
+			}
 			compiled.facts[key] = facts
 		}
 	}
@@ -430,6 +458,7 @@ func (c *CompiledSpecs) addDeclaration(
 			Members:       group.Members,
 			Discriminator: group.Discriminator,
 			AllowedMember: group.AllowedMember,
+			Required:      group.Required,
 		}
 	}
 
@@ -470,6 +499,9 @@ func (c *CompiledSpecs) addDeclaration(
 					"only a selector can name what its selected type refers to", attributeName, attributePath.Path)
 			}
 			attributePath.Path = JoinRelativePath(prefix, attributePath.Path)
+			if attributePath.Replacement != "" {
+				attributePath.Replacement = JoinRelativePath(prefix, attributePath.Replacement)
+			}
 			c.attributes[key][attributeName] = append(c.attributes[key][attributeName], attributePath)
 		}
 	}
@@ -570,6 +602,22 @@ func (c *CompiledSpecs) ListTypeForPath(
 	return ""
 }
 
+// RequiredExclusiveFields returns the groups declared for one resource type of which one member
+// has to be set, keyed by the path of the object holding them, which may hold wildcards. The
+// returned map is new.
+func (c *CompiledSpecs) RequiredExclusiveFields(
+	toolchainType workerapi.ToolchainType,
+	resourceType api.ResourceType,
+) map[string]ExclusiveFields {
+	required := map[string]ExclusiveFields{}
+	for path, group := range c.exclusiveFields[specKey{toolchainType, resourceType}] {
+		if group.Required {
+			required[path] = group
+		}
+	}
+	return required
+}
+
 // ExclusiveFieldsForPath returns the mutually exclusive sibling fields of the object at the
 // given path, checking the type's own entries before those declared for api.ResourceTypeAny.
 //
@@ -633,6 +681,18 @@ func (c *CompiledSpecs) ApplyPriorityOf(toolchainType workerapi.ToolchainType, r
 // is every toolchain whose formats have no schema to fetch.
 func (c *CompiledSpecs) SchemaLocationsFor(toolchainType workerapi.ToolchainType) []string {
 	return slices.Clone(c.schemaLocations[toolchainType])
+}
+
+// NameFormatOf returns the syntax a type's names have, as its spec declares it, or "" for the
+// toolchain's default.
+func (c *CompiledSpecs) NameFormatOf(toolchainType workerapi.ToolchainType, resourceType api.ResourceType) string {
+	return c.facts[specKey{toolchainType, resourceType}].nameFormat
+}
+
+// DeprecationOf returns whether a type is deprecated, and the warning it declares for that.
+func (c *CompiledSpecs) DeprecationOf(toolchainType workerapi.ToolchainType, resourceType api.ResourceType) (bool, string) {
+	facts := c.facts[specKey{toolchainType, resourceType}]
+	return facts.deprecated, facts.deprecation
 }
 
 // SchemaFor returns what a type declares about where its own schema is: a location that

@@ -176,6 +176,43 @@ func ClusterScopedResourceTypeSet() map[api.ResourceType]struct{} {
 	return set
 }
 
+// The syntaxes a Kubernetes resource type's names have, as the API server validates them. A type
+// whose spec names none has DNS-1123 subdomain names.
+const (
+	NameFormatDNS1123Subdomain = "dns1123-subdomain"
+	NameFormatDNS1123Label     = "dns1123-label"
+	NameFormatDNS1035Label     = "dns1035-label"
+	NameFormatPathSegment      = "path-segment"
+)
+
+// NameFormats are the name syntaxes a spec can declare.
+var NameFormats = []string{NameFormatDNS1123Subdomain, NameFormatDNS1123Label, NameFormatDNS1035Label, NameFormatPathSegment}
+
+// NameFormatOf returns the syntax a resource type's names have.
+func NameFormatOf(resourceType api.ResourceType) string {
+	if format := compiledK8sSpecs.NameFormatOf(workerapi.ToolchainKubernetesYAML, resourceType); format != "" {
+		return format
+	}
+	return NameFormatDNS1123Subdomain
+}
+
+// DeprecationOf returns whether a resource type is deprecated, and the warning its spec declares.
+func DeprecationOf(resourceType api.ResourceType) (bool, string) {
+	return compiledK8sSpecs.DeprecationOf(workerapi.ToolchainKubernetesYAML, resourceType)
+}
+
+// RequiredExclusiveFields returns the exclusive groups of a resource type of which one member has
+// to be set, keyed by the path of the object holding them.
+func RequiredExclusiveFields(resourceType api.ResourceType) map[string]yamlkit.ExclusiveFields {
+	return compiledK8sSpecs.RequiredExclusiveFields(workerapi.ToolchainKubernetesYAML, resourceType)
+}
+
+// DeprecatedPaths returns the paths of a resource type declared deprecated, each with the path
+// that replaces it.
+func DeprecatedPaths(resourceType api.ResourceType) []yamlkit.AttributePath {
+	return compiledK8sSpecs.DeclaredAttributes(workerapi.ToolchainKubernetesYAML, resourceType)[AttributeNameDeprecated]
+}
+
 // SimilarityClassWorkload is the class of types that carry a pod spec in the same place, which is
 // what lets a mutation to one be replayed against another.
 const SimilarityClassWorkload = "workload"
@@ -205,6 +242,11 @@ const (
 	// get/set-workload-labels read them together while they stay distinguishable when written:
 	// a selector is immutable on most workloads and the template labels are not.
 	AttributeNameWorkloadLabels = api.AttributeName("workload-labels")
+
+	// AttributeNameDeprecated is the attribute declaring fields the API has superseded, each
+	// with the field that replaces it. Like immutable, it is a predicate on the path, read by
+	// vet-correctness.
+	AttributeNameDeprecated = api.AttributeName("deprecated")
 
 	// AttributeNameConfigMapHash is the attribute carrying a hash of a ConfigMap's content:
 	// provided at the ConfigMap's confighub.com/Hash annotation, and needed at the hash

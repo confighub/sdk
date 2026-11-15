@@ -25,8 +25,8 @@ import (
 // property of the merge, so it belongs in a Trigger a Space opts into rather than in the
 // merge itself.
 //
-// The conflicts arrive in the FunctionContext, which the server fills only when the
-// invocation asks (FunctionInvocationOptions.IncludeConflicts).
+// The conflicts arrive in the FunctionContext, which the server fills only for the functions
+// whose signatures include Conflicts.
 func registerVetNoMergeConflicts(fh handler.FunctionRegistry, _ configkit.ConfigConverter, resourceProvider yamlkit.ResourceProvider) {
 	if err := fh.RegisterFunction("vet-no-merge-conflicts", &handler.FunctionRegistration{
 		FunctionSignature: api.FunctionSignature{
@@ -50,6 +50,7 @@ func registerVetNoMergeConflicts(fh handler.FunctionRegistry, _ configkit.Config
 			},
 			Mutating:              false,
 			Validating:            true,
+			Include:               []api.FunctionContextPart{api.FunctionContextConflicts},
 			Hermetic:              true,
 			Idempotent:            true,
 			Description:           "Returns true if the unit has no outstanding merge conflicts",

@@ -8,9 +8,11 @@ import (
 	"io"
 	"os"
 	"sort"
+	"strconv"
 	"strings"
 
 	"github.com/spf13/cobra"
+	"sigs.k8s.io/yaml"
 
 	"github.com/confighub/sdk/configkit/k8skit"
 	"github.com/confighub/sdk/core/configkit/yamlkit"
@@ -46,7 +48,8 @@ What a CRD does not say is which of its fields name other resources, what the ty
 order is, and which types it is interchangeable with. Those are left out for you to add.
 
 One stanza is written per version the CRD declares, because a version is part of a resource
-type.
+type. A version the CRD deprecates (kubebuilder's deprecatedversion marker) is declared
+deprecated, with the CRD's warning, which vet-correctness reports on resources of that version.
 
 Examples:
 ` + "```" + `
@@ -140,6 +143,12 @@ func renderCRDSpecStanzas(specs []k8skit.CRDSpec, source string) string {
 		if spec.Scope != "" {
 			fmt.Fprintf(&out, "    scope: %s\n", spec.Scope)
 		}
+		if spec.Deprecated {
+			out.WriteString("    deprecated: true\n")
+			if spec.DeprecationWarning != "" {
+				fmt.Fprintf(&out, "    deprecationWarning: %s\n", yamlScalar(spec.DeprecationWarning))
+			}
+		}
 		if len(generated.SuggestedEmbeds) > 0 {
 			out.WriteString(renderCRDSpecEmbeds(generated.SuggestedEmbeds))
 		}
@@ -177,6 +186,15 @@ func renderCRDSpecStanzas(specs []k8skit.CRDSpec, source string) string {
 		}
 	}
 	return out.String()
+}
+
+// yamlScalar is s as a YAML scalar, quoted when it has to be.
+func yamlScalar(s string) string {
+	out, err := yaml.Marshal(s)
+	if err != nil {
+		return strconv.Quote(s)
+	}
+	return strings.TrimSuffix(string(out), "\n")
 }
 
 func renderCRDSpecEmbeds(embeds []yamlkit.ShapeEmbed) string {

@@ -223,7 +223,8 @@ func init() {
 	variantPromoteCmd.Flags().StringVar(&variantPromoteArgs.forceReason, "force-reason", "", "why the gates are overridden; required with --force")
 	variantPromoteCmd.Flags().StringVar(&variantPromoteArgs.expectedPlan, "expected-plan", "", "the Plan a --dry-run of the same promotion returned; nothing is written if the promotion would now do anything different")
 	variantPromoteCmd.Flags().BoolVar(&variantPromoteArgs.protect, "protect", false, "record the paths each write of the promotion changes as protected local overrides, so a later merge from upstream does not overwrite them; only with a change order that is promoted by invocation or by Insert, Upsert, or TransformPaths links, since a promotion that merges is what protection holds paths against")
-	addClearanceFlag(variantPromoteCmd)
+	variantPromoteCmd.Flags().StringArrayVar(&changeClearance, "clearance", nil, clearanceFlagUsage+
+		". Without it, a promotion of a change order that runs an invocation or resolves Insert, Upsert, or TransformPaths links is cleared for Override guards, whatever their value, as one that merges is not; a clearance given replaces that, and --clearance '' clears nothing")
 	addGuardFlag(variantPromoteCmd)
 	variantPromoteCmd.Flags().StringVar(&variantPromoteArgs.tag, "tag", "", "tag (slug, space/slug, or UUID) to put on the revision each unit the promotion writes is left at; not with --change-order, whose own tags mark what it promotes")
 	variantPromoteCmd.Flags().StringVar(&variantPromoteArgs.subgroup, "subgroup", "", "category recorded on the mutations of each write of the promotion: alphanumeric, at most 64 characters")
@@ -264,13 +265,6 @@ func variantPromoteCmdRun(cmd *cobra.Command, args []string) error {
 		Protect:           variantPromoteArgs.protect,
 		Subgroup:          variantPromoteArgs.subgroup,
 	}
-	if len(changeClearance) > 0 {
-		clearance, err := parseClearanceSpecs(changeClearance)
-		if err != nil {
-			return err
-		}
-		req.Clearance = &clearance
-	}
 	if len(changeGuards) > 0 {
 		guards, err := parseGuardStampSpecs(changeGuards)
 		if err != nil {
@@ -306,6 +300,17 @@ func variantPromoteCmdRun(cmd *cobra.Command, args []string) error {
 		req.ChangeOrderID = &changeOrder.ChangeOrder.ChangeOrderID
 		promoteChangeOrderSlug = changeOrder.ChangeOrder.Slug
 		promoteChangeOrderUpdateType = string(changeOrder.ChangeOrder.UpdateType)
+	}
+	// A promotion merges unless it is of a change order that runs an invocation or resolves
+	// links, the same line --protect is drawn on.
+	merge := variantPromoteArgs.changeorderSlug == "" || cubapi.IsMergeUpdateType(promoteChangeOrderUpdateType)
+	clearance, err := cubapi.OperationClearance(changeClearance, merge)
+	if err != nil {
+		return err
+	}
+	sentClearance = clearance
+	if len(clearance) > 0 {
+		req.Clearance = &clearance
 	}
 	if variantPromoteArgs.filterSpace != "" {
 		filterID, err := resolveFilterID(variantPromoteArgs.filterSpace)

@@ -8,6 +8,8 @@ package api
 import (
 	"crypto/sha256"
 	"encoding/hex"
+	"fmt"
+	"slices"
 	"strings"
 
 	"github.com/confighub/sdk/core/workerapi"
@@ -93,9 +95,14 @@ type FunctionSignature struct {
 	OtherDataExpected  []OtherDataSource       `json:",omitempty" description:"The keys of the OtherData the function reads, if any: a revision specifier such as LastReleasedRevisionNum, which a caller that names no revision is passed, or a key such as schema under which the caller passes another Unit. Letters, digits, '-' and '_'."`
 	OutputInfo         *FunctionOutput         `description:"Output description"`
 	Mutating           bool                    `description:"May change the configuration data"`
-	Validating         bool                    `description:"Returns ValidationResult"`
-	Hermetic           bool                    `description:"Does not call other systems"`
-	Idempotent         bool                    `description:"Will return the same result if invoked again"`
+	// Validating says the function returns a ValidationResult judging the resources its
+	// WhereResource selects, so it passes when it selects none, unless it declares in Include
+	// that it judges something else. A Trigger running it is not invoked on a Unit with nothing
+	// selected. A function that returns a ValidationResult answering some other question, as
+	// where-filter does, is not validating.
+	Validating bool `description:"Returns a ValidationResult judging the resources selected, passing when none is selected unless it judges something it declares in Include"`
+	Hermetic   bool `description:"Does not call other systems"`
+	Idempotent bool `description:"Will return the same result if invoked again"`
 	// Replayable says this function means the same thing run against a different Unit, so a
 	// merge may re-execute a stored invocation of it against a downstream variant instead of
 	// transporting the patch it produced. It is a claim about generalizing: the function
@@ -111,6 +118,35 @@ type FunctionSignature struct {
 	FunctionType          FunctionType   `swaggertype:"string" description:"Implementation pattern of the function: PathVisitor or Custom"`
 	AttributeName         AttributeName  `json:",omitempty" swaggertype:"string" description:"Attribute corresponding to registered paths, if a path visitor; optional"`
 	AffectedResourceTypes []ResourceType `json:",omitempty" description:"Resource types the function applies to; * if all"`
+	// Include names the parts of the FunctionContext the function reads that are passed only
+	// to the functions that declare them.
+	Include []FunctionContextPart `json:",omitempty" description:"Parts of the FunctionContext passed only to the functions that read them: Conflicts, the Unit's outstanding merge conflicts, and LinkFindings, what the resolves of its Links could not do"`
+}
+
+// FunctionContextPart names a part of the FunctionContext that is passed only to the functions
+// whose signatures Include it, because it can be large in a way the rest of the context is not,
+// and few functions read it.
+type FunctionContextPart string
+
+const (
+	FunctionContextConflicts    FunctionContextPart = "Conflicts"
+	FunctionContextLinkFindings FunctionContextPart = "LinkFindings"
+)
+
+// Includes reports whether the function reads part of the FunctionContext.
+func (fs *FunctionSignature) Includes(part FunctionContextPart) bool {
+	return slices.Contains(fs.Include, part)
+}
+
+// ValidateFunctionContextPart checks that part names a part of the FunctionContext a signature
+// can Include.
+func ValidateFunctionContextPart(part FunctionContextPart) error {
+	switch part {
+	case FunctionContextConflicts, FunctionContextLinkFindings:
+		return nil
+	}
+	return fmt.Errorf("%q is not a part of the FunctionContext a function can include: %s or %s",
+		part, FunctionContextConflicts, FunctionContextLinkFindings)
 }
 
 // FunctionParameter organizing metadata

@@ -17,6 +17,7 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"maps"
 	"regexp"
 	"slices"
 	"sort"
@@ -68,8 +69,8 @@ func ExceptionAnnotation(rule string) string {
 	return ExceptionAnnotationPrefix + rule
 }
 
-// exceptionWhereResource is the WhereResource of rule's Trigger: every resource
-// but those excepted from it.
+// exceptionWhereResource is the WhereResource clause skipping the resources
+// excepted from rule.
 func exceptionWhereResource(rule string) string {
 	return "metadata.annotations." + yamlkit.EscapeDotsInPathSegment(ExceptionAnnotation(rule)) + " IS NULL"
 }
@@ -101,6 +102,47 @@ type Rule struct {
 	// AppliedTo is AppliedToTarget for a rule that checks only released Units,
 	// so it is selected by Targets rather than Spaces. Empty means Spaces.
 	AppliedTo string
+
+	// ResourceTypes are the types the rule governs, which its WhereResource
+	// selects, so it is not run on a Unit holding none of them. Empty governs
+	// every resource.
+	ResourceTypes []string
+	// Controls are the control numbers of the checks the rule runs, recorded on
+	// its Trigger.
+	Controls []string
+	// Priority is the rule's priority when its Trigger is created: the highest of
+	// its checks'. A Trigger's priority is not changed by installing again.
+	Priority string
+	// ExceptFrom are other rules whose exceptions this one honors as well as its
+	// own: those of the rule a check was separated from.
+	ExceptFrom []string
+}
+
+// whereResource is the rule's Trigger's WhereResource: the resources of its
+// types, but those excepted from it.
+func (r Rule) whereResource() string {
+	clauses := []string{}
+	if types := resourceTypesWhere(r.ResourceTypes); types != "" {
+		clauses = append(clauses, types)
+	}
+	clauses = append(clauses, exceptionWhereResource(r.Slug))
+	for _, rule := range r.ExceptFrom {
+		clauses = append(clauses, exceptionWhereResource(rule))
+	}
+	return strings.Join(clauses, " AND ")
+}
+
+// annotations are the annotations the rule's Trigger is written with, beyond
+// the plan's: its controls, and its priority when the Trigger is new.
+func (r Rule) annotations(isNew bool) map[string]string {
+	annotations := map[string]string{}
+	if len(r.Controls) > 0 {
+		annotations[ControlsAnnotation] = strings.Join(r.Controls, ",")
+	}
+	if isNew && r.Priority != "" {
+		annotations[constants.TriggerPriorityAnnotation] = r.Priority
+	}
+	return annotations
 }
 
 // invocation is the function and arguments this rule's Trigger runs.
@@ -125,16 +167,22 @@ type Pack struct {
 	// Group is the GroupLabel value of every rule's Trigger, and the name a
 	// Space's selection lists to opt into these rules.
 	Group string
-	// Rules are the policies. They install with Warn=true: advisory
-	// ValidationWarnings, never blocking, until someone enforces one with
-	// `guardrails update <rule> --enforce`, which installing again leaves in
+	// Rules are policies declared as rules. They install with Warn=true:
+	// advisory ValidationWarnings, never blocking, until someone enforces one
+	// with `guardrails update <rule> --enforce`, which installing again leaves in
 	// place.
 	Rules []Rule
+	// Checks are the pack's checks, which install groups into rules by the Rule
+	// each names (catalog.go). They install as Rules do.
+	Checks []Check
+	// RuleInfo describes the rules that run several checks.
+	RuleInfo []RuleInfo
 }
 
 // hasTargetRules reports whether any rule belongs on Targets.
 func (p Pack) hasTargetRules() bool {
-	return slices.ContainsFunc(p.Rules, func(r Rule) bool { return r.AppliedTo == AppliedToTarget })
+	return slices.ContainsFunc(p.Rules, func(r Rule) bool { return r.AppliedTo == AppliedToTarget }) ||
+		p.hasTargetChecks()
 }
 
 // Selection is the WhereTrigger this package writes on a Space or a Target: the
@@ -247,6 +295,12 @@ type Plan struct {
 	// its enforcement annotations; empty leaves what a Trigger has.
 	Priority   string `json:"priority,omitempty"`
 	EnforcedBy string `json:"enforcedBy,omitempty"`
+	// SkippedChecks are checks the install leaves out, such as one missing a
+	// required parameter.
+	SkippedChecks []CheckSkip `json:"skippedChecks,omitempty"`
+
+	// rules are the rules the install writes.
+	rules []Rule
 }
 
 // enforcementAnnotations are the annotations the plan writes on each rule's
@@ -266,8 +320,9 @@ func (p Plan) enforcementAnnotations() map[string]string {
 }
 
 // BuildPlan works out which Spaces holding Kubernetes/YAML Units this pack
-// would wire, and which it would leave alone. It writes nothing.
-func (p Pack) BuildPlan(ctx context.Context, client *cubapi.Client, policySpace string, scope Scope) (Plan, error) {
+// would wire, and which it would leave alone, and the rules it would write,
+// with the optional checks and parameters in sel. It writes nothing.
+func (p Pack) BuildPlan(ctx context.Context, client *cubapi.Client, policySpace string, scope Scope, sel ...CheckSelection) (Plan, error) {
 	k8sSpaces, err := KubernetesSpaces(ctx, client)
 	if err != nil {
 		return Plan{}, fmt.Errorf("find Kubernetes/YAML spaces: %w", err)
@@ -276,7 +331,7 @@ func (p Pack) BuildPlan(ctx context.Context, client *cubapi.Client, policySpace 
 	for slug := range k8sSpaces {
 		candidates = append(candidates, slug)
 	}
-	return p.PlanFor(ctx, client, policySpace, candidates, scope)
+	return p.PlanFor(ctx, client, policySpace, candidates, scope, sel...)
 }
 
 // PlanFor is BuildPlan over a candidate set of Spaces the caller chose, for a
@@ -288,13 +343,30 @@ func (p Pack) BuildPlan(ctx context.Context, client *cubapi.Client, policySpace 
 // rather than modified: rewriting its selection would silently drop whatever
 // policy it already has, and there is no way to tell from here whether that
 // was deliberate.
-func (p Pack) PlanFor(ctx context.Context, client *cubapi.Client, policySpace string, candidates []string, scope Scope) (Plan, error) {
+func (p Pack) PlanFor(ctx context.Context, client *cubapi.Client, policySpace string, candidates []string, scope Scope, sel ...CheckSelection) (Plan, error) {
 	plan := Plan{PolicySpace: policySpace, Group: p.Group}
-	for _, r := range p.Rules {
-		plan.Triggers = append(plan.Triggers, r.Slug)
-	}
 	if _, err := cubapi.ResolveSpace(ctx, client, cubapi.ParseRef(policySpace), cubapi.ResolveOpts{}); err == nil {
 		plan.PolicySpaceExists = true
+	}
+	var installed []installedRule
+	if plan.PolicySpaceExists && len(p.Checks) > 0 {
+		triggers, err := p.installedTriggers(ctx, client, policySpace)
+		if err != nil {
+			return plan, err
+		}
+		installed = installedRules(triggers)
+	}
+	var selection CheckSelection
+	if len(sel) > 0 {
+		selection = sel[0]
+	}
+	rules, skipped, err := p.layout(installed, selection)
+	if err != nil {
+		return plan, err
+	}
+	plan.rules, plan.SkippedChecks = rules, skipped
+	for _, r := range rules {
+		plan.Triggers = append(plan.Triggers, r.Slug)
 	}
 
 	want := make(map[string]bool, len(candidates))
@@ -410,38 +482,16 @@ func (p Pack) Execute(ctx context.Context, client *cubapi.Client, policySpace st
 	if err != nil {
 		return fmt.Errorf("create policy space %s: %w", policySpace, err)
 	}
-	for _, r := range p.Rules {
-		fn, args := r.invocation()
-		// A rule installs as a warning, but one already promoted with --unwarn
-		// stays blocking: re-installing to update the rules must not quietly undo
-		// that decision.
-		// Only a rule with no Trigger yet is new; on any other error, guessing
-		// would risk the very demotion this avoids.
-		warn := true
-		existing, err := cubapi.ResolveTrigger(ctx, client, cubapi.NewRef("", r.Slug),
-			cubapi.ResolveOpts{Space: ps.SpaceID, Select: "TriggerID,Slug,Warn"})
-		switch {
-		case err == nil && existing.Trigger != nil:
-			warn = existing.Trigger.Warn
-		case err != nil && !cubapi.IsNotFoundError(err):
-			return fmt.Errorf("read trigger %s: %w", r.Slug, err)
+	rules := plan.rules
+	if rules == nil {
+		// A plan not built by PlanFor installs the declared rules and the default checks.
+		if rules, _, err = p.layout(nil, CheckSelection{}); err != nil {
+			return err
 		}
-		if _, err := cubapi.EnsureTrigger(ctx, client, goclientnew.Trigger{
-			SpaceID:       ps.SpaceID,
-			Slug:          r.Slug,
-			DisplayName:   r.DisplayName,
-			Description:   r.Description,
-			Event:         "Mutation",
-			ToolchainType: "Kubernetes/YAML",
-			FunctionName:  fn,
-			Arguments:     cubapi.Arguments(args),
-			WhereResource: exceptionWhereResource(r.Slug),
-			Warn:          warn,
-			Labels:        r.labels(p.Group),
-			// Merged into what the Trigger has, so a rerun without them keeps them.
-			Annotations: plan.enforcementAnnotations(),
-		}); err != nil {
-			return fmt.Errorf("create trigger %s: %w", r.Slug, err)
+	}
+	for _, r := range rules {
+		if _, err := p.ensureRule(ctx, client, ps.SpaceID, r, nil, plan.enforcementAnnotations()); err != nil {
+			return err
 		}
 	}
 	say(fmt.Sprintf("Guardrail group %q ready in %s.", p.Group, policySpace))
@@ -461,6 +511,87 @@ func (p Pack) Execute(ctx context.Context, client *cubapi.Client, policySpace st
 		say(fmt.Sprintf("  re-listed the Triggers of %d already wired", len(plan.AlreadyWired)))
 	}
 	return nil
+}
+
+// ensureRule writes rule r's Trigger in the policy Space, and returns it. A
+// rule installs as a warning, but one already promoted with --unwarn stays
+// blocking: re-installing to update the rules must not quietly undo that
+// decision. Only a rule with no Trigger yet is new; on any other error,
+// guessing would risk the very demotion this avoids.
+//
+// like, when not nil, is a Trigger a new one takes its stage and enforcement
+// annotations from: the rule a check is separated from. annotations are merged
+// into what the Trigger has, so a rerun without them keeps them.
+func (p Pack) ensureRule(ctx context.Context, client *cubapi.Client, policySpaceID goclientnew.UUID, r Rule,
+	like *goclientnew.Trigger, annotations map[string]string) (*goclientnew.Trigger, error) {
+	fn, args := r.invocation()
+	warn, isNew := true, true
+	existing, err := cubapi.ResolveTrigger(ctx, client, cubapi.NewRef("", r.Slug),
+		cubapi.ResolveOpts{Space: policySpaceID, Select: "TriggerID,Slug,Warn"})
+	switch {
+	case err == nil && existing.Trigger != nil:
+		warn, isNew = existing.Trigger.Warn, false
+	case err != nil && !cubapi.IsNotFoundError(err):
+		return nil, fmt.Errorf("read trigger %s: %w", r.Slug, err)
+	}
+	var inherited map[string]string
+	if isNew && like != nil {
+		warn = like.Warn
+		inherited = map[string]string{}
+		for _, key := range []string{constants.TriggerPriorityAnnotation, constants.TriggerEnforcedByAnnotation, constants.TriggerEnforcedAtAnnotation} {
+			if value, ok := like.Annotations[key]; ok {
+				inherited[key] = value
+			}
+		}
+	}
+	t, err := cubapi.EnsureTrigger(ctx, client, goclientnew.Trigger{
+		SpaceID:       policySpaceID,
+		Slug:          r.Slug,
+		DisplayName:   r.DisplayName,
+		Description:   r.Description,
+		Event:         "Mutation",
+		ToolchainType: "Kubernetes/YAML",
+		FunctionName:  fn,
+		Arguments:     cubapi.Arguments(args),
+		WhereResource: r.whereResource(),
+		Warn:          warn,
+		Labels:        r.labels(p.Group),
+		Annotations:   mergeAnnotations(r.annotations(isNew), inherited, annotations),
+	})
+	if err != nil {
+		return nil, fmt.Errorf("create trigger %s: %w", r.Slug, err)
+	}
+	return t, nil
+}
+
+// mergeAnnotations is the union of the annotation maps, later ones winning; nil
+// when empty, so that nothing is sent.
+func mergeAnnotations(all ...map[string]string) map[string]string {
+	out := map[string]string{}
+	for _, m := range all {
+		maps.Copy(out, m)
+	}
+	if len(out) == 0 {
+		return nil
+	}
+	return out
+}
+
+// installedTriggers are the Triggers of the pack's rules in the policy Space.
+func (p Pack) installedTriggers(ctx context.Context, client *cubapi.Client, policySpace string) ([]*goclientnew.Trigger, error) {
+	extended, err := cubapi.ListTriggers(ctx, client,
+		cubapi.Where{}.Eq("Space.Slug", policySpace).Eq("Labels."+GroupLabel, p.Group),
+		cubapi.ListOpts{Select: "TriggerID,SpaceID,Slug,ToolchainType,Labels,Annotations,Arguments,Warn,Disabled"})
+	if err != nil {
+		return nil, fmt.Errorf("list the %s rules in %s: %w", p.Group, policySpace, err)
+	}
+	triggers := make([]*goclientnew.Trigger, 0, len(extended))
+	for _, et := range extended {
+		if et.Trigger != nil {
+			triggers = append(triggers, et.Trigger)
+		}
+	}
+	return triggers, nil
 }
 
 // patchSelection merge-patches a Space or Target with fields and re-lists its

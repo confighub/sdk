@@ -261,8 +261,18 @@ func TestCommitFlagsChange(t *testing.T) {
 	if _, err := (CommitFlags{Guards: []string{"NoValue"}}).Change("summary"); err == nil {
 		t.Error("a guard without =VALUE was accepted")
 	}
-	if ch, _ := (CommitFlags{}).Change("summary"); ch.Guards != nil || ch.Clearance != nil {
-		t.Errorf("no flags should mean no guards or clearance, got %+v", ch)
+	// Without --clearance the change, which is not a merge, is cleared for the default, and
+	// what covers the guards it records is added to that.
+	if ch, _ := (CommitFlags{}).Change("summary"); ch.Guards != nil || cubapi.FormatClearance(&ch.Clearance) != "Override" {
+		t.Errorf("no flags should mean no guards and the default clearance, got %+v", ch)
+	}
+	if ch, _ := (CommitFlags{Guards: []string{"owner=platform"}}).Change("summary"); cubapi.FormatClearance(&ch.Clearance) != "Override owner=platform" {
+		t.Errorf("a guard without --clearance: clearance %q", cubapi.FormatClearance(&ch.Clearance))
+	}
+	// --clearance '' clears nothing, and is sent as an empty clearance, which a nil one would
+	// replace with the default.
+	if ch, _ := (CommitFlags{Clearance: []string{""}}).Change("summary"); ch.Clearance == nil || len(ch.Clearance) != 0 {
+		t.Errorf("--clearance '': clearance %#v, want empty and not nil", ch.Clearance)
 	}
 }
 
@@ -297,5 +307,14 @@ func TestReportMutationsShowsWithheld(t *testing.T) {
 	WriteWithheld(&out, rep)
 	if !strings.Contains(out.String(), "Would withhold 1 change(s)") {
 		t.Errorf("dry run should say what it would withhold:\n%s", out.String())
+	}
+
+	// A change sent with the default clearance is told to state it again, since a clearance
+	// given replaces it.
+	res.Clearance = cubapi.DefaultClearance()
+	out.Reset()
+	WriteWithheld(&out, Summarize("harden", "prod", false, res))
+	if want := `--clearance "Override" --clearance "Owner=Platform"`; !strings.Contains(out.String(), want) {
+		t.Errorf("missing %q in:\n%s", want, out.String())
 	}
 }

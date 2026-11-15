@@ -270,7 +270,7 @@ func RegisterFunctionsAsCobraCommands() {
 						},
 					}
 
-					clearance, cerr := clearanceJSON()
+					clearance, cerr := clearanceJSON(false)
 					if cerr != nil {
 						return cerr
 					}

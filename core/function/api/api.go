@@ -35,18 +35,15 @@ type FunctionContext struct {
 	PreviousDataHash DataHash                `json:",omitempty" description:"SHA256 hash of the previous copy of the data, for determining whether it has been changed since it was last written"`
 
 	// Conflicts are the Unit's outstanding merge conflicts — the parts of a merge's patch
-	// that were not applied. Populated only when the invocation asks for them with
-	// FunctionInvocationOptions.IncludeConflicts, and empty when the Unit has none, so an
-	// ordinary invocation carries nothing extra. A validating function reads them to
-	// decide whether an unresolved merge should block apply; an argument's template or CEL
-	// expression can reach them as {{.Conflicts}} / functionContext.Conflicts.
-	Conflicts MutationConflictList `json:",omitempty" description:"The Unit's outstanding merge conflicts; present only when the invocation asked for them"`
+	// that were not applied. Passed only to the functions whose signatures Include them, and
+	// empty when the Unit has none. A validating function reads them to decide whether an
+	// unresolved merge should block apply.
+	Conflicts MutationConflictList `json:",omitempty" description:"The Unit's outstanding merge conflicts; present only for a function whose signature includes Conflicts"`
 
 	// LinkFindings are what the resolves of the Unit's Links could not do -- a path a Link names
-	// that is not there, a resolve that failed. Populated, like Conflicts, only when the
-	// invocation asks for them with FunctionInvocationOptions.IncludeLinkFindings, and always for
-	// a Trigger, where the policy on whether they block apply lives.
-	LinkFindings LinkFindingList `json:",omitempty" description:"What the resolves of the Unit's Links could not do; present only when the invocation asked for them"`
+	// that is not there, a resolve that failed. Passed, like Conflicts, only to the functions
+	// whose signatures Include them.
+	LinkFindings LinkFindingList `json:",omitempty" description:"What the resolves of the Unit's Links could not do; present only for a function whose signature includes LinkFindings"`
 }
 
 // InstanceString returns a string that uniquely identifies the configuration Unit and,
@@ -169,24 +166,11 @@ type FunctionInvocationRequest struct {
 // FunctionInvocationOptions contains function execution options passed in FunctionInvocationRequest.
 type FunctionInvocationOptions struct {
 	// Options that apply to sequences of function invocations.
-	NumFilters  int  `description:"Number of validating functions to treat as filters: stop, but don't report errors"`
+	NumFilters  int  `description:"Number of the first functions returning a ValidationResult to treat as filters: stop, but don't report errors"`
 	StopOnError bool `description:"If true, stop executing functions on the first error"`
 
 	// Options passed to individual function implementations, translated to FunctionOptions.
 	WhereResource string `json:",omitempty" description:"If non-empty, restrict which resources functions operate on using ConfigHub metadata path expressions (ConfigHub.ResourceName, ConfigHub.ResourceNameWithoutScope, ConfigHub.ResourceType, ConfigHub.ResourceCategory)"`
-
-	// IncludeConflicts asks the server to put the Unit's outstanding merge conflicts into
-	// the FunctionContext, where a function can read them directly or an argument's
-	// template/CEL expression can reference them. Off by default: the conflicts are
-	// unbounded in a way the rest of the context is not, and no ordinary invocation needs
-	// them. A request that runs Triggers gets them without asking, as a Trigger does when it
-	// runs on a mutation, so that a Trigger gives the same answer however it is run.
-	IncludeConflicts bool `json:",omitempty" description:"Put the Unit's outstanding merge conflicts in the FunctionContext, for functions that reason about them. A request that runs Triggers gets them regardless"`
-
-	// IncludeLinkFindings asks the server to put what the Unit's Links' resolves could not do
-	// into the FunctionContext, as IncludeConflicts does for merge conflicts, and likewise is
-	// implied for a request that runs Triggers.
-	IncludeLinkFindings bool `json:",omitempty" description:"Put what the resolves of the Unit's Links could not do in the FunctionContext, for functions that reason about it. A request that runs Triggers gets them regardless"`
 }
 
 // FunctionOptions contains options that affect how functions operate on resources that need to be

@@ -48,7 +48,9 @@ type Change struct {
 	// them, and a merge carries them to the Units downstream.
 	InheritedGuards goclientnew.GuardStamp
 	// Clearance is the guarded reasons the change is cleared for. A path whose guards it does
-	// not cover is not written, and the withheld change is reported as a conflict.
+	// not cover is not written, and the withheld change is reported as a conflict. Left nil, a
+	// function invocation is sent with DefaultClearance, since it is not a merge, and an upgrade
+	// or a resolve with none; an empty, non-nil Clearance is sent as none either way.
 	Clearance goclientnew.Clearance
 	// ChangeSet names the ChangeSet to make the change in, by space/slug or UUID. A commit opens
 	// it on the Units the change selects, all of them or none, so their revisions are recorded
@@ -222,6 +224,9 @@ func conflictList(list *goclientnew.MutationConflictList) []goclientnew.Mutation
 type Result struct {
 	DryRun   bool
 	Outcomes []UnitOutcome
+	// Clearance is the clearance the change was sent with, DefaultClearance where it stated
+	// none, for a suggestion of what to run it again with (ClearanceToRetry).
+	Clearance goclientnew.Clearance
 }
 
 // Failed returns the outcomes that did not succeed.
@@ -318,6 +323,11 @@ func invokeRequest(ctx context.Context, c *Client, sel Selector, ch Change, dryR
 		params.DryRun = &dryRunParam
 	}
 	params.Include = ch.include()
+	// A function invocation is not a merge, so a change stating no clearance is sent with the
+	// default.
+	if ch.Clearance == nil {
+		ch.Clearance = DefaultClearance()
+	}
 	gp, err := ch.GuardParams()
 	if err != nil {
 		return nil, err
@@ -337,7 +347,7 @@ func invokeRequest(ctx context.Context, c *Client, sel Selector, ch Change, dryR
 	if responses == nil {
 		responses = res.JSON207 // partial success/failure
 	}
-	out := &Result{DryRun: dryRun}
+	out := &Result{DryRun: dryRun, Clearance: ch.Clearance}
 	if responses != nil {
 		for i := range *responses {
 			fr := &(*responses)[i]

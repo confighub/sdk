@@ -258,7 +258,7 @@ func init() {
 	_ = variantUploadCmd.Flags().MarkDeprecated("annotation", "use --unit-annotation")
 	variantUploadCmd.Flags().StringVar(&variantUploadArgs.changeDesc, "change-desc", "", "change description recorded on each written Unit")
 	variantUploadCmd.Flags().StringVar(&variantUploadArgs.changeWorkflow, "change-workflow", "", "ChangeWorkflow (slug, space/slug, or UUID) governing the changeset the upload records its writes in, which a space whose Component requires one needs; a governed changeset is left open, since closing it is gated")
-	addClearanceFlag(variantUploadCmd)
+	addMergeClearanceFlag(variantUploadCmd)
 	variantUploadCmd.Flags().StringVar(&variantUploadArgs.tag, "tag", "", "tag (slug, space/slug, or UUID) to put on the revision each Unit the upload writes is left at")
 	variantUploadCmd.Flags().StringVar(&variantUploadArgs.subgroup, "subgroup", "", "category recorded on the mutations of each Unit write of the upload: alphanumeric, at most 64 characters")
 	variantUploadCmd.Flags().BoolVar(&variantUploadArgs.dryRun, "dry-run", false, "report what the upload would create, update, empty, revive, or adopt, and exit without changing anything")

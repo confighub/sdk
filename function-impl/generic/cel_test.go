@@ -299,3 +299,42 @@ func TestVetCEL_SkipsNonMatchingResources(t *testing.T) {
 	require.True(t, ok)
 	assert.True(t, vr.Passed)
 }
+
+func TestVetCEL_Issues(t *testing.T) {
+	docs, err := gaby.ParseAll([]byte(deploymentFixture))
+	require.NoError(t, err)
+
+	// One expression reporting two checks, the way a rule grouping several checks does: each
+	// finding names its check, and carries a score.
+	args := stringArgsToFunctionArgs([]string{
+		`{"passed": false,
+		  "issues": [{"Identifier": "replicas", "Message": "fewer than 5 replicas"}],
+		  "failed_attributes": [
+		    {"ResourceName": "default/nginx", "ResourceType": "apps/v1/Deployment",
+		     "Path": "spec.template.spec.containers.?name=nginx.image", "Value": "nginx:1.21",
+		     "Score": "high",
+		     "Issues": [{"Identifier": "image-digest", "Message": "not pinned by digest"}]},
+		    {"ResourceName": "default/nginx", "ResourceType": "apps/v1/Deployment",
+		     "Path": "spec.replicas", "Value": 3, "Score": "Low",
+		     "Issues": [{"Identifier": "replicas", "Message": "fewer than 5"}, "not an issue"]},
+		    {"ResourceName": "default/nginx", "ResourceType": "apps/v1/Deployment",
+		     "Path": "metadata.name", "Value": "nginx", "Score": "nonsense"}
+		  ]}`,
+	})
+
+	_, output, err := GenericFnVetCEL(testResourceProvider, nil, nil, docs, args)
+	require.NoError(t, err)
+
+	vr, ok := output.(api.ValidationResult)
+	require.True(t, ok)
+	assert.False(t, vr.Passed)
+	assert.Equal(t, []api.Issue{{Identifier: "replicas", Message: "fewer than 5 replicas"}}, vr.Issues)
+	assert.Equal(t, api.ScoreHigh, vr.MaxScore)
+	require.Len(t, vr.FailedAttributes, 3)
+	assert.Equal(t, api.ScoreHigh, vr.FailedAttributes[0].Score)
+	assert.Equal(t, []api.Issue{{Identifier: "image-digest", Message: "not pinned by digest"}}, vr.FailedAttributes[0].Issues)
+	assert.Equal(t, api.ScoreLow, vr.FailedAttributes[1].Score)
+	assert.Equal(t, []api.Issue{{Identifier: "replicas", Message: "fewer than 5"}}, vr.FailedAttributes[1].Issues)
+	assert.Equal(t, api.ScoreNone, vr.FailedAttributes[2].Score)
+	assert.Empty(t, vr.FailedAttributes[2].Issues)
+}

@@ -8,6 +8,8 @@ import (
 	"encoding/json"
 	"fmt"
 	"log/slog"
+	"slices"
+	"strings"
 
 	"github.com/cockroachdb/errors"
 	admissionregistrationv1 "k8s.io/api/admissionregistration/v1"
@@ -37,14 +39,35 @@ import (
 // ValidatingAdmissionPolicies from.
 const PolicyOtherDataKey = api.OtherDataSource("policy")
 
+// ParamsOtherDataKey is the key of the OtherData vet-validating-admission-policy also finds a
+// binding's params in, after the policy Unit: a Unit of params kept apart from the policies, so
+// that the policies can be replaced without losing what was set in them.
+const ParamsOtherDataKey = api.OtherDataSource("params")
+
+// releasedOtherDataKey is the revision whose resources are each resource's oldObject.
+const releasedOtherDataKey = api.OtherDataSource("LastReleasedRevisionNum")
+
 const admissionRegistrationGroup = "admissionregistration.k8s.io"
 
 func registerVetValidatingAdmissionPolicy(fh handler.FunctionRegistry, rp *k8skit.K8sResourceProviderType) {
 	if err := fh.RegisterFunction("vet-validating-admission-policy", &handler.FunctionRegistration{
 		FunctionSignature: api.FunctionSignature{
-			FunctionName:      "vet-validating-admission-policy",
-			Parameters:        []api.FunctionParameter{},
-			OtherDataExpected: []api.OtherDataSource{PolicyOtherDataKey},
+			FunctionName: "vet-validating-admission-policy",
+			Parameters: []api.FunctionParameter{
+				{
+					ParameterName: "policy",
+					Required:      false,
+					Description:   "Comma-separated names of the ValidatingAdmissionPolicies in the policy Unit to evaluate. Omitted, all of them",
+					DataType:      api.DataTypeString,
+				},
+				{
+					ParameterName: "exclude-policy",
+					Required:      false,
+					Description:   "Comma-separated names of ValidatingAdmissionPolicies in the policy Unit not to evaluate",
+					DataType:      api.DataTypeString,
+				},
+			},
+			OtherDataExpected: []api.OtherDataSource{PolicyOtherDataKey, ParamsOtherDataKey, releasedOtherDataKey},
 			OutputInfo: &api.FunctionOutput{
 				ResultName:  "passed",
 				Description: "True if no ValidatingAdmissionPolicy denies any resource, false otherwise",
@@ -56,15 +79,34 @@ func registerVetValidatingAdmissionPolicy(fh handler.FunctionRegistry, rp *k8ski
 			Hermetic:   true,
 			Idempotent: true,
 			Description: "Evaluates the ValidatingAdmissionPolicies in the Unit passed as OtherData policy, such as by a Trigger's OtherUnitIDs, " +
-				"against each resource as the Kubernetes API server would admit its creation. A policy is applied through each ValidatingAdmissionPolicyBinding " +
+				"against each resource as the Kubernetes API server would admit it: as an update of the resource in the Unit's last released revision, " +
+				"which is oldObject, or as its creation when that revision does not have it. A policy is applied through each ValidatingAdmissionPolicyBinding " +
 				"in that Unit that names it, or with the Deny action when none does; a binding's paramRef finds its params among that Unit's other resources, " +
-				"and a namespaceSelector reads the labels of the Namespace resources in the Unit being validated. " +
+				"then among those of the Unit passed as OtherData params, and a namespaceSelector reads the labels of the Namespace resources in the Unit being validated. " +
+				"policy and exclude-policy evaluate some of the policies rather than all. Each finding is an Issue identified by its policy's name. " +
 				"The request has no user and expressions cannot use the authorizer.",
 			FunctionType:          api.FunctionTypeCustom,
 			AffectedResourceTypes: []api.ResourceType{api.ResourceTypeAny},
 		},
 		Function: func(fArgs handler.FunctionImplementationArguments) (gaby.Container, any, error) {
-			return VetValidatingAdmissionPolicy(rp, fArgs.Options, fArgs.ParsedData, fArgs.ParsedOtherData[PolicyOtherDataKey])
+			inputs := AdmissionPolicyInputs{
+				Policy:   fArgs.ParsedOtherData[PolicyOtherDataKey],
+				Params:   fArgs.ParsedOtherData[ParamsOtherDataKey],
+				Released: fArgs.ParsedOtherData[releasedOtherDataKey],
+			}
+			for _, arg := range fArgs.Arguments {
+				s, ok := arg.Value.(string)
+				if !ok {
+					continue
+				}
+				switch arg.ParameterName {
+				case "policy":
+					inputs.Include = splitNames(s)
+				case "exclude-policy":
+					inputs.Exclude = splitNames(s)
+				}
+			}
+			return VetValidatingAdmissionPolicyWith(rp, fArgs.Options, fArgs.ParsedData, inputs)
 		},
 	}); err != nil {
 		slog.Error("failed to register function", "error", err)
@@ -108,18 +150,56 @@ func (b *boundPolicy) denies() bool {
 }
 
 // admissionPolicies is what the Unit passed as OtherData policy holds: its policies, each as its
-// bindings apply it, and the rest of its resources, which a binding's paramRef may name.
+// bindings apply it, and the rest of its resources, which a binding's paramRef may name, as it may
+// name the resources of the Unit passed as OtherData params.
 type admissionPolicies struct {
 	bound  []*boundPolicy
 	others []*unstructured.Unstructured
+	params []*unstructured.Unstructured
 }
 
-// readAdmissionPolicies reads the policy Unit's data and compiles each of its policies.
-func readAdmissionPolicies(policyData gaby.Container) (*admissionPolicies, error) {
+// AdmissionPolicyInputs is what vet-validating-admission-policy evaluates a Unit's resources with,
+// besides the resources themselves.
+type AdmissionPolicyInputs struct {
+	// Policy is the data of the Unit holding the policies and their bindings.
+	Policy gaby.Container
+	// Params is the data of a Unit holding params, which a binding's paramRef finds after any in
+	// Policy. Optional.
+	Params gaby.Container
+	// Released is the data of the Unit's last released revision, whose resources are the
+	// oldObjects of the ones being validated. Optional: without it, every resource is created.
+	Released gaby.Container
+	// Include names the policies to evaluate, all of them when empty; Exclude, those not to.
+	Include, Exclude []string
+}
+
+func splitNames(list string) []string {
+	var names []string
+	for _, name := range strings.Split(list, ",") {
+		if name = strings.TrimSpace(name); name != "" {
+			names = append(names, name)
+		}
+	}
+	return names
+}
+
+// readAdmissionPolicies reads the policy Unit's data and compiles each of its policies that
+// inputs selects, and reads the params Unit's resources.
+func readAdmissionPolicies(inputs AdmissionPolicyInputs) (*admissionPolicies, error) {
 	var policies []*admissionregistrationv1.ValidatingAdmissionPolicy
 	bindings := map[string][]*admissionregistrationv1.ValidatingAdmissionPolicyBinding{}
 	read := &admissionPolicies{}
-	for _, doc := range policyData {
+	for _, doc := range inputs.Params {
+		if doc == nil || doc.Data() == nil {
+			continue
+		}
+		object, err := unstructuredFromDoc(doc)
+		if err != nil {
+			return nil, errors.Wrapf(err, "the Unit passed as OtherData %s", ParamsOtherDataKey)
+		}
+		read.params = append(read.params, object)
+	}
+	for _, doc := range inputs.Policy {
 		if doc == nil || doc.Data() == nil {
 			continue
 		}
@@ -148,6 +228,16 @@ func readAdmissionPolicies(policyData gaby.Container) (*admissionPolicies, error
 	if len(policies) == 0 {
 		return nil, errors.Newf("no ValidatingAdmissionPolicy to evaluate: pass a Unit holding one as OtherData %s", PolicyOtherDataKey)
 	}
+	// A name the policy Unit does not have is a mistake in the Trigger, which would otherwise
+	// pass everything without saying so.
+	for _, name := range slices.Concat(inputs.Include, inputs.Exclude) {
+		if !slices.ContainsFunc(policies, func(p *admissionregistrationv1.ValidatingAdmissionPolicy) bool { return p.Name == name }) {
+			return nil, errors.Newf("the Unit passed as OtherData %s has no ValidatingAdmissionPolicy named %q", PolicyOtherDataKey, name)
+		}
+	}
+	policies = slices.DeleteFunc(policies, func(p *admissionregistrationv1.ValidatingAdmissionPolicy) bool {
+		return (len(inputs.Include) > 0 && !slices.Contains(inputs.Include, p.Name)) || slices.Contains(inputs.Exclude, p.Name)
+	})
 	for _, policy := range policies {
 		validator := compileAdmissionPolicy(policy)
 		policyBindings := bindings[policy.Name]
@@ -217,9 +307,16 @@ func compileAdmissionPolicy(policy *admissionregistrationv1.ValidatingAdmissionP
 }
 
 // VetValidatingAdmissionPolicy evaluates the ValidatingAdmissionPolicies policyData holds, the data
-// of the Unit passed as OtherData policy, against each resource of parsedData.
+// of the Unit passed as OtherData policy, against each resource of parsedData, as created.
 func VetValidatingAdmissionPolicy(rp yamlkit.ResourceProvider, options *api.FunctionOptions, parsedData, policyData gaby.Container) (gaby.Container, any, error) {
-	policies, err := readAdmissionPolicies(policyData)
+	return VetValidatingAdmissionPolicyWith(rp, options, parsedData, AdmissionPolicyInputs{Policy: policyData})
+}
+
+// VetValidatingAdmissionPolicyWith evaluates the ValidatingAdmissionPolicies inputs selects against
+// each resource of parsedData, as an update of the same resource in inputs.Released or, when that
+// has none, as its creation.
+func VetValidatingAdmissionPolicyWith(rp yamlkit.ResourceProvider, options *api.FunctionOptions, parsedData gaby.Container, inputs AdmissionPolicyInputs) (gaby.Container, any, error) {
+	policies, err := readAdmissionPolicies(inputs)
 	if err != nil {
 		return parsedData, api.ValidationResultFalse, err
 	}
@@ -235,7 +332,15 @@ func VetValidatingAdmissionPolicy(rp yamlkit.ResourceProvider, options *api.Func
 		if err != nil {
 			return output, []error{errors.Wrapf(err, "resource %s", resourceInfo.ResourceName)}
 		}
-		attributes := admissionAttributesFor(object)
+		var oldObject *unstructured.Unstructured
+		if len(inputs.Released) > 0 {
+			if oldDoc, _ := yamlkit.FindResourceDoc(inputs.Released, rp, resourceInfo); oldDoc != nil {
+				if oldObject, err = unstructuredFromDoc(oldDoc); err != nil {
+					return output, []error{errors.Wrapf(err, "released resource %s", resourceInfo.ResourceName)}
+				}
+			}
+		}
+		attributes := admissionAttributesFor(object, oldObject)
 		for _, bound := range policies.bound {
 			for _, finding := range evaluateBoundPolicy(bound, policies, objectInterfaces, namespaces, attributes) {
 				detail := fmt.Sprintf("%s %s: %s: %s", resourceInfo.ResourceType, resourceInfo.ResourceName, bound.name(), finding)
@@ -250,7 +355,7 @@ func VetValidatingAdmissionPolicy(rp yamlkit.ResourceProvider, options *api.Func
 						AttributeIdentifier: api.AttributeIdentifier{ResourceInfo: *resourceInfo, Path: "."},
 						AttributeMetadata:   api.AttributeMetadata{AttributeName: api.AttributeNameNone},
 					},
-					Issues: []api.Issue{{Identifier: bound.name(), Message: finding}},
+					Issues: []api.Issue{{Identifier: bound.policy.Name, Message: finding}},
 				})
 			}
 		}
@@ -329,10 +434,17 @@ func evaluateBoundPolicy(bound *boundPolicy, policies *admissionPolicies, object
 	return findings
 }
 
-// paramsFor finds the params a binding's paramRef names among the policy Unit's other resources.
-// A paramRef without a namespace finds params in the namespace of the resource being validated,
-// or cluster-scoped ones.
+// paramsFor finds the params a binding's paramRef names among the policy Unit's other resources,
+// or when it has none, among the params Unit's. A paramRef without a namespace finds params in the
+// namespace of the resource being validated, or cluster-scoped ones.
 func (p *admissionPolicies) paramsFor(paramKind *admissionregistrationv1.ParamKind, paramRef *admissionregistrationv1.ParamRef, namespace string) []runtime.Object {
+	if params := findParams(p.others, paramKind, paramRef, namespace); len(params) > 0 {
+		return params
+	}
+	return findParams(p.params, paramKind, paramRef, namespace)
+}
+
+func findParams(candidates []*unstructured.Unstructured, paramKind *admissionregistrationv1.ParamKind, paramRef *admissionregistrationv1.ParamRef, namespace string) []runtime.Object {
 	selector := labels.Everything()
 	if paramRef.Selector != nil {
 		var err error
@@ -345,7 +457,7 @@ func (p *admissionPolicies) paramsFor(paramKind *admissionregistrationv1.ParamKi
 		wantNamespace = namespace
 	}
 	var params []runtime.Object
-	for _, candidate := range p.others {
+	for _, candidate := range candidates {
 		switch {
 		case candidate.GetAPIVersion() != paramKind.APIVersion || candidate.GetKind() != paramKind.Kind:
 		case paramRef.Name != "" && candidate.GetName() != paramRef.Name:
@@ -358,14 +470,18 @@ func (p *admissionPolicies) paramsFor(paramKind *admissionregistrationv1.ParamKi
 	return params
 }
 
-// admissionAttributesFor describes the creation of a resource, as the API server would be asked
-// to admit it. The resource is named by guessing it from the kind, as a REST mapper with no
-// discovery does.
-func admissionAttributesFor(object *unstructured.Unstructured) admission.Attributes {
+// admissionAttributesFor describes the creation of a resource, or with oldObject, its update, as
+// the API server would be asked to admit it. The resource is named by guessing it from the kind,
+// as a REST mapper with no discovery does.
+func admissionAttributesFor(object, oldObject *unstructured.Unstructured) admission.Attributes {
 	gvk := object.GroupVersionKind()
 	resource, _ := meta.UnsafeGuessKindToResource(gvk)
 	if irregular, ok := irregularResources[gvk.GroupKind()]; ok {
 		resource.Resource = irregular
+	}
+	if oldObject != nil {
+		return admission.NewAttributesRecord(object, oldObject, gvk, object.GetNamespace(), object.GetName(), resource, "",
+			admission.Update, &metav1.UpdateOptions{}, false, &user.DefaultInfo{})
 	}
 	return admission.NewAttributesRecord(object, nil, gvk, object.GetNamespace(), object.GetName(), resource, "",
 		admission.Create, &metav1.CreateOptions{}, false, &user.DefaultInfo{})

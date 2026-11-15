@@ -54,7 +54,7 @@ func registerK8sCELFunctions(fh handler.FunctionRegistry, rp *k8skit.K8sResource
 				{
 					ParameterName: "expression",
 					Required:      true,
-					Description:   "CEL expression to validate each Kubernetes resource. The resource is available as 'object' (alias 'r'). Kubernetes CEL libraries are available: quantity(), url(), ip(), cidr(), regex(), format(). Must return a bool or a map with 'passed' (bool), 'details' (list of strings), and optionally 'failed_attributes' (list of maps). Params are accessible via 'params'. ConfigHub metadata is accessible via 'functionContext' (e.g. functionContext.TargetID).",
+					Description:   "CEL expression to validate each Kubernetes resource. The resource is available as 'object' (alias 'r'). Kubernetes CEL libraries are available: quantity(), url(), ip(), cidr(), regex(), format(). Must return a bool or a map with 'passed' (bool), 'details' (list of strings), and optionally 'issues' (list of maps with Identifier and Message, naming the check each finding fails) and 'failed_attributes' (list of maps with ResourceName, ResourceType, Path, Value, and optionally Score and Issues). Params are accessible via 'params'. ConfigHub metadata is accessible via 'functionContext' (e.g. functionContext.TargetID).",
 					DataType:      api.DataTypeCEL,
 					Example:       `object.kind != 'Deployment' || object.spec.template.spec.containers.all(c, quantity(c.resources.limits['memory']).isGreaterThan(quantity('64Mi')))`,
 				},

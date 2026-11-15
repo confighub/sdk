@@ -37,6 +37,9 @@ func attributeDescriptors() map[api.AttributeName]yamlkit.AttributeDescriptor {
 		// path, read by vet-immutable -- so it has no getter, no setter, and a data type that
 		// admits anything.
 		k8skit.AttributeNameImmutable: {DataType: api.DataTypeYAML},
+		// Like immutable, a predicate on the path, read by vet-correctness with the path that
+		// replaces it.
+		k8skit.AttributeNameDeprecated: {DataType: api.DataTypeYAML},
 		// Written separately because only one of them is safe to change freely, and read together
 		// through the workload-labels group by get/set-workload-labels.
 		k8skit.AttributeNamePodTemplateLabels: {DataType: api.DataTypeYAML},
@@ -148,6 +151,7 @@ func RegisterFunctions(rp *k8skit.K8sResourceProviderType, fh handler.FunctionRe
 	registerPruneConfigMaps(fh, rp)
 	registerConfigMapHashAnnotations(fh, rp)
 	registerPodSecurityFunctions(fh, rp)
+	registerCorrectnessFunctions(fh, rp)
 	registerVetEnv(fh, rp)
 	registerVetValidatingAdmissionPolicy(fh, rp)
 }

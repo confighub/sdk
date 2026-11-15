@@ -29,6 +29,8 @@ func (p Pack) InstallCmd(preflight Preflight) *cobra.Command {
 	var policySpace, output, priority, enforcedBy string
 	var scope Scope
 	var commit bool
+	var sel CheckSelection
+	var params []string
 	cmd := &cobra.Command{
 		Use:   "install",
 		Short: "Install the guardrail group and add it to in-scope Spaces (dry-run by default)",
@@ -63,7 +65,10 @@ stands, and 'guardrails update' changes them one rule at a time.`,
 			if err != nil {
 				return err
 			}
-			plan, err := p.BuildPlan(cmd.Context(), client, policySpace, scope)
+			if sel.Params, err = parseParams(params); err != nil {
+				return err
+			}
+			plan, err := p.BuildPlan(cmd.Context(), client, policySpace, scope, sel)
 			if err != nil {
 				return err
 			}
@@ -83,7 +88,35 @@ stands, and 'guardrails update' changes them one rule at a time.`,
 	if p.hasTargetRules() {
 		cmd.Flags().StringVar(&scope.WhereTarget, "where-target", "", "ConfigHub filter over Targets to narrow which Targets get wired")
 	}
+	if len(p.Checks) > 0 {
+		cmd.Long += `
+
+The pack's checks are grouped into rules, each a Trigger running the checks it
+can run together; a finding names its check. Installing adds the pack's default
+checks, and keeps every check already installed. --check adds an optional check,
+and --all every one. --param <check>.<name>=<value> gives a check a parameter; a
+check missing a required one is left out until it has it, and the plan says so.`
+		cmd.Flags().StringSliceVar(&sel.Checks, "check", nil, "optional checks to install, by name; repeat or comma-separate")
+		cmd.Flags().BoolVar(&sel.All, "all", false, "install every optional check")
+		cmd.Flags().StringArrayVar(&params, "param", nil, "a check's parameter, <check>.<name>=<value>; repeat for each")
+	}
 	return cmd
+}
+
+// parseParams reads --param values, <check>.<name>=<value>.
+func parseParams(params []string) (map[string]string, error) {
+	if len(params) == 0 {
+		return nil, nil
+	}
+	out := map[string]string{}
+	for _, p := range params {
+		key, value, ok := strings.Cut(p, "=")
+		if !ok || !strings.Contains(key, ".") {
+			return nil, fmt.Errorf("--param %q: write <check>.<name>=<value>", p)
+		}
+		out[key] = value
+	}
+	return out, nil
 }
 
 // BindInstallFlags binds the flags every install command shares, for a tool
@@ -208,6 +241,14 @@ func PrintPlan(cmd *cobra.Command, plan Plan) {
 	}
 	if len(plan.AlreadyWired) > 0 {
 		cliutil.Fprintln(out, fmt.Sprintf("  already wired (%d): %s", len(plan.AlreadyWired), strings.Join(names(plan.AlreadyWired), ", ")))
+	}
+	if len(plan.SkippedChecks) > 0 {
+		tw := tabwriter.NewWriter(out, 0, 2, 2, ' ', 0)
+		fmt.Fprintln(tw, "  CHECK LEFT OUT\tREASON")
+		for _, s := range plan.SkippedChecks {
+			fmt.Fprintf(tw, "  %s\t%s\n", s.Check, s.Reason)
+		}
+		_ = tw.Flush()
 	}
 	if len(plan.Skipped) > 0 {
 		tw := tabwriter.NewWriter(out, 0, 2, 2, ' ', 0)

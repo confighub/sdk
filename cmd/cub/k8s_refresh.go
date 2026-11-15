@@ -293,7 +293,7 @@ func applyClusterDrift(unit *goclientnew.Unit, spaceID, resourceType, name strin
 	selectedSpaceID = spaceID
 	defer func() { selectedSpaceID = savedSpaceID }()
 
-	clearance, err := clearanceJSON()
+	clearance, err := clearanceJSON(false)
 	if err != nil {
 		return err
 	}

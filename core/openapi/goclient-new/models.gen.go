@@ -4894,12 +4894,6 @@ type FunctionInvocationsRequest struct {
 	ChannelID           *openapi_types.UUID     `json:"ChannelID,omitempty" yaml:"ChannelID,omitempty"`
 	FunctionInvocations *FunctionInvocationList `json:"FunctionInvocations,omitempty" yaml:"FunctionInvocations,omitempty"`
 
-	// IncludeConflicts Put the Unit's outstanding merge conflicts in the FunctionContext, for functions that reason about them. A request that runs Triggers gets them regardless
-	IncludeConflicts bool `json:"IncludeConflicts,omitempty" yaml:"IncludeConflicts,omitempty"`
-
-	// IncludeLinkFindings Put what the resolves of the Unit's Links could not do in the FunctionContext, for functions that reason about it. A request that runs Triggers gets them regardless
-	IncludeLinkFindings bool `json:"IncludeLinkFindings,omitempty" yaml:"IncludeLinkFindings,omitempty"`
-
 	// Invocations Invocations is a list of Invocation IDs to execute. The invocations must be within the same Organization. Invocations will be executed after the FunctionInvocations list. Functions are grouped by executor (built-in or Channel) and executed in phases: general mutating functions first, then final mutating functions (like ensure-context), then validating functions. Functions that don't match the unit's toolchain type are ignored.
 	Invocations []UUID `json:"Invocations,omitempty" yaml:"Invocations,omitempty"`
 
@@ -5062,6 +5056,9 @@ type FunctionSignature struct {
 	// Idempotent Will return the same result if invoked again
 	Idempotent bool `json:"Idempotent,omitempty" yaml:"Idempotent,omitempty"`
 
+	// Include Parts of the FunctionContext passed only to the functions that read them: Conflicts, the Unit's outstanding merge conflicts, and LinkFindings, what the resolves of its Links could not do
+	Include []string `json:"Include,omitempty" yaml:"Include,omitempty"`
+
 	// Mutating May change the configuration data
 	Mutating bool `json:"Mutating,omitempty" yaml:"Mutating,omitempty"`
 
@@ -5083,7 +5080,7 @@ type FunctionSignature struct {
 	// ToolchainType Toolchain under which the function is registered
 	ToolchainType string `json:"ToolchainType,omitempty" yaml:"ToolchainType,omitempty"`
 
-	// Validating Returns ValidationResult
+	// Validating Returns a ValidationResult judging the resources selected, passing when none is selected unless it judges something it declares in Include
 	Validating bool `json:"Validating,omitempty" yaml:"Validating,omitempty"`
 
 	// VarArgs Last parameter may be repeated

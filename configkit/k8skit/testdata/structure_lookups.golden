@@ -542,6 +542,7 @@ exclusive	batch/v1/Job	spec.template.spec.initContainers.*.readinessProbe	exec,g
 exclusive	batch/v1/Job	spec.template.spec.initContainers.*.startupProbe	exec,grpc,httpGet,tcpSocket		
 exclusive	batch/v1/Job	spec.template.spec.resourceClaims.*	resourceClaimName,resourceClaimTemplateName		
 exclusive	batch/v1/Job	spec.template.spec.volumes.*	awsElasticBlockStore,azureDisk,azureFile,cephfs,cinder,configMap,csi,downwardAPI,emptyDir,ephemeral,fc,flexVolume,flocker,gcePersistentDisk,gitRepo,glusterfs,hostPath,image,iscsi,nfs,persistentVolumeClaim,photonPersistentDisk,portworxVolume,projected,quobyte,rbd,scaleIO,secret,storageos,vsphereVolume		
+exclusive	policy/v1/PodDisruptionBudget	spec	maxUnavailable,minAvailable		
 exclusive	serving.knative.dev/v1/Service	spec.template.spec.containers.*.env.*	value,valueFrom		
 exclusive	serving.knative.dev/v1/Service	spec.template.spec.containers.*.env.*.valueFrom	configMapKeyRef,fieldRef,fileKeyRef,resourceFieldRef,secretKeyRef		
 exclusive	serving.knative.dev/v1/Service	spec.template.spec.containers.*.lifecycle.postStart	exec,grpc,httpGet,tcpSocket		

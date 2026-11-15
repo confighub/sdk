@@ -49,28 +49,44 @@ const clearanceValueSeparator = cubapi.ClearanceValueSeparator
 // spellings.
 var changeClearance []string
 
-// addClearanceFlag registers --clearance on a command that writes configuration data.
+// sentClearance is the clearance the command's change was sent with, cubapi.DefaultClearance
+// where it stated none, for the suggestions of what to run it again with
+// (cubapi.ClearanceToRetry).
+var sentClearance goclientnew.Clearance
+
+// clearanceFlagUsage describes --clearance on a command that writes configuration data.
+const clearanceFlagUsage = "class of guarded reason this change is cleared for, as KEY, KEY=VALUE[;VALUE...], KEY!=VALUE[;VALUE...], or !KEY to refuse any path carrying KEY (repeatable). A guarded path this does not cover is not written, and the withheld change is reported as a conflict"
+
+// clearanceDefaultUsage describes the clearance a change that is not a merge has without the flag.
+const clearanceDefaultUsage = ". Without it the change is cleared for Override guards, whatever their value, as a merge is not; a clearance given replaces that, and --clearance '' clears nothing"
+
+// addClearanceFlag registers --clearance on a command that writes configuration data and does
+// not merge, which is cleared for cubapi.DefaultClearance when the flag is not given.
 func addClearanceFlag(cmd *cobra.Command) {
-	cmd.Flags().StringArrayVar(&changeClearance, "clearance", nil,
-		"class of guarded reason this change is cleared for, as KEY, KEY=VALUE[;VALUE...], KEY!=VALUE[;VALUE...], or !KEY to refuse any path carrying KEY (repeatable). A guarded path this does not cover is not written, and the withheld change is reported as a conflict")
+	cmd.Flags().StringArrayVar(&changeClearance, "clearance", nil, clearanceFlagUsage+clearanceDefaultUsage)
 }
 
-// clearanceJSON renders the --clearance flag for the wire, or "" when none was given. The
-// clearance travels as a JSON query parameter rather than a repeated scalar because a
-// requirement is a triple, and flattening it into a string grammar the server would have to
-// re-parse is how two grammars drift apart.
+// addMergeClearanceFlag registers --clearance on a command that merges, such as a promotion or
+// an upload, which is cleared for nothing when the flag is not given.
+func addMergeClearanceFlag(cmd *cobra.Command) {
+	cmd.Flags().StringArrayVar(&changeClearance, "clearance", nil, clearanceFlagUsage)
+}
+
+// clearanceJSON renders the clearance of the change for the wire, or "" for none: the
+// --clearance flag, or cubapi.DefaultClearance when it was not given and the change is not a
+// merge (see cubapi.OperationClearance). The clearance travels as a JSON query parameter rather
+// than a repeated scalar because a requirement is a triple, and flattening it into a string
+// grammar the server would have to re-parse is how two grammars drift apart.
 //
 // A malformed flag is an error rather than an empty result. Dropping it would send the change
 // with no clearance, and a guarded path would be withheld with nothing said about why -- the
 // operator stated the reason and was told, silently, that they had not.
-func clearanceJSON() (string, error) {
-	if len(changeClearance) == 0 {
-		return "", nil
-	}
-	clearance, err := parseClearanceSpecs(changeClearance)
+func clearanceJSON(merge bool) (string, error) {
+	clearance, err := cubapi.OperationClearance(changeClearance, merge)
 	if err != nil {
 		return "", err
 	}
+	sentClearance = clearance
 	if len(clearance) == 0 {
 		return "", nil
 	}
@@ -84,8 +100,7 @@ func clearanceJSON() (string, error) {
 // addPersistentClearanceFlag is addClearanceFlag for a command whose subcommands all write
 // configuration data.
 func addPersistentClearanceFlag(cmd *cobra.Command) {
-	cmd.PersistentFlags().StringArrayVar(&changeClearance, "clearance", nil,
-		"class of guarded reason this change is cleared for, as KEY, KEY=VALUE[;VALUE...], KEY!=VALUE[;VALUE...], or !KEY to refuse any path carrying KEY (repeatable). A guarded path this does not cover is not written, and the withheld change is reported as a conflict")
+	cmd.PersistentFlags().StringArrayVar(&changeClearance, "clearance", nil, clearanceFlagUsage+clearanceDefaultUsage)
 }
 
 // triggerClearance holds the --clearance flag on trigger create and update. Separate from
@@ -131,14 +146,13 @@ func withClearanceFlags(err error) error {
 	if decodeErr := decoder.Decode(&clearance); decodeErr != nil || len(clearance) == 0 {
 		return err
 	}
-	flags := make([]string, 0, len(clearance))
-	for _, requirement := range clearance {
-		flags = append(flags, fmt.Sprintf("--clearance %q", formatClearance(&goclientnew.Clearance{requirement})))
-	}
-	return fmt.Errorf("%s%s%s", message[:start], strings.Join(flags, " "), rest[decoder.InputOffset():])
+	// The clearance named covers what was refused; a request that relied on the default has to
+	// state it too, since a clearance given replaces it.
+	clearance = cubapi.RestateDefaultClearance(clearance, sentClearance)
+	return fmt.Errorf("%s%s%s", message[:start], clearanceFlags(clearance), rest[decoder.InputOffset():])
 }
 
-// clearanceCoveringGuards is cubapi.ClearanceCoveringGuards, named for its callers here.
-func clearanceCoveringGuards(conflicts []goclientnew.MutationConflict) goclientnew.Clearance {
-	return cubapi.ClearanceCoveringGuards(conflicts)
+// clearanceToRetry is cubapi.ClearanceToRetry for the change this command sent.
+func clearanceToRetry(conflicts []goclientnew.MutationConflict) goclientnew.Clearance {
+	return cubapi.ClearanceToRetry(conflicts, sentClearance)
 }

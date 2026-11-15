@@ -164,6 +164,8 @@ type ExclusiveFields struct {
 	Members       []string
 	Discriminator string
 	AllowedMember map[string]string
+	// Required says one member has to be set.
+	Required bool
 }
 
 // IsMember reports whether a field name is one of the union's members.

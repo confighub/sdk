@@ -11,7 +11,7 @@ Reading a fleet is [`core/cubapi`](https://pkg.go.dev/github.com/confighub/sdk/c
 ## Packages
 
 - **`managerkit`** -- `CommonSpace`, the Space (`common`) where manager tools keep what an organization shares: guardrail Triggers, the profile library, and the Attributes a validating function reads. One Space rather than one per tool, because a Space selects guardrails with one WhereTrigger naming one policy Space; every command that writes there takes a flag to put it elsewhere. Also `AddOutputFlag` and `Render`, the `-o/--output` flag every command has. And `BindComponentResolver`, which lets `--component` name a Component by slug in a command whose flags come from `cliutil.QueryFlags`. It defaults to JSON rather than a table, because these tools are read by agents as often as by people; `json`, `yaml`, `table`, `jq=<expr>` and `yq=<expr>` are accepted.
-- **`managerkit/guardrails`** -- a tool's policy pack: a group of validating Triggers defined once in the policy Space and selected by the WhereTrigger of each Space, or Target, that opts into the group. A tool supplies a `Pack` of `Rule`s, each a CEL expression over the resource `r` run by `vet-cel`, or another validating function; the package supplies `guardrails install` (dry run by default, `--commit` to apply) and `guardrails status`, and for a rule that needs more than one resource to decide, `guardrails annotate`, which writes the tool's findings onto each Unit as an annotation the rule then checks. A resource is excepted from one rule by the annotation `exceptions.guardrails.confighub.com/<rule>`, whose value says why; `guardrails exception` adds and removes them, and lists every resource excepted, with its reason. Each rule's Trigger is created with a backing Unit, which keeps its revision history. Rules install as warnings and are made blocking with `cub trigger update <slug> --space <policy-space> --unwarn`, which a later install leaves in place. A Space that already selects Triggers its own way is reported and left alone.
+- **`managerkit/guardrails`** -- a tool's policy pack: a group of validating Triggers defined once in the policy Space and selected by the WhereTrigger of each Space, or Target, that opts into the group. A tool supplies a `Pack` of `Check`s, each with a control number of its own (`CH-NNNN`), a name its findings carry as their Issue Identifier, a default priority, the resource types it governs, and how it runs: a CEL list of failures over the resource `r`, run by `vet-cel`; a Pod Security Standards check; or another validating function. Install groups the checks that name the same rule into one Trigger, whose `WhereResource` selects their resource types and whose `Controls` annotation records their control numbers, so a rule is not run on a Unit holding none of its types. Optional checks are added with `--check` or `--all`, and parameters with `--param <check>.<name>=<value>`; installing again keeps every check already installed. `guardrails update <rule> --separate <check>` moves a check into a rule of its own, to stage it ahead of the rest. The package supplies `guardrails install` (dry run by default, `--commit` to apply) and `guardrails status`, and for a rule that needs more than one resource to decide, `guardrails annotate`, which writes the tool's findings onto each Unit as an annotation the rule then checks. A resource is excepted from one rule by the annotation `exceptions.guardrails.confighub.com/<rule>`, whose value says why; `guardrails exception` adds and removes them, and lists every resource excepted, with its reason. Each rule's Trigger is created with a backing Unit, which keeps its revision history. Rules install as warnings and are made blocking with `cub trigger update <slug> --space <policy-space> --unwarn`, which a later install leaves in place. A Space that already selects Triggers its own way is reported and left alone.
 - **`managerkit/profiles`** -- a library of profiles: named, reusable edits stored as ConfigHub Invocations, each a function with preset arguments and optional parameters supplied at apply time. A profile that edits one kind of resource names it in `WhereResource`, which is stored with the profile, since a Unit can hold several resources and a function otherwise runs on all of them. A tool declares a `Library` of `Spec`s and gets `profile install`, `profile list` and `profile apply <profile> <space>/<unit>`, plus `fleet-edit --profile <slug>` to apply one profile to every Unit a filter selects; it refuses to run without one. Each profile's Invocation is created with a backing Unit, which keeps its revision history.
 - **`managerkit/write`** -- the reporting half of a mutating command: `ParseUnitRef` for the `<space>/<unit>` argument, `Change` for the change description and dry run, and `ReportMutations`, which renders the function results per Unit, followed on a table by the diff of each Unit that changed or, on a dry run, would change, and after a commit by `ReleaseNote`: nothing reaches a Target until the Space is released.
 - **`managerkit/configmaps`** -- the configmaps pack: the Mutation Triggers that roll a workload when a ConfigMap it uses changes, and bound the immutable ConfigMaps `render-configmap` leaves behind. `SetHash` runs `set-hash data binaryData` on the ConfigMaps not rendered, keeping the `confighub.com/Hash` that Needs/Provides carries to each pod template's `hash.confighub.com/<configmap>` annotation, and `Prune` runs `prune-configmaps`. Both are labeled `Pack: configmaps` (`Labels`). `cub variant upload` creates them in a Space that runs its own Triggers; a tool installs them into a policy Space for the Spaces that select their Triggers from there.
@@ -41,10 +41,17 @@ func preflight(ctx context.Context) (*cubapi.Client, error) {
 
 var pack = guardrails.Pack{
 	Group: "scheduling",
-	Rules: []guardrails.Rule{{
-		Slug:        "deployment-needs-node-selector",
-		Description: "Warns on a Deployment with no nodeSelector.",
-		Expression:  "r.kind != 'Deployment' || has(r.spec.template.spec.nodeSelector)",
+	Checks: []guardrails.Check{{
+		Control:       "CH-1199",
+		Name:          "deployment-needs-node-selector",
+		Rule:          "deployment-needs-node-selector",
+		Description:   "Warns on a Deployment with no nodeSelector.",
+		Engine:        guardrails.EngineCEL,
+		Priority:      guardrails.PriorityMedium,
+		ResourceTypes: []string{"apps/v1/Deployment"},
+		Failures: "has(r.spec.template.spec.nodeSelector) ? [] : [{'ResourceName': r.metadata.name, " +
+			"'ResourceType': 'apps/v1/Deployment', 'Path': 'spec.template.spec.nodeSelector', " +
+			"'Detail': 'the pods have no nodeSelector'}]",
 	}},
 }
 
@@ -73,4 +80,4 @@ func addCommands(root *cobra.Command) {
 }
 ```
 
-The rule opens with a kind test so that it passes for every resource it does not govern; a rule that fails everything else it is run on blocks those Units once it is made blocking.
+The check's rule selects Deployments with `WhereResource`, so its failures are evaluated only on Deployments and need no kind test.

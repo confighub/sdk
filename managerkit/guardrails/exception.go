@@ -239,7 +239,9 @@ func exceptionRemoveCmd(preflight Preflight, rules []string) *cobra.Command {
 		Long: `remove deletes the ` + ExceptionAnnotationPrefix + `<rule> annotation, so the rule
 checks the resource again. Without --resource, it removes the exception from
 every resource in the Unit that has one. An exception added with --guard is
-removed with --clearance for that guard, as in --clearance Override=External.
+removed with --clearance for that guard, as in --clearance owner=platform; an
+Override guard, such as Override=External, needs none, since a change is
+cleared for Override guards unless --clearance says otherwise.
 
 Rules:
 ` + wrapList(rules),
@@ -431,9 +433,7 @@ func wrapList(words []string) string {
 func ruleSlugs(packs []Pack) []string {
 	var slugs []string
 	for _, p := range packs {
-		for _, r := range p.Rules {
-			slugs = append(slugs, r.Slug)
-		}
+		slugs = append(slugs, p.ruleSlugs()...)
 	}
 	slices.Sort(slugs)
 	return slices.Compact(slugs)
