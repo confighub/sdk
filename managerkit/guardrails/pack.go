@@ -114,8 +114,17 @@ type Rule struct {
 	// its checks'. A Trigger's priority is not changed by installing again.
 	Priority string
 	// ExceptFrom are other rules whose exceptions this one honors as well as its
-	// own: those of the rule a check was separated from.
+	// own: those its checks name, and those of the rule a check was separated
+	// from.
 	ExceptFrom []string
+	// OtherUnitIDs are Units passed to Function as OtherData, by key.
+	OtherUnitIDs map[string]goclientnew.UUID
+	// PolicyUnit is the Unit, <space>/<unit>, of the policies a rule installed with
+	// --policy-unit runs, recorded on its Trigger.
+	PolicyUnit string
+	// Library is the pack's PolicyLibrary whose policies the rule runs. Install writes its
+	// Units into the policy Space and passes them as OtherUnitIDs.
+	Library string
 }
 
 // whereResource is the rule's Trigger's WhereResource: the resources of its
@@ -141,6 +150,9 @@ func (r Rule) annotations(isNew bool) map[string]string {
 	}
 	if isNew && r.Priority != "" {
 		annotations[constants.TriggerPriorityAnnotation] = r.Priority
+	}
+	if r.PolicyUnit != "" {
+		annotations[PolicyUnitAnnotation] = r.PolicyUnit
 	}
 	return annotations
 }
@@ -177,6 +189,8 @@ type Pack struct {
 	Checks []Check
 	// RuleInfo describes the rules that run several checks.
 	RuleInfo []RuleInfo
+	// Libraries are the admission policies the pack's EngineAdmissionPolicy checks run.
+	Libraries []PolicyLibrary
 }
 
 // hasTargetRules reports whether any rule belongs on Targets.
@@ -298,6 +312,12 @@ type Plan struct {
 	// SkippedChecks are checks the install leaves out, such as one missing a
 	// required parameter.
 	SkippedChecks []CheckSkip `json:"skippedChecks,omitempty"`
+	// PolicyUnits are the Units of admission policies the install writes in the policy Space:
+	// each library Unit, replaced with this version's, and each params Unit, created once.
+	PolicyUnits []string `json:"policyUnits,omitempty"`
+	// NarrowPolicySpace says the install narrows the policy Space's selection from its own
+	// Triggers to those in no group, so that the rules do not check the PolicyUnits.
+	NarrowPolicySpace bool `json:"narrowPolicySpace,omitempty"`
 
 	// rules are the rules the install writes.
 	rules []Rule
@@ -345,8 +365,13 @@ func (p Pack) BuildPlan(ctx context.Context, client *cubapi.Client, policySpace 
 // was deliberate.
 func (p Pack) PlanFor(ctx context.Context, client *cubapi.Client, policySpace string, candidates []string, scope Scope, sel ...CheckSelection) (Plan, error) {
 	plan := Plan{PolicySpace: policySpace, Group: p.Group}
-	if _, err := cubapi.ResolveSpace(ctx, client, cubapi.ParseRef(policySpace), cubapi.ResolveOpts{}); err == nil {
+	var policySpaceID *goclientnew.UUID
+	// A new policy Space selects its own Triggers.
+	ownSelection := true
+	if ps, err := cubapi.ResolveSpace(ctx, client, cubapi.ParseRef(policySpace), cubapi.ResolveOpts{Select: policySpaceSelect}); err == nil {
 		plan.PolicySpaceExists = true
+		policySpaceID = &ps.Space.SpaceID
+		ownSelection = selectsOwnTriggers(ps.Space)
 	}
 	var installed []installedRule
 	if plan.PolicySpaceExists && len(p.Checks) > 0 {
@@ -364,9 +389,27 @@ func (p Pack) PlanFor(ctx context.Context, client *cubapi.Client, policySpace st
 	if err != nil {
 		return plan, err
 	}
+	for _, ref := range selection.PolicyUnits {
+		rule, err := p.policyUnitRule(ctx, client, policySpaceID, ref)
+		if err != nil {
+			return plan, err
+		}
+		if slices.ContainsFunc(rules, func(r Rule) bool { return r.Slug == rule.Slug }) {
+			return plan, fmt.Errorf("--policy-unit %s: two policy Units are named %s", ref, rule.Slug)
+		}
+		rules = append(rules, rule)
+	}
 	plan.rules, plan.SkippedChecks = rules, skipped
 	for _, r := range rules {
 		plan.Triggers = append(plan.Triggers, r.Slug)
+		if r.Library == "" || slices.Contains(plan.PolicyUnits, p.LibraryUnit(r.Library)) {
+			continue
+		}
+		plan.PolicyUnits = append(plan.PolicyUnits, p.LibraryUnit(r.Library))
+		if l, _ := p.library(r.Library); l.Params != "" {
+			plan.PolicyUnits = append(plan.PolicyUnits, ParamsUnit(r.Library))
+		}
+		plan.NarrowPolicySpace = ownSelection
 	}
 
 	want := make(map[string]bool, len(candidates))
@@ -489,6 +532,10 @@ func (p Pack) Execute(ctx context.Context, client *cubapi.Client, policySpace st
 			return err
 		}
 	}
+	rules = slices.Clone(rules)
+	if err := p.ensureLibraries(ctx, client, ps.SpaceID, rules); err != nil {
+		return err
+	}
 	for _, r := range rules {
 		if _, err := p.ensureRule(ctx, client, ps.SpaceID, r, nil, plan.enforcementAnnotations()); err != nil {
 			return err
@@ -553,6 +600,7 @@ func (p Pack) ensureRule(ctx context.Context, client *cubapi.Client, policySpace
 		ToolchainType: "Kubernetes/YAML",
 		FunctionName:  fn,
 		Arguments:     cubapi.Arguments(args),
+		OtherUnitIDs:  r.OtherUnitIDs,
 		WhereResource: r.whereResource(),
 		Warn:          warn,
 		Labels:        r.labels(p.Group),

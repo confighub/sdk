@@ -96,7 +96,11 @@ func PlanSeparation(ctx context.Context, client *cubapi.Client, policySpace stri
 // failed, so that its findings of the separated checks move to their new rules.
 func ExecuteSeparation(ctx context.Context, client *cubapi.Client, sep *Separation) error {
 	var ids []goclientnew.UUID
-	for _, r := range sep.rules {
+	rules := slices.Clone(sep.rules)
+	if err := sep.pack.ensureLibraries(ctx, client, sep.group.SpaceID, rules); err != nil {
+		return err
+	}
+	for _, r := range rules {
 		like := sep.group
 		if r.Slug == sep.Rule {
 			like = nil

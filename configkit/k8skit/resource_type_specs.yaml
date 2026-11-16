@@ -1696,6 +1696,10 @@ resourceTypes:
   - type: karpenter.sh/v1beta1/NodePool
     scope: Cluster
 
+  # The parameters of Kubescape's ValidatingAdmissionPolicies.
+  - type: kubescape.io/v1/ControlConfiguration
+    scope: Cluster
+
   - type: kyverno.io/v1/ClusterPolicy
     scope: Cluster
 

@@ -67,6 +67,8 @@ type EnforcementRow struct {
 	Priority   string `json:"priority"`
 	EnforcedBy string `json:"enforcedBy,omitempty"`
 	EnforcedAt string `json:"enforcedAt,omitempty"`
+	// Controls are the control numbers of the checks the rule runs.
+	Controls []string `json:"controls,omitempty"`
 	// Spaces and Targets count what selects the rule.
 	Spaces  int `json:"spaces"`
 	Targets int `json:"targets"`
@@ -130,6 +132,7 @@ func Enforcement(ctx context.Context, client *cubapi.Client, policySpace string,
 			Priority:   priorityOf(t.Annotations),
 			EnforcedBy: t.Annotations[constants.TriggerEnforcedByAnnotation],
 			EnforcedAt: t.Annotations[constants.TriggerEnforcedAtAnnotation],
+			Controls:   controlsOf(t),
 		}
 	}
 	for _, es := range spaces {

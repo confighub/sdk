@@ -9,6 +9,7 @@ package guardrails
 import (
 	"context"
 	"fmt"
+	"slices"
 	"strings"
 	"text/tabwriter"
 
@@ -58,7 +59,14 @@ the Triggers to this version of the rules, and leaves a rule promoted with
 
 --priority and --enforced-by record how urgent the rules are and when they are
 due to be enforced; 'guardrails status --by-rule' reports them, with where each rule
-stands, and 'guardrails update' changes them one rule at a time.`,
+stands, and 'guardrails update' changes them one rule at a time.
+
+--policy-unit <space>/<unit> installs a rule running the ValidatingAdmissionPolicies
+of a Unit of your own, as vet-validating-admission-policy, so the policies checked
+before release are the ones your clusters enforce at admission. The rule is named
+after the Unit, and its policies see the resources their bindings in the Unit
+select; a paramRef is looked up in the same Unit. Installing again without the
+flag leaves the rule as it is.`,
 		Args: cobra.NoArgs,
 		RunE: func(cmd *cobra.Command, args []string) error {
 			client, err := preflight(cmd.Context())
@@ -85,6 +93,7 @@ stands, and 'guardrails update' changes them one rule at a time.`,
 	cmd.Flags().StringVar(&priority, "priority", "", "priority of the group's rules, recorded on each Trigger: High, Medium or Low")
 	cmd.Flags().StringVar(&enforcedBy, "enforced-by", "", "when the group's rules are due to be enforced, recorded on each Trigger: a date (2026-12-31) or RFC 3339")
 	cmd.Flags().StringVar(&scope.WhereSpace, "where-space", "", "ConfigHub filter over Spaces to narrow which Spaces get wired")
+	cmd.Flags().StringSliceVar(&sel.PolicyUnits, "policy-unit", nil, "a Unit of your own ValidatingAdmissionPolicies, <space>/<unit>, to install a rule running; repeat or comma-separate")
 	if p.hasTargetRules() {
 		cmd.Flags().StringVar(&scope.WhereTarget, "where-target", "", "ConfigHub filter over Targets to narrow which Targets get wired")
 	}
@@ -99,6 +108,16 @@ check missing a required one is left out until it has it, and the plan says so.`
 		cmd.Flags().StringSliceVar(&sel.Checks, "check", nil, "optional checks to install, by name; repeat or comma-separate")
 		cmd.Flags().BoolVar(&sel.All, "all", false, "install every optional check")
 		cmd.Flags().StringArrayVar(&params, "param", nil, "a check's parameter, <check>.<name>=<value>; repeat for each")
+	}
+	if len(p.Libraries) > 0 {
+		cmd.Long += `
+
+Some checks run ValidatingAdmissionPolicies the pack adopts from a library, such as
+Kubescape's. Install writes each library into the policy Space as a Unit,
+guardrails-` + p.Group + `-<library>, replaced with this version's policies every time,
+and the library's parameters as a Unit, guardrails-<library>-params, created once
+with the library's defaults and never overwritten: edit it to set them, such as
+the image registries allowed.`
 	}
 	return cmd
 }
@@ -155,7 +174,13 @@ func (p Pack) exampleSelection() string {
 // StatusCmd is `guardrails status`: which Units the Triggers have marked, or,
 // with --by-rule, where each rule stands.
 func (p Pack) StatusCmd(preflight Preflight) *cobra.Command {
-	var output, policySpace, only string
+	return StatusCmd(preflight, nil, nil)
+}
+
+// StatusCmd is `guardrails status` over the checks of packs. Given frameworks, it takes
+// --framework, which reports how far the installed rules go towards one of them.
+func StatusCmd(preflight Preflight, packs []Pack, frameworks []Framework) *cobra.Command {
+	var output, policySpace, only, framework string
 	var byRule bool
 	cmd := &cobra.Command{
 		Use:   "status",
@@ -183,12 +208,37 @@ due to be enforced, are set with 'guardrails update' too.`,
 			"  guardrails status --by-rule --rule workload-runs-nonroot -o json",
 		Args: cobra.NoArgs,
 		RunE: func(cmd *cobra.Command, args []string) error {
-			if !byRule && (only != "" || cmd.Flags().Changed("policy-space")) {
-				return fmt.Errorf("--rule and --policy-space go with --by-rule")
+			if byRule && framework != "" {
+				return fmt.Errorf("--by-rule and --framework are mutually exclusive")
+			}
+			if !byRule && only != "" {
+				return fmt.Errorf("--rule goes with --by-rule")
+			}
+			if !byRule && framework == "" && cmd.Flags().Changed("policy-space") {
+				return fmt.Errorf("--policy-space goes with --by-rule or --framework")
+			}
+			var f Framework
+			if framework != "" {
+				i := slices.IndexFunc(frameworks, func(f Framework) bool { return f.Name == framework })
+				if i < 0 {
+					return fmt.Errorf("unknown framework %q: want one of %s", framework, strings.Join(frameworkNames(frameworks), ", "))
+				}
+				f = frameworks[i]
 			}
 			client, err := preflight(cmd.Context())
 			if err != nil {
 				return err
+			}
+			if framework != "" {
+				rep, err := FrameworkStatus(cmd.Context(), client, policySpace, f, packs)
+				if err != nil {
+					return err
+				}
+				if done, err := managerkit.Render(cmd.OutOrStdout(), output, rep); done || err != nil {
+					return err
+				}
+				PrintFramework(cmd, rep)
+				return nil
 			}
 			if byRule {
 				var rules []string
@@ -219,10 +269,30 @@ due to be enforced, are set with 'guardrails update' too.`,
 		},
 	}
 	cmd.Flags().BoolVar(&byRule, "by-rule", false, "report each guardrail rule's enforcement rather than the marked Units")
-	cmd.Flags().StringVar(&policySpace, "policy-space", DefaultPolicySpace, "with --by-rule, the Space holding the guardrail Triggers")
+	cmd.Flags().StringVar(&policySpace, "policy-space", DefaultPolicySpace, "with --by-rule or --framework, the Space holding the guardrail Triggers")
 	cmd.Flags().StringVar(&only, "rule", "", "with --by-rule, only these rules, comma-separated")
+	if len(frameworks) > 0 {
+		cmd.Short += ", or with --framework, how far they go towards a framework"
+		cmd.Long += `
+
+With --framework, it reports each control of a framework, such as the CIS
+Kubernetes Benchmark: the checks that correspond to it, the rule each runs in and
+where that rule stands, and how far the control has got, which is as far as the
+furthest of its checks. A control no check covers is Uncovered. The frameworks:
+` + wrapList(frameworkNames(frameworks))
+		cmd.Example += "\n  guardrails status --framework " + frameworks[0].Name + " -o table"
+		cmd.Flags().StringVar(&framework, "framework", "", "report each control of this framework rather than the marked Units")
+	}
 	managerkit.AddOutputFlag(cmd, &output)
 	return cmd
+}
+
+func frameworkNames(frameworks []Framework) []string {
+	names := make([]string, len(frameworks))
+	for i, f := range frameworks {
+		names[i] = f.Name
+	}
+	return names
 }
 
 // PrintPlan renders an install plan as a table.
@@ -234,6 +304,12 @@ func PrintPlan(cmd *cobra.Command, plan Plan) {
 	}
 	cliutil.Fprintln(out, fmt.Sprintf("%s — guardrail group %q in policy Space %q", verb, plan.Group, plan.PolicySpace))
 	cliutil.Fprintln(out, "  triggers: "+strings.Join(plan.Triggers, ", "))
+	if len(plan.PolicyUnits) > 0 {
+		cliutil.Fprintln(out, "  policy units: "+strings.Join(plan.PolicyUnits, ", "))
+	}
+	if plan.NarrowPolicySpace {
+		cliutil.Fprintln(out, fmt.Sprintf("  policy space selection: %s's own Triggers in no group (WhereTrigger \"SpaceID = '<id>' AND Labels.%s IS NULL\"), so the rules skip the policy units", plan.PolicySpace, GroupLabel))
+	}
 	if len(plan.Wire) == 0 {
 		cliutil.Fprintln(out, "  to wire: none")
 	} else {

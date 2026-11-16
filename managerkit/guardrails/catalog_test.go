@@ -8,6 +8,7 @@ import (
 	"strings"
 	"testing"
 
+	api "github.com/confighub/sdk/core/function/api"
 	goclientnew "github.com/confighub/sdk/core/openapi/goclient-new"
 )
 
@@ -210,6 +211,15 @@ func TestValidateRejectsChecksThatCannotRunTogether(t *testing.T) {
 		"levels differ":        func(p *Pack) { p.Checks[4].Level = "baseline" },
 		"no priority":          func(p *Pack) { p.Checks[0].Priority = "" },
 		"pss param":            func(p *Pack) { p.Checks[3].Params = []Param{{Name: "x"}} },
+		"except from differs":  func(p *Pack) { p.Checks[3].ExceptFrom = []string{"test-runs-nonroot"} },
+		"except from itself": func(p *Pack) {
+			p.Checks[3].ExceptFrom = []string{"test-pss"}
+			p.Checks[4].ExceptFrom = []string{"test-pss"}
+		},
+		"except from a bad slug": func(p *Pack) {
+			p.Checks[3].ExceptFrom = []string{"Runs Nonroot"}
+			p.Checks[4].ExceptFrom = []string{"Runs Nonroot"}
+		},
 	} {
 		p := testCatalog()
 		p.Checks = slices.Clone(p.Checks)
@@ -255,5 +265,69 @@ func TestCheckExpressionNamesEachFailuresCheck(t *testing.T) {
 		if !strings.Contains(expression, want) {
 			t.Errorf("expression lacks %q:\n%s", want, expression)
 		}
+	}
+}
+
+// Checks of one function that runs several, chosen by its check argument, share a rule.
+func TestLayoutGroupsChecksOfOneFunction(t *testing.T) {
+	correctness := func(control, name, id string) Check {
+		return Check{Control: control, Name: name, Rule: "test-correctness", Engine: EngineFunction, Priority: PriorityHigh,
+			Function: "vet-correctness", FunctionCheck: id}
+	}
+	p := Pack{Group: "test", Checks: []Check{
+		correctness("CH-0201", "selector-matches-template", "selector-matches-template"),
+		correctness("CH-0202", "label-syntax", "label-syntax"),
+	}}
+	rules, _, err := p.layout(nil, CheckSelection{})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(rules) != 1 || rules[0].Function != "vet-correctness" ||
+		!slices.Equal(argument(rules[0], "check"), []string{"selector-matches-template,label-syntax"}) ||
+		!slices.Equal(rules[0].Controls, []string{"CH-0201", "CH-0202"}) {
+		t.Errorf("rules = %+v", rules)
+	}
+
+	for name, mutate := range map[string]func(*Pack){
+		"one without a FunctionCheck": func(p *Pack) { p.Checks[1].FunctionCheck = "" },
+		"different functions":         func(p *Pack) { p.Checks[1].Function = "vet-other" },
+		"different arguments": func(p *Pack) {
+			p.Checks[1].Arguments = []api.FunctionArgument{{ParameterName: "strict", Value: "true"}}
+		},
+		"a comma in FunctionCheck": func(p *Pack) { p.Checks[0].FunctionCheck = "a,b" },
+		"a check argument": func(p *Pack) {
+			p.Checks[0].Arguments = []api.FunctionArgument{{ParameterName: "check", Value: "x"}}
+		},
+	} {
+		bad := p
+		bad.Checks = slices.Clone(p.Checks)
+		mutate(&bad)
+		if err := bad.Validate(); err == nil {
+			t.Errorf("%s: Validate passed", name)
+		}
+	}
+}
+
+// A rule honors the exceptions of the rules its checks name in ExceptFrom, and a check separated
+// from it honors them too, beside the group rule's.
+func TestLayoutHonorsExceptFrom(t *testing.T) {
+	p := testCatalog()
+	p.Checks = slices.Clone(p.Checks)
+	p.Checks[3].ExceptFrom = []string{"test-runs-nonroot"}
+	p.Checks[4].ExceptFrom = []string{"test-runs-nonroot"}
+	if err := p.Validate(); err != nil {
+		t.Fatal(err)
+	}
+	rules, _, err := p.layout([]installedRule{{Slug: "seccomp", Controls: []string{"CH-0305"}}}, CheckSelection{})
+	if err != nil {
+		t.Fatal(err)
+	}
+	group := ruleNamed(t, rules, "test-pss")
+	if !slices.Equal(group.ExceptFrom, []string{"test-runs-nonroot"}) ||
+		!strings.HasSuffix(group.whereResource(), "confighub~1com/test-pss IS NULL AND metadata.annotations.exceptions~1guardrails~1confighub~1com/test-runs-nonroot IS NULL") {
+		t.Errorf("group = %+v, where %s", group, group.whereResource())
+	}
+	if separated := ruleNamed(t, rules, "seccomp"); !slices.Equal(separated.ExceptFrom, []string{"test-pss", "test-runs-nonroot"}) {
+		t.Errorf("separated = %+v", separated)
 	}
 }

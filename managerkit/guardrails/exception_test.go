@@ -4,6 +4,7 @@
 package guardrails
 
 import (
+	"reflect"
 	"slices"
 	"strings"
 	"testing"
@@ -77,5 +78,33 @@ func TestAnnotationPath(t *testing.T) {
 	want := "metadata.annotations.exceptions~1guardrails~1confighub~1com/rbac-no-wildcards"
 	if got := annotationPath(ExceptionAnnotation("rbac-no-wildcards")); got != want {
 		t.Errorf("got %s, want %s", got, want)
+	}
+}
+
+// The exception help and list say which rules honor another's exceptions, so an exception that
+// skips a resource in more than its own rule says so.
+func TestExceptionsHonoredBy(t *testing.T) {
+	p := testCatalog()
+	p.Checks = slices.Clone(p.Checks)
+	p.Checks[3].ExceptFrom = []string{"test-runs-nonroot"}
+	p.Checks[4].ExceptFrom = []string{"test-runs-nonroot"}
+	honoredBy := exceptionsHonoredBy([]Pack{p})
+	if !reflect.DeepEqual(honoredBy, map[string][]string{"test-runs-nonroot": {"test-pss"}}) {
+		t.Fatalf("exceptionsHonoredBy = %v", honoredBy)
+	}
+	want := []string{"An exception to test-runs-nonroot also skips the resource in test-pss."}
+	for _, listed := range [][]string{{"test-runs-nonroot"}, {"test-pss"}} {
+		if got := honoredByLines(honoredBy, listed); !slices.Equal(got, want) {
+			t.Errorf("honoredByLines(%v) = %q", listed, got)
+		}
+	}
+	if got := honoredByLines(honoredBy, []string{"test-baseline"}); len(got) != 0 {
+		t.Errorf("honoredByLines of an unrelated rule = %q", got)
+	}
+	if help := ExceptionCmd(nil, p).Long; !strings.Contains(help, "\n\n"+want[0]+"\n\nAn exception is part") {
+		t.Errorf("help does not list the honored exceptions:\n%s", help)
+	}
+	if help := ExceptionCmd(nil, testCatalog()).Long; !strings.Contains(help, "reads them all back.\n\nAn exception is part") {
+		t.Errorf("help without honored exceptions:\n%s", help)
 	}
 }

@@ -11,6 +11,7 @@ package guardrails
 import (
 	"context"
 	"fmt"
+	"maps"
 	"slices"
 	"sort"
 	"strings"
@@ -36,6 +37,9 @@ type Exception struct {
 	ResourceType string `json:"resourceType"`
 	ResourceName string `json:"resourceName"`
 	Reason       string `json:"reason"`
+	// AlsoSkippedBy are the other rules that skip the resource for this exception, since
+	// their checks name its rule in ExceptFrom.
+	AlsoSkippedBy []string `json:"alsoSkippedBy,omitempty"`
 }
 
 // Resource names the excepted resource as --resource takes it: its type, then
@@ -131,6 +135,8 @@ func ListExceptions(ctx context.Context, client *cubapi.Client, rules []string, 
 // every pack a tool has.
 func ExceptionCmd(preflight Preflight, packs ...Pack) *cobra.Command {
 	rules := ruleSlugs(packs)
+	groups := packGroups(packs)
+	honoredBy := exceptionsHonoredBy(packs)
 	cmd := &cobra.Command{
 		Use:   "exception",
 		Short: "Except a resource from a guardrail rule, remove an exception, or list them",
@@ -139,18 +145,19 @@ func ExceptionCmd(preflight Preflight, packs ...Pack) *cobra.Command {
   ` + ExceptionAnnotationPrefix + `<rule>: <why>
 
 A rule's Trigger skips every resource carrying it, so the resource gets no
-warning, or after the rule is promoted, no error, from that rule alone. The
-value records why, and 'exception list' reads them all back.
-
+warning, or after the rule is promoted, no error, from that rule, and from the
+rules whose checks a resource excepted from it cannot pass, which honor its
+exceptions too. The value records why, and 'exception list' reads them all back.
+` + honoredByHelp(honoredBy) + `
 An exception is part of the resource's configuration: adding or removing one is
 a change to its Unit, dry-run unless --commit --change-desc, and released like
 any other.`,
 	}
-	cmd.AddCommand(exceptionAddCmd(preflight, rules), exceptionRemoveCmd(preflight, rules), exceptionListCmd(preflight, rules))
+	cmd.AddCommand(exceptionAddCmd(preflight, rules, groups), exceptionRemoveCmd(preflight, rules, groups), exceptionListCmd(preflight, rules, groups, honoredBy))
 	return cmd
 }
 
-func exceptionAddCmd(preflight Preflight, rules []string) *cobra.Command {
+func exceptionAddCmd(preflight Preflight, rules, groups []string) *cobra.Command {
 	var output, rule, reason, resource string
 	var commit write.CommitFlags
 	cmd := &cobra.Command{
@@ -172,14 +179,14 @@ source from removing the exception, as an exception added to a base Unit that
 is uploaded from a chart needs. --clearance is for a path already guarded,
 since the annotation is written into the resource's existing metadata.
 
-Rules:
+Rules, and those installed with --policy-unit, named after their Units:
 ` + wrapList(rules),
 		Example: "  exception add prod/web --rule workload-pdb-coverage --reason \"singleton by design\"\n" +
 			"  exception add prod/web --resource apps/v1/Deployment/shop/web --rule workload-pdb-coverage --reason \"…\" --commit --change-desc \"…\"",
 		Args: cobra.ExactArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
-			if err := checkRule(rule, rules); err != nil {
-				return err
+			if rule == "" {
+				return checkRule(rule, rules)
 			}
 			if strings.TrimSpace(reason) == "" {
 				return fmt.Errorf("--reason is required: it records why the resource is excepted")
@@ -190,6 +197,9 @@ Rules:
 			}
 			client, err := preflight(cmd.Context())
 			if err != nil {
+				return err
+			}
+			if err := checkInstalledRule(cmd.Context(), client, rule, rules, groups); err != nil {
 				return err
 			}
 			ref, all, err := unitResources(cmd.Context(), client, args[0])
@@ -230,7 +240,7 @@ Rules:
 	return cmd
 }
 
-func exceptionRemoveCmd(preflight Preflight, rules []string) *cobra.Command {
+func exceptionRemoveCmd(preflight Preflight, rules, groups []string) *cobra.Command {
 	var output, rule, resource string
 	var commit write.CommitFlags
 	cmd := &cobra.Command{
@@ -243,13 +253,13 @@ removed with --clearance for that guard, as in --clearance owner=platform; an
 Override guard, such as Override=External, needs none, since a change is
 cleared for Override guards unless --clearance says otherwise.
 
-Rules:
+Rules, and those installed with --policy-unit, named after their Units:
 ` + wrapList(rules),
 		Example: "  exception remove prod/web --rule workload-pdb-coverage --commit --change-desc \"web has a PDB now\"",
 		Args:    cobra.ExactArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
-			if err := checkRule(rule, rules); err != nil {
-				return err
+			if rule == "" {
+				return checkRule(rule, rules)
 			}
 			change, err := commit.Change(fmt.Sprintf("remove the exception of %s from %s", args[0], rule))
 			if err != nil {
@@ -257,6 +267,9 @@ Rules:
 			}
 			client, err := preflight(cmd.Context())
 			if err != nil {
+				return err
+			}
+			if err := checkInstalledRule(cmd.Context(), client, rule, rules, groups); err != nil {
 				return err
 			}
 			ref, all, err := unitResources(cmd.Context(), client, args[0])
@@ -317,7 +330,7 @@ Rules:
 	return cmd
 }
 
-func exceptionListCmd(preflight Preflight, rules []string) *cobra.Command {
+func exceptionListCmd(preflight Preflight, rules, groups []string, honoredBy map[string][]string) *cobra.Command {
 	var output, only string
 	var filter cliutil.QueryFlags
 	cmd := &cobra.Command{
@@ -325,18 +338,23 @@ func exceptionListCmd(preflight Preflight, rules []string) *cobra.Command {
 		Short: "List the resources excepted from guardrail rules, and why",
 		Long: `list reports every resource excepted from a guardrail rule, with the reason its
 annotation records, and counts the exceptions to each rule, including the rules
-that have none.
+that have none. An exception to a rule whose exceptions other rules honor names
+those rules too; listing a rule that honors another's lists only its own.
 
 Scope it to one Unit by naming it, or to a set of Units with --where and the
 label shorthands. --rule narrows it to some rules.`,
 		Example: "  exception list -o table\n  exception list --environment prod --rule netpol-no-wide-cidr-egress -o table",
 		Args:    cobra.MaximumNArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
-			listed, err := parseRules(only, rules)
+			client, err := preflight(cmd.Context())
 			if err != nil {
 				return err
 			}
-			client, err := preflight(cmd.Context())
+			policyRules, err := policyUnitRuleSlugs(cmd.Context(), client, groups)
+			if err != nil {
+				return err
+			}
+			listed, err := parseRules(only, mergeSlugs(rules, policyRules))
 			if err != nil {
 				return err
 			}
@@ -359,6 +377,9 @@ label shorthands. --rule narrows it to some rules.`,
 			if err != nil {
 				return err
 			}
+			for i := range exceptions {
+				exceptions[i].AlsoSkippedBy = honoredBy[exceptions[i].Rule]
+			}
 			rep := ExceptionReport{Exceptions: exceptions, Total: len(exceptions), ByRule: map[string]int{}, Filter: where}
 			for _, r := range listed {
 				rep.ByRule[r] = 0
@@ -369,7 +390,7 @@ label shorthands. --rule narrows it to some rules.`,
 			if done, err := managerkit.Render(cmd.OutOrStdout(), output, rep); done || err != nil {
 				return err
 			}
-			printExceptions(cmd, rep, listed)
+			printExceptions(cmd, rep, listed, honoredBy)
 			return nil
 		},
 	}
@@ -381,7 +402,7 @@ label shorthands. --rule narrows it to some rules.`,
 	return cmd
 }
 
-func printExceptions(cmd *cobra.Command, rep ExceptionReport, listed []string) {
+func printExceptions(cmd *cobra.Command, rep ExceptionReport, listed []string, honoredBy map[string][]string) {
 	out := cmd.OutOrStdout()
 	if rep.Total == 0 {
 		cliutil.Fprintln(out, "No resources are excepted from these rules.")
@@ -409,6 +430,51 @@ func printExceptions(cmd *cobra.Command, rep ExceptionReport, listed []string) {
 	if len(none) > 0 {
 		cliutil.Fprintln(out, "No exceptions to: "+strings.Join(none, ", "))
 	}
+	for _, line := range honoredByLines(honoredBy, listed) {
+		cliutil.Fprintln(out, line)
+	}
+}
+
+// exceptionsHonoredBy maps each rule to the other rules that honor its exceptions: the rules of
+// the checks naming it in ExceptFrom.
+func exceptionsHonoredBy(packs []Pack) map[string][]string {
+	out := map[string][]string{}
+	for _, p := range packs {
+		for _, c := range p.Checks {
+			for _, rule := range c.ExceptFrom {
+				if !slices.Contains(out[rule], c.Rule) {
+					out[rule] = append(out[rule], c.Rule)
+				}
+			}
+		}
+	}
+	for _, honoring := range out {
+		slices.Sort(honoring)
+	}
+	return out
+}
+
+// honoredByLines say, for each rule whose exceptions other rules honor, which rules, where
+// either is among listed.
+func honoredByLines(honoredBy map[string][]string, listed []string) []string {
+	var lines []string
+	for _, rule := range slices.Sorted(maps.Keys(honoredBy)) {
+		honoring := honoredBy[rule]
+		if !slices.Contains(listed, rule) && !slices.ContainsFunc(honoring, func(r string) bool { return slices.Contains(listed, r) }) {
+			continue
+		}
+		lines = append(lines, fmt.Sprintf("An exception to %s also skips the resource in %s.", rule, strings.Join(honoring, ", ")))
+	}
+	return lines
+}
+
+// honoredByHelp lists, for the help, the rules whose exceptions other rules honor.
+func honoredByHelp(honoredBy map[string][]string) string {
+	lines := honoredByLines(honoredBy, slices.Collect(maps.Keys(honoredBy)))
+	if len(lines) == 0 {
+		return ""
+	}
+	return "\n" + strings.Join(lines, "\n") + "\n"
 }
 
 // wrapList renders words as an indented, comma-separated list wrapped to fit a
@@ -437,6 +503,50 @@ func ruleSlugs(packs []Pack) []string {
 	}
 	slices.Sort(slugs)
 	return slices.Compact(slugs)
+}
+
+// packGroups are the groups of packs.
+func packGroups(packs []Pack) []string {
+	groups := make([]string, len(packs))
+	for i, p := range packs {
+		groups[i] = p.Group
+	}
+	return groups
+}
+
+func mergeSlugs(a, b []string) []string {
+	out := slices.Concat(a, b)
+	slices.Sort(out)
+	return slices.Compact(out)
+}
+
+// policyUnitRuleSlugs are the slugs of the rules installed with --policy-unit in groups, which
+// no pack names.
+func policyUnitRuleSlugs(ctx context.Context, client *cubapi.Client, groups []string) ([]string, error) {
+	triggers, err := cubapi.ListTriggers(ctx, client, cubapi.Where{}.InStrings("Labels."+GroupLabel, groups),
+		cubapi.ListOpts{Select: "TriggerID,Slug,Annotations"})
+	if err != nil {
+		return nil, fmt.Errorf("list the installed rules: %w", err)
+	}
+	var slugs []string
+	for _, t := range triggers {
+		if t.Trigger != nil && t.Trigger.Annotations[PolicyUnitAnnotation] != "" {
+			slugs = append(slugs, t.Trigger.Slug)
+		}
+	}
+	return mergeSlugs(slugs, nil), nil
+}
+
+// checkInstalledRule is checkRule, where a rule is also one installed with --policy-unit.
+func checkInstalledRule(ctx context.Context, client *cubapi.Client, rule string, rules, groups []string) error {
+	if slices.Contains(rules, rule) {
+		return nil
+	}
+	policyRules, err := policyUnitRuleSlugs(ctx, client, groups)
+	if err != nil {
+		return err
+	}
+	return checkRule(rule, mergeSlugs(rules, policyRules))
 }
 
 func checkRule(rule string, rules []string) error {

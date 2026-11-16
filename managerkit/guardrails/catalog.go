@@ -9,12 +9,13 @@ package guardrails
 // is a validating Trigger, and runs one or more checks; it is what is staged, from audit to
 // enforced. Checks that a Trigger can run together -- the same engine, the same resource types,
 // the same AppliedTo -- name the same rule, and each finding names the check it fails by its
-// Issue Identifier. A check can be separated into a rule of its own, to stage it ahead of the
+// Issue Identifier: the check's Name, or, for a check of a function, its FunctionCheck. A check can be separated into a rule of its own, to stage it ahead of the
 // rest of its group, and stays there when the pack is installed again.
 
 import (
 	"fmt"
 	"maps"
+	"reflect"
 	"regexp"
 	"slices"
 	"sort"
@@ -31,11 +32,19 @@ const (
 	// EngineCEL is vet-cel. The check's Failures is a CEL list of failure maps.
 	EngineCEL = "cel"
 	// EnginePodSecurity is vet-pod-security-standard, at the check's Level, running the
-	// Pod Security Standards check named by the check's PodSecurityCheck.
+	// Pod Security Standards check named by the check's PodSecurityCheck. It is shorthand for
+	// an EngineFunction check of that function, whose FunctionCheck is the PodSecurityCheck.
 	EnginePodSecurity = "pss"
 	// EngineFunction is any other validating function, with the check's Function and
-	// Arguments. Such a check is always a rule of its own.
+	// Arguments. A check that sets FunctionCheck is one of several the function runs, chosen by
+	// its check argument, as vet-correctness's are, and shares a rule with the checks naming the
+	// same rule, function and arguments; their FunctionChecks are joined into the rule's check
+	// argument. A check that does not is a rule of its own.
 	EngineFunction = "fn"
+	// EngineAdmissionPolicy is AdmissionPolicyFunction, running the ValidatingAdmissionPolicy
+	// named by the check's Policy from the pack's library named by its Library. The checks of
+	// one library naming one rule share it; their policies are joined into its policy argument.
+	EngineAdmissionPolicy = "vap"
 )
 
 // PodSecurityFunction runs the EnginePodSecurity checks.
@@ -67,7 +76,9 @@ type Param struct {
 type Check struct {
 	// Control is the check's control number, CH-NNNN. It never changes or is reused.
 	Control string
-	// Name is the check's name, unique across packs: the Identifier of the Issues it reports.
+	// Name is the check's name, unique across packs. A cel check's findings carry it as their
+	// Issue Identifier; a function check's carry whatever the function names them, which for
+	// a check with a FunctionCheck is the FunctionCheck.
 	Name string
 	// DisplayName and Description describe the check, and the rule when it is a rule of its
 	// own.
@@ -95,6 +106,11 @@ type Check struct {
 	ResourceTypes []string
 	// AppliedTo is AppliedToTarget for a check of released Units only.
 	AppliedTo string
+	// ExceptFrom are other rules whose exceptions except a resource from this check too, since
+	// a resource excepted from them cannot pass it: a workload excepted from running as non-root
+	// cannot meet the restricted Pod Security Standard. A rule honors the exceptions of each,
+	// so the checks naming one rule name the same ones.
+	ExceptFrom []string
 
 	// Failures, for EngineCEL, is a CEL list of failure maps, empty when the resource r passes.
 	// Each map has ResourceName, ResourceType and Path, the optional Value, and Detail, a
@@ -107,6 +123,26 @@ type Check struct {
 	// Function and Arguments, for EngineFunction, are the function the check's rule runs.
 	Function  string
 	Arguments []api.FunctionArgument
+	// FunctionCheck, for EngineFunction, is the name the function's check argument knows the
+	// check by, for a function that runs several checks and names each finding by its check.
+	FunctionCheck string
+	// Library and Policy, for EngineAdmissionPolicy, are the pack's PolicyLibrary and the name
+	// of the ValidatingAdmissionPolicy in it, which is the Identifier of the check's findings.
+	Library string
+	Policy  string
+}
+
+// asFunction is c as an EngineFunction check: a pss check is a check of
+// vet-pod-security-standard at its level.
+func (c Check) asFunction() Check {
+	if c.Engine != EnginePodSecurity {
+		return c
+	}
+	c.Engine = EngineFunction
+	c.Function = PodSecurityFunction
+	c.Arguments = []api.FunctionArgument{{ParameterName: "level", Value: c.Level}}
+	c.FunctionCheck = c.PodSecurityCheck
+	return c
 }
 
 // RuleInfo describes a rule that runs several checks, where a person reads it.
@@ -125,6 +161,9 @@ type CheckSelection struct {
 	All bool
 	// Params are parameter values, keyed <check>.<name>.
 	Params map[string]string
+	// PolicyUnits are Units of the caller's own ValidatingAdmissionPolicies, as <space>/<unit>,
+	// to install a rule running each.
+	PolicyUnits []string
 }
 
 // CheckSkip is a check an install leaves out, and why.
@@ -159,6 +198,16 @@ func (p Pack) Validate() error {
 	for _, r := range p.Rules {
 		declared[r.Slug] = true
 	}
+	libraries := map[string]bool{}
+	for _, l := range p.Libraries {
+		if libraries[l.Name] {
+			return fmt.Errorf("library %s is declared twice", l.Name)
+		}
+		libraries[l.Name] = true
+		if err := l.validate(); err != nil {
+			return err
+		}
+	}
 	for _, c := range p.Checks {
 		switch {
 		case !namePattern.MatchString(c.Name) || !namePattern.MatchString(c.Rule):
@@ -188,6 +237,16 @@ func (p Pack) Validate() error {
 			if c.Function == "" {
 				return fmt.Errorf("check %s: an fn check needs a Function", c.Name)
 			}
+			if strings.ContainsAny(c.FunctionCheck, ", ") {
+				return fmt.Errorf("check %s: FunctionCheck %q has a comma or a space, which would split it", c.Name, c.FunctionCheck)
+			}
+			if slices.ContainsFunc(c.Arguments, func(a api.FunctionArgument) bool { return a.ParameterName == "check" }) && c.FunctionCheck != "" {
+				return fmt.Errorf("check %s: its rule writes the check argument from FunctionCheck, so Arguments may not hold one", c.Name)
+			}
+		case EngineAdmissionPolicy:
+			if err := p.checkPolicy(c); err != nil {
+				return err
+			}
 		default:
 			return fmt.Errorf("check %s: unknown engine %q", c.Name, c.Engine)
 		}
@@ -198,6 +257,11 @@ func (p Pack) Validate() error {
 		}
 		if len(c.Params) > 0 && c.Engine != EngineCEL {
 			return fmt.Errorf("check %s: only cel checks take parameters", c.Name)
+		}
+		for _, rule := range c.ExceptFrom {
+			if !namePattern.MatchString(rule) || rule == c.Rule || rule == c.Name {
+				return fmt.Errorf("check %s: ExceptFrom %q is not another rule's slug", c.Name, rule)
+			}
 		}
 		first, ok := byRule[c.Rule]
 		if !ok {
@@ -223,19 +287,46 @@ func (p Pack) Validate() error {
 	return nil
 }
 
+// checkPolicy checks that the EngineAdmissionPolicy check c names a policy of one of the pack's
+// libraries.
+func (p Pack) checkPolicy(c Check) error {
+	l, ok := p.library(c.Library)
+	if !ok {
+		return fmt.Errorf("check %s: the pack has no library %q", c.Name, c.Library)
+	}
+	policies, err := l.policies()
+	if err != nil {
+		return err
+	}
+	if !slices.ContainsFunc(policies, func(policy admissionPolicy) bool { return policy.Metadata.Name == c.Policy }) {
+		return fmt.Errorf("check %s: library %s has no policy %q", c.Name, c.Library, c.Policy)
+	}
+	if strings.ContainsAny(c.Policy, ", ") {
+		return fmt.Errorf("check %s: policy %q has a comma or a space, which would split it", c.Name, c.Policy)
+	}
+	return nil
+}
+
 // cannotShareRule says why two checks cannot run in one rule, or "" when they can.
 func cannotShareRule(a, b Check) string {
+	a, b = a.asFunction(), b.asFunction()
 	switch {
 	case a.Engine != b.Engine:
 		return "their engines differ"
-	case a.Engine == EngineFunction:
-		return "an fn check is a rule of its own"
+	case a.Engine == EngineFunction && (a.FunctionCheck == "" || b.FunctionCheck == ""):
+		return "an fn check without a FunctionCheck is a rule of its own"
+	case a.Function != b.Function:
+		return "their functions differ"
+	case !reflect.DeepEqual(a.Arguments, b.Arguments):
+		return "their functions' arguments differ"
 	case !slices.Equal(sortedTypes(a.ResourceTypes), sortedTypes(b.ResourceTypes)):
 		return "their resource types differ"
 	case a.AppliedTo != b.AppliedTo:
 		return "one applies to Targets and the other does not"
-	case a.Level != b.Level:
-		return "their Pod Security levels differ"
+	case !slices.Equal(sortedTypes(a.ExceptFrom), sortedTypes(b.ExceptFrom)):
+		return "they honor the exceptions of different rules"
+	case a.Library != b.Library:
+		return "their policy libraries differ"
 	}
 	return ""
 }
@@ -340,7 +431,7 @@ func (p Pack) layout(installed []installedRule, sel CheckSelection) ([]Rule, []C
 		}
 		if rc.separated != nil {
 			// A separated check still skips the resources excepted from the rule it came from.
-			rule.ExceptFrom = []string{rc.checks[0].Rule}
+			rule.ExceptFrom = append([]string{rc.checks[0].Rule}, rule.ExceptFrom...)
 		}
 		out = append(out, rule)
 	}
@@ -368,11 +459,13 @@ func (p Pack) ruleOf(slug string, checks []Check, params map[string]string) (Rul
 		Description:   info.Description,
 		AppliedTo:     first.AppliedTo,
 		ResourceTypes: sortedTypes(first.ResourceTypes),
+		ExceptFrom:    sortedTypes(first.ExceptFrom),
 	}
 	for _, c := range checks {
 		rule.Controls = append(rule.Controls, c.Control)
 		rule.Priority = higherPriority(rule.Priority, c.Priority)
 	}
+	first = first.asFunction()
 	switch first.Engine {
 	case EngineCEL:
 		rule.Function = ValidatingFunction
@@ -387,22 +480,27 @@ func (p Pack) ruleOf(slug string, checks []Check, params map[string]string) (Rul
 				rule.Arguments = append(rule.Arguments, api.FunctionArgument{ParameterName: "param", Value: key + "=" + value})
 			}
 		}
-	case EnginePodSecurity:
+	case EngineFunction:
+		rule.Function = first.Function
+		rule.Arguments = slices.Clone(first.Arguments)
+		if first.FunctionCheck == "" {
+			if len(checks) > 1 {
+				return Rule{}, fmt.Errorf("rule %s: an fn check without a FunctionCheck is a rule of its own", slug)
+			}
+			break
+		}
 		ids := make([]string, len(checks))
 		for i, c := range checks {
-			ids[i] = c.PodSecurityCheck
+			ids[i] = c.asFunction().FunctionCheck
 		}
-		rule.Function = PodSecurityFunction
-		rule.Arguments = []api.FunctionArgument{
-			{ParameterName: "level", Value: first.Level},
-			{ParameterName: "check", Value: strings.Join(ids, ",")},
+		rule.Arguments = append(rule.Arguments, api.FunctionArgument{ParameterName: "check", Value: strings.Join(ids, ",")})
+	case EngineAdmissionPolicy:
+		names := make([]string, len(checks))
+		for i, c := range checks {
+			names[i] = c.Policy
 		}
-	case EngineFunction:
-		if len(checks) > 1 {
-			return Rule{}, fmt.Errorf("rule %s: an fn check is a rule of its own", slug)
-		}
-		rule.Function = first.Function
-		rule.Arguments = first.Arguments
+		rule.Function, rule.Library = AdmissionPolicyFunction, first.Library
+		rule.Arguments = []api.FunctionArgument{{ParameterName: "policy", Value: strings.Join(names, ",")}}
 	}
 	return rule, nil
 }
@@ -430,17 +528,23 @@ func CheckExpression(checks []Check) string {
 		"'details': f.map(a, a.Detail), 'failed_attributes': f})[0]"
 }
 
+// controlsOf are the control numbers a rule's Trigger records.
+func controlsOf(t *goclientnew.Trigger) []string {
+	var controls []string
+	for _, control := range strings.Split(t.Annotations[ControlsAnnotation], ",") {
+		if control = strings.TrimSpace(control); control != "" {
+			controls = append(controls, control)
+		}
+	}
+	return controls
+}
+
 // installedRules reads what the Triggers of a pack's rules say about the checks they run: the
 // control numbers each records, and the parameters in its arguments.
 func installedRules(triggers []*goclientnew.Trigger) []installedRule {
 	var out []installedRule
 	for _, t := range triggers {
-		r := installedRule{Slug: t.Slug, Params: map[string]string{}, Trigger: t}
-		for _, control := range strings.Split(t.Annotations[ControlsAnnotation], ",") {
-			if control = strings.TrimSpace(control); control != "" {
-				r.Controls = append(r.Controls, control)
-			}
-		}
+		r := installedRule{Slug: t.Slug, Params: map[string]string{}, Trigger: t, Controls: controlsOf(t)}
 		for _, arg := range t.Arguments {
 			if arg.ParameterName == nil || *arg.ParameterName != "param" {
 				continue
