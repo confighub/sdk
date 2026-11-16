@@ -52,7 +52,7 @@ Agent inspection workflow:
 Key information provided:
 - Unit metadata: ID, slug, display name, creation/update times
 - Revision tracking: HeadRevisionNum vs LastReleasedRevisionNum shows pending changes
-- Validation state: ValidationErrors, ValidationWarnings, ValidationPassed, and the Attestations covering the head Revision
+- Validation state: ValidationErrors, ValidationWarnings, ValidationPassed, ValidationSkipped (the validating Triggers with nothing to check in the unit), and the Attestations covering the head Revision
 - Link findings: what the resolves of the unit's links could not do, such as a path a link names that is not there
 - Configuration data: Actual YAML/HCL content via 'cub unit data'
 
@@ -224,6 +224,9 @@ func displayExtendedUnitDetails(unitDetails *goclientnew.ExtendedUnit) {
 
 		if len(unitDetails.Unit.ValidationPassed) != 0 {
 			view.Append([]string{"Validation Passed", validationErrorsToString(unitDetails.Unit.ValidationPassed)})
+		}
+		if len(unitDetails.Unit.ValidationSkipped) != 0 {
+			view.Append([]string{"Nothing to Check", validationErrorsToString(unitDetails.Unit.ValidationSkipped)})
 		}
 
 		// Attestations are made of Revisions, not Units, so these are the ones recorded of the

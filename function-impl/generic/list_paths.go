@@ -44,6 +44,7 @@ func registerListPaths(fh handler.FunctionRegistry, converter configkit.ConfigCo
 					Required:         false,
 					Description:      "Report only paths within this many segments of the resource root. 0, the default, reports every depth. An associative segment counts as one segment, as does a list index.",
 					DataType:         api.DataTypeInt,
+					DefaultValue:     "0",
 					Example:          "2",
 					ValueConstraints: api.ValueConstraints{Min: &depthMinimum},
 				},

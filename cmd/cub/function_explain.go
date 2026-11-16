@@ -142,7 +142,7 @@ func displayFunctionDetails(toolchainType, functionName string, functionDetails 
 
 	view.Render()
 	view = tableView()
-	view.SetHeader([]string{"Parameter", "Name", "Data-Type", "Required", "Description", "Example", "Constraint"})
+	view.SetHeader([]string{"Parameter", "Name", "Data-Type", "Required", "Description", "Example", "Default", "Constraint"})
 	rstring := map[bool]string{true: "required", false: "optional"}
 	for i, param := range functionDetails.Parameters {
 		constraint := ""
@@ -150,7 +150,7 @@ func displayFunctionDetails(toolchainType, functionName string, functionDetails 
 			constraint = param.Regexp
 		}
 		// TODO: Min and Max aren't pointers, so it's not possible to differentiate set to zero from unset
-		view.Append([]string{fmt.Sprintf("%d", i), param.ParameterName, param.DataType, rstring[param.Required], param.Description, param.Example, constraint})
+		view.Append([]string{fmt.Sprintf("%d", i), param.ParameterName, param.DataType, rstring[param.Required], param.Description, param.Example, param.DefaultValue, constraint})
 	}
 	view.Render()
 }

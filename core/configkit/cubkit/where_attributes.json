@@ -1417,6 +1417,9 @@
       "ValidationResults": {
         "dataType": "JSON"
       },
+      "ValidationSkipped": {
+        "dataType": "map[string]bool"
+      },
       "ValidationTriggerIDs": {
         "dataType": "map[string]uuid"
       },
@@ -1923,6 +1926,9 @@
       },
       "ValidationResults": {
         "dataType": "JSON"
+      },
+      "ValidationSkipped": {
+        "dataType": "map[string]bool"
       },
       "ValidationTriggerIDs": {
         "dataType": "map[string]uuid"

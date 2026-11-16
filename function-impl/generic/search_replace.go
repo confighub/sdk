@@ -38,6 +38,7 @@ func registerSearchReplace(fh handler.FunctionRegistry, converter configkit.Conf
 					Required:      false,
 					Description:   "If true, interpret search-value as an RE2 regular expression and expand submatch references in replace-value, conceptually similar to sed. Defaults to false (literal substring replacement).",
 					DataType:      api.DataTypeBool,
+					DefaultValue:  "false",
 					Example:       "false",
 				},
 			},

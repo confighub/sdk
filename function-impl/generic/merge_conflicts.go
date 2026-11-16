@@ -38,7 +38,7 @@ func registerVetNoMergeConflicts(fh handler.FunctionRegistry, _ configkit.Config
 					Description: "Comma-separated conflict reasons to fail on: Subtracted, DeleteShadowed, " +
 						"ProtectedPath, UnresolvedPath, ExclusiveWithheld, ExclusiveCleared. " +
 						"Empty fails on any outstanding conflict.",
-					DataType: api.DataTypeString,
+					DataType: api.DataTypeCSV,
 					Example:  "UnresolvedPath,DeleteShadowed",
 				},
 			},
@@ -53,7 +53,7 @@ func registerVetNoMergeConflicts(fh handler.FunctionRegistry, _ configkit.Config
 			Include:               []api.FunctionContextPart{api.FunctionContextConflicts},
 			Hermetic:              true,
 			Idempotent:            true,
-			Description:           "Returns true if the unit has no outstanding merge conflicts",
+			Description:           "Fails a Unit with outstanding merge conflicts: upstream changes that could not be applied over its own. Fix: resolve or dismiss each conflict.",
 			FunctionType:          api.FunctionTypeCustom,
 			AffectedResourceTypes: []api.ResourceType{api.ResourceTypeAny},
 		},

@@ -159,6 +159,13 @@ type FunctionParameter struct {
 	Required      bool     `description:"Whether the parameter is required"`
 	DataType      DataType `swaggertype:"string" description:"Data type of the parameter"`
 	Example       string   `json:",omitempty" description:"Example value"`
+	// DefaultValue is what the function uses when the argument is omitted, when that is one
+	// fixed value. It is written as an argument is passed, as a string whatever DataType is, so
+	// an int is "10" and a bool "false"; the handler converts an argument by DataType, and a
+	// reader of this converts it the same way. A default that depends on the configuration or
+	// its context -- every check, the Kubernetes version of the Unit's Target -- has none here,
+	// and Description says it.
+	DefaultValue string `json:",omitempty" description:"The value the function uses when the argument is omitted, when that is one fixed value. It is a string whatever DataType is, as an argument is passed: an int is \"10\" and a bool \"false\", to convert by DataType. A default that depends on the configuration or its context is described in Description instead."`
 	ValueConstraints
 }
 

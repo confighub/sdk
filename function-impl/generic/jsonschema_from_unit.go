@@ -45,7 +45,7 @@ func registerVetJSONSchemaFromUnit(fh handler.FunctionRegistry, resourceProvider
 			Validating:            true,
 			Hermetic:              true,
 			Idempotent:            true,
-			Description:           "Validates each resource against the JSON Schema held by the Unit passed as OtherData schema, such as by a Trigger's OtherUnitIDs. Narrow the resources it checks with WhereResource.",
+			Description:           "Fails a resource that does not match the JSON Schema held by the Unit passed as OtherData schema, such as by a Trigger's OtherUnitIDs. Narrow the resources it checks with WhereResource. Fix: correct or remove the field each finding names, or change the schema.",
 			FunctionType:          api.FunctionTypeCustom,
 			AffectedResourceTypes: []api.ResourceType{api.ResourceTypeAny},
 		},

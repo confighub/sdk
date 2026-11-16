@@ -27,7 +27,7 @@ func registerVetFormat(fh handler.FunctionRegistry, converter configkit.ConfigCo
 			Validating:            true,
 			Hermetic:              true,
 			Idempotent:            true,
-			Description:           "Validates YAML format: no anchors/aliases, no empty values, no duplicate keys, no truthy values (yes/no/on/off/y/n), no old-style octals (0755).",
+			Description:           "Fails YAML that reads differently to different parsers or tools: anchors or aliases, empty values, duplicate keys, truthy words (yes/no/on/off/y/n), and old-style octals (0755). Fix: quote the value, write it out in full, or remove the duplicate key.",
 			FunctionType:          api.FunctionTypeCustom,
 			AffectedResourceTypes: []api.ResourceType{api.ResourceTypeAny},
 		},

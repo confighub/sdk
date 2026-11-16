@@ -64,9 +64,10 @@ func registerWhereFunctions(fh handler.FunctionRegistry, rp *cubkit.ConfigHubRes
 			Validating: true,
 			Hermetic:   true,
 			Idempotent: true,
-			Description: "Checks each where expression in entity documents, such as a Space's WhereTrigger or a Filter's Where, against the attributes of the entity type it selects, " +
-				"as the server does when the entity is written: its syntax, the names it uses, and the types of its literals. " +
-				"A literal UUID compared with an ID is scored Low without failing: it names one entity in one environment, so promoting the document carries it into another.",
+			Description: "Fails a where expression in an entity document, such as a Space's WhereTrigger or a Filter's Where, that the server would refuse when the entity is written, checked as the server checks it against the attributes " +
+				"of the entity type it selects: its syntax, the names it uses, and the types of its literals. " +
+				"A literal UUID compared with an ID is scored Low without failing: it names one entity in one environment, so promoting the document carries it into another. " +
+				"Fix: correct the expression as each finding says, and select by slug or label rather than by ID.",
 			FunctionType:          api.FunctionTypeCustom,
 			AttributeName:         cubkit.AttributeNameWhereExpression,
 			AffectedResourceTypes: yamlkit.ResourceTypesForAttribute(cubkit.AttributeNameWhereExpression, rp),

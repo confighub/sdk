@@ -152,6 +152,7 @@ func registerDefaultingFunctions(fh handler.FunctionRegistry, rp *k8skit.K8sReso
 					Required:      false,
 					Description:   "URL path for the liveness probe HTTP GET. Defaults to /healthz.",
 					DataType:      api.DataTypeString,
+					DefaultValue:  "/healthz",
 					Example:       "/internal/ok",
 				},
 				{
@@ -159,6 +160,7 @@ func registerDefaultingFunctions(fh handler.FunctionRegistry, rp *k8skit.K8sReso
 					Required:      false,
 					Description:   "URL path for the readiness probe HTTP GET. Defaults to /healthz.",
 					DataType:      api.DataTypeString,
+					DefaultValue:  "/healthz",
 					Example:       "/internal/ready",
 				},
 				{
@@ -166,6 +168,7 @@ func registerDefaultingFunctions(fh handler.FunctionRegistry, rp *k8skit.K8sReso
 					Required:      false,
 					Description:   "URL path for the startup probe HTTP GET. Defaults to /healthz.",
 					DataType:      api.DataTypeString,
+					DefaultValue:  "/healthz",
 					Example:       "/internal/ok",
 				},
 			},

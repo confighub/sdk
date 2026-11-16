@@ -14,7 +14,6 @@ import (
 
 	"github.com/cockroachdb/errors"
 	"github.com/yannh/kubeconform/pkg/resource"
-	"github.com/yannh/kubeconform/pkg/validator"
 	quantity "k8s.io/apimachinery/pkg/api/resource"
 
 	"github.com/confighub/sdk/configkit/k8skit"
@@ -23,6 +22,7 @@ import (
 	"github.com/confighub/sdk/core/function/handler"
 	"github.com/confighub/sdk/core/third_party/gaby"
 	"github.com/confighub/sdk/function-impl/generic"
+	"github.com/confighub/sdk/function-impl/third_party/kubeconform/validator"
 )
 
 func registerStandardFunctions(fh handler.FunctionRegistry, rp *k8skit.K8sResourceProviderType) {
@@ -97,7 +97,7 @@ func registerStandardFunctions(fh handler.FunctionRegistry, rp *k8skit.K8sResour
 			Validating:            true,
 			Hermetic:              true,
 			Idempotent:            true,
-			Description:           "Returns true if schema passes validation",
+			Description:           "Fails a resource that does not match the Kubernetes OpenAPI schema of its type and apiVersion: a field the type does not have, a required field that is missing, or a value of the wrong type or outside its allowed values. The schemas are those of kubernetes-version, or without it, of the Kubernetes version of the cluster the Unit's Target represents; a type with no schema found is reported as not validated rather than failed. Each finding is an Issue on the field, identified by the JSON Schema keyword that failed, such as required, additionalProperties or type. Fix: correct, add or remove the field each finding names.",
 			FunctionType:          api.FunctionTypeCustom,
 			AffectedResourceTypes: []api.ResourceType{api.ResourceTypeAny},
 		},
@@ -131,7 +131,7 @@ func registerStandardFunctions(fh handler.FunctionRegistry, rp *k8skit.K8sResour
 			Validating:            true,
 			Hermetic:              true,
 			Idempotent:            true,
-			Description:           "Returns true if schema passes validation",
+			Description:           "Fails a resource that does not match the Kubernetes OpenAPI schema of its type and apiVersion: a field the type does not have, a required field that is missing, or a value of the wrong type or outside its allowed values. The schemas are those of kubernetes-version, or without it, of the Kubernetes version of the cluster the Unit's Target represents; a type with no schema found is reported as not validated rather than failed. Each finding is an Issue on the field, identified by the JSON Schema keyword that failed, such as required, additionalProperties or type. Fix: correct, add or remove the field each finding names.",
 			FunctionType:          api.FunctionTypeCustom,
 			AffectedResourceTypes: []api.ResourceType{api.ResourceTypeAny},
 		},
@@ -379,30 +379,12 @@ func k8sFnVetSchemas(rp *k8skit.K8sResourceProviderType, options *api.FunctionOp
 		case validator.Invalid:
 			vr.Passed = false
 			for _, validationError := range valResult.ValidationErrors {
-				vr.Details = append(vr.Details, validationError.Msg)
-				// This path will be the parent of a bogus path. Try to parse the field out of the message.
-				path := gaby.JSONPointerToPath(validationError.Path)
-				if strings.HasPrefix(validationError.Msg, "additionalProperties '") {
-					field, _, found := strings.Cut(strings.TrimPrefix(validationError.Msg, "additionalProperties '"), "'")
-					if found {
-						path += "." + field
-					}
+				for _, attribute := range schemaErrorAttributes(doc, resourceInfo, validationError) {
+					vr.FailedAttributes = append(vr.FailedAttributes, attribute)
+					// The same text, for clients that read only the details.
+					vr.Details = append(vr.Details, string(resourceInfo.ResourceName)+" "+
+						string(attribute.Path)+": "+attribute.Issues[0].Message)
 				}
-				failedPath := api.AttributeValue{
-					AttributeInfo: api.AttributeInfo{
-						AttributeIdentifier: api.AttributeIdentifier{
-							ResourceInfo: *resourceInfo,
-							Path:         api.ResolvedPath(path),
-						},
-						AttributeMetadata: api.AttributeMetadata{
-							AttributeName: api.AttributeNameNone,
-						},
-					},
-					// The Value is not relevant for schema validation, but users may find it useful.
-					// TODO: Add the Value if it's a scalar (string, int, bool). Otherwise empty is fine for now.
-					Value: "",
-				}
-				vr.FailedAttributes = append(vr.FailedAttributes, failedPath)
 			}
 		case validator.Error:
 			vr.Passed = false
@@ -438,4 +420,72 @@ func k8sFnVetSchemas(rp *k8skit.K8sResourceProviderType, options *api.FunctionOp
 
 	vr := output.(*api.ValidationResult)
 	return parsedData, *vr, nil
+}
+
+// quotedNames matches the 'name' items of a list such as missing properties: 'a', 'b'.
+var quotedNames = regexp.MustCompile(`'([^']*)'`)
+
+// schemaErrorAttributes turns one schema error into the failed attributes it names, each with the
+// error as its Issue, identified by the JSON Schema keyword that failed. A schema locates a missing
+// or unknown property at the object that should or should not have it, so it is located here at
+// the property itself, one attribute for each the message names; any other error is at the field
+// whose value failed, and carries that value.
+func schemaErrorAttributes(doc *gaby.YamlDoc, resourceInfo *api.ResourceInfo, validationError validator.ValidationError) []api.AttributeValue {
+	kind := validationError.Keyword
+	if kind == "" {
+		kind = "schema"
+	}
+	segments := jsonPointerSegments(validationError.Path)
+	attribute := func(segments []string, value any, message string) api.AttributeValue {
+		return api.AttributeValue{
+			AttributeInfo: api.AttributeInfo{
+				AttributeIdentifier: api.AttributeIdentifier{
+					ResourceInfo: *resourceInfo,
+					Path:         api.ResolvedPath(yamlkit.JoinPathSegments(segments)),
+				},
+				AttributeMetadata: api.AttributeMetadata{AttributeName: api.AttributeNameNone},
+			},
+			Value:  value,
+			Issues: []api.Issue{{Identifier: kind, Message: message}},
+		}
+	}
+	if kind == "required" || kind == "additionalProperties" {
+		var attributes []api.AttributeValue
+		for _, match := range quotedNames.FindAllStringSubmatch(validationError.Msg, -1) {
+			message := match[1] + " is required here"
+			if kind == "additionalProperties" {
+				message = match[1] + " is not a field here: check its name and indentation, or remove it"
+			}
+			attributes = append(attributes, attribute(append(slices.Clone(segments), match[1]), nil, message))
+		}
+		if len(attributes) > 0 {
+			return attributes
+		}
+	}
+	// The value found, when it is a scalar: a value of the wrong type, or outside what is allowed.
+	var value any
+	if found, err := doc.JSONPointer(validationError.Path); err == nil && found != nil {
+		switch v := found.Data().(type) {
+		case string, bool, int, int64, float64:
+			value = v
+		}
+	}
+	// A field the schema lets be null says so in every type error; that it may be omitted is not
+	// what is wrong with it.
+	message := strings.ReplaceAll(validationError.Msg, " or null", "")
+	return []api.AttributeValue{attribute(segments, value, message)}
+}
+
+// jsonPointerSegments splits a JSON pointer, such as /metadata/annotations/a~1b, into its unescaped
+// segments.
+func jsonPointerSegments(pointer string) []string {
+	pointer = strings.TrimPrefix(pointer, "/")
+	if pointer == "" {
+		return nil
+	}
+	segments := strings.Split(pointer, "/")
+	for i, segment := range segments {
+		segments[i] = strings.ReplaceAll(strings.ReplaceAll(segment, "~1", "/"), "~0", "~")
+	}
+	return segments
 }

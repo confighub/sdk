@@ -64,6 +64,9 @@ const (
 	TriggerEnforcedByAnnotation = "EnforcedBy"
 	// TriggerEnforcedAtAnnotation is when the Trigger was last changed to enforce, in RFC 3339.
 	TriggerEnforcedAtAnnotation = "EnforcedAt"
+	// TriggerControlsAnnotation is the numbers of the controls the policy covers, such as the
+	// CH-0301 of a guardrail check, comma-separated.
+	TriggerControlsAnnotation = "Controls"
 )
 
 // TriggerPriorityAnnotation values.

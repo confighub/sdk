@@ -35,7 +35,7 @@ func TestStage(t *testing.T) {
 }
 
 func TestUnitVerdicts(t *testing.T) {
-	renamed, passed, warned := uuid.New(), uuid.New(), uuid.New()
+	renamed, passed, warned, skipped := uuid.New(), uuid.New(), uuid.New(), uuid.New()
 	u := &goclientnew.Unit{
 		ValidationTriggerIDs: map[string]goclientnew.UUID{
 			// A renamed Trigger passed under its old name and fails under its new one.
@@ -43,12 +43,15 @@ func TestUnitVerdicts(t *testing.T) {
 			"policy/new-name/vet-cel": renamed,
 			"policy/passes/vet-cel":   passed,
 			"policy/warns/vet-cel":    warned,
+			// Nothing to check in the Unit.
+			"policy/skips/vet-cel": skipped,
 		},
 		ValidationErrors:   map[string]bool{"policy/new-name/vet-cel": true},
 		ValidationWarnings: map[string]bool{"policy/warns/vet-cel": true},
+		ValidationSkipped:  map[string]bool{"policy/skips/vet-cel": true},
 	}
 	got := unitVerdicts(u)
-	want := map[goclientnew.UUID]verdict{renamed: verdictError, passed: verdictPassed, warned: verdictWarning}
+	want := map[goclientnew.UUID]verdict{renamed: verdictError, passed: verdictPassed, warned: verdictWarning, skipped: verdictSkipped}
 	if len(got) != len(want) {
 		t.Fatalf("got %d verdicts, want %d: %v", len(got), len(want), got)
 	}

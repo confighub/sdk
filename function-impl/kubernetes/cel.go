@@ -76,7 +76,7 @@ func registerK8sCELFunctions(fh handler.FunctionRegistry, rp *k8skit.K8sResource
 			Validating:            true,
 			Hermetic:              true,
 			Idempotent:            true,
-			Description:           "Validates Kubernetes resources using a CEL expression with Kubernetes admission policy libraries (quantity, url, ip, cidr, regex, format). Evaluated once per resource.",
+			Description:           "Fails each resource for which a CEL expression, evaluated once per resource with the Kubernetes admission policy libraries (quantity, url, ip, cidr, regex, format), returns false or {passed: false}. Fix: change the resource so the expression holds; its details, or the Trigger's Description, say what it requires.",
 			FunctionType:          api.FunctionTypeCustom,
 			AffectedResourceTypes: []api.ResourceType{api.ResourceTypeAny},
 		},

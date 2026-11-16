@@ -28,7 +28,7 @@ func registerVetMergeKeys(fh handler.FunctionRegistry, converter configkit.Confi
 			Validating:            true,
 			Hermetic:              true,
 			Idempotent:            true,
-			Description:           "Returns true if no arrays contain duplicate strategic merge patch keys. Duplicate merge keys in Kubernetes resources (such as duplicate container names or environment variable names) cause apply errors.",
+			Description:           "Fails a list with two entries under one strategic merge patch key, such as two containers or two environment variables with the same name, which makes applying it fail. Fix: rename or remove one of the entries.",
 			FunctionType:          api.FunctionTypeCustom,
 			AffectedResourceTypes: []api.ResourceType{api.ResourceTypeAny},
 		},

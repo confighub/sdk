@@ -160,14 +160,14 @@ func parseUUIDMapKey(decodedQueryString string, attributeName string) (string, s
 // deprecated ApplyGates and ApplyWarnings aliases are keyed the same way.
 func isValidationMapAttribute(attributeName string) bool {
 	switch attributeName {
-	case "ValidationErrors", "ValidationWarnings", "ValidationPassed", "ApplyGates", "ApplyWarnings":
+	case "ValidationErrors", "ValidationWarnings", "ValidationPassed", "ValidationSkipped", "ApplyGates", "ApplyWarnings":
 		return true
 	}
 	return false
 }
 
-// parseValidationErrorsMapKey parses gate-name map keys: those of ValidationErrors, ValidationWarnings
-// and ValidationPassed, and of ValidationTriggerIDs, which is keyed the same way.
+// parseValidationErrorsMapKey parses gate-name map keys: those of ValidationErrors, ValidationWarnings,
+// ValidationPassed and ValidationSkipped, and of ValidationTriggerIDs, which is keyed the same way.
 // Supports both 3-part (space-slug/trigger-slug/function-name) and legacy 2-part (trigger-slug/function-name) formats.
 // The function name may carry its position in its Trigger's Invocation, as function-name:position.
 func parseValidationErrorsMapKey(decodedQueryString string, attributeName string) (string, string, error) {

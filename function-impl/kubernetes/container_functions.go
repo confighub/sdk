@@ -216,6 +216,7 @@ func registerContainerFunctions(fh handler.FunctionRegistry, rp *k8skit.K8sResou
 					Required:         false,
 					Description:      "Optional container name to restrict the change to; '*' (the default) matches all containers",
 					DataType:         api.DataTypeString,
+					DefaultValue:     "*",
 					Example:          "server",
 					ValueConstraints: api.ValueConstraints{Regexp: convertToFullRegexp(containerNameRegexpString)},
 				},
@@ -384,6 +385,7 @@ func registerContainerFunctions(fh handler.FunctionRegistry, rp *k8skit.K8sResou
 					Required:      false,
 					Description:   "Enable pod security labels on namespaces (default: false)",
 					DataType:      api.DataTypeBool,
+					DefaultValue:  "false",
 					Example:       "true",
 				},
 				{
@@ -391,6 +393,7 @@ func registerContainerFunctions(fh handler.FunctionRegistry, rp *k8skit.K8sResou
 					Required:      false,
 					Description:   "Set automountServiceAccountToken to false (default: false)",
 					DataType:      api.DataTypeBool,
+					DefaultValue:  "false",
 					Example:       "true",
 				},
 				{
@@ -398,6 +401,7 @@ func registerContainerFunctions(fh handler.FunctionRegistry, rp *k8skit.K8sResou
 					Required:      false,
 					Description:   "Set security context for pods and containers (default: false)",
 					DataType:      api.DataTypeBool,
+					DefaultValue:  "false",
 					Example:       "true",
 				},
 				{
@@ -405,6 +409,7 @@ func registerContainerFunctions(fh handler.FunctionRegistry, rp *k8skit.K8sResou
 					Required:      false,
 					Description:   "Set minimum resource requests for containers (default: false)",
 					DataType:      api.DataTypeBool,
+					DefaultValue:  "false",
 					Example:       "true",
 				},
 				{
@@ -412,6 +417,7 @@ func registerContainerFunctions(fh handler.FunctionRegistry, rp *k8skit.K8sResou
 					Required:      false,
 					Description:   "Add liveness, readiness, and startup probes to containers (default: false)",
 					DataType:      api.DataTypeBool,
+					DefaultValue:  "false",
 					Example:       "true",
 				},
 			},
@@ -598,7 +604,7 @@ func registerContainerFunctions(fh handler.FunctionRegistry, rp *k8skit.K8sResou
 			Validating:            true,
 			Hermetic:              true,
 			Idempotent:            true,
-			Description:           "Validates that all container images pass the specified allow/deny filter. If AllowStrings is non-empty, all images must be in the allow list. Images in DenyStrings are always rejected.",
+			Description:           "Fails a container image the image filter does not allow: one not in AllowStrings, when that is non-empty, or one in DenyStrings. Fix: use an allowed image.",
 			FunctionType:          api.FunctionTypeCustom,
 			AffectedResourceTypes: imageResourceTypes,
 		},

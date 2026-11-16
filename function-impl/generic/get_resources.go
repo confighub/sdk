@@ -24,6 +24,7 @@ func registerGetResources(fh handler.FunctionRegistry, converter configkit.Confi
 					Required:         false,
 					Description:      "Format for resource body output: yaml (default), none, json, or native",
 					DataType:         api.DataTypeEnum,
+					DefaultValue:     "yaml",
 					Example:          "yaml",
 					ValueConstraints: api.ValueConstraints{EnumValues: []string{"yaml", "none", "json", "native"}},
 				},

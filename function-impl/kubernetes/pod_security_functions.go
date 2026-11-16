@@ -143,18 +143,19 @@ func registerPodSecurityFunctions(fh handler.FunctionRegistry, rp *k8skit.K8sRes
 					Required:      false,
 					Description:   `Version of the standard to check against, as in the pod-security.kubernetes.io/enforce-version label: "latest" (the default) or a Kubernetes minor version such as "v1.30". A workload's own enforce-version label takes precedence when level is omitted`,
 					DataType:      api.DataTypeString,
+					DefaultValue:  "latest",
 				},
 				{
 					ParameterName: "check",
 					Required:      false,
 					Description:   "Comma-separated IDs of the checks to run, of those the level includes, such as privileged,hostNamespaces. Omitted, all of them. The IDs are " + strings.Join(podSecurityCheckIDs, ", "),
-					DataType:      api.DataTypeString,
+					DataType:      api.DataTypeCSV,
 				},
 				{
 					ParameterName: "exclude-check",
 					Required:      false,
 					Description:   "Comma-separated IDs of checks not to run, such as runAsNonRoot",
-					DataType:      api.DataTypeString,
+					DataType:      api.DataTypeCSV,
 				},
 			},
 			RequiredParameters: 0,
@@ -168,12 +169,13 @@ func registerPodSecurityFunctions(fh handler.FunctionRegistry, rp *k8skit.K8sRes
 			Validating: true,
 			Hermetic:   true,
 			Idempotent: true,
-			Description: "Validates that every pod template in the configuration meets a Pod Security Standard level " +
+			Description: "Fails a pod template that does not meet a Pod Security Standard level " +
 				"(https://kubernetes.io/docs/concepts/security/pod-security-standards/), using the same checks the " +
 				"PodSecurity admission controller applies: the level given, or without one, the level in each workload's own " +
 				"pod-security.kubernetes.io/enforce label, as on its namespace, so one Trigger can hold every workload to " +
 				"its namespace's level. check and exclude-check run some of the level's checks rather than all. Each " +
-				"failure is an Issue identified by the check's ID. Passes when there are no workloads, or none to check.",
+				"failure is an Issue identified by the check's ID. Passes when there are no workloads, or none to check. " +
+				"Fix: set what the check names in the pod's or the container's securityContext, or hold the workload to a lower level.",
 			FunctionType:          api.FunctionTypeCustom,
 			AffectedResourceTypes: k8skit.PodSpecResourceTypes(),
 		},

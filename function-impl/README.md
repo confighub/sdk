@@ -270,6 +270,7 @@ type FunctionParameter struct {
 	Required      bool     `description:"Whether the parameter is required"`
 	DataType      DataType `swaggertype:"string" description:"Data type of the parameter"`
 	Example       string   `json:",omitempty" description:"Example value"`
+	DefaultValue  string   `json:",omitempty" description:"The value the function uses when the argument is omitted, when that is one fixed value"`
 	ValueConstraints
 }
 
@@ -291,7 +292,11 @@ type FunctionOutput struct {
 }
 ```
 
-Parameter types may be scalar types, some JSON types defined in the [function API](https://github.com/confighub/sdk/tree/main/core/function/api), YAML, and selected other well defined types. The type enables proper decoding and validation by the handler. Rather than pass int and bool parameter values as the corresponding JSON types, the CLI passes them as strings and the function executor handler knows it should convert them prior to invoking the functions.
+Parameter types may be scalar types, some JSON types defined in the [function API](https://github.com/confighub/sdk/tree/main/core/function/api), YAML, and selected other well defined types. The type enables proper decoding and validation by the handler. Rather than pass int and bool parameter values as the corresponding JSON types, the CLI passes them as strings and the function executor handler knows it should convert them prior to invoking the functions. A list is passed as one comma-separated string and declared `DataTypeCSV`, which `api.ParseStringArrayCSV` reads; `DataTypeStringArray` is for a list in structured form.
+
+An optional parameter whose omission means one fixed value declares it as `DefaultValue`, which must be a valid argument for the parameter. Like an argument, it is a string whatever the parameter's type: an int default is `"10"`, a bool `"false"`. A default that depends on the configuration or its context, such as every check or the Kubernetes version of the Unit's Target, is described in `Description` instead.
+
+A validating function's `Description` is what a person reads when the function fails their configuration, so it starts with what the function fails ("Fails a container image the image filter does not allow: ...") and ends with how to fix it ("Fix: use an allowed image."). The `Issues` it returns name the field each finding is about, as a failed attribute's path where it has one, with an `Identifier` naming the check or kind of error.
 
 ```
 const (
@@ -300,6 +305,7 @@ const (
 	DataTypeInt                  = DataType("int")
 	DataTypeBool                 = DataType("bool")
 	DataTypeEnum                 = DataType("enum")
+	DataTypeCSV                  = DataType("CSV")
 	DataTypeAttributeValueList   = DataType("AttributeValueList")
 	DataTypePatchMap             = DataType("PatchMap")
 	DataTypeJSON                 = DataType("JSON")

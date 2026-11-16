@@ -98,7 +98,7 @@ func Enforcement(ctx context.Context, client *cubapi.Client, policySpace string,
 		return nil, fmt.Errorf("list targets: %w", err)
 	}
 	units, err := cubapi.ListUnits(ctx, client, cubapi.Where{},
-		cubapi.ListOpts{Select: "UnitID,SpaceID,ToolchainType,ValidationErrors,ValidationWarnings,ValidationTriggerIDs"})
+		cubapi.ListOpts{Select: "UnitID,SpaceID,ToolchainType,ValidationErrors,ValidationWarnings,ValidationSkipped,ValidationTriggerIDs"})
 	if err != nil {
 		return nil, fmt.Errorf("list units: %w", err)
 	}
@@ -171,7 +171,7 @@ func Enforcement(ctx context.Context, client *cubapi.Client, policySpace string,
 				r.Errors++
 			case verdictWarning:
 				r.Warnings++
-			default:
+			case verdictPassed:
 				r.Passed++
 			}
 		}
@@ -209,25 +209,32 @@ func stageOrder(stage string) int {
 
 type verdict int
 
+// A Trigger skipped on a Unit, for having nothing to check in it, has neither passed nor failed
+// there, and is not counted. Passed is the zero value, which a Trigger with no verdict on a Unit
+// reads as.
 const (
-	verdictPassed verdict = iota
+	verdictSkipped verdict = iota - 1
+	verdictPassed
 	verdictWarning
 	verdictError
 )
 
 // unitVerdicts is the last verdict of each Trigger that ran on a Unit's head
-// Revision. A Trigger that has been renamed can have passed under its old gate
-// name and failed under the new one, so a failure under any of its names wins.
+// Revision, or that skipped it. A Trigger that has been renamed can have passed under its old
+// gate name and failed under the new one, so a failure under any of its names wins.
 func unitVerdicts(u *goclientnew.Unit) map[goclientnew.UUID]verdict {
 	out := map[goclientnew.UUID]verdict{}
 	for gate, id := range u.ValidationTriggerIDs {
 		v := verdictPassed
-		if u.ValidationErrors[gate] {
+		switch {
+		case u.ValidationErrors[gate]:
 			v = verdictError
-		} else if u.ValidationWarnings[gate] {
+		case u.ValidationWarnings[gate]:
 			v = verdictWarning
+		case u.ValidationSkipped[gate]:
+			v = verdictSkipped
 		}
-		if v >= out[id] {
+		if current, ok := out[id]; !ok || v > current {
 			out[id] = v
 		}
 	}
@@ -392,7 +399,7 @@ func reevaluateFailing(ctx context.Context, client *cubapi.Client, trigger gocli
 	}
 	var failing []string
 	for _, eu := range units {
-		if eu.Unit != nil && unitVerdicts(eu.Unit)[trigger] != verdictPassed {
+		if eu.Unit != nil && unitVerdicts(eu.Unit)[trigger] > verdictPassed {
 			failing = append(failing, "'"+eu.Unit.UnitID.String()+"'")
 		}
 	}

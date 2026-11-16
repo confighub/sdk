@@ -58,13 +58,13 @@ func registerVetValidatingAdmissionPolicy(fh handler.FunctionRegistry, rp *k8ski
 					ParameterName: "policy",
 					Required:      false,
 					Description:   "Comma-separated names of the ValidatingAdmissionPolicies in the policy Unit to evaluate. Omitted, all of them",
-					DataType:      api.DataTypeString,
+					DataType:      api.DataTypeCSV,
 				},
 				{
 					ParameterName: "exclude-policy",
 					Required:      false,
 					Description:   "Comma-separated names of ValidatingAdmissionPolicies in the policy Unit not to evaluate",
-					DataType:      api.DataTypeString,
+					DataType:      api.DataTypeCSV,
 				},
 			},
 			OtherDataExpected: []api.OtherDataSource{PolicyOtherDataKey, ParamsOtherDataKey, releasedOtherDataKey},
@@ -78,13 +78,14 @@ func registerVetValidatingAdmissionPolicy(fh handler.FunctionRegistry, rp *k8ski
 			Validating: true,
 			Hermetic:   true,
 			Idempotent: true,
-			Description: "Evaluates the ValidatingAdmissionPolicies in the Unit passed as OtherData policy, such as by a Trigger's OtherUnitIDs, " +
-				"against each resource as the Kubernetes API server would admit it: as an update of the resource in the Unit's last released revision, " +
+			Description: "Fails a resource that a ValidatingAdmissionPolicy in the Unit passed as OtherData policy, such as by a Trigger's OtherUnitIDs, denies, " +
+				"evaluated as the Kubernetes API server would admit the resource: as an update of the resource in the Unit's last released revision, " +
 				"which is oldObject, or as its creation when that revision does not have it. A policy is applied through each ValidatingAdmissionPolicyBinding " +
 				"in that Unit that names it, or with the Deny action when none does; a binding's paramRef finds its params among that Unit's other resources, " +
 				"then among those of the Unit passed as OtherData params, and a namespaceSelector reads the labels of the Namespace resources in the Unit being validated. " +
 				"policy and exclude-policy evaluate some of the policies rather than all. Each finding is an Issue identified by its policy's name. " +
-				"The request has no user and expressions cannot use the authorizer.",
+				"The request has no user and expressions cannot use the authorizer. " +
+				"Fix: change the resource as the policy's message says, or change the policy or its params.",
 			FunctionType:          api.FunctionTypeCustom,
 			AffectedResourceTypes: []api.ResourceType{api.ResourceTypeAny},
 		},

@@ -34,6 +34,11 @@ const (
 	DataTypeStringUUIDMap           = DataType("map[string]uuid")
 	DataTypeStringStringUUIDBoolMap = DataType("map[string]map[string]map[uuid]bool")
 
+	// DataTypeCSV is a list of strings written as one comma-separated string, such as
+	// "privileged,hostNamespaces": how a function argument, which is a string, carries a list.
+	// ParseStringArrayCSV reads it. DataTypeStringArray is a list in structured form, as JSON.
+	DataTypeCSV = DataType("CSV")
+
 	// Structured data types
 	DataTypeAttributeValueList   = DataType("AttributeValueList")
 	DataTypeAttributeInfoList    = DataType("AttributeInfoList")
@@ -147,17 +152,16 @@ func DataTypeOfValue(value any) DataType {
 	}
 }
 
-// ParseStringArrayCSV parses a DataTypeStringArray argument value serialized as
-// a comma-separated string into a []string. Whitespace around each element is
-// trimmed and empty elements are dropped. A nil value or empty string returns
-// a nil slice.
+// ParseStringArrayCSV parses a DataTypeCSV argument value, a comma-separated string, into a
+// []string. Whitespace around each element is trimmed and empty elements are dropped. A nil
+// value or empty string returns a nil slice.
 func ParseStringArrayCSV(value any) ([]string, error) {
 	if value == nil {
 		return nil, nil
 	}
 	s, ok := value.(string)
 	if !ok {
-		return nil, fmt.Errorf("expected string for %s, got %T", DataTypeStringArray, value)
+		return nil, fmt.Errorf("expected string for %s, got %T", DataTypeCSV, value)
 	}
 	if s == "" {
 		return nil, nil

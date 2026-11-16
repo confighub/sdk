@@ -50,7 +50,7 @@ func registerVetJSONSchema(fh handler.FunctionRegistry, converter configkit.Conf
 			Validating:            true,
 			Hermetic:              true,
 			Idempotent:            true,
-			Description:           "Validates each resource against its corresponding JSONSchema from the provided map",
+			Description:           "Fails a resource that does not match the JSON Schema schema-map gives for its type. Fix: correct or remove the field each finding names.",
 			FunctionType:          api.FunctionTypeCustom,
 			AffectedResourceTypes: []api.ResourceType{api.ResourceTypeAny},
 		},

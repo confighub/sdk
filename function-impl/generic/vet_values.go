@@ -56,7 +56,7 @@ func registerVetValues(fh handler.FunctionRegistry, converter configkit.ConfigCo
 			Validating:            true,
 			Hermetic:              true,
 			Idempotent:            true,
-			Description:           "Validates that all values at the paths registered for the specified attribute pass the specified allow/deny filter. Supports string, int, and bool values.",
+			Description:           "Fails a value, at a path registered for attribute-name, that the value filter does not allow. Supports string, int, and bool values. Fix: set an allowed value.",
 			FunctionType:          api.FunctionTypeCustom,
 			AffectedResourceTypes: []api.ResourceType{api.ResourceTypeAny},
 		},

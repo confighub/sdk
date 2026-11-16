@@ -449,6 +449,10 @@
           "description": "Data type of the parameter",
           "type": "string"
         },
+        "DefaultValue": {
+          "description": "The value the function uses when the argument is omitted, when that is one fixed value. It is a string whatever DataType is, as an argument is passed: an int is \"10\" and a bool \"false\", to convert by DataType. A default that depends on the configuration or its context is described in Description instead.",
+          "type": "string"
+        },
         "Description": {
           "description": "Description of the parameter",
           "type": "string"

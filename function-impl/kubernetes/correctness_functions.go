@@ -111,13 +111,13 @@ func registerCorrectnessFunctions(fh handler.FunctionRegistry, rp *k8skit.K8sRes
 					ParameterName: "check",
 					Required:      false,
 					Description:   "Comma-separated names of the checks to run. Omitted, all of them. The checks are " + strings.Join(correctnessCheckNames, ", "),
-					DataType:      api.DataTypeString,
+					DataType:      api.DataTypeCSV,
 				},
 				{
 					ParameterName: "exclude-check",
 					Required:      false,
 					Description:   "Comma-separated names of checks not to run",
-					DataType:      api.DataTypeString,
+					DataType:      api.DataTypeCSV,
 				},
 			},
 			OutputInfo: &api.FunctionOutput{
@@ -130,7 +130,7 @@ func registerCorrectnessFunctions(fh handler.FunctionRegistry, rp *k8skit.K8sRes
 			Validating: true,
 			Hermetic:   true,
 			Idempotent: true,
-			Description: "Checks what the API server would reject, or accept and silently ignore, that the schemas do not " +
+			Description: "Fails a resource the Kubernetes API server would reject, or accept and silently ignore part of, for reasons the schemas do not " +
 				"express: " + checkSelectorMatchesTemplate + " (a controller's selector selects its own pod template's labels), " +
 				checkLabelSyntax + " (label keys and values are valid), " + checkNameSyntax + " (metadata.name has its type's " +
 				"syntax), " + checkPortNames + " (container port names are valid and unique in the container), " +
@@ -142,7 +142,7 @@ func registerCorrectnessFunctions(fh handler.FunctionRegistry, rp *k8skit.K8sRes
 				" (no superseded field is set without the field replacing it, or with a different value), and " +
 				checkDeprecatedAPI + " (the resource's type, or the version of it, is not deprecated). Name formats, " +
 				"required groups, and deprecated fields and types are declared per resource type, a CRD's deprecated " +
-				"versions included. Each failure is an Issue identified by its check.",
+				"versions included. Each failure is an Issue identified by its check. Fix: what the Issue says, for the check it names.",
 			FunctionType:          api.FunctionTypeCustom,
 			AffectedResourceTypes: []api.ResourceType{api.ResourceTypeAny},
 		},

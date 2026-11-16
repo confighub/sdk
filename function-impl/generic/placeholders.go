@@ -59,7 +59,7 @@ func registerVetPlaceholders(fh handler.FunctionRegistry, converter configkit.Co
 			Validating:            true,
 			Hermetic:              true,
 			Idempotent:            true,
-			Description:           "Returns true if no attributes contain the placeholder string 'confighubplaceholder' or number 999999999. See https://docs.confighub.com/background/concepts/placeholders/ for more information about placeholders.",
+			Description:           "Fails a value still set to a placeholder, the string 'confighubplaceholder' or the number 999999999, which marks a value to be filled in. See https://docs.confighub.com/background/concepts/placeholders/ for more information about placeholders. Fix: set the real value.",
 			FunctionType:          api.FunctionTypeCustom,
 			AffectedResourceTypes: []api.ResourceType{api.ResourceTypeAny},
 		},

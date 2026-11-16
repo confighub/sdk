@@ -31,6 +31,7 @@ func registerPruneConfigMaps(fh handler.FunctionRegistry, rp *k8skit.K8sResource
 					Required:      false,
 					Description:   "Maximum number of immutable ConfigMaps with the same ResourceNameStableCore annotation to retain. Older versions beyond the limit are removed. Defaults to 10.",
 					DataType:      api.DataTypeInt,
+					DefaultValue:  "10",
 					Example:       "10",
 				},
 			},

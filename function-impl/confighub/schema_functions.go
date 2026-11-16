@@ -33,8 +33,9 @@ func registerSchemaFunctions(fh handler.FunctionRegistry, rp *cubkit.ConfigHubRe
 			Validating: true,
 			Hermetic:   true,
 			Idempotent: true,
-			Description: "Returns true if every entity document passes the schema of its EntityType, which states the fields a document of that type may set. " +
-				"The schemas are built in, so nothing is fetched, and a document whose EntityType has none fails rather than being skipped.",
+			Description: "Fails an entity document that does not match the schema of its EntityType, which states the fields a document of that type may set. " +
+				"The schemas are built in, so nothing is fetched, and a document whose EntityType has none fails rather than being skipped. " +
+				"Fix: correct or remove the field each finding names.",
 			FunctionType:          api.FunctionTypeCustom,
 			AffectedResourceTypes: cubkit.DocumentSchemaTypes(),
 		},

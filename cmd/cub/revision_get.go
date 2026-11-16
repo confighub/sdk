@@ -147,6 +147,9 @@ func displayExtendedRevisionDetails(extendedRev *goclientnew.ExtendedRevision) {
 		if len(rev.ValidationPassed) != 0 {
 			view.Append([]string{"Validation Passed", validationErrorsToString(rev.ValidationPassed)})
 		}
+		if len(rev.ValidationSkipped) != 0 {
+			view.Append([]string{"Nothing to Check", validationErrorsToString(rev.ValidationSkipped)})
+		}
 		if len(rev.Attestations) != 0 {
 			attestations, err := describeRevisionAttestations(rev.SpaceID, rev.Attestations)
 			if err != nil {

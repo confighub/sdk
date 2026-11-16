@@ -16,7 +16,7 @@ import (
 var triggerListCmd = &cobra.Command{
 	Use:   "list",
 	Short: "List triggers",
-	Long: getCommandHelp(`List triggers you have access to in a space or across all spaces. The output includes slugs, space slugs, the pack each belongs to (its `+constants.PackLabel+` label), whether each validates, is disabled, or only warns, the priority of a validating trigger's policy (its `+constants.TriggerPriorityAnnotation+` annotation), and the invocation it runs, if any. What a trigger runs is shown with --columns, as in --columns Name,Event,ToolchainType,Channel.Slug,FunctionName,Arguments, and by trigger get.
+	Long: getCommandHelp(`List triggers you have access to in a space or across all spaces. The output includes slugs, space slugs, the pack each belongs to (its `+constants.PackLabel+` label), whether each validates, is disabled, or only warns, the priority of a validating trigger's policy (its `+constants.TriggerPriorityAnnotation+` annotation), the controls it covers (its `+constants.TriggerControlsAnnotation+` annotation, a run of consecutive numbers written as its first and last), and the invocation it runs, if any. What a trigger runs is shown with --columns, as in --columns Name,Event,ToolchainType,Channel.Slug,FunctionName,Arguments, and by trigger get.
 
 Examples:
 `+"```"+`
@@ -64,6 +64,9 @@ Examples:
 
   # List the triggers of two packs in a policy space
   cub trigger list --space confighub-system --pack basic --pack rbac
+
+  # Find the trigger that covers a control
+  cub trigger list --where "Annotations.Controls LIKE '%CH-0301%'"
 `+"```"+`
 `, ""),
 	Args:        cobra.ExactArgs(0),
@@ -90,9 +93,9 @@ var triggerAliases = map[string]string{
 	"ID":   "Trigger.TriggerID",
 }
 
-// Trigger custom column dependencies: Pack comes from Labels.Pack, and Priority from
-// Annotations.Priority and Validating.
-var triggerCustomColumnDependencies = map[string][]string{"Pack": {"Labels"}, "Priority": {"Annotations", "Validating"}}
+// Trigger custom column dependencies: Pack comes from Labels.Pack, Priority from
+// Annotations.Priority and Validating, and Controls from Annotations.Controls.
+var triggerCustomColumnDependencies = map[string][]string{"Pack": {"Labels"}, "Priority": {"Annotations", "Validating"}, "Controls": {"Annotations"}}
 
 // triggerCustomColumns are the columns the default table computes rather than
 // reads.
@@ -106,6 +109,12 @@ var triggerCustomColumns = map[string]func(any) string{
 	"Priority": func(obj any) string {
 		if t, ok := obj.(*goclientnew.ExtendedTrigger); ok && t.Trigger != nil {
 			return triggerPriorityColumn(t.Trigger)
+		}
+		return ""
+	},
+	"Controls": func(obj any) string {
+		if t, ok := obj.(*goclientnew.ExtendedTrigger); ok && t.Trigger != nil {
+			return cubapi.FormatControls(cubapi.TriggerControls(t.Trigger.Annotations))
 		}
 		return ""
 	},
@@ -164,7 +173,7 @@ func displayTriggerList(triggers []*goclientnew.ExtendedTrigger) {
 	}
 	table := tableView()
 	if !noheader {
-		table.SetHeader([]string{"Name", "Space", "Pack", "Validating", "Disabled", "Warn", "Priority", "Invocation"})
+		table.SetHeader([]string{"Name", "Space", "Pack", "Validating", "Disabled", "Warn", "Priority", "Controls", "Invocation"})
 	}
 	for _, t := range triggers {
 		trigger := t.Trigger
@@ -186,6 +195,7 @@ func displayTriggerList(triggers []*goclientnew.ExtendedTrigger) {
 			strconv.FormatBool(trigger.Disabled),
 			strconv.FormatBool(trigger.Warn),
 			triggerPriorityColumn(trigger),
+			cubapi.FormatControls(cubapi.TriggerControls(trigger.Annotations)),
 			invocationSlug,
 		})
 	}

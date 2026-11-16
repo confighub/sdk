@@ -5,6 +5,8 @@ package cubapi
 
 import (
 	"fmt"
+	"regexp"
+	"strconv"
 	"strings"
 	"time"
 
@@ -55,4 +57,59 @@ func ParseEnforcementTime(s string) (string, error) {
 // FormatEnforcementTime writes t the way ParseEnforcementTime returns it.
 func FormatEnforcementTime(t time.Time) string {
 	return t.UTC().Format(time.RFC3339)
+}
+
+// TriggerControls returns the control numbers a Trigger's TriggerControlsAnnotation lists, in
+// its order.
+func TriggerControls(annotations map[string]string) []string {
+	var controls []string
+	for _, control := range strings.Split(annotations[constants.TriggerControlsAnnotation], ",") {
+		if control = strings.TrimSpace(control); control != "" {
+			controls = append(controls, control)
+		}
+	}
+	return controls
+}
+
+// controlNumber splits a control into its prefix and its number, as CH-0301 into CH- and 0301.
+var controlNumber = regexp.MustCompile(`^(.*?)(\d+)$`)
+
+// FormatControls writes controls as one short line: comma-separated, with each run of three or
+// more consecutive numbers of one prefix written as its first and last, as CH-0301–CH-0311, so
+// that a rule running a dozen checks still fits a table column.
+func FormatControls(controls []string) string {
+	type control struct {
+		prefix, digits string
+		number         int
+	}
+	parse := func(s string) (control, bool) {
+		m := controlNumber.FindStringSubmatch(s)
+		if m == nil {
+			return control{}, false
+		}
+		n, err := strconv.Atoi(m[2])
+		if err != nil {
+			return control{}, false
+		}
+		return control{m[1], m[2], n}, true
+	}
+	var parts []string
+	for i := 0; i < len(controls); {
+		first, ok := parse(controls[i])
+		j := i + 1
+		for ok && j < len(controls) {
+			next, nextOK := parse(controls[j])
+			if !nextOK || next.prefix != first.prefix || len(next.digits) != len(first.digits) || next.number != first.number+(j-i) {
+				break
+			}
+			j++
+		}
+		if j-i >= 3 {
+			parts = append(parts, controls[i]+"–"+controls[j-1])
+		} else {
+			parts = append(parts, controls[i:j]...)
+		}
+		i = j
+	}
+	return strings.Join(parts, ",")
 }

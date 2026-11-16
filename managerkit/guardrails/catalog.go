@@ -21,6 +21,7 @@ import (
 	"sort"
 	"strings"
 
+	"github.com/confighub/sdk/core/constants"
 	"github.com/confighub/sdk/core/cubapi"
 	api "github.com/confighub/sdk/core/function/api"
 	goclientnew "github.com/confighub/sdk/core/openapi/goclient-new"
@@ -53,7 +54,7 @@ const PodSecurityFunction = "vet-pod-security-standard"
 // ControlsAnnotation records on a rule's Trigger the control numbers of the checks it runs,
 // comma-separated, so a Trigger read from the server says what it covers, and installing again
 // knows which checks it holds.
-const ControlsAnnotation = "Controls"
+const ControlsAnnotation = constants.TriggerControlsAnnotation
 
 // The priorities a check can have by default, from most to least urgent.
 const (
@@ -530,13 +531,7 @@ func CheckExpression(checks []Check) string {
 
 // controlsOf are the control numbers a rule's Trigger records.
 func controlsOf(t *goclientnew.Trigger) []string {
-	var controls []string
-	for _, control := range strings.Split(t.Annotations[ControlsAnnotation], ",") {
-		if control = strings.TrimSpace(control); control != "" {
-			controls = append(controls, control)
-		}
-	}
-	return controls
+	return cubapi.TriggerControls(t.Annotations)
 }
 
 // installedRules reads what the Triggers of a pack's rules say about the checks they run: the

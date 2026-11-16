@@ -409,7 +409,7 @@ func registerVetStarlark(fh handler.FunctionRegistry, converter configkit.Config
 			Validating:            true,
 			Hermetic:              true,
 			Idempotent:            true,
-			Description:           "Validates configuration resources using a Starlark program that defines a validate(r) function returning {passed: bool, details: [string]}. Called once per resource.",
+			Description:           "Fails each resource for which a Starlark program's validate(r) function, called once per resource, returns {passed: false, details: [string]}. Fix: change the resource so the program passes it; its details, or the Trigger's Description, say what it requires.",
 			FunctionType:          api.FunctionTypeCustom,
 			AffectedResourceTypes: []api.ResourceType{api.ResourceTypeAny},
 		},

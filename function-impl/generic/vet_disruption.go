@@ -58,6 +58,7 @@ func registerVetDisruption(fh handler.FunctionRegistry, converter configkit.Conf
 					Required:      false,
 					Description:   `Prefix of the per-severity attributes whose registered paths are checked; "` + DefaultDisruptionAttributePrefix + `" by default, meaning disruption-critical, disruption-high, disruption-medium and disruption-low.`,
 					DataType:      api.DataTypeString,
+					DefaultValue:  DefaultDisruptionAttributePrefix,
 				},
 			},
 			RequiredParameters: 1,
@@ -72,12 +73,13 @@ func registerVetDisruption(fh handler.FunctionRegistry, converter configkit.Conf
 			Validating: true,
 			Hermetic:   true,
 			Idempotent: true,
-			Description: "Validates how disruptive a pending change is, by comparing registered per-severity " +
+			Description: "Fails a pending change at least as disruptive as score-threshold, by comparing registered per-severity " +
 				"paths against the last-released revision. Registering a path under disruption-critical / -high / " +
 				"-medium / -low grades a change to it; the score-threshold decides which severities fail. " +
 				"Unlike vet-immutable this is graded rather than binary, so one rule can block a destructive " +
 				"change while merely reporting a benign one. Validation passes when there is no baseline, " +
-				"because creating a resource is not replacing one.",
+				"because creating a resource is not replacing one. Fix: undo the change, or make a disruptive " +
+				"change deliberately, where this Trigger does not gate it.",
 			FunctionType:          api.FunctionTypeCustom,
 			AffectedResourceTypes: []api.ResourceType{api.ResourceTypeAny},
 		},
