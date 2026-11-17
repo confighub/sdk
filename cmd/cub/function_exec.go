@@ -80,7 +80,8 @@ func init() {
 	functionExecCmd.Flags().BoolVar(&dryRun, "dry-run", false, "dry run mode: execute functions but skip updating configuration data")
 	// The functions in the file can write, so the writes take what function do's do: a claim on
 	// the paths they write, the guards they are cleared for, and the reasons they state.
-	functionExecCmd.Flags().BoolVar(&protectChange, "protect", false, "record the paths this change writes as protected local overrides, so a later merge from upstream does not overwrite them; by default a change claims nothing and each path keeps the protection it already has")
+	functionExecCmd.Flags().BoolVar(&protectChange, "protect", false, "record each unit's Override guard (Override=Upstream, or Override=External for a unit with no upstream unit) on the paths this change writes, so a later merge does not overwrite them")
+	_ = functionExecCmd.Flags().MarkDeprecated("protect", "use --guard Override=Upstream, or Override=External for a unit with no upstream unit, with --clearance for it; --protect records that guard on each unit")
 	addClearanceFlag(functionExecCmd)
 	addGuardFlag(functionExecCmd)
 	addInheritedGuardFlag(functionExecCmd)

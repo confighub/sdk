@@ -2541,22 +2541,26 @@ type ClientInterface interface {
 	// Corresponds with GET /space/{space_id}/unit/{unit_id}/path (the `GetUnitPath` operationId).
 	GetUnitPath(ctx context.Context, spaceId openapi_types.UUID, unitId openapi_types.UUID, params *GetUnitPathParams, reqEditors ...RequestEditorFn) (*http.Response, error)
 
-	// SetUnitProtectionWithBody Set path protection on a unit
+	// SetUnitProtectionWithBody Set path protection on a unit (deprecated)
 	//
-	// Set Protected values on the unit's MutationSources, marking paths as local overrides a merge must not overwrite when subtraction is disabled. The empty path protects a resource as a whole: a merge then withholds every change to it, including its deletion and replacement. A merge's WhereMutation protects further paths on top of these. UnprotectAll clears every Protected value before ResourceProtection is applied. Creates a new revision only if the protection actually changes. Requires Edit permission.
+	// Deprecated: use POST /space/{space_id}/unit/{unit_id}/guard with the Override guard. A local override a merge must not overwrite is an Override guard, and this edits it: a path set protected gets the unit's Override guard -- Override=Upstream for a unit with an upstream unit, Override=External for one without -- and a path set unprotected loses its Override guard. The empty path is the resource as a whole. UnprotectAll removes every Override guard the unit has. The edit is cleared for Override guards only, so a path that carries another guard of its own is refused. Creates a new revision only if the guards actually change, and returns the unit's MutationSources, whose Protected values are no longer read. Requires Edit permission.
 	//
 	// Takes any type of body and a specified content type.
 	//
 	// Corresponds with POST /space/{space_id}/unit/{unit_id}/protection (the `SetUnitProtection` operationId).
+	//
+	// Deprecated: this operation has been marked as deprecated upstream, but no `x-deprecated-reason` was set
 	SetUnitProtectionWithBody(ctx context.Context, spaceId openapi_types.UUID, unitId openapi_types.UUID, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error)
 
-	// SetUnitProtection Set path protection on a unit
+	// SetUnitProtection Set path protection on a unit (deprecated)
 	//
-	// Set Protected values on the unit's MutationSources, marking paths as local overrides a merge must not overwrite when subtraction is disabled. The empty path protects a resource as a whole: a merge then withholds every change to it, including its deletion and replacement. A merge's WhereMutation protects further paths on top of these. UnprotectAll clears every Protected value before ResourceProtection is applied. Creates a new revision only if the protection actually changes. Requires Edit permission.
+	// Deprecated: use POST /space/{space_id}/unit/{unit_id}/guard with the Override guard. A local override a merge must not overwrite is an Override guard, and this edits it: a path set protected gets the unit's Override guard -- Override=Upstream for a unit with an upstream unit, Override=External for one without -- and a path set unprotected loses its Override guard. The empty path is the resource as a whole. UnprotectAll removes every Override guard the unit has. The edit is cleared for Override guards only, so a path that carries another guard of its own is refused. Creates a new revision only if the guards actually change, and returns the unit's MutationSources, whose Protected values are no longer read. Requires Edit permission.
 	//
 	// Takes a body of the `application/json` content type.
 	//
 	// Corresponds with POST /space/{space_id}/unit/{unit_id}/protection (the `SetUnitProtection` operationId).
+	//
+	// Deprecated: this operation has been marked as deprecated upstream, but no `x-deprecated-reason` was set
 	SetUnitProtection(ctx context.Context, spaceId openapi_types.UUID, unitId openapi_types.UUID, body SetUnitProtectionJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error)
 
 	// ListExtendedResources List ExtendedResources
@@ -8979,13 +8983,14 @@ func (c *Client) GetUnitPath(ctx context.Context, spaceId openapi_types.UUID, un
 	return c.Client.Do(req)
 }
 
-// SetUnitProtectionWithBody Set path protection on a unit
+// SetUnitProtectionWithBody Set path protection on a unit (deprecated)
 //
-// Set Protected values on the unit's MutationSources, marking paths as local overrides a merge must not overwrite when subtraction is disabled. The empty path protects a resource as a whole: a merge then withholds every change to it, including its deletion and replacement. A merge's WhereMutation protects further paths on top of these. UnprotectAll clears every Protected value before ResourceProtection is applied. Creates a new revision only if the protection actually changes. Requires Edit permission.
+// Deprecated: use POST /space/{space_id}/unit/{unit_id}/guard with the Override guard. A local override a merge must not overwrite is an Override guard, and this edits it: a path set protected gets the unit's Override guard -- Override=Upstream for a unit with an upstream unit, Override=External for one without -- and a path set unprotected loses its Override guard. The empty path is the resource as a whole. UnprotectAll removes every Override guard the unit has. The edit is cleared for Override guards only, so a path that carries another guard of its own is refused. Creates a new revision only if the guards actually change, and returns the unit's MutationSources, whose Protected values are no longer read. Requires Edit permission.
 //
 // Takes any type of body and a specified content type.
 //
 // Corresponds with POST /space/{space_id}/unit/{unit_id}/protection (the `SetUnitProtection` operationId).
+// Deprecated: this operation has been marked as deprecated upstream, but no `x-deprecated-reason` was set
 func (c *Client) SetUnitProtectionWithBody(ctx context.Context, spaceId openapi_types.UUID, unitId openapi_types.UUID, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error) {
 	req, err := NewSetUnitProtectionRequestWithBody(c.Server, spaceId, unitId, contentType, body)
 	if err != nil {
@@ -8998,13 +9003,14 @@ func (c *Client) SetUnitProtectionWithBody(ctx context.Context, spaceId openapi_
 	return c.Client.Do(req)
 }
 
-// SetUnitProtection Set path protection on a unit
+// SetUnitProtection Set path protection on a unit (deprecated)
 //
-// Set Protected values on the unit's MutationSources, marking paths as local overrides a merge must not overwrite when subtraction is disabled. The empty path protects a resource as a whole: a merge then withholds every change to it, including its deletion and replacement. A merge's WhereMutation protects further paths on top of these. UnprotectAll clears every Protected value before ResourceProtection is applied. Creates a new revision only if the protection actually changes. Requires Edit permission.
+// Deprecated: use POST /space/{space_id}/unit/{unit_id}/guard with the Override guard. A local override a merge must not overwrite is an Override guard, and this edits it: a path set protected gets the unit's Override guard -- Override=Upstream for a unit with an upstream unit, Override=External for one without -- and a path set unprotected loses its Override guard. The empty path is the resource as a whole. UnprotectAll removes every Override guard the unit has. The edit is cleared for Override guards only, so a path that carries another guard of its own is refused. Creates a new revision only if the guards actually change, and returns the unit's MutationSources, whose Protected values are no longer read. Requires Edit permission.
 //
 // Takes a body of the `application/json` content type.
 //
 // Corresponds with POST /space/{space_id}/unit/{unit_id}/protection (the `SetUnitProtection` operationId).
+// Deprecated: this operation has been marked as deprecated upstream, but no `x-deprecated-reason` was set
 func (c *Client) SetUnitProtection(ctx context.Context, spaceId openapi_types.UUID, unitId openapi_types.UUID, body SetUnitProtectionJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error) {
 	req, err := NewSetUnitProtectionRequest(c.Server, spaceId, unitId, body)
 	if err != nil {
@@ -47770,22 +47776,26 @@ type ClientWithResponsesInterface interface {
 	// Corresponds with GET /space/{space_id}/unit/{unit_id}/path (the `GetUnitPath` operationId).
 	GetUnitPathWithResponse(ctx context.Context, spaceId openapi_types.UUID, unitId openapi_types.UUID, params *GetUnitPathParams, reqEditors ...RequestEditorFn) (*GetUnitPathResponse, error)
 
-	// SetUnitProtectionWithBodyWithResponse Set path protection on a unit
+	// SetUnitProtectionWithBodyWithResponse Set path protection on a unit (deprecated)
 	//
-	// Set Protected values on the unit's MutationSources, marking paths as local overrides a merge must not overwrite when subtraction is disabled. The empty path protects a resource as a whole: a merge then withholds every change to it, including its deletion and replacement. A merge's WhereMutation protects further paths on top of these. UnprotectAll clears every Protected value before ResourceProtection is applied. Creates a new revision only if the protection actually changes. Requires Edit permission.
+	// Deprecated: use POST /space/{space_id}/unit/{unit_id}/guard with the Override guard. A local override a merge must not overwrite is an Override guard, and this edits it: a path set protected gets the unit's Override guard -- Override=Upstream for a unit with an upstream unit, Override=External for one without -- and a path set unprotected loses its Override guard. The empty path is the resource as a whole. UnprotectAll removes every Override guard the unit has. The edit is cleared for Override guards only, so a path that carries another guard of its own is refused. Creates a new revision only if the guards actually change, and returns the unit's MutationSources, whose Protected values are no longer read. Requires Edit permission.
 	//
 	// Takes any type of body and a specified content type, and returns a wrapper object for the known response body format(s).
 	//
 	// Corresponds with POST /space/{space_id}/unit/{unit_id}/protection (the `SetUnitProtection` operationId).
+	//
+	// Deprecated: this operation has been marked as deprecated upstream, but no `x-deprecated-reason` was set
 	SetUnitProtectionWithBodyWithResponse(ctx context.Context, spaceId openapi_types.UUID, unitId openapi_types.UUID, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*SetUnitProtectionResponse, error)
 
-	// SetUnitProtectionWithResponse Set path protection on a unit
+	// SetUnitProtectionWithResponse Set path protection on a unit (deprecated)
 	//
-	// Set Protected values on the unit's MutationSources, marking paths as local overrides a merge must not overwrite when subtraction is disabled. The empty path protects a resource as a whole: a merge then withholds every change to it, including its deletion and replacement. A merge's WhereMutation protects further paths on top of these. UnprotectAll clears every Protected value before ResourceProtection is applied. Creates a new revision only if the protection actually changes. Requires Edit permission.
+	// Deprecated: use POST /space/{space_id}/unit/{unit_id}/guard with the Override guard. A local override a merge must not overwrite is an Override guard, and this edits it: a path set protected gets the unit's Override guard -- Override=Upstream for a unit with an upstream unit, Override=External for one without -- and a path set unprotected loses its Override guard. The empty path is the resource as a whole. UnprotectAll removes every Override guard the unit has. The edit is cleared for Override guards only, so a path that carries another guard of its own is refused. Creates a new revision only if the guards actually change, and returns the unit's MutationSources, whose Protected values are no longer read. Requires Edit permission.
 	//
 	// Takes a body of the `application/json` content type, and returns a wrapper object for the known response body format(s).
 	//
 	// Corresponds with POST /space/{space_id}/unit/{unit_id}/protection (the `SetUnitProtection` operationId).
+	//
+	// Deprecated: this operation has been marked as deprecated upstream, but no `x-deprecated-reason` was set
 	SetUnitProtectionWithResponse(ctx context.Context, spaceId openapi_types.UUID, unitId openapi_types.UUID, body SetUnitProtectionJSONRequestBody, reqEditors ...RequestEditorFn) (*SetUnitProtectionResponse, error)
 
 	// ListExtendedResourcesWithResponse List ExtendedResources
@@ -80284,13 +80294,15 @@ func (c *ClientWithResponses) GetUnitPathWithResponse(ctx context.Context, space
 	return ParseGetUnitPathResponse(rsp)
 }
 
-// SetUnitProtectionWithBodyWithResponse Set path protection on a unit
+// SetUnitProtectionWithBodyWithResponse Set path protection on a unit (deprecated)
 //
-// Set Protected values on the unit's MutationSources, marking paths as local overrides a merge must not overwrite when subtraction is disabled. The empty path protects a resource as a whole: a merge then withholds every change to it, including its deletion and replacement. A merge's WhereMutation protects further paths on top of these. UnprotectAll clears every Protected value before ResourceProtection is applied. Creates a new revision only if the protection actually changes. Requires Edit permission.
+// Deprecated: use POST /space/{space_id}/unit/{unit_id}/guard with the Override guard. A local override a merge must not overwrite is an Override guard, and this edits it: a path set protected gets the unit's Override guard -- Override=Upstream for a unit with an upstream unit, Override=External for one without -- and a path set unprotected loses its Override guard. The empty path is the resource as a whole. UnprotectAll removes every Override guard the unit has. The edit is cleared for Override guards only, so a path that carries another guard of its own is refused. Creates a new revision only if the guards actually change, and returns the unit's MutationSources, whose Protected values are no longer read. Requires Edit permission.
 //
 // Takes any type of body and a specified content type, and returns a wrapper object for the known response body format(s).
 //
 // Corresponds with POST /space/{space_id}/unit/{unit_id}/protection (the `SetUnitProtection` operationId).
+//
+// Deprecated: this operation has been marked as deprecated upstream, but no `x-deprecated-reason` was set
 func (c *ClientWithResponses) SetUnitProtectionWithBodyWithResponse(ctx context.Context, spaceId openapi_types.UUID, unitId openapi_types.UUID, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*SetUnitProtectionResponse, error) {
 	rsp, err := c.SetUnitProtectionWithBody(ctx, spaceId, unitId, contentType, body, reqEditors...)
 	if err != nil {
@@ -80299,13 +80311,14 @@ func (c *ClientWithResponses) SetUnitProtectionWithBodyWithResponse(ctx context.
 	return ParseSetUnitProtectionResponse(rsp)
 }
 
-// SetUnitProtectionWithResponse Set path protection on a unit
+// SetUnitProtectionWithResponse Set path protection on a unit (deprecated)
 //
-// Set Protected values on the unit's MutationSources, marking paths as local overrides a merge must not overwrite when subtraction is disabled. The empty path protects a resource as a whole: a merge then withholds every change to it, including its deletion and replacement. A merge's WhereMutation protects further paths on top of these. UnprotectAll clears every Protected value before ResourceProtection is applied. Creates a new revision only if the protection actually changes. Requires Edit permission.
+// Deprecated: use POST /space/{space_id}/unit/{unit_id}/guard with the Override guard. A local override a merge must not overwrite is an Override guard, and this edits it: a path set protected gets the unit's Override guard -- Override=Upstream for a unit with an upstream unit, Override=External for one without -- and a path set unprotected loses its Override guard. The empty path is the resource as a whole. UnprotectAll removes every Override guard the unit has. The edit is cleared for Override guards only, so a path that carries another guard of its own is refused. Creates a new revision only if the guards actually change, and returns the unit's MutationSources, whose Protected values are no longer read. Requires Edit permission.
 //
 // Takes a body of the `application/json` content type, and returns a wrapper object for the known response body format(s).
 //
 // Corresponds with POST /space/{space_id}/unit/{unit_id}/protection (the `SetUnitProtection` operationId).
+// Deprecated: this operation has been marked as deprecated upstream, but no `x-deprecated-reason` was set
 func (c *ClientWithResponses) SetUnitProtectionWithResponse(ctx context.Context, spaceId openapi_types.UUID, unitId openapi_types.UUID, body SetUnitProtectionJSONRequestBody, reqEditors ...RequestEditorFn) (*SetUnitProtectionResponse, error) {
 	rsp, err := c.SetUnitProtection(ctx, spaceId, unitId, body, reqEditors...)
 	if err != nil {

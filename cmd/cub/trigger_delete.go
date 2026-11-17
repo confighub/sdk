@@ -16,6 +16,9 @@ var triggerDeleteCmd = &cobra.Command{
 	Short: "Delete a trigger or multiple triggers",
 	Long: getCommandHelp(`Delete a trigger or multiple triggers using bulk operations.
 
+Deleting a trigger takes back the guards it set on the paths it last wrote, in every unit it
+wrote, since nothing maintains them any more. What it wrote stays.
+
 Single trigger delete:
 `+"```"+`
   cub trigger delete my-trigger

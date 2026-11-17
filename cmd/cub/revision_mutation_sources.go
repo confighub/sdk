@@ -51,16 +51,16 @@ Examples:
   # Every revision of a unit, with the revision each row belongs to
   cub revision mutation-sources --space my-space my-deployment -o jq='.[].RevisionNum'
 
-  # The revisions of a unit in which spec.replicas was protected
+  # The revisions of a unit in which spec.replicas was last set by an update
   cub revision mutation-sources --space my-space my-deployment \
-    --where "MutationSources.*.PathMutationMap.spec~1replicas.Protected = true"
+    --where "MutationSources.*.PathMutationMap.spec~1replicas.MutationType = 'Update'"
 
   # For each unit in a space, the newest revision a change set made
   cub revision mutation-sources --space my-space --where "ChangeSetID = '<changeset-id>'"
 
-  # Every revision in the organization with a protected path, not only the newest per unit
+  # Every revision in the organization recording a deleted path, not only the newest per unit
   cub revision mutation-sources --distinct-on Off \
-    --where "MutationSources.*.PathMutationMap.*.Protected = true"
+    --where "MutationSources.*.PathMutationMap.*.MutationType = 'Delete'"
 `+"```"+`
 `, ""),
 	Args:        cobra.RangeArgs(0, 2),

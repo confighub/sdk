@@ -41,16 +41,6 @@ func displayUnitPath(report *blame.PathReport) {
 	}
 	unitPathValue(0, "Value", f.Value)
 	unitPathLine(0, "Released", report.ReleaseMessage)
-	switch {
-	case f.Deleted && f.Protected:
-		unitPathLine(0, "Protected", "yes: a merge from upstream leaves it deleted")
-	case f.ResourceProtected && f.Path == "":
-		unitPathLine(0, "Protected", "yes: the resource is protected as a whole, so a merge from upstream leaves all of it alone")
-	case f.ResourceProtected:
-		unitPathLine(0, "Protected", "yes: its resource is protected as a whole, so a merge from upstream leaves all of it alone")
-	case f.Protected:
-		unitPathLine(0, "Protected", "yes: a local override, which a merge from upstream leaves alone")
-	}
 	if len(f.Guards) > 0 {
 		unitPathLine(0, "Guards", blame.FormatFieldGuards(f.Guards, f.InheritedGuards))
 	}

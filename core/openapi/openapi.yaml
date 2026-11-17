@@ -1873,7 +1873,7 @@ paths:
           An example conjunction is:
           `CreatedAt >= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.
 
-          Supported attributes for filtering on Unit: Annotations, ApplyGates, ApplyWarnings, ChangeSetID, Conflicts, CreatedAt, DataHash, DeleteGates, DestroyGates, DisplayName, FromLinkID, HeadRevisionID, HeadRevisionNum, HeadUnitEventNum, HiddenReason, Labels, LastChangeDescription, LastReleasedRevisionNum, LinkFindings, MutationSources, NeededPaths, OrganizationID, Permissions, ProvidedPaths, Slug, SpaceID, TargetID, ToolchainType, UnitID, Unreleasable, UpdatedAt, UpstreamRevisionNum, UpstreamSpaceID, UpstreamUnitID, ValidationErrors, ValidationPassed, ValidationResults, ValidationSkipped, ValidationTriggerIDs, ValidationWarnings, ValueTriggerIDs, Values.
+          Supported attributes for filtering on Unit: Annotations, ApplyGates, ApplyWarnings, ChangeSetID, Conflicts, CreatedAt, DataHash, DeleteGates, DestroyGates, DisplayName, FromLinkID, HeadRevisionID, HeadRevisionNum, HeadUnitEventNum, HiddenReason, Labels, LastChangeDescription, LastReleasedRevisionNum, LinkFindings, MutationSources, NeededPaths, OrganizationID, PathAnnotations, Permissions, ProvidedPaths, Slug, SpaceID, TargetID, ToolchainType, UnitID, Unreleasable, UpdatedAt, UpstreamRevisionNum, UpstreamSpaceID, UpstreamUnitID, ValidationErrors, ValidationPassed, ValidationResults, ValidationSkipped, ValidationTriggerIDs, ValidationWarnings, ValueTriggerIDs, Values.
 
           The Units to create entities from, with from_backing_units.
 
@@ -3475,7 +3475,7 @@ paths:
           An example conjunction is:
           `CreatedAt >= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.
 
-          Supported attributes for filtering on Unit: Annotations, ApplyGates, ApplyWarnings, ChangeSetID, Conflicts, CreatedAt, DataHash, DeleteGates, DestroyGates, DisplayName, FromLinkID, HeadRevisionID, HeadRevisionNum, HeadUnitEventNum, HiddenReason, Labels, LastChangeDescription, LastReleasedRevisionNum, LinkFindings, MutationSources, NeededPaths, OrganizationID, Permissions, ProvidedPaths, Slug, SpaceID, TargetID, ToolchainType, UnitID, Unreleasable, UpdatedAt, UpstreamRevisionNum, UpstreamSpaceID, UpstreamUnitID, ValidationErrors, ValidationPassed, ValidationResults, ValidationSkipped, ValidationTriggerIDs, ValidationWarnings, ValueTriggerIDs, Values.
+          Supported attributes for filtering on Unit: Annotations, ApplyGates, ApplyWarnings, ChangeSetID, Conflicts, CreatedAt, DataHash, DeleteGates, DestroyGates, DisplayName, FromLinkID, HeadRevisionID, HeadRevisionNum, HeadUnitEventNum, HiddenReason, Labels, LastChangeDescription, LastReleasedRevisionNum, LinkFindings, MutationSources, NeededPaths, OrganizationID, PathAnnotations, Permissions, ProvidedPaths, Slug, SpaceID, TargetID, ToolchainType, UnitID, Unreleasable, UpdatedAt, UpstreamRevisionNum, UpstreamSpaceID, UpstreamUnitID, ValidationErrors, ValidationPassed, ValidationResults, ValidationSkipped, ValidationTriggerIDs, ValidationWarnings, ValueTriggerIDs, Values.
 
           The Units to create entities from, with from_backing_units.
 
@@ -7792,7 +7792,7 @@ paths:
           An example conjunction is:
           `CreatedAt >= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.
 
-          Supported attributes for filtering on Unit: Annotations, ApplyGates, ApplyWarnings, ChangeSetID, Conflicts, CreatedAt, DataHash, DeleteGates, DestroyGates, DisplayName, FromLinkID, HeadRevisionID, HeadRevisionNum, HeadUnitEventNum, HiddenReason, Labels, LastChangeDescription, LastReleasedRevisionNum, LinkFindings, MutationSources, NeededPaths, OrganizationID, Permissions, ProvidedPaths, Slug, SpaceID, TargetID, ToolchainType, UnitID, Unreleasable, UpdatedAt, UpstreamRevisionNum, UpstreamSpaceID, UpstreamUnitID, ValidationErrors, ValidationPassed, ValidationResults, ValidationSkipped, ValidationTriggerIDs, ValidationWarnings, ValueTriggerIDs, Values.
+          Supported attributes for filtering on Unit: Annotations, ApplyGates, ApplyWarnings, ChangeSetID, Conflicts, CreatedAt, DataHash, DeleteGates, DestroyGates, DisplayName, FromLinkID, HeadRevisionID, HeadRevisionNum, HeadUnitEventNum, HiddenReason, Labels, LastChangeDescription, LastReleasedRevisionNum, LinkFindings, MutationSources, NeededPaths, OrganizationID, PathAnnotations, Permissions, ProvidedPaths, Slug, SpaceID, TargetID, ToolchainType, UnitID, Unreleasable, UpdatedAt, UpstreamRevisionNum, UpstreamSpaceID, UpstreamUnitID, ValidationErrors, ValidationPassed, ValidationResults, ValidationSkipped, ValidationTriggerIDs, ValidationWarnings, ValueTriggerIDs, Values.
 
           The Units to create entities from, with from_backing_units.
 
@@ -9264,7 +9264,7 @@ paths:
           An example conjunction is:
           `CreatedAt >= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.
 
-          Supported attributes for filtering on Unit: Annotations, ApplyGates, ApplyWarnings, ChangeSetID, Conflicts, CreatedAt, DataHash, DeleteGates, DestroyGates, DisplayName, FromLinkID, HeadRevisionID, HeadRevisionNum, HeadUnitEventNum, HiddenReason, Labels, LastChangeDescription, LastReleasedRevisionNum, LinkFindings, MutationSources, NeededPaths, OrganizationID, Permissions, ProvidedPaths, Slug, SpaceID, TargetID, ToolchainType, UnitID, Unreleasable, UpdatedAt, UpstreamRevisionNum, UpstreamSpaceID, UpstreamUnitID, ValidationErrors, ValidationPassed, ValidationResults, ValidationSkipped, ValidationTriggerIDs, ValidationWarnings, ValueTriggerIDs, Values.
+          Supported attributes for filtering on Unit: Annotations, ApplyGates, ApplyWarnings, ChangeSetID, Conflicts, CreatedAt, DataHash, DeleteGates, DestroyGates, DisplayName, FromLinkID, HeadRevisionID, HeadRevisionNum, HeadUnitEventNum, HiddenReason, Labels, LastChangeDescription, LastReleasedRevisionNum, LinkFindings, MutationSources, NeededPaths, OrganizationID, PathAnnotations, Permissions, ProvidedPaths, Slug, SpaceID, TargetID, ToolchainType, UnitID, Unreleasable, UpdatedAt, UpstreamRevisionNum, UpstreamSpaceID, UpstreamUnitID, ValidationErrors, ValidationPassed, ValidationResults, ValidationSkipped, ValidationTriggerIDs, ValidationWarnings, ValueTriggerIDs, Values.
 
           The Units to create entities from, with from_backing_units.
 
@@ -12127,7 +12127,7 @@ paths:
           An example conjunction is:
           `CreatedAt >= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.
 
-          Supported attributes for filtering on Unit: Annotations, ApplyGates, ApplyWarnings, ChangeSetID, Conflicts, CreatedAt, DataHash, DeleteGates, DestroyGates, DisplayName, FromLinkID, HeadRevisionID, HeadRevisionNum, HeadUnitEventNum, HiddenReason, Labels, LastChangeDescription, LastReleasedRevisionNum, LinkFindings, MutationSources, NeededPaths, OrganizationID, Permissions, ProvidedPaths, Slug, SpaceID, TargetID, ToolchainType, UnitID, Unreleasable, UpdatedAt, UpstreamRevisionNum, UpstreamSpaceID, UpstreamUnitID, ValidationErrors, ValidationPassed, ValidationResults, ValidationSkipped, ValidationTriggerIDs, ValidationWarnings, ValueTriggerIDs, Values.
+          Supported attributes for filtering on Unit: Annotations, ApplyGates, ApplyWarnings, ChangeSetID, Conflicts, CreatedAt, DataHash, DeleteGates, DestroyGates, DisplayName, FromLinkID, HeadRevisionID, HeadRevisionNum, HeadUnitEventNum, HiddenReason, Labels, LastChangeDescription, LastReleasedRevisionNum, LinkFindings, MutationSources, NeededPaths, OrganizationID, PathAnnotations, Permissions, ProvidedPaths, Slug, SpaceID, TargetID, ToolchainType, UnitID, Unreleasable, UpdatedAt, UpstreamRevisionNum, UpstreamSpaceID, UpstreamUnitID, ValidationErrors, ValidationPassed, ValidationResults, ValidationSkipped, ValidationTriggerIDs, ValidationWarnings, ValueTriggerIDs, Values.
 
           The Units to create entities from, with from_backing_units.
 
@@ -12643,11 +12643,12 @@ paths:
         required: false
         schema:
           type: string
-      - description: 'Record the paths this operation writes as protected local overrides,
-          so a later merge from upstream does not overwrite them. Without it the operation
-          claims nothing: each written path keeps whatever the Unit already has for
-          it, and a path with no history is left unprotected. It only ever adds protection
-          -- re-opening a path is the /protection API (cub unit set-protection --unprotect).'
+      - deprecated: true
+        description: 'Deprecated: use guards, as {"Override":"Upstream"} or {"Override":"External"}.
+          Records the paths this operation writes as local overrides a merge must
+          not overwrite: each Unit''s Override guard -- Override=Upstream for a Unit
+          with an upstream Unit, Override=External for one without -- with the clearance
+          to write over one. A guard this request names under Override wins.'
         in: query
         name: protect
         required: false
@@ -12764,7 +12765,7 @@ paths:
           An example conjunction is:
           `CreatedAt >= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.
 
-          Supported attributes for filtering on Unit: Annotations, ApplyGates, ApplyWarnings, ChangeSetID, Conflicts, CreatedAt, DataHash, DeleteGates, DestroyGates, DisplayName, FromLinkID, HeadRevisionID, HeadRevisionNum, HeadUnitEventNum, HiddenReason, Labels, LastChangeDescription, LastReleasedRevisionNum, LinkFindings, MutationSources, NeededPaths, OrganizationID, Permissions, ProvidedPaths, Slug, SpaceID, TargetID, ToolchainType, UnitID, Unreleasable, UpdatedAt, UpstreamRevisionNum, UpstreamSpaceID, UpstreamUnitID, ValidationErrors, ValidationPassed, ValidationResults, ValidationSkipped, ValidationTriggerIDs, ValidationWarnings, ValueTriggerIDs, Values.
+          Supported attributes for filtering on Unit: Annotations, ApplyGates, ApplyWarnings, ChangeSetID, Conflicts, CreatedAt, DataHash, DeleteGates, DestroyGates, DisplayName, FromLinkID, HeadRevisionID, HeadRevisionNum, HeadUnitEventNum, HiddenReason, Labels, LastChangeDescription, LastReleasedRevisionNum, LinkFindings, MutationSources, NeededPaths, OrganizationID, PathAnnotations, Permissions, ProvidedPaths, Slug, SpaceID, TargetID, ToolchainType, UnitID, Unreleasable, UpdatedAt, UpstreamRevisionNum, UpstreamSpaceID, UpstreamUnitID, ValidationErrors, ValidationPassed, ValidationResults, ValidationSkipped, ValidationTriggerIDs, ValidationWarnings, ValueTriggerIDs, Values.
 
           Finding all units created by cloning can be done using the expression `UpstreamRevisionNum > 0`. Clones of a specific unit can be found by additionally filtering based on `UpstreamUnitID`. Units never released can be found using `LastReleasedRevisionNum = 0`. Units with unreleased changes can be found with `HeadRevisionNum > LastReleasedRevisionNum AND ReleaseTargetID IS NOT NULL AND Unreleasable = false`.
 
@@ -14576,7 +14577,7 @@ paths:
           An example conjunction is:
           `CreatedAt >= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.
 
-          Supported attributes for filtering on Unit: Annotations, ApplyGates, ApplyWarnings, ChangeSetID, Conflicts, CreatedAt, DataHash, DeleteGates, DestroyGates, DisplayName, FromLinkID, HeadRevisionID, HeadRevisionNum, HeadUnitEventNum, HiddenReason, Labels, LastChangeDescription, LastReleasedRevisionNum, LinkFindings, MutationSources, NeededPaths, OrganizationID, Permissions, ProvidedPaths, Slug, SpaceID, TargetID, ToolchainType, UnitID, Unreleasable, UpdatedAt, UpstreamRevisionNum, UpstreamSpaceID, UpstreamUnitID, ValidationErrors, ValidationPassed, ValidationResults, ValidationSkipped, ValidationTriggerIDs, ValidationWarnings, ValueTriggerIDs, Values.
+          Supported attributes for filtering on Unit: Annotations, ApplyGates, ApplyWarnings, ChangeSetID, Conflicts, CreatedAt, DataHash, DeleteGates, DestroyGates, DisplayName, FromLinkID, HeadRevisionID, HeadRevisionNum, HeadUnitEventNum, HiddenReason, Labels, LastChangeDescription, LastReleasedRevisionNum, LinkFindings, MutationSources, NeededPaths, OrganizationID, PathAnnotations, Permissions, ProvidedPaths, Slug, SpaceID, TargetID, ToolchainType, UnitID, Unreleasable, UpdatedAt, UpstreamRevisionNum, UpstreamSpaceID, UpstreamUnitID, ValidationErrors, ValidationPassed, ValidationResults, ValidationSkipped, ValidationTriggerIDs, ValidationWarnings, ValueTriggerIDs, Values.
 
           The Units to create entities from, with from_backing_units.
 
@@ -15707,8 +15708,10 @@ paths:
                     a later operation must be cleared for them before overwriting.
                     Sibling to Protect: Protect claims the paths, Guards say why.
                     Add and overwrite only -- retiring a guard is the /guard API (cub
-                    unit set-guard --remove-guard). Refused on UpgradeUnit and MergeUnits
-                    links, whose guards arrive by propagation from upstream.'
+                    unit set-guard --remove-guard), except that deleting the link
+                    takes back the guards it set on the paths it last wrote. Refused
+                    on UpgradeUnit and MergeUnits links, whose guards arrive by propagation
+                    from upstream.'
                   nullable: true
                   type: object
                 HiddenReason:
@@ -16211,7 +16214,7 @@ paths:
           An example conjunction is:
           `CreatedAt >= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.
 
-          Supported attributes for filtering on Unit: Annotations, ApplyGates, ApplyWarnings, ChangeSetID, Conflicts, CreatedAt, DataHash, DeleteGates, DestroyGates, DisplayName, FromLinkID, HeadRevisionID, HeadRevisionNum, HeadUnitEventNum, HiddenReason, Labels, LastChangeDescription, LastReleasedRevisionNum, LinkFindings, MutationSources, NeededPaths, OrganizationID, Permissions, ProvidedPaths, Slug, SpaceID, TargetID, ToolchainType, UnitID, Unreleasable, UpdatedAt, UpstreamRevisionNum, UpstreamSpaceID, UpstreamUnitID, ValidationErrors, ValidationPassed, ValidationResults, ValidationSkipped, ValidationTriggerIDs, ValidationWarnings, ValueTriggerIDs, Values.
+          Supported attributes for filtering on Unit: Annotations, ApplyGates, ApplyWarnings, ChangeSetID, Conflicts, CreatedAt, DataHash, DeleteGates, DestroyGates, DisplayName, FromLinkID, HeadRevisionID, HeadRevisionNum, HeadUnitEventNum, HiddenReason, Labels, LastChangeDescription, LastReleasedRevisionNum, LinkFindings, MutationSources, NeededPaths, OrganizationID, PathAnnotations, Permissions, ProvidedPaths, Slug, SpaceID, TargetID, ToolchainType, UnitID, Unreleasable, UpdatedAt, UpstreamRevisionNum, UpstreamSpaceID, UpstreamUnitID, ValidationErrors, ValidationPassed, ValidationResults, ValidationSkipped, ValidationTriggerIDs, ValidationWarnings, ValueTriggerIDs, Values.
 
           The Units to create entities from, with from_backing_units, or to create links between, with from_refs.
 
@@ -16318,8 +16321,10 @@ paths:
                     a later operation must be cleared for them before overwriting.
                     Sibling to Protect: Protect claims the paths, Guards say why.
                     Add and overwrite only -- retiring a guard is the /guard API (cub
-                    unit set-guard --remove-guard). Refused on UpgradeUnit and MergeUnits
-                    links, whose guards arrive by propagation from upstream.'
+                    unit set-guard --remove-guard), except that deleting the link
+                    takes back the guards it set on the paths it last wrote. Refused
+                    on UpgradeUnit and MergeUnits links, whose guards arrive by propagation
+                    from upstream.'
                   nullable: true
                   type: object
                 HiddenReason:
@@ -29560,11 +29565,12 @@ paths:
         required: false
         schema:
           type: string
-      - description: 'Record the paths this operation writes as protected local overrides,
-          so a later merge from upstream does not overwrite them. Without it the operation
-          claims nothing: each written path keeps whatever the Unit already has for
-          it, and a path with no history is left unprotected. It only ever adds protection
-          -- re-opening a path is the /protection API (cub unit set-protection --unprotect).'
+      - deprecated: true
+        description: 'Deprecated: use guards, as {"Override":"Upstream"} or {"Override":"External"}.
+          Records the paths this operation writes as local overrides a merge must
+          not overwrite: each Unit''s Override guard -- Override=Upstream for a Unit
+          with an upstream Unit, Override=External for one without -- with the clearance
+          to write over one. A guard this request names under Override wins.'
         in: query
         name: protect
         required: false
@@ -29681,7 +29687,7 @@ paths:
           An example conjunction is:
           `CreatedAt >= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.
 
-          Supported attributes for filtering on Unit: Annotations, ApplyGates, ApplyWarnings, ChangeSetID, Conflicts, CreatedAt, DataHash, DeleteGates, DestroyGates, DisplayName, FromLinkID, HeadRevisionID, HeadRevisionNum, HeadUnitEventNum, HiddenReason, Labels, LastChangeDescription, LastReleasedRevisionNum, LinkFindings, MutationSources, NeededPaths, OrganizationID, Permissions, ProvidedPaths, Slug, SpaceID, TargetID, ToolchainType, UnitID, Unreleasable, UpdatedAt, UpstreamRevisionNum, UpstreamSpaceID, UpstreamUnitID, ValidationErrors, ValidationPassed, ValidationResults, ValidationSkipped, ValidationTriggerIDs, ValidationWarnings, ValueTriggerIDs, Values.
+          Supported attributes for filtering on Unit: Annotations, ApplyGates, ApplyWarnings, ChangeSetID, Conflicts, CreatedAt, DataHash, DeleteGates, DestroyGates, DisplayName, FromLinkID, HeadRevisionID, HeadRevisionNum, HeadUnitEventNum, HiddenReason, Labels, LastChangeDescription, LastReleasedRevisionNum, LinkFindings, MutationSources, NeededPaths, OrganizationID, PathAnnotations, Permissions, ProvidedPaths, Slug, SpaceID, TargetID, ToolchainType, UnitID, Unreleasable, UpdatedAt, UpstreamRevisionNum, UpstreamSpaceID, UpstreamUnitID, ValidationErrors, ValidationPassed, ValidationResults, ValidationSkipped, ValidationTriggerIDs, ValidationWarnings, ValueTriggerIDs, Values.
 
           Finding all units created by cloning can be done using the expression `UpstreamRevisionNum > 0`. Clones of a specific unit can be found by additionally filtering based on `UpstreamUnitID`. Units never released can be found using `LastReleasedRevisionNum = 0`. Units with unreleased changes can be found with `HeadRevisionNum > LastReleasedRevisionNum AND ReleaseTargetID IS NOT NULL AND Unreleasable = false`.
 
@@ -31493,8 +31499,10 @@ paths:
                     a later operation must be cleared for them before overwriting.
                     Sibling to Protect: Protect claims the paths, Guards say why.
                     Add and overwrite only -- retiring a guard is the /guard API (cub
-                    unit set-guard --remove-guard). Refused on UpgradeUnit and MergeUnits
-                    links, whose guards arrive by propagation from upstream.'
+                    unit set-guard --remove-guard), except that deleting the link
+                    takes back the guards it set on the paths it last wrote. Refused
+                    on UpgradeUnit and MergeUnits links, whose guards arrive by propagation
+                    from upstream.'
                   nullable: true
                   type: object
                 HiddenReason:
@@ -35171,8 +35179,10 @@ paths:
                     a later operation must be cleared for them before overwriting.
                     Sibling to Protect: Protect claims the paths, Guards say why.
                     Add and overwrite only -- retiring a guard is the /guard API (cub
-                    unit set-guard --remove-guard). Only meaningful for a mutating
-                    trigger, and part of the trigger''s Hash, unlike Protect.'
+                    unit set-guard --remove-guard), except that deleting the trigger
+                    takes back the guards it set on the paths it last wrote. Only
+                    meaningful for a mutating trigger, and part of the trigger''s
+                    Hash, unlike Protect.'
                   nullable: true
                   type: object
                 HiddenReason:
@@ -35616,7 +35626,7 @@ paths:
           An example conjunction is:
           `CreatedAt >= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.
 
-          Supported attributes for filtering on Unit: Annotations, ApplyGates, ApplyWarnings, ChangeSetID, Conflicts, CreatedAt, DataHash, DeleteGates, DestroyGates, DisplayName, FromLinkID, HeadRevisionID, HeadRevisionNum, HeadUnitEventNum, HiddenReason, Labels, LastChangeDescription, LastReleasedRevisionNum, LinkFindings, MutationSources, NeededPaths, OrganizationID, Permissions, ProvidedPaths, Slug, SpaceID, TargetID, ToolchainType, UnitID, Unreleasable, UpdatedAt, UpstreamRevisionNum, UpstreamSpaceID, UpstreamUnitID, ValidationErrors, ValidationPassed, ValidationResults, ValidationSkipped, ValidationTriggerIDs, ValidationWarnings, ValueTriggerIDs, Values.
+          Supported attributes for filtering on Unit: Annotations, ApplyGates, ApplyWarnings, ChangeSetID, Conflicts, CreatedAt, DataHash, DeleteGates, DestroyGates, DisplayName, FromLinkID, HeadRevisionID, HeadRevisionNum, HeadUnitEventNum, HiddenReason, Labels, LastChangeDescription, LastReleasedRevisionNum, LinkFindings, MutationSources, NeededPaths, OrganizationID, PathAnnotations, Permissions, ProvidedPaths, Slug, SpaceID, TargetID, ToolchainType, UnitID, Unreleasable, UpdatedAt, UpstreamRevisionNum, UpstreamSpaceID, UpstreamUnitID, ValidationErrors, ValidationPassed, ValidationResults, ValidationSkipped, ValidationTriggerIDs, ValidationWarnings, ValueTriggerIDs, Values.
 
           Finding all units created by cloning can be done using the expression `UpstreamRevisionNum > 0`. Clones of a specific unit can be found by additionally filtering based on `UpstreamUnitID`. Units never released can be found using `LastReleasedRevisionNum = 0`. Units with unreleased changes can be found with `HeadRevisionNum > LastReleasedRevisionNum AND ReleaseTargetID IS NOT NULL AND Unreleasable = false`.
 
@@ -36280,13 +36290,13 @@ paths:
         required: false
         schema:
           type: boolean
-      - description: 'Record the paths this operation writes as protected local overrides,
-          so a later merge from upstream does not overwrite them. Without it the operation
-          claims nothing: each written path keeps whatever the Unit already has for
-          it, and a path with no history is left unprotected. It only ever adds protection
-          -- re-opening a path is the /protection API (cub unit set-protection --unprotect).
-          Has no effect with restore, which rewinds MutationSources to the restored
-          Revision''s stored values wholesale.'
+      - deprecated: true
+        description: 'Deprecated: use guards, as {"Override":"Upstream"} or {"Override":"External"}.
+          Records the paths this operation writes as local overrides a merge must
+          not overwrite: each Unit''s Override guard -- Override=Upstream for a Unit
+          with an upstream Unit, Override=External for one without -- with the clearance
+          to write over one. A guard this request names under Override wins. Has no
+          effect with restore.'
         in: query
         name: protect
         required: false
@@ -36792,13 +36802,13 @@ paths:
         required: false
         schema:
           type: boolean
-      - description: 'Record the paths this operation writes as protected local overrides,
-          so a later merge from upstream does not overwrite them. Without it the operation
-          claims nothing: each written path keeps whatever the Unit already has for
-          it, and a path with no history is left unprotected. It only ever adds protection
-          -- re-opening a path is the /protection API (cub unit set-protection --unprotect).
-          Has no effect with restore, which rewinds MutationSources to the restored
-          Revision''s stored values wholesale.'
+      - deprecated: true
+        description: 'Deprecated: use guards, as {"Override":"Upstream"} or {"Override":"External"}.
+          Records the paths this operation writes as local overrides a merge must
+          not overwrite: each Unit''s Override guard -- Override=Upstream for a Unit
+          with an upstream Unit, Override=External for one without -- with the clearance
+          to write over one. A guard this request names under Override wins. Has no
+          effect with restore.'
         in: query
         name: protect
         required: false
@@ -37501,13 +37511,13 @@ paths:
         required: false
         schema:
           type: boolean
-      - description: 'Record the paths this operation writes as protected local overrides,
-          so a later merge from upstream does not overwrite them. Without it the operation
-          claims nothing: each written path keeps whatever the Unit already has for
-          it, and a path with no history is left unprotected. It only ever adds protection
-          -- re-opening a path is the /protection API (cub unit set-protection --unprotect).
-          Has no effect with restore, which rewinds MutationSources to the restored
-          Revision''s stored values wholesale.'
+      - deprecated: true
+        description: 'Deprecated: use guards, as {"Override":"Upstream"} or {"Override":"External"}.
+          Records the paths this operation writes as local overrides a merge must
+          not overwrite: each Unit''s Override guard -- Override=Upstream for a Unit
+          with an upstream Unit, Override=External for one without -- with the clearance
+          to write over one. A guard this request names under Override wins. Has no
+          effect with restore.'
         in: query
         name: protect
         required: false
@@ -38397,13 +38407,17 @@ paths:
       - Unit
   /space/{space_id}/unit/{unit_id}/protection:
     post:
-      description: 'Set Protected values on the unit''s MutationSources, marking paths
-        as local overrides a merge must not overwrite when subtraction is disabled.
-        The empty path protects a resource as a whole: a merge then withholds every
-        change to it, including its deletion and replacement. A merge''s WhereMutation
-        protects further paths on top of these. UnprotectAll clears every Protected
-        value before ResourceProtection is applied. Creates a new revision only if
-        the protection actually changes. Requires Edit permission.'
+      deprecated: true
+      description: 'Deprecated: use POST /space/{space_id}/unit/{unit_id}/guard with
+        the Override guard. A local override a merge must not overwrite is an Override
+        guard, and this edits it: a path set protected gets the unit''s Override guard
+        -- Override=Upstream for a unit with an upstream unit, Override=External for
+        one without -- and a path set unprotected loses its Override guard. The empty
+        path is the resource as a whole. UnprotectAll removes every Override guard
+        the unit has. The edit is cleared for Override guards only, so a path that
+        carries another guard of its own is refused. Creates a new revision only if
+        the guards actually change, and returns the unit''s MutationSources, whose
+        Protected values are no longer read. Requires Edit permission.'
       operationId: SetUnitProtection
       parameters:
       - description: Unique identifier for a space_id
@@ -38474,7 +38488,7 @@ paths:
               schema:
                 $ref: '#/components/schemas/StandardErrorResponse'
           description: Unexpected error.
-      summary: Set path protection on a unit
+      summary: Set path protection on a unit (deprecated)
       tags:
       - Unit
   /space/{space_id}/unit/{unit_id}/resource:
@@ -43813,7 +43827,7 @@ paths:
           An example conjunction is:
           `CreatedAt >= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.
 
-          Supported attributes for filtering on Unit: Annotations, ApplyGates, ApplyWarnings, ChangeSetID, Conflicts, CreatedAt, DataHash, DeleteGates, DestroyGates, DisplayName, FromLinkID, HeadRevisionID, HeadRevisionNum, HeadUnitEventNum, HiddenReason, Labels, LastChangeDescription, LastReleasedRevisionNum, LinkFindings, MutationSources, NeededPaths, OrganizationID, Permissions, ProvidedPaths, Slug, SpaceID, TargetID, ToolchainType, UnitID, Unreleasable, UpdatedAt, UpstreamRevisionNum, UpstreamSpaceID, UpstreamUnitID, ValidationErrors, ValidationPassed, ValidationResults, ValidationSkipped, ValidationTriggerIDs, ValidationWarnings, ValueTriggerIDs, Values.
+          Supported attributes for filtering on Unit: Annotations, ApplyGates, ApplyWarnings, ChangeSetID, Conflicts, CreatedAt, DataHash, DeleteGates, DestroyGates, DisplayName, FromLinkID, HeadRevisionID, HeadRevisionNum, HeadUnitEventNum, HiddenReason, Labels, LastChangeDescription, LastReleasedRevisionNum, LinkFindings, MutationSources, NeededPaths, OrganizationID, PathAnnotations, Permissions, ProvidedPaths, Slug, SpaceID, TargetID, ToolchainType, UnitID, Unreleasable, UpdatedAt, UpstreamRevisionNum, UpstreamSpaceID, UpstreamUnitID, ValidationErrors, ValidationPassed, ValidationResults, ValidationSkipped, ValidationTriggerIDs, ValidationWarnings, ValueTriggerIDs, Values.
 
           The Units to create entities from, with from_backing_units.
 
@@ -44908,8 +44922,10 @@ paths:
                     a later operation must be cleared for them before overwriting.
                     Sibling to Protect: Protect claims the paths, Guards say why.
                     Add and overwrite only -- retiring a guard is the /guard API (cub
-                    unit set-guard --remove-guard). Only meaningful for a mutating
-                    trigger, and part of the trigger''s Hash, unlike Protect.'
+                    unit set-guard --remove-guard), except that deleting the trigger
+                    takes back the guards it set on the paths it last wrote. Only
+                    meaningful for a mutating trigger, and part of the trigger''s
+                    Hash, unlike Protect.'
                   nullable: true
                   type: object
                 HiddenReason:
@@ -45344,7 +45360,7 @@ paths:
           An example conjunction is:
           `CreatedAt >= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.
 
-          Supported attributes for filtering on Unit: Annotations, ApplyGates, ApplyWarnings, ChangeSetID, Conflicts, CreatedAt, DataHash, DeleteGates, DestroyGates, DisplayName, FromLinkID, HeadRevisionID, HeadRevisionNum, HeadUnitEventNum, HiddenReason, Labels, LastChangeDescription, LastReleasedRevisionNum, LinkFindings, MutationSources, NeededPaths, OrganizationID, Permissions, ProvidedPaths, Slug, SpaceID, TargetID, ToolchainType, UnitID, Unreleasable, UpdatedAt, UpstreamRevisionNum, UpstreamSpaceID, UpstreamUnitID, ValidationErrors, ValidationPassed, ValidationResults, ValidationSkipped, ValidationTriggerIDs, ValidationWarnings, ValueTriggerIDs, Values.
+          Supported attributes for filtering on Unit: Annotations, ApplyGates, ApplyWarnings, ChangeSetID, Conflicts, CreatedAt, DataHash, DeleteGates, DestroyGates, DisplayName, FromLinkID, HeadRevisionID, HeadRevisionNum, HeadUnitEventNum, HiddenReason, Labels, LastChangeDescription, LastReleasedRevisionNum, LinkFindings, MutationSources, NeededPaths, OrganizationID, PathAnnotations, Permissions, ProvidedPaths, Slug, SpaceID, TargetID, ToolchainType, UnitID, Unreleasable, UpdatedAt, UpstreamRevisionNum, UpstreamSpaceID, UpstreamUnitID, ValidationErrors, ValidationPassed, ValidationResults, ValidationSkipped, ValidationTriggerIDs, ValidationWarnings, ValueTriggerIDs, Values.
 
           The Units to create entities from, with from_backing_units.
 
@@ -45452,8 +45468,10 @@ paths:
                     a later operation must be cleared for them before overwriting.
                     Sibling to Protect: Protect claims the paths, Guards say why.
                     Add and overwrite only -- retiring a guard is the /guard API (cub
-                    unit set-guard --remove-guard). Only meaningful for a mutating
-                    trigger, and part of the trigger''s Hash, unlike Protect.'
+                    unit set-guard --remove-guard), except that deleting the trigger
+                    takes back the guards it set on the paths it last wrote. Only
+                    meaningful for a mutating trigger, and part of the trigger''s
+                    Hash, unlike Protect.'
                   nullable: true
                   type: object
                 HiddenReason:
@@ -45844,7 +45862,7 @@ paths:
           An example conjunction is:
           `CreatedAt >= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.
 
-          Supported attributes for filtering on Unit: Annotations, ApplyGates, ApplyWarnings, ChangeSetID, Conflicts, CreatedAt, DataHash, DeleteGates, DestroyGates, DisplayName, FromLinkID, HeadRevisionID, HeadRevisionNum, HeadUnitEventNum, HiddenReason, Labels, LastChangeDescription, LastReleasedRevisionNum, LinkFindings, MutationSources, NeededPaths, OrganizationID, Permissions, ProvidedPaths, Slug, SpaceID, TargetID, ToolchainType, UnitID, Unreleasable, UpdatedAt, UpstreamRevisionNum, UpstreamSpaceID, UpstreamUnitID, ValidationErrors, ValidationPassed, ValidationResults, ValidationSkipped, ValidationTriggerIDs, ValidationWarnings, ValueTriggerIDs, Values.
+          Supported attributes for filtering on Unit: Annotations, ApplyGates, ApplyWarnings, ChangeSetID, Conflicts, CreatedAt, DataHash, DeleteGates, DestroyGates, DisplayName, FromLinkID, HeadRevisionID, HeadRevisionNum, HeadUnitEventNum, HiddenReason, Labels, LastChangeDescription, LastReleasedRevisionNum, LinkFindings, MutationSources, NeededPaths, OrganizationID, PathAnnotations, Permissions, ProvidedPaths, Slug, SpaceID, TargetID, ToolchainType, UnitID, Unreleasable, UpdatedAt, UpstreamRevisionNum, UpstreamSpaceID, UpstreamUnitID, ValidationErrors, ValidationPassed, ValidationResults, ValidationSkipped, ValidationTriggerIDs, ValidationWarnings, ValueTriggerIDs, Values.
 
           Finding all units created by cloning can be done using the expression `UpstreamRevisionNum > 0`. Clones of a specific unit can be found by additionally filtering based on `UpstreamUnitID`. Units never released can be found using `LastReleasedRevisionNum = 0`. Units with unreleased changes can be found with `HeadRevisionNum > LastReleasedRevisionNum AND ReleaseTargetID IS NOT NULL AND Unreleasable = false`.
 
@@ -46073,7 +46091,7 @@ paths:
           An example conjunction is:
           `CreatedAt >= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.
 
-          Supported attributes for filtering on Unit: Annotations, ApplyGates, ApplyWarnings, ChangeSetID, Conflicts, CreatedAt, DataHash, DeleteGates, DestroyGates, DisplayName, FromLinkID, HeadRevisionID, HeadRevisionNum, HeadUnitEventNum, HiddenReason, Labels, LastChangeDescription, LastReleasedRevisionNum, LinkFindings, MutationSources, NeededPaths, OrganizationID, Permissions, ProvidedPaths, Slug, SpaceID, TargetID, ToolchainType, UnitID, Unreleasable, UpdatedAt, UpstreamRevisionNum, UpstreamSpaceID, UpstreamUnitID, ValidationErrors, ValidationPassed, ValidationResults, ValidationSkipped, ValidationTriggerIDs, ValidationWarnings, ValueTriggerIDs, Values.
+          Supported attributes for filtering on Unit: Annotations, ApplyGates, ApplyWarnings, ChangeSetID, Conflicts, CreatedAt, DataHash, DeleteGates, DestroyGates, DisplayName, FromLinkID, HeadRevisionID, HeadRevisionNum, HeadUnitEventNum, HiddenReason, Labels, LastChangeDescription, LastReleasedRevisionNum, LinkFindings, MutationSources, NeededPaths, OrganizationID, PathAnnotations, Permissions, ProvidedPaths, Slug, SpaceID, TargetID, ToolchainType, UnitID, Unreleasable, UpdatedAt, UpstreamRevisionNum, UpstreamSpaceID, UpstreamUnitID, ValidationErrors, ValidationPassed, ValidationResults, ValidationSkipped, ValidationTriggerIDs, ValidationWarnings, ValueTriggerIDs, Values.
 
           Finding all units created by cloning can be done using the expression `UpstreamRevisionNum > 0`. Clones of a specific unit can be found by additionally filtering based on `UpstreamUnitID`. Units never released can be found using `LastReleasedRevisionNum = 0`. Units with unreleased changes can be found with `HeadRevisionNum > LastReleasedRevisionNum AND ReleaseTargetID IS NOT NULL AND Unreleasable = false`.
 
@@ -46404,7 +46422,7 @@ paths:
           An example conjunction is:
           `CreatedAt >= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.
 
-          Supported attributes for filtering on Unit: Annotations, ApplyGates, ApplyWarnings, ChangeSetID, Conflicts, CreatedAt, DataHash, DeleteGates, DestroyGates, DisplayName, FromLinkID, HeadRevisionID, HeadRevisionNum, HeadUnitEventNum, HiddenReason, Labels, LastChangeDescription, LastReleasedRevisionNum, LinkFindings, MutationSources, NeededPaths, OrganizationID, Permissions, ProvidedPaths, Slug, SpaceID, TargetID, ToolchainType, UnitID, Unreleasable, UpdatedAt, UpstreamRevisionNum, UpstreamSpaceID, UpstreamUnitID, ValidationErrors, ValidationPassed, ValidationResults, ValidationSkipped, ValidationTriggerIDs, ValidationWarnings, ValueTriggerIDs, Values.
+          Supported attributes for filtering on Unit: Annotations, ApplyGates, ApplyWarnings, ChangeSetID, Conflicts, CreatedAt, DataHash, DeleteGates, DestroyGates, DisplayName, FromLinkID, HeadRevisionID, HeadRevisionNum, HeadUnitEventNum, HiddenReason, Labels, LastChangeDescription, LastReleasedRevisionNum, LinkFindings, MutationSources, NeededPaths, OrganizationID, PathAnnotations, Permissions, ProvidedPaths, Slug, SpaceID, TargetID, ToolchainType, UnitID, Unreleasable, UpdatedAt, UpstreamRevisionNum, UpstreamSpaceID, UpstreamUnitID, ValidationErrors, ValidationPassed, ValidationResults, ValidationSkipped, ValidationTriggerIDs, ValidationWarnings, ValueTriggerIDs, Values.
 
           Finding all units created by cloning can be done using the expression `UpstreamRevisionNum > 0`. Clones of a specific unit can be found by additionally filtering based on `UpstreamUnitID`. Units never released can be found using `LastReleasedRevisionNum = 0`. Units with unreleased changes can be found with `HeadRevisionNum > LastReleasedRevisionNum AND ReleaseTargetID IS NOT NULL AND Unreleasable = false`.
 
@@ -46511,13 +46529,13 @@ paths:
         required: false
         schema:
           type: boolean
-      - description: 'Record the paths this operation writes as protected local overrides,
-          so a later merge from upstream does not overwrite them. Without it the operation
-          claims nothing: each written path keeps whatever the Unit already has for
-          it, and a path with no history is left unprotected. It only ever adds protection
-          -- re-opening a path is the /protection API (cub unit set-protection --unprotect).
-          Has no effect with restore, which rewinds MutationSources to the restored
-          Revision''s stored values wholesale.'
+      - deprecated: true
+        description: 'Deprecated: use guards, as {"Override":"Upstream"} or {"Override":"External"}.
+          Records the paths this operation writes as local overrides a merge must
+          not overwrite: each Unit''s Override guard -- Override=Upstream for a Unit
+          with an upstream Unit, Override=External for one without -- with the clearance
+          to write over one. A guard this request names under Override wins. Has no
+          effect with restore.'
         in: query
         name: protect
         required: false
@@ -47039,7 +47057,7 @@ paths:
           An example conjunction is:
           `CreatedAt >= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.
 
-          Supported attributes for filtering on Unit: Annotations, ApplyGates, ApplyWarnings, ChangeSetID, Conflicts, CreatedAt, DataHash, DeleteGates, DestroyGates, DisplayName, FromLinkID, HeadRevisionID, HeadRevisionNum, HeadUnitEventNum, HiddenReason, Labels, LastChangeDescription, LastReleasedRevisionNum, LinkFindings, MutationSources, NeededPaths, OrganizationID, Permissions, ProvidedPaths, Slug, SpaceID, TargetID, ToolchainType, UnitID, Unreleasable, UpdatedAt, UpstreamRevisionNum, UpstreamSpaceID, UpstreamUnitID, ValidationErrors, ValidationPassed, ValidationResults, ValidationSkipped, ValidationTriggerIDs, ValidationWarnings, ValueTriggerIDs, Values.
+          Supported attributes for filtering on Unit: Annotations, ApplyGates, ApplyWarnings, ChangeSetID, Conflicts, CreatedAt, DataHash, DeleteGates, DestroyGates, DisplayName, FromLinkID, HeadRevisionID, HeadRevisionNum, HeadUnitEventNum, HiddenReason, Labels, LastChangeDescription, LastReleasedRevisionNum, LinkFindings, MutationSources, NeededPaths, OrganizationID, PathAnnotations, Permissions, ProvidedPaths, Slug, SpaceID, TargetID, ToolchainType, UnitID, Unreleasable, UpdatedAt, UpstreamRevisionNum, UpstreamSpaceID, UpstreamUnitID, ValidationErrors, ValidationPassed, ValidationResults, ValidationSkipped, ValidationTriggerIDs, ValidationWarnings, ValueTriggerIDs, Values.
 
           Finding all units created by cloning can be done using the expression `UpstreamRevisionNum > 0`. Clones of a specific unit can be found by additionally filtering based on `UpstreamUnitID`. Units never released can be found using `LastReleasedRevisionNum = 0`. Units with unreleased changes can be found with `HeadRevisionNum > LastReleasedRevisionNum AND ReleaseTargetID IS NOT NULL AND Unreleasable = false`.
 
@@ -47529,7 +47547,7 @@ paths:
           An example conjunction is:
           `CreatedAt >= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.
 
-          Supported attributes for filtering on Unit: Annotations, ApplyGates, ApplyWarnings, ChangeSetID, Conflicts, CreatedAt, DataHash, DeleteGates, DestroyGates, DisplayName, FromLinkID, HeadRevisionID, HeadRevisionNum, HeadUnitEventNum, HiddenReason, Labels, LastChangeDescription, LastReleasedRevisionNum, LinkFindings, MutationSources, NeededPaths, OrganizationID, Permissions, ProvidedPaths, Slug, SpaceID, TargetID, ToolchainType, UnitID, Unreleasable, UpdatedAt, UpstreamRevisionNum, UpstreamSpaceID, UpstreamUnitID, ValidationErrors, ValidationPassed, ValidationResults, ValidationSkipped, ValidationTriggerIDs, ValidationWarnings, ValueTriggerIDs, Values.
+          Supported attributes for filtering on Unit: Annotations, ApplyGates, ApplyWarnings, ChangeSetID, Conflicts, CreatedAt, DataHash, DeleteGates, DestroyGates, DisplayName, FromLinkID, HeadRevisionID, HeadRevisionNum, HeadUnitEventNum, HiddenReason, Labels, LastChangeDescription, LastReleasedRevisionNum, LinkFindings, MutationSources, NeededPaths, OrganizationID, PathAnnotations, Permissions, ProvidedPaths, Slug, SpaceID, TargetID, ToolchainType, UnitID, Unreleasable, UpdatedAt, UpstreamRevisionNum, UpstreamSpaceID, UpstreamUnitID, ValidationErrors, ValidationPassed, ValidationResults, ValidationSkipped, ValidationTriggerIDs, ValidationWarnings, ValueTriggerIDs, Values.
 
           Finding all units created by cloning can be done using the expression `UpstreamRevisionNum > 0`. Clones of a specific unit can be found by additionally filtering based on `UpstreamUnitID`. Units never released can be found using `LastReleasedRevisionNum = 0`. Units with unreleased changes can be found with `HeadRevisionNum > LastReleasedRevisionNum AND ReleaseTargetID IS NOT NULL AND Unreleasable = false`.
 
@@ -47719,7 +47737,7 @@ paths:
           An example conjunction is:
           `CreatedAt >= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.
 
-          Supported attributes for filtering on Unit: Annotations, ApplyGates, ApplyWarnings, ChangeSetID, Conflicts, CreatedAt, DataHash, DeleteGates, DestroyGates, DisplayName, FromLinkID, HeadRevisionID, HeadRevisionNum, HeadUnitEventNum, HiddenReason, Labels, LastChangeDescription, LastReleasedRevisionNum, LinkFindings, MutationSources, NeededPaths, OrganizationID, Permissions, ProvidedPaths, Slug, SpaceID, TargetID, ToolchainType, UnitID, Unreleasable, UpdatedAt, UpstreamRevisionNum, UpstreamSpaceID, UpstreamUnitID, ValidationErrors, ValidationPassed, ValidationResults, ValidationSkipped, ValidationTriggerIDs, ValidationWarnings, ValueTriggerIDs, Values.
+          Supported attributes for filtering on Unit: Annotations, ApplyGates, ApplyWarnings, ChangeSetID, Conflicts, CreatedAt, DataHash, DeleteGates, DestroyGates, DisplayName, FromLinkID, HeadRevisionID, HeadRevisionNum, HeadUnitEventNum, HiddenReason, Labels, LastChangeDescription, LastReleasedRevisionNum, LinkFindings, MutationSources, NeededPaths, OrganizationID, PathAnnotations, Permissions, ProvidedPaths, Slug, SpaceID, TargetID, ToolchainType, UnitID, Unreleasable, UpdatedAt, UpstreamRevisionNum, UpstreamSpaceID, UpstreamUnitID, ValidationErrors, ValidationPassed, ValidationResults, ValidationSkipped, ValidationTriggerIDs, ValidationWarnings, ValueTriggerIDs, Values.
 
           Finding all units created by cloning can be done using the expression `UpstreamRevisionNum > 0`. Clones of a specific unit can be found by additionally filtering based on `UpstreamUnitID`. Units never released can be found using `LastReleasedRevisionNum = 0`. Units with unreleased changes can be found with `HeadRevisionNum > LastReleasedRevisionNum AND ReleaseTargetID IS NOT NULL AND Unreleasable = false`.
 
@@ -47915,7 +47933,7 @@ paths:
           An example conjunction is:
           `CreatedAt >= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.
 
-          Supported attributes for filtering on Unit: Annotations, ApplyGates, ApplyWarnings, ChangeSetID, Conflicts, CreatedAt, DataHash, DeleteGates, DestroyGates, DisplayName, FromLinkID, HeadRevisionID, HeadRevisionNum, HeadUnitEventNum, HiddenReason, Labels, LastChangeDescription, LastReleasedRevisionNum, LinkFindings, MutationSources, NeededPaths, OrganizationID, Permissions, ProvidedPaths, Slug, SpaceID, TargetID, ToolchainType, UnitID, Unreleasable, UpdatedAt, UpstreamRevisionNum, UpstreamSpaceID, UpstreamUnitID, ValidationErrors, ValidationPassed, ValidationResults, ValidationSkipped, ValidationTriggerIDs, ValidationWarnings, ValueTriggerIDs, Values.
+          Supported attributes for filtering on Unit: Annotations, ApplyGates, ApplyWarnings, ChangeSetID, Conflicts, CreatedAt, DataHash, DeleteGates, DestroyGates, DisplayName, FromLinkID, HeadRevisionID, HeadRevisionNum, HeadUnitEventNum, HiddenReason, Labels, LastChangeDescription, LastReleasedRevisionNum, LinkFindings, MutationSources, NeededPaths, OrganizationID, PathAnnotations, Permissions, ProvidedPaths, Slug, SpaceID, TargetID, ToolchainType, UnitID, Unreleasable, UpdatedAt, UpstreamRevisionNum, UpstreamSpaceID, UpstreamUnitID, ValidationErrors, ValidationPassed, ValidationResults, ValidationSkipped, ValidationTriggerIDs, ValidationWarnings, ValueTriggerIDs, Values.
 
           Finding all units created by cloning can be done using the expression `UpstreamRevisionNum > 0`. Clones of a specific unit can be found by additionally filtering based on `UpstreamUnitID`. Units never released can be found using `LastReleasedRevisionNum = 0`. Units with unreleased changes can be found with `HeadRevisionNum > LastReleasedRevisionNum AND ReleaseTargetID IS NOT NULL AND Unreleasable = false`.
 
@@ -48263,7 +48281,7 @@ paths:
           An example conjunction is:
           `CreatedAt >= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.
 
-          Supported attributes for filtering on Unit: Annotations, ApplyGates, ApplyWarnings, ChangeSetID, Conflicts, CreatedAt, DataHash, DeleteGates, DestroyGates, DisplayName, FromLinkID, HeadRevisionID, HeadRevisionNum, HeadUnitEventNum, HiddenReason, Labels, LastChangeDescription, LastReleasedRevisionNum, LinkFindings, MutationSources, NeededPaths, OrganizationID, Permissions, ProvidedPaths, Slug, SpaceID, TargetID, ToolchainType, UnitID, Unreleasable, UpdatedAt, UpstreamRevisionNum, UpstreamSpaceID, UpstreamUnitID, ValidationErrors, ValidationPassed, ValidationResults, ValidationSkipped, ValidationTriggerIDs, ValidationWarnings, ValueTriggerIDs, Values.
+          Supported attributes for filtering on Unit: Annotations, ApplyGates, ApplyWarnings, ChangeSetID, Conflicts, CreatedAt, DataHash, DeleteGates, DestroyGates, DisplayName, FromLinkID, HeadRevisionID, HeadRevisionNum, HeadUnitEventNum, HiddenReason, Labels, LastChangeDescription, LastReleasedRevisionNum, LinkFindings, MutationSources, NeededPaths, OrganizationID, PathAnnotations, Permissions, ProvidedPaths, Slug, SpaceID, TargetID, ToolchainType, UnitID, Unreleasable, UpdatedAt, UpstreamRevisionNum, UpstreamSpaceID, UpstreamUnitID, ValidationErrors, ValidationPassed, ValidationResults, ValidationSkipped, ValidationTriggerIDs, ValidationWarnings, ValueTriggerIDs, Values.
 
           Finding all units created by cloning can be done using the expression `UpstreamRevisionNum > 0`. Clones of a specific unit can be found by additionally filtering based on `UpstreamUnitID`. Units never released can be found using `LastReleasedRevisionNum = 0`. Units with unreleased changes can be found with `HeadRevisionNum > LastReleasedRevisionNum AND ReleaseTargetID IS NOT NULL AND Unreleasable = false`.
 
@@ -48596,7 +48614,7 @@ paths:
           An example conjunction is:
           `CreatedAt >= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.
 
-          Supported attributes for filtering on Unit: Annotations, ApplyGates, ApplyWarnings, ChangeSetID, Conflicts, CreatedAt, DataHash, DeleteGates, DestroyGates, DisplayName, FromLinkID, HeadRevisionID, HeadRevisionNum, HeadUnitEventNum, HiddenReason, Labels, LastChangeDescription, LastReleasedRevisionNum, LinkFindings, MutationSources, NeededPaths, OrganizationID, Permissions, ProvidedPaths, Slug, SpaceID, TargetID, ToolchainType, UnitID, Unreleasable, UpdatedAt, UpstreamRevisionNum, UpstreamSpaceID, UpstreamUnitID, ValidationErrors, ValidationPassed, ValidationResults, ValidationSkipped, ValidationTriggerIDs, ValidationWarnings, ValueTriggerIDs, Values.
+          Supported attributes for filtering on Unit: Annotations, ApplyGates, ApplyWarnings, ChangeSetID, Conflicts, CreatedAt, DataHash, DeleteGates, DestroyGates, DisplayName, FromLinkID, HeadRevisionID, HeadRevisionNum, HeadUnitEventNum, HiddenReason, Labels, LastChangeDescription, LastReleasedRevisionNum, LinkFindings, MutationSources, NeededPaths, OrganizationID, PathAnnotations, Permissions, ProvidedPaths, Slug, SpaceID, TargetID, ToolchainType, UnitID, Unreleasable, UpdatedAt, UpstreamRevisionNum, UpstreamSpaceID, UpstreamUnitID, ValidationErrors, ValidationPassed, ValidationResults, ValidationSkipped, ValidationTriggerIDs, ValidationWarnings, ValueTriggerIDs, Values.
 
           Finding all units created by cloning can be done using the expression `UpstreamRevisionNum > 0`. Clones of a specific unit can be found by additionally filtering based on `UpstreamUnitID`. Units never released can be found using `LastReleasedRevisionNum = 0`. Units with unreleased changes can be found with `HeadRevisionNum > LastReleasedRevisionNum AND ReleaseTargetID IS NOT NULL AND Unreleasable = false`.
 
@@ -49173,7 +49191,7 @@ paths:
           An example conjunction is:
           `CreatedAt >= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.
 
-          Supported attributes for filtering on Unit: Annotations, ApplyGates, ApplyWarnings, ChangeSetID, Conflicts, CreatedAt, DataHash, DeleteGates, DestroyGates, DisplayName, FromLinkID, HeadRevisionID, HeadRevisionNum, HeadUnitEventNum, HiddenReason, Labels, LastChangeDescription, LastReleasedRevisionNum, LinkFindings, MutationSources, NeededPaths, OrganizationID, Permissions, ProvidedPaths, Slug, SpaceID, TargetID, ToolchainType, UnitID, Unreleasable, UpdatedAt, UpstreamRevisionNum, UpstreamSpaceID, UpstreamUnitID, ValidationErrors, ValidationPassed, ValidationResults, ValidationSkipped, ValidationTriggerIDs, ValidationWarnings, ValueTriggerIDs, Values.
+          Supported attributes for filtering on Unit: Annotations, ApplyGates, ApplyWarnings, ChangeSetID, Conflicts, CreatedAt, DataHash, DeleteGates, DestroyGates, DisplayName, FromLinkID, HeadRevisionID, HeadRevisionNum, HeadUnitEventNum, HiddenReason, Labels, LastChangeDescription, LastReleasedRevisionNum, LinkFindings, MutationSources, NeededPaths, OrganizationID, PathAnnotations, Permissions, ProvidedPaths, Slug, SpaceID, TargetID, ToolchainType, UnitID, Unreleasable, UpdatedAt, UpstreamRevisionNum, UpstreamSpaceID, UpstreamUnitID, ValidationErrors, ValidationPassed, ValidationResults, ValidationSkipped, ValidationTriggerIDs, ValidationWarnings, ValueTriggerIDs, Values.
 
           Finding all units created by cloning can be done using the expression `UpstreamRevisionNum > 0`. Clones of a specific unit can be found by additionally filtering based on `UpstreamUnitID`. Units never released can be found using `LastReleasedRevisionNum = 0`. Units with unreleased changes can be found with `HeadRevisionNum > LastReleasedRevisionNum AND ReleaseTargetID IS NOT NULL AND Unreleasable = false`.
 
@@ -50953,7 +50971,7 @@ paths:
           An example conjunction is:
           `CreatedAt >= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.
 
-          Supported attributes for filtering on Unit: Annotations, ApplyGates, ApplyWarnings, ChangeSetID, Conflicts, CreatedAt, DataHash, DeleteGates, DestroyGates, DisplayName, FromLinkID, HeadRevisionID, HeadRevisionNum, HeadUnitEventNum, HiddenReason, Labels, LastChangeDescription, LastReleasedRevisionNum, LinkFindings, MutationSources, NeededPaths, OrganizationID, Permissions, ProvidedPaths, Slug, SpaceID, TargetID, ToolchainType, UnitID, Unreleasable, UpdatedAt, UpstreamRevisionNum, UpstreamSpaceID, UpstreamUnitID, ValidationErrors, ValidationPassed, ValidationResults, ValidationSkipped, ValidationTriggerIDs, ValidationWarnings, ValueTriggerIDs, Values.
+          Supported attributes for filtering on Unit: Annotations, ApplyGates, ApplyWarnings, ChangeSetID, Conflicts, CreatedAt, DataHash, DeleteGates, DestroyGates, DisplayName, FromLinkID, HeadRevisionID, HeadRevisionNum, HeadUnitEventNum, HiddenReason, Labels, LastChangeDescription, LastReleasedRevisionNum, LinkFindings, MutationSources, NeededPaths, OrganizationID, PathAnnotations, Permissions, ProvidedPaths, Slug, SpaceID, TargetID, ToolchainType, UnitID, Unreleasable, UpdatedAt, UpstreamRevisionNum, UpstreamSpaceID, UpstreamUnitID, ValidationErrors, ValidationPassed, ValidationResults, ValidationSkipped, ValidationTriggerIDs, ValidationWarnings, ValueTriggerIDs, Values.
 
           The Units to create entities from, with from_backing_units.
 
@@ -52542,8 +52560,8 @@ components:
         Deleted:
           description: 'True for a field, or a resource, that the unit does not have
             because a change deleted it: the unit''s record still names the deletion.
-            It has no value; its chain is the change that deleted it, and Protected
-            says whether a merge from upstream leaves it deleted.'
+            It has no value; its chain is the change that deleted it, and Guards says
+            whether a merge leaves it deleted.'
           type: boolean
           x-go-type-skip-optional-pointer: true
         Findings:
@@ -52594,9 +52612,8 @@ components:
           type: string
           x-go-type-skip-optional-pointer: true
         Protected:
-          description: True for a local override, which a merge from upstream leaves
-            alone. On the row about a resource as a whole, true when the resource
-            is protected as a whole.
+          description: 'Deprecated and always false: a local override a merge leaves
+            alone is an Override guard, which Guards lists.'
           type: boolean
           x-go-type-skip-optional-pointer: true
         Provided:
@@ -52623,8 +52640,8 @@ components:
           type: string
           x-go-type-skip-optional-pointer: true
         ResourceProtected:
-          description: True when the field is protected because its resource is protected
-            as a whole, and on the row about that resource.
+          description: 'Deprecated and always false: a resource held as a whole is
+            one with a guard on the resource, which Guards lists for each of its fields.'
           type: boolean
           x-go-type-skip-optional-pointer: true
         ResourceType:
@@ -57846,9 +57863,10 @@ components:
             naming the reasons those paths hold what they hold, so a later operation
             must be cleared for them before overwriting. Sibling to Protect: Protect
             claims the paths, Guards say why. Add and overwrite only -- retiring a
-            guard is the /guard API (cub unit set-guard --remove-guard). Refused on
-            UpgradeUnit and MergeUnits links, whose guards arrive by propagation from
-            upstream.'
+            guard is the /guard API (cub unit set-guard --remove-guard), except that
+            deleting the link takes back the guards it set on the paths it last wrote.
+            Refused on UpgradeUnit and MergeUnits links, whose guards arrive by propagation
+            from upstream.'
           x-confighub-where:
             dataType: map[string]string
         Hash:
@@ -57936,11 +57954,12 @@ components:
           x-confighub-where:
             dataType: map[string]map[string]map[uuid]bool
         Protect:
-          description: Records the paths this Link's resolve writes as protected local
-            overrides, so a later merge from upstream does not overwrite them. Without
-            it the resolve claims nothing, as any other change does. Refused on UpgradeUnit
-            and MergeUnits Links, where the upstream keeps updating what it delivered
-            and protecting that content would freeze the downstream one merge in.
+          deprecated: true
+          description: 'Deprecated: use Guards, as {"Link":"<UpdateType>"}, with a
+            Clearance admitting it. Setting it records that guard and clearance on
+            the Link instead, so the paths its resolve writes hold what it wrote against
+            merges and other writes, and the Link keeps maintaining them; it is not
+            stored, and reads false. Refused on UpgradeUnit and MergeUnits Links.'
           type: boolean
           x-confighub-where:
             dataType: bool
@@ -58588,8 +58607,11 @@ components:
           type: string
           x-go-type-skip-optional-pointer: true
         Protected:
-          description: True if this is a local override a merge must not overwrite;
-            false if the value came from elsewhere and may be overwritten
+          description: 'In the protection argument of the patch-mutations and reset
+            functions, that the operation must leave the path alone. On a Unit''s
+            stored MutationSources, deprecated and no longer read: a local override
+            a merge must not overwrite is an Override guard, in the Unit''s PathAnnotations.
+            True on paths stored as local overrides before that'
           type: boolean
           x-go-type-skip-optional-pointer: true
         Value:
@@ -59237,12 +59259,13 @@ components:
           type: string
           x-go-type-skip-optional-pointer: true
         Protect:
-          description: 'Record the paths each Unit write changes as protected local
-            overrides, so a later merge from upstream does not overwrite them. By
-            default a write claims nothing and each path keeps the protection it already
-            had. Accepted only for an Invoke ChangeOrder and for one that follows
+          description: 'Deprecated: use Guards, as {"Override":"Upstream"}, with a
+            Clearance admitting it. Records each Unit''s Override guard on the paths
+            its writes change -- Override=Upstream for a Unit with an upstream Unit,
+            Override=External for one without -- with the clearance to write over
+            one. Accepted only for an Invoke ChangeOrder and for one that follows
             Insert, Upsert, or TransformPaths Links: refused for a promotion that
-            merges, which protection holds paths against.'
+            merges, which the guard holds paths against.'
           type: boolean
           x-go-type-skip-optional-pointer: true
         SpaceFilterID:
@@ -60301,13 +60324,10 @@ components:
         Protected:
           additionalProperties:
             type: boolean
-          description: 'Map of path to its new Protected value: true = a local override
-            a merge must not overwrite, false = the merge''s to update. A list element
+          description: 'Map of path to whether it is a local override: true gives
+            the path the Unit''s Override guard, false removes it. A list element
             is named by merge key or by position, and * stands for every element or
-            key there is; a path naming a field the unit deleted is set on the record
-            of that deletion. The empty path addresses the resource as a whole: a
-            merge withholds every change to a resource protected as a whole, including
-            its deletion and replacement, whatever its paths'' values are'
+            key there is. The empty path addresses the resource as a whole'
           nullable: true
           type: object
           x-go-type-skip-optional-pointer: true
@@ -62098,8 +62118,10 @@ components:
             naming the reasons those paths hold what they hold, so a later operation
             must be cleared for them before overwriting. Sibling to Protect: Protect
             claims the paths, Guards say why. Add and overwrite only -- retiring a
-            guard is the /guard API (cub unit set-guard --remove-guard). Only meaningful
-            for a mutating trigger, and part of the trigger''s Hash, unlike Protect.'
+            guard is the /guard API (cub unit set-guard --remove-guard), except that
+            deleting the trigger takes back the guards it set on the paths it last
+            wrote. Only meaningful for a mutating trigger, and part of the trigger''s
+            Hash, unlike Protect.'
           x-confighub-where:
             dataType: map[string]string
         Hash:
@@ -62175,12 +62197,12 @@ components:
           x-confighub-where:
             dataType: map[string]map[string]map[uuid]bool
         Protect:
-          description: Protect indicates whether the paths this trigger's function
-            writes are recorded as protected local overrides, so a later merge from
-            upstream does not overwrite them. A change claims nothing by default and
-            so does a trigger; set this for a trigger that decides a value on the
-            Unit's behalf and will not be back to decide it again, such as a PostClone
-            trigger customizing a variant. Only meaningful for a mutating trigger.
+          deprecated: true
+          description: 'Deprecated: use Guards, as {"Trigger":"<Slug>"}, with a Clearance
+            admitting it. Setting it records that guard and clearance on the trigger
+            instead, so the paths its function writes hold what it wrote against merges
+            and other writes, and the trigger keeps maintaining them; it is not stored,
+            and reads false. Only meaningful for a mutating trigger.'
           example: "false"
           type: boolean
           x-confighub-where:
@@ -62576,6 +62598,8 @@ components:
           description: Annotations on locations within the Unit's configuration data,
             by resource and path.
           readOnly: true
+          x-confighub-where:
+            dataType: JSON
         Permissions:
           allOf:
           - $ref: '#/components/schemas/Permissions'
@@ -63450,15 +63474,16 @@ components:
           format: uuid
           type: string
         ResourceProtection:
-          description: Per-resource Protected edits to apply to the Unit's MutationSources
+          description: 'Per-resource edits: a path mapped to true gets the Unit''s
+            Override guard (Override=Upstream for a Unit with an upstream Unit, Override=External
+            for one without), and one mapped to false loses its Override guard'
           items:
             $ref: '#/components/schemas/ResourceProtection'
           nullable: true
           type: array
           x-go-type-skip-optional-pointer: true
         UnprotectAll:
-          description: Clear every Protected value on the Unit's MutationSources before
-            applying ResourceProtection
+          description: Remove every Override guard the Unit has before applying ResourceProtection
           type: boolean
           x-go-type-skip-optional-pointer: true
       type: object

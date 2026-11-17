@@ -17,6 +17,9 @@ var linkDeleteCmd = &cobra.Command{
 	Short: "Delete a link or multiple links",
 	Long: getCommandHelp(`Delete a link or multiple links using bulk operations.
 
+Deleting a link takes back the guards it set on the paths it last wrote, since nothing maintains
+them any more. A NeedsProvides link also sets what it filled back to a placeholder.
+
 Single link delete:
 `+"```"+`
   cub link delete my-link

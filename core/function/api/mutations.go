@@ -45,9 +45,9 @@ type ResourceMutationList []ResourceMutation
 
 type MutationMap map[ResolvedPath]MutationInfo
 
-// ResourceProtection specifies Protected values to set on the mutations of one resource in a
-// MutationSources list. Each entry in Protected maps a resolved path to its new value: true
-// marks the path a local override a merge must not overwrite, false re-opens it.
+// ResourceProtection specifies, for the deprecated /protection API, which paths of one resource
+// are local overrides a merge must not overwrite. Each entry in Protected maps a path to its new
+// value: true gives the path the Unit's Override guard, false removes it.
 //
 // The empty ResolvedPath addresses the resource as a whole, as it does in ResourceGuards. A
 // merge withholds every change to a resource protected as a whole -- its deletion and its
@@ -57,7 +57,7 @@ type MutationMap map[ResolvedPath]MutationInfo
 // Consumed by the set-protection function via yamlkit.SetProtection.
 type ResourceProtection struct {
 	Resource  ResourceInfo          `description:"The resource whose protection is being set: ResourceName, its whole name (namespace/name) or a name it had before a rename, or ResourceNameWithoutScope, a name without its namespace that has to match one resource; ResourceType, in any API version, is optional"`
-	Protected map[ResolvedPath]bool `description:"Map of path to its new Protected value: true = a local override a merge must not overwrite, false = the merge's to update. A list element is named by merge key or by position, and * stands for every element or key there is; a path naming a field the unit deleted is set on the record of that deletion. The empty path addresses the resource as a whole: a merge withholds every change to a resource protected as a whole, including its deletion and replacement, whatever its paths' values are"`
+	Protected map[ResolvedPath]bool `description:"Map of path to whether it is a local override: true gives the path the Unit's Override guard, false removes it. A list element is named by merge key or by position, and * stands for every element or key there is. The empty path addresses the resource as a whole"`
 }
 
 // ArrayOrderMap records, for each merge-keyed array path whose element set or
@@ -87,10 +87,12 @@ type ArrayElementAliasMap map[ResolvedPath]map[string]string
 type MutationInfo struct {
 	MutationType MutationType `description:"Type of mutation performed on the associated configuration element: Add, Update, Replace, Delete, or None, if no change"`
 	Index        int64        `description:"Function index or sequence number corresponding to the change"`
-	// Protected says the target chose this value locally and a merge must not overwrite it.
-	// False -- the default, and the common case -- means the value came from somewhere else
-	// (a clone, an upgrade, a merge, an external source) and is the merge's to update.
-	Protected bool   `json:",omitempty" description:"True if this is a local override a merge must not overwrite; false if the value came from elsewhere and may be overwritten"`
+	// Protected says an operation must leave the path alone. In the protection argument of the
+	// patch-mutations and reset functions it is set per operation, from the Mutations the
+	// operation selects. On a Unit's stored MutationSources it said the target chose the value
+	// locally, and is deprecated and no longer read there: a local override is an Override
+	// guard, on the Unit's PathAnnotations. Values stored before that are kept as they were.
+	Protected bool   `json:",omitempty" description:"In the protection argument of the patch-mutations and reset functions, that the operation must leave the path alone. On a Unit's stored MutationSources, deprecated and no longer read: a local override a merge must not overwrite is an Override guard, in the Unit's PathAnnotations. True on paths stored as local overrides before that"`
 	Value     string `description:"Removed configuration data if MutationType is Delete and otherwise the new data"`
 	Patch     string `json:",omitempty" description:"Line-level patch for multi-line string updates, in unified diff format. When present on an Update, PatchMutations applies this to the target value instead of replacing with Value. Falls back to Value if the patch cannot be applied cleanly."`
 }

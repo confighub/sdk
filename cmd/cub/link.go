@@ -5,6 +5,7 @@ package main
 
 import (
 	"fmt"
+	"slices"
 	"strings"
 
 	goclientnew "github.com/confighub/sdk/core/openapi/goclient-new"
@@ -53,12 +54,14 @@ func addLinkFieldFlags(cmd *cobra.Command) {
 	addLinkElementFlags(cmd)
 	cmd.Flags().BoolVar(&linkAutoUpdate, "auto-update", false, "enable automatic downstream unit updates when upstream changes; a link created with no --update-type gets this without asking")
 	cmd.Flags().BoolVar(&linkNoAutoUpdate, "no-auto-update", false, "disable automatic downstream unit updates; a link that does not update itself instead reports Stale when its upstream moves past it")
-	cmd.Flags().StringVar(&linkWhereMutation, "where-mutation", "", "where expression selecting mutations of the downstream unit whose paths this link's merges must not overwrite; unioned with the unit's stored path protection, so it protects more and never re-opens a path the unit claimed")
+	cmd.Flags().StringVar(&linkWhereMutation, "where-mutation", "", "where expression selecting mutations of the downstream unit whose paths this link's merges must not overwrite; on top of the unit's guards, so it holds more and never re-opens a guarded path")
 	cmd.Flags().StringVar(&linkWhereResource, "where-resource", "", "where expression to select upstream resources for propagation")
-	cmd.Flags().BoolVar(&linkMergeEnableSubtraction, "merge-enable-subtraction", false, "also subtract the downstream unit's local differences from the patch when resolving this link, on top of the stored path protection that preserves overrides by default")
+	cmd.Flags().BoolVar(&linkMergeEnableSubtraction, "merge-enable-subtraction", false, "also subtract the downstream unit's local differences from the patch when resolving this link, on top of the Override guards that hold its local overrides")
 	cmd.Flags().BoolVar(&linkNoMergeEnableSubtraction, "no-merge-enable-subtraction", false, "return this link to the default: no subtraction step")
-	cmd.Flags().BoolVar(&linkProtect, "protect", false, "record the paths this link's resolve writes as protected local overrides, so a later merge from upstream does not overwrite them; refused on UpgradeUnit and MergeUnits links")
-	cmd.Flags().BoolVar(&linkNoProtect, "no-protect", false, "return this link to the default: its resolve claims nothing it writes")
+	cmd.Flags().BoolVar(&linkProtect, "protect", false, "record the guard Link=<update-type> on the paths this link's resolve writes, with the clearance for it; refused on UpgradeUnit and MergeUnits links")
+	_ = cmd.Flags().MarkDeprecated("protect", "use --guard Link=<update-type> with --clearance Link=<update-type>; --protect records that guard and clearance on the link")
+	cmd.Flags().BoolVar(&linkNoProtect, "no-protect", false, "deprecated: remove the guard Link=<update-type> that --protect records, and the clearance for it")
+	_ = cmd.Flags().MarkDeprecated("no-protect", "Protect is recorded as the link's guard Link=<update-type> and the clearance for it, not stored; update --guard and --clearance to change them")
 	cmd.Flags().StringArrayVar(&linkClearance, "clearance", nil,
 		"class of guarded reason this link's resolve is cleared for, as KEY, KEY=VALUE[;VALUE...], KEY!=VALUE[;VALUE...], or !KEY to refuse any path carrying KEY (repeatable). Pass an empty value to clear")
 	cmd.Flags().StringArrayVar(&linkGuardSpecs, "guard", nil,
@@ -245,8 +248,6 @@ func setLinkFieldsOnUpdate(link *goclientnew.Link, cmd *cobra.Command) error {
 	}
 	if linkProtect {
 		link.Protect = true
-	} else if linkNoProtect {
-		link.Protect = false
 	}
 	if cmd.Flags().Changed("clearance") {
 		clearance, err := parseClearanceSpecs(linkClearance)
@@ -264,6 +265,9 @@ func setLinkFieldsOnUpdate(link *goclientnew.Link, cmd *cobra.Command) error {
 			guards = goclientnew.GuardStamp{}
 		}
 		link.Guards = &guards
+	}
+	if linkNoProtect {
+		unprotectLink(link, !cmd.Flags().Changed("guard"), !cmd.Flags().Changed("clearance"))
 	}
 	if linkSquash {
 		link.Squash = true
@@ -337,8 +341,11 @@ func linkFieldsEnhancer(cmd *cobra.Command) PatchEnhancer {
 		}
 		if linkProtect {
 			patchMap["Protect"] = true
-		} else if linkNoProtect {
-			patchMap["Protect"] = false
+		} else if linkNoProtect && !cmd.Flags().Changed("guard") {
+			// Protect is the guard Link=<update-type>, which a merge patch takes off by naming
+			// the key with null. Each Link's own type is not known here, so its clearance for
+			// the guard stays; it admits a guard the Link no longer sets.
+			patchMap["Guards"] = map[string]any{"Link": nil}
 		}
 		if linkSquash {
 			patchMap["Squash"] = true
@@ -358,6 +365,36 @@ func linkFieldsEnhancer(cmd *cobra.Command) PatchEnhancer {
 				patchMap["TransformInvocationID"] = id.String()
 			}
 		}
+	}
+}
+
+// unprotectLink undoes what Protect recorded on a Link: the guard Link=<update-type>, where it has
+// that value, and the clearance for it. The server records Protect as that guard and clearance
+// rather than storing it, so Protect false says nothing to it. guards and clearance say whether
+// each is the command's to change, rather than set by --guard or --clearance.
+func unprotectLink(link *goclientnew.Link, guards, clearance bool) {
+	updateType := link.UpdateType
+	if guards && link.Guards != nil && (*link.Guards)["Link"] == updateType {
+		stamp := goclientnew.GuardStamp{}
+		for key, value := range *link.Guards {
+			if key != "Link" {
+				stamp[key] = value
+			}
+		}
+		link.Guards = &stamp
+	}
+	if clearance && link.Clearance != nil {
+		kept := goclientnew.Clearance{}
+		for _, requirement := range *link.Clearance {
+			if requirement.Key == "Link" && requirement.Operator == "In" {
+				requirement.Values = slices.DeleteFunc(slices.Clone(requirement.Values), func(v string) bool { return v == updateType })
+				if len(requirement.Values) == 0 {
+					continue
+				}
+			}
+			kept = append(kept, requirement)
+		}
+		link.Clearance = &kept
 	}
 }
 

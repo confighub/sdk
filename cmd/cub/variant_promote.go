@@ -149,9 +149,8 @@ hold, requires --force-reason, and is recorded on the change order.
 
 The writes take the options a unit update does, and every write of the promotion carries them:
 the upgrades, the set-namespace on added and revived units, and a change order's invocation.
---protect records the paths each write changes as protected local overrides, and is refused on a
-promotion that merges -- one without --change-order, or of an UpgradeUnit or MergeUnits change
-order -- since merges are what protection holds paths against. --clearance names the guarded
+--guard records reasons on the paths each write changes; --guard Override=Upstream says they are
+local overrides a later merge leaves alone. --clearance names the guarded
 reasons the writes are cleared for, and a guarded path it does not cover is withheld and reported
 as a conflict; --guard records reasons on the paths written, which a later operation must be
 cleared for, this promotion's later writes included, so --clearance has to cover them;
@@ -222,7 +221,8 @@ func init() {
 	variantPromoteCmd.Flags().BoolVar(&variantPromoteArgs.force, "force", false, "promote past ChangeWorkflow gates that do not hold; requires --force-reason, and is recorded on the change order")
 	variantPromoteCmd.Flags().StringVar(&variantPromoteArgs.forceReason, "force-reason", "", "why the gates are overridden; required with --force")
 	variantPromoteCmd.Flags().StringVar(&variantPromoteArgs.expectedPlan, "expected-plan", "", "the Plan a --dry-run of the same promotion returned; nothing is written if the promotion would now do anything different")
-	variantPromoteCmd.Flags().BoolVar(&variantPromoteArgs.protect, "protect", false, "record the paths each write of the promotion changes as protected local overrides, so a later merge from upstream does not overwrite them; only with a change order that is promoted by invocation or by Insert, Upsert, or TransformPaths links, since a promotion that merges is what protection holds paths against")
+	variantPromoteCmd.Flags().BoolVar(&variantPromoteArgs.protect, "protect", false, "record each unit's Override guard on the paths each write of the promotion changes; only with a change order that is promoted by invocation or by Insert, Upsert, or TransformPaths links")
+	_ = variantPromoteCmd.Flags().MarkDeprecated("protect", "use --guard Override=Upstream, or Override=External for a unit with no upstream unit, with --clearance for it; --protect records that guard on each unit")
 	variantPromoteCmd.Flags().StringArrayVar(&changeClearance, "clearance", nil, clearanceFlagUsage+
 		". Without it, a promotion of a change order that runs an invocation or resolves Insert, Upsert, or TransformPaths links is cleared for Override guards, whatever their value, as one that merges is not; a clearance given replaces that, and --clearance '' clears nothing")
 	addGuardFlag(variantPromoteCmd)

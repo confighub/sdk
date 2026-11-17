@@ -1353,7 +1353,7 @@
               "$ref": "#/definitions/GuardStamp"
             }
           ],
-          "description": "Guards to record on the paths this link's resolve writes, naming the reasons those paths hold what they hold, so a later operation must be cleared for them before overwriting. Sibling to Protect: Protect claims the paths, Guards say why. Add and overwrite only -- retiring a guard is the /guard API (cub unit set-guard --remove-guard). Refused on UpgradeUnit and MergeUnits links, whose guards arrive by propagation from upstream."
+          "description": "Guards to record on the paths this link's resolve writes, naming the reasons those paths hold what they hold, so a later operation must be cleared for them before overwriting. Sibling to Protect: Protect claims the paths, Guards say why. Add and overwrite only -- retiring a guard is the /guard API (cub unit set-guard --remove-guard), except that deleting the link takes back the guards it set on the paths it last wrote. Refused on UpgradeUnit and MergeUnits links, whose guards arrive by propagation from upstream."
         },
         "Labels": {
           "additionalProperties": {
@@ -1385,7 +1385,7 @@
           "description": "Permissions to access this link."
         },
         "Protect": {
-          "description": "Records the paths this Link's resolve writes as protected local overrides, so a later merge from upstream does not overwrite them. Without it the resolve claims nothing, as any other change does. Refused on UpgradeUnit and MergeUnits Links, where the upstream keeps updating what it delivered and protecting that content would freeze the downstream one merge in.",
+          "description": "Deprecated: use Guards, as {\"Link\":\"\u003cUpdateType\u003e\"}, with a Clearance admitting it. Setting it records that guard and clearance on the Link instead, so the paths its resolve writes hold what it wrote against merges and other writes, and the Link keeps maintaining them; it is not stored, and reads false. Refused on UpgradeUnit and MergeUnits Links.",
           "type": "boolean"
         },
         "Slug": {
@@ -1679,7 +1679,7 @@
               "$ref": "#/definitions/GuardStamp"
             }
           ],
-          "description": "Guards to record on the paths this trigger's function writes, naming the reasons those paths hold what they hold, so a later operation must be cleared for them before overwriting. Sibling to Protect: Protect claims the paths, Guards say why. Add and overwrite only -- retiring a guard is the /guard API (cub unit set-guard --remove-guard). Only meaningful for a mutating trigger, and part of the trigger's Hash, unlike Protect."
+          "description": "Guards to record on the paths this trigger's function writes, naming the reasons those paths hold what they hold, so a later operation must be cleared for them before overwriting. Sibling to Protect: Protect claims the paths, Guards say why. Add and overwrite only -- retiring a guard is the /guard API (cub unit set-guard --remove-guard), except that deleting the trigger takes back the guards it set on the paths it last wrote. Only meaningful for a mutating trigger, and part of the trigger's Hash, unlike Protect."
         },
         "Invocation": {
           "description": "The Invocation it refers to, by its slug, or as \u003cspace\u003e/\u003cslug\u003e in another Space than the document's.",
@@ -1713,7 +1713,7 @@
           "description": "Permissions to access this trigger."
         },
         "Protect": {
-          "description": "Protect indicates whether the paths this trigger's function writes are recorded as protected local overrides, so a later merge from upstream does not overwrite them. A change claims nothing by default and so does a trigger; set this for a trigger that decides a value on the Unit's behalf and will not be back to decide it again, such as a PostClone trigger customizing a variant. Only meaningful for a mutating trigger.",
+          "description": "Deprecated: use Guards, as {\"Trigger\":\"\u003cSlug\u003e\"}, with a Clearance admitting it. Setting it records that guard and clearance on the trigger instead, so the paths its function writes hold what it wrote against merges and other writes, and the trigger keeps maintaining them; it is not stored, and reads false. Only meaningful for a mutating trigger.",
           "type": "boolean"
         },
         "Slug": {

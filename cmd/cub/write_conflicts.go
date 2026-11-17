@@ -15,12 +15,12 @@ import (
 // displayWriteConflicts reports what a write to a unit could not apply: what a merge withheld,
 // or a guard its clearance did not cover. A write that withheld part of a change would
 // otherwise read as having landed whole. It names the command that acts on them, with the
-// clearance that covers the guarded ones. Printed only with the command's default output, and
-// not with --quiet.
+// clearance that covers the guarded ones. Printed with the command's default output and with
+// -o mutations, and not with --quiet.
 //
 // space is the unit's space slug, or its ID where the response names no slug.
 func displayWriteConflicts(space, unit string, conflicts *goclientnew.MutationConflictList, dryRun bool) {
-	if conflicts == nil || len(*conflicts) == 0 || !showProgress() {
+	if conflicts == nil || len(*conflicts) == 0 || !showWithheld() {
 		return
 	}
 	withheld := *conflicts
@@ -58,6 +58,13 @@ func displayWriteConflicts(space, unit string, conflicts *goclientnew.MutationCo
 	default:
 		tprint("Review them with: %s", conflictsCmd)
 	}
+}
+
+// showWithheld reports whether the output says what a write withheld. -o mutations is the diff
+// of what the write changed, read by a person, so what it withheld goes with it: without it, a
+// write a guard withheld whole shows "No changes", as one with nothing to change does.
+func showWithheld() bool {
+	return showProgress() || (!quiet && !hasAlternativeFunctionOutput() && effectiveOutput().Kind == OutputMutations)
 }
 
 // clearanceFlags renders a clearance as the --clearance flags that state it, one per requirement.

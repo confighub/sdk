@@ -4,6 +4,7 @@
 package cubapi
 
 import (
+	"maps"
 	"strings"
 	"testing"
 
@@ -11,10 +12,10 @@ import (
 	"github.com/google/uuid"
 )
 
-// The merge's own writes are what a sync protects: its paths, and not those an earlier
-// Mutation wrote or a None entry. A resource it added whole has no path to protect, and is
-// protected as a whole.
-func TestSyncProtection(t *testing.T) {
+// The merge's own writes are what a sync guards: its paths, and not those an earlier Mutation
+// wrote or a None entry. A resource it added whole has no path to guard, and is guarded as a
+// whole.
+func TestSyncGuards(t *testing.T) {
 	update, add, none := goclientnew.Update, goclientnew.Add, goclientnew.None
 	paths := goclientnew.MutationMap{
 		"data.HOST":     {Index: 7, MutationType: &update},
@@ -31,16 +32,17 @@ func TestSyncProtection(t *testing.T) {
 			ResourceMutationInfo: &goclientnew.MutationInfo{Index: 2, MutationType: &add}},
 	}
 
-	protection := syncProtection(mutationSources, 7)
-	if len(protection) != 2 || protection[0].Resource.ResourceName != "ns/env" || protection[1].Resource.ResourceName != "ns/restore" {
-		t.Fatalf("protection = %+v, want the ConfigMap and the ServiceAccount", protection)
+	guards := syncGuards(mutationSources, 7, "Upstream")
+	if len(guards) != 2 || guards[0].Resource.ResourceName != "ns/env" || guards[1].Resource.ResourceName != "ns/restore" {
+		t.Fatalf("guards = %+v, want the ConfigMap and the ServiceAccount", guards)
 	}
-	got := protection[0].Protected
-	if len(got) != 2 || !got["data.HOST"] || !got["data.REGION"] {
-		t.Errorf("protected paths = %v, want data.HOST and data.REGION", got)
+	override := map[string]string{"Override": "Upstream"}
+	got := guards[0].Set
+	if len(got) != 2 || !maps.Equal(got["data.HOST"], override) || !maps.Equal(got["data.REGION"], override) {
+		t.Errorf("guarded paths = %v, want data.HOST and data.REGION with Override=Upstream", got)
 	}
-	if whole := protection[1].Protected; len(whole) != 1 || !whole[""] {
-		t.Errorf("the ServiceAccount the merge added should be protected as a whole, got %v", whole)
+	if whole := guards[1].Set; len(whole) != 1 || !maps.Equal(whole[""], override) {
+		t.Errorf("the ServiceAccount the merge added should be guarded as a whole, got %v", whole)
 	}
 }
 

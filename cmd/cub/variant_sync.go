@@ -35,8 +35,8 @@ made empty and then given its content has an empty first revision, so that is th
 its configuration. For a clone, whose first revision is what its upstream gave it, it is the
 source variant's own changes and the upgrades it took, and what the clone started with stays
 as the target has it: compare with --dry-run --include-config-data. The merge is like any
-other: a path the target protects keeps the target's value, and the change is reported as a
-conflict.
+other: a path the target guards, such as with an Override guard, keeps the target's value
+unless the merge is cleared for the guard, and the change is reported as a conflict.
 
 A source unit the target does not have is cloned from the source unit's upstream first, as
 promotion clones a unit its upstream added, and moved into the target's namespace when the
@@ -50,23 +50,22 @@ gates. UpgradeUnit links are not copied: each is its unit's upstream, which this
 change. A link the target has a link of the same slug for is left alone, and the target's
 links the source does not have are kept.
 
---protect protects the paths each merge wrote, so that a later upgrade from the target's
-upstream does not write the upstream's values back over them. It is a step of its own after
-each merge, since a merge is itself subject to protection and cannot protect what it writes.
-A resource the merge added whole has no path of its own, and is protected as a whole; the
-Protected column counts it as one.
+--protect records the target's Override guard on the paths each merge wrote, so that a later
+upgrade from the target's upstream does not write the upstream's values back over them. It is
+a step of its own after each merge. A resource the merge added whole has no path of its own,
+and is guarded as a whole; the Protected column counts it as one.
 
 The table says, for each unit, what was done and whether its configuration now says what the
 source's does: the same documents with the same values, whatever the order of their keys or
 the style of their lists, for YAML and JSON, and the same text for other formats. A path the
-target protects keeps it from matching.
+target's guards kept keeps it from matching.
 
 Examples:
 `+"```"+`
   # What syncing staging-2 to staging would do
   cub variant sync app/staging app/staging-2 --dry-run
 
-  # Sync it, protecting what the sync changes against the base's later upgrades
+  # Sync it, guarding what the sync changes against the base's later upgrades
   cub variant sync app/staging app/staging-2 --protect --change-desc "Sync from staging"
 
   # Each unit's changes, path by path
@@ -79,7 +78,7 @@ Examples:
 
 func init() {
 	variantSyncCmd.Flags().StringVar(&variantSyncArgs.changeDescription, "change-desc", "", "change description recorded on the units the sync writes")
-	variantSyncCmd.Flags().BoolVar(&variantSyncArgs.protect, "protect", false, "protect the paths each merge writes, so a later upgrade from the target's upstream does not overwrite them")
+	variantSyncCmd.Flags().BoolVar(&variantSyncArgs.protect, "protect", false, "record the Override guard on the paths each merge writes, so a later upgrade from the target's upstream does not overwrite them")
 	variantSyncCmd.Flags().BoolVar(&variantSyncArgs.dryRun, "dry-run", false, "report what the sync would do without changing anything")
 	variantSyncCmd.Flags().BoolVar(&variantSyncArgs.includeConfigData, "include-config-data", false, "return the configuration each merge produces, or with --dry-run would produce, as ConfigData in structured output (-o json, -o yaml, -o jq=...)")
 	enableWaitFlag(variantSyncCmd)

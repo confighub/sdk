@@ -14,80 +14,43 @@ import (
 
 var unitSetProtectionCmd = &cobra.Command{
 	Use:   "set-protection <unit-slug> [--unprotect-all] [--protect <spec> ...] [--unprotect <spec> ...]",
-	Short: "Protect paths or resources of a unit from being overwritten by a merge",
-	Long: getCommandHelp(`Set the Protected flags stored on a unit's MutationSources.
+	Short: "Keep paths or resources of a unit from being overwritten by a merge (deprecated: use set-guard)",
+	Deprecated: "use 'cub unit set-guard --guard RESOURCE_TYPE:RESOURCE_NAME:PATH=Override=Upstream' " +
+		"(Override=External for a unit with no upstream unit), and --remove-guard ...=Override to re-open a path",
+	Long: getCommandHelp(`Deprecated: use cub unit set-guard with the Override guard.
 
-A protected path is a local override a merge must not overwrite. An unprotected
-path holds a value that came from somewhere else -- a clone, an upgrade, a
-merge -- and is the merge's to update. Merges consult these stored values by
-default, and they are then the only mechanism preserving local overrides; a
-WhereMutation filter protects further paths on top of them. Turning the merge's
-subtraction step on (via --merge-enable-subtraction or a link's
-MergeEnableSubtraction) preserves them by a second mechanism, and the stored
-values are not consulted.
+A local override a merge must not overwrite is an Override guard: Override=Upstream
+on a unit with an upstream unit, which its upgrades leave alone, and
+Override=External on one without, which an upload of its configuration leaves
+alone. This edits that guard. --protect gives a path the unit's Override guard,
+--unprotect removes it, and --unprotect-all removes every Override guard the
+unit has before the others apply. Any change that is not a merge is cleared for
+Override guards unless it says otherwise, so they do not stand in the way of an
+edit.
 
-Each --protect and --unprotect takes RESOURCE_TYPE:RESOURCE_NAME:PATH, where
-RESOURCE_TYPE and RESOURCE_NAME identify the resource (e.g. apps/v1/Deployment
-and default/myapp) and PATH is a path within that resource. RESOURCE_TYPE may
-be left empty, as :default/myapp:PATH, when the name alone picks out the
-resource, and it matches in any API version. RESOURCE_NAME is the whole name,
-or a name the resource had before a rename; a name without a namespace (myapp)
-matches that name in any namespace, and has to match only one resource. PATH
-names a list element by merge key (containers.?name=app.image) or by position
-(containers.0.image), and * stands for every element or key there is
-(containers.*.image). Repeat either flag to set several paths or resources at
-once, and combine them to protect some paths and re-open others in one
-revision; a path named on its own decides over a * that also names it.
+Each --protect and --unprotect takes RESOURCE_TYPE:RESOURCE_NAME:PATH, as
+set-guard's flags do. Leave out PATH, as RESOURCE_TYPE:RESOURCE_NAME, for the
+resource as a whole. A path that carries another guard of its own is refused,
+naming the --clearance set-guard would need.
 
-Leave out PATH, as RESOURCE_TYPE:RESOURCE_NAME, to protect or re-open the
-resource as a whole. A merge withholds every change to a resource protected as
-a whole -- deleting it and replacing it included -- whatever its paths say,
-and its paths' own protection takes effect again once it is re-opened. That is
-how to protect a resource a change added whole, such as a ServiceAccount a
-variant added, since such a resource has no paths of its own to protect. A
-resource the unit deleted can be protected as a whole too, which keeps a merge
-from adding it back. A path that is not
-already present inherits the closest ancestor mutation's provenance. Protecting
-a path does not protect a path beneath it that a change of its own wrote, such
-as an env entry's value set after the entry was added: name that path too, and
-check the result with 'cub unit blame', which marks a protected field P, and a
-resource protected as a whole P on its (resource) row, deleted resources included.
-
---unprotect-all clears every protected path and resource of the unit, so a
-future merge may overwrite all of them. Combined with --protect, it clears the rest first, and
-the paths named are the only ones protected afterwards.
-
-Setting protection creates a new revision only if it changes; pass
---change-desc to record why on it.
-
-It prints the unit's MutationSources with -o json, yaml, jq or yq, or after its
-confirmation with --verbose.
+It creates a new revision only if the guards change; pass --change-desc to
+record why on it. Check the result with 'cub unit blame', which marks a guarded
+field G.
 
 Examples:
 `+"```"+`
-  # Protect the downstream replica count from being overwritten by upgrades
+  # Keep the downstream replica count from being overwritten by upgrades
   cub unit set-protection my-unit \
     --protect "apps/v1/Deployment:default/myapp:spec.replicas" \
     --change-desc "Prod runs more replicas than the base"
 
+  # The same with set-guard
+  cub unit set-guard my-unit \
+    --guard "apps/v1/Deployment:default/myapp:spec.replicas=Override=Upstream"
+
   # Re-open a path so a future merge may overwrite it again
   cub unit set-protection my-unit \
     --unprotect "apps/v1/Deployment:default/myapp:spec.replicas"
-
-  # Keep a ServiceAccount the variant added from being replaced by upgrades
-  cub unit set-protection my-unit \
-    --protect "v1/ServiceAccount:default/myapp"
-
-  # Protect every container's image, naming the resource without its type or namespace
-  cub unit set-protection my-unit \
-    --protect ":myapp:spec.template.spec.containers.*.image"
-
-  # Re-open every protected path of the unit
-  cub unit set-protection my-unit --unprotect-all
-
-  # Make the replica count the only protected path
-  cub unit set-protection my-unit --unprotect-all \
-    --protect "apps/v1/Deployment:default/myapp:spec.replicas"
 `+"```"+`
 `, ""),
 	Args: cobra.ExactArgs(1),
@@ -104,11 +67,11 @@ var (
 
 func init() {
 	unitSetProtectionCmd.Flags().StringArrayVar(&protectSpecs, "protect", nil,
-		"path to protect from merges, as RESOURCE_TYPE:RESOURCE_NAME:PATH, or a whole resource as RESOURCE_TYPE:RESOURCE_NAME; RESOURCE_TYPE may be empty (repeatable)")
+		"path to give the unit's Override guard, as RESOURCE_TYPE:RESOURCE_NAME:PATH, or a whole resource as RESOURCE_TYPE:RESOURCE_NAME; RESOURCE_TYPE may be empty (repeatable)")
 	unitSetProtectionCmd.Flags().StringArrayVar(&unprotectSpecs, "unprotect", nil,
-		"path to re-open to merges, as RESOURCE_TYPE:RESOURCE_NAME:PATH, or a whole resource as RESOURCE_TYPE:RESOURCE_NAME; RESOURCE_TYPE may be empty (repeatable)")
+		"path to remove the Override guard from, as RESOURCE_TYPE:RESOURCE_NAME:PATH, or a whole resource as RESOURCE_TYPE:RESOURCE_NAME; RESOURCE_TYPE may be empty (repeatable)")
 	unitSetProtectionCmd.Flags().BoolVar(&unprotectAll, "unprotect-all", false,
-		"re-open every protected path of the unit to merges, before applying --protect and --unprotect")
+		"remove every Override guard of the unit, before applying --protect and --unprotect")
 	unitSetProtectionCmd.Flags().StringVar(&setProtectionChangeSet, "changeset", "", changeSetFlagHelp)
 	unitSetProtectionCmd.Flags().StringVar(&setProtectionChangeDesc, "change-desc", "",
 		"change description recorded on the revision the edit creates")

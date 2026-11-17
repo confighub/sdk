@@ -62,20 +62,7 @@ func displayResourceMutationList(mutations *goclientnew.ResourceMutationList) {
 		mutationMap = lookupMutations(collectUniqueIndices(mutations))
 	}
 
-	protected, unprotected := true, false
-	shownOverrides := false
-	if anyMutationWithProtection(mutations, true) {
-		tprintRaw("Locally overridden (preserved during merges):")
-		displayMutationEntries(mutations, mutationMap, &protected)
-		shownOverrides = true
-	}
-	if anyMutationWithProtection(mutations, false) {
-		if shownOverrides {
-			tprintRaw("")
-		}
-		tprintRaw("Eligible for upstream merges:")
-		displayMutationEntries(mutations, mutationMap, &unprotected)
-	}
+	displayMutationEntries(mutations, mutationMap)
 
 	if len(mutationMap) > 0 {
 		tprintRaw("")
@@ -84,35 +71,8 @@ func displayResourceMutationList(mutations *goclientnew.ResourceMutationList) {
 	}
 }
 
-// protectionMatches reports whether a mutation with the given Protected value should be shown
-// for the given filter. A nil filter matches everything; otherwise only entries whose Protected
-// equals *filter are shown.
-func protectionMatches(filter *bool, protected bool) bool {
-	return filter == nil || *filter == protected
-}
-
-// anyMutationWithProtection reports whether any non-None mutation (resource-level or path)
-// has the given Protected value.
-func anyMutationWithProtection(mutations *goclientnew.ResourceMutationList, want bool) bool {
-	for _, rm := range *mutations {
-		if rm.ResourceMutationInfo != nil && rm.ResourceMutationInfo.MutationType != nil &&
-			*rm.ResourceMutationInfo.MutationType != goclientnew.None && rm.ResourceMutationInfo.Protected == want {
-			return true
-		}
-		if rm.PathMutationMap != nil {
-			for _, mi := range *rm.PathMutationMap {
-				if mi.MutationType != nil && *mi.MutationType != goclientnew.None && mi.Protected == want {
-					return true
-				}
-			}
-		}
-	}
-	return false
-}
-
-// displayMutationEntries renders the resource mutation entries whose Protected matches
-// protectionFilter, or all of them for a nil filter.
-func displayMutationEntries(mutations *goclientnew.ResourceMutationList, mutationMap map[int64]*goclientnew.ExtendedMutation, protectionFilter *bool) {
+// displayMutationEntries renders the resource mutation entries that record a change.
+func displayMutationEntries(mutations *goclientnew.ResourceMutationList, mutationMap map[int64]*goclientnew.ExtendedMutation) {
 	first := true
 	for _, rm := range *mutations {
 		if rm.ResourceMutationInfo == nil || rm.ResourceMutationInfo.MutationType == nil {
@@ -121,10 +81,10 @@ func displayMutationEntries(mutations *goclientnew.ResourceMutationList, mutatio
 		mutType := *rm.ResourceMutationInfo.MutationType
 
 		// Determine if this resource has any mutations to show in this section
-		hasRelevant := mutType != goclientnew.None && protectionMatches(protectionFilter, rm.ResourceMutationInfo.Protected)
+		hasRelevant := mutType != goclientnew.None
 		if !hasRelevant && rm.PathMutationMap != nil {
 			for _, mi := range *rm.PathMutationMap {
-				if mi.MutationType != nil && *mi.MutationType != goclientnew.None && protectionMatches(protectionFilter, mi.Protected) {
+				if mi.MutationType != nil && *mi.MutationType != goclientnew.None {
 					hasRelevant = true
 					break
 				}
@@ -149,7 +109,7 @@ func displayMutationEntries(mutations *goclientnew.ResourceMutationList, mutatio
 		tprintRaw(fmt.Sprintf("%sResource: %s %s", colorLightBlue, resourceType, resourceName+colorReset))
 
 		// Resource-level mutation
-		if mutType != goclientnew.None && protectionMatches(protectionFilter, rm.ResourceMutationInfo.Protected) {
+		if mutType != goclientnew.None {
 			tprintRaw(fmt.Sprintf("  %s %s", mutationTypeSymbol(mutType), formatIndexLabel(rm.ResourceMutationInfo.Index, mutationMap)))
 			displayMutationValue(mutType, rm.ResourceMutationInfo.Value, "    ")
 		}
@@ -165,9 +125,6 @@ func displayMutationEntries(mutations *goclientnew.ResourceMutationList, mutatio
 			for _, path := range paths {
 				mi := (*rm.PathMutationMap)[path]
 				if mi.MutationType == nil || *mi.MutationType == goclientnew.None {
-					continue
-				}
-				if !protectionMatches(protectionFilter, mi.Protected) {
 					continue
 				}
 				tprintRaw(fmt.Sprintf("  %s %s  %s", mutationTypeSymbol(*mi.MutationType), displayPath(path), formatIndexLabel(mi.Index, mutationMap)))

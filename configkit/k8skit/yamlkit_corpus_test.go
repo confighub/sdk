@@ -1787,6 +1787,51 @@ func TestMergeCorpusExclusiveFields(t *testing.T) {
 	})
 }
 
+// TestMergeExclusiveFieldKeepsAGuardedMember: a downstream that guarded the volume source it
+// chose -- an Override guard, which a merge is not cleared for -- owns it, so an upstream switch to
+// another source is withheld whole and reported, rather than adding the new source beside the one
+// the guard keeps. Two sources on one volume would not apply.
+func TestMergeExclusiveFieldKeepsAGuardedMember(t *testing.T) {
+	provider := k8skit.NewK8sResourceProvider()
+	volume := func(source string) string {
+		d := baseDep()
+		d.PodExtra = "      volumes:\n      - name: data\n" + source
+		return d.String()
+	}
+	base := volume("        emptyDir: {}\n")
+	upstream := volume("        configMap:\n          name: settings\n")
+	downstream := volume("        emptyDir:\n          sizeLimit: 2Gi\n")
+
+	patch, err := yamlkit.ComputeMutations(parseCorpus(t, base), parseCorpus(t, upstream), 1, provider)
+	require.NoError(t, err)
+	guards := &yamlkit.GuardFilter{
+		Annotations: guardTable(map[api.ResolvedPath]map[string]string{
+			"spec.template.spec.volumes.?name=data.emptyDir": {api.GuardKeyOverride: api.GuardOverrideUpstream},
+		}),
+	}
+
+	merged, conflicts, err := yamlkit.PatchMutationsGuarded(parseCorpus(t, downstream), nil, patch, nil,
+		guards, provider, nil)
+	require.NoError(t, err)
+	assert.Equal(t, "2Gi", merged[0].Path("spec.template.spec.volumes.0.emptyDir.sizeLimit").Data(),
+		"the guarded source is kept")
+	assert.Nil(t, merged[0].Path("spec.template.spec.volumes.0.configMap").Data(),
+		"the upstream's source is not added beside it")
+	var reasons []api.ConflictReason
+	for _, conflict := range conflicts {
+		reasons = append(reasons, conflict.Reason)
+	}
+	assert.Contains(t, reasons, api.ConflictReasonExclusiveWithheld)
+
+	// Cleared for the guard, the merge performs the switch.
+	guards.Clearance = api.Clearance{{Key: api.GuardKeyOverride, Operator: api.ClearanceOperatorExists}}
+	merged, _, err = yamlkit.PatchMutationsGuarded(parseCorpus(t, downstream), nil, patch, nil,
+		guards, provider, nil)
+	require.NoError(t, err)
+	assert.Equal(t, "settings", merged[0].Path("spec.template.spec.volumes.0.configMap.name").Data())
+	assert.Nil(t, merged[0].Path("spec.template.spec.volumes.0.emptyDir").Data())
+}
+
 // TestMergeAnchorLocatesMovedElement covers what the anchor on a positional array element
 // is for. The elements of an array with no declared merge key have no identity beyond
 // where they sit, so a patch computed against one arrangement used to land on whatever
@@ -2126,6 +2171,76 @@ func guardTable(guards map[api.ResolvedPath]map[string]string) api.PathAnnotatio
 	return api.PathAnnotationList{entry}
 }
 
+// TestGuardedConflictSaysWhatTheTargetKeeps: a change a guard withholds is reported with the
+// target's record of the path, which carries the value it keeps, as a protected path's was. A
+// promotion preview reads it to say what the variant keeps instead of the incoming value.
+func TestGuardedConflictSaysWhatTheTargetKeeps(t *testing.T) {
+	provider := k8skit.NewK8sResourceProvider()
+	image := func(tag string) string {
+		d := baseDep()
+		d.Containers = strings.Replace(oneContainer, "nginx:1.19", tag, 1)
+		return d.String()
+	}
+	base, upstream, downstream := image("nginx:1.19"), image("nginx:1.21"), image("nginx:custom")
+	const imagePath = api.ResolvedPath("spec.template.spec.containers.?name=app.image")
+
+	patch, err := yamlkit.ComputeMutations(parseCorpus(t, base), parseCorpus(t, upstream), 1, provider)
+	require.NoError(t, err)
+	record, err := yamlkit.ComputeMutations(parseCorpus(t, base), parseCorpus(t, downstream), 2, provider)
+	require.NoError(t, err)
+
+	guards := &yamlkit.GuardFilter{
+		Annotations: guardTable(map[api.ResolvedPath]map[string]string{
+			imagePath: {api.GuardKeyOverride: api.GuardOverrideUpstream},
+		}),
+	}
+	_, conflicts, err := yamlkit.PatchMutationsGuarded(parseCorpus(t, downstream), record, patch, nil,
+		guards, provider, nil)
+	require.NoError(t, err)
+	require.Len(t, conflicts, 1)
+	assert.Equal(t, api.ConflictReasonGuarded, conflicts[0].Reason)
+	require.NotNil(t, conflicts[0].Target, "the conflict says what the target has at the path")
+	assert.Equal(t, "nginx:custom", strings.TrimSpace(conflicts[0].Target.Value))
+	assert.Equal(t, int64(2), conflicts[0].Target.Index, "and which of its Mutations wrote it")
+	assert.Equal(t, "nginx:1.21", strings.TrimSpace(conflicts[0].Source.Value))
+}
+
+// TestGuardDoesNotWithholdWhatThePathHas: a change that writes the value a guarded path already
+// has, in another form, writes nothing and is not withheld. A document saved whole rewrites every
+// value, and one quoted in the stored data and plain in the saved document is the same value;
+// reported as withheld, it would ask the reader to clear a guard for nothing.
+func TestGuardDoesNotWithholdWhatThePathHas(t *testing.T) {
+	provider := k8skit.NewK8sResourceProvider()
+	const stored = `apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: web
+  namespace: ns
+spec:
+  minReadySeconds: "10"
+  template:
+    spec:
+      containers:
+      - name: app
+        image: "nginx:1.19"
+`
+	saved := strings.Replace(strings.Replace(stored, `"nginx:1.19"`, `nginx:1.19`, 1), `"10"`, `"42"`, 1)
+	patch, err := yamlkit.ComputeMutations(parseCorpus(t, stored), parseCorpus(t, saved), 1, provider)
+	require.NoError(t, err)
+	guards := &yamlkit.GuardFilter{
+		Annotations: guardTable(map[api.ResolvedPath]map[string]string{
+			"spec.template.spec.containers.?name=app.image": {api.GuardKeyOverride: api.GuardOverrideExternal},
+			"spec.minReadySeconds":                          {api.GuardKeyOverride: api.GuardOverrideExternal},
+		}),
+	}
+	merged, conflicts, err := yamlkit.PatchMutationsGuarded(parseCorpus(t, stored), nil, patch, nil, guards, provider, nil)
+	require.NoError(t, err)
+	require.Len(t, conflicts, 1, "only the change of value is withheld")
+	assert.Equal(t, api.ResolvedPath("spec.minReadySeconds"), conflicts[0].Path)
+	assert.Equal(t, "10", merged[0].Path("spec.minReadySeconds").Data())
+	assert.Equal(t, "nginx:1.19", merged[0].Path("spec.template.spec.containers.0.image").Data())
+}
+
 // TestMergeWithheldByAGuard is the first thing a guard has to do: stop a merge from overwriting
 // a value whose reason the merge does not know about, and say which reason stopped it.
 //
@@ -2409,6 +2524,77 @@ func TestGuardAtTheResourceLevelWithholdsEveryPathInIt(t *testing.T) {
 	assert.Equal(t, 7, merged[0].Path("spec.replicas").Data())
 	assert.Equal(t, "nginx:1.21", merged[0].Path("spec.template.spec.containers.0.image").Data())
 	assert.Empty(t, conflicts)
+}
+
+// TestGuardAtTheResourceLevelHoldsTheResource: a guard on the resource as a whole holds the
+// resource itself, not only the paths in it. The upstream deleting it does not delete it here,
+// and a resource the downstream deleted and guarded is not added back. Cleared, both land.
+func TestGuardAtTheResourceLevelHoldsTheResource(t *testing.T) {
+	provider := k8skit.NewK8sResourceProvider()
+	deployment := baseDep().String()
+	serviceAccount := "apiVersion: v1\nkind: ServiceAccount\nmetadata:\n  name: web\n  namespace: ns\n"
+	both := deployment + "---\n" + serviceAccount
+	guards := func() *yamlkit.GuardFilter {
+		table := resourceGuardTable(map[string]string{api.GuardKeyOverride: api.GuardOverrideUpstream})
+		table[0].Resource = api.ResourceInfo{ResourceType: "v1/ServiceAccount", ResourceName: "ns/web", ResourceNameWithoutScope: "web"}
+		return &yamlkit.GuardFilter{Annotations: table}
+	}
+	serviceAccounts := func(docs gaby.Container) int {
+		n := 0
+		for _, doc := range docs {
+			if doc.Path("kind").Data() == "ServiceAccount" {
+				n++
+			}
+		}
+		return n
+	}
+
+	// The upstream deletes the ServiceAccount the downstream holds.
+	deletion, err := yamlkit.ComputeMutations(parseCorpus(t, both), parseCorpus(t, deployment), 1, provider)
+	require.NoError(t, err)
+	merged, conflicts, err := yamlkit.PatchMutationsGuarded(parseCorpus(t, both), nil, deletion, nil, guards(), provider, nil)
+	require.NoError(t, err)
+	assert.Equal(t, 1, serviceAccounts(merged), "a guarded resource is not deleted")
+	require.Len(t, conflicts, 1)
+	assert.Equal(t, api.ConflictReasonGuarded, conflicts[0].Reason)
+	assert.Equal(t, api.GuardKeyOverride, conflicts[0].Guard.Key)
+
+	// The upstream adds a ServiceAccount the downstream deleted and holds deleted.
+	addition, err := yamlkit.ComputeMutations(parseCorpus(t, deployment), parseCorpus(t, both), 1, provider)
+	require.NoError(t, err)
+	merged, conflicts, err = yamlkit.PatchMutationsGuarded(parseCorpus(t, deployment), nil, addition, nil, guards(), provider, nil)
+	require.NoError(t, err)
+	assert.Equal(t, 0, serviceAccounts(merged), "a resource held deleted is not added back")
+	require.Len(t, conflicts, 1)
+	assert.Equal(t, api.ConflictReasonGuarded, conflicts[0].Reason)
+
+	// Cleared for the guard, both land.
+	cleared := guards()
+	cleared.Clearance = api.Clearance{{Key: api.GuardKeyOverride, Operator: api.ClearanceOperatorExists}}
+	merged, conflicts, err = yamlkit.PatchMutationsGuarded(parseCorpus(t, both), nil, deletion, nil, cleared, provider, nil)
+	require.NoError(t, err)
+	assert.Equal(t, 0, serviceAccounts(merged))
+	assert.Empty(t, conflicts)
+	merged, conflicts, err = yamlkit.PatchMutationsGuarded(parseCorpus(t, deployment), nil, addition, nil, cleared, provider, nil)
+	require.NoError(t, err)
+	assert.Equal(t, 1, serviceAccounts(merged))
+	assert.Empty(t, conflicts)
+
+	// A replacement with what the resource already is writes nothing, and is not withheld.
+	replacement := api.ResourceMutationList{{
+		Resource: api.ResourceInfo{ResourceType: "v1/ServiceAccount", ResourceName: "ns/web", ResourceNameWithoutScope: "web"},
+		ResourceMutationInfo: api.MutationInfo{MutationType: api.MutationTypeReplace, Index: 1,
+			Value: parseCorpus(t, both)[1].String()},
+	}}
+	merged, conflicts, err = yamlkit.PatchMutationsGuarded(parseCorpus(t, both), nil, replacement, nil, guards(), provider, nil)
+	require.NoError(t, err)
+	assert.Equal(t, 1, serviceAccounts(merged))
+	assert.Empty(t, conflicts, "a replacement that changes nothing is not a guarded change")
+	replacement[0].ResourceMutationInfo.Value = strings.Replace(serviceAccount, "name: web\n", "name: web\n  labels:\n    team: other\n", 1)
+	_, conflicts, err = yamlkit.PatchMutationsGuarded(parseCorpus(t, both), nil, replacement, nil, guards(), provider, nil)
+	require.NoError(t, err)
+	require.Len(t, conflicts, 1, "one that changes the resource is")
+	assert.Equal(t, api.ConflictReasonGuarded, conflicts[0].Reason)
 }
 
 // TestNearestGuardDecidesTheValueUnderTheFilter states through a merge what

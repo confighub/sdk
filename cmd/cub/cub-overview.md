@@ -348,11 +348,11 @@ Preview what would change without applying:
 cub function set --space $SPACE --where "Slug = 'mydeployment'" --dry-run -o mutations set-container-image nginx nginx:1.25
 ```
 
-Hold a value against the next merge from upstream, by recording the paths the
-change writes as protected local overrides:
+Hold a value against the next merge from upstream, by recording the Override guard
+on the paths the change writes (Override=External on a unit with no upstream unit):
 
 ```
-cub function set --space $SPACE --where "Slug = 'mydeployment'" --protect --change-desc "Prod owns its replica count" set-replicas 5
+cub function set --space $SPACE --where "Slug = 'mydeployment'" --guard Override=Upstream --change-desc "Prod owns its replica count" set-replicas 5
 ```
 
 Get the image attribute using `get-yq`:

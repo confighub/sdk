@@ -14,6 +14,7 @@ import (
 	"strings"
 	"time"
 
+	api "github.com/confighub/sdk/core/function/api"
 	goclientnew "github.com/confighub/sdk/core/openapi/goclient-new"
 	"sigs.k8s.io/yaml"
 )
@@ -27,10 +28,9 @@ type VariantSyncSpec struct {
 	// Source and Target are the two variants' Spaces.
 	Source goclientnew.UUID
 	Target goclientnew.UUID
-	// Protect records the paths each merge writes as protected local overrides, so that a
+	// Protect records the target's Override guard on the paths each merge writes, so that a
 	// later upgrade from the target's upstream does not write the upstream's values back over
-	// what the sync brought. It is a step of its own after the merge: a merge is itself held
-	// back by protection, so the server refuses to protect what one writes.
+	// what the sync brought. It is a step of its own after the merge, as a guard edit.
 	Protect bool
 	// ChangeDescription is recorded on every unit the sync writes.
 	ChangeDescription string
@@ -70,8 +70,8 @@ type UnitSyncResult struct {
 	MatchesSource bool
 	// ConfigData is the target unit's configuration after the merge, when asked for.
 	ConfigData string `json:",omitempty"`
-	// Protected is the number of paths the sync protected, counting a resource the merge added
-	// whole, which it protected as a whole, as one.
+	// Protected is the number of paths the sync guarded, counting a resource the merge added
+	// whole, which it guarded as a whole, as one.
 	Protected int `json:",omitempty"`
 	// Unit is the target unit after the sync, absent on a dry run of a unit it would clone.
 	Unit *goclientnew.Unit `json:"-"`
@@ -324,15 +324,21 @@ func mergeSyncUnit(ctx context.Context, c *Client, spec VariantSyncSpec, source,
 	result.Action = UnitSyncMerged
 
 	if spec.Protect && merged.MutationSources != nil {
-		protection := syncProtection(*merged.MutationSources, merged.Unit.HeadMutationNum)
-		if len(protection) > 0 {
-			protectRes, err := c.API.SetUnitProtectionWithResponse(ctx, target.SpaceID, target.UnitID,
-				goclientnew.UnitProtectionRequest{ResourceProtection: protection})
-			if IsAPIError(err, protectRes) {
-				return fail(fmt.Errorf("the merge succeeded, but protecting what it wrote failed: %w", InterpretErrorGeneric(err, protectRes)))
+		override := api.GuardOverrideExternal
+		if merged.Unit.UpstreamUnitID != nil {
+			override = api.GuardOverrideUpstream
+		}
+		guards := syncGuards(*merged.MutationSources, merged.Unit.HeadMutationNum, override)
+		if len(guards) > 0 {
+			// Cleared for the Override guard, which the paths may already carry.
+			clearance := DefaultClearance()
+			guardRes, err := c.API.SetUnitGuardWithResponse(ctx, target.SpaceID, target.UnitID,
+				goclientnew.UnitGuardRequest{ResourceGuards: guards, Clearance: &clearance})
+			if IsAPIError(err, guardRes) {
+				return fail(fmt.Errorf("the merge succeeded, but guarding what it wrote failed: %w", InterpretErrorGeneric(err, guardRes)))
 			}
-			for _, resource := range protection {
-				result.Protected += len(resource.Protected)
+			for _, resource := range guards {
+				result.Protected += len(resource.Set)
 			}
 		}
 	}
@@ -387,41 +393,41 @@ func canonicalDocuments(data string) ([]string, error) {
 	return docs, nil
 }
 
-// syncProtection returns, for each resource, the paths the Mutation numbered mutationNum
-// wrote, to protect: the merge's own writes. A resource that Mutation added whole has no paths
-// of its own, and is protected as a whole, by the empty path.
-func syncProtection(mutationSources goclientnew.ResourceMutationList, mutationNum int64) []goclientnew.ResourceProtection {
-	var protection []goclientnew.ResourceProtection
+// syncGuards returns, for each resource, the Override guard edits for the paths the Mutation
+// numbered mutationNum wrote: the merge's own writes. A resource that Mutation added whole has
+// no paths of its own, and is guarded as a whole, by the empty path.
+func syncGuards(mutationSources goclientnew.ResourceMutationList, mutationNum int64, override string) []goclientnew.ResourceGuards {
+	var guards []goclientnew.ResourceGuards
 	for _, rm := range mutationSources {
 		if rm.Resource == nil {
 			continue
 		}
-		paths := map[string]bool{}
+		paths := map[string]map[string]string{}
 		if rm.PathMutationMap != nil {
 			for path, info := range *rm.PathMutationMap {
 				if info.Index == mutationNum && info.MutationType != nil && *info.MutationType != goclientnew.None {
-					paths[path] = true
+					paths[path] = map[string]string{api.GuardKeyOverride: override}
 				}
 			}
 		}
 		if len(paths) == 0 {
 			if info := rm.ResourceMutationInfo; info != nil && info.Index == mutationNum && info.MutationType != nil &&
 				*info.MutationType == goclientnew.Add {
-				paths[""] = true
+				paths[""] = map[string]string{api.GuardKeyOverride: override}
 			}
 		}
 		if len(paths) > 0 {
-			protection = append(protection, goclientnew.ResourceProtection{
-				Resource:  &goclientnew.ResourceInfo{ResourceType: rm.Resource.ResourceType, ResourceName: rm.Resource.ResourceName},
-				Protected: paths,
+			guards = append(guards, goclientnew.ResourceGuards{
+				Resource: &goclientnew.ResourceInfo{ResourceType: rm.Resource.ResourceType, ResourceName: rm.Resource.ResourceName},
+				Set:      paths,
 			})
 		}
 	}
-	sort.Slice(protection, func(a, b int) bool {
-		return protection[a].Resource.ResourceType+protection[a].Resource.ResourceName <
-			protection[b].Resource.ResourceType+protection[b].Resource.ResourceName
+	sort.Slice(guards, func(a, b int) bool {
+		return guards[a].Resource.ResourceType+guards[a].Resource.ResourceName <
+			guards[b].Resource.ResourceType+guards[b].Resource.ResourceName
 	})
-	return protection
+	return guards
 }
 
 // copySyncLinks copies each of the source's links that the target has no link of the same

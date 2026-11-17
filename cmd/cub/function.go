@@ -78,9 +78,10 @@ Flags for mutating invocations:
 - --change-desc: record why the change was made; it becomes the revision's description
 - -o mutations: show the per-path diff the invocation produced
 - --dry-run: compute the result without writing it (combine with -o mutations to preview)
-- --protect: record the paths this change writes as protected local overrides, so a
-  later merge from upstream does not overwrite them. Leave it off when applying a
-  value decided elsewhere, such as propagating a release.
+- --guard Override=Upstream (Override=External for a unit with no upstream unit):
+  record the paths this change writes as local overrides, so a later merge does not
+  overwrite them. Leave it off when applying a value decided elsewhere, such as
+  propagating a release.
 
 Some function names are retained as deprecated aliases and should not be used in
 new work: yq (use get-yq), yq-i (use set-yq), set-image/get-image (use

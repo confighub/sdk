@@ -10,6 +10,7 @@ import (
 	"fmt"
 	"log/slog"
 	"math"
+	"reflect"
 	"regexp"
 	"slices"
 	"strconv"
@@ -3232,6 +3233,19 @@ func PatchMutationsGuarded(parsedData gaby.Container, mutationsProtection, mutat
 		arrayOrders := mutationsPatch[mutationPatchIndex].ArrayOrders
 		arrayElementAliases := mutationsPatch[mutationPatchIndex].ArrayElementAliases
 		resourcePatchMutation := &mutationsPatch[mutationPatchIndex].ResourceMutationInfo
+		// A guard on the resource as a whole holds the resource: its deletion and its
+		// replacement are withheld whole, as every path in it is. A replacement with what the
+		// resource already is writes nothing, so there is nothing to withhold.
+		if resourcePatchMutation.MutationType == api.MutationTypeDelete ||
+			resourcePatchMutation.MutationType == api.MutationTypeReplace {
+			if resourceGuards != nil && targetHoldsResourceMutation(doc, &mutationsPatch[mutationPatchIndex]) {
+				return nil, nil
+			}
+			if conflict := resourceGuardConflict(resourceGuards, guardClearance, &mutationsPatch[mutationPatchIndex]); conflict != nil {
+				conflicts = append(conflicts, *conflict)
+				return nil, nil
+			}
+		}
 		switch resourcePatchMutation.MutationType {
 		case api.MutationTypeAdd, api.MutationTypeReplace:
 			// Replace at the resource level means there was a delete then an add, so
@@ -3350,6 +3364,20 @@ func PatchMutationsGuarded(parsedData gaby.Container, mutationsProtection, mutat
 			}
 			continue
 		case api.MutationTypeAdd, api.MutationTypeReplace:
+			// A resource the target does not have can still be guarded: a guard may be
+			// written before the thing it is about exists, which is the same rule that lets
+			// one cover a path added later. One on the resource as a whole keeps it out, which
+			// is how a resource the target deleted stays deleted.
+			var resourceGuards *api.ResourcePathAnnotations
+			if guardIdx != nil {
+				if annotationIndex, ok := guardIdx.Find(mutationsPatch[i].Resource, mutationsPatch[i].AliasesWithoutScopes); ok {
+					resourceGuards = &guards.Annotations[annotationIndex]
+				}
+			}
+			if conflict := resourceGuardConflict(resourceGuards, guardClearance, &mutationsPatch[i]); conflict != nil {
+				conflicts = append(conflicts, *conflict)
+				continue
+			}
 			if protectedMutInfo != nil {
 				// The target deleted this resource and marked the deletion protected.
 				slog.Info("patch filtered", "resource",
@@ -3376,15 +3404,6 @@ func PatchMutationsGuarded(parsedData gaby.Container, mutationsProtection, mutat
 			exclusiveLookup := ExclusiveFieldsLookup(func(path string) (ExclusiveFields, bool) {
 				return resourceProvider.ExclusiveFieldsForPath(mutationsPatch[i].Resource.ResourceType, path)
 			})
-			// A resource the target does not have can still be guarded: a guard may be
-			// written before the thing it is about exists, which is the same rule that lets
-			// one cover a path added later.
-			var resourceGuards *api.ResourcePathAnnotations
-			if guardIdx != nil {
-				if annotationIndex, ok := guardIdx.Find(mutationsPatch[i].Resource, mutationsPatch[i].AliasesWithoutScopes); ok {
-					resourceGuards = &guards.Annotations[annotationIndex]
-				}
-			}
 			errs, pathConflicts = applyPathMutations(valueDoc, mutationsPatch[i].PathMutationMap,
 				false, nil, 0, mutationsPatch[i].Resource,
 				mutationsPatch[i].ArrayOrders, mutationsPatch[i].ArrayElementAliases,
@@ -3559,6 +3578,29 @@ func applyArrayElementOps(doc *gaby.YamlDoc, ops []arrayElementOp, errs []error)
 	return errs
 }
 
+// resourceGuardConflict returns the Guarded conflict for a change to a resource as a whole -- its
+// addition, deletion or replacement -- that a guard on the resource as a whole withholds, or nil
+// when the clearance covers the resource's own guards.
+func resourceGuardConflict(resourceGuards *api.ResourcePathAnnotations, clearance api.Clearance,
+	patch *api.ResourceMutation) *api.MutationConflict {
+	if resourceGuards == nil {
+		return nil
+	}
+	withheld := clearance.Withheld(resourceGuards.ResourceAnnotations[api.AnnotationKindGuard])
+	if len(withheld) == 0 {
+		return nil
+	}
+	first := withheld[0]
+	return &api.MutationConflict{
+		Reason:   api.ConflictReasonGuarded,
+		Resource: patch.Resource,
+		Source:   patch.ResourceMutationInfo,
+		Guard:    &first,
+		Guards:   withheld,
+		Details:  api.WithheldGuardDetails(first),
+	}
+}
+
 // resourceHoldsPaths reports whether anything holds a path of a resource the target has: a
 // protected path in its stored record, or a guard on it.
 func resourceHoldsPaths(hasProtection bool, mutationsProtection api.ResourceMutationList, protectionIndex int,
@@ -3594,7 +3636,10 @@ func targetHoldsPathMutation(doc *gaby.YamlDoc, path string, mutation *api.Mutat
 		if err != nil {
 			return false
 		}
-		return current.String() == value.String()
+		// By value, not by text: a string written with quotes and one written without are the
+		// same value, and a guard holding a path should not report a change that writes what
+		// the path already has.
+		return reflect.DeepEqual(current.Data(), value.Data())
 	case api.MutationTypeNone:
 		// Writes nothing, which any target already holds.
 		return true
@@ -4242,14 +4287,23 @@ func applyPathMutations(doc *gaby.YamlDoc, pathMutationMap api.MutationMap,
 	resourceGuards = withPositionalGuardKeys(doc, resourceGuards)
 
 	// What the target has claimed as its own, in whichever way this merge expresses it: a
-	// stored Protected=true, or — when subtraction is in play, where there is no stored
-	// protection at all — a mutation of the target's own at the path. Only the exclusive-
-	// field rules consult it; every other filter is already expressed as protection.
+	// guard the merge is not cleared for, a path the protection argument holds, or -- when
+	// subtraction is in play -- a mutation of the target's own at the path. Only the
+	// exclusive-field rules consult it; every other filter is already expressed as protection
+	// or as the guard filter. A guarded member counts because the merge cannot clear it: the
+	// guard filter would withhold its removal, and the union would end with two members.
 	var canonicalSubtracted api.MutationMap
 	if len(mutationsSubtracted) > 0 {
 		canonicalSubtracted, _ = canonicalMutationMap(mutationsSubtracted)
 	}
 	targetOwns := pathOwnership(func(canonicalPath, resolvedPath string) bool {
+		if resourceGuards != nil {
+			guardsHere := guardsAt(resourceGuards, api.ResolvedPath(canonicalPath),
+				api.ResolvedPath(positionalForm(canonicalPath, resolvedPath)))
+			if admitted, _ := clearance.Admits(guardsHere); !admitted {
+				return true
+			}
+		}
 		if hasProtection {
 			if _, mutation, found := api.FindAncestorPath(canonicalProtection,
 				api.ResolvedPath(positionalForm(canonicalPath, resolvedPath))); found && mutation.Protected {
@@ -4357,8 +4411,10 @@ func applyPathMutations(doc *gaby.YamlDoc, pathMutationMap api.MutationMap,
 		// Check for patches that conflict with the target's protection. A coarse entry covering a
 		// path the target protects part of has already been broken into its leaves, so
 		// this decides one leaf at a time -- see expandCoarsePatchEntries.
+		// The target's record of the path, or of the closest ancestor it has one for: what holds
+		// the path, if it is protected, and what a conflict reports the target keeps there.
+		var targetRecord *api.MutationInfo
 		if hasProtection {
-			// Walk up path ancestors to find whether any protection filters this path.
 			_, protectionMutation, hasFilter := api.FindAncestorPath(
 				canonicalProtection, CanonicalMutationPath(patches[i].Path))
 			if !hasFilter {
@@ -4368,6 +4424,10 @@ func applyPathMutations(doc *gaby.YamlDoc, pathMutationMap api.MutationMap,
 			if !hasFilter {
 				_, protectionMutation, hasFilter = api.FindAncestorPath(
 					mutationsProtection[protectionIndex].PathMutationMap, patchPath)
+			}
+			if hasFilter {
+				recordCopy := protectionMutation
+				targetRecord = &recordCopy
 			}
 			if hasFilter && protectionMutation.Protected {
 				if targetHoldsPathMutation(doc, string(patchPath), patchMutation) {
@@ -4404,6 +4464,7 @@ func applyPathMutations(doc *gaby.YamlDoc, pathMutationMap api.MutationMap,
 					Resource: resource,
 					Path:     patches[i].Path,
 					Source:   *patchMutation,
+					Target:   targetRecord,
 					Guard:    &withheldCopy,
 					Guards:   clearance.Withheld(pathGuards),
 					Details:  api.WithheldGuardDetails(withheld),

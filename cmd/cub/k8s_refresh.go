@@ -47,8 +47,9 @@ What refresh actually does, in order:
      than the unit's head is what isolates cluster-side drift from changes made in
      ConfigHub since the release.
   3. Patches that drift onto the unit's head, restricted to this one resource and
-     to the paths that actually changed. Paths the unit protects as local overrides
-     are not overwritten, and are reported as conflicts instead.
+     to the paths that actually changed. A path with a guard, such as the Override
+     guard on a value set on purpose, is not overwritten unless --clearance covers
+     the guard, and is reported as a conflict instead.
 
 A unit that has never been released has nothing to diff against, and refresh says so
 rather than treating the whole live object as a change.
@@ -95,7 +96,7 @@ func init() {
 	addK8sClusterFlags(k8sRefreshCmd)
 	addStandardDisplayFlags(k8sRefreshCmd)
 	enableDisplayMutationsFlag(k8sRefreshCmd)
-	addClearanceFlag(k8sRefreshCmd)
+	addMergeClearanceFlag(k8sRefreshCmd)
 	addGuardFlag(k8sRefreshCmd)
 	addInheritedGuardFlag(k8sRefreshCmd)
 	k8sRefreshCmd.Flags().StringVar(&changeDescription, "change-desc", "", "change description")
@@ -253,21 +254,9 @@ func applyClusterDrift(unit *goclientnew.Unit, spaceID, resourceType, name strin
 		return fmt.Errorf("failed to encode the changes to %s %s: %w", resourceType, name, err)
 	}
 
-	// The unit's own MutationSources carry the Protected flags that say which paths refresh
-	// may not overwrite. An empty list protects nothing, which is the right answer for a unit
-	// nothing has claimed a path in.
-	protection := goclientnew.ResourceMutationList{}
-	stored, err := fetchUnitMutationSources(unit.SpaceID, unit.UnitID)
-	if err != nil {
-		return fmt.Errorf("failed to read what set the values in unit %s: %w", unit.Slug, err)
-	}
-	if stored != nil {
-		protection = *stored
-	}
-	protectionData, err := json.Marshal(protection)
-	if err != nil {
-		return fmt.Errorf("failed to encode unit %s's protected paths: %w", unit.Slug, err)
-	}
+	// Nothing is protected by the patch itself: a path refresh may not overwrite is a guarded
+	// one, and the server's guard filter withholds it unless the refresh is cleared for it.
+	protectionData := []byte("[]")
 
 	body := &goclientnew.FunctionInvocationsRequest{
 		ToolchainType:     "Kubernetes/YAML",
@@ -293,7 +282,10 @@ func applyClusterDrift(unit *goclientnew.Unit, spaceID, resourceType, name strin
 	selectedSpaceID = spaceID
 	defer func() { selectedSpaceID = savedSpaceID }()
 
-	clearance, err := clearanceJSON(false)
+	// Refresh brings in values from outside the unit's configuration, as an upload does, so it
+	// is a merge: an Override guard holds a value set on purpose against it, and it is cleared
+	// for one only by --clearance.
+	clearance, err := clearanceJSON(true)
 	if err != nil {
 		return err
 	}
@@ -355,13 +347,12 @@ func matchesResourceName(info api.ResourceInfo, name string) bool {
 	return string(api.ResourceNameWithoutScopeFromResourceInfo(refreshResourceIdentifier, info)) == name
 }
 
-// reportRefreshConflicts prints the changes from the cluster the refresh did not write --
-// paths the unit protects as local overrides, paths a guard withheld, and paths that no longer
-// resolve against its data. They are the answer to "the cluster has this value but the unit
+// reportRefreshConflicts prints the changes from the cluster the refresh did not write -- paths
+// a guard withheld, and paths that no longer resolve against its data. They are the answer to "the cluster has this value but the unit
 // still doesn't", so they are reported rather than left in an output blob nobody reads.
 //
 // Two sources, because the two filters run at different moments and neither set contains the
-// other. Protection and path resolution are applied by patch-mutations itself, and come back in
+// other. Path resolution is applied by patch-mutations itself, and comes back in
 // the invocation's outputs. Guards are applied by the server as it writes the invocation's
 // result, and come back on the response. Reading only the outputs -- which is what this did --
 // reported a guarded path as refreshed, because the mutations describe the change that was

@@ -1288,6 +1288,14 @@ const GuardKeyTrigger = "Trigger"
 // protection does, so clients clear it by default for a change that is not a merge.
 const GuardKeyOverride = "Override"
 
+// GuardOverrideUpstream is the Override guard value for a value set on purpose over the one the
+// Unit's upstream Unit gives it, which an upgrade would bring.
+const GuardOverrideUpstream = "Upstream"
+
+// GuardOverrideExternal is the Override guard value for a value set on purpose over the one the
+// configuration the Unit is uploaded from gives it, which the next upload would bring.
+const GuardOverrideExternal = "External"
+
 // ClearanceAdmitting returns the clearance, extended if it has to be to admit the guard
 // key=value: by adding value to its In requirement on key, or else by adding one. The clearance
 // passed in is not modified.

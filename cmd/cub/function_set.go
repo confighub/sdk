@@ -26,10 +26,10 @@ A missing set- prefix is supplied, so 'cub function set replicas 3' invokes
 set-replicas.
 
 Pass --change-desc to record why the change was made; it becomes the new
-revision's description. Pass --protect to record the paths this change writes as
-protected local overrides, so a later merge from upstream does not overwrite
-them -- leave it off when applying a value decided elsewhere, such as
-propagating a release.
+revision's description. Pass --guard Override=Upstream (Override=External for a
+unit with no upstream unit) to record the paths this change writes as local
+overrides, so a later merge does not overwrite them -- leave it off when
+applying a value decided elsewhere, such as propagating a release.
 
 Common idioms:
   cub function set --dry-run -o mutations set-container-image nginx nginx:1.25

@@ -1873,6 +1873,9 @@
         "references": "Organization",
         "expandable": true
       },
+      "PathAnnotations": {
+        "dataType": "JSON"
+      },
       "Permissions": {
         "dataType": "map[string]map[string]map[uuid]bool"
       },

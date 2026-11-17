@@ -321,8 +321,6 @@ func displayBlameDetail(f *blame.Field) {
 	switch {
 	case f.Absent:
 		tprintRaw("    (not in the unit: the conflicts above are changes a merge could not make here)")
-	case f.Deleted && f.Protected:
-		tprintRaw("    (not in the unit: deleted by the change above, and protected, so a merge from upstream leaves it deleted)")
 	case f.Deleted:
 		tprintRaw("    (not in the unit: deleted by the change above)")
 	case len(f.Chain) == 0:

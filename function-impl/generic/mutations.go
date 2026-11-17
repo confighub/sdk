@@ -168,7 +168,7 @@ func registerSetProtection(fh handler.FunctionRegistry, converter configkit.Conf
 			Validating:            false,
 			Hermetic:              true,
 			Idempotent:            true,
-			Description:           "Set Protected values on a unit's MutationSources for the given resource paths, or for a resource as a whole, marking them local overrides a merge must not overwrite. Fails if any path does not exist in the unit's data.",
+			Description:           "Deprecated: Protected values are no longer read; a local override is an Override guard (cub unit set-guard). Sets Protected values on a unit's MutationSources for the given resource paths, or for a resource as a whole. Fails if any path does not exist in the unit's data.",
 			FunctionType:          api.FunctionTypeCustom,
 			AffectedResourceTypes: []api.ResourceType{api.ResourceTypeAny},
 		},
