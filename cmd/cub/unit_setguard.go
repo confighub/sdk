@@ -65,8 +65,8 @@ revision. Setting guards creates a new revision only if they change; pass
 A change can state its own reasons instead, without naming where: cub unit
 update --guard and --inherited-guard, cub function do --guard and
 --inherited-guard, and the Guards field on a link or a trigger take a bare
-KEY=VALUE and record it on the paths that change wrote --
-the guard analogue of --protect. Use this command to guard a path no change of
+KEY=VALUE and record it on the paths that change wrote.
+Use this command to guard a path no change of
 yours is writing, and to remove a guard, which no change can do.
 
 It prints the unit's PathAnnotations with -o json, yaml, jq or yq, or after its

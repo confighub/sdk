@@ -41,8 +41,7 @@ func ParseClearance(specs []string) (goclientnew.Clearance, error) {
 // DefaultClearance is the clearance a client sends with a change that is not a merge when none is
 // specified: cleared for Override guards, whatever their value. An Override guard keeps a merge --
 // an upgrade, a promotion, an upload, a merge from a source -- from replacing a value someone set
-// on purpose, as protection does, and like protection it does not stand in the way of the next
-// edit by hand. Each call returns a new Clearance, so a caller may extend it.
+// on purpose, and it is not meant to stand in the way of the next edit by hand. Each call returns a new Clearance, so a caller may extend it.
 func DefaultClearance() goclientnew.Clearance {
 	return goclientnew.Clearance{{
 		Key:      api.GuardKeyOverride,

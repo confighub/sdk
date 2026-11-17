@@ -19,7 +19,7 @@ var unitPathCmd = &cobra.Command{
 	Use:   "path <unit> <ref|path>",
 	Short: "Show everything recorded about one field of a unit",
 	Long: getCommandHelp(`Show everything ConfigHub records about one field of a unit's configuration: its value,
-whether it is protected, the guards and other annotations on it, the conflicts and link
+the guards and other annotations on it, the conflicts and link
 findings about it, whether a link needs or provides it, the comments written beside it in the
 configuration, the latest thread of review comments about it, and every change from this unit
 out to where the value was set -- each with its whole mutation and revision rather than the one

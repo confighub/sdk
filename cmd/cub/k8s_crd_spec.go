@@ -36,7 +36,7 @@ func getK8sCRDSpecHelp() string {
 A spec is what tells ConfigHub how to address the fields of a resource type: which arrays are
 keyed and by what, which sibling fields are mutually exclusive, which objects are freeform
 maps, which fields cannot change after creation, and where a pod template sits. Without one,
-a custom resource's containers are addressed by position, so a protected value moves when
+a custom resource's containers are addressed by position, so a guarded value moves when
 something is inserted ahead of it, and the container and pod functions do not see the type at
 all.
 

@@ -121,7 +121,7 @@ func addInvocationClearanceFlag(cmd *cobra.Command) {
 // addTriggerClearanceFlag registers --clearance on a trigger command.
 func addTriggerClearanceFlag(cmd *cobra.Command) {
 	cmd.Flags().StringArrayVar(&triggerClearance, "clearance", nil,
-		"class of guarded reason this trigger's function is cleared for, as KEY, KEY=VALUE[;VALUE...], KEY!=VALUE[;VALUE...], or !KEY to refuse any path carrying KEY (repeatable). Part of the trigger's Hash, unlike --protect: changing it changes what a re-run lands")
+		"class of guarded reason this trigger's function is cleared for, as KEY, KEY=VALUE[;VALUE...], KEY!=VALUE[;VALUE...], or !KEY to refuse any path carrying KEY (repeatable). Part of the trigger's Hash: changing it changes what a re-run lands")
 }
 
 // clearanceErrorPhrase introduces the clearance a refusal names as the one that would cover what

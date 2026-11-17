@@ -104,13 +104,11 @@ func displayExtendedLinkDetails(extendedLink *goclientnew.ExtendedLink) {
 	if linkDetails.UpdateType != "" {
 		view.Append([]string{"Update Type", linkDetails.UpdateType})
 	}
-	// AutoUpdate, Stale and Protect are shown for both values. A false is an answer here --
-	// whether the Link updates itself, whether it is behind, and whether what it writes is
-	// claimed as a local override -- and an omitted row is indistinguishable from one the
-	// display does not carry.
+	// AutoUpdate and Stale are shown for both values. A false is an answer here -- whether the
+	// Link updates itself, and whether it is behind -- and an omitted row is indistinguishable
+	// from one the display does not carry.
 	view.Append([]string{"Auto Update", fmt.Sprintf("%t", linkDetails.AutoUpdate)})
 	view.Append([]string{"Stale", fmt.Sprintf("%t", linkDetails.Stale)})
-	view.Append([]string{"Protect", fmt.Sprintf("%t", linkDetails.Protect)})
 	if linkDetails.Squash {
 		view.Append([]string{"Squash", "true"})
 	}

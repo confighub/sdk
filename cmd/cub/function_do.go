@@ -149,9 +149,10 @@ Key flags for agents:
 - --wait: Wait for async triggers to complete
 - --change-desc: Record why a mutating invocation was made; it becomes the revision description
 - -o mutations: Show the per-path diff, with or without --dry-run
-- --protect: Record the paths written as protected local overrides that a later
-  merge from upstream must not overwrite. Leave it off when applying a value
-  decided elsewhere, such as propagating a release.
+- --guard Override=Upstream: Record the paths written as local overrides that a
+  later merge from upstream must not overwrite (Override=External for a unit with
+  no upstream unit). Leave it off when applying a value decided elsewhere, such as
+  propagating a release.
 
 Error handling:
 - Functions return Success: true/false in response

@@ -112,7 +112,8 @@ func init() {
 	addTriggerGuardFlag(triggerUpdateCmd)
 	triggerUpdateCmd.Flags().BoolVar(&protectTrigger, "protect", false, "record the guard Trigger=<slug> on the paths this trigger's function writes, with the clearance for it")
 	_ = triggerUpdateCmd.Flags().MarkDeprecated("protect", "use --guard Trigger=<slug> with --clearance Trigger=<slug>; --protect records that guard and clearance on the trigger")
-	triggerUpdateCmd.Flags().BoolVar(&unprotectTrigger, "unprotect", false, "return this trigger to the default: it claims nothing it writes")
+	triggerUpdateCmd.Flags().BoolVar(&unprotectTrigger, "unprotect", false, "deprecated: remove the guard Trigger=<slug> that --protect records, and the clearance for it")
+	_ = triggerUpdateCmd.Flags().MarkDeprecated("unprotect", "Protect is recorded as the trigger's guard Trigger=<slug> and the clearance for it, not stored; update --guard and --clearance to change them")
 	triggerUpdateCmd.Flags().StringVar(&functionChannel, "channel", "", "channel whose client executes the trigger function")
 	triggerUpdateCmd.Flags().BoolVar(&triggerPatch, "patch", false, "use patch API for individual or bulk operations")
 	enableWhereFlag(triggerUpdateCmd)
@@ -435,8 +436,6 @@ func triggerUpdateCmdRun(cmd *cobra.Command, args []string) error {
 	}
 	if protectTrigger {
 		currentTrigger.Trigger.Protect = true
-	} else if unprotectTrigger {
-		currentTrigger.Trigger.Protect = false
 	}
 	// The full-update path assigns these as well as the two patch paths, since all three
 	// accept the flags and a field the command takes has to reach the entity on every route
@@ -450,6 +449,11 @@ func triggerUpdateCmdRun(cmd *cobra.Command, args []string) error {
 	}
 	if fullGuards != nil {
 		currentTrigger.Trigger.Guards = &fullGuards
+	}
+	if unprotectTrigger {
+		currentTrigger.Trigger.Guards, currentTrigger.Trigger.Clearance = withoutProtectGuard(
+			currentTrigger.Trigger.Guards, currentTrigger.Trigger.Clearance, "Trigger", currentTrigger.Trigger.Slug,
+			fullGuards == nil, fullClearance == nil)
 	}
 	if functionChannel != "" {
 		channelID, err := resolveChannelID(functionChannel)
@@ -599,8 +603,13 @@ func triggerPatchEnhancer(wasWarn bool) (PatchEnhancer, error) {
 		}
 		if protectTrigger {
 			patchMap["Protect"] = true
-		} else if unprotectTrigger {
-			patchMap["Protect"] = false
+		} else if unprotectTrigger && parsedGuards == nil {
+			// Protect is the guard Trigger=<slug>, which a merge patch takes off by naming the
+			// key with null. A merge patch cannot remove a key only where it has a given value,
+			// and each Trigger's own slug is not known here, so this removes a Trigger guard
+			// whatever its value, where a full update keeps one naming something else; and the
+			// clearance for the guard stays, admitting a guard the Trigger no longer sets.
+			patchMap["Guards"] = map[string]any{"Trigger": nil}
 		}
 		if channelID != nil {
 			patchMap["ChannelID"] = channelID.String()

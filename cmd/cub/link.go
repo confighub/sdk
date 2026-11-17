@@ -343,8 +343,10 @@ func linkFieldsEnhancer(cmd *cobra.Command) PatchEnhancer {
 			patchMap["Protect"] = true
 		} else if linkNoProtect && !cmd.Flags().Changed("guard") {
 			// Protect is the guard Link=<update-type>, which a merge patch takes off by naming
-			// the key with null. Each Link's own type is not known here, so its clearance for
-			// the guard stays; it admits a guard the Link no longer sets.
+			// the key with null. A merge patch cannot remove a key only where it has a given
+			// value, and each Link's own type is not known here, so this removes a Link guard
+			// whatever its value, where a full update keeps one naming another type; and the
+			// clearance for the guard stays, admitting a guard the Link no longer sets.
 			patchMap["Guards"] = map[string]any{"Link": nil}
 		}
 		if linkSquash {
@@ -373,29 +375,38 @@ func linkFieldsEnhancer(cmd *cobra.Command) PatchEnhancer {
 // rather than storing it, so Protect false says nothing to it. guards and clearance say whether
 // each is the command's to change, rather than set by --guard or --clearance.
 func unprotectLink(link *goclientnew.Link, guards, clearance bool) {
-	updateType := link.UpdateType
-	if guards && link.Guards != nil && (*link.Guards)["Link"] == updateType {
+	link.Guards, link.Clearance = withoutProtectGuard(link.Guards, link.Clearance, "Link", link.UpdateType, guards, clearance)
+}
+
+// withoutProtectGuard returns guardStamp without the guard key=value that Protect recorded, and
+// entityClearance without what admits that value, leaving each alone where editGuards or
+// editClearance is false. A guard under the key with another value was set for another reason,
+// and stays.
+func withoutProtectGuard(guardStamp *goclientnew.GuardStamp, entityClearance *goclientnew.Clearance, key, value string,
+	editGuards, editClearance bool) (*goclientnew.GuardStamp, *goclientnew.Clearance) {
+	if editGuards && guardStamp != nil && (*guardStamp)[key] == value {
 		stamp := goclientnew.GuardStamp{}
-		for key, value := range *link.Guards {
-			if key != "Link" {
-				stamp[key] = value
+		for k, v := range *guardStamp {
+			if k != key {
+				stamp[k] = v
 			}
 		}
-		link.Guards = &stamp
+		guardStamp = &stamp
 	}
-	if clearance && link.Clearance != nil {
+	if editClearance && entityClearance != nil {
 		kept := goclientnew.Clearance{}
-		for _, requirement := range *link.Clearance {
-			if requirement.Key == "Link" && requirement.Operator == "In" {
-				requirement.Values = slices.DeleteFunc(slices.Clone(requirement.Values), func(v string) bool { return v == updateType })
+		for _, requirement := range *entityClearance {
+			if requirement.Key == key && requirement.Operator == "In" {
+				requirement.Values = slices.DeleteFunc(slices.Clone(requirement.Values), func(v string) bool { return v == value })
 				if len(requirement.Values) == 0 {
 					continue
 				}
 			}
 			kept = append(kept, requirement)
 		}
-		link.Clearance = &kept
+		entityClearance = &kept
 	}
+	return guardStamp, entityClearance
 }
 
 // hasLinkFieldFlags returns true if any link-specific field flags were explicitly set.

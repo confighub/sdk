@@ -5276,8 +5276,10 @@ type Link struct {
 	BackingUnitID *openapi_types.UUID `json:"BackingUnitID,omitempty" yaml:"BackingUnitID,omitempty"`
 
 	// Bindings The needs/provides attribute bindings resolution found for this Link and keeps up to date: one for each needed attribute of the downstream Unit it matched with an attribute the upstream Unit provides. Set by the server, and rebuilt by each resolve. A needed attribute that a binding in ManualBindings names is not matched again.
-	Bindings  *BindingList `json:"Bindings,omitempty" yaml:"Bindings,omitempty"`
-	Clearance *Clearance   `json:"Clearance,omitempty" yaml:"Clearance,omitempty"`
+	Bindings *BindingList `json:"Bindings,omitempty" yaml:"Bindings,omitempty"`
+
+	// Clearance Classes of guarded reason this Link's resolve is cleared for, whatever its UpdateType and whether the resolve is queued or requested. A path whose guards it does not cover is not written, and the withheld change is reported as a conflict. This is what lets one Link maintain a field another is guarded out of: a TransformPaths Link cleared for the guard {"Link":"TransformPaths"} keeps writing the value it guards, while an UpgradeUnit Link cleared for nothing leaves it alone. A stored clearance gets no default: a Link that should write over an Override guard needs Override in its Clearance.
+	Clearance *Clearance `json:"Clearance,omitempty" yaml:"Clearance,omitempty"`
 
 	// CreatedAt The timestamp when the entity was created in "2023-01-01T12:00:00Z" format.
 	//
@@ -5307,7 +5309,7 @@ type Link struct {
 	// Example: 248df4b7-aa70-47b8-a036-33ac447e668d
 	FromUnitID openapi_types.UUID `json:"FromUnitID,omitzero" yaml:"FromUnitID"`
 
-	// Guards Guards to record on the paths this link's resolve writes, naming the reasons those paths hold what they hold, so a later operation must be cleared for them before overwriting. Sibling to Protect: Protect claims the paths, Guards say why. Add and overwrite only -- retiring a guard is the /guard API (cub unit set-guard --remove-guard), except that deleting the link takes back the guards it set on the paths it last wrote. Refused on UpgradeUnit and MergeUnits links, whose guards arrive by propagation from upstream.
+	// Guards Guards to record on the paths this link's resolve writes, naming the reasons those paths hold what they hold, so a later operation must be cleared for them before overwriting. {"Link":"<UpdateType>"}, with a Clearance admitting it, holds what the link maintains against merges and other writes while the link keeps writing it. Add and overwrite only -- retiring a guard is the /guard API (cub unit set-guard --remove-guard), except that deleting the link takes back the guards it set on the paths it last wrote, and updating it takes back those it no longer states. Refused on UpgradeUnit and MergeUnits links, whose guards arrive by propagation from upstream.
 	Guards *GuardStamp `json:"Guards,omitempty" yaml:"Guards,omitempty"`
 
 	// Hash SHA256 hash of the resolution-relevant Link fields, used to detect changes that require re-resolution.
@@ -5327,7 +5329,7 @@ type Link struct {
 	// ManualBindings The needs/provides attribute bindings stated for this Link, which resolution uses as they are. Each Binding maps one needed attribute in the downstream Unit to one provided attribute in the upstream Unit. An Insert Link has exactly one, which identifies only the needed attribute (NeededResource and NeededPath) and whose DataType selects how the upstream Unit is inserted: string, the default, inserts it verbatim as text; the downstream Unit's own configuration format inserts it as configuration data.
 	ManualBindings *BindingList `json:"ManualBindings,omitempty" yaml:"ManualBindings,omitempty"`
 
-	// MergeEnableSubtraction Enables the subtraction (override-preservation) step of the merge performed when resolving this Link. When false (the default), the source patch is applied without subtraction and the downstream Unit's local differences are preserved by the stored Mutation Protected values alone, widened by WhereMutation if it is set. When true, the merge additionally subtracts the downstream Unit's local differences from the source patch and the stored values are not consulted. Only meaningful for UpgradeUnit and MergeUnits Links.
+	// MergeEnableSubtraction Enables the subtraction (override-preservation) step of the merge performed when resolving this Link. When false (the default), the source patch is applied without subtraction, and the downstream Unit's local differences are preserved by its guards -- an Override guard on each local override -- widened by WhereMutation if it is set. When true, the merge additionally subtracts the downstream Unit's local differences from the source patch; the guards still hold. Only meaningful for UpgradeUnit and MergeUnits Links.
 	MergeEnableSubtraction bool `json:"MergeEnableSubtraction,omitempty" yaml:"MergeEnableSubtraction,omitempty"`
 
 	// OrganizationID Unique identifier for an organization.
@@ -5404,7 +5406,7 @@ type Link struct {
 	// Version An entity-specific sequence number used for optimistic concurrency control. The value read must be sent in calls to Update.
 	Version int64 `json:"Version,omitempty" yaml:"Version,omitempty"`
 
-	// WhereMutation Where expression selecting Mutations of the downstream Unit whose paths this Link's merges must not overwrite. Unioned with the Protected values stored on the downstream Unit's MutationSources, so it protects further paths and never re-opens one the Unit already claimed.
+	// WhereMutation Where expression selecting Mutations of the downstream Unit whose paths this Link's merges must not overwrite. It adds to the downstream Unit's guards, so it holds further paths and never re-opens a guarded one.
 	WhereMutation string `json:"WhereMutation,omitempty" yaml:"WhereMutation,omitempty"`
 
 	// WhereResource Where expression used to select which resources of the upstream Unit should be eligible for propagation to the downstream Unit.
@@ -7331,7 +7333,9 @@ type Trigger struct {
 	//
 	// Example: 248df4b7-aa70-47b8-a036-33ac447e668d
 	ChannelID *openapi_types.UUID `json:"ChannelID,omitempty" yaml:"ChannelID,omitempty"`
-	Clearance *Clearance          `json:"Clearance,omitempty" yaml:"Clearance,omitempty"`
+
+	// Clearance Classes of guarded reason this trigger's function is cleared for. A path whose guards it does not cover is not written, and the withheld change is reported as a conflict. A trigger running a stored Invocation is cleared for what either names. A stored clearance gets no default: a trigger that should write over an Override guard needs Override in its Clearance. Only meaningful for a mutating trigger, and part of the trigger's Hash.
+	Clearance *Clearance `json:"Clearance,omitempty" yaml:"Clearance,omitempty"`
 
 	// CreatedAt The timestamp when the entity was created in "2023-01-01T12:00:00Z" format.
 	//
@@ -7362,7 +7366,7 @@ type Trigger struct {
 	// FunctionName Function name
 	FunctionName string `json:"FunctionName,omitempty" yaml:"FunctionName,omitempty"`
 
-	// Guards Guards to record on the paths this trigger's function writes, naming the reasons those paths hold what they hold, so a later operation must be cleared for them before overwriting. Sibling to Protect: Protect claims the paths, Guards say why. Add and overwrite only -- retiring a guard is the /guard API (cub unit set-guard --remove-guard), except that deleting the trigger takes back the guards it set on the paths it last wrote. Only meaningful for a mutating trigger, and part of the trigger's Hash, unlike Protect.
+	// Guards Guards to record on the paths this trigger's function writes, naming the reasons those paths hold what they hold, so a later operation must be cleared for them before overwriting. {"Trigger":"<Slug>"}, with a Clearance admitting it, holds what the trigger decides against merges and other writes while the trigger keeps writing it. Add and overwrite only -- retiring a guard is the /guard API (cub unit set-guard --remove-guard), except that deleting the trigger takes back the guards it set on the paths it last wrote, and updating it takes back those it no longer states. Only meaningful for a mutating trigger, and part of the trigger's Hash.
 	Guards *GuardStamp `json:"Guards,omitempty" yaml:"Guards,omitempty"`
 
 	// Hash SHA256 hash of the trigger's specification fields, used to detect changes.
@@ -14875,11 +14879,9 @@ type ListAllInvocationsParamsWherePermission string
 // BulkPatchInvocationsApplicationMergePatchPlusJSONBody defines parameters for BulkPatchInvocations.
 type BulkPatchInvocationsApplicationMergePatchPlusJSONBody struct {
 	// Annotations An optional map of Annotation key/value pairs for tools to attach information to entities.
-	Annotations *map[string]*string `json:"Annotations,omitempty" yaml:"Annotations,omitempty"`
-	ChannelID   *openapi_types.UUID `json:"ChannelID,omitempty" yaml:"ChannelID,omitempty"`
-
-	// Clearance Classes of guarded reason this Invocation's functions are cleared for; combined by union with the clearance of the Trigger or API call that runs it
-	Clearance *[]*map[string]interface{} `json:"Clearance,omitempty" yaml:"Clearance,omitempty"`
+	Annotations *map[string]*string        `json:"Annotations,omitempty" yaml:"Annotations,omitempty"`
+	ChannelID   *openapi_types.UUID        `json:"ChannelID,omitempty" yaml:"ChannelID,omitempty"`
+	Clearance   *[]*map[string]interface{} `json:"Clearance,omitempty" yaml:"Clearance,omitempty"`
 
 	// DeleteGates An optional set of gates that, if any is present, will block deletion
 	DeleteGates *map[string]*bool `json:"DeleteGates,omitempty" yaml:"DeleteGates,omitempty"`
@@ -14887,9 +14889,7 @@ type BulkPatchInvocationsApplicationMergePatchPlusJSONBody struct {
 	// DisplayName Friendly name for the entity.
 	DisplayName         *string                    `json:"DisplayName,omitempty" yaml:"DisplayName,omitempty"`
 	FunctionInvocations *[]*map[string]interface{} `json:"FunctionInvocations,omitempty" yaml:"FunctionInvocations,omitempty"`
-
-	// Guards Guards to record on the paths this Invocation's functions write, so a later operation must be cleared for them; combined with the guards of a Trigger running it, the Trigger's winning per key. Add and overwrite only -- retiring a guard is the /guard API (cub unit set-guard --remove-guard). Clearance must cover them.
-	Guards *map[string]*string `json:"Guards,omitempty" yaml:"Guards,omitempty"`
+	Guards              *map[string]*string        `json:"Guards,omitempty" yaml:"Guards,omitempty"`
 
 	// HiddenReason The reason the entity is hidden, if it is. A hidden entity is left out of List and Search results, and of what bulk operations act on, unless the include_hidden parameter names its reason or is *, or the where parameter names the entity by Slug or ID. ConfigHub/YAML Units are created hidden with the reason BackingUnit unless given another.
 	HiddenReason *string `json:"HiddenReason,omitempty" yaml:"HiddenReason,omitempty"`
@@ -15018,11 +15018,9 @@ type BulkPatchInvocationsParams struct {
 // BulkCreateInvocationsApplicationMergePatchPlusJSONBody defines parameters for BulkCreateInvocations.
 type BulkCreateInvocationsApplicationMergePatchPlusJSONBody struct {
 	// Annotations An optional map of Annotation key/value pairs for tools to attach information to entities.
-	Annotations *map[string]*string `json:"Annotations,omitempty" yaml:"Annotations,omitempty"`
-	ChannelID   *openapi_types.UUID `json:"ChannelID,omitempty" yaml:"ChannelID,omitempty"`
-
-	// Clearance Classes of guarded reason this Invocation's functions are cleared for; combined by union with the clearance of the Trigger or API call that runs it
-	Clearance *[]*map[string]interface{} `json:"Clearance,omitempty" yaml:"Clearance,omitempty"`
+	Annotations *map[string]*string        `json:"Annotations,omitempty" yaml:"Annotations,omitempty"`
+	ChannelID   *openapi_types.UUID        `json:"ChannelID,omitempty" yaml:"ChannelID,omitempty"`
+	Clearance   *[]*map[string]interface{} `json:"Clearance,omitempty" yaml:"Clearance,omitempty"`
 
 	// DeleteGates An optional set of gates that, if any is present, will block deletion
 	DeleteGates *map[string]*bool `json:"DeleteGates,omitempty" yaml:"DeleteGates,omitempty"`
@@ -15030,9 +15028,7 @@ type BulkCreateInvocationsApplicationMergePatchPlusJSONBody struct {
 	// DisplayName Friendly name for the entity.
 	DisplayName         *string                    `json:"DisplayName,omitempty" yaml:"DisplayName,omitempty"`
 	FunctionInvocations *[]*map[string]interface{} `json:"FunctionInvocations,omitempty" yaml:"FunctionInvocations,omitempty"`
-
-	// Guards Guards to record on the paths this Invocation's functions write, so a later operation must be cleared for them; combined with the guards of a Trigger running it, the Trigger's winning per key. Add and overwrite only -- retiring a guard is the /guard API (cub unit set-guard --remove-guard). Clearance must cover them.
-	Guards *map[string]*string `json:"Guards,omitempty" yaml:"Guards,omitempty"`
+	Guards              *map[string]*string        `json:"Guards,omitempty" yaml:"Guards,omitempty"`
 
 	// HiddenReason The reason the entity is hidden, if it is. A hidden entity is left out of List and Search results, and of what bulk operations act on, unless the include_hidden parameter names its reason or is *, or the where parameter names the entity by Slug or ID. ConfigHub/YAML Units are created hidden with the reason BackingUnit unless given another.
 	HiddenReason *string `json:"HiddenReason,omitempty" yaml:"HiddenReason,omitempty"`
@@ -15621,9 +15617,7 @@ type BulkPatchLinksApplicationMergePatchPlusJSONBody struct {
 	DownstreamPaths                 *[]*map[string]interface{} `json:"DownstreamPaths,omitempty" yaml:"DownstreamPaths,omitempty"`
 	DownstreamSetters               *[]*map[string]interface{} `json:"DownstreamSetters,omitempty" yaml:"DownstreamSetters,omitempty"`
 	FromUnitID                      *openapi_types.UUID        `json:"FromUnitID,omitempty" yaml:"FromUnitID,omitempty"`
-
-	// Guards Guards to record on the paths this link's resolve writes, naming the reasons those paths hold what they hold, so a later operation must be cleared for them before overwriting. Sibling to Protect: Protect claims the paths, Guards say why. Add and overwrite only -- retiring a guard is the /guard API (cub unit set-guard --remove-guard), except that deleting the link takes back the guards it set on the paths it last wrote. Refused on UpgradeUnit and MergeUnits links, whose guards arrive by propagation from upstream.
-	Guards *map[string]*string `json:"Guards,omitempty" yaml:"Guards,omitempty"`
+	Guards                          *map[string]*string        `json:"Guards,omitempty" yaml:"Guards,omitempty"`
 
 	// HiddenReason The reason the entity is hidden, if it is. A hidden entity is left out of List and Search results, and of what bulk operations act on, unless the include_hidden parameter names its reason or is *, or the where parameter names the entity by Slug or ID. ConfigHub/YAML Units are created hidden with the reason BackingUnit unless given another.
 	HiddenReason *string `json:"HiddenReason,omitempty" yaml:"HiddenReason,omitempty"`
@@ -15776,9 +15770,7 @@ type BulkCreateLinksApplicationMergePatchPlusJSONBody struct {
 	DownstreamPaths                 *[]*map[string]interface{} `json:"DownstreamPaths,omitempty" yaml:"DownstreamPaths,omitempty"`
 	DownstreamSetters               *[]*map[string]interface{} `json:"DownstreamSetters,omitempty" yaml:"DownstreamSetters,omitempty"`
 	FromUnitID                      *openapi_types.UUID        `json:"FromUnitID,omitempty" yaml:"FromUnitID,omitempty"`
-
-	// Guards Guards to record on the paths this link's resolve writes, naming the reasons those paths hold what they hold, so a later operation must be cleared for them before overwriting. Sibling to Protect: Protect claims the paths, Guards say why. Add and overwrite only -- retiring a guard is the /guard API (cub unit set-guard --remove-guard), except that deleting the link takes back the guards it set on the paths it last wrote. Refused on UpgradeUnit and MergeUnits links, whose guards arrive by propagation from upstream.
-	Guards *map[string]*string `json:"Guards,omitempty" yaml:"Guards,omitempty"`
+	Guards                          *map[string]*string        `json:"Guards,omitempty" yaml:"Guards,omitempty"`
 
 	// HiddenReason The reason the entity is hidden, if it is. A hidden entity is left out of List and Search results, and of what bulk operations act on, unless the include_hidden parameter names its reason or is *, or the where parameter names the entity by Slug or ID. ConfigHub/YAML Units are created hidden with the reason BackingUnit unless given another.
 	HiddenReason *string `json:"HiddenReason,omitempty" yaml:"HiddenReason,omitempty"`
@@ -20266,11 +20258,9 @@ type GetInvocationParams struct {
 // PatchInvocationApplicationMergePatchPlusJSONBody defines parameters for PatchInvocation.
 type PatchInvocationApplicationMergePatchPlusJSONBody struct {
 	// Annotations An optional map of Annotation key/value pairs for tools to attach information to entities.
-	Annotations *map[string]*string `json:"Annotations,omitempty" yaml:"Annotations,omitempty"`
-	ChannelID   *openapi_types.UUID `json:"ChannelID,omitempty" yaml:"ChannelID,omitempty"`
-
-	// Clearance Classes of guarded reason this Invocation's functions are cleared for; combined by union with the clearance of the Trigger or API call that runs it
-	Clearance *[]*map[string]interface{} `json:"Clearance,omitempty" yaml:"Clearance,omitempty"`
+	Annotations *map[string]*string        `json:"Annotations,omitempty" yaml:"Annotations,omitempty"`
+	ChannelID   *openapi_types.UUID        `json:"ChannelID,omitempty" yaml:"ChannelID,omitempty"`
+	Clearance   *[]*map[string]interface{} `json:"Clearance,omitempty" yaml:"Clearance,omitempty"`
 
 	// DeleteGates An optional set of gates that, if any is present, will block deletion
 	DeleteGates *map[string]*bool `json:"DeleteGates,omitempty" yaml:"DeleteGates,omitempty"`
@@ -20278,9 +20268,7 @@ type PatchInvocationApplicationMergePatchPlusJSONBody struct {
 	// DisplayName Friendly name for the entity.
 	DisplayName         *string                    `json:"DisplayName,omitempty" yaml:"DisplayName,omitempty"`
 	FunctionInvocations *[]*map[string]interface{} `json:"FunctionInvocations,omitempty" yaml:"FunctionInvocations,omitempty"`
-
-	// Guards Guards to record on the paths this Invocation's functions write, so a later operation must be cleared for them; combined with the guards of a Trigger running it, the Trigger's winning per key. Add and overwrite only -- retiring a guard is the /guard API (cub unit set-guard --remove-guard). Clearance must cover them.
-	Guards *map[string]*string `json:"Guards,omitempty" yaml:"Guards,omitempty"`
+	Guards              *map[string]*string        `json:"Guards,omitempty" yaml:"Guards,omitempty"`
 
 	// HiddenReason The reason the entity is hidden, if it is. A hidden entity is left out of List and Search results, and of what bulk operations act on, unless the include_hidden parameter names its reason or is *, or the where parameter names the entity by Slug or ID. ConfigHub/YAML Units are created hidden with the reason BackingUnit unless given another.
 	HiddenReason *string `json:"HiddenReason,omitempty" yaml:"HiddenReason,omitempty"`
@@ -20509,9 +20497,7 @@ type PatchLinkApplicationMergePatchPlusJSONBody struct {
 	DownstreamPaths                 *[]*map[string]interface{} `json:"DownstreamPaths,omitempty" yaml:"DownstreamPaths,omitempty"`
 	DownstreamSetters               *[]*map[string]interface{} `json:"DownstreamSetters,omitempty" yaml:"DownstreamSetters,omitempty"`
 	FromUnitID                      *openapi_types.UUID        `json:"FromUnitID,omitempty" yaml:"FromUnitID,omitempty"`
-
-	// Guards Guards to record on the paths this link's resolve writes, naming the reasons those paths hold what they hold, so a later operation must be cleared for them before overwriting. Sibling to Protect: Protect claims the paths, Guards say why. Add and overwrite only -- retiring a guard is the /guard API (cub unit set-guard --remove-guard), except that deleting the link takes back the guards it set on the paths it last wrote. Refused on UpgradeUnit and MergeUnits links, whose guards arrive by propagation from upstream.
-	Guards *map[string]*string `json:"Guards,omitempty" yaml:"Guards,omitempty"`
+	Guards                          *map[string]*string        `json:"Guards,omitempty" yaml:"Guards,omitempty"`
 
 	// HiddenReason The reason the entity is hidden, if it is. A hidden entity is left out of List and Search results, and of what bulk operations act on, unless the include_hidden parameter names its reason or is *, or the where parameter names the entity by Slug or ID. ConfigHub/YAML Units are created hidden with the reason BackingUnit unless given another.
 	HiddenReason *string `json:"HiddenReason,omitempty" yaml:"HiddenReason,omitempty"`
@@ -21411,10 +21397,8 @@ type PatchTriggerApplicationMergePatchPlusJSONBody struct {
 	Event       *string `json:"Event,omitempty" yaml:"Event,omitempty"`
 
 	// FunctionName Function name
-	FunctionName *string `json:"FunctionName,omitempty" yaml:"FunctionName,omitempty"`
-
-	// Guards Guards to record on the paths this trigger's function writes, naming the reasons those paths hold what they hold, so a later operation must be cleared for them before overwriting. Sibling to Protect: Protect claims the paths, Guards say why. Add and overwrite only -- retiring a guard is the /guard API (cub unit set-guard --remove-guard), except that deleting the trigger takes back the guards it set on the paths it last wrote. Only meaningful for a mutating trigger, and part of the trigger's Hash, unlike Protect.
-	Guards *map[string]*string `json:"Guards,omitempty" yaml:"Guards,omitempty"`
+	FunctionName *string             `json:"FunctionName,omitempty" yaml:"FunctionName,omitempty"`
+	Guards       *map[string]*string `json:"Guards,omitempty" yaml:"Guards,omitempty"`
 
 	// HiddenReason The reason the entity is hidden, if it is. A hidden entity is left out of List and Search results, and of what bulk operations act on, unless the include_hidden parameter names its reason or is *, or the where parameter names the entity by Slug or ID. ConfigHub/YAML Units are created hidden with the reason BackingUnit unless given another.
 	HiddenReason *string             `json:"HiddenReason,omitempty" yaml:"HiddenReason,omitempty"`
@@ -24769,10 +24753,8 @@ type BulkPatchTriggersApplicationMergePatchPlusJSONBody struct {
 	Event       *string `json:"Event,omitempty" yaml:"Event,omitempty"`
 
 	// FunctionName Function name
-	FunctionName *string `json:"FunctionName,omitempty" yaml:"FunctionName,omitempty"`
-
-	// Guards Guards to record on the paths this trigger's function writes, naming the reasons those paths hold what they hold, so a later operation must be cleared for them before overwriting. Sibling to Protect: Protect claims the paths, Guards say why. Add and overwrite only -- retiring a guard is the /guard API (cub unit set-guard --remove-guard), except that deleting the trigger takes back the guards it set on the paths it last wrote. Only meaningful for a mutating trigger, and part of the trigger's Hash, unlike Protect.
-	Guards *map[string]*string `json:"Guards,omitempty" yaml:"Guards,omitempty"`
+	FunctionName *string             `json:"FunctionName,omitempty" yaml:"FunctionName,omitempty"`
+	Guards       *map[string]*string `json:"Guards,omitempty" yaml:"Guards,omitempty"`
 
 	// HiddenReason The reason the entity is hidden, if it is. A hidden entity is left out of List and Search results, and of what bulk operations act on, unless the include_hidden parameter names its reason or is *, or the where parameter names the entity by Slug or ID. ConfigHub/YAML Units are created hidden with the reason BackingUnit unless given another.
 	HiddenReason *string             `json:"HiddenReason,omitempty" yaml:"HiddenReason,omitempty"`
@@ -24925,10 +24907,8 @@ type BulkCreateTriggersApplicationMergePatchPlusJSONBody struct {
 	Event       *string `json:"Event,omitempty" yaml:"Event,omitempty"`
 
 	// FunctionName Function name
-	FunctionName *string `json:"FunctionName,omitempty" yaml:"FunctionName,omitempty"`
-
-	// Guards Guards to record on the paths this trigger's function writes, naming the reasons those paths hold what they hold, so a later operation must be cleared for them before overwriting. Sibling to Protect: Protect claims the paths, Guards say why. Add and overwrite only -- retiring a guard is the /guard API (cub unit set-guard --remove-guard), except that deleting the trigger takes back the guards it set on the paths it last wrote. Only meaningful for a mutating trigger, and part of the trigger's Hash, unlike Protect.
-	Guards *map[string]*string `json:"Guards,omitempty" yaml:"Guards,omitempty"`
+	FunctionName *string             `json:"FunctionName,omitempty" yaml:"FunctionName,omitempty"`
+	Guards       *map[string]*string `json:"Guards,omitempty" yaml:"Guards,omitempty"`
 
 	// HiddenReason The reason the entity is hidden, if it is. A hidden entity is left out of List and Search results, and of what bulk operations act on, unless the include_hidden parameter names its reason or is *, or the where parameter names the entity by Slug or ID. ConfigHub/YAML Units are created hidden with the reason BackingUnit unless given another.
 	HiddenReason *string             `json:"HiddenReason,omitempty" yaml:"HiddenReason,omitempty"`

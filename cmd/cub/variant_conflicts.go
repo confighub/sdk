@@ -20,8 +20,8 @@ var variantConflictsCmd = &cobra.Command{
 	Long: getCommandHelp(`Work with the parts of the last promote's patch that were not applied, across a
 whole variant.
 
-A merge reports a conflict for every change it could not make: a path the variant
-protects (ProtectedPath), a path the variant owns (Subtracted), a path that could not be
+A merge reports a conflict for every change it could not make: a path a link's
+--where-mutation holds (ProtectedPath), a path the variant owns (Subtracted), a path that could not be
 located (UnresolvedPath), a downstream change displaced by an upstream deletion
 (DeleteShadowed), a value a guard stopped (Guarded), a guard change the merge was not
 cleared for (GuardWithheld), and a change a mutually exclusive field blocked

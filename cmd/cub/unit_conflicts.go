@@ -21,16 +21,19 @@ var unitConflictsCmd = &cobra.Command{
 	Long: getCommandHelp(`Work with the parts of the last merge's patch that were not applied.
 
 A merge reports a conflict for every change it could not make: a path the
-downstream owns (Subtracted), a path the downstream protects (ProtectedPath),
-a path that could not be located in this unit (UnresolvedPath), and each
-downstream change displaced by an upstream deletion (DeleteShadowed). The
-merged data is correct as it stands -- a conflict says what the source wanted
-to change and couldn't.
+downstream owns (Subtracted), a path a link's --where-mutation holds
+(ProtectedPath), a path that could not be located in this unit
+(UnresolvedPath), and each downstream change displaced by an upstream deletion
+(DeleteShadowed). The merged data is correct as it stands -- a conflict says
+what the source wanted to change and couldn't.
 
 Guarded is one of those, for a value the source wanted to write at a path
 carrying a guard -- a recorded reason its value is what it is -- that the merge
 was not cleared for. The conflict names the guard, so the report says which
-reason stopped it rather than only that something did.
+reason stopped it rather than only that something did. The common case is an
+Override guard keeping a local override, Override=Upstream or Override=External,
+which merges are not cleared for by default. Conflicts recorded by releases
+before guards replaced protection report those as ProtectedPath.
 
 Applying a Guarded conflict writes the guarded path, so it needs what the merge
 lacked: a --clearance covering the guards there, given as for any change. Without
@@ -60,10 +63,12 @@ response of the request that ran it. The next merge replaces them with its own,
 and a merge that lands cleanly clears them.
 
 With no flags this lists the outstanding conflicts, and the dismissals recorded
-with --permanent. --apply replays the changes they withheld, with protection and
-subtraction set aside so neither filters them out a second time; guards still
-apply, and --clearance says which the applied changes are cleared for. --dismiss drops them without
-touching the configuration data. Both act on every outstanding conflict unless
+with --permanent. --apply replays the changes they withheld, with
+--where-mutation and subtraction set aside so neither filters them out a second
+time; guards still apply, and --clearance says which the applied changes are
+cleared for. Unlike an edit, an apply is not cleared for Override guards unless
+--clearance says so. --dismiss drops them without touching the configuration
+data. Both act on every outstanding conflict unless
 --reason, --path, --resource, --resource-type, or --guard narrows the selection,
 and both take --dry-run, which reports what the request would do and writes
 nothing.

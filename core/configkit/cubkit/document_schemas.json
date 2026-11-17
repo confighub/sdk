@@ -1309,7 +1309,12 @@
           "type": "boolean"
         },
         "Clearance": {
-          "$ref": "#/definitions/Clearance"
+          "allOf": [
+            {
+              "$ref": "#/definitions/Clearance"
+            }
+          ],
+          "description": "Classes of guarded reason this Link's resolve is cleared for, whatever its UpdateType and whether the resolve is queued or requested. A path whose guards it does not cover is not written, and the withheld change is reported as a conflict. This is what lets one Link maintain a field another is guarded out of: a TransformPaths Link cleared for the guard {\"Link\":\"TransformPaths\"} keeps writing the value it guards, while an UpgradeUnit Link cleared for nothing leaves it alone. A stored clearance gets no default: a Link that should write over an Override guard needs Override in its Clearance."
         },
         "DeleteGates": {
           "additionalProperties": {
@@ -1353,7 +1358,7 @@
               "$ref": "#/definitions/GuardStamp"
             }
           ],
-          "description": "Guards to record on the paths this link's resolve writes, naming the reasons those paths hold what they hold, so a later operation must be cleared for them before overwriting. Sibling to Protect: Protect claims the paths, Guards say why. Add and overwrite only -- retiring a guard is the /guard API (cub unit set-guard --remove-guard), except that deleting the link takes back the guards it set on the paths it last wrote. Refused on UpgradeUnit and MergeUnits links, whose guards arrive by propagation from upstream."
+          "description": "Guards to record on the paths this link's resolve writes, naming the reasons those paths hold what they hold, so a later operation must be cleared for them before overwriting. {\"Link\":\"\u003cUpdateType\u003e\"}, with a Clearance admitting it, holds what the link maintains against merges and other writes while the link keeps writing it. Add and overwrite only -- retiring a guard is the /guard API (cub unit set-guard --remove-guard), except that deleting the link takes back the guards it set on the paths it last wrote, and updating it takes back those it no longer states. Refused on UpgradeUnit and MergeUnits links, whose guards arrive by propagation from upstream."
         },
         "Labels": {
           "additionalProperties": {
@@ -1373,7 +1378,7 @@
           "description": "The needs/provides attribute bindings stated for this Link, which resolution uses as they are. Each Binding maps one needed attribute in the downstream Unit to one provided attribute in the upstream Unit. An Insert Link has exactly one, which identifies only the needed attribute (NeededResource and NeededPath) and whose DataType selects how the upstream Unit is inserted: string, the default, inserts it verbatim as text; the downstream Unit's own configuration format inserts it as configuration data."
         },
         "MergeEnableSubtraction": {
-          "description": "Enables the subtraction (override-preservation) step of the merge performed when resolving this Link. When false (the default), the source patch is applied without subtraction and the downstream Unit's local differences are preserved by the stored Mutation Protected values alone, widened by WhereMutation if it is set. When true, the merge additionally subtracts the downstream Unit's local differences from the source patch and the stored values are not consulted. Only meaningful for UpgradeUnit and MergeUnits Links.",
+          "description": "Enables the subtraction (override-preservation) step of the merge performed when resolving this Link. When false (the default), the source patch is applied without subtraction, and the downstream Unit's local differences are preserved by its guards -- an Override guard on each local override -- widened by WhereMutation if it is set. When true, the merge additionally subtracts the downstream Unit's local differences from the source patch; the guards still hold. Only meaningful for UpgradeUnit and MergeUnits Links.",
           "type": "boolean"
         },
         "Permissions": {
@@ -1427,7 +1432,7 @@
           "type": "array"
         },
         "WhereMutation": {
-          "description": "Where expression selecting Mutations of the downstream Unit whose paths this Link's merges must not overwrite. Unioned with the Protected values stored on the downstream Unit's MutationSources, so it protects further paths and never re-opens one the Unit already claimed.",
+          "description": "Where expression selecting Mutations of the downstream Unit whose paths this Link's merges must not overwrite. It adds to the downstream Unit's guards, so it holds further paths and never re-opens a guarded one.",
           "type": "string"
         },
         "WhereResource": {
@@ -1638,7 +1643,12 @@
           "type": "string"
         },
         "Clearance": {
-          "$ref": "#/definitions/Clearance"
+          "allOf": [
+            {
+              "$ref": "#/definitions/Clearance"
+            }
+          ],
+          "description": "Classes of guarded reason this trigger's function is cleared for. A path whose guards it does not cover is not written, and the withheld change is reported as a conflict. A trigger running a stored Invocation is cleared for what either names. A stored clearance gets no default: a trigger that should write over an Override guard needs Override in its Clearance. Only meaningful for a mutating trigger, and part of the trigger's Hash."
         },
         "DeleteGates": {
           "additionalProperties": {
@@ -1679,7 +1689,7 @@
               "$ref": "#/definitions/GuardStamp"
             }
           ],
-          "description": "Guards to record on the paths this trigger's function writes, naming the reasons those paths hold what they hold, so a later operation must be cleared for them before overwriting. Sibling to Protect: Protect claims the paths, Guards say why. Add and overwrite only -- retiring a guard is the /guard API (cub unit set-guard --remove-guard), except that deleting the trigger takes back the guards it set on the paths it last wrote. Only meaningful for a mutating trigger, and part of the trigger's Hash, unlike Protect."
+          "description": "Guards to record on the paths this trigger's function writes, naming the reasons those paths hold what they hold, so a later operation must be cleared for them before overwriting. {\"Trigger\":\"\u003cSlug\u003e\"}, with a Clearance admitting it, holds what the trigger decides against merges and other writes while the trigger keeps writing it. Add and overwrite only -- retiring a guard is the /guard API (cub unit set-guard --remove-guard), except that deleting the trigger takes back the guards it set on the paths it last wrote, and updating it takes back those it no longer states. Only meaningful for a mutating trigger, and part of the trigger's Hash."
         },
         "Invocation": {
           "description": "The Invocation it refers to, by its slug, or as \u003cspace\u003e/\u003cslug\u003e in another Space than the document's.",

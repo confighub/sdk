@@ -120,9 +120,9 @@ const (
 	// Delete; Target is the displaced target mutation.
 	ConflictReasonDeleteShadowed ConflictReason = "DeleteShadowed"
 	// ConflictReasonProtectedPath: a path or resource in the patch was
-	// skipped by PatchMutations because the target had Protected=true on it
-	// (directly or via an ancestor path) -- a local override the merge must
-	// not overwrite.
+	// skipped by PatchMutations because its protection argument -- a Link's
+	// WhereMutation -- had Protected=true on it (directly or via an ancestor
+	// path). A local override is an Override guard, reported as Guarded.
 	ConflictReasonProtectedPath ConflictReason = "ProtectedPath"
 	// ConflictReasonUnresolvedPath: a path in the patch couldn't be fully
 	// resolved against the target document — typically because the

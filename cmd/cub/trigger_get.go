@@ -104,10 +104,9 @@ func displayExtendedTriggerDetails(extendedTrigger *goclientnew.ExtendedTrigger)
 	view.Append([]string{"Validating", strconv.FormatBool(trigger.Validating)})
 	view.Append([]string{"Disabled", strconv.FormatBool(trigger.Disabled)})
 	view.Append([]string{"Warn", strconv.FormatBool(trigger.Warn)})
-	// Protect, and the two statements about guards beside it, are shown the way cub link get
-	// shows them: what a Trigger claims and states about what it writes belongs next to what
-	// it does, not somewhere a reader has to go looking for it.
-	view.Append([]string{"Protect", strconv.FormatBool(trigger.Protect)})
+	// Clearance and Guards are shown the way cub link get shows them: what a Trigger states
+	// about what it writes belongs next to what it does, not somewhere a reader has to go
+	// looking for it.
 	if clearance := formatClearance(trigger.Clearance); clearance != "" {
 		view.Append([]string{"Clearance", clearance})
 	}
@@ -173,10 +172,9 @@ func displayTriggerDetails(trigger *goclientnew.Trigger) {
 	view.Append([]string{"Validating", strconv.FormatBool(trigger.Validating)})
 	view.Append([]string{"Disabled", strconv.FormatBool(trigger.Disabled)})
 	view.Append([]string{"Warn", strconv.FormatBool(trigger.Warn)})
-	// Protect, and the two statements about guards beside it, are shown the way cub link get
-	// shows them: what a Trigger claims and states about what it writes belongs next to what
-	// it does, not somewhere a reader has to go looking for it.
-	view.Append([]string{"Protect", strconv.FormatBool(trigger.Protect)})
+	// Clearance and Guards are shown the way cub link get shows them: what a Trigger states
+	// about what it writes belongs next to what it does, not somewhere a reader has to go
+	// looking for it.
 	if clearance := formatClearance(trigger.Clearance); clearance != "" {
 		view.Append([]string{"Clearance", clearance})
 	}

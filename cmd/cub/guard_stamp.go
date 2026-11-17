@@ -15,8 +15,8 @@ import (
 )
 
 // A change can state the reasons it has for what it writes, so that a later operation has to
-// know about them before overwriting. This is --guard, the guard analogue of --protect: where
-// --protect claims the paths the operation wrote, --guard says why they hold what they hold.
+// know about them before overwriting. This is --guard: it says why the paths the operation wrote
+// hold what they hold. --guard Override=Upstream is what keeps a local override against merges.
 //
 // On the command line each guard is one KEY=VALUE pair, the key naming a class of reason and the
 // value the specific one:
@@ -27,8 +27,8 @@ import (
 // --guard records guards that stay with the unit. --inherited-guard records guards that travel:
 // a clone of the unit receives them, and a merge carries them to the units downstream.
 //
-// It names no path, which is the point. The paths are the ones the operation wrote, exactly as
-// they are for --protect. `cub unit set-guard --guard` spells the same flag with a resource and
+// It names no path, which is the point. The paths are the ones the operation wrote.
+// `cub unit set-guard --guard` spells the same flag with a resource and
 // a path in front of it, because there it is guarding somewhere the command is not writing.
 //
 // It only ever adds and overwrites the keys it names. Retiring a guard is
@@ -170,5 +170,5 @@ func addInvocationGuardFlag(cmd *cobra.Command) {
 // addTriggerGuardFlag registers --guard on a trigger command.
 func addTriggerGuardFlag(cmd *cobra.Command) {
 	cmd.Flags().StringArrayVar(&triggerGuards, "guard", nil,
-		"reason to record on the paths this trigger's function writes, as KEY=VALUE (repeatable). A later operation must be cleared for it before overwriting those paths, the trigger's next run included, so --clearance has to cover it. Part of the trigger's Hash, unlike --protect: changing it changes what a re-run leaves behind")
+		"reason to record on the paths this trigger's function writes, as KEY=VALUE (repeatable). A later operation must be cleared for it before overwriting those paths, the trigger's next run included, so --clearance has to cover it. Part of the trigger's Hash: changing it changes what a re-run leaves behind")
 }
