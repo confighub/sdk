@@ -493,7 +493,6 @@ type ModelConstraint interface {
 		goclientnew.ChangeWorkflow |
 		goclientnew.ExtendedChangeWorkflow |
 		goclientnew.Unit |
-		goclientnew.UnitEvent |
 		goclientnew.ExtendedUnit |
 		goclientnew.Attribute |
 		goclientnew.ExtendedAttribute |
@@ -805,13 +804,5 @@ func jsonOneLine(v any) string {
 		return fmt.Sprintf("%v", v)
 	}
 	return string(encoded)
-}
-
-// actionStatus dereferences an optional ActionStatusType for display.
-func actionStatus(status *goclientnew.ActionStatusType) goclientnew.ActionStatusType {
-	if status == nil {
-		return "None"
-	}
-	return *status
 }
 

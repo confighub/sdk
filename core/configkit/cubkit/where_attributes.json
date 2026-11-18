@@ -1842,9 +1842,6 @@
         "references": "Revision",
         "expandable": true
       },
-      "HeadUnitEventNum": {
-        "dataType": "int"
-      },
       "HiddenReason": {
         "dataType": "string"
       },
@@ -1944,54 +1941,6 @@
       },
       "Values": {
         "dataType": "map[string]string"
-      }
-    },
-    "UnitEvent": {
-      "Action": {
-        "dataType": "string"
-      },
-      "CreatedAt": {
-        "dataType": "time"
-      },
-      "HiddenReason": {
-        "dataType": "string"
-      },
-      "OrganizationID": {
-        "dataType": "uuid",
-        "references": "Organization"
-      },
-      "Result": {
-        "dataType": "string"
-      },
-      "RevisionNum": {
-        "dataType": "int",
-        "references": "Revision"
-      },
-      "SpaceID": {
-        "dataType": "uuid",
-        "references": "Space"
-      },
-      "StartedAt": {
-        "dataType": "time"
-      },
-      "Status": {
-        "dataType": "string"
-      },
-      "TerminatedAt": {
-        "dataType": "time"
-      },
-      "UnitEventID": {
-        "dataType": "uuid"
-      },
-      "UnitEventNum": {
-        "dataType": "int"
-      },
-      "UnitID": {
-        "dataType": "uuid",
-        "references": "Unit"
-      },
-      "UpdatedAt": {
-        "dataType": "time"
       }
     },
     "User": {

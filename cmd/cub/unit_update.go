@@ -958,7 +958,7 @@ func runBulkUnitUpdate() error {
 	}
 
 	// Set include parameter to expand UpstreamUnitID
-	include := "UnitEventID,TargetID,UpstreamUnitID,SpaceID"
+	include := "TargetID,UpstreamUnitID,SpaceID"
 	params.Include = &include
 
 	// Add merge parameters if specified

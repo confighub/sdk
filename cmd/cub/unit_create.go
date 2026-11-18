@@ -596,7 +596,7 @@ func runBulkUnitCreate() error {
 	}
 
 	// Set include parameter to expand UpstreamUnitID
-	include := "UnitEventID,TargetID,UpstreamUnitID,SpaceID"
+	include := "TargetID,UpstreamUnitID,SpaceID"
 	if shouldDisplayMutations() {
 		include += "," + *includeWriteDiff()
 	}

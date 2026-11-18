@@ -105,7 +105,7 @@ func runBulkUnitDelete() error {
 	effectiveWhere = addSpaceIDToWhereClause(effectiveWhere, selectedSpaceID)
 
 	// Build bulk delete parameters
-	include := "UnitEventID,TargetID,UpstreamUnitID,SpaceID"
+	include := "TargetID,UpstreamUnitID,SpaceID"
 	params := &goclientnew.BulkDeleteUnitsParams{
 		Where:   &effectiveWhere,
 		Include: &include,

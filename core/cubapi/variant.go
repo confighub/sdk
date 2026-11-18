@@ -188,7 +188,7 @@ func cloneVariantSpace(ctx context.Context, c *Client, spec VariantSpec, upstrea
 func cloneVariantUnits(ctx context.Context, c *Client, spec VariantSpec, upstreamID, spaceID goclientnew.UUID) ([]goclientnew.UnitCreateOrUpdateResponse, int, error) {
 	where := NewWhere("").SpaceID(upstreamID).String()
 	whereSpace := NewWhere("").SpaceID(spaceID).String()
-	include := "UnitEventID,TargetID,UpstreamUnitID,SpaceID"
+	include := "TargetID,UpstreamUnitID,SpaceID"
 	if spec.Diff {
 		include += ",Diff"
 	}

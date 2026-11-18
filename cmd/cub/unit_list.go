@@ -5,7 +5,6 @@ package main
 
 import (
 	"fmt"
-	"strings"
 
 	"github.com/confighub/sdk/core/cubapi"
 	goclientnew "github.com/confighub/sdk/core/openapi/goclient-new"
@@ -133,9 +132,8 @@ var includeUnreleasable bool
 var defaultUnitColumns = []string{"Unit.Slug", "Space.Slug", "ChangeSet.Slug", "Target.Slug", "UpgradeNeeded", "UnreleasedChanges", "Unit.ValidationErrors", "Unit.LastChangeDescription"}
 
 // unitListInclude is the Include parameter for unit list queries (the related
-// entities expanded into each ExtendedUnit). UnitEventID is a pseudo-field used
-// only by Include, not a selectable field.
-const unitListInclude = "UnitEventID,TargetID,UpstreamUnitID,SpaceID,FromLinkID,ChangeSetID"
+// entities expanded into each ExtendedUnit).
+const unitListInclude = "TargetID,UpstreamUnitID,SpaceID,FromLinkID,ChangeSetID"
 
 // unitBaseSelectFields are the fields always returned by unit list queries,
 // regardless of the requested columns.
@@ -304,9 +302,7 @@ func apiListExtendedUnits(spaceID string, whereFilter string, resourceType strin
 
 func apiListAllUnits(where cubapi.Where, resourceType string, whereData string, whereTrigger string, triggerFilter string, triggersPassed bool, selectParam string, filterParam string, viewParam string) ([]*goclientnew.ExtendedUnit, error) {
 	selectValue := handleSelectParameter(selectParam, selectFields, func() string {
-		// UnitEventID is an Include-only pseudo-field, not selectable.
-		selectInclude := strings.TrimPrefix(unitListInclude, "UnitEventID,")
-		return buildSelectList("Unit", effectiveColumns(), selectInclude, defaultUnitColumns, unitAliases, unitCustomColumnDependencies, unitBaseSelectFields)
+		return buildSelectList("Unit", effectiveColumns(), unitListInclude, defaultUnitColumns, unitAliases, unitCustomColumnDependencies, unitBaseSelectFields)
 	})
 	return cubapi.ListUnits(ctx, cubClient, where, cubapi.ListOpts{
 		Limit:           listLimit,

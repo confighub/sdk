@@ -17,7 +17,7 @@ import (
 // the entity they resolved, never the selected one, which is what lets a
 // qualified reference reach another space than --space or the default.
 //
-// The revision, mutation, unit-event, release and attestation commands
+// The revision, mutation, release and attestation commands
 // have no resolver of their own: they resolve the unit (or, for a release or an
 // attestation, locate it by UUID organization-wide) and read through its space.
 var referenceOperandCommands = []string{
@@ -29,7 +29,6 @@ var referenceOperandCommands = []string{
 	"revision get", "revision data", "revision mutation-sources", "mutation get", "mutation list", "release get",
 	"review-comment get", "review-comment list", "review-comment create",
 	"attestation get", "attestation revoke",
-	"unit-event get",
 	"k8s collect", "k8s appconfig extract",
 	"changeorder rename", "changeset rename", "changeworkflow rename", "filter rename", "invocation rename",
 	"link rename", "tag rename", "target rename", "trigger rename", "unit rename", "view rename",

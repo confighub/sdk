@@ -14,90 +14,6 @@ import (
 	openapi_types "github.com/oapi-codegen/runtime/types"
 )
 
-// Defines values for ActionResultType.
-const (
-	ActionResultTypeFunctionInvocationCompleted ActionResultType = "FunctionInvocationCompleted"
-	ActionResultTypeFunctionInvocationFailed    ActionResultType = "FunctionInvocationFailed"
-	ActionResultTypeNone                        ActionResultType = "None"
-)
-
-// Valid indicates whether the value is a known member of the ActionResultType enum.
-func (e ActionResultType) Valid() bool {
-	switch e {
-	case ActionResultTypeFunctionInvocationCompleted:
-		return true
-	case ActionResultTypeFunctionInvocationFailed:
-		return true
-	case ActionResultTypeNone:
-		return true
-	default:
-		return false
-	}
-}
-
-// Defines values for ActionStatusType.
-const (
-	ActionStatusTypeAborted     ActionStatusType = "Aborted"
-	ActionStatusTypeCanceled    ActionStatusType = "Canceled"
-	ActionStatusTypeCompleted   ActionStatusType = "Completed"
-	ActionStatusTypeFailed      ActionStatusType = "Failed"
-	ActionStatusTypeNone        ActionStatusType = "None"
-	ActionStatusTypePending     ActionStatusType = "Pending"
-	ActionStatusTypeProgressing ActionStatusType = "Progressing"
-	ActionStatusTypeSubmitted   ActionStatusType = "Submitted"
-)
-
-// Valid indicates whether the value is a known member of the ActionStatusType enum.
-func (e ActionStatusType) Valid() bool {
-	switch e {
-	case ActionStatusTypeAborted:
-		return true
-	case ActionStatusTypeCanceled:
-		return true
-	case ActionStatusTypeCompleted:
-		return true
-	case ActionStatusTypeFailed:
-		return true
-	case ActionStatusTypeNone:
-		return true
-	case ActionStatusTypePending:
-		return true
-	case ActionStatusTypeProgressing:
-		return true
-	case ActionStatusTypeSubmitted:
-		return true
-	default:
-		return false
-	}
-}
-
-// Defines values for ActionType.
-const (
-	Apply           ActionType = "Apply"
-	Cancel          ActionType = "Cancel"
-	InvokeFunctions ActionType = "InvokeFunctions"
-	ListFunctions   ActionType = "ListFunctions"
-	NA              ActionType = "N/A"
-)
-
-// Valid indicates whether the value is a known member of the ActionType enum.
-func (e ActionType) Valid() bool {
-	switch e {
-	case Apply:
-		return true
-	case Cancel:
-		return true
-	case InvokeFunctions:
-		return true
-	case ListFunctions:
-		return true
-	case NA:
-		return true
-	default:
-		return false
-	}
-}
-
 // Defines values for AttestationResult.
 const (
 	Fail AttestationResult = "Fail"
@@ -1454,30 +1370,6 @@ func (e ListExtendedRevisionsParamsWherePermission) Valid() bool {
 	}
 }
 
-// Defines values for ListUnitEventsParamsWherePermission.
-const (
-	ListUnitEventsParamsWherePermissionEdit   ListUnitEventsParamsWherePermission = "Edit"
-	ListUnitEventsParamsWherePermissionManage ListUnitEventsParamsWherePermission = "Manage"
-	ListUnitEventsParamsWherePermissionUse    ListUnitEventsParamsWherePermission = "Use"
-	ListUnitEventsParamsWherePermissionView   ListUnitEventsParamsWherePermission = "View"
-)
-
-// Valid indicates whether the value is a known member of the ListUnitEventsParamsWherePermission enum.
-func (e ListUnitEventsParamsWherePermission) Valid() bool {
-	switch e {
-	case ListUnitEventsParamsWherePermissionEdit:
-		return true
-	case ListUnitEventsParamsWherePermissionManage:
-		return true
-	case ListUnitEventsParamsWherePermissionUse:
-		return true
-	case ListUnitEventsParamsWherePermissionView:
-		return true
-	default:
-		return false
-	}
-}
-
 // Defines values for ListViewsParamsWherePermission.
 const (
 	ListViewsParamsWherePermissionEdit   ListViewsParamsWherePermission = "Edit"
@@ -1730,48 +1622,6 @@ func (e SearchUnitDiffParamsWherePermission) Valid() bool {
 	}
 }
 
-// Defines values for ListAllUnitEventsParamsWherePermission.
-const (
-	ListAllUnitEventsParamsWherePermissionEdit   ListAllUnitEventsParamsWherePermission = "Edit"
-	ListAllUnitEventsParamsWherePermissionManage ListAllUnitEventsParamsWherePermission = "Manage"
-	ListAllUnitEventsParamsWherePermissionUse    ListAllUnitEventsParamsWherePermission = "Use"
-	ListAllUnitEventsParamsWherePermissionView   ListAllUnitEventsParamsWherePermission = "View"
-)
-
-// Valid indicates whether the value is a known member of the ListAllUnitEventsParamsWherePermission enum.
-func (e ListAllUnitEventsParamsWherePermission) Valid() bool {
-	switch e {
-	case ListAllUnitEventsParamsWherePermissionEdit:
-		return true
-	case ListAllUnitEventsParamsWherePermissionManage:
-		return true
-	case ListAllUnitEventsParamsWherePermissionUse:
-		return true
-	case ListAllUnitEventsParamsWherePermissionView:
-		return true
-	default:
-		return false
-	}
-}
-
-// Defines values for ListAllUnitEventsParamsDistinctOn.
-const (
-	ListAllUnitEventsParamsDistinctOnOff  ListAllUnitEventsParamsDistinctOn = "Off"
-	ListAllUnitEventsParamsDistinctOnUnit ListAllUnitEventsParamsDistinctOn = "Unit"
-)
-
-// Valid indicates whether the value is a known member of the ListAllUnitEventsParamsDistinctOn enum.
-func (e ListAllUnitEventsParamsDistinctOn) Valid() bool {
-	switch e {
-	case ListAllUnitEventsParamsDistinctOnOff:
-		return true
-	case ListAllUnitEventsParamsDistinctOnUnit:
-		return true
-	default:
-		return false
-	}
-}
-
 // Defines values for SearchUnitMutationSourcesParamsWherePermission.
 const (
 	SearchUnitMutationSourcesParamsWherePermissionApprove    SearchUnitMutationSourcesParamsWherePermission = "Approve"
@@ -1852,15 +1702,6 @@ func (e ListAllViewsParamsWherePermission) Valid() bool {
 		return false
 	}
 }
-
-// ActionResultType defines model for ActionResultType.
-type ActionResultType string
-
-// ActionStatusType defines model for ActionStatusType.
-type ActionStatusType string
-
-// ActionType defines model for ActionType.
-type ActionType string
 
 // ApiInfo Information provided to clients by the server.
 type ApiInfo struct {
@@ -4680,9 +4521,6 @@ type ExtendedUnit struct {
 
 	// LastReleasedRevision The Unit's current LastReleasedRevision
 	LastReleasedRevision *Revision `json:"LastReleasedRevision,omitempty" yaml:"LastReleasedRevision,omitempty"`
-
-	// LatestUnitEvent The latest event that took place on the Unit.
-	LatestUnitEvent *UnitEvent `json:"LatestUnitEvent,omitempty" yaml:"LatestUnitEvent,omitempty"`
 
 	// Organization The Organization the Unit belongs to.
 	Organization *Organization        `json:"Organization,omitempty" yaml:"Organization,omitempty"`
@@ -7533,9 +7371,6 @@ type Unit struct {
 	// HeadRevisionNum Sequence number the head Revision.
 	HeadRevisionNum int64 `json:"HeadRevisionNum,omitempty,omitzero" yaml:"HeadRevisionNum,omitempty"`
 
-	// HeadUnitEventNum Sequence number of the head unit event.
-	HeadUnitEventNum int64 `json:"HeadUnitEventNum,omitempty,omitzero" yaml:"HeadUnitEventNum,omitempty"`
-
 	// HiddenReason The reason the entity is hidden, if it is. A hidden entity is left out of List and Search results, and of what bulk operations act on, unless the include_hidden parameter names its reason or is *, or the where parameter names the entity by Slug or ID. ConfigHub/YAML Units are created hidden with the reason BackingUnit unless given another.
 	HiddenReason string `json:"HiddenReason,omitempty" yaml:"HiddenReason,omitempty"`
 
@@ -7799,86 +7634,6 @@ type UnitDiff struct {
 	//
 	// Example: 248df4b7-aa70-47b8-a036-33ac447e668d
 	UnitID openapi_types.UUID `json:"UnitID,omitempty,omitzero" yaml:"UnitID,omitempty"`
-}
-
-// UnitEvent UnitEvent is a historical record of the outcome of an operation on a
-// Unit, such as a function invocation completing or failing, or a cancellation being acknowledged.
-// Each event records the action, its result and status, any message, and when the operation started
-// and ended. UnitEvents are numbered per Unit by UnitEventNum.
-//
-// The workers that performed these operations have been removed, so no new UnitEvents are written;
-// existing ones remain in a Unit's history.
-type UnitEvent struct {
-	// Action Action is the operation the event reports on, such as InvokeFunctions, Cancel, or Apply.
-	Action *ActionType `json:"Action,omitempty" yaml:"Action,omitempty"`
-
-	// CreatedAt The timestamp when the entity was created in "2023-01-01T12:00:00Z" format.
-	//
-	// Example: 2025-04-04T11:50:02.95102-07:00
-	CreatedAt time.Time `json:"CreatedAt,omitempty,omitzero" yaml:"CreatedAt,omitempty"`
-
-	// EntityType The type of entity.
-	EntityType string `json:"EntityType,omitempty" yaml:"EntityType,omitempty"`
-
-	// HiddenReason The reason the entity is hidden, if it is. A hidden entity is left out of List and Search results, and of what bulk operations act on, unless the include_hidden parameter names its reason or is *, or the where parameter names the entity by Slug or ID. ConfigHub/YAML Units are created hidden with the reason BackingUnit unless given another.
-	HiddenReason string `json:"HiddenReason,omitempty" yaml:"HiddenReason,omitempty"`
-
-	// Message Message is the message reported with the result.
-	Message string `json:"Message,omitempty" yaml:"Message,omitempty"`
-
-	// OrganizationID Unique identifier for an Organization.
-	//
-	// Example: 248df4b7-aa70-47b8-a036-33ac447e668d
-	OrganizationID openapi_types.UUID `json:"OrganizationID,omitempty,omitzero" yaml:"OrganizationID,omitempty"`
-
-	// Result Result is what the operation produced: FunctionInvocationCompleted or FunctionInvocationFailed for a function invocation, and None otherwise.
-	Result *ActionResultType `json:"Result,omitempty" yaml:"Result,omitempty"`
-
-	// RevisionNum RevisionNum is the number of the Unit's Revision the action was performed on.
-	RevisionNum int64 `json:"RevisionNum,omitempty" yaml:"RevisionNum,omitempty"`
-
-	// SpaceID Unique identifier for a space.
-	//
-	// Example: 248df4b7-aa70-47b8-a036-33ac447e668d
-	SpaceID openapi_types.UUID `json:"SpaceID,omitempty,omitzero" yaml:"SpaceID,omitempty"`
-
-	// SpaceSlug Slug of the Space this entity belongs to. (readonly)
-	SpaceSlug string `json:"SpaceSlug,omitempty" yaml:"SpaceSlug,omitempty"`
-
-	// StartedAt StartedAt is when the operation started, in "2023-01-01T12:00:00Z" format.
-	//
-	// Example: 2006-01-02T15:04:05Z07:00
-	StartedAt time.Time `json:"StartedAt,omitempty" yaml:"StartedAt,omitempty"`
-
-	// Status Status is the state of the operation the event reports: None, Pending, Submitted, Progressing, Completed, Failed, Canceled, or Aborted.
-	Status *ActionStatusType `json:"Status,omitempty" yaml:"Status,omitempty"`
-
-	// TerminatedAt TerminatedAt is when the operation ended, in "2023-01-01T12:00:00Z" format. It is absent for an operation that had not ended when the event was recorded.
-	TerminatedAt time.Time `json:"TerminatedAt,omitempty" yaml:"TerminatedAt,omitempty"`
-
-	// UnitEventID UnitEventID is the unique identifier for this UnitEvent.
-	//
-	// Example: 248df4b7-aa70-47b8-a036-33ac447e668d
-	UnitEventID openapi_types.UUID `json:"UnitEventID,omitempty,omitzero" yaml:"UnitEventID,omitempty"`
-
-	// UnitEventNum UnitEventNum is the sequence number of this UnitEvent among the Unit's UnitEvents.
-	UnitEventNum int64 `json:"UnitEventNum,omitempty" yaml:"UnitEventNum,omitempty"`
-
-	// UnitID Unique identifier for a Unit.
-	//
-	// Example: 248df4b7-aa70-47b8-a036-33ac447e668d
-	UnitID openapi_types.UUID `json:"UnitID,omitempty,omitzero" yaml:"UnitID,omitempty"`
-
-	// UnitSlug Slug of the Unit this entity belongs to. (readonly)
-	UnitSlug string `json:"UnitSlug,omitempty" yaml:"UnitSlug,omitempty"`
-
-	// UpdatedAt The timestamp when the entity was last updated in "2023-01-01T12:00:00Z" format.
-	//
-	// Example: 2025-04-04T11:50:02.95102-07:00
-	UpdatedAt time.Time `json:"UpdatedAt,omitempty,omitzero" yaml:"UpdatedAt,omitempty"`
-
-	// Version An entity-specific sequence number used for optimistic concurrency control. The value read must be sent in calls to Update.
-	Version int64 `json:"Version,omitempty" yaml:"Version,omitempty"`
 }
 
 // UnitGuardRequest defines model for UnitGuardRequest.
@@ -9536,7 +9291,7 @@ type BulkCreateSpacesParams struct {
 	// An example conjunction is:
 	// `CreatedAt >= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.
 	//
-	// Supported attributes for filtering on Unit: Annotations, ApplyGates, ApplyWarnings, ChangeSetID, Conflicts, CreatedAt, DataHash, DeleteGates, DestroyGates, DisplayName, FromLinkID, HeadRevisionID, HeadRevisionNum, HeadUnitEventNum, HiddenReason, Labels, LastChangeDescription, LastReleasedRevisionNum, LinkFindings, MutationSources, NeededPaths, OrganizationID, PathAnnotations, Permissions, ProvidedPaths, Slug, SpaceID, TargetID, ToolchainType, UnitID, Unreleasable, UpdatedAt, UpstreamRevisionNum, UpstreamSpaceID, UpstreamUnitID, ValidationErrors, ValidationPassed, ValidationResults, ValidationSkipped, ValidationTriggerIDs, ValidationWarnings, ValueTriggerIDs, Values.
+	// Supported attributes for filtering on Unit: Annotations, ApplyGates, ApplyWarnings, ChangeSetID, Conflicts, CreatedAt, DataHash, DeleteGates, DestroyGates, DisplayName, FromLinkID, HeadRevisionID, HeadRevisionNum, HiddenReason, Labels, LastChangeDescription, LastReleasedRevisionNum, LinkFindings, MutationSources, NeededPaths, OrganizationID, PathAnnotations, Permissions, ProvidedPaths, Slug, SpaceID, TargetID, ToolchainType, UnitID, Unreleasable, UpdatedAt, UpstreamRevisionNum, UpstreamSpaceID, UpstreamUnitID, ValidationErrors, ValidationPassed, ValidationResults, ValidationSkipped, ValidationTriggerIDs, ValidationWarnings, ValueTriggerIDs, Values.
 	//
 	// The Units to create entities from, with from_backing_units.
 	//
@@ -10299,7 +10054,7 @@ type BulkCreateAttributesParams struct {
 	// An example conjunction is:
 	// `CreatedAt >= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.
 	//
-	// Supported attributes for filtering on Unit: Annotations, ApplyGates, ApplyWarnings, ChangeSetID, Conflicts, CreatedAt, DataHash, DeleteGates, DestroyGates, DisplayName, FromLinkID, HeadRevisionID, HeadRevisionNum, HeadUnitEventNum, HiddenReason, Labels, LastChangeDescription, LastReleasedRevisionNum, LinkFindings, MutationSources, NeededPaths, OrganizationID, PathAnnotations, Permissions, ProvidedPaths, Slug, SpaceID, TargetID, ToolchainType, UnitID, Unreleasable, UpdatedAt, UpstreamRevisionNum, UpstreamSpaceID, UpstreamUnitID, ValidationErrors, ValidationPassed, ValidationResults, ValidationSkipped, ValidationTriggerIDs, ValidationWarnings, ValueTriggerIDs, Values.
+	// Supported attributes for filtering on Unit: Annotations, ApplyGates, ApplyWarnings, ChangeSetID, Conflicts, CreatedAt, DataHash, DeleteGates, DestroyGates, DisplayName, FromLinkID, HeadRevisionID, HeadRevisionNum, HiddenReason, Labels, LastChangeDescription, LastReleasedRevisionNum, LinkFindings, MutationSources, NeededPaths, OrganizationID, PathAnnotations, Permissions, ProvidedPaths, Slug, SpaceID, TargetID, ToolchainType, UnitID, Unreleasable, UpdatedAt, UpstreamRevisionNum, UpstreamSpaceID, UpstreamUnitID, ValidationErrors, ValidationPassed, ValidationResults, ValidationSkipped, ValidationTriggerIDs, ValidationWarnings, ValueTriggerIDs, Values.
 	//
 	// The Units to create entities from, with from_backing_units.
 	//
@@ -12373,7 +12128,7 @@ type BulkCreateChangeWorkflowsParams struct {
 	// An example conjunction is:
 	// `CreatedAt >= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.
 	//
-	// Supported attributes for filtering on Unit: Annotations, ApplyGates, ApplyWarnings, ChangeSetID, Conflicts, CreatedAt, DataHash, DeleteGates, DestroyGates, DisplayName, FromLinkID, HeadRevisionID, HeadRevisionNum, HeadUnitEventNum, HiddenReason, Labels, LastChangeDescription, LastReleasedRevisionNum, LinkFindings, MutationSources, NeededPaths, OrganizationID, PathAnnotations, Permissions, ProvidedPaths, Slug, SpaceID, TargetID, ToolchainType, UnitID, Unreleasable, UpdatedAt, UpstreamRevisionNum, UpstreamSpaceID, UpstreamUnitID, ValidationErrors, ValidationPassed, ValidationResults, ValidationSkipped, ValidationTriggerIDs, ValidationWarnings, ValueTriggerIDs, Values.
+	// Supported attributes for filtering on Unit: Annotations, ApplyGates, ApplyWarnings, ChangeSetID, Conflicts, CreatedAt, DataHash, DeleteGates, DestroyGates, DisplayName, FromLinkID, HeadRevisionID, HeadRevisionNum, HiddenReason, Labels, LastChangeDescription, LastReleasedRevisionNum, LinkFindings, MutationSources, NeededPaths, OrganizationID, PathAnnotations, Permissions, ProvidedPaths, Slug, SpaceID, TargetID, ToolchainType, UnitID, Unreleasable, UpdatedAt, UpstreamRevisionNum, UpstreamSpaceID, UpstreamUnitID, ValidationErrors, ValidationPassed, ValidationResults, ValidationSkipped, ValidationTriggerIDs, ValidationWarnings, ValueTriggerIDs, Values.
 	//
 	// The Units to create entities from, with from_backing_units.
 	//
@@ -13086,7 +12841,7 @@ type BulkCreateChannelsParams struct {
 	// An example conjunction is:
 	// `CreatedAt >= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.
 	//
-	// Supported attributes for filtering on Unit: Annotations, ApplyGates, ApplyWarnings, ChangeSetID, Conflicts, CreatedAt, DataHash, DeleteGates, DestroyGates, DisplayName, FromLinkID, HeadRevisionID, HeadRevisionNum, HeadUnitEventNum, HiddenReason, Labels, LastChangeDescription, LastReleasedRevisionNum, LinkFindings, MutationSources, NeededPaths, OrganizationID, PathAnnotations, Permissions, ProvidedPaths, Slug, SpaceID, TargetID, ToolchainType, UnitID, Unreleasable, UpdatedAt, UpstreamRevisionNum, UpstreamSpaceID, UpstreamUnitID, ValidationErrors, ValidationPassed, ValidationResults, ValidationSkipped, ValidationTriggerIDs, ValidationWarnings, ValueTriggerIDs, Values.
+	// Supported attributes for filtering on Unit: Annotations, ApplyGates, ApplyWarnings, ChangeSetID, Conflicts, CreatedAt, DataHash, DeleteGates, DestroyGates, DisplayName, FromLinkID, HeadRevisionID, HeadRevisionNum, HiddenReason, Labels, LastChangeDescription, LastReleasedRevisionNum, LinkFindings, MutationSources, NeededPaths, OrganizationID, PathAnnotations, Permissions, ProvidedPaths, Slug, SpaceID, TargetID, ToolchainType, UnitID, Unreleasable, UpdatedAt, UpstreamRevisionNum, UpstreamSpaceID, UpstreamUnitID, ValidationErrors, ValidationPassed, ValidationResults, ValidationSkipped, ValidationTriggerIDs, ValidationWarnings, ValueTriggerIDs, Values.
 	//
 	// The Units to create entities from, with from_backing_units.
 	//
@@ -14207,7 +13962,7 @@ type BulkCreateFiltersParams struct {
 	// An example conjunction is:
 	// `CreatedAt >= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.
 	//
-	// Supported attributes for filtering on Unit: Annotations, ApplyGates, ApplyWarnings, ChangeSetID, Conflicts, CreatedAt, DataHash, DeleteGates, DestroyGates, DisplayName, FromLinkID, HeadRevisionID, HeadRevisionNum, HeadUnitEventNum, HiddenReason, Labels, LastChangeDescription, LastReleasedRevisionNum, LinkFindings, MutationSources, NeededPaths, OrganizationID, PathAnnotations, Permissions, ProvidedPaths, Slug, SpaceID, TargetID, ToolchainType, UnitID, Unreleasable, UpdatedAt, UpstreamRevisionNum, UpstreamSpaceID, UpstreamUnitID, ValidationErrors, ValidationPassed, ValidationResults, ValidationSkipped, ValidationTriggerIDs, ValidationWarnings, ValueTriggerIDs, Values.
+	// Supported attributes for filtering on Unit: Annotations, ApplyGates, ApplyWarnings, ChangeSetID, Conflicts, CreatedAt, DataHash, DeleteGates, DestroyGates, DisplayName, FromLinkID, HeadRevisionID, HeadRevisionNum, HiddenReason, Labels, LastChangeDescription, LastReleasedRevisionNum, LinkFindings, MutationSources, NeededPaths, OrganizationID, PathAnnotations, Permissions, ProvidedPaths, Slug, SpaceID, TargetID, ToolchainType, UnitID, Unreleasable, UpdatedAt, UpstreamRevisionNum, UpstreamSpaceID, UpstreamUnitID, ValidationErrors, ValidationPassed, ValidationResults, ValidationSkipped, ValidationTriggerIDs, ValidationWarnings, ValueTriggerIDs, Values.
 	//
 	// The Units to create entities from, with from_backing_units.
 	//
@@ -14429,7 +14184,7 @@ type InvokeFunctionsOnOrgParams struct {
 	// An example conjunction is:
 	// `CreatedAt >= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.
 	//
-	// Supported attributes for filtering on Unit: Annotations, ApplyGates, ApplyWarnings, ChangeSetID, Conflicts, CreatedAt, DataHash, DeleteGates, DestroyGates, DisplayName, FromLinkID, HeadRevisionID, HeadRevisionNum, HeadUnitEventNum, HiddenReason, Labels, LastChangeDescription, LastReleasedRevisionNum, LinkFindings, MutationSources, NeededPaths, OrganizationID, PathAnnotations, Permissions, ProvidedPaths, Slug, SpaceID, TargetID, ToolchainType, UnitID, Unreleasable, UpdatedAt, UpstreamRevisionNum, UpstreamSpaceID, UpstreamUnitID, ValidationErrors, ValidationPassed, ValidationResults, ValidationSkipped, ValidationTriggerIDs, ValidationWarnings, ValueTriggerIDs, Values.
+	// Supported attributes for filtering on Unit: Annotations, ApplyGates, ApplyWarnings, ChangeSetID, Conflicts, CreatedAt, DataHash, DeleteGates, DestroyGates, DisplayName, FromLinkID, HeadRevisionID, HeadRevisionNum, HiddenReason, Labels, LastChangeDescription, LastReleasedRevisionNum, LinkFindings, MutationSources, NeededPaths, OrganizationID, PathAnnotations, Permissions, ProvidedPaths, Slug, SpaceID, TargetID, ToolchainType, UnitID, Unreleasable, UpdatedAt, UpstreamRevisionNum, UpstreamSpaceID, UpstreamUnitID, ValidationErrors, ValidationPassed, ValidationResults, ValidationSkipped, ValidationTriggerIDs, ValidationWarnings, ValueTriggerIDs, Values.
 	//
 	// Finding all units created by cloning can be done using the expression `UpstreamRevisionNum > 0`. Clones of a specific unit can be found by additionally filtering based on `UpstreamUnitID`. Units never released can be found using `LastReleasedRevisionNum = 0`. Units with unreleased changes can be found with `HeadRevisionNum > LastReleasedRevisionNum AND ReleaseTargetID IS NOT NULL AND Unreleasable = false`.
 	//
@@ -15250,7 +15005,7 @@ type BulkCreateInvocationsParams struct {
 	// An example conjunction is:
 	// `CreatedAt >= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.
 	//
-	// Supported attributes for filtering on Unit: Annotations, ApplyGates, ApplyWarnings, ChangeSetID, Conflicts, CreatedAt, DataHash, DeleteGates, DestroyGates, DisplayName, FromLinkID, HeadRevisionID, HeadRevisionNum, HeadUnitEventNum, HiddenReason, Labels, LastChangeDescription, LastReleasedRevisionNum, LinkFindings, MutationSources, NeededPaths, OrganizationID, PathAnnotations, Permissions, ProvidedPaths, Slug, SpaceID, TargetID, ToolchainType, UnitID, Unreleasable, UpdatedAt, UpstreamRevisionNum, UpstreamSpaceID, UpstreamUnitID, ValidationErrors, ValidationPassed, ValidationResults, ValidationSkipped, ValidationTriggerIDs, ValidationWarnings, ValueTriggerIDs, Values.
+	// Supported attributes for filtering on Unit: Annotations, ApplyGates, ApplyWarnings, ChangeSetID, Conflicts, CreatedAt, DataHash, DeleteGates, DestroyGates, DisplayName, FromLinkID, HeadRevisionID, HeadRevisionNum, HiddenReason, Labels, LastChangeDescription, LastReleasedRevisionNum, LinkFindings, MutationSources, NeededPaths, OrganizationID, PathAnnotations, Permissions, ProvidedPaths, Slug, SpaceID, TargetID, ToolchainType, UnitID, Unreleasable, UpdatedAt, UpstreamRevisionNum, UpstreamSpaceID, UpstreamUnitID, ValidationErrors, ValidationPassed, ValidationResults, ValidationSkipped, ValidationTriggerIDs, ValidationWarnings, ValueTriggerIDs, Values.
 	//
 	// The Units to create entities from, with from_backing_units.
 	//
@@ -16049,7 +15804,7 @@ type BulkCreateLinksParams struct {
 	// An example conjunction is:
 	// `CreatedAt >= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.
 	//
-	// Supported attributes for filtering on Unit: Annotations, ApplyGates, ApplyWarnings, ChangeSetID, Conflicts, CreatedAt, DataHash, DeleteGates, DestroyGates, DisplayName, FromLinkID, HeadRevisionID, HeadRevisionNum, HeadUnitEventNum, HiddenReason, Labels, LastChangeDescription, LastReleasedRevisionNum, LinkFindings, MutationSources, NeededPaths, OrganizationID, PathAnnotations, Permissions, ProvidedPaths, Slug, SpaceID, TargetID, ToolchainType, UnitID, Unreleasable, UpdatedAt, UpstreamRevisionNum, UpstreamSpaceID, UpstreamUnitID, ValidationErrors, ValidationPassed, ValidationResults, ValidationSkipped, ValidationTriggerIDs, ValidationWarnings, ValueTriggerIDs, Values.
+	// Supported attributes for filtering on Unit: Annotations, ApplyGates, ApplyWarnings, ChangeSetID, Conflicts, CreatedAt, DataHash, DeleteGates, DestroyGates, DisplayName, FromLinkID, HeadRevisionID, HeadRevisionNum, HiddenReason, Labels, LastChangeDescription, LastReleasedRevisionNum, LinkFindings, MutationSources, NeededPaths, OrganizationID, PathAnnotations, Permissions, ProvidedPaths, Slug, SpaceID, TargetID, ToolchainType, UnitID, Unreleasable, UpdatedAt, UpstreamRevisionNum, UpstreamSpaceID, UpstreamUnitID, ValidationErrors, ValidationPassed, ValidationResults, ValidationSkipped, ValidationTriggerIDs, ValidationWarnings, ValueTriggerIDs, Values.
 	//
 	// The Units to create entities from, with from_backing_units, or to create links between, with from_refs.
 	//
@@ -20021,7 +19776,7 @@ type InvokeFunctionsParams struct {
 	// An example conjunction is:
 	// `CreatedAt >= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.
 	//
-	// Supported attributes for filtering on Unit: Annotations, ApplyGates, ApplyWarnings, ChangeSetID, Conflicts, CreatedAt, DataHash, DeleteGates, DestroyGates, DisplayName, FromLinkID, HeadRevisionID, HeadRevisionNum, HeadUnitEventNum, HiddenReason, Labels, LastChangeDescription, LastReleasedRevisionNum, LinkFindings, MutationSources, NeededPaths, OrganizationID, PathAnnotations, Permissions, ProvidedPaths, Slug, SpaceID, TargetID, ToolchainType, UnitID, Unreleasable, UpdatedAt, UpstreamRevisionNum, UpstreamSpaceID, UpstreamUnitID, ValidationErrors, ValidationPassed, ValidationResults, ValidationSkipped, ValidationTriggerIDs, ValidationWarnings, ValueTriggerIDs, Values.
+	// Supported attributes for filtering on Unit: Annotations, ApplyGates, ApplyWarnings, ChangeSetID, Conflicts, CreatedAt, DataHash, DeleteGates, DestroyGates, DisplayName, FromLinkID, HeadRevisionID, HeadRevisionNum, HiddenReason, Labels, LastChangeDescription, LastReleasedRevisionNum, LinkFindings, MutationSources, NeededPaths, OrganizationID, PathAnnotations, Permissions, ProvidedPaths, Slug, SpaceID, TargetID, ToolchainType, UnitID, Unreleasable, UpdatedAt, UpstreamRevisionNum, UpstreamSpaceID, UpstreamUnitID, ValidationErrors, ValidationPassed, ValidationResults, ValidationSkipped, ValidationTriggerIDs, ValidationWarnings, ValueTriggerIDs, Values.
 	//
 	// Finding all units created by cloning can be done using the expression `UpstreamRevisionNum > 0`. Clones of a specific unit can be found by additionally filtering based on `UpstreamUnitID`. Units never released can be found using `LastReleasedRevisionNum = 0`. Units with unreleased changes can be found with `HeadRevisionNum > LastReleasedRevisionNum AND ReleaseTargetID IS NOT NULL AND Unreleasable = false`.
 	//
@@ -21478,7 +21233,7 @@ type ListUnitsParams struct {
 	// An example conjunction is:
 	// `CreatedAt >= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.
 	//
-	// Supported attributes for filtering on Unit: Annotations, ApplyGates, ApplyWarnings, ChangeSetID, Conflicts, CreatedAt, DataHash, DeleteGates, DestroyGates, DisplayName, FromLinkID, HeadRevisionID, HeadRevisionNum, HeadUnitEventNum, HiddenReason, Labels, LastChangeDescription, LastReleasedRevisionNum, LinkFindings, MutationSources, NeededPaths, OrganizationID, PathAnnotations, Permissions, ProvidedPaths, Slug, SpaceID, TargetID, ToolchainType, UnitID, Unreleasable, UpdatedAt, UpstreamRevisionNum, UpstreamSpaceID, UpstreamUnitID, ValidationErrors, ValidationPassed, ValidationResults, ValidationSkipped, ValidationTriggerIDs, ValidationWarnings, ValueTriggerIDs, Values.
+	// Supported attributes for filtering on Unit: Annotations, ApplyGates, ApplyWarnings, ChangeSetID, Conflicts, CreatedAt, DataHash, DeleteGates, DestroyGates, DisplayName, FromLinkID, HeadRevisionID, HeadRevisionNum, HiddenReason, Labels, LastChangeDescription, LastReleasedRevisionNum, LinkFindings, MutationSources, NeededPaths, OrganizationID, PathAnnotations, Permissions, ProvidedPaths, Slug, SpaceID, TargetID, ToolchainType, UnitID, Unreleasable, UpdatedAt, UpstreamRevisionNum, UpstreamSpaceID, UpstreamUnitID, ValidationErrors, ValidationPassed, ValidationResults, ValidationSkipped, ValidationTriggerIDs, ValidationWarnings, ValueTriggerIDs, Values.
 	//
 	// Finding all units created by cloning can be done using the expression `UpstreamRevisionNum > 0`. Clones of a specific unit can be found by additionally filtering based on `UpstreamUnitID`. Units never released can be found using `LastReleasedRevisionNum = 0`. Units with unreleased changes can be found with `HeadRevisionNum > LastReleasedRevisionNum AND ReleaseTargetID IS NOT NULL AND Unreleasable = false`.
 	//
@@ -21519,7 +21274,7 @@ type ListUnitsParams struct {
 	// The attribute names are case-sensitive, PascalCase, and
 	// expected in a comma-separated list format as in the JSON encoding.
 	//
-	// Supported attributes for Unit are ChangeSetID, FromLinkID, HeadMutationNum, HeadRevisionNum, LastReleasedRevisionNum, OrganizationID, Permissions, SpaceID, TargetID, UnitEventID, UpstreamSpaceID, UpstreamUnitID.
+	// Supported attributes for Unit are ChangeSetID, FromLinkID, HeadMutationNum, HeadRevisionNum, LastReleasedRevisionNum, OrganizationID, Permissions, SpaceID, TargetID, UpstreamSpaceID, UpstreamUnitID.
 	//
 	// The whole string must be query-encoded.
 	Include *string `form:"include,omitempty" json:"include,omitempty" yaml:"include,omitempty"`
@@ -21566,7 +21321,7 @@ type ListUnitsParams struct {
 	//
 	// Field names are case-sensitive and PascalCase, as in the JSON encoding. Sort direction defaults to ASC when the 'DIRECTION:' prefix is omitted.
 	//
-	// Supported attributes for ordering Unit: ChangeSetID, CreatedAt, DataHash, DisplayName, HeadRevisionID, HeadRevisionNum, HeadUnitEventNum, HiddenReason, LastChangeDescription, LastReleasedRevisionNum, OrganizationID, Slug, SpaceID, ToolchainType, UnitID, Unreleasable, UpdatedAt, UpstreamRevisionNum, UpstreamUnitID.
+	// Supported attributes for ordering Unit: ChangeSetID, CreatedAt, DataHash, DisplayName, HeadRevisionID, HeadRevisionNum, HiddenReason, LastChangeDescription, LastReleasedRevisionNum, OrganizationID, Slug, SpaceID, ToolchainType, UnitID, Unreleasable, UpdatedAt, UpstreamRevisionNum, UpstreamUnitID.
 	//
 	// Example: 'DESC:CreatedAt' or 'DisplayName,DESC:CreatedAt'.
 	//
@@ -21645,7 +21400,7 @@ type GetUnitParams struct {
 	// The attribute names are case-sensitive, PascalCase, and
 	// expected in a comma-separated list format as in the JSON encoding.
 	//
-	// Supported attributes for Unit are ChangeSetID, FromLinkID, HeadMutationNum, HeadRevisionNum, LastReleasedRevisionNum, OrganizationID, Permissions, SpaceID, TargetID, UnitEventID, UpstreamSpaceID, UpstreamUnitID.
+	// Supported attributes for Unit are ChangeSetID, FromLinkID, HeadMutationNum, HeadRevisionNum, LastReleasedRevisionNum, OrganizationID, Permissions, SpaceID, TargetID, UpstreamSpaceID, UpstreamUnitID.
 	//
 	// The whole string must be query-encoded.
 	Include *string `form:"include,omitempty" json:"include,omitempty" yaml:"include,omitempty"`
@@ -22777,124 +22532,6 @@ type GetExtendedRevisionParams struct {
 	// The whole string must be query-encoded.
 	Select *string `form:"select,omitempty" json:"select,omitempty" yaml:"select,omitempty"`
 }
-
-// ListUnitEventsParams defines parameters for ListUnitEvents.
-type ListUnitEventsParams struct {
-	// Where The specified string is an expression for the purpose of filtering
-	// the list of UnitEvents returned. The expression syntax was inspired by SQL.
-	// It supports conjunctions using `AND` of relational expressions of the form *attribute*
-	// *operator* *attribute_or_literal*. The attribute names are case-sensitive and PascalCase,
-	// as in the JSON encoding.
-	// Strings support the following operators: `<`, `>`, `<=`, `>=`, `=`, `!=`, `LIKE`, `NOT LIKE`, `ILIKE`, `~~`, `!~~`, `~`, `~*`, `!~`, `!~*`, `IN`, `NOT IN`.
-	// String pattern operators: `LIKE` and `~~` for pattern matching with `%` and `_` wildcards,
-	// `ILIKE` for case-insensitive pattern matching, `NOT LIKE` and `!~~` for negated pattern matching.
-	// String regex operators: `~` for regex matching, `~*` for case-insensitive regex,
-	// `!~` and `!~*` for regex not matching (case-sensitive and insensitive).
-	// Integers support the following operators: `<`, `>`, `<=`, `>=`, `=`, `!=`, `IN`, `NOT IN`.
-	// UUIDs and boolean attributes support equality and inequality only.
-	// UUID and time literals must be quoted as string literals.
-	// String literals are quoted with single quotes, such as `'string'`.
-	// Time literals use the same form as when serialized as JSON,
-	// such as: `CreatedAt > '2025-02-18T23:16:34'`.
-	// Integer and boolean literals are also supported for attributes of those types.
-	// Arrays support the `?` operator to to match any element of the array,
-	// as in `FromLinkID ? '7c61626f-ddbe-41af-93f6-b69f4ab6d308'`.
-	// Arrays can perform LEN() to check for length, as in `LEN(FromLinkID) > 0`.
-	// An attribute naming a list of other entities can be filtered on their attributes with a `*` segment,
-	// as in `FromLink.*.Slug = 'upgrade-app'`, which holds when any element satisfies it.
-	// Without the `*` such a reference is an error, since it names no single value to compare.
-	// Map support the dot notation to specify a particular map key, as in `Labels.tier = 'Backend'`.
-	// Maps support `IS NULL` and `IS NOT NULL` with dot notation to check for key absence or presence,
-	// as in `Labels.tier IS NULL` (key doesn't exist) or `Labels.tier IS NOT NULL` (key exists).
-	// Comparison results can be tested with `IS TRUE`, `IS FALSE`, `IS NOT TRUE`, and `IS NOT FALSE`.
-	// These are useful for nullable columns: `MergeSourceID = '<uuid>' IS NOT FALSE` matches rows where MergeSourceID equals the value OR is NULL.
-	// The `IN` and `NOT IN` operators accept a comma-separated list of values in parentheses,
-	// such as `Slug IN ('slugone', 'slugtwo')` or `Labels.environment IN ('prod', 'staging')`.
-	// Conjunctions are supported using the `AND` operator.
-	// An example conjunction is:
-	// `CreatedAt >= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.
-	//
-	// Supported attributes for filtering on UnitEvent: Action, CreatedAt, HiddenReason, OrganizationID, Result, RevisionNum, SpaceID, StartedAt, Status, TerminatedAt, UnitEventID, UnitEventNum, UnitID, UpdatedAt.
-	//
-	// The whole string must be query-encoded.
-	Where *string `form:"where,omitempty" json:"where,omitempty" yaml:"where,omitempty"`
-
-	// Filter UUID of a Filter entity to apply to the UnitEvent list.
-	//
-	// The Filter must be in the same Organization as the user credentials.
-	//
-	// The Filter's From field must match the entity type being filtered (UnitEvent).
-	//
-	// For Space-resident entities, if the Filter has a FromSpaceID, it must match the operation's SpaceID.
-	//
-	// The Filter's Where clause will be combined with any explicit 'where' parameter using AND logic.
-	//
-	// If both 'filter' and 'where' parameters are specified, they are combined with AND logic.
-	Filter *string `form:"filter,omitempty" json:"filter,omitempty" yaml:"filter,omitempty"`
-
-	// Contains Free text search that approximately matches the specified string against string fields and map keys/values.
-	//
-	// The search is case-insensitive and uses pattern matching to find entities containing the text.
-	//
-	// Searchable string fields include attributes like Slug, DisplayName, and string-typed custom fields.
-	//
-	// For map fields (like Labels and Annotations), the search matches both map keys and values.
-	//
-	// The search uses OR logic across all searchable fields, so matching any field will return the entity.
-	//
-	// If both 'where' and 'contains' parameters are specified, they are combined with AND logic.
-	//
-	// Searchable fields for UnitEvent include string and map-type attributes from the queryable attributes list.
-	//
-	// The whole string must be query-encoded.
-	Contains *string `form:"contains,omitempty" json:"contains,omitempty" yaml:"contains,omitempty"`
-
-	// WherePermission Only return UnitEvent entities on which the caller has this permission, as well as View, which every entity listed needs.
-	//
-	// A list made to choose an entity to act on can name the permission the action needs, such as Edit to change it or Use to refer to it from another entity, so that it leaves out the entities the action would be refused on.
-	//
-	// Supported values: Manage, Edit, Use, View.
-	WherePermission *ListUnitEventsParamsWherePermission `form:"where_permission,omitempty" json:"where_permission,omitempty" yaml:"where_permission,omitempty"`
-
-	// IncludeHidden Hidden UnitEvent entities, those with a HiddenReason, are left out of the results, or of what a bulk operation acts on, unless this names their HiddenReason.
-	//
-	// It is a comma-separated list of HiddenReasons, or `*` for all of them.
-	//
-	// A where clause naming the entities, by their Slug or ID with `=` or `IN`, or naming HiddenReason at all, also returns hidden entities it selects.
-	//
-	// ConfigHub/YAML Units, which hold the configuration of entities, are hidden with the HiddenReason `BackingUnit`.
-	IncludeHidden *string `form:"include_hidden,omitempty" json:"include_hidden,omitempty" yaml:"include_hidden,omitempty"`
-
-	// Offset Deprecated: use continue. Number of UnitEvent entities to skip before returning results. Cannot be combined with continue.
-	// Deprecated: this property has been marked as deprecated upstream, but no `x-deprecated-reason` was set
-	Offset *int `form:"offset,omitempty" json:"offset,omitempty" yaml:"offset,omitempty"`
-
-	// Limit Maximum number of UnitEvent entities to return. If not specified, all matching entities are returned. Values greater than 1000 are rejected with 400. When there may be more entities, the response has a ConfigHub-Continue header to pass as the continue parameter of the next request.
-	Limit *int `form:"limit,omitempty" json:"limit,omitempty" yaml:"limit,omitempty"`
-
-	// OrderBy Comma-separated list of fields to sort UnitEvent results by, each in the form 'ASC|DESC:FieldName' or just 'FieldName'.
-	//
-	// Field names are case-sensitive and PascalCase, as in the JSON encoding. Sort direction defaults to ASC when the 'DIRECTION:' prefix is omitted.
-	//
-	// Supported attributes for ordering UnitEvent: Action, CreatedAt, HiddenReason, OrganizationID, Result, RevisionNum, StartedAt, Status, TerminatedAt, UnitEventID, UnitEventNum, UnitID, UpdatedAt.
-	//
-	// Example: 'DESC:CreatedAt' or 'DisplayName,DESC:CreatedAt'.
-	//
-	// Results are ordered by the UnitEvent's ID after the fields named, and by the ID alone if none are.
-	//
-	// The whole string must be query-encoded.
-	OrderBy *string `form:"order_by,omitempty" json:"order_by,omitempty" yaml:"order_by,omitempty"`
-
-	// Continue The token from the ConfigHub-Continue header of the previous page, to return the UnitEvent entities after it.
-	//
-	// The request's other parameters, except limit, must be the same as those of the request that returned the token.
-	//
-	// Keep reading until a response has no such header: a page can hold fewer entities than the limit, or none, and still be followed by more.
-	Continue *string `form:"continue,omitempty" json:"continue,omitempty" yaml:"continue,omitempty"`
-}
-
-// ListUnitEventsParamsWherePermission defines parameters for ListUnitEvents.
-type ListUnitEventsParamsWherePermission string
 
 // ListViewsParams defines parameters for ListViews.
 type ListViewsParams struct {
@@ -24378,7 +24015,7 @@ type BulkCreateTargetsParams struct {
 	// An example conjunction is:
 	// `CreatedAt >= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.
 	//
-	// Supported attributes for filtering on Unit: Annotations, ApplyGates, ApplyWarnings, ChangeSetID, Conflicts, CreatedAt, DataHash, DeleteGates, DestroyGates, DisplayName, FromLinkID, HeadRevisionID, HeadRevisionNum, HeadUnitEventNum, HiddenReason, Labels, LastChangeDescription, LastReleasedRevisionNum, LinkFindings, MutationSources, NeededPaths, OrganizationID, PathAnnotations, Permissions, ProvidedPaths, Slug, SpaceID, TargetID, ToolchainType, UnitID, Unreleasable, UpdatedAt, UpstreamRevisionNum, UpstreamSpaceID, UpstreamUnitID, ValidationErrors, ValidationPassed, ValidationResults, ValidationSkipped, ValidationTriggerIDs, ValidationWarnings, ValueTriggerIDs, Values.
+	// Supported attributes for filtering on Unit: Annotations, ApplyGates, ApplyWarnings, ChangeSetID, Conflicts, CreatedAt, DataHash, DeleteGates, DestroyGates, DisplayName, FromLinkID, HeadRevisionID, HeadRevisionNum, HiddenReason, Labels, LastChangeDescription, LastReleasedRevisionNum, LinkFindings, MutationSources, NeededPaths, OrganizationID, PathAnnotations, Permissions, ProvidedPaths, Slug, SpaceID, TargetID, ToolchainType, UnitID, Unreleasable, UpdatedAt, UpstreamRevisionNum, UpstreamSpaceID, UpstreamUnitID, ValidationErrors, ValidationPassed, ValidationResults, ValidationSkipped, ValidationTriggerIDs, ValidationWarnings, ValueTriggerIDs, Values.
 	//
 	// The Units to create entities from, with from_backing_units.
 	//
@@ -25137,7 +24774,7 @@ type BulkCreateTriggersParams struct {
 	// An example conjunction is:
 	// `CreatedAt >= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.
 	//
-	// Supported attributes for filtering on Unit: Annotations, ApplyGates, ApplyWarnings, ChangeSetID, Conflicts, CreatedAt, DataHash, DeleteGates, DestroyGates, DisplayName, FromLinkID, HeadRevisionID, HeadRevisionNum, HeadUnitEventNum, HiddenReason, Labels, LastChangeDescription, LastReleasedRevisionNum, LinkFindings, MutationSources, NeededPaths, OrganizationID, PathAnnotations, Permissions, ProvidedPaths, Slug, SpaceID, TargetID, ToolchainType, UnitID, Unreleasable, UpdatedAt, UpstreamRevisionNum, UpstreamSpaceID, UpstreamUnitID, ValidationErrors, ValidationPassed, ValidationResults, ValidationSkipped, ValidationTriggerIDs, ValidationWarnings, ValueTriggerIDs, Values.
+	// Supported attributes for filtering on Unit: Annotations, ApplyGates, ApplyWarnings, ChangeSetID, Conflicts, CreatedAt, DataHash, DeleteGates, DestroyGates, DisplayName, FromLinkID, HeadRevisionID, HeadRevisionNum, HiddenReason, Labels, LastChangeDescription, LastReleasedRevisionNum, LinkFindings, MutationSources, NeededPaths, OrganizationID, PathAnnotations, Permissions, ProvidedPaths, Slug, SpaceID, TargetID, ToolchainType, UnitID, Unreleasable, UpdatedAt, UpstreamRevisionNum, UpstreamSpaceID, UpstreamUnitID, ValidationErrors, ValidationPassed, ValidationResults, ValidationSkipped, ValidationTriggerIDs, ValidationWarnings, ValueTriggerIDs, Values.
 	//
 	// The Units to create entities from, with from_backing_units.
 	//
@@ -25283,7 +24920,7 @@ type BulkDeleteUnitsParams struct {
 	// An example conjunction is:
 	// `CreatedAt >= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.
 	//
-	// Supported attributes for filtering on Unit: Annotations, ApplyGates, ApplyWarnings, ChangeSetID, Conflicts, CreatedAt, DataHash, DeleteGates, DestroyGates, DisplayName, FromLinkID, HeadRevisionID, HeadRevisionNum, HeadUnitEventNum, HiddenReason, Labels, LastChangeDescription, LastReleasedRevisionNum, LinkFindings, MutationSources, NeededPaths, OrganizationID, PathAnnotations, Permissions, ProvidedPaths, Slug, SpaceID, TargetID, ToolchainType, UnitID, Unreleasable, UpdatedAt, UpstreamRevisionNum, UpstreamSpaceID, UpstreamUnitID, ValidationErrors, ValidationPassed, ValidationResults, ValidationSkipped, ValidationTriggerIDs, ValidationWarnings, ValueTriggerIDs, Values.
+	// Supported attributes for filtering on Unit: Annotations, ApplyGates, ApplyWarnings, ChangeSetID, Conflicts, CreatedAt, DataHash, DeleteGates, DestroyGates, DisplayName, FromLinkID, HeadRevisionID, HeadRevisionNum, HiddenReason, Labels, LastChangeDescription, LastReleasedRevisionNum, LinkFindings, MutationSources, NeededPaths, OrganizationID, PathAnnotations, Permissions, ProvidedPaths, Slug, SpaceID, TargetID, ToolchainType, UnitID, Unreleasable, UpdatedAt, UpstreamRevisionNum, UpstreamSpaceID, UpstreamUnitID, ValidationErrors, ValidationPassed, ValidationResults, ValidationSkipped, ValidationTriggerIDs, ValidationWarnings, ValueTriggerIDs, Values.
 	//
 	// Finding all units created by cloning can be done using the expression `UpstreamRevisionNum > 0`. Clones of a specific unit can be found by additionally filtering based on `UpstreamUnitID`. Units never released can be found using `LastReleasedRevisionNum = 0`. Units with unreleased changes can be found with `HeadRevisionNum > LastReleasedRevisionNum AND ReleaseTargetID IS NOT NULL AND Unreleasable = false`.
 	//
@@ -25333,7 +24970,7 @@ type BulkDeleteUnitsParams struct {
 	// The attribute names are case-sensitive, PascalCase, and
 	// expected in a comma-separated list format as in the JSON encoding.
 	//
-	// Supported attributes for Unit are ChangeSetID, FromLinkID, HeadMutationNum, HeadRevisionNum, LastReleasedRevisionNum, OrganizationID, Permissions, SpaceID, TargetID, UnitEventID, UpstreamSpaceID, UpstreamUnitID.
+	// Supported attributes for Unit are ChangeSetID, FromLinkID, HeadMutationNum, HeadRevisionNum, LastReleasedRevisionNum, OrganizationID, Permissions, SpaceID, TargetID, UpstreamSpaceID, UpstreamUnitID.
 	//
 	// The whole string must be query-encoded.
 	Include *string `form:"include,omitempty" json:"include,omitempty" yaml:"include,omitempty"`
@@ -25384,7 +25021,7 @@ type ListAllUnitsParams struct {
 	// An example conjunction is:
 	// `CreatedAt >= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.
 	//
-	// Supported attributes for filtering on Unit: Annotations, ApplyGates, ApplyWarnings, ChangeSetID, Conflicts, CreatedAt, DataHash, DeleteGates, DestroyGates, DisplayName, FromLinkID, HeadRevisionID, HeadRevisionNum, HeadUnitEventNum, HiddenReason, Labels, LastChangeDescription, LastReleasedRevisionNum, LinkFindings, MutationSources, NeededPaths, OrganizationID, PathAnnotations, Permissions, ProvidedPaths, Slug, SpaceID, TargetID, ToolchainType, UnitID, Unreleasable, UpdatedAt, UpstreamRevisionNum, UpstreamSpaceID, UpstreamUnitID, ValidationErrors, ValidationPassed, ValidationResults, ValidationSkipped, ValidationTriggerIDs, ValidationWarnings, ValueTriggerIDs, Values.
+	// Supported attributes for filtering on Unit: Annotations, ApplyGates, ApplyWarnings, ChangeSetID, Conflicts, CreatedAt, DataHash, DeleteGates, DestroyGates, DisplayName, FromLinkID, HeadRevisionID, HeadRevisionNum, HiddenReason, Labels, LastChangeDescription, LastReleasedRevisionNum, LinkFindings, MutationSources, NeededPaths, OrganizationID, PathAnnotations, Permissions, ProvidedPaths, Slug, SpaceID, TargetID, ToolchainType, UnitID, Unreleasable, UpdatedAt, UpstreamRevisionNum, UpstreamSpaceID, UpstreamUnitID, ValidationErrors, ValidationPassed, ValidationResults, ValidationSkipped, ValidationTriggerIDs, ValidationWarnings, ValueTriggerIDs, Values.
 	//
 	// Finding all units created by cloning can be done using the expression `UpstreamRevisionNum > 0`. Clones of a specific unit can be found by additionally filtering based on `UpstreamUnitID`. Units never released can be found using `LastReleasedRevisionNum = 0`. Units with unreleased changes can be found with `HeadRevisionNum > LastReleasedRevisionNum AND ReleaseTargetID IS NOT NULL AND Unreleasable = false`.
 	//
@@ -25425,7 +25062,7 @@ type ListAllUnitsParams struct {
 	// The attribute names are case-sensitive, PascalCase, and
 	// expected in a comma-separated list format as in the JSON encoding.
 	//
-	// Supported attributes for Unit are ChangeSetID, FromLinkID, HeadMutationNum, HeadRevisionNum, LastReleasedRevisionNum, OrganizationID, Permissions, SpaceID, TargetID, UnitEventID, UpstreamSpaceID, UpstreamUnitID.
+	// Supported attributes for Unit are ChangeSetID, FromLinkID, HeadMutationNum, HeadRevisionNum, LastReleasedRevisionNum, OrganizationID, Permissions, SpaceID, TargetID, UpstreamSpaceID, UpstreamUnitID.
 	//
 	// The whole string must be query-encoded.
 	Include *string `form:"include,omitempty" json:"include,omitempty" yaml:"include,omitempty"`
@@ -25472,7 +25109,7 @@ type ListAllUnitsParams struct {
 	//
 	// Field names are case-sensitive and PascalCase, as in the JSON encoding. Sort direction defaults to ASC when the 'DIRECTION:' prefix is omitted.
 	//
-	// Supported attributes for ordering Unit: ChangeSetID, CreatedAt, DataHash, DisplayName, HeadRevisionID, HeadRevisionNum, HeadUnitEventNum, HiddenReason, LastChangeDescription, LastReleasedRevisionNum, OrganizationID, Slug, SpaceID, ToolchainType, UnitID, Unreleasable, UpdatedAt, UpstreamRevisionNum, UpstreamUnitID.
+	// Supported attributes for ordering Unit: ChangeSetID, CreatedAt, DataHash, DisplayName, HeadRevisionID, HeadRevisionNum, HiddenReason, LastChangeDescription, LastReleasedRevisionNum, OrganizationID, Slug, SpaceID, ToolchainType, UnitID, Unreleasable, UpdatedAt, UpstreamRevisionNum, UpstreamUnitID.
 	//
 	// Example: 'DESC:CreatedAt' or 'DisplayName,DESC:CreatedAt'.
 	//
@@ -25584,7 +25221,7 @@ type BulkPatchUnitsParams struct {
 	// An example conjunction is:
 	// `CreatedAt >= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.
 	//
-	// Supported attributes for filtering on Unit: Annotations, ApplyGates, ApplyWarnings, ChangeSetID, Conflicts, CreatedAt, DataHash, DeleteGates, DestroyGates, DisplayName, FromLinkID, HeadRevisionID, HeadRevisionNum, HeadUnitEventNum, HiddenReason, Labels, LastChangeDescription, LastReleasedRevisionNum, LinkFindings, MutationSources, NeededPaths, OrganizationID, PathAnnotations, Permissions, ProvidedPaths, Slug, SpaceID, TargetID, ToolchainType, UnitID, Unreleasable, UpdatedAt, UpstreamRevisionNum, UpstreamSpaceID, UpstreamUnitID, ValidationErrors, ValidationPassed, ValidationResults, ValidationSkipped, ValidationTriggerIDs, ValidationWarnings, ValueTriggerIDs, Values.
+	// Supported attributes for filtering on Unit: Annotations, ApplyGates, ApplyWarnings, ChangeSetID, Conflicts, CreatedAt, DataHash, DeleteGates, DestroyGates, DisplayName, FromLinkID, HeadRevisionID, HeadRevisionNum, HiddenReason, Labels, LastChangeDescription, LastReleasedRevisionNum, LinkFindings, MutationSources, NeededPaths, OrganizationID, PathAnnotations, Permissions, ProvidedPaths, Slug, SpaceID, TargetID, ToolchainType, UnitID, Unreleasable, UpdatedAt, UpstreamRevisionNum, UpstreamSpaceID, UpstreamUnitID, ValidationErrors, ValidationPassed, ValidationResults, ValidationSkipped, ValidationTriggerIDs, ValidationWarnings, ValueTriggerIDs, Values.
 	//
 	// Finding all units created by cloning can be done using the expression `UpstreamRevisionNum > 0`. Clones of a specific unit can be found by additionally filtering based on `UpstreamUnitID`. Units never released can be found using `LastReleasedRevisionNum = 0`. Units with unreleased changes can be found with `HeadRevisionNum > LastReleasedRevisionNum AND ReleaseTargetID IS NOT NULL AND Unreleasable = false`.
 	//
@@ -25634,11 +25271,11 @@ type BulkPatchUnitsParams struct {
 	// The attribute names are case-sensitive, PascalCase, and
 	// expected in a comma-separated list format as in the JSON encoding.
 	//
-	// Supported attributes for Unit are ChangeSetID, FromLinkID, HeadMutationNum, HeadRevisionNum, LastReleasedRevisionNum, OrganizationID, Permissions, SpaceID, TargetID, UnitEventID, UpstreamSpaceID, UpstreamUnitID.
+	// Supported attributes for Unit are ChangeSetID, FromLinkID, HeadMutationNum, HeadRevisionNum, LastReleasedRevisionNum, OrganizationID, Permissions, SpaceID, TargetID, UpstreamSpaceID, UpstreamUnitID.
 	//
 	// A write also accepts the parts of its result: ConfigData for the configuration the operation produced, MutationSources for what set each value in it, and Diff for what the operation changed, path by path with the values on both sides. None is a field of a Unit, and each costs something to return, so they are returned only when named. A dry run stores nothing, so this is the only way to see what it would have produced.
 	//
-	// Supported values: ChangeSetID, FromLinkID, HeadMutationNum, HeadRevisionNum, LastReleasedRevisionNum, OrganizationID, Permissions, SpaceID, TargetID, UnitEventID, UpstreamSpaceID, UpstreamUnitID, ConfigData, MutationSources, Diff.
+	// Supported values: ChangeSetID, FromLinkID, HeadMutationNum, HeadRevisionNum, LastReleasedRevisionNum, OrganizationID, Permissions, SpaceID, TargetID, UpstreamSpaceID, UpstreamUnitID, ConfigData, MutationSources, Diff.
 	//
 	// The whole string must be query-encoded.
 	Include *string `form:"include,omitempty" json:"include,omitempty" yaml:"include,omitempty"`
@@ -25842,7 +25479,7 @@ type BulkCreateUnitsParams struct {
 	// An example conjunction is:
 	// `CreatedAt >= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.
 	//
-	// Supported attributes for filtering on Unit: Annotations, ApplyGates, ApplyWarnings, ChangeSetID, Conflicts, CreatedAt, DataHash, DeleteGates, DestroyGates, DisplayName, FromLinkID, HeadRevisionID, HeadRevisionNum, HeadUnitEventNum, HiddenReason, Labels, LastChangeDescription, LastReleasedRevisionNum, LinkFindings, MutationSources, NeededPaths, OrganizationID, PathAnnotations, Permissions, ProvidedPaths, Slug, SpaceID, TargetID, ToolchainType, UnitID, Unreleasable, UpdatedAt, UpstreamRevisionNum, UpstreamSpaceID, UpstreamUnitID, ValidationErrors, ValidationPassed, ValidationResults, ValidationSkipped, ValidationTriggerIDs, ValidationWarnings, ValueTriggerIDs, Values.
+	// Supported attributes for filtering on Unit: Annotations, ApplyGates, ApplyWarnings, ChangeSetID, Conflicts, CreatedAt, DataHash, DeleteGates, DestroyGates, DisplayName, FromLinkID, HeadRevisionID, HeadRevisionNum, HiddenReason, Labels, LastChangeDescription, LastReleasedRevisionNum, LinkFindings, MutationSources, NeededPaths, OrganizationID, PathAnnotations, Permissions, ProvidedPaths, Slug, SpaceID, TargetID, ToolchainType, UnitID, Unreleasable, UpdatedAt, UpstreamRevisionNum, UpstreamSpaceID, UpstreamUnitID, ValidationErrors, ValidationPassed, ValidationResults, ValidationSkipped, ValidationTriggerIDs, ValidationWarnings, ValueTriggerIDs, Values.
 	//
 	// Finding all units created by cloning can be done using the expression `UpstreamRevisionNum > 0`. Clones of a specific unit can be found by additionally filtering based on `UpstreamUnitID`. Units never released can be found using `LastReleasedRevisionNum = 0`. Units with unreleased changes can be found with `HeadRevisionNum > LastReleasedRevisionNum AND ReleaseTargetID IS NOT NULL AND Unreleasable = false`.
 	//
@@ -25892,11 +25529,11 @@ type BulkCreateUnitsParams struct {
 	// The attribute names are case-sensitive, PascalCase, and
 	// expected in a comma-separated list format as in the JSON encoding.
 	//
-	// Supported attributes for Unit are ChangeSetID, FromLinkID, HeadMutationNum, HeadRevisionNum, LastReleasedRevisionNum, OrganizationID, Permissions, SpaceID, TargetID, UnitEventID, UpstreamSpaceID, UpstreamUnitID.
+	// Supported attributes for Unit are ChangeSetID, FromLinkID, HeadMutationNum, HeadRevisionNum, LastReleasedRevisionNum, OrganizationID, Permissions, SpaceID, TargetID, UpstreamSpaceID, UpstreamUnitID.
 	//
 	// A write also accepts the parts of its result: ConfigData for the configuration the operation produced, MutationSources for what set each value in it, and Diff for what the operation changed, path by path with the values on both sides. None is a field of a Unit, and each costs something to return, so they are returned only when named. A dry run stores nothing, so this is the only way to see what it would have produced.
 	//
-	// Supported values: ChangeSetID, FromLinkID, HeadMutationNum, HeadRevisionNum, LastReleasedRevisionNum, OrganizationID, Permissions, SpaceID, TargetID, UnitEventID, UpstreamSpaceID, UpstreamUnitID, ConfigData, MutationSources, Diff.
+	// Supported values: ChangeSetID, FromLinkID, HeadMutationNum, HeadRevisionNum, LastReleasedRevisionNum, OrganizationID, Permissions, SpaceID, TargetID, UpstreamSpaceID, UpstreamUnitID, ConfigData, MutationSources, Diff.
 	//
 	// The whole string must be query-encoded.
 	Include *string `form:"include,omitempty" json:"include,omitempty" yaml:"include,omitempty"`
@@ -26060,7 +25697,7 @@ type BulkMoveUnitsParams struct {
 	// An example conjunction is:
 	// `CreatedAt >= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.
 	//
-	// Supported attributes for filtering on Unit: Annotations, ApplyGates, ApplyWarnings, ChangeSetID, Conflicts, CreatedAt, DataHash, DeleteGates, DestroyGates, DisplayName, FromLinkID, HeadRevisionID, HeadRevisionNum, HeadUnitEventNum, HiddenReason, Labels, LastChangeDescription, LastReleasedRevisionNum, LinkFindings, MutationSources, NeededPaths, OrganizationID, PathAnnotations, Permissions, ProvidedPaths, Slug, SpaceID, TargetID, ToolchainType, UnitID, Unreleasable, UpdatedAt, UpstreamRevisionNum, UpstreamSpaceID, UpstreamUnitID, ValidationErrors, ValidationPassed, ValidationResults, ValidationSkipped, ValidationTriggerIDs, ValidationWarnings, ValueTriggerIDs, Values.
+	// Supported attributes for filtering on Unit: Annotations, ApplyGates, ApplyWarnings, ChangeSetID, Conflicts, CreatedAt, DataHash, DeleteGates, DestroyGates, DisplayName, FromLinkID, HeadRevisionID, HeadRevisionNum, HiddenReason, Labels, LastChangeDescription, LastReleasedRevisionNum, LinkFindings, MutationSources, NeededPaths, OrganizationID, PathAnnotations, Permissions, ProvidedPaths, Slug, SpaceID, TargetID, ToolchainType, UnitID, Unreleasable, UpdatedAt, UpstreamRevisionNum, UpstreamSpaceID, UpstreamUnitID, ValidationErrors, ValidationPassed, ValidationResults, ValidationSkipped, ValidationTriggerIDs, ValidationWarnings, ValueTriggerIDs, Values.
 	//
 	// Finding all units created by cloning can be done using the expression `UpstreamRevisionNum > 0`. Clones of a specific unit can be found by additionally filtering based on `UpstreamUnitID`. Units never released can be found using `LastReleasedRevisionNum = 0`. Units with unreleased changes can be found with `HeadRevisionNum > LastReleasedRevisionNum AND ReleaseTargetID IS NOT NULL AND Unreleasable = false`.
 	//
@@ -26110,7 +25747,7 @@ type BulkMoveUnitsParams struct {
 	// The attribute names are case-sensitive, PascalCase, and
 	// expected in a comma-separated list format as in the JSON encoding.
 	//
-	// Supported attributes for Unit are ChangeSetID, FromLinkID, HeadMutationNum, HeadRevisionNum, LastReleasedRevisionNum, OrganizationID, Permissions, SpaceID, TargetID, UnitEventID, UpstreamSpaceID, UpstreamUnitID.
+	// Supported attributes for Unit are ChangeSetID, FromLinkID, HeadMutationNum, HeadRevisionNum, LastReleasedRevisionNum, OrganizationID, Permissions, SpaceID, TargetID, UpstreamSpaceID, UpstreamUnitID.
 	//
 	// The whole string must be query-encoded.
 	Include *string `form:"include,omitempty" json:"include,omitempty" yaml:"include,omitempty"`
@@ -26155,7 +25792,7 @@ type BulkTagUnitsParams struct {
 	// An example conjunction is:
 	// `CreatedAt >= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.
 	//
-	// Supported attributes for filtering on Unit: Annotations, ApplyGates, ApplyWarnings, ChangeSetID, Conflicts, CreatedAt, DataHash, DeleteGates, DestroyGates, DisplayName, FromLinkID, HeadRevisionID, HeadRevisionNum, HeadUnitEventNum, HiddenReason, Labels, LastChangeDescription, LastReleasedRevisionNum, LinkFindings, MutationSources, NeededPaths, OrganizationID, PathAnnotations, Permissions, ProvidedPaths, Slug, SpaceID, TargetID, ToolchainType, UnitID, Unreleasable, UpdatedAt, UpstreamRevisionNum, UpstreamSpaceID, UpstreamUnitID, ValidationErrors, ValidationPassed, ValidationResults, ValidationSkipped, ValidationTriggerIDs, ValidationWarnings, ValueTriggerIDs, Values.
+	// Supported attributes for filtering on Unit: Annotations, ApplyGates, ApplyWarnings, ChangeSetID, Conflicts, CreatedAt, DataHash, DeleteGates, DestroyGates, DisplayName, FromLinkID, HeadRevisionID, HeadRevisionNum, HiddenReason, Labels, LastChangeDescription, LastReleasedRevisionNum, LinkFindings, MutationSources, NeededPaths, OrganizationID, PathAnnotations, Permissions, ProvidedPaths, Slug, SpaceID, TargetID, ToolchainType, UnitID, Unreleasable, UpdatedAt, UpstreamRevisionNum, UpstreamSpaceID, UpstreamUnitID, ValidationErrors, ValidationPassed, ValidationResults, ValidationSkipped, ValidationTriggerIDs, ValidationWarnings, ValueTriggerIDs, Values.
 	//
 	// Finding all units created by cloning can be done using the expression `UpstreamRevisionNum > 0`. Clones of a specific unit can be found by additionally filtering based on `UpstreamUnitID`. Units never released can be found using `LastReleasedRevisionNum = 0`. Units with unreleased changes can be found with `HeadRevisionNum > LastReleasedRevisionNum AND ReleaseTargetID IS NOT NULL AND Unreleasable = false`.
 	//
@@ -26205,7 +25842,7 @@ type BulkTagUnitsParams struct {
 	// The attribute names are case-sensitive, PascalCase, and
 	// expected in a comma-separated list format as in the JSON encoding.
 	//
-	// Supported attributes for Unit are ChangeSetID, FromLinkID, HeadMutationNum, HeadRevisionNum, LastReleasedRevisionNum, OrganizationID, Permissions, SpaceID, TargetID, UnitEventID, UpstreamSpaceID, UpstreamUnitID.
+	// Supported attributes for Unit are ChangeSetID, FromLinkID, HeadMutationNum, HeadRevisionNum, LastReleasedRevisionNum, OrganizationID, Permissions, SpaceID, TargetID, UpstreamSpaceID, UpstreamUnitID.
 	//
 	// The whole string must be query-encoded.
 	Include *string `form:"include,omitempty" json:"include,omitempty" yaml:"include,omitempty"`
@@ -26247,7 +25884,7 @@ type SearchUnitBlameParams struct {
 	// An example conjunction is:
 	// `CreatedAt >= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.
 	//
-	// Supported attributes for filtering on Unit: Annotations, ApplyGates, ApplyWarnings, ChangeSetID, Conflicts, CreatedAt, DataHash, DeleteGates, DestroyGates, DisplayName, FromLinkID, HeadRevisionID, HeadRevisionNum, HeadUnitEventNum, HiddenReason, Labels, LastChangeDescription, LastReleasedRevisionNum, LinkFindings, MutationSources, NeededPaths, OrganizationID, PathAnnotations, Permissions, ProvidedPaths, Slug, SpaceID, TargetID, ToolchainType, UnitID, Unreleasable, UpdatedAt, UpstreamRevisionNum, UpstreamSpaceID, UpstreamUnitID, ValidationErrors, ValidationPassed, ValidationResults, ValidationSkipped, ValidationTriggerIDs, ValidationWarnings, ValueTriggerIDs, Values.
+	// Supported attributes for filtering on Unit: Annotations, ApplyGates, ApplyWarnings, ChangeSetID, Conflicts, CreatedAt, DataHash, DeleteGates, DestroyGates, DisplayName, FromLinkID, HeadRevisionID, HeadRevisionNum, HiddenReason, Labels, LastChangeDescription, LastReleasedRevisionNum, LinkFindings, MutationSources, NeededPaths, OrganizationID, PathAnnotations, Permissions, ProvidedPaths, Slug, SpaceID, TargetID, ToolchainType, UnitID, Unreleasable, UpdatedAt, UpstreamRevisionNum, UpstreamSpaceID, UpstreamUnitID, ValidationErrors, ValidationPassed, ValidationResults, ValidationSkipped, ValidationTriggerIDs, ValidationWarnings, ValueTriggerIDs, Values.
 	//
 	// Finding all units created by cloning can be done using the expression `UpstreamRevisionNum > 0`. Clones of a specific unit can be found by additionally filtering based on `UpstreamUnitID`. Units never released can be found using `LastReleasedRevisionNum = 0`. Units with unreleased changes can be found with `HeadRevisionNum > LastReleasedRevisionNum AND ReleaseTargetID IS NOT NULL AND Unreleasable = false`.
 	//
@@ -26310,7 +25947,7 @@ type SearchUnitBlameParams struct {
 	//
 	// Field names are case-sensitive and PascalCase, as in the JSON encoding. Sort direction defaults to ASC when the 'DIRECTION:' prefix is omitted.
 	//
-	// Supported attributes for ordering Unit: ChangeSetID, CreatedAt, DataHash, DisplayName, HeadRevisionID, HeadRevisionNum, HeadUnitEventNum, HiddenReason, LastChangeDescription, LastReleasedRevisionNum, OrganizationID, Slug, SpaceID, ToolchainType, UnitID, Unreleasable, UpdatedAt, UpstreamRevisionNum, UpstreamUnitID.
+	// Supported attributes for ordering Unit: ChangeSetID, CreatedAt, DataHash, DisplayName, HeadRevisionID, HeadRevisionNum, HiddenReason, LastChangeDescription, LastReleasedRevisionNum, OrganizationID, Slug, SpaceID, ToolchainType, UnitID, Unreleasable, UpdatedAt, UpstreamRevisionNum, UpstreamUnitID.
 	//
 	// Example: 'DESC:CreatedAt' or 'DisplayName,DESC:CreatedAt'.
 	//
@@ -26404,7 +26041,7 @@ type SearchUnitDataParams struct {
 	// An example conjunction is:
 	// `CreatedAt >= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.
 	//
-	// Supported attributes for filtering on Unit: Annotations, ApplyGates, ApplyWarnings, ChangeSetID, Conflicts, CreatedAt, DataHash, DeleteGates, DestroyGates, DisplayName, FromLinkID, HeadRevisionID, HeadRevisionNum, HeadUnitEventNum, HiddenReason, Labels, LastChangeDescription, LastReleasedRevisionNum, LinkFindings, MutationSources, NeededPaths, OrganizationID, PathAnnotations, Permissions, ProvidedPaths, Slug, SpaceID, TargetID, ToolchainType, UnitID, Unreleasable, UpdatedAt, UpstreamRevisionNum, UpstreamSpaceID, UpstreamUnitID, ValidationErrors, ValidationPassed, ValidationResults, ValidationSkipped, ValidationTriggerIDs, ValidationWarnings, ValueTriggerIDs, Values.
+	// Supported attributes for filtering on Unit: Annotations, ApplyGates, ApplyWarnings, ChangeSetID, Conflicts, CreatedAt, DataHash, DeleteGates, DestroyGates, DisplayName, FromLinkID, HeadRevisionID, HeadRevisionNum, HiddenReason, Labels, LastChangeDescription, LastReleasedRevisionNum, LinkFindings, MutationSources, NeededPaths, OrganizationID, PathAnnotations, Permissions, ProvidedPaths, Slug, SpaceID, TargetID, ToolchainType, UnitID, Unreleasable, UpdatedAt, UpstreamRevisionNum, UpstreamSpaceID, UpstreamUnitID, ValidationErrors, ValidationPassed, ValidationResults, ValidationSkipped, ValidationTriggerIDs, ValidationWarnings, ValueTriggerIDs, Values.
 	//
 	// Finding all units created by cloning can be done using the expression `UpstreamRevisionNum > 0`. Clones of a specific unit can be found by additionally filtering based on `UpstreamUnitID`. Units never released can be found using `LastReleasedRevisionNum = 0`. Units with unreleased changes can be found with `HeadRevisionNum > LastReleasedRevisionNum AND ReleaseTargetID IS NOT NULL AND Unreleasable = false`.
 	//
@@ -26445,7 +26082,7 @@ type SearchUnitDataParams struct {
 	// The attribute names are case-sensitive, PascalCase, and
 	// expected in a comma-separated list format as in the JSON encoding.
 	//
-	// Supported attributes for Unit are ChangeSetID, FromLinkID, HeadMutationNum, HeadRevisionNum, LastReleasedRevisionNum, OrganizationID, Permissions, SpaceID, TargetID, UnitEventID, UpstreamSpaceID, UpstreamUnitID.
+	// Supported attributes for Unit are ChangeSetID, FromLinkID, HeadMutationNum, HeadRevisionNum, LastReleasedRevisionNum, OrganizationID, Permissions, SpaceID, TargetID, UpstreamSpaceID, UpstreamUnitID.
 	//
 	// The whole string must be query-encoded.
 	Include *string `form:"include,omitempty" json:"include,omitempty" yaml:"include,omitempty"`
@@ -26486,7 +26123,7 @@ type SearchUnitDataParams struct {
 	//
 	// Field names are case-sensitive and PascalCase, as in the JSON encoding. Sort direction defaults to ASC when the 'DIRECTION:' prefix is omitted.
 	//
-	// Supported attributes for ordering Unit: ChangeSetID, CreatedAt, DataHash, DisplayName, HeadRevisionID, HeadRevisionNum, HeadUnitEventNum, HiddenReason, LastChangeDescription, LastReleasedRevisionNum, OrganizationID, Slug, SpaceID, ToolchainType, UnitID, Unreleasable, UpdatedAt, UpstreamRevisionNum, UpstreamUnitID.
+	// Supported attributes for ordering Unit: ChangeSetID, CreatedAt, DataHash, DisplayName, HeadRevisionID, HeadRevisionNum, HiddenReason, LastChangeDescription, LastReleasedRevisionNum, OrganizationID, Slug, SpaceID, ToolchainType, UnitID, Unreleasable, UpdatedAt, UpstreamRevisionNum, UpstreamUnitID.
 	//
 	// Example: 'DESC:CreatedAt' or 'DisplayName,DESC:CreatedAt'.
 	//
@@ -26560,7 +26197,7 @@ type SearchUnitDiffParams struct {
 	// An example conjunction is:
 	// `CreatedAt >= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.
 	//
-	// Supported attributes for filtering on Unit: Annotations, ApplyGates, ApplyWarnings, ChangeSetID, Conflicts, CreatedAt, DataHash, DeleteGates, DestroyGates, DisplayName, FromLinkID, HeadRevisionID, HeadRevisionNum, HeadUnitEventNum, HiddenReason, Labels, LastChangeDescription, LastReleasedRevisionNum, LinkFindings, MutationSources, NeededPaths, OrganizationID, PathAnnotations, Permissions, ProvidedPaths, Slug, SpaceID, TargetID, ToolchainType, UnitID, Unreleasable, UpdatedAt, UpstreamRevisionNum, UpstreamSpaceID, UpstreamUnitID, ValidationErrors, ValidationPassed, ValidationResults, ValidationSkipped, ValidationTriggerIDs, ValidationWarnings, ValueTriggerIDs, Values.
+	// Supported attributes for filtering on Unit: Annotations, ApplyGates, ApplyWarnings, ChangeSetID, Conflicts, CreatedAt, DataHash, DeleteGates, DestroyGates, DisplayName, FromLinkID, HeadRevisionID, HeadRevisionNum, HiddenReason, Labels, LastChangeDescription, LastReleasedRevisionNum, LinkFindings, MutationSources, NeededPaths, OrganizationID, PathAnnotations, Permissions, ProvidedPaths, Slug, SpaceID, TargetID, ToolchainType, UnitID, Unreleasable, UpdatedAt, UpstreamRevisionNum, UpstreamSpaceID, UpstreamUnitID, ValidationErrors, ValidationPassed, ValidationResults, ValidationSkipped, ValidationTriggerIDs, ValidationWarnings, ValueTriggerIDs, Values.
 	//
 	// Finding all units created by cloning can be done using the expression `UpstreamRevisionNum > 0`. Clones of a specific unit can be found by additionally filtering based on `UpstreamUnitID`. Units never released can be found using `LastReleasedRevisionNum = 0`. Units with unreleased changes can be found with `HeadRevisionNum > LastReleasedRevisionNum AND ReleaseTargetID IS NOT NULL AND Unreleasable = false`.
 	//
@@ -26623,7 +26260,7 @@ type SearchUnitDiffParams struct {
 	//
 	// Field names are case-sensitive and PascalCase, as in the JSON encoding. Sort direction defaults to ASC when the 'DIRECTION:' prefix is omitted.
 	//
-	// Supported attributes for ordering Unit: ChangeSetID, CreatedAt, DataHash, DisplayName, HeadRevisionID, HeadRevisionNum, HeadUnitEventNum, HiddenReason, LastChangeDescription, LastReleasedRevisionNum, OrganizationID, Slug, SpaceID, ToolchainType, UnitID, Unreleasable, UpdatedAt, UpstreamRevisionNum, UpstreamUnitID.
+	// Supported attributes for ordering Unit: ChangeSetID, CreatedAt, DataHash, DisplayName, HeadRevisionID, HeadRevisionNum, HiddenReason, LastChangeDescription, LastReleasedRevisionNum, OrganizationID, Slug, SpaceID, ToolchainType, UnitID, Unreleasable, UpdatedAt, UpstreamRevisionNum, UpstreamUnitID.
 	//
 	// Example: 'DESC:CreatedAt' or 'DisplayName,DESC:CreatedAt'.
 	//
@@ -26675,136 +26312,6 @@ type SearchUnitDiffParams struct {
 // SearchUnitDiffParamsWherePermission defines parameters for SearchUnitDiff.
 type SearchUnitDiffParamsWherePermission string
 
-// ListAllUnitEventsParams defines parameters for ListAllUnitEvents.
-type ListAllUnitEventsParams struct {
-	// Where The specified string is an expression for the purpose of filtering
-	// the list of UnitEvents returned. The expression syntax was inspired by SQL.
-	// It supports conjunctions using `AND` of relational expressions of the form *attribute*
-	// *operator* *attribute_or_literal*. The attribute names are case-sensitive and PascalCase,
-	// as in the JSON encoding.
-	// Strings support the following operators: `<`, `>`, `<=`, `>=`, `=`, `!=`, `LIKE`, `NOT LIKE`, `ILIKE`, `~~`, `!~~`, `~`, `~*`, `!~`, `!~*`, `IN`, `NOT IN`.
-	// String pattern operators: `LIKE` and `~~` for pattern matching with `%` and `_` wildcards,
-	// `ILIKE` for case-insensitive pattern matching, `NOT LIKE` and `!~~` for negated pattern matching.
-	// String regex operators: `~` for regex matching, `~*` for case-insensitive regex,
-	// `!~` and `!~*` for regex not matching (case-sensitive and insensitive).
-	// Integers support the following operators: `<`, `>`, `<=`, `>=`, `=`, `!=`, `IN`, `NOT IN`.
-	// UUIDs and boolean attributes support equality and inequality only.
-	// UUID and time literals must be quoted as string literals.
-	// String literals are quoted with single quotes, such as `'string'`.
-	// Time literals use the same form as when serialized as JSON,
-	// such as: `CreatedAt > '2025-02-18T23:16:34'`.
-	// Integer and boolean literals are also supported for attributes of those types.
-	// Arrays support the `?` operator to to match any element of the array,
-	// as in `FromLinkID ? '7c61626f-ddbe-41af-93f6-b69f4ab6d308'`.
-	// Arrays can perform LEN() to check for length, as in `LEN(FromLinkID) > 0`.
-	// An attribute naming a list of other entities can be filtered on their attributes with a `*` segment,
-	// as in `FromLink.*.Slug = 'upgrade-app'`, which holds when any element satisfies it.
-	// Without the `*` such a reference is an error, since it names no single value to compare.
-	// Map support the dot notation to specify a particular map key, as in `Labels.tier = 'Backend'`.
-	// Maps support `IS NULL` and `IS NOT NULL` with dot notation to check for key absence or presence,
-	// as in `Labels.tier IS NULL` (key doesn't exist) or `Labels.tier IS NOT NULL` (key exists).
-	// Comparison results can be tested with `IS TRUE`, `IS FALSE`, `IS NOT TRUE`, and `IS NOT FALSE`.
-	// These are useful for nullable columns: `MergeSourceID = '<uuid>' IS NOT FALSE` matches rows where MergeSourceID equals the value OR is NULL.
-	// The `IN` and `NOT IN` operators accept a comma-separated list of values in parentheses,
-	// such as `Slug IN ('slugone', 'slugtwo')` or `Labels.environment IN ('prod', 'staging')`.
-	// Conjunctions are supported using the `AND` operator.
-	// An example conjunction is:
-	// `CreatedAt >= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.
-	//
-	// Supported attributes for filtering on UnitEvent: Action, CreatedAt, HiddenReason, OrganizationID, Result, RevisionNum, SpaceID, StartedAt, Status, TerminatedAt, UnitEventID, UnitEventNum, UnitID, UpdatedAt.
-	//
-	// The whole string must be query-encoded.
-	Where *string `form:"where,omitempty" json:"where,omitempty" yaml:"where,omitempty"`
-
-	// Filter UUID of a Filter entity to apply to the UnitEvent list.
-	//
-	// The Filter must be in the same Organization as the user credentials.
-	//
-	// The Filter's From field must match the entity type being filtered (UnitEvent).
-	//
-	// For Space-resident entities, if the Filter has a FromSpaceID, it must match the operation's SpaceID.
-	//
-	// The Filter's Where clause will be combined with any explicit 'where' parameter using AND logic.
-	//
-	// If both 'filter' and 'where' parameters are specified, they are combined with AND logic.
-	Filter *string `form:"filter,omitempty" json:"filter,omitempty" yaml:"filter,omitempty"`
-
-	// Contains Free text search that approximately matches the specified string against string fields and map keys/values.
-	//
-	// The search is case-insensitive and uses pattern matching to find entities containing the text.
-	//
-	// Searchable string fields include attributes like Slug, DisplayName, and string-typed custom fields.
-	//
-	// For map fields (like Labels and Annotations), the search matches both map keys and values.
-	//
-	// The search uses OR logic across all searchable fields, so matching any field will return the entity.
-	//
-	// If both 'where' and 'contains' parameters are specified, they are combined with AND logic.
-	//
-	// Searchable fields for UnitEvent include string and map-type attributes from the queryable attributes list.
-	//
-	// The whole string must be query-encoded.
-	Contains *string `form:"contains,omitempty" json:"contains,omitempty" yaml:"contains,omitempty"`
-
-	// WherePermission Only return UnitEvent entities on which the caller has this permission, as well as View, which every entity listed needs.
-	//
-	// A list made to choose an entity to act on can name the permission the action needs, such as Edit to change it or Use to refer to it from another entity, so that it leaves out the entities the action would be refused on.
-	//
-	// Supported values: Manage, Edit, Use, View.
-	WherePermission *ListAllUnitEventsParamsWherePermission `form:"where_permission,omitempty" json:"where_permission,omitempty" yaml:"where_permission,omitempty"`
-
-	// IncludeHidden Hidden UnitEvent entities, those with a HiddenReason, are left out of the results, or of what a bulk operation acts on, unless this names their HiddenReason.
-	//
-	// It is a comma-separated list of HiddenReasons, or `*` for all of them.
-	//
-	// A where clause naming the entities, by their Slug or ID with `=` or `IN`, or naming HiddenReason at all, also returns hidden entities it selects.
-	//
-	// ConfigHub/YAML Units, which hold the configuration of entities, are hidden with the HiddenReason `BackingUnit`.
-	IncludeHidden *string `form:"include_hidden,omitempty" json:"include_hidden,omitempty" yaml:"include_hidden,omitempty"`
-
-	// Offset Deprecated: use continue. Number of UnitEvent entities to skip before returning results. Cannot be combined with continue.
-	// Deprecated: this property has been marked as deprecated upstream, but no `x-deprecated-reason` was set
-	Offset *int `form:"offset,omitempty" json:"offset,omitempty" yaml:"offset,omitempty"`
-
-	// Limit Maximum number of UnitEvent entities to return. If not specified, all matching entities are returned. Values greater than 1000 are rejected with 400. When there may be more entities, the response has a ConfigHub-Continue header to pass as the continue parameter of the next request.
-	Limit *int `form:"limit,omitempty" json:"limit,omitempty" yaml:"limit,omitempty"`
-
-	// OrderBy Comma-separated list of fields to sort UnitEvent results by, each in the form 'ASC|DESC:FieldName' or just 'FieldName'.
-	//
-	// Field names are case-sensitive and PascalCase, as in the JSON encoding. Sort direction defaults to ASC when the 'DIRECTION:' prefix is omitted.
-	//
-	// Supported attributes for ordering UnitEvent: Action, CreatedAt, HiddenReason, OrganizationID, Result, RevisionNum, StartedAt, Status, TerminatedAt, UnitEventID, UnitEventNum, UnitID, UpdatedAt.
-	//
-	// Example: 'DESC:CreatedAt' or 'DisplayName,DESC:CreatedAt'.
-	//
-	// Results are ordered by the UnitEvent's ID after the fields named, and by the ID alone if none are.
-	//
-	// The whole string must be query-encoded.
-	OrderBy *string `form:"order_by,omitempty" json:"order_by,omitempty" yaml:"order_by,omitempty"`
-
-	// Continue The token from the ConfigHub-Continue header of the previous page, to return the UnitEvent entities after it.
-	//
-	// The request's other parameters, except limit, must be the same as those of the request that returned the token.
-	//
-	// Keep reading until a response has no such header: a page can hold fewer entities than the limit, or none, and still be followed by more.
-	Continue *string `form:"continue,omitempty" json:"continue,omitempty" yaml:"continue,omitempty"`
-
-	// DistinctOn Entity to return at most one UnitEvent per. The result set applies DISTINCT ON this key, keeping the most recent row for each.
-	//
-	// Supported values: Unit, Off.
-	//
-	// If not specified, results are restricted to at most one row per Unit.
-	//
-	// Off disables the DISTINCT ON and returns every matching row, so it requires an explicit 'limit' and is rejected with 400 without one.
-	DistinctOn *ListAllUnitEventsParamsDistinctOn `form:"distinct_on,omitempty" json:"distinct_on,omitempty" yaml:"distinct_on,omitempty"`
-}
-
-// ListAllUnitEventsParamsWherePermission defines parameters for ListAllUnitEvents.
-type ListAllUnitEventsParamsWherePermission string
-
-// ListAllUnitEventsParamsDistinctOn defines parameters for ListAllUnitEvents.
-type ListAllUnitEventsParamsDistinctOn string
-
 // SearchUnitMutationSourcesParams defines parameters for SearchUnitMutationSources.
 type SearchUnitMutationSourcesParams struct {
 	// Where The specified string is an expression for the purpose of filtering
@@ -26841,7 +26348,7 @@ type SearchUnitMutationSourcesParams struct {
 	// An example conjunction is:
 	// `CreatedAt >= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.
 	//
-	// Supported attributes for filtering on Unit: Annotations, ApplyGates, ApplyWarnings, ChangeSetID, Conflicts, CreatedAt, DataHash, DeleteGates, DestroyGates, DisplayName, FromLinkID, HeadRevisionID, HeadRevisionNum, HeadUnitEventNum, HiddenReason, Labels, LastChangeDescription, LastReleasedRevisionNum, LinkFindings, MutationSources, NeededPaths, OrganizationID, PathAnnotations, Permissions, ProvidedPaths, Slug, SpaceID, TargetID, ToolchainType, UnitID, Unreleasable, UpdatedAt, UpstreamRevisionNum, UpstreamSpaceID, UpstreamUnitID, ValidationErrors, ValidationPassed, ValidationResults, ValidationSkipped, ValidationTriggerIDs, ValidationWarnings, ValueTriggerIDs, Values.
+	// Supported attributes for filtering on Unit: Annotations, ApplyGates, ApplyWarnings, ChangeSetID, Conflicts, CreatedAt, DataHash, DeleteGates, DestroyGates, DisplayName, FromLinkID, HeadRevisionID, HeadRevisionNum, HiddenReason, Labels, LastChangeDescription, LastReleasedRevisionNum, LinkFindings, MutationSources, NeededPaths, OrganizationID, PathAnnotations, Permissions, ProvidedPaths, Slug, SpaceID, TargetID, ToolchainType, UnitID, Unreleasable, UpdatedAt, UpstreamRevisionNum, UpstreamSpaceID, UpstreamUnitID, ValidationErrors, ValidationPassed, ValidationResults, ValidationSkipped, ValidationTriggerIDs, ValidationWarnings, ValueTriggerIDs, Values.
 	//
 	// Finding all units created by cloning can be done using the expression `UpstreamRevisionNum > 0`. Clones of a specific unit can be found by additionally filtering based on `UpstreamUnitID`. Units never released can be found using `LastReleasedRevisionNum = 0`. Units with unreleased changes can be found with `HeadRevisionNum > LastReleasedRevisionNum AND ReleaseTargetID IS NOT NULL AND Unreleasable = false`.
 	//
@@ -26882,7 +26389,7 @@ type SearchUnitMutationSourcesParams struct {
 	// The attribute names are case-sensitive, PascalCase, and
 	// expected in a comma-separated list format as in the JSON encoding.
 	//
-	// Supported attributes for Unit are ChangeSetID, FromLinkID, HeadMutationNum, HeadRevisionNum, LastReleasedRevisionNum, OrganizationID, Permissions, SpaceID, TargetID, UnitEventID, UpstreamSpaceID, UpstreamUnitID.
+	// Supported attributes for Unit are ChangeSetID, FromLinkID, HeadMutationNum, HeadRevisionNum, LastReleasedRevisionNum, OrganizationID, Permissions, SpaceID, TargetID, UpstreamSpaceID, UpstreamUnitID.
 	//
 	// The whole string must be query-encoded.
 	Include *string `form:"include,omitempty" json:"include,omitempty" yaml:"include,omitempty"`
@@ -26923,7 +26430,7 @@ type SearchUnitMutationSourcesParams struct {
 	//
 	// Field names are case-sensitive and PascalCase, as in the JSON encoding. Sort direction defaults to ASC when the 'DIRECTION:' prefix is omitted.
 	//
-	// Supported attributes for ordering Unit: ChangeSetID, CreatedAt, DataHash, DisplayName, HeadRevisionID, HeadRevisionNum, HeadUnitEventNum, HiddenReason, LastChangeDescription, LastReleasedRevisionNum, OrganizationID, Slug, SpaceID, ToolchainType, UnitID, Unreleasable, UpdatedAt, UpstreamRevisionNum, UpstreamUnitID.
+	// Supported attributes for ordering Unit: ChangeSetID, CreatedAt, DataHash, DisplayName, HeadRevisionID, HeadRevisionNum, HiddenReason, LastChangeDescription, LastReleasedRevisionNum, OrganizationID, Slug, SpaceID, ToolchainType, UnitID, Unreleasable, UpdatedAt, UpstreamRevisionNum, UpstreamUnitID.
 	//
 	// Example: 'DESC:CreatedAt' or 'DisplayName,DESC:CreatedAt'.
 	//
@@ -27728,7 +27235,7 @@ type BulkCreateViewsParams struct {
 	// An example conjunction is:
 	// `CreatedAt >= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.
 	//
-	// Supported attributes for filtering on Unit: Annotations, ApplyGates, ApplyWarnings, ChangeSetID, Conflicts, CreatedAt, DataHash, DeleteGates, DestroyGates, DisplayName, FromLinkID, HeadRevisionID, HeadRevisionNum, HeadUnitEventNum, HiddenReason, Labels, LastChangeDescription, LastReleasedRevisionNum, LinkFindings, MutationSources, NeededPaths, OrganizationID, PathAnnotations, Permissions, ProvidedPaths, Slug, SpaceID, TargetID, ToolchainType, UnitID, Unreleasable, UpdatedAt, UpstreamRevisionNum, UpstreamSpaceID, UpstreamUnitID, ValidationErrors, ValidationPassed, ValidationResults, ValidationSkipped, ValidationTriggerIDs, ValidationWarnings, ValueTriggerIDs, Values.
+	// Supported attributes for filtering on Unit: Annotations, ApplyGates, ApplyWarnings, ChangeSetID, Conflicts, CreatedAt, DataHash, DeleteGates, DestroyGates, DisplayName, FromLinkID, HeadRevisionID, HeadRevisionNum, HiddenReason, Labels, LastChangeDescription, LastReleasedRevisionNum, LinkFindings, MutationSources, NeededPaths, OrganizationID, PathAnnotations, Permissions, ProvidedPaths, Slug, SpaceID, TargetID, ToolchainType, UnitID, Unreleasable, UpdatedAt, UpstreamRevisionNum, UpstreamSpaceID, UpstreamUnitID, ValidationErrors, ValidationPassed, ValidationResults, ValidationSkipped, ValidationTriggerIDs, ValidationWarnings, ValueTriggerIDs, Values.
 	//
 	// The Units to create entities from, with from_backing_units.
 	//

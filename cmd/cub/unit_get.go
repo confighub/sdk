@@ -273,7 +273,6 @@ func displayExtendedUnitDetails(unitDetails *goclientnew.ExtendedUnit) {
 		mutationSources, msErr := fetchUnitMutationSources(unitDetails.Unit.SpaceID, unitDetails.Unit.UnitID)
 		failOnError(msErr)
 		view.Append([]string{"Head Mutation Num", fmt.Sprintf("%d", unitDetails.Unit.HeadMutationNum)})
-		view.Append([]string{"Head Unit Event Num", fmt.Sprintf("%d", unitDetails.Unit.HeadUnitEventNum)})
 		view.Append([]string{"Number of Resources", fmt.Sprintf("%d", countResources(mutationSources))})
 
 		if len(unitDetails.Unit.NeededPaths) > 0 {

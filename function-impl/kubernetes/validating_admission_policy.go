@@ -548,7 +548,34 @@ func unstructuredFromDoc(doc *gaby.YamlDoc) (*unstructured.Unstructured, error) 
 	if err := object.UnmarshalJSON(docJSON); err != nil {
 		return nil, errors.Wrap(err, "not a Kubernetes resource")
 	}
+	dropNullFields(object.Object)
 	return object, nil
+}
+
+// dropNullFields removes the fields set to null, at any depth. The API server decodes a resource
+// into its type before admission, and prunes a custom resource by its schema, so a field of a
+// struct written as null is unset there, and has() is false for it. Left in, a null fails every
+// expression that uses the field, even one guarded by has().
+//
+// Without the resource's schema a struct can't be told from a map, so this differs from a cluster
+// in two cases. A null value in a map of strings, such as a label, annotation or ConfigMap key, is
+// kept by the API server as an empty string, and is removed here. A field of a custom resource
+// marked nullable keeps its null in a cluster, and is removed here.
+func dropNullFields(value any) {
+	switch value := value.(type) {
+	case map[string]any:
+		for key, field := range value {
+			if field == nil {
+				delete(value, key)
+				continue
+			}
+			dropNullFields(field)
+		}
+	case []any:
+		for _, item := range value {
+			dropNullFields(item)
+		}
+	}
 }
 
 // fromUnstructured decodes a resource into its typed form. A policy of an earlier version of the

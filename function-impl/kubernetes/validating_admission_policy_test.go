@@ -377,3 +377,57 @@ spec:
 	require.NoError(t, err)
 	assert.True(t, result.Passed, "%v", result.Details)
 }
+
+// A field written as null is unset to the API server, which decodes the object into its type
+// before admission, so an expression guarding a field with has() sees no field, as in a cluster.
+func TestVAPNullFieldIsUnset(t *testing.T) {
+	const deployment = `apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: web
+  namespace: prod
+  labels: null
+spec:
+  template:
+    spec:
+      containers:
+      - name: web
+        image: nginx:1.27
+        env:
+        - name: FROM_SECRET
+          value: null
+          valueFrom:
+            secretKeyRef:
+              name: web
+              key: password
+        - name: MODE
+          value: fast
+`
+	const policy = `apiVersion: admissionregistration.k8s.io/v1
+kind: ValidatingAdmissionPolicy
+metadata:
+  name: no-literal-secrets
+spec:
+  failurePolicy: Fail
+  matchConstraints:
+    resourceRules:
+    - apiGroups: ["apps"]
+      apiVersions: ["v1"]
+      operations: ["CREATE", "UPDATE"]
+      resources: ["deployments"]
+  validations:
+  - expression: |
+      object.spec.template.spec.containers.all(container, container.env.all(envVariable,
+        !envVariable.value.matches("^secret") || !has(envVariable.value)))
+  - expression: "!has(object.metadata.labels) || object.metadata.labels.all(key, key != 'secret')"
+`
+	docs, err := gaby.ParseAll([]byte(deployment))
+	require.NoError(t, err)
+	policyDocs, err := gaby.ParseAll([]byte(policy))
+	require.NoError(t, err)
+	_, output, err := VetValidatingAdmissionPolicy(testResourceProvider, api.NewFunctionOptions(), docs, policyDocs)
+	require.NoError(t, err)
+	result, ok := output.(api.ValidationResult)
+	require.True(t, ok)
+	assert.True(t, result.Passed, "%v", result.Details)
+}

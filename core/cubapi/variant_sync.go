@@ -212,7 +212,7 @@ func cloneSyncUnit(ctx context.Context, c *Client, spec VariantSyncSpec, targetS
 	upstreamUnitID goclientnew.UUID) (*goclientnew.Unit, error) {
 	where := NewWhere("").Eq("UnitID", upstreamUnitID.String()).String()
 	whereSpace := NewWhere("").SpaceID(targetSpace.SpaceID).String()
-	include := "UnitEventID,TargetID,UpstreamUnitID,SpaceID"
+	include := "TargetID,UpstreamUnitID,SpaceID"
 	params := &goclientnew.BulkCreateUnitsParams{Where: &where, WhereSpace: &whereSpace, Include: &include, DryRun: dryRun(spec.DryRun)}
 	patch, err := layerPatch(nil, map[string]any{"LastChangeDescription": spec.ChangeDescription}, nil)
 	if err != nil {

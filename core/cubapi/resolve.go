@@ -237,7 +237,7 @@ func (r resolver[E]) notFound(ref Ref, spaceID goclientnew.UUID) error {
 // reference return the same envelope.
 const (
 	spaceGetInclude       = "TriggerFilterID,TriggerIDs,Permissions,ReleaseTargetID,ComponentID,UpstreamSpaceID"
-	unitGetInclude        = "UnitEventID,TargetID,UpstreamUnitID,SpaceID,FromLinkID,ChangeSetID,UpstreamSpaceID"
+	unitGetInclude        = "TargetID,UpstreamUnitID,SpaceID,FromLinkID,ChangeSetID,UpstreamSpaceID"
 	targetGetInclude      = "SpaceID,TriggerFilterID,TriggerIDs,Permissions"
 	triggerGetInclude     = "SpaceID,InvocationID,UnitFilterID"
 	filterGetInclude      = "SpaceID,FromSpaceID"

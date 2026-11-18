@@ -58,7 +58,6 @@ The entities are:
 - `changeset`, `changeorder`, `changeworkflow`, `attestation`, `review-comment`
 - `target`, `release`, `resource`
 - `serviceaccount`, `channel`, `command`, `commandrun`
-- `unit-event`, the history of operations on units
 
 Other functional areas include:
 
@@ -81,7 +80,7 @@ The standard entity verbs are:
 - `explain`, which describes the entity's fields from the API's schema
 - `rename`, `move` (to another space), `edit` (in an editor, as a YAML document) and `open` (in the web UI), where they apply
 
-Some entities, such as `user`, `revision`, `mutation`, and `unit-event`, are read-only, and support `list`, `get` and `explain`, and `data` for revisions.
+Some entities, such as `user`, `revision`, and `mutation`, are read-only, and support `list`, `get` and `explain`, and `data` for revisions.
 
 ### Flags
 

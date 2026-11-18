@@ -261,7 +261,6 @@ var refArgKinds = map[string][]*refKind{
 	"unit path":      {kindUnit},
 	"unit set-guard": {kindUnit}, "unit set-protection": {kindUnit},
 	"unit tag":        {kindTag},
-	"unit-event get":  {kindUnit},
 	"variant approve": {kindVariantOrSpace}, "variant demote": {kindVariantOrSpace}, "variant diff": {kindVariantOrSpace}, "variant promote": {kindVariantOrSpace},
 	"variant blame": {kindVariantOrSpace}, "variant conflicts": {kindVariantOrSpace}, "variant delete": {kindVariantOrSpace},
 	"variant create": {nil, kindVariantOrSpace},
