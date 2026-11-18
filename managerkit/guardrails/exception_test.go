@@ -8,6 +8,8 @@ import (
 	"slices"
 	"strings"
 	"testing"
+
+	"github.com/spf13/cobra"
 )
 
 func TestMatchResource(t *testing.T) {
@@ -106,5 +108,48 @@ func TestExceptionsHonoredBy(t *testing.T) {
 	}
 	if help := ExceptionCmd(nil, testCatalog()).Long; !strings.Contains(help, "reads them all back.\n\nAn exception is part") {
 		t.Errorf("help without honored exceptions:\n%s", help)
+	}
+}
+
+// `exception list` counts the temporary exceptions, and with --temporary lists only them.
+func TestExceptionReportTemporary(t *testing.T) {
+	all := func() []Exception {
+		return []Exception{
+			{Rule: "a", Space: "s", Unit: "u1", ResourceType: "apps/v1/Deployment", ResourceName: "x/web", Reason: "singleton by design"},
+			{Rule: "a", Space: "s", Unit: "u2", ResourceType: "apps/v1/Deployment", ResourceName: "x/web", Reason: TemporaryReason("images rebuilt in Q1"), Temporary: true},
+			{Rule: "b", Space: "s", Unit: "u3", ResourceType: "apps/v1/Deployment", ResourceName: "x/api", Reason: TemporaryReason("later"), Temporary: true},
+		}
+	}
+	listed := []string{"a", "b", "c"}
+	print := func(rep ExceptionReport, temporary bool) string {
+		var out strings.Builder
+		cmd := &cobra.Command{}
+		cmd.SetOut(&out)
+		printExceptions(cmd, rep, listed, nil, temporary)
+		return out.String()
+	}
+
+	rep := exceptionReport(all(), listed, nil, false, "")
+	if rep.Total != 3 || rep.Temporary != 2 || !reflect.DeepEqual(rep.ByRule, map[string]int{"a": 2, "b": 1, "c": 0}) {
+		t.Errorf("report = total %d, temporary %d, by rule %v", rep.Total, rep.Temporary, rep.ByRule)
+	}
+	if text := print(rep, false); !strings.Contains(text, "3 exceptions: 2 a, 1 b\n2 of them temporary, to be fixed: exception list --temporary") {
+		t.Errorf("table:\n%s", text)
+	}
+
+	rep = exceptionReport(all(), listed, nil, true, "")
+	var units []string
+	for _, e := range rep.Exceptions {
+		units = append(units, e.Unit)
+	}
+	if !slices.Equal(units, []string{"u2", "u3"}) || rep.Total != 2 || rep.Temporary != 2 ||
+		!reflect.DeepEqual(rep.ByRule, map[string]int{"a": 1, "b": 1, "c": 0}) {
+		t.Errorf("--temporary report = %v, total %d, temporary %d, by rule %v", units, rep.Total, rep.Temporary, rep.ByRule)
+	}
+	if text := print(rep, true); !strings.Contains(text, "2 temporary exceptions: 1 a, 1 b") || strings.Contains(text, "of them temporary") {
+		t.Errorf("--temporary table:\n%s", text)
+	}
+	if text := print(exceptionReport(all()[:1], listed, nil, true, ""), true); !strings.Contains(text, "No resources are temporarily excepted") {
+		t.Errorf("--temporary with none:\n%s", text)
 	}
 }

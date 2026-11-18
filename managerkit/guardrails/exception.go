@@ -37,6 +37,9 @@ type Exception struct {
 	ResourceType string `json:"resourceType"`
 	ResourceName string `json:"resourceName"`
 	Reason       string `json:"reason"`
+	// Temporary is whether the reason marks the exception as one for a failure
+	// to be fixed, as add-temporary records them.
+	Temporary bool `json:"temporary,omitempty"`
 	// AlsoSkippedBy are the other rules that skip the resource for this exception, since
 	// their checks name its rule in ExceptFrom.
 	AlsoSkippedBy []string `json:"alsoSkippedBy,omitempty"`
@@ -50,6 +53,8 @@ func (e Exception) Resource() string { return resourceRef(e.ResourceType, e.Reso
 type ExceptionReport struct {
 	Exceptions []Exception `json:"exceptions"`
 	Total      int         `json:"total"`
+	// Temporary counts the exceptions whose reason marks them as temporary.
+	Temporary int `json:"temporary"`
 	// ByRule counts the exceptions to each rule listed, including the rules that
 	// have none, so that what is not excepted is as plain as what is.
 	ByRule map[string]int `json:"byRule"`
@@ -111,6 +116,7 @@ func ListExceptions(ctx context.Context, client *cubapi.Client, rules []string, 
 			out = append(out, Exception{
 				Rule: rule, Space: r.SpaceSlug, Unit: r.UnitSlug,
 				ResourceType: r.ResourceType, ResourceName: r.ResourceName, Reason: reason,
+				Temporary: IsTemporary(reason),
 			})
 		}
 	}
@@ -151,9 +157,15 @@ exceptions too. The value records why, and 'exception list' reads them all back.
 ` + honoredByHelp(honoredBy) + `
 An exception is part of the resource's configuration: adding or removing one is
 a change to its Unit, dry-run unless --commit --change-desc, and released like
-any other.`,
+any other.
+
+'exception add-temporary' excepts every resource that fails a rule now, so the
+rule can be enforced before they are fixed. Their reasons start with
+` + TemporaryExceptionPrefix + `, which marks them as temporary, and 'exception list --temporary'
+lists them.`,
 	}
-	cmd.AddCommand(exceptionAddCmd(preflight, rules, groups), exceptionRemoveCmd(preflight, rules, groups), exceptionListCmd(preflight, rules, groups, honoredBy))
+	cmd.AddCommand(exceptionAddCmd(preflight, rules, groups), exceptionAddTemporaryCmd(preflight, rules, groups),
+		exceptionRemoveCmd(preflight, rules, groups), exceptionListCmd(preflight, rules, groups, honoredBy))
 	return cmd
 }
 
@@ -332,6 +344,7 @@ Rules, and those installed with --policy-unit, named after their Units:
 
 func exceptionListCmd(preflight Preflight, rules, groups []string, honoredBy map[string][]string) *cobra.Command {
 	var output, only string
+	var temporary bool
 	var filter cliutil.QueryFlags
 	cmd := &cobra.Command{
 		Use:   "list [<space>/<unit>]",
@@ -341,9 +354,13 @@ annotation records, and counts the exceptions to each rule, including the rules
 that have none. An exception to a rule whose exceptions other rules honor names
 those rules too; listing a rule that honors another's lists only its own.
 
+An exception whose reason starts with ` + TemporaryExceptionPrefix + ` is temporary: one added, as
+'exception add-temporary' adds them, for a failure to be fixed. --temporary
+lists only those.
+
 Scope it to one Unit by naming it, or to a set of Units with --where and the
 label shorthands. --rule narrows it to some rules.`,
-		Example: "  exception list -o table\n  exception list --environment prod --rule netpol-no-wide-cidr-egress -o table",
+		Example: "  exception list -o table\n  exception list --environment prod --rule netpol-no-wide-cidr-egress -o table\n  exception list --temporary -o table",
 		Args:    cobra.MaximumNArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
 			client, err := preflight(cmd.Context())
@@ -377,20 +394,11 @@ label shorthands. --rule narrows it to some rules.`,
 			if err != nil {
 				return err
 			}
-			for i := range exceptions {
-				exceptions[i].AlsoSkippedBy = honoredBy[exceptions[i].Rule]
-			}
-			rep := ExceptionReport{Exceptions: exceptions, Total: len(exceptions), ByRule: map[string]int{}, Filter: where}
-			for _, r := range listed {
-				rep.ByRule[r] = 0
-			}
-			for _, e := range exceptions {
-				rep.ByRule[e.Rule]++
-			}
+			rep := exceptionReport(exceptions, listed, honoredBy, temporary, where)
 			if done, err := managerkit.Render(cmd.OutOrStdout(), output, rep); done || err != nil {
 				return err
 			}
-			printExceptions(cmd, rep, listed, honoredBy)
+			printExceptions(cmd, rep, listed, honoredBy, temporary)
 			return nil
 		},
 	}
@@ -399,13 +407,41 @@ label shorthands. --rule narrows it to some rules.`,
 	filter.BindSpaceLabels(cmd)
 	managerkit.BindComponentResolver(cmd, &filter, preflight)
 	cmd.Flags().StringVar(&only, "rule", "", "only exceptions to these rules, comma-separated")
+	cmd.Flags().BoolVar(&temporary, "temporary", false, "only temporary exceptions, whose reason starts with "+TemporaryExceptionPrefix)
 	return cmd
 }
 
-func printExceptions(cmd *cobra.Command, rep ExceptionReport, listed []string, honoredBy map[string][]string) {
+// exceptionReport is the report of exceptions to the rules listed, read under where: only the
+// temporary ones when temporary is set, each with the rules that also honor it, and counted by
+// rule, including the rules that have none.
+func exceptionReport(exceptions []Exception, listed []string, honoredBy map[string][]string, temporary bool, where string) ExceptionReport {
+	if temporary {
+		exceptions = slices.DeleteFunc(exceptions, func(e Exception) bool { return !e.Temporary })
+	}
+	for i := range exceptions {
+		exceptions[i].AlsoSkippedBy = honoredBy[exceptions[i].Rule]
+	}
+	rep := ExceptionReport{Exceptions: exceptions, Total: len(exceptions), ByRule: map[string]int{}, Filter: where}
+	for _, r := range listed {
+		rep.ByRule[r] = 0
+	}
+	for _, e := range exceptions {
+		rep.ByRule[e.Rule]++
+		if e.Temporary {
+			rep.Temporary++
+		}
+	}
+	return rep
+}
+
+func printExceptions(cmd *cobra.Command, rep ExceptionReport, listed []string, honoredBy map[string][]string, temporary bool) {
 	out := cmd.OutOrStdout()
 	if rep.Total == 0 {
-		cliutil.Fprintln(out, "No resources are excepted from these rules.")
+		if temporary {
+			cliutil.Fprintln(out, "No resources are temporarily excepted from these rules.")
+		} else {
+			cliutil.Fprintln(out, "No resources are excepted from these rules.")
+		}
 		return
 	}
 	tw := tabwriter.NewWriter(out, 0, 2, 2, ' ', 0)
@@ -426,7 +462,14 @@ func printExceptions(cmd *cobra.Command, rep ExceptionReport, listed []string, h
 	if rep.Total == 1 {
 		noun = "exception"
 	}
-	cliutil.Fprintln(out, fmt.Sprintf("\n%d %s: %s", rep.Total, noun, strings.Join(counts, ", ")))
+	if temporary {
+		noun = "temporary " + noun
+	}
+	summary := fmt.Sprintf("\n%d %s: %s", rep.Total, noun, strings.Join(counts, ", "))
+	if !temporary && rep.Temporary > 0 {
+		summary += fmt.Sprintf("\n%d of them temporary, to be fixed: exception list --temporary", rep.Temporary)
+	}
+	cliutil.Fprintln(out, summary)
 	if len(none) > 0 {
 		cliutil.Fprintln(out, "No exceptions to: "+strings.Join(none, ", "))
 	}
