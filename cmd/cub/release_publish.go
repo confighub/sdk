@@ -41,12 +41,24 @@ number that means something different in every Unit:
   --revision ChangeOrder:<slug>           the change order's release tag
   --revision Before:ChangeOrder:<slug>    the state before it
 
+Each of them is refused for a Unit released since at a later Revision, since a
+Release never rolls a Unit back (below).
+
 A ChangeOrder's release tag marks every releasable Unit of each Space the change
 is in, at the state the change left it in, and follows what resolving Links
 within the Space writes after the promotion. Publishing by ChangeOrder publishes
 for that ChangeOrder: its release prerequisites are checked against what is
 bundled, and its stage is advanced. Move the release tag to adopt a later
-Revision of a Unit before releasing with "cub unit tag --move".
+Revision of a Unit before releasing with "cub unit tag --move". Where a Unit has
+been released past the Revision the release tag marks, as when another change
+order promoted into the Space after this one was released first, publishing
+moves the release tag up to the released Revision, so that the Release carries
+the other change rather than rolling it back.
+
+A Release never rolls a Unit back: publishing is refused when the Revision it
+would bundle for a Unit is older than the Unit's LastReleasedRevisionNum. To
+roll back, restore the earlier configuration as a new Revision, with
+"cub unit update --patch --restore Before:ChangeOrder:<slug>", and publish that.
 
 A Release of a ChangeOrder can carry revisions from before the change: a unit's
 revisions after its last released one, up to where the change starts, which an
@@ -101,8 +113,9 @@ Examples:
   cub release publish --revision ChangeOrder:bump-base-image --dry-run my-space
   cub release publish --revision ChangeOrder:bump-base-image my-space
 
-  # Release the state a promotion started from, to roll it back
-  cub release publish --revision Before:ChangeOrder:bump-base-image my-space
+  # Roll a released change order back: restore what preceded it, and release that
+  cub unit update --patch --space my-space --restore Before:ChangeOrder:bump-base-image
+  cub release publish my-space
 
   # Publish with metadata, and a gate that blocks deleting the Release
   cub release publish --label env=prod --annotation ticket=OPS-1234 my-space

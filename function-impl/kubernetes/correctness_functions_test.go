@@ -265,6 +265,43 @@ func TestCorrectnessContainerReferences(t *testing.T) {
 	}, correctnessFindingsOf(t, containerReferences, checkDeprecatedFields))
 }
 
+// TestCorrectnessStatefulSetClaimVolumes checks that a StatefulSet's pods have a volume for each
+// of its volumeClaimTemplates, which their containers can mount.
+func TestCorrectnessStatefulSetClaimVolumes(t *testing.T) {
+	const statefulSet = `apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: db
+spec:
+  selector:
+    matchLabels: {app: db}
+  template:
+    metadata:
+      labels: {app: db}
+    spec:
+      volumes:
+        - name: run
+          emptyDir: {}
+      containers:
+        - name: db
+          image: postgres
+          volumeMounts:
+            - {name: data, mountPath: /var/lib/postgresql/data}
+            - {name: run, mountPath: /var/run/postgresql}
+            - {name: logs, mountPath: /logs}
+  volumeClaimTemplates:
+    - metadata:
+        name: data
+      spec:
+        accessModes: [ReadWriteOnce]
+        resources:
+          requests: {storage: 1Gi}
+`
+	assert.Equal(t, []string{
+		"volume-references spec.template.spec.containers.?name=db.volumeMounts.2.name",
+	}, correctnessFindingsOf(t, statefulSet, checkVolumeReferences))
+}
+
 func TestCorrectnessExactlyOneOf(t *testing.T) {
 	budget := func(spec string) string {
 		return "apiVersion: policy/v1\nkind: PodDisruptionBudget\nmetadata:\n  name: web\nspec:\n" + spec
@@ -318,4 +355,22 @@ func TestCorrectnessDeprecatedAPI(t *testing.T) {
 	assert.Equal(t, []string{"deprecated-api apiVersion"},
 		correctnessFindingsOf(t, "apiVersion: v1\nkind: ComponentStatus\nmetadata:\n  name: scheduler\n", checkDeprecatedAPI))
 	assert.Empty(t, correctnessFindingsOf(t, "apiVersion: v1\nkind: ConfigMap\nmetadata:\n  name: settings\n", checkDeprecatedAPI))
+}
+
+// TestCorrectnessIgnoresComments checks that comments, which reach a function as $comment$ keys
+// beside what they annotate, are not read as fields: not as labels, nor as a ConfigMap's data.
+func TestCorrectnessIgnoresComments(t *testing.T) {
+	const commented = `apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: settings
+  labels:
+    $comment$head$app.kubernetes.io/version: '# the chart version, set by the release'
+    app.kubernetes.io/version: "1.2.3"
+data:
+  $comment$head$big: '# ` + "PLACEHOLDER" + `'
+  small: x
+`
+	data := strings.Replace(commented, "PLACEHOLDER", strings.Repeat("x", maxConfigMapSize), 1)
+	assert.Empty(t, correctnessFindingsOf(t, data, checkLabelSyntax, checkConfigMapSize))
 }

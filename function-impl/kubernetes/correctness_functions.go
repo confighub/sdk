@@ -172,7 +172,9 @@ func k8sFnVetCorrectness(rp yamlkit.ResourceProvider, parsedData gaby.Container,
 	result := api.ValidationResult{Passed: true}
 	_, err := yamlkit.VisitResourcesFiltered(parsedData, &result, rp, options, func(doc *gaby.YamlDoc, output any, _ int, resourceInfo *api.ResourceInfo) (any, []error) {
 		vr := output.(*api.ValidationResult)
-		resource, ok := doc.Data().(map[string]any)
+		// A comment in the configuration is a $comment$ key beside what it annotates, which is
+		// no field of the resource: a comment on a label is not a label.
+		resource, ok := yamlkit.StripCommentKeys(doc.Data()).(map[string]any)
 		if !ok {
 			return vr, nil
 		}
@@ -761,7 +763,8 @@ func portReferences(resourceType api.ResourceType, resource map[string]any) []co
 }
 
 // volumeReferences fails a volume mount or device naming no volume of its pod, which the API
-// server rejects.
+// server rejects. A StatefulSet's pods also have a volume for each of its volumeClaimTemplates,
+// named as the template is.
 func volumeReferences(resourceType api.ResourceType, resource map[string]any) []correctnessFinding {
 	volumes := map[string]map[string]bool{} // pod spec path -> its volumes' names
 	for _, podSpec := range k8skit.PodSpecPaths(resourceType) {
@@ -772,6 +775,19 @@ func volumeReferences(resourceType api.ResourceType, resource map[string]any) []
 			if volume, ok := v.(map[string]any); ok {
 				if name, ok := volume["name"].(string); ok {
 					volumes[podSpec][name] = true
+				}
+			}
+		}
+	}
+	if resourceType == "apps/v1/StatefulSet" {
+		templates, _ := lookup(resource, "spec.volumeClaimTemplates")
+		entries, _ := templates.([]any)
+		for _, podSpec := range k8skit.PodSpecPaths(resourceType) {
+			for _, t := range entries {
+				if name, ok := lookup(t, "metadata.name"); ok {
+					if s, ok := name.(string); ok {
+						volumes[podSpec][s] = true
+					}
 				}
 			}
 		}
