@@ -44,7 +44,7 @@ dashboard goes on the first port of the node's host port window.
 In ConfigHub:
 
   <name>              the cluster Space, which holds the OCI target and, once
-                      attached, argobot's Channel.
+                      attached, k8sbot's Channel.
   target              the OCI target that represents the cluster, gated by a
                       "no-placeholders" Trigger in the cluster Space unless
                       --no-placeholder-gate is given. No one is granted access
@@ -157,6 +157,6 @@ func clusterControllerInstallRun(out io.Writer, opts clusterAttachOptions) (err 
 		fmt.Fprintf(out, "  gates:      %s/%s (vet-placeholders)\n", opts.spaceSlug, clusterGateTriggerSlug)
 	}
 	clusterPrintControllerSummary(out, opts.name, opts.controller, kubeconfigPath, inst)
-	fmt.Fprintf(out, "\nFinish wiring it into ConfigHub — the service account, the apps space, the\nroot and argobot — with:\n  cub cluster attach %s\n", opts.name)
+	fmt.Fprintf(out, "\nFinish wiring it into ConfigHub — the service account, the apps space, the\nroot and k8sbot — with:\n  cub cluster attach %s\n", opts.name)
 	return nil
 }

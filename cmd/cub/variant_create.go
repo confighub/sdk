@@ -148,7 +148,7 @@ republish the apps space: a ClusterProfile whose Release does not exist yet fail
 backs it off. The new space's first "cub release publish" republishes the apps space with it, and
 the cluster's root ClusterProfile applies it. For a cluster from "cub cluster up --controller flux"
 (whose target's confighub.com/cluster-controller is flux), it adds a unit holding a Flux OCIRepository and
-Kustomization. With argobot on the cluster, the apps space is republished at once, as for Argo CD;
+Kustomization. With k8sbot on the cluster, the apps space is republished at once, as for Argo CD;
 with --no-k8sbot, the new space's first "cub release publish" republishes it, as for Sveltos, since
 Flux backs off an OCIRepository whose Release does not exist yet. This is a no-op for ordinary
 targets; use --no-argo-app to skip it. Publish the deployment's own release

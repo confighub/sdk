@@ -205,7 +205,7 @@ func EnsureFilter(ctx context.Context, c *Client, filter goclientnew.Filter) (*g
 
 // EnsureTrigger creates a Trigger in trigger.SpaceID or patches an existing one.
 func EnsureTrigger(ctx context.Context, c *Client, trigger goclientnew.Trigger) (*goclientnew.Trigger, error) {
-	existing, err := ResolveTrigger(ctx, c, NewRef("", trigger.Slug), ResolveOpts{Space: trigger.SpaceID, Select: "TriggerID,Slug,SpaceID"})
+	existing, err := ResolveTrigger(ctx, c, NewRef("", trigger.Slug), ResolveOpts{Space: trigger.SpaceID, Select: "TriggerID,Slug,SpaceID,OtherUnitSelections"})
 	if err != nil {
 		res, err := c.API.CreateTriggerWithResponse(ctx, trigger.SpaceID, &goclientnew.CreateTriggerParams{AllowExists: allowExists(), WithBackingUnits: withBackingUnits()}, trigger)
 		if IsAPIError(err, res) {
@@ -213,7 +213,7 @@ func EnsureTrigger(ctx context.Context, c *Client, trigger goclientnew.Trigger) 
 		}
 		return res.JSON200, nil
 	}
-	patch, err := triggerMergePatch(trigger)
+	patch, err := triggerMergePatch(trigger, existing.Trigger.OtherUnitSelections)
 	if err != nil {
 		return nil, err
 	}
@@ -235,17 +235,62 @@ func EnsureTrigger(ctx context.Context, c *Client, trigger goclientnew.Trigger) 
 // function states the function's whole invocation, so its Arguments go in the patch even when
 // there are none: left out, a merge patch would keep the arguments of the function the Trigger
 // ran before, which the new one may not take.
-func triggerMergePatch(trigger goclientnew.Trigger) ([]byte, error) {
+//
+// A description whose OtherUnitSelections is not nil states the Trigger's selections, an empty
+// map stating that it has none. A merge patch merges a map key by key and a selection field by
+// field, so the patch removes, with nulls, the stored selections, existing, the description does
+// not name and the fields of a selection it leaves empty. A nil OtherUnitSelections leaves them
+// as they are.
+func triggerMergePatch(trigger goclientnew.Trigger, existing map[string]goclientnew.OtherUnitSelection) ([]byte, error) {
 	patch, err := mergePatch[goclientnew.PatchTriggerApplicationMergePatchPlusJSONBody](trigger)
-	if err != nil || trigger.FunctionName == "" || len(trigger.Arguments) > 0 {
+	statesArguments := trigger.FunctionName != "" && len(trigger.Arguments) == 0
+	if err != nil || (!statesArguments && trigger.OtherUnitSelections == nil) {
 		return patch, err
 	}
 	var m map[string]any
 	if err := json.Unmarshal(patch, &m); err != nil {
 		return nil, fmt.Errorf("cubapi: reread the patch of trigger %s: %w", trigger.Slug, err)
 	}
-	m["Arguments"] = []any{}
+	if statesArguments {
+		m["Arguments"] = []any{}
+	}
+	if trigger.OtherUnitSelections != nil {
+		if selections := selectionsMergePatch(trigger.OtherUnitSelections, existing); len(selections) > 0 {
+			m["OtherUnitSelections"] = selections
+		} else {
+			delete(m, "OtherUnitSelections")
+		}
+	}
 	return json.Marshal(m)
+}
+
+// selectionsMergePatch is the part of a merge patch that makes a Trigger's OtherUnitSelections
+// those desired, from those existing.
+func selectionsMergePatch(desired, existing map[string]goclientnew.OtherUnitSelection) map[string]any {
+	patch := map[string]any{}
+	for key := range existing {
+		if _, kept := desired[key]; !kept {
+			patch[key] = nil
+		}
+	}
+	orNull := func(value string) any {
+		if value == "" {
+			return nil
+		}
+		return value
+	}
+	for key, selection := range desired {
+		var filterID any
+		if selection.FilterID != nil {
+			filterID = selection.FilterID.String()
+		}
+		patch[key] = map[string]any{
+			"Where":         orNull(selection.Where),
+			"FilterID":      filterID,
+			"WhereResource": orNull(selection.WhereResource),
+		}
+	}
+	return patch
 }
 
 // EnsureInvocation creates a stored Invocation in invocation.SpaceID or patches

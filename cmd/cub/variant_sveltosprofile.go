@@ -21,7 +21,7 @@ import (
 // Unlike an Argo Application, the profile is not released until the variant has
 // a Release of its own. A ClusterProfile whose Release does not exist yet fails,
 // and Sveltos backs a failed profile off for 10 to 60 seconds, skipping any
-// redeploy argobot asks for in the meantime, so a variant's first publish would
+// redeploy k8sbot asks for in the meantime, so a variant's first publish would
 // wait out the backoff. So `cub variant create` only adds the Unit, and the
 // variant's first `cub release publish` republishes the apps Space with it.
 //

@@ -132,16 +132,16 @@ func registerPodSecurityFunctions(fh handler.FunctionRegistry, rp *k8skit.K8sRes
 				{
 					ParameterName: "level",
 					Required:      false,
-					Description:   `Pod Security Standard level every workload must meet: "privileged", "baseline", or "restricted". Omitted, each workload is checked at the level in its own pod-security.kubernetes.io/enforce label, and a workload without one is not checked`,
+					Description:   `Pod Security Standard level every workload must meet: "privileged", "baseline", or "restricted"; or "namespace", the level in the pod-security.kubernetes.io/enforce label of each workload's Namespace, found in the Unit or among the resources passed as OtherData namespaces, such as by a Trigger's OtherUnitSelections, the strictest counting when several of those declare one Namespace, failing a workload whose Namespace is not found or has no such label. Omitted, each workload is checked at the level in its own pod-security.kubernetes.io/enforce label, and a workload without one is not checked`,
 					DataType:      api.DataTypeString,
 					ValueConstraints: api.ValueConstraints{EnumValues: []string{
-						string(psaapi.LevelPrivileged), string(psaapi.LevelBaseline), string(psaapi.LevelRestricted),
+						string(psaapi.LevelPrivileged), string(psaapi.LevelBaseline), string(psaapi.LevelRestricted), fromNamespace,
 					}},
 				},
 				{
 					ParameterName: "version",
 					Required:      false,
-					Description:   `Version of the standard to check against, as in the pod-security.kubernetes.io/enforce-version label: "latest" (the default) or a Kubernetes minor version such as "v1.30". A workload's own enforce-version label takes precedence when level is omitted`,
+					Description:   `Version of the standard to check against, as in the pod-security.kubernetes.io/enforce-version label: "latest" (the default) or a Kubernetes minor version such as "v1.30"; or "namespace", the version in the pod-security.kubernetes.io/enforce-version label of each workload's Namespace, found as for level, or "latest" when it has none, failing a workload whose Namespace is not found. A workload's own enforce-version label takes precedence when level is omitted`,
 					DataType:      api.DataTypeString,
 					DefaultValue:  "latest",
 				},
@@ -159,6 +159,7 @@ func registerPodSecurityFunctions(fh handler.FunctionRegistry, rp *k8skit.K8sRes
 				},
 			},
 			RequiredParameters: 0,
+			OtherDataExpected:  []api.OtherDataSource{NamespacesOtherDataKey},
 			OutputInfo: &api.FunctionOutput{
 				ResultName:  "passed",
 				Description: "True if every workload meets the level, false otherwise",
@@ -173,7 +174,7 @@ func registerPodSecurityFunctions(fh handler.FunctionRegistry, rp *k8skit.K8sRes
 				"(https://kubernetes.io/docs/concepts/security/pod-security-standards/), using the same checks the " +
 				"PodSecurity admission controller applies: the level given, or without one, the level in each workload's own " +
 				"pod-security.kubernetes.io/enforce label, as on its namespace, so one Trigger can hold every workload to " +
-				"its namespace's level. check and exclude-check run some of the level's checks rather than all. Each " +
+				"its namespace's level, or with level namespace, the level labeled on the workload's Namespace itself. check and exclude-check run some of the level's checks rather than all. Each " +
 				"failure is an Issue identified by the check's ID. Passes when there are no workloads, or none to check. " +
 				"Fix: set what the check names in the pod's or the container's securityContext, or hold the workload to a lower level.",
 			FunctionType:          api.FunctionTypeCustom,
@@ -201,10 +202,107 @@ func registerPodSecurityFunctions(fh handler.FunctionRegistry, rp *k8skit.K8sRes
 			if err != nil {
 				return fArgs.ParsedData, nil, err
 			}
-			return k8sFnVetPodSecurityStandard(rp, fArgs.ParsedData, level, version, selected, fArgs.Options)
+			namespaces := namespacesByName(fArgs.ParsedData, fArgs.ParsedOtherData[NamespacesOtherDataKey])
+			return k8sFnVetPodSecurityStandard(rp, fArgs.ParsedData, level, version, selected, namespaces, fArgs.Options)
 		},
 	}); err != nil {
 		slog.Error("failed to register function", "error", err)
+	}
+}
+
+// fromNamespace is the level or version argument that reads it from the workload's Namespace.
+const fromNamespace = "namespace"
+
+// NamespacesOtherDataKey is the key of the OtherData vet-pod-security-standard finds the Namespaces
+// of the workloads it checks among, besides those in the Unit, when level or version is namespace.
+const NamespacesOtherDataKey = api.OtherDataSource("namespaces")
+
+// namespacesByName indexes, by name, the Namespace resources in the Unit and those passed as
+// OtherData. The Unit's own declaration of a Namespace is the one used. Among those passed, which
+// can declare one Namespace more than once, as two Units released to one cluster can, the one with
+// the strictest enforce label is used, and between two at the same level the one with the newer
+// enforce-version, whatever order they were passed in: a declaration without the label does not
+// lift the level another sets, and an invalid label is reported rather than passed over.
+func namespacesByName(own gaby.Container, passed gaby.Container) map[string]*gaby.YamlDoc {
+	namespaces := map[string]*gaby.YamlDoc{}
+	ownNames := map[string]bool{}
+	for _, doc := range own {
+		if name := namespaceName(doc); name != "" && !ownNames[name] {
+			namespaces[name] = doc
+			ownNames[name] = true
+		}
+	}
+	for _, doc := range passed {
+		name := namespaceName(doc)
+		if name == "" || ownNames[name] {
+			continue
+		}
+		if chosen, seen := namespaces[name]; !seen || stricterNamespace(doc, chosen) {
+			namespaces[name] = doc
+		}
+	}
+	return namespaces
+}
+
+// namespaceName is the name of a v1 Namespace, or empty for any other resource.
+func namespaceName(doc *gaby.YamlDoc) string {
+	if doc == nil {
+		return ""
+	}
+	kind, _ := doc.Search("kind").Data().(string)
+	apiVersion, _ := doc.Search("apiVersion").Data().(string)
+	name, _ := doc.Search("metadata", "name").Data().(string)
+	if kind != "Namespace" || apiVersion != "v1" {
+		return ""
+	}
+	return name
+}
+
+// stricterNamespace says whether one declaration of a Namespace holds workloads to more than
+// another: a stricter enforce level, or the same level at a newer enforce-version, as a version of
+// the standards adds to what the one before it checks. A Namespace without the version label is
+// held to the latest, and one with an invalid label sorts above any valid one, so it is reported.
+func stricterNamespace(namespace, than *gaby.YamlDoc) bool {
+	if a, b := enforceStrictness(namespace), enforceStrictness(than); a != b {
+		return a > b
+	}
+	version, versionValid := enforceVersion(namespace)
+	thanVersion, thanValid := enforceVersion(than)
+	if versionValid != thanValid {
+		return !versionValid
+	}
+	return versionValid && thanVersion.Older(version)
+}
+
+// enforceVersion is a Namespace's enforce-version label, latest when it has none, and whether the
+// label is valid.
+func enforceVersion(namespace *gaby.YamlDoc) (psaapi.Version, bool) {
+	value, ok := namespace.Search("metadata", "labels", podSecurityEnforceVersionLabel).Data().(string)
+	if !ok {
+		return psaapi.LatestVersion(), true
+	}
+	version, err := psaapi.ParseVersion(value)
+	return version, err == nil
+}
+
+// enforceStrictness orders Namespaces by their enforce label: none, then privileged, baseline and
+// restricted, then an invalid one.
+func enforceStrictness(namespace *gaby.YamlDoc) int {
+	value, ok := namespace.Search("metadata", "labels", podSecurityEnforceLabel).Data().(string)
+	if !ok {
+		return 0
+	}
+	level, err := psaapi.ParseLevel(value)
+	if err != nil {
+		return 4
+	}
+	switch level {
+	case psaapi.LevelPrivileged:
+		return 1
+	case psaapi.LevelBaseline:
+		return 2
+	default:
+		return 3
 	}
 }
 
@@ -215,17 +313,23 @@ const (
 	podSecurityEnforceVersionLabel = "pod-security.kubernetes.io/enforce-version"
 )
 
-func k8sFnVetPodSecurityStandard(rp *k8skit.K8sResourceProviderType, parsedData gaby.Container, levelArg, versionArg string, selected []string, options *api.FunctionOptions) (gaby.Container, any, error) {
+func k8sFnVetPodSecurityStandard(rp *k8skit.K8sResourceProviderType, parsedData gaby.Container, levelArg, versionArg string, selected []string, namespaces map[string]*gaby.YamlDoc, options *api.FunctionOptions) (gaby.Container, any, error) {
 	if versionArg == "" {
 		versionArg = "latest"
 	}
-	version, err := psaapi.ParseVersion(versionArg)
-	if err != nil {
-		return parsedData, nil, errors.Wrapf(err, "invalid version %q", versionArg)
+	versionFromNamespace := versionArg == fromNamespace
+	version := psaapi.LatestVersion()
+	if !versionFromNamespace {
+		var err error
+		if version, err = psaapi.ParseVersion(versionArg); err != nil {
+			return parsedData, nil, errors.Wrapf(err, "invalid version %q", versionArg)
+		}
 	}
-	// With a level, every workload is held to it; without one, each is held to its own label.
+	levelFromNamespace := levelArg == fromNamespace
+	// With a level, every workload is held to it; without one, each is held to its own label, or
+	// with namespace, to its Namespace's.
 	var fixed *psaapi.LevelVersion
-	if levelArg != "" {
+	if levelArg != "" && !levelFromNamespace {
 		level, err := psaapi.ParseLevel(levelArg)
 		if err != nil {
 			return parsedData, nil, errors.Wrapf(err, "invalid level %q", levelArg)
@@ -244,9 +348,51 @@ func k8sFnVetPodSecurityStandard(rp *k8skit.K8sResourceProviderType, parsedData 
 		if len(podSpecPaths) == 0 {
 			return vr, nil
 		}
+		workloadVersion := version
+		var namespace *gaby.YamlDoc
+		if levelFromNamespace || versionFromNamespace {
+			found, missing := workloadNamespace(doc, namespaces)
+			if missing != nil {
+				vr.Passed = false
+				missing.ResourceInfo = *resourceInfo
+				vr.FailedAttributes = append(vr.FailedAttributes, *missing)
+				return vr, nil
+			}
+			namespace = found
+		}
+		if versionFromNamespace {
+			namespaceVersion, invalid := labeledVersion(namespace, version)
+			if invalid != nil {
+				vr.Passed = false
+				invalid.ResourceInfo = *resourceInfo
+				vr.FailedAttributes = append(vr.FailedAttributes, *invalid)
+				return vr, nil
+			}
+			workloadVersion = namespaceVersion
+		}
 		lv := fixed
+		if lv != nil && versionFromNamespace {
+			lv = &psaapi.LevelVersion{Level: fixed.Level, Version: workloadVersion}
+		}
+		if lv == nil && levelFromNamespace {
+			labeled, invalid := labeledLevel(namespace, workloadVersion)
+			if invalid == nil && labeled == nil {
+				invalid = missingNamespaceLabel(namespace)
+			}
+			if invalid != nil {
+				vr.Passed = false
+				invalid.ResourceInfo = *resourceInfo
+				vr.FailedAttributes = append(vr.FailedAttributes, *invalid)
+				return vr, nil
+			}
+			if !versionFromNamespace {
+				// The level is the Namespace's; its version is the argument's.
+				labeled.Version = version
+			}
+			lv = labeled
+		}
 		if lv == nil {
-			labeled, invalid := labeledLevel(doc, version)
+			labeled, invalid := labeledLevel(doc, workloadVersion)
 			if invalid != nil {
 				vr.Passed = false
 				invalid.ResourceInfo = *resourceInfo
@@ -287,6 +433,66 @@ func k8sFnVetPodSecurityStandard(rp *k8skit.K8sResourceProviderType, parsedData 
 		return parsedData, nil, err
 	}
 	return parsedData, result, nil
+}
+
+// workloadNamespace finds the Namespace of a workload, named by its metadata.namespace or
+// "default". Not found, it returns a failed attribute saying so, without the ResourceInfo the
+// caller fills in.
+func workloadNamespace(doc *gaby.YamlDoc, namespaces map[string]*gaby.YamlDoc) (*gaby.YamlDoc, *api.AttributeValue) {
+	name, _ := doc.Search("metadata", "namespace").Data().(string)
+	if name == "" {
+		name = "default"
+	}
+	if namespace, ok := namespaces[name]; ok {
+		return namespace, nil
+	}
+	return nil, &api.AttributeValue{
+		AttributeInfo: api.AttributeInfo{
+			AttributeIdentifier: api.AttributeIdentifier{Path: "metadata.namespace"},
+			AttributeMetadata:   api.AttributeMetadata{AttributeName: api.AttributeNameNone},
+		},
+		Value: name,
+		Issues: []api.Issue{{Identifier: "missing namespace", Message: fmt.Sprintf(
+			"the Namespace %s, whose Pod Security labels the workload is held to, is neither in the Unit nor passed as OtherData %s", name, NamespacesOtherDataKey)}},
+	}
+}
+
+// missingNamespaceLabel is the failure of a workload whose Namespace has no enforce label to hold
+// it to, without the ResourceInfo the caller fills in.
+func missingNamespaceLabel(namespace *gaby.YamlDoc) *api.AttributeValue {
+	name, _ := namespace.Search("metadata", "name").Data().(string)
+	return &api.AttributeValue{
+		AttributeInfo: api.AttributeInfo{
+			AttributeIdentifier: api.AttributeIdentifier{Path: "metadata.namespace"},
+			AttributeMetadata:   api.AttributeMetadata{AttributeName: api.AttributeNameNone},
+		},
+		Value: name,
+		Issues: []api.Issue{{Identifier: "missing " + podSecurityEnforceLabel, Message: fmt.Sprintf(
+			"the Namespace %s has no %s label to hold the workload to", name, podSecurityEnforceLabel)}},
+	}
+}
+
+// labeledVersion is the version in a Namespace's enforce-version label, or defaultVersion when it
+// has none. A label whose value is not a version is returned as a failed attribute naming it,
+// without the ResourceInfo the caller fills in.
+func labeledVersion(namespace *gaby.YamlDoc, defaultVersion psaapi.Version) (psaapi.Version, *api.AttributeValue) {
+	value, ok := namespace.Search("metadata", "labels", podSecurityEnforceVersionLabel).Data().(string)
+	if !ok {
+		return defaultVersion, nil
+	}
+	version, err := psaapi.ParseVersion(value)
+	if err != nil {
+		return defaultVersion, &api.AttributeValue{
+			AttributeInfo: api.AttributeInfo{
+				AttributeIdentifier: api.AttributeIdentifier{Path: "metadata.namespace"},
+				AttributeMetadata:   api.AttributeMetadata{AttributeName: api.AttributeNameNone},
+			},
+			Value: value,
+			Issues: []api.Issue{{Identifier: "invalid " + podSecurityEnforceVersionLabel, Message: fmt.Sprintf(
+				"the Namespace's label %s=%q %s", podSecurityEnforceVersionLabel, value, err.Error())}},
+		}
+	}
+	return version, nil
 }
 
 // labeledLevel is the level and version a workload's own labels hold it to, or nil when it has

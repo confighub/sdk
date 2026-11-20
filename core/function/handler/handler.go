@@ -139,7 +139,7 @@ func (fh *FunctionHandler) InvokeCore(ctx context.Context, functionInvocation *a
 	needsOtherData := false
 	for _, invocation := range functionInvocation.FunctionInvocations {
 		f, existed := fh.functionMap[invocation.FunctionName]
-		if existed && len(f.OtherDataExpected) > 0 {
+		if existed && (len(f.OtherDataExpected) > 0 || f.OtherDataAnyKey) {
 			needsOtherData = true
 			break
 		}
@@ -267,11 +267,12 @@ func (fh *FunctionHandler) InvokeCore(ctx context.Context, functionInvocation *a
 		}
 
 		newParsedData, functionOutput, err = f.Function(FunctionImplementationArguments{
-			FunctionContext: &functionContext,
-			Options:         invocationFunctionOptions,
-			ParsedData:      newParsedData,
-			ParsedOtherData: parsedOtherData,
-			Arguments:       arguments,
+			FunctionContext:  &functionContext,
+			Options:          invocationFunctionOptions,
+			ParsedData:       newParsedData,
+			ParsedOtherData:  parsedOtherData,
+			OtherDataOrigins: functionInvocation.OtherDataOrigins,
+			Arguments:        arguments,
 		})
 		if err == nil && isFilter {
 			validationResult, ok := functionOutput.(api.ValidationResult)
@@ -774,7 +775,10 @@ type FunctionImplementationArguments struct {
 	Options         *api.FunctionOptions
 	ParsedData      gaby.Container
 	ParsedOtherData map[api.OtherDataSource]gaby.Container
-	Arguments       []api.FunctionArgument
+	// OtherDataOrigins says where each document of an OtherData entry assembled from several
+	// Units came from, one per document of that entry in ParsedOtherData, in order.
+	OtherDataOrigins map[api.OtherDataSource][]api.OtherDataOrigin
+	Arguments        []api.FunctionArgument
 }
 
 type FunctionImplementation func(args FunctionImplementationArguments) (gaby.Container, any, error)

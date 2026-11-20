@@ -168,6 +168,7 @@ func init() {
 	triggerCreateCmd.Flags().StringVar(&triggerWhereResource, "where-resource", "", "metadata path expression to restrict which resources the trigger operates on")
 	addTriggerEnforcementFlags(triggerCreateCmd)
 	addStoredOtherDataFlags(triggerCreateCmd, "trigger", false)
+	addOtherUnitSelectionFlags(triggerCreateCmd)
 
 	addBackingUnitFlags(triggerCreateCmd, "Trigger", false, true)
 	addFromBackingUnitsFlags(triggerCreateCmd, "Trigger", true)
@@ -343,7 +344,13 @@ func runSingleTriggerCreate(args []string) error {
 	if err != nil {
 		return err
 	}
-	newBody.OtherUnitIDs = applyOtherUnits(nil, otherUnits)
+	// The flags add to what --from-stdin or --filename gave.
+	newBody.OtherUnitIDs = applyOtherUnits(newBody.OtherUnitIDs, otherUnits)
+	selections, err := parseOtherUnitSelectionFlags()
+	if err != nil {
+		return err
+	}
+	newBody.OtherUnitSelections = applyOtherUnitSelections(newBody.OtherUnitSelections, selections)
 
 	// TODO: update with overriden string type TriggerEvent
 	// params.Trigger.Event = models.ModelsTriggerEvent(args[1])

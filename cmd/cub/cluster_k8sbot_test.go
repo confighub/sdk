@@ -17,11 +17,11 @@ import (
 	"sigs.k8s.io/yaml"
 )
 
-// The key goes into the Secret as a YAML block scalar; what argobot reads back
+// The key goes into the Secret as a YAML block scalar; what k8sbot reads back
 // from CONFIGHUB_AUTH_PRIVATE_KEY must be the JWK exactly.
-func TestClusterArgobotSecretManifestCarriesTheKeyIntact(t *testing.T) {
+func TestClusterK8sbotSecretManifestCarriesTheKeyIntact(t *testing.T) {
 	key := json.RawMessage(`{"kty":"OKP","crv":"Ed25519","x":"abc","d":"def","confighub_user_external_id":"sa:123"}` + "\n")
-	docs := strings.Split(string(clusterArgobotSecretManifest(key)), "\n---\n")
+	docs := strings.Split(string(clusterK8sbotSecretManifest(key)), "\n---\n")
 	if len(docs) != 2 {
 		t.Fatalf("documents = %d, want Namespace + Secret", len(docs))
 	}
@@ -45,9 +45,9 @@ func TestClusterArgobotSecretManifestCarriesTheKeyIntact(t *testing.T) {
 	}
 }
 
-func TestClusterArgobotSubscriptions(t *testing.T) {
+func TestClusterK8sbotSubscriptions(t *testing.T) {
 	target := uuid.New()
-	subs := clusterArgobotSubscriptions(target)
+	subs := clusterK8sbotSubscriptions(target)
 	if len(subs) != 1 {
 		t.Fatalf("len = %d, want 1", len(subs))
 	}
@@ -58,42 +58,42 @@ func TestClusterArgobotSubscriptions(t *testing.T) {
 	if sub.SpaceID != nil {
 		t.Fatalf("SpaceID = %v, want nil: the Target scopes the subscription, not a Space", sub.SpaceID)
 	}
-	if want := []string{clusterArgobotEventReleasePublished}; !slices.Equal(sub.EventTypes, want) {
+	if want := []string{clusterK8sbotEventReleasePublished}; !slices.Equal(sub.EventTypes, want) {
 		t.Fatalf("EventTypes = %v, want %v", sub.EventTypes, want)
 	}
 }
 
-func TestClusterArgobotImageIn(t *testing.T) {
+func TestClusterK8sbotImageIn(t *testing.T) {
 	deployment := `apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: argobot
-  namespace: argobot
+  name: k8sbot
+  namespace: k8sbot
 spec:
   template:
     spec:
       containers:
       - name: sidecar
         image: example.com/sidecar:v1
-      - name: argobot
-        image: ghcr.io/confighub/argobot:v0.1.6
+      - name: k8sbot
+        image: ghcr.io/confighub/k8sbot:v0.1.6
 `
 	for name, tc := range map[string]struct {
 		data string
 		want string
 	}{
-		"one Deployment": {data: deployment, want: "ghcr.io/confighub/argobot:v0.1.6"},
-		"all of argobot in one Unit": {
-			data: "apiVersion: v1\nkind: Namespace\nmetadata:\n  name: argobot\n---\n" + deployment + "---\napiVersion: v1\nkind: ServiceAccount\nmetadata:\n  name: argobot\n",
-			want: "ghcr.io/confighub/argobot:v0.1.6",
+		"one Deployment": {data: deployment, want: "ghcr.io/confighub/k8sbot:v0.1.6"},
+		"all of k8sbot in one Unit": {
+			data: "apiVersion: v1\nkind: Namespace\nmetadata:\n  name: k8sbot\n---\n" + deployment + "---\napiVersion: v1\nkind: ServiceAccount\nmetadata:\n  name: k8sbot\n",
+			want: "ghcr.io/confighub/k8sbot:v0.1.6",
 		},
-		"no Deployment":        {data: "apiVersion: v1\nkind: Namespace\nmetadata:\n  name: argobot\n"},
-		"not YAML":             {data: "{"},
-		"no argobot container": {data: strings.Replace(deployment, "- name: argobot", "- name: other", 1)},
+		"no Deployment":       {data: "apiVersion: v1\nkind: Namespace\nmetadata:\n  name: k8sbot\n"},
+		"not YAML":            {data: "{"},
+		"no k8sbot container": {data: strings.Replace(deployment, "- name: k8sbot", "- name: other", 1)},
 	} {
 		t.Run(name, func(t *testing.T) {
-			if got := clusterArgobotImageIn(tc.data); got != tc.want {
-				t.Errorf("clusterArgobotImageIn() = %q, want %q", got, tc.want)
+			if got := clusterK8sbotImageIn(tc.data); got != tc.want {
+				t.Errorf("clusterK8sbotImageIn() = %q, want %q", got, tc.want)
 			}
 		})
 	}
@@ -101,47 +101,47 @@ spec:
 
 // A --k8sbot-base value is taken as given, with no question and no call to
 // ConfigHub, and anything else is refused.
-func TestClusterChooseArgobotBaseFlag(t *testing.T) {
-	for _, flag := range []string{clusterArgobotBaseUpdate, clusterArgobotBaseClone} {
-		got, err := clusterChooseArgobotBase(io.Discard, clusterControllerArgo, flag)
+func TestClusterChooseK8sbotBaseFlag(t *testing.T) {
+	for _, flag := range []string{clusterK8sbotBaseUpdate, clusterK8sbotBaseClone} {
+		got, err := clusterChooseK8sbotBase(io.Discard, clusterControllerArgo, flag)
 		if err != nil || got != flag {
-			t.Errorf("clusterChooseArgobotBase(%q) = %q, %v; want %q", flag, got, err, flag)
+			t.Errorf("clusterChooseK8sbotBase(%q) = %q, %v; want %q", flag, got, err, flag)
 		}
 	}
-	if _, err := clusterChooseArgobotBase(io.Discard, clusterControllerArgo, "replace"); err == nil {
-		t.Error("clusterChooseArgobotBase(\"replace\") succeeded; want an error")
+	if _, err := clusterChooseK8sbotBase(io.Discard, clusterControllerArgo, "replace"); err == nil {
+		t.Error("clusterChooseK8sbotBase(\"replace\") succeeded; want an error")
 	}
 }
 
-// --registry names ghcr, gcr, or a mirror prefix, which argobot's image sits
+// --registry names ghcr, gcr, or a mirror prefix, which k8sbot's image sits
 // under; a bare word that is neither is refused rather than taken as a host.
-func TestClusterArgobotRepository(t *testing.T) {
+func TestClusterK8sbotRepository(t *testing.T) {
 	for registry, want := range map[string]string{
-		"":                                 clusterArgobotGHCR,
-		"ghcr":                             clusterArgobotGHCR,
-		"gcr":                              clusterArgobotGCR,
-		"gcr.io":                           clusterArgobotGCR,
-		"registry.example.com/confighub/":  "registry.example.com/confighub/argobot",
-		"registry.example.com:5000/mirror": "registry.example.com:5000/mirror/argobot",
+		"":                                 clusterK8sbotGHCR,
+		"ghcr":                             clusterK8sbotGHCR,
+		"gcr":                              clusterK8sbotGCR,
+		"gcr.io":                           clusterK8sbotGCR,
+		"registry.example.com/confighub/":  "registry.example.com/confighub/k8sbot",
+		"registry.example.com:5000/mirror": "registry.example.com:5000/mirror/k8sbot",
 	} {
-		if got, err := clusterArgobotRepository(registry); err != nil || got != want {
-			t.Errorf("clusterArgobotRepository(%q) = %q, %v; want %q", registry, got, err, want)
+		if got, err := clusterK8sbotRepository(registry); err != nil || got != want {
+			t.Errorf("clusterK8sbotRepository(%q) = %q, %v; want %q", registry, got, err, want)
 		}
 	}
-	if _, err := clusterArgobotRepository("quay"); err == nil {
-		t.Error("clusterArgobotRepository(\"quay\") succeeded; want an error")
+	if _, err := clusterK8sbotRepository("quay"); err == nil {
+		t.Error("clusterK8sbotRepository(\"quay\") succeeded; want an error")
 	}
 }
 
-// argobot's installer package sits beside its image, under packages/.
-func TestClusterArgobotPackageRepository(t *testing.T) {
+// k8sbot's installer package sits beside its image, under packages/.
+func TestClusterK8sbotPackageRepository(t *testing.T) {
 	for repository, want := range map[string]string{
-		clusterArgobotGHCR:                         "ghcr.io/confighub/packages/argobot",
-		clusterArgobotGCR:                          "gcr.io/confighubapp/packages/argobot",
-		"registry.example.com:5000/mirror/argobot": "registry.example.com:5000/mirror/packages/argobot",
+		clusterK8sbotGHCR:                         "ghcr.io/confighub/packages/k8sbot",
+		clusterK8sbotGCR:                          "gcr.io/confighubapp/packages/k8sbot",
+		"registry.example.com:5000/mirror/k8sbot": "registry.example.com:5000/mirror/packages/k8sbot",
 	} {
-		if got := clusterArgobotPackageRepository(repository); got != want {
-			t.Errorf("clusterArgobotPackageRepository(%q) = %q, want %q", repository, got, want)
+		if got := clusterK8sbotPackageRepository(repository); got != want {
+			t.Errorf("clusterK8sbotPackageRepository(%q) = %q, want %q", repository, got, want)
 		}
 	}
 }

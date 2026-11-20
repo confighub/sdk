@@ -99,24 +99,24 @@ func TestOrderSpaceStagesConfigHubApp(t *testing.T) {
 // A production Space free to go early still waits for the test Spaces, and a test Space
 // downstream of a base still waits for the base.
 func TestOrderSpaceStagesByRank(t *testing.T) {
-	topology := newStageTopology("argobot-base",
-		[]string{"prod-use2-argobot", "nonprod-argobot", "prod-use2-testwebsite", "nonprod-registrybot", "edge"},
+	topology := newStageTopology("k8sbot-base",
+		[]string{"prod-use2-k8sbot", "nonprod-k8sbot", "prod-use2-testwebsite", "nonprod-registrybot", "edge"},
 		map[string]map[string]string{
-			"prod-use2-argobot":     {"Stage": "public", "Environment": "prod"},
-			"nonprod-argobot":       {"Stage": "test", "Environment": "nonprod"},
+			"prod-use2-k8sbot":      {"Stage": "public", "Environment": "prod"},
+			"nonprod-k8sbot":        {"Stage": "test", "Environment": "nonprod"},
 			"prod-use2-testwebsite": {"Stage": "test", "Environment": "prod-test"},
 			// Its Stage label says public, but its slug and Environment say nonprod.
 			"nonprod-registrybot": {"Stage": "public", "Environment": "nonprod"},
 		},
 		[][2]string{
-			{"argobot-base", "prod-use2-argobot"},
-			{"argobot-base", "nonprod-argobot"},
-			{"argobot-base", "edge"},
-			{"argobot-base", "region-base"},
+			{"k8sbot-base", "prod-use2-k8sbot"},
+			{"k8sbot-base", "nonprod-k8sbot"},
+			{"k8sbot-base", "edge"},
+			{"k8sbot-base", "region-base"},
 			{"region-base", "prod-use2-testwebsite"},
 			{"region-base", "nonprod-registrybot"},
 		})
-	want := []string{"region-base", "nonprod-argobot", "nonprod-registrybot", "prod-use2-testwebsite", "edge", "prod-use2-argobot"}
+	want := []string{"region-base", "nonprod-k8sbot", "nonprod-registrybot", "prod-use2-testwebsite", "edge", "prod-use2-k8sbot"}
 	if got := topology.order(t, nil); !reflect.DeepEqual(got, want) {
 		t.Errorf("order = %v, want %v", got, want)
 	}

@@ -127,6 +127,7 @@ func init() {
 	triggerUpdateCmd.Flags().StringVar(&triggerWhereResource, "where-resource", "", "metadata path expression to restrict which resources the trigger operates on")
 	addTriggerEnforcementFlags(triggerUpdateCmd)
 	addStoredOtherDataFlags(triggerUpdateCmd, "trigger", true)
+	addOtherUnitSelectionFlags(triggerUpdateCmd)
 	addBackingUnitFlags(triggerUpdateCmd, "Trigger", false, false)
 	addFromBackingUnitsFlags(triggerUpdateCmd, "Trigger", false)
 	triggerCmd.AddCommand(triggerUpdateCmd)
@@ -507,6 +508,11 @@ func triggerUpdateCmdRun(cmd *cobra.Command, args []string) error {
 		return err
 	}
 	currentTrigger.Trigger.OtherUnitIDs = applyOtherUnits(currentTrigger.Trigger.OtherUnitIDs, otherUnits)
+	selections, err := parseOtherUnitSelectionFlags()
+	if err != nil {
+		return err
+	}
+	currentTrigger.Trigger.OtherUnitSelections = applyOtherUnitSelections(currentTrigger.Trigger.OtherUnitSelections, selections)
 	if err := applyFieldEdits("Trigger", currentTrigger.Trigger); err != nil {
 		return err
 	}
@@ -578,6 +584,10 @@ func triggerPatchEnhancer(wasWarn bool) (PatchEnhancer, error) {
 	if err != nil {
 		return nil, err
 	}
+	selections, err := parseOtherUnitSelectionFlags()
+	if err != nil {
+		return nil, err
+	}
 	enforcement, err := triggerEnforcementAnnotations(wasWarn)
 	if err != nil {
 		return nil, err
@@ -635,6 +645,7 @@ func triggerPatchEnhancer(wasWarn bool) (PatchEnhancer, error) {
 			patchMap["WhereResource"] = triggerWhereResource
 		}
 		addOtherDataToPatch(patchMap, otherUnits)
+		addOtherUnitSelectionsToPatch(patchMap, selections)
 	}, nil
 }
 

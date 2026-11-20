@@ -116,7 +116,7 @@ func clusterOCIEndpointFromContainer(ociURL, apiURL string) (string, error) {
 }
 
 // clusterAPIEndpointFromContainer returns the ConfigHub API URL as seen from
-// inside a container in the cluster (argobot's CONFIGHUB_URL).
+// inside a container in the cluster (k8sbot's CONFIGHUB_URL).
 func clusterAPIEndpointFromContainer(apiURL string) (string, error) {
 	u, err := url.Parse(apiURL)
 	if err != nil {

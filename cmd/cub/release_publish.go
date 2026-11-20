@@ -236,7 +236,7 @@ func releasePublishCmdRun(cmd *cobra.Command, args []string) error {
 
 	// A variant deployed to a `cub cluster up --controller sveltos` cluster has
 	// its ClusterProfile released only now that its first Release exists, and one
-	// deployed to a `--controller flux` cluster without argobot its Flux Unit.
+	// deployed to a `--controller flux` cluster without k8sbot its Flux Unit.
 	if err := publishVariantSveltosProfile(cmd.OutOrStdout(), space.Space.SpaceID); err != nil {
 		return err
 	}

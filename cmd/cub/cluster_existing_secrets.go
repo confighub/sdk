@@ -277,23 +277,23 @@ func clusterRequirePullToken(s *clusterSecretObject, controller, ociURL string, 
 	return nil
 }
 
-// clusterRequireArgobotKey checks argobot's key Secret in the cluster with
-// clusterCheckArgobotKey.
-func clusterRequireArgobotKey(s *clusterSecretObject, userID uuid.UUID, serviceAccountSlug string) error {
-	if err := clusterCheckArgobotKey(s.Data["CONFIGHUB_AUTH_PRIVATE_KEY"], userID, serviceAccountSlug); err != nil {
-		return fmt.Errorf("--existing-secrets: Secret %s/%s: %w", clusterArgobotNamespace, clusterArgobotSecret, err)
+// clusterRequireK8sbotKey checks k8sbot's key Secret in the cluster with
+// clusterCheckK8sbotKey.
+func clusterRequireK8sbotKey(s *clusterSecretObject, userID uuid.UUID, serviceAccountSlug string) error {
+	if err := clusterCheckK8sbotKey(s.Data["CONFIGHUB_AUTH_PRIVATE_KEY"], userID, serviceAccountSlug); err != nil {
+		return fmt.Errorf("--existing-secrets: Secret %s/%s: %w", clusterK8sbotNamespace, clusterK8sbotSecret, err)
 	}
 	return nil
 }
 
-// clusterCheckArgobotKey checks argobot's private key, the value of its
-// CONFIGHUB_AUTH_PRIVATE_KEY, by authenticating with it as argobot will, and
+// clusterCheckK8sbotKey checks k8sbot's private key, the value of its
+// CONFIGHUB_AUTH_PRIVATE_KEY, by authenticating with it as k8sbot will, and
 // checking that it is the cluster's service account that it authenticates as.
-func clusterCheckArgobotKey(key []byte, userID uuid.UUID, serviceAccountSlug string) error {
+func clusterCheckK8sbotKey(key []byte, userID uuid.UUID, serviceAccountSlug string) error {
 	if len(key) == 0 {
-		return errors.New("it has no CONFIGHUB_AUTH_PRIVATE_KEY, which argobot authenticates with")
+		return errors.New("it has no CONFIGHUB_AUTH_PRIVATE_KEY, which k8sbot authenticates with")
 	}
-	// argobot names no subject, so the key has to record its holder.
+	// k8sbot names no subject, so the key has to record its holder.
 	signer, err := cubapi.NewAssertionSigner(key, "", "")
 	if err != nil {
 		return fmt.Errorf("CONFIGHUB_AUTH_PRIVATE_KEY: %w", err)
@@ -308,9 +308,9 @@ func clusterCheckArgobotKey(key []byte, userID uuid.UUID, serviceAccountSlug str
 	return nil
 }
 
-// clusterArgobotKeyInManifest returns the CONFIGHUB_AUTH_PRIVATE_KEY of the
-// argobot-secrets Secret in a manifest clusterArgobotSecretManifest wrote.
-func clusterArgobotKeyInManifest(manifest []byte) ([]byte, error) {
+// clusterK8sbotKeyInManifest returns the CONFIGHUB_AUTH_PRIVATE_KEY of the
+// k8sbot-secrets Secret in a manifest clusterK8sbotSecretManifest wrote.
+func clusterK8sbotKeyInManifest(manifest []byte) ([]byte, error) {
 	for _, doc := range strings.Split(string(manifest), "\n---") {
 		var secret struct {
 			Kind       string            `json:"kind"`

@@ -47,14 +47,14 @@ const (
 	// apps Space holding the root and child Flux Units.
 	clusterFluxAppsSuffix = "-flux-apps"
 
-	// clusterFluxPollIntervalWithoutArgobot is the OCIRepositories' poll interval
+	// clusterFluxPollIntervalWithoutK8sbot is the OCIRepositories' poll interval
 	// when polling is the only way a publish reaches the cluster.
-	clusterFluxPollIntervalWithoutArgobot = "1m0s"
+	clusterFluxPollIntervalWithoutK8sbot = "1m0s"
 
-	// clusterFluxPollIntervalWithArgobot is the OCIRepositories' poll interval
-	// when argobot is installed. argobot requests a reconciliation of a Space's
-	// OCIRepository on each publish, so polling only catches what argobot missed.
-	clusterFluxPollIntervalWithArgobot = "10m0s"
+	// clusterFluxPollIntervalWithK8sbot is the OCIRepositories' poll interval
+	// when k8sbot is installed. k8sbot requests a reconciliation of a Space's
+	// OCIRepository on each publish, so polling only catches what k8sbot missed.
+	clusterFluxPollIntervalWithK8sbot = "10m0s"
 
 	// clusterFluxFieldManager is the field manager cub patches Kustomizations
 	// as, which Flux leaves alone (see clusterFluxSetCascade).
@@ -203,9 +203,9 @@ func clusterFluxCredsManifest(annotations map[string]string, ociURL, pullToken s
 // clusterFluxChildManifest returns the YAML for the OCIRepository and
 // Kustomization that deploy a deployment Space's Release to the cluster: the
 // Flux counterpart of variantArgoAppManifest. Both are named after the Space,
-// which is how argobot finds the OCIRepository to reconcile when that Space is
+// which is how k8sbot finds the OCIRepository to reconcile when that Space is
 // published. wait makes the Kustomization's Healthy condition cover the health
-// of what it applied, which is what argobot reports.
+// of what it applied, which is what k8sbot reports.
 //
 // Without prune, Flux never deletes what the Kustomization applied: a resource
 // that leaves the Release stays running, and so does everything when the
@@ -389,13 +389,13 @@ func clusterFluxDeleteDeployment(ctx context.Context, kubeconfigPath, name strin
 }
 
 // clusterFluxPollInterval returns the OCIRepositories' poll interval for a
-// cluster: infrequent when argobot requests reconciliations, every minute when
+// cluster: infrequent when k8sbot requests reconciliations, every minute when
 // polling is all there is.
-func clusterFluxPollInterval(argobot bool) string {
-	if argobot {
-		return clusterFluxPollIntervalWithArgobot
+func clusterFluxPollInterval(k8sbot bool) string {
+	if k8sbot {
+		return clusterFluxPollIntervalWithK8sbot
 	}
-	return clusterFluxPollIntervalWithoutArgobot
+	return clusterFluxPollIntervalWithoutK8sbot
 }
 
 // clusterFluxPollIntervalOf returns the poll interval `cub cluster up` recorded
@@ -405,7 +405,7 @@ func clusterFluxPollIntervalOf(target *goclientnew.Target) string {
 	if interval := target.Annotations[clusterAnnotationFluxPollInterval]; interval != "" {
 		return interval
 	}
-	return clusterFluxPollIntervalWithoutArgobot
+	return clusterFluxPollIntervalWithoutK8sbot
 }
 
 // clusterFluxStatusCommand is the command `cub cluster up` and `cub cluster

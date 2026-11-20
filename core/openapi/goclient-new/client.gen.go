@@ -21682,6 +21682,30 @@ func NewListAllResourcesRequest(server string, params *ListAllResourcesParams) (
 
 		}
 
+		if params.SelectedBy != nil {
+
+			if queryFrag, err := runtime.StyleParamWithOptions("form", true, "selected_by", *params.SelectedBy, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationQuery, Type: "string", Format: "uuid"}); err != nil {
+				return nil, err
+			} else {
+				for _, qp := range strings.Split(queryFrag, "&") {
+					rawQueryFragments = append(rawQueryFragments, qp)
+				}
+			}
+
+		}
+
+		if params.Selecting != nil {
+
+			if queryFrag, err := runtime.StyleParamWithOptions("form", true, "selecting", *params.Selecting, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationQuery, Type: "string", Format: "uuid"}); err != nil {
+				return nil, err
+			} else {
+				for _, qp := range strings.Split(queryFrag, "&") {
+					rawQueryFragments = append(rawQueryFragments, qp)
+				}
+			}
+
+		}
+
 		if encoded := queryValues.Encode(); encoded != "" {
 			rawQueryFragments = append(rawQueryFragments, encoded)
 		}
@@ -36641,6 +36665,30 @@ func NewListExtendedResourcesRequest(server string, spaceId openapi_types.UUID, 
 
 		}
 
+		if params.SelectedBy != nil {
+
+			if queryFrag, err := runtime.StyleParamWithOptions("form", true, "selected_by", *params.SelectedBy, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationQuery, Type: "string", Format: "uuid"}); err != nil {
+				return nil, err
+			} else {
+				for _, qp := range strings.Split(queryFrag, "&") {
+					rawQueryFragments = append(rawQueryFragments, qp)
+				}
+			}
+
+		}
+
+		if params.Selecting != nil {
+
+			if queryFrag, err := runtime.StyleParamWithOptions("form", true, "selecting", *params.Selecting, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationQuery, Type: "string", Format: "uuid"}); err != nil {
+				return nil, err
+			} else {
+				for _, qp := range strings.Split(queryFrag, "&") {
+					rawQueryFragments = append(rawQueryFragments, qp)
+				}
+			}
+
+		}
+
 		if encoded := queryValues.Encode(); encoded != "" {
 			rawQueryFragments = append(rawQueryFragments, encoded)
 		}
@@ -36731,6 +36779,30 @@ func NewGetExtendedResourceRequest(server string, spaceId openapi_types.UUID, un
 		if params.RawData != nil {
 
 			if queryFrag, err := runtime.StyleParamWithOptions("form", true, "raw_data", *params.RawData, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationQuery, Type: "boolean", Format: ""}); err != nil {
+				return nil, err
+			} else {
+				for _, qp := range strings.Split(queryFrag, "&") {
+					rawQueryFragments = append(rawQueryFragments, qp)
+				}
+			}
+
+		}
+
+		if params.SelectedBy != nil {
+
+			if queryFrag, err := runtime.StyleParamWithOptions("form", true, "selected_by", *params.SelectedBy, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationQuery, Type: "string", Format: "uuid"}); err != nil {
+				return nil, err
+			} else {
+				for _, qp := range strings.Split(queryFrag, "&") {
+					rawQueryFragments = append(rawQueryFragments, qp)
+				}
+			}
+
+		}
+
+		if params.Selecting != nil {
+
+			if queryFrag, err := runtime.StyleParamWithOptions("form", true, "selecting", *params.Selecting, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationQuery, Type: "string", Format: "uuid"}); err != nil {
 				return nil, err
 			} else {
 				for _, qp := range strings.Split(queryFrag, "&") {

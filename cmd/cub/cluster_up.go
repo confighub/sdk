@@ -20,8 +20,8 @@ var clusterUpArgs struct {
 	controller        string
 	mounts            []string
 	noPorts           bool
-	noArgobot         bool
-	argobotBase       string
+	noK8sbot          bool
+	k8sbotBase        string
 	registry          string
 	k8sbotInstaller   bool
 	noPlaceholderGate bool
@@ -36,7 +36,7 @@ var clusterUpCmd = &cobra.Command{
 	Long: `Creates a local kind cluster and attaches it: "cub cluster create" followed by
 "cub cluster attach --provider kind", which sets up the controller, the
 cluster and apps Spaces, the service account, the gated OCI target, the root
-app-of-apps and argobot. See "cub cluster attach --help" for what attaching
+app-of-apps and k8sbot. See "cub cluster attach --help" for what attaching
 sets up; this help covers what "up" adds. Unlike a cluster attached by hand,
 one "up" brings up is torn down again with "cub cluster down".
 
@@ -55,10 +55,10 @@ apps Space is <name>-sveltos-apps. Its root Unit is a ClusterProfile that pulls
 the apps Space's own Release and deploys it to the management cluster, so each
 ClusterProfile Unit added there, pulling a deployment Space's Release, becomes
 a profile Sveltos runs; "cub variant create --target" adds one per deployment.
-argobot is installed in its Sveltos mode, from its own base Space
-("argobot-sveltos-base"): on each deploy it redeploys the matching profile, and
+k8sbot is installed in its Sveltos mode, from its own base Space
+("k8sbot-sveltos-base"): on each deploy it redeploys the matching profile, and
 it reports live status from Sveltos health reports. Sveltos also polls each
-Release itself, as a fallback: every 10 minutes with argobot, every minute
+Release itself, as a fallback: every 10 minutes with k8sbot, every minute
 with --no-k8sbot, where polling is all there is. The Sveltos dashboard is
 reachable at http://localhost:<dashboard-port>, and logs in with a token from
 the platform-admin ServiceAccount.
@@ -68,11 +68,11 @@ With --controller flux, Flux is installed instead, and the apps Space is
 named confighub-root, that pull and apply the apps Space's own Release, so each
 Unit added there, holding an OCIRepository and Kustomization that pull and
 apply a deployment Space's Release, becomes a deployment Flux runs; "cub variant
-create --target" adds one per deployment. argobot is installed in its Flux mode,
-from its own base Space ("argobot-flux-base"): on each deploy it requests a
+create --target" adds one per deployment. k8sbot is installed in its Flux mode,
+from its own base Space ("k8sbot-flux-base"): on each deploy it requests a
 reconciliation of the matching OCIRepository, and it reports live status from
 the Kustomizations. The OCIRepositories also poll for a new Release themselves:
-every 10 minutes with argobot, every minute with --no-k8sbot. Flux has no UI;
+every 10 minutes with k8sbot, every minute with --no-k8sbot. Flux has no UI;
 the whole NodePort window is left for your apps, and
 "kubectl -n flux-system get ocirepository,kustomization" shows Flux's state.
 
@@ -98,12 +98,12 @@ unless --delete-config is given.`,
 func init() {
 	clusterUpCmd.Flags().StringVar(&clusterUpArgs.name, "name", "", "cluster name (may also be given as the argument; auto-generated if empty)")
 	_ = clusterUpCmd.Flags().MarkHidden("name")
-	clusterUpCmd.Flags().StringVar(&clusterUpArgs.spaceSlug, "space", "", "ConfigHub space slug for the cluster's target and argobot channel (the \"target prefix\"); the apps space is this slug + \"-argo-apps\", + \"-sveltos-apps\" with --controller sveltos, or + \"-flux-apps\" with --controller flux (defaults to <name>)")
+	clusterUpCmd.Flags().StringVar(&clusterUpArgs.spaceSlug, "space", "", "ConfigHub space slug for the cluster's target and k8sbot channel (the \"target prefix\"); the apps space is this slug + \"-argo-apps\", + \"-sveltos-apps\" with --controller sveltos, or + \"-flux-apps\" with --controller flux (defaults to <name>)")
 	clusterUpCmd.Flags().StringVar(&clusterUpArgs.controller, "controller", clusterControllerArgo, "controller to install and wire to ConfigHub: argo (Argo CD), sveltos (Sveltos) or flux (Flux)")
 	clusterUpCmd.Flags().StringArrayVar(&clusterUpArgs.mounts, "mount", nil, "host:container bind mount (repeatable; container path defaults to /mnt/<basename>)")
 	clusterUpCmd.Flags().BoolVar(&clusterUpArgs.noPorts, "no-ports", false, "only reserve the controller UI's NodePort (none for Flux); skip the user-app NodePort window")
-	clusterUpCmd.Flags().BoolVar(&clusterUpArgs.noArgobot, "no-k8sbot", false, "skip installing argobot (the event-driven Argo CD sync, Sveltos redeploy, or Flux reconciliation, bot); 'cub cluster k8sbot-install' installs it later")
-	clusterUpCmd.Flags().StringVar(&clusterUpArgs.argobotBase, "k8sbot-base", "", clusterK8sbotBaseFlagUsage)
+	clusterUpCmd.Flags().BoolVar(&clusterUpArgs.noK8sbot, "no-k8sbot", false, "skip installing k8sbot (the event-driven Argo CD sync, Sveltos redeploy, or Flux reconciliation, bot); 'cub cluster k8sbot-install' installs it later")
+	clusterUpCmd.Flags().StringVar(&clusterUpArgs.k8sbotBase, "k8sbot-base", "", clusterK8sbotBaseFlagUsage)
 	clusterUpCmd.Flags().StringVar(&clusterUpArgs.registry, "registry", "", clusterRegistryFlagUsage)
 	clusterUpCmd.Flags().BoolVar(&clusterUpArgs.k8sbotInstaller, "k8sbot-installer", false, clusterK8sbotInstallerFlagUsage)
 	clusterUpCmd.Flags().BoolVar(&clusterUpArgs.noPlaceholderGate, "no-placeholder-gate", false, "skip the default vet-placeholders Trigger, allowing Releases with unfilled confighubplaceholder values to be published to this cluster")
@@ -118,8 +118,8 @@ type clusterUpOptions struct {
 	controller        string
 	mounts            []clusterMount
 	noPorts           bool
-	noArgobot         bool
-	argobotBase       string
+	noK8sbot          bool
+	k8sbotBase        string
 	registry          string
 	k8sbotInstaller   bool
 	noPlaceholderGate bool
@@ -142,8 +142,8 @@ func clusterUpCmdRun(cmd *cobra.Command, args []string) error {
 		controller:        clusterUpArgs.controller,
 		mounts:            mounts,
 		noPorts:           clusterUpArgs.noPorts,
-		noArgobot:         clusterUpArgs.noArgobot,
-		argobotBase:       clusterUpArgs.argobotBase,
+		noK8sbot:          clusterUpArgs.noK8sbot,
+		k8sbotBase:        clusterUpArgs.k8sbotBase,
 		registry:          clusterUpArgs.registry,
 		k8sbotInstaller:   clusterUpArgs.k8sbotInstaller,
 		noPlaceholderGate: clusterUpArgs.noPlaceholderGate,
@@ -228,15 +228,15 @@ func clusterUpRun(out io.Writer, opts clusterUpOptions) error {
 
 	// Surface leftovers before building the kind cluster rather than failing
 	// mid-run.
-	argobotSlug := ""
-	if !opts.noArgobot {
-		argobotSlug = clusterArgobotComponent + "-" + opts.name
+	k8sbotSlug := ""
+	if !opts.noK8sbot {
+		k8sbotSlug = clusterK8sbotComponent + "-" + opts.name
 	}
-	if err := clusterRequireFreshConfigHub(opts.name, opts.spaceSlug, appsSlug, argobotSlug, true); err != nil {
+	if err := clusterRequireFreshConfigHub(opts.name, opts.spaceSlug, appsSlug, k8sbotSlug, true); err != nil {
 		return err
 	}
-	if !opts.noArgobot {
-		if _, err := clusterArgobotRepository(opts.registry); err != nil {
+	if !opts.noK8sbot {
+		if _, err := clusterK8sbotRepository(opts.registry); err != nil {
 			return err
 		}
 		if opts.k8sbotInstaller {
@@ -244,14 +244,14 @@ func clusterUpRun(out io.Writer, opts clusterUpOptions) error {
 				return err
 			}
 		}
-		if err := clusterArgobotCheckBaseKind(opts.controller, opts.k8sbotInstaller); err != nil {
+		if err := clusterK8sbotCheckBaseKind(opts.controller, opts.k8sbotInstaller); err != nil {
 			return err
 		}
-		mode, err := clusterChooseArgobotBase(out, opts.controller, opts.argobotBase)
+		mode, err := clusterChooseK8sbotBase(out, opts.controller, opts.k8sbotBase)
 		if err != nil {
 			return err
 		}
-		opts.argobotBase = mode
+		opts.k8sbotBase = mode
 	}
 
 	// A cluster of the same name deleted without `cub cluster down` leaves its
@@ -297,8 +297,8 @@ func clusterUpRun(out io.Writer, opts clusterUpOptions) error {
 		cluster:           opts.name,
 		controller:        opts.controller,
 		controllerVersion: opts.controllerVersion,
-		noArgobot:         opts.noArgobot,
-		argobotBase:       opts.argobotBase,
+		noK8sbot:          opts.noK8sbot,
+		k8sbotBase:        opts.k8sbotBase,
 		registry:          opts.registry,
 		k8sbotInstaller:   opts.k8sbotInstaller,
 		noPlaceholderGate: opts.noPlaceholderGate,

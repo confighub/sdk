@@ -164,7 +164,7 @@ func TestClusterRollbackSecondInterruptListsWhatIsLeft(t *testing.T) {
 		sigs <- syscall.SIGTERM
 		code = <-exited
 	}))
-	r.add(testUndo("argobot space", func() {}))
+	r.add(testUndo("k8sbot space", func() {}))
 
 	stepCtx := ctx
 	sigs <- os.Interrupt
@@ -184,7 +184,7 @@ func TestClusterRollbackSecondInterruptListsWhatIsLeft(t *testing.T) {
 			t.Errorf("list of what is left lacks %q: %q", want, list)
 		}
 	}
-	if strings.Contains(list, "argobot space") {
+	if strings.Contains(list, "k8sbot space") {
 		t.Errorf("list of what is left names a step that finished: %q", list)
 	}
 }
@@ -232,8 +232,8 @@ func TestClusterRollbackPartialUndoListsOnlyWhatIsLeft(t *testing.T) {
 	var out bytes.Buffer
 	r := clusterBeginRollbackOn(&out, make(chan os.Signal), func() {})
 	r.add(clusterUndo{
-		what: "argobot's Unit",
-		fix:  []string{"cub unit delete apps/argobot", "cub release publish apps"},
+		what: "k8sbot's Unit",
+		fix:  []string{"cub unit delete apps/k8sbot", "cub release publish apps"},
 		run: func() error {
 			return &clusterUndoPartial{fix: []string{"cub release publish apps"}, err: errors.New("publish failed")}
 		},
@@ -243,7 +243,7 @@ func TestClusterRollbackPartialUndoListsOnlyWhatIsLeft(t *testing.T) {
 	r.finish(false, &err)
 
 	got := out.String()
-	if !strings.Contains(got, "- argobot's Unit\n      cub release publish apps\n") {
+	if !strings.Contains(got, "- k8sbot's Unit\n      cub release publish apps\n") {
 		t.Errorf("list does not give the partial step's remaining fix: %q", got)
 	}
 	if strings.Contains(got, "cub unit delete") {

@@ -18,12 +18,12 @@ import (
 // applies an apps Space; deploying a variant to that cluster means adding one
 // Unit holding the pair to that apps Space and republishing its Release.
 //
-// When the pair is released depends on argobot. An OCIRepository whose Release
+// When the pair is released depends on k8sbot. An OCIRepository whose Release
 // does not exist yet fails, and Flux retries it with an exponential backoff of
-// up to 15 minutes. A reconciliation request skips the backoff, so with argobot,
+// up to 15 minutes. A reconciliation request skips the backoff, so with k8sbot,
 // which requests one on each publish, the Unit is released straight away, as an
 // Argo CD Application is, and the variant's first publish deploys at once
-// wherever it is published from. Without argobot, nothing would cut the backoff
+// wherever it is published from. Without k8sbot, nothing would cut the backoff
 // short, so `cub variant create` only adds the Unit, and the variant's first
 // `cub release publish` republishes the apps Space with it, as with Sveltos.
 //
@@ -33,7 +33,7 @@ import (
 
 // createVariantFluxApp adds the Flux Unit for a deployment variant to the
 // cluster's apps Space when its target is a cub-cluster Flux target, and
-// releases it when the cluster has argobot (see publishVariantFluxApp). It
+// releases it when the cluster has k8sbot (see publishVariantFluxApp). It
 // reports whether it did anything.
 //
 // The Kustomization prunes what it applied when prune is set (--prune) or the
@@ -109,15 +109,15 @@ func createVariantFluxApp(out io.Writer, target *goclientnew.Target, variantSpac
 		return false, err
 	}
 	if !jsonOutput {
-		fmt.Fprintf(out, "Flux Kustomization %q created; argobot deploys the variant's first Release when it is published.\n", variantSpace.Slug)
+		fmt.Fprintf(out, "Flux Kustomization %q created; k8sbot deploys the variant's first Release when it is published.\n", variantSpace.Slug)
 	}
 	return true, nil
 }
 
 // clusterFluxReleasesOnCreate says a Flux cluster's child Units are released
-// when they are created: the cluster has argobot to skip Flux's backoff.
+// when they are created: the cluster has k8sbot to skip Flux's backoff.
 func clusterFluxReleasesOnCreate(target *goclientnew.Target) bool {
-	return target.Annotations[clusterAnnotationArgobot] == "true"
+	return target.Annotations[clusterAnnotationK8sbot] == "true" || target.Annotations[clusterAnnotationArgobot] == "true"
 }
 
 // deleteVariantFluxApp is the inverse of createVariantFluxApp, run by `cub
@@ -174,7 +174,7 @@ func deleteVariantFluxApp(out io.Writer, app *variantClusterApp, cascade bool) e
 
 // publishVariantFluxApp releases a variant's Flux Unit, when it has not been
 // released yet, by republishing the cluster's apps Space. It runs after `cub
-// release publish` of the variant, and acts only for a cluster without argobot,
+// release publish` of the variant, and acts only for a cluster without k8sbot,
 // whose Units createVariantFluxApp leaves unreleased.
 func publishVariantFluxApp(out io.Writer, spaceID uuid.UUID) error {
 	return publishVariantAppsUnit(out, spaceID, clusterControllerFlux, "Flux Kustomization",

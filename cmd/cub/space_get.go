@@ -170,6 +170,17 @@ func displayExtendedSpaceDetails(extendedSpace *goclientnew.ExtendedSpace) {
 		view.Append([]string{"Triggers", ""})
 	}
 	view.Append([]string{"Trigger Hash", extendedSpace.Space.TriggerHash})
+	// What each selection of other units picked: the number of units per trigger and key, since
+	// a list of IDs is unreadable; -o json has them.
+	for _, selected := range extendedSpace.Space.TriggerOtherUnitIDs {
+		trigger := selected.TriggerID.String()
+		for _, t := range extendedSpace.Triggers {
+			if t.TriggerID == selected.TriggerID {
+				trigger = t.Slug
+			}
+		}
+		view.Append([]string{"Other Units " + trigger + "/" + selected.Key, fmt.Sprintf("%d units", len(selected.UnitIDs))})
+	}
 
 	// TODO: TriggerCountByEventType
 	view.Append([]string{"# Units", fmt.Sprintf("%d", extendedSpace.TotalUnitCount)})

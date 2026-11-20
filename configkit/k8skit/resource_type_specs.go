@@ -89,6 +89,43 @@ func PodTemplateContaining(resourceType api.ResourceType, path string) (string, 
 	return "", false
 }
 
+// PodLabelsPath returns where a resource of the type keeps the labels of the pods it runs, as path
+// segments, and whether it runs pods: for a workload type carrying a pod template, the template's,
+// the first when it carries several, and for a bare v1/Pod, its own. A v1/PodTemplate is a template for others to
+// use and runs none. These are the labels a NetworkPolicy's, PodDisruptionBudget's or Service's
+// selector is matched against.
+func PodLabelsPath(resourceType api.ResourceType) ([]string, bool) {
+	if resourceType == podResourceType {
+		return []string{"metadata", "labels"}, true
+	}
+	if resourceType == podTemplateResourceType {
+		return nil, false
+	}
+	templates := PodTemplatePaths(resourceType)
+	if len(templates) == 0 {
+		return nil, false
+	}
+	return append(gaby.DotPathToSlice(templates[0]), "metadata", "labels"), true
+}
+
+// PodLabelsResourceTypes returns every resource type that runs pods, sorted: those PodLabelsPath
+// answers for.
+func PodLabelsResourceTypes() []api.ResourceType {
+	types := []api.ResourceType{podResourceType}
+	for _, resourceType := range PodTemplateResourceTypes() {
+		if resourceType != podTemplateResourceType {
+			types = append(types, resourceType)
+		}
+	}
+	slices.Sort(types)
+	return types
+}
+
+const (
+	podResourceType         = api.ResourceType("v1/Pod")
+	podTemplateResourceType = api.ResourceType("v1/PodTemplate")
+)
+
 // ContainerArrayPaths returns a resource type's container arrays -- containers, initContainers
 // and ephemeralContainers under each PodSpec it carries -- or nil if it has none.
 func ContainerArrayPaths(resourceType api.ResourceType) []string {

@@ -4,7 +4,7 @@
 // Package livestatus maps what a deployment tool reports about a running Release onto the
 // normalized values of Release.LiveStatus.
 //
-// A Release's LiveStatus is written by the client that deploys it -- argobot, for Argo CD -- as a
+// A Release's LiveStatus is written by the client that deploys it -- k8sbot, for Argo CD -- as a
 // patch of the Release, which EditChildren on the Release's Target authorizes. The server reads
 // only the normalized Sync, Health and Operation, so a gate means the same whatever the tool; the
 // tool's own words are kept beside them for display. A client finds the Release to write by the

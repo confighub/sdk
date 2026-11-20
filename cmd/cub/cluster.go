@@ -29,7 +29,7 @@ const (
 	clusterOriginKind       = "kind"
 	clusterOriginAttach     = "attach"
 	// clusterAnnotationBotSpace and clusterAnnotationBotChannel record where the
-	// cluster's bot (argobot) lives: its variant Space slug and the Channel slug
+	// cluster's bot (k8sbot) lives: its variant Space slug and the Channel slug
 	// in the cluster Space. `cub cluster detach` reads them rather than deriving
 	// the names from the cluster name, so the bot can be renamed or moved
 	// without the teardown losing track of it. Absent when the cluster was
@@ -64,7 +64,7 @@ const (
 	// clusterAnnotationExistingSecrets is "true" on the cluster Space of a
 	// cluster attached with --existing-secrets: its credentials Secrets were
 	// put in the cluster by a secret store, not by attach, so `cub cluster
-	// detach` leaves them, and the argobot namespace they are in, in place.
+	// detach` leaves them, and the k8sbot namespace they are in, in place.
 	clusterAnnotationExistingSecrets = "confighub.com/cluster-existing-secrets"
 	// clusterLabel is the queryable marker label on every cluster Space.
 	clusterLabel = "confighub.com/cluster"
@@ -119,17 +119,20 @@ const (
 	// --target` gives a deployment's OCIRepository the same one as the root.
 	clusterAnnotationFluxPollInterval = "confighub.com/flux-poll-interval"
 
-	// clusterAnnotationArgobot is "true" on the OCI target of a cluster `cub
-	// cluster up` installed argobot in. With Flux it decides when a deployment's
+	// clusterAnnotationK8sbot is "true" on the OCI target of a cluster `cub
+	// cluster up` installed k8sbot in. With Flux it decides when a deployment's
 	// Units are released (see createVariantFluxApp).
+	clusterAnnotationK8sbot = "confighub.com/cluster-k8sbot"
+	// clusterAnnotationArgobot is the same, on the target of a cluster attached
+	// before k8sbot was renamed from argobot.
 	clusterAnnotationArgobot = "confighub.com/cluster-argobot"
 )
 
 // Slugs of the ConfigHub entities an attachment creates. The target lives in
 // the cluster (target-prefix) Space; the root Unit lives in the dedicated apps
 // Space; the cluster's service account is org-scoped and named by
-// clusterServiceAccountSlug. (argobot-specific constants live in
-// cluster_argobot.go.)
+// clusterServiceAccountSlug. (k8sbot-specific constants live in
+// cluster_k8sbot.go.)
 const (
 	clusterTargetSlug   = "target"
 	clusterRootUnitSlug = "root"
@@ -192,9 +195,9 @@ single cub unit create.
                        credentials in the cluster, the second part
   cub cluster app-bootstrap
                        create the apps space and bootstrap the root, the third
-                       part, which finishes attaching without argobot
+                       part, which finishes attaching without k8sbot
   cub cluster k8sbot-install
-                       install argobot in a cluster attached without it, the
+                       install k8sbot in a cluster attached without it, the
                        last part
   cub cluster up       create a local kind cluster, then attach it
   cub cluster down     the inverse: detach, then delete the kind cluster

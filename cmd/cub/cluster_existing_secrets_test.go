@@ -82,13 +82,13 @@ func TestClusterPullTokenFromSecretRefusesSurroundingWhitespace(t *testing.T) {
 }
 
 // The key a --secrets-dir file holds is the one it was written with.
-func TestClusterArgobotKeyInManifest(t *testing.T) {
+func TestClusterK8sbotKeyInManifest(t *testing.T) {
 	const key = `{"kty":"OKP","crv":"Ed25519","x":"abc","d":"def"}`
-	got, err := clusterArgobotKeyInManifest(clusterArgobotSecretManifest([]byte(key)))
+	got, err := clusterK8sbotKeyInManifest(clusterK8sbotSecretManifest([]byte(key)))
 	if err != nil || string(got) != key {
-		t.Errorf("clusterArgobotKeyInManifest = %q, %v; want %q", got, err, key)
+		t.Errorf("clusterK8sbotKeyInManifest = %q, %v; want %q", got, err, key)
 	}
-	if _, err := clusterArgobotKeyInManifest(clusterArgobotNamespaceManifest()); err == nil {
+	if _, err := clusterK8sbotKeyInManifest(clusterK8sbotNamespaceManifest()); err == nil {
 		t.Error("a manifest with no Secret: want an error")
 	}
 }

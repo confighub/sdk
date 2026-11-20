@@ -20,9 +20,9 @@ var clusterAppBootstrapCmd = &cobra.Command{
 	Args:  cobra.ExactArgs(1),
 	Short: "Create a cluster's apps Space and bootstrap its root in the controller",
 	Long: `The third part of "cub cluster attach", on its own, for a cluster "cub cluster
-svc-account-bootstrap" set up. It finishes the attachment without argobot, as
+svc-account-bootstrap" set up. It finishes the attachment without k8sbot, as
 "cub cluster attach --no-k8sbot" does; "cub cluster k8sbot-install" adds
-argobot afterwards.
+k8sbot afterwards.
 
 In ConfigHub it creates the apps Space, <name>-argo-apps (<name>-sveltos-apps
 or <name>-flux-apps with Sveltos or Flux), releasing to the cluster's OCI
@@ -34,7 +34,7 @@ Space's own Release from ConfigHub's OCI registry with the pull token
 In the cluster the root is applied once with kubectl; from then on the
 controller pulls everything else from ConfigHub, so each Unit "cub variant
 create --target" adds to the apps Space becomes a deployment the controller
-runs. Without argobot, a Sveltos or Flux root polls its Release every minute.
+runs. Without k8sbot, a Sveltos or Flux root polls its Release every minute.
 
 --prune lets the controller delete what a removed deployment deployed; see
 "cub cluster attach --help".
@@ -58,7 +58,7 @@ func clusterAppBootstrapCmdRun(cmd *cobra.Command, args []string) error {
 }
 
 // clusterAppBootstrapRun runs the apps stage of an attachment, without
-// argobot, on a cluster `cub cluster svc-account-bootstrap` set up.
+// k8sbot, on a cluster `cub cluster svc-account-bootstrap` set up.
 func clusterAppBootstrapRun(out io.Writer, name string, prune bool) (err error) {
 	if _, err := exec.LookPath("kubectl"); err != nil {
 		return fmt.Errorf("kubectl not found on PATH")
@@ -100,8 +100,8 @@ func clusterAppBootstrapRun(out io.Writer, name string, prune bool) (err error) 
 			controller:        space.Controller,
 			noPlaceholderGate: inst.noPlaceholderGate,
 		},
-		noArgobot: true,
-		prune:     prune,
+		noK8sbot: true,
+		prune:    prune,
 	}
 	result, err := clusterBootstrapApps(out, spec, inst, nil, rollback.add)
 	if err != nil {
@@ -112,6 +112,6 @@ func clusterAppBootstrapRun(out io.Writer, name string, prune bool) (err error) 
 	envFilePath := clusterEnvFilePath(name)
 	clusterPrintSummaryHead(out, "Attached", result, kubeconfigPath, envFilePath)
 	clusterPrintSummaryTail(out, result, envFilePath)
-	fmt.Fprintf(out, "\nInstall argobot, which has the controller deploy each Release the moment it is\npublished, with:\n  cub cluster k8sbot-install %s\n", name)
+	fmt.Fprintf(out, "\nInstall k8sbot, which has the controller deploy each Release the moment it is\npublished, with:\n  cub cluster k8sbot-install %s\n", name)
 	return nil
 }

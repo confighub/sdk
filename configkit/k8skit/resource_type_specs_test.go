@@ -4,6 +4,7 @@
 package k8skit
 
 import (
+	"slices"
 	"testing"
 
 	"github.com/confighub/sdk/core/configkit/yamlkit"
@@ -89,4 +90,29 @@ func TestNameFormatsAndCorrectnessDeclarations(t *testing.T) {
 	require.Len(t, deprecated, 1)
 	assert.Equal(t, "spec.template.spec.serviceAccount", deprecated[0].Path)
 	assert.Equal(t, "spec.template.spec.serviceAccountName", deprecated[0].Replacement)
+}
+
+// A Pod's labels are its own; a workload's are its pod template's, wherever its kind keeps it; a
+// PodTemplate, and a kind with no template, run no pods.
+func TestPodLabelsPath(t *testing.T) {
+	for resourceType, want := range map[api.ResourceType][]string{
+		"v1/Pod":                       {"metadata", "labels"},
+		"apps/v1/Deployment":           {"spec", "template", "metadata", "labels"},
+		"batch/v1/CronJob":             {"spec", "jobTemplate", "spec", "template", "metadata", "labels"},
+		"argoproj.io/v1alpha1/Rollout": {"spec", "template", "metadata", "labels"},
+	} {
+		got, ok := PodLabelsPath(resourceType)
+		if !ok || !slices.Equal(got, want) {
+			t.Errorf("PodLabelsPath(%s) = %v, %v; want %v", resourceType, got, ok, want)
+		}
+	}
+	for _, resourceType := range []api.ResourceType{"v1/PodTemplate", "v1/Service", "networking.k8s.io/v1/NetworkPolicy"} {
+		if got, ok := PodLabelsPath(resourceType); ok {
+			t.Errorf("PodLabelsPath(%s) = %v, want none", resourceType, got)
+		}
+	}
+	types := PodLabelsResourceTypes()
+	if !slices.Contains(types, "v1/Pod") || !slices.Contains(types, "batch/v1/Job") || slices.Contains(types, "v1/PodTemplate") {
+		t.Errorf("PodLabelsResourceTypes() = %v", types)
+	}
 }

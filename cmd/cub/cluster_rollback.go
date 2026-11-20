@@ -66,7 +66,7 @@ func (e *clusterUndoPartial) Unwrap() error { return e.err }
 // first, unless the command commits. Whatever the rollback could not remove
 // is listed at the end with the commands that remove it.
 //
-// An attach runs for minutes, through a controller install and an argobot
+// An attach runs for minutes, through a controller install and a k8sbot
 // install, so while it runs SIGINT and SIGTERM cancel the in-flight step,
 // through the package ctx every step uses, and the command returns and rolls
 // back instead of dying with everything left behind. A second signal exits at

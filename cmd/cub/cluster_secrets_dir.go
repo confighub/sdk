@@ -12,11 +12,11 @@ import (
 
 // clusterSecretsDirFlagUsage is the usage of --secrets-dir, on every command
 // that puts a ConfigHub credential in the cluster.
-const clusterSecretsDirFlagUsage = "write the Secrets holding ConfigHub credentials (argobot's key, the controller's pull token) to this directory as Kubernetes Secret manifests instead of applying them, for a secret store, such as the External Secrets Operator, to put in the cluster"
+const clusterSecretsDirFlagUsage = "write the Secrets holding ConfigHub credentials (k8sbot's key, the controller's pull token) to this directory as Kubernetes Secret manifests instead of applying them, for a secret store, such as the External Secrets Operator, to put in the cluster"
 
 // clusterSecret is a Secret holding a ConfigHub credential that a cluster
 // command puts in the cluster: manifest is the Kubernetes manifest applied for
-// it, the Secret with its values in stringData, and for argobot's key the
+// it, the Secret with its values in stringData, and for k8sbot's key the
 // Namespace before it.
 type clusterSecret struct {
 	namespace, name string
@@ -86,9 +86,9 @@ func clusterSecretsDirFor(flag, clusterName string) string {
 	return filepath.Join(flag, clusterName)
 }
 
-// clusterArgobotKeySecret names argobot's key Secret, without its manifest.
-func clusterArgobotKeySecret() clusterSecret {
-	return clusterSecret{namespace: clusterArgobotNamespace, name: clusterArgobotSecret}
+// clusterK8sbotKeySecret names k8sbot's key Secret, without its manifest.
+func clusterK8sbotKeySecret() clusterSecret {
+	return clusterSecret{namespace: clusterK8sbotNamespace, name: clusterK8sbotSecret}
 }
 
 // clusterDescribeSecret says where s is, for a command's summary.

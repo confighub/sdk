@@ -55,10 +55,10 @@ Examples:
   preview-bot --print-commands | cub channel create --space previews preview-bot --commands -
 
   # Clone a channel to the staging and prod spaces
-  cub channel create --space dev --channel argobot --dest-space staging,prod
+  cub channel create --space dev --channel k8sbot --dest-space staging,prod
 
   # Clone a channel once per region, labeled with it
-  cub channel create --space dev --channel argobot --variant-labels 'region=us|eu' \
+  cub channel create --space dev --channel k8sbot --variant-labels 'region=us|eu' \
     --name-pattern 'template:{{.SourceEntitySlug}}-{{.Labels.region}}'
 `+"```"+`
 `, ""),

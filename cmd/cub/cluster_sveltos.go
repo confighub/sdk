@@ -67,12 +67,12 @@ const (
 	// interval was recorded on its target.
 	clusterSveltosFetchInterval = "1m0s"
 
-	// clusterSveltosPollIntervalWithArgobot is Sveltos's own poll interval
-	// (remoteURL.interval) when argobot is installed. argobot's force sync is
+	// clusterSveltosPollIntervalWithK8sbot is Sveltos's own poll interval
+	// (remoteURL.interval) when k8sbot is installed. k8sbot's force sync is
 	// event-driven: it redeploys a profile on each publish, which fetches the new
-	// Release within seconds. So Sveltos's polling only catches what argobot
+	// Release within seconds. So Sveltos's polling only catches what k8sbot
 	// missed, and can be infrequent.
-	clusterSveltosPollIntervalWithArgobot = "10m0s"
+	clusterSveltosPollIntervalWithK8sbot = "10m0s"
 )
 
 // clusterSveltosManifestURL returns the Sveltos install manifest for a release
@@ -377,7 +377,7 @@ stringData:
 // clusterSveltosChildProfileManifest returns the YAML for the ClusterProfile
 // that deploys a deployment Space's Release to the cluster: the Sveltos
 // counterpart of variantArgoAppManifest. It is named after the Space, which is
-// how argobot finds the profile to redeploy when that Space is published.
+// how k8sbot finds the profile to redeploy when that Space is published.
 // continueOnError lets one object that fails, such as a custom resource whose
 // controller is not ready yet, leave the rest of the Release applied.
 // pollInterval is Sveltos's own poll interval for it (see
@@ -505,11 +505,11 @@ func clusterSveltosTargetUI(dashboardPort int) string {
 }
 
 // clusterSveltosPollInterval returns Sveltos's poll interval for a cluster's
-// profiles: infrequent when argobot forces syncs, every minute when polling is
+// profiles: infrequent when k8sbot forces syncs, every minute when polling is
 // all there is.
-func clusterSveltosPollInterval(argobot bool) string {
-	if argobot {
-		return clusterSveltosPollIntervalWithArgobot
+func clusterSveltosPollInterval(k8sbot bool) string {
+	if k8sbot {
+		return clusterSveltosPollIntervalWithK8sbot
 	}
 	return clusterSveltosFetchInterval
 }

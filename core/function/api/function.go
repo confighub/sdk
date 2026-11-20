@@ -93,6 +93,7 @@ type FunctionSignature struct {
 	RequiredParameters int                     `description:"Number of required parameters"`
 	VarArgs            bool                    `description:"Last parameter may be repeated"`
 	OtherDataExpected  []OtherDataSource       `json:",omitempty" description:"The keys of the OtherData the function reads, if any: a revision specifier such as LastReleasedRevisionNum, which a caller that names no revision is passed, or a key such as schema under which the caller passes another Unit. Letters, digits, '-' and '_'."`
+	OtherDataAnyKey    bool                    `json:",omitempty" description:"The function reads OtherData under any key its caller passes, as a general-purpose function such as vet-cel does, whose expression names the keys: such as the Units a Trigger's OtherUnitSelections pass. Besides those in OtherDataExpected"`
 	OutputInfo         *FunctionOutput         `description:"Output description"`
 	Mutating           bool                    `description:"May change the configuration data"`
 	// Validating says the function returns a ValidationResult judging the resources its

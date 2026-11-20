@@ -79,6 +79,7 @@ func registerVetValidatingAdmissionPolicy(fh handler.FunctionRegistry, rp *k8ski
 			Hermetic:   true,
 			Idempotent: true,
 			Description: "Fails a resource that a ValidatingAdmissionPolicy in the Unit passed as OtherData policy, such as by a Trigger's OtherUnitIDs, denies, " +
+				"or in the Units a Trigger's OtherUnitSelections pass as policy, which may be none, when nothing denies anything, " +
 				"evaluated as the Kubernetes API server would admit the resource: as an update of the resource in the Unit's last released revision, " +
 				"which is oldObject, or as its creation when that revision does not have it. A policy is applied through each ValidatingAdmissionPolicyBinding " +
 				"in that Unit that names it, or with the Deny action when none does; a binding's paramRef finds its params among that Unit's other resources, " +
@@ -90,10 +91,12 @@ func registerVetValidatingAdmissionPolicy(fh handler.FunctionRegistry, rp *k8ski
 			AffectedResourceTypes: []api.ResourceType{api.ResourceTypeAny},
 		},
 		Function: func(fArgs handler.FunctionImplementationArguments) (gaby.Container, any, error) {
+			_, selected := fArgs.OtherDataOrigins[PolicyOtherDataKey]
 			inputs := AdmissionPolicyInputs{
-				Policy:   fArgs.ParsedOtherData[PolicyOtherDataKey],
-				Params:   fArgs.ParsedOtherData[ParamsOtherDataKey],
-				Released: fArgs.ParsedOtherData[releasedOtherDataKey],
+				Policy:         fArgs.ParsedOtherData[PolicyOtherDataKey],
+				PolicySelected: selected,
+				Params:         fArgs.ParsedOtherData[ParamsOtherDataKey],
+				Released:       fArgs.ParsedOtherData[releasedOtherDataKey],
 			}
 			for _, arg := range fArgs.Arguments {
 				s, ok := arg.Value.(string)
@@ -164,6 +167,10 @@ type admissionPolicies struct {
 type AdmissionPolicyInputs struct {
 	// Policy is the data of the Unit holding the policies and their bindings.
 	Policy gaby.Container
+	// PolicySelected says Policy holds what a selection picked, the resources of several Units,
+	// rather than a Unit named for its policies. A selection that picks none denies nothing,
+	// where a named Unit with none is a mistake to report.
+	PolicySelected bool
 	// Params is the data of a Unit holding params, which a binding's paramRef finds after any in
 	// Policy. Optional.
 	Params gaby.Container
@@ -226,7 +233,7 @@ func readAdmissionPolicies(inputs AdmissionPolicyInputs) (*admissionPolicies, er
 			read.others = append(read.others, object)
 		}
 	}
-	if len(policies) == 0 {
+	if len(policies) == 0 && !inputs.PolicySelected {
 		return nil, errors.Newf("no ValidatingAdmissionPolicy to evaluate: pass a Unit holding one as OtherData %s", PolicyOtherDataKey)
 	}
 	// A name the policy Unit does not have is a mistake in the Trigger, which would otherwise

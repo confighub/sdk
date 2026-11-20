@@ -317,6 +317,9 @@ resourceTypes:
     - optional: true
       path: OtherUnits.*
       target: Unit
+    - optional: true
+      path: OtherUnitSelections.*.Filter
+      target: Filter
     where-expression:
     - dataType: string
       path: WhereUnit
@@ -335,6 +338,7 @@ resourceTypes:
   - Annotations.*
   - Guards.*
   - OtherUnits.*
+  - OtherUnitSelections.*
   - Permissions.*
   mergeKeys:
   - key: ParameterName

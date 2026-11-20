@@ -85,7 +85,7 @@ func clusterPickFreePortWindow(bound map[int]bool, rangeStart, rangeEnd, size in
 
 // clusterHostFromContainer returns the address a container on the local docker
 // network reaches this host by — the address to stamp into an Argo Application's
-// repoURL, or into argobot's CONFIGHUB_URL.
+// repoURL, or into k8sbot's CONFIGHUB_URL.
 //
 // This is a property of the cluster, not of the ConfigHub server: the server has
 // no idea what cluster exists on your machine, and the answer differs by docker

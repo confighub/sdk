@@ -51,10 +51,54 @@ func NewCELEnv(vars []cel.EnvOption, extraOpts ...cel.EnvOption) (*cel.Env, erro
 		ext.Sets(),
 		ext.Lists(),
 		ext.Encoders(),
+		celSelectsFunction(),
+		celPodLabelsFunction(),
+		celNamespaceLabelsFunction(),
 	}
 	opts = append(opts, vars...)
 	opts = append(opts, extraOpts...)
 	return cel.NewEnv(opts...)
+}
+
+// celSelectsFunction is selects(selector, labels): whether a Kubernetes label selector selects the
+// labels, as LabelSelectorMatches reads them, so a rule can say which NetworkPolicies select a
+// workload's pods without spelling out matchExpressions.
+func celSelectsFunction() cel.EnvOption {
+	return cel.Function("selects",
+		cel.Overload("selects_dyn_dyn", []*cel.Type{cel.DynType, cel.DynType}, cel.BoolType,
+			cel.BinaryBinding(func(selector, labelValues ref.Val) ref.Val {
+				matched, err := LabelSelectorMatches(CelToGo(selector), CelToGo(labelValues))
+				if err != nil {
+					return types.NewErr("selects: %v", err)
+				}
+				return types.Bool(matched)
+			})))
+}
+
+// celPodLabelsFunction is podLabels(resource): the labels of the pods a resource runs, as PodLabels
+// reads them, null for one that runs none, so that a rule matching selectors against workloads
+// does not spell out where each kind keeps its pod template.
+func celPodLabelsFunction() cel.EnvOption {
+	return cel.Function("podLabels",
+		cel.Overload("podLabels_dyn", []*cel.Type{cel.DynType}, cel.DynType,
+			cel.UnaryBinding(func(resource ref.Val) ref.Val {
+				return types.DefaultTypeAdapter.NativeToValue(PodLabels(CelToGo(resource)))
+			})))
+}
+
+// celNamespaceLabelsFunction is namespaceLabels(namespaces, name): the labels of the Namespace
+// named name among a list of Namespaces, as a namespaceSelector is matched against them
+// (NamespaceLabels).
+func celNamespaceLabelsFunction() cel.EnvOption {
+	return cel.Function("namespaceLabels",
+		cel.Overload("namespaceLabels_dyn_string", []*cel.Type{cel.DynType, cel.StringType}, cel.DynType,
+			cel.BinaryBinding(func(namespaces, name ref.Val) ref.Val {
+				nameString, ok := name.Value().(string)
+				if !ok {
+					return types.NewErr("namespaceLabels: the name must be a string")
+				}
+				return types.DefaultTypeAdapter.NativeToValue(NamespaceLabels(CelToGo(namespaces), nameString))
+			})))
 }
 
 // CelParseParams extracts key=value params from function arguments starting at the given index
@@ -159,6 +203,16 @@ func CELVarOpts() []cel.EnvOption {
 	}
 }
 
+// CELOtherDataVarOpts declares other and otherOrigins, the OtherData a function was passed
+// (OtherResources): other.policies is the list of resources passed under the key policies, and
+// otherOrigins.policies[i] where other.policies[i] came from.
+func CELOtherDataVarOpts() []cel.EnvOption {
+	return []cel.EnvOption{
+		cel.Variable("other", cel.MapType(cel.StringType, cel.ListType(cel.DynType))),
+		cel.Variable("otherOrigins", cel.MapType(cel.StringType, cel.ListType(cel.DynType))),
+	}
+}
+
 // CELActivation builds the activation map for a resource with params and the
 // FunctionContext metadata, which exposes fields such as
 // functionContext.TargetID and functionContext.UnitSlug.
@@ -180,7 +234,7 @@ func registerVetCEL(fh handler.FunctionRegistry, converter configkit.ConfigConve
 				{
 					ParameterName: "expression",
 					Required:      true,
-					Description:   "CEL expression to validate each resource. The current resource is available as 'r' (alias 'object'). Must return a bool (true=pass), or a map with 'passed' (bool), 'details' (list of strings), and optionally 'issues' (list of maps with Identifier and Message, naming the check each finding fails) and 'failed_attributes' (list of maps with ResourceName, ResourceType, Path, Value, and optionally Score and Issues). The 'params' dict and 'functionContext' map (ConfigHub metadata, e.g. functionContext.TargetID) are also available.",
+					Description:   "CEL expression to validate each resource. The current resource is available as 'r' (alias 'object'). Must return a bool (true=pass), or a map with 'passed' (bool), 'details' (list of strings), and optionally 'issues' (list of maps with Identifier and Message, naming the check each finding fails) and 'failed_attributes' (list of maps with ResourceName, ResourceType, Path, Value, and optionally Score and Issues). The 'params' dict and 'functionContext' map (ConfigHub metadata, e.g. functionContext.TargetID) are also available. Other Units passed as OtherData, such as those a Trigger's OtherUnitSelections select, are available as 'other', a map from each key to the list of resources passed under it, and where each came from as 'otherOrigins', at the same positions (UnitSlug, SpaceSlug, UnitID, SpaceID, RevisionNum, UnitLabels). selects(selector, labels) says whether a Kubernetes label selector selects the labels, podLabels(resource) gives the labels of the pods a resource runs, wherever its kind keeps them (null for one that runs none), and namespaceLabels(namespaces, name) the labels of a Namespace in a list as a namespaceSelector matches them, e.g. other.policies.exists(p, p.metadata.namespace == r.metadata.namespace && selects(p.spec.podSelector, podLabels(r))).",
 					DataType:      api.DataTypeCEL,
 					Example:       `r.kind != 'Deployment' || r.spec.replicas <= 10`,
 				},
@@ -202,12 +256,17 @@ func registerVetCEL(fh handler.FunctionRegistry, converter configkit.ConfigConve
 			Validating:            true,
 			Hermetic:              true,
 			Idempotent:            true,
-			Description:           "Fails each resource for which a CEL expression, evaluated once per resource, returns false or {passed: false, details: [string]}. Fix: change the resource so the expression holds; its details, or the Trigger's Description, say what it requires.",
+			Description:           "Fails each resource for which a CEL expression, evaluated once per resource, returns false or {passed: false, details: [string]}. The expression can read other Units passed as OtherData, as other. Fix: change the resource so the expression holds; its details, or the Trigger's Description, say what it requires.",
 			FunctionType:          api.FunctionTypeCustom,
 			AffectedResourceTypes: []api.ResourceType{api.ResourceTypeAny},
+			OtherDataAnyKey:       true,
 		},
 		Function: func(fArgs handler.FunctionImplementationArguments) (gaby.Container, any, error) {
-			return GenericFnVetCEL(resourceProvider, fArgs.Options, fArgs.FunctionContext, fArgs.ParsedData, fArgs.Arguments)
+			other, err := OtherResourcesOf(fArgs)
+			if err != nil {
+				return fArgs.ParsedData, api.ValidationResultFalse, err
+			}
+			return GenericFnVetCELWithOtherData(resourceProvider, fArgs.Options, fArgs.FunctionContext, fArgs.ParsedData, other, fArgs.Arguments)
 		},
 	}); err != nil {
 		slog.Error("failed to register function", "error", err)
@@ -217,6 +276,12 @@ func registerVetCEL(fh handler.FunctionRegistry, converter configkit.ConfigConve
 // GenericFnVetCEL implements vet-cel validation. Extra CEL env options can be passed
 // by toolchain-specific overrides (e.g., Kubernetes admission policy libraries).
 func GenericFnVetCEL(resourceProvider yamlkit.ResourceProvider, options *api.FunctionOptions, functionContext *api.FunctionContext, parsedData gaby.Container, args []api.FunctionArgument, extraEnvOpts ...cel.EnvOption) (gaby.Container, any, error) {
+	return GenericFnVetCELWithOtherData(resourceProvider, options, functionContext, parsedData, OtherResources{}, args, extraEnvOpts...)
+}
+
+// GenericFnVetCELWithOtherData is GenericFnVetCEL with the OtherData the function was passed,
+// which the expression reads as other and otherOrigins.
+func GenericFnVetCELWithOtherData(resourceProvider yamlkit.ResourceProvider, options *api.FunctionOptions, functionContext *api.FunctionContext, parsedData gaby.Container, other OtherResources, args []api.FunctionArgument, extraEnvOpts ...cel.EnvOption) (gaby.Container, any, error) {
 	expression := args[0].Value.(string)
 
 	params, err := CelParseParams(args, 1)
@@ -229,9 +294,13 @@ func GenericFnVetCEL(resourceProvider yamlkit.ResourceProvider, options *api.Fun
 		return parsedData, api.ValidationResultFalse, err
 	}
 
-	env, err := NewCELEnv(CELVarOpts(), extraEnvOpts...)
+	env, err := NewCELEnv(append(CELVarOpts(), CELOtherDataVarOpts()...), extraEnvOpts...)
 	if err != nil {
 		return parsedData, api.ValidationResultFalse, fmt.Errorf("failed to create CEL environment: %v", err)
+	}
+	otherResources, otherOrigins := other.Resources, other.Origins
+	if otherResources == nil {
+		otherResources, otherOrigins = map[string][]any{}, map[string][]any{}
 	}
 
 	ast, issues := env.Compile(expression)
@@ -255,6 +324,8 @@ func GenericFnVetCEL(resourceProvider yamlkit.ResourceProvider, options *api.Fun
 		}
 
 		activation := CELActivation(dataMap, params, functionContextMap)
+		activation["other"] = otherResources
+		activation["otherOrigins"] = otherOrigins
 		val, _, err := program.Eval(activation)
 		if err != nil {
 			overallResult.Passed = false

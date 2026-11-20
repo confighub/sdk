@@ -9,6 +9,8 @@ import (
 	"strings"
 	"testing"
 	"time"
+
+	goclientnew "github.com/confighub/sdk/core/openapi/goclient-new"
 )
 
 func TestClusterKubectlConfigViewArgs(t *testing.T) {
@@ -194,11 +196,52 @@ func TestClusterArgoInstallURL(t *testing.T) {
 }
 
 func TestClusterBotSpaceOf(t *testing.T) {
-	if got := clusterBotSpaceOf(&clusterSpace{ClusterName: "dev", BotSpace: "k8sbot-dev"}); got != "k8sbot-dev" {
+	only := func(slug string) func(string) (bool, error) {
+		return func(s string) (bool, error) { return s == slug, nil }
+	}
+	if got := clusterBotSpaceFor(&clusterSpace{ClusterName: "dev", BotSpace: "k8sbot-dev"}, only("argobot-dev")); got != "k8sbot-dev" {
 		t.Errorf("recorded bot space ignored: %q", got)
 	}
-	if got := clusterBotSpaceOf(&clusterSpace{ClusterName: "dev"}); got != "argobot-dev" {
-		t.Errorf("convention fallback: %q", got)
+	// Without a recorded bot Space, an argobot Space means a cluster attached
+	// before the rename; otherwise an attach this cub has not finished.
+	if got := clusterBotSpaceFor(&clusterSpace{ClusterName: "dev"}, only("argobot-dev")); got != "argobot-dev" {
+		t.Errorf("unrecorded, argobot space exists: %q", got)
+	}
+	if got := clusterBotSpaceFor(&clusterSpace{ClusterName: "dev"}, only("")); got != "k8sbot-dev" {
+		t.Errorf("unrecorded, no argobot space: %q", got)
+	}
+	if got := clusterBotSpaceFor(nil, only("")); got != "k8sbot-" {
+		t.Errorf("nil cluster space: %q", got)
+	}
+}
+
+func TestClusterBotKeySecret(t *testing.T) {
+	cases := map[string]clusterSecret{
+		"k8sbot-dev":         {namespace: "k8sbot", name: "k8sbot-secrets"},
+		"argobot-dev":        {namespace: "argobot", name: "argobot-secrets"},
+		"k8sbot-argobot-dev": {namespace: "k8sbot", name: "k8sbot-secrets"},
+	}
+	for botSpace, want := range cases {
+		got := clusterBotKeySecret(botSpace)
+		if got.namespace != want.namespace || got.name != want.name {
+			t.Errorf("%s: got %s/%s, want %s/%s", botSpace, got.namespace, got.name, want.namespace, want.name)
+		}
+	}
+}
+
+func TestClusterFluxReleasesOnCreate(t *testing.T) {
+	for annotations, want := range map[string]bool{
+		clusterAnnotationK8sbot:  true,
+		clusterAnnotationArgobot: true,
+		"":                       false,
+	} {
+		target := &goclientnew.Target{Annotations: map[string]string{}}
+		if annotations != "" {
+			target.Annotations[annotations] = "true"
+		}
+		if got := clusterFluxReleasesOnCreate(target); got != want {
+			t.Errorf("annotation %q: got %v, want %v", annotations, got, want)
+		}
 	}
 }
 

@@ -7,6 +7,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"maps"
+	"net/http"
 	"strings"
 	"time"
 
@@ -148,7 +149,7 @@ func clusterSpaceByNameInOrg(name string) (*clusterSpace, error) {
 // clusterRequireFreshConfigHub refuses to start when any of the Spaces an
 // attachment creates already exists, so a leftover from an earlier run is
 // surfaced before anything slow or irreversible happens rather than mid-run.
-// argobotSlug is skipped when empty (--no-k8sbot): its variant Space is created
+// k8sbotSlug is skipped when empty (--no-k8sbot): its variant Space is created
 // fail-fast, without --allow-exists, during the install. The cluster's service
 // account is org-scoped, so a leftover one is not caught by the Space checks
 // and is checked here too.
@@ -157,7 +158,7 @@ func clusterSpaceByNameInOrg(name string) (*clusterSpace, error) {
 // controller-install` set up, whose cluster Space is expected to exist, and
 // serviceAccount false when `cub cluster svc-account-bootstrap` has created
 // the service account too.
-func clusterRequireFreshConfigHub(name, spaceSlug, appsSlug, argobotSlug string, serviceAccount bool) error {
+func clusterRequireFreshConfigHub(name, spaceSlug, appsSlug, k8sbotSlug string, serviceAccount bool) error {
 	for _, slug := range []string{spaceSlug, appsSlug} {
 		if slug == "" {
 			continue
@@ -168,11 +169,11 @@ func clusterRequireFreshConfigHub(name, spaceSlug, appsSlug, argobotSlug string,
 			return fmt.Errorf("ConfigHub space %q already exists", slug)
 		}
 	}
-	if argobotSlug != "" {
-		if exists, err := clusterSpaceExists(argobotSlug); err != nil {
+	if k8sbotSlug != "" {
+		if exists, err := clusterSpaceExists(k8sbotSlug); err != nil {
 			return err
 		} else if exists {
-			return fmt.Errorf("ConfigHub space %q already exists (leftover argobot install; delete it with 'cub space delete --recursive %s' or pass --no-k8sbot)", argobotSlug, argobotSlug)
+			return fmt.Errorf("ConfigHub space %q already exists (leftover k8sbot install; delete it with 'cub space delete --recursive %s' or pass --no-k8sbot)", k8sbotSlug, k8sbotSlug)
 		}
 	}
 	if !serviceAccount {
@@ -257,8 +258,8 @@ func clusterCreateSpace(slug, displayName string, labels, annotations map[string
 }
 
 // clusterServiceAccountSlug is the service account `cub cluster up` creates for a
-// cluster: the identity Argo CD pulls as and argobot runs as. Org-scoped, so it
-// is named for the cluster, beside the argobot variant Space argobot-<name>.
+// cluster: the identity Argo CD pulls as and k8sbot runs as. Org-scoped, so it
+// is named for the cluster, beside the k8sbot variant Space k8sbot-<name>.
 func clusterServiceAccountSlug(name string) string {
 	return "argo-" + name
 }
@@ -480,9 +481,9 @@ func clusterGetTarget(spaceID, targetID uuid.UUID) (*goclientnew.Target, error) 
 // to it, returning the Target's annotations afterwards. ViewChildren is what
 // authorizes the controller, pulling as that service account, to pull the
 // Releases of every Space that releases to the Target; View is what lets
-// argobot, running as the same service account, find it; Edit is what lets
-// argobot store the facts it collects from the cluster on it; and EditChildren
-// is what lets argobot record each Release's LiveStatus. Grants the Target
+// k8sbot, running as the same service account, find it; Edit is what lets
+// k8sbot store the facts it collects from the cluster on it; and EditChildren
+// is what lets k8sbot record each Release's LiveStatus. Grants the Target
 // already has are kept. A botUserID of uuid.Nil grants nothing and only adds
 // the annotations.
 func clusterGrantTarget(spaceID, targetID, botUserID uuid.UUID, annotations map[string]string) (map[string]string, error) {
@@ -628,7 +629,7 @@ func clusterSetClusterUnitID(spaceID, unitID uuid.UUID) error {
 // `cub cluster up` rollback before recursively deleting a Space it just
 // created: the Space's release-target reference blocks deleting the OCI target
 // it points at (spaces_release_target_id_fkey is ON DELETE RESTRICT). Both the
-// apps Space and the argobot variant point their release target cross-Space at
+// apps Space and the k8sbot variant point their release target cross-Space at
 // the OCI target in the cluster Space, so clearing that reference lets their
 // deletion proceed before the cluster Space (holding the target) is deleted.
 //
@@ -682,17 +683,55 @@ func clusterWaitUnitTriggers(spaceID, unitID uuid.UUID) error {
 // clusterPublishRelease publishes a Release for the Space: an immutable bundle
 // of the Space's Units that are not Unreleasable, for its release Target, served to Argo
 // at /space/<slug> with tag "latest".
+//
+// A Space several commands publish, such as a cluster's apps Space, can hold a
+// Unit another command created a moment ago, whose Triggers are still being
+// evaluated. The server refuses to release it, so the publish is tried again
+// while any Unit of the Space is awaiting its Triggers.
 func clusterPublishRelease(spaceID uuid.UUID) error {
-	res, err := cubClientNew.PublishReleaseWithResponse(ctx, spaceID, goclientnew.PublishReleaseJSONRequestBody{})
-	if cubapi.IsAPIError(err, res) {
-		return cubapi.InterpretErrorGeneric(err, res)
+	publish := func() (int, error) {
+		res, err := cubClientNew.PublishReleaseWithResponse(ctx, spaceID, goclientnew.PublishReleaseJSONRequestBody{})
+		if cubapi.IsAPIError(err, res) {
+			status := 0
+			if res != nil {
+				status = res.StatusCode()
+			}
+			return status, cubapi.InterpretErrorGeneric(err, res)
+		}
+		return http.StatusOK, nil
 	}
-	return nil
+	awaiting := func() (bool, error) {
+		units, err := apiListUnits(spaceID.String(), "ValidationErrors.awaiting/triggers = true", "UnitID")
+		return len(units) > 0, err
+	}
+	return clusterPublishOnceTriggersSettle(publish, awaiting, 30*time.Second, time.Second)
+}
+
+// clusterPublishOnceTriggersSettle calls publish, which returns the response's
+// status, until it succeeds, fails with anything but 422, or fails with no Unit
+// awaiting its Triggers: that refusal is a verdict, and is returned. It gives up
+// after timeout and returns the last refusal.
+func clusterPublishOnceTriggersSettle(publish func() (int, error), awaiting func() (bool, error), timeout, interval time.Duration) error {
+	deadline := time.Now().Add(timeout)
+	for {
+		status, err := publish()
+		if err == nil || status != http.StatusUnprocessableEntity || time.Now().After(deadline) {
+			return err
+		}
+		if pending, listErr := awaiting(); listErr != nil || !pending {
+			return err
+		}
+		select {
+		case <-ctx.Done():
+			return ctx.Err()
+		case <-time.After(interval):
+		}
+	}
 }
 
 // clusterDependentSpaceSlugs returns the slugs of the Spaces whose release
 // target is the OCI target in the given cluster Space — the apps Space, the
-// argobot variant Space, and any deployment variant Spaces. They reference the
+// k8sbot variant Space, and any deployment variant Spaces. They reference the
 // target cross-Space (spaces_release_target_id_fkey is ON DELETE RESTRICT), so
 // they must be deleted before the cluster Space that holds the target. The
 // cluster Space itself is excluded (its own release target is nil). A cluster

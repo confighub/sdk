@@ -148,6 +148,9 @@ func displayExtendedTriggerDetails(extendedTrigger *goclientnew.ExtendedTrigger)
 	if len(trigger.OtherUnitIDs) > 0 {
 		view.Append([]string{"Other Units", formatOtherUnits(trigger.OtherUnitIDs)})
 	}
+	if len(trigger.OtherUnitSelections) > 0 {
+		view.Append([]string{"Other Unit Selections", formatOtherUnitSelections(trigger.OtherUnitSelections)})
+	}
 	view.Render()
 }
 
@@ -210,6 +213,9 @@ func displayTriggerDetails(trigger *goclientnew.Trigger) {
 	}
 	if len(trigger.OtherUnitIDs) > 0 {
 		view.Append([]string{"Other Units", formatOtherUnits(trigger.OtherUnitIDs)})
+	}
+	if len(trigger.OtherUnitSelections) > 0 {
+		view.Append([]string{"Other Unit Selections", formatOtherUnitSelections(trigger.OtherUnitSelections)})
 	}
 	view.Render()
 }

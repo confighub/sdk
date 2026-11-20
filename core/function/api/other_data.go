@@ -22,6 +22,22 @@ import (
 //     Unit:<key>:<unit-id> where a single string names it, as in the other_data_source
 //     parameter of the function invocation APIs. vet-jsonschema-from-unit reads its schema
 //     from the Unit passed as schema, for example.
+//   - The Units a Trigger's selection picks for the Space of the Unit the function runs on, such
+//     as the NetworkPolicies on its Target, under a key the selection names. They are passed as
+//     one entry, held as YAML, whose documents are those Units' resources, possibly none, with
+//     each document's origin in OtherDataOrigins.
+
+// OtherDataOrigin is where one document of an OtherData entry assembled from several Units came
+// from, so that a function can say which Unit a finding is about, or scope what it reads by
+// Space or label.
+type OtherDataOrigin struct {
+	UnitID      uuid.UUID         `description:"The Unit the document came from"`
+	UnitSlug    string            `description:"The Unit's slug"`
+	SpaceID     uuid.UUID         `description:"The Unit's Space"`
+	SpaceSlug   string            `json:",omitempty" description:"The slug of the Unit's Space"`
+	RevisionNum int64             `description:"The revision of the Unit the document was read from, its head; 0 for the Unit the function runs on, whose data is being written"`
+	UnitLabels  map[string]string `json:",omitempty" description:"The Unit's labels"`
+}
 
 // MaxOtherDataKeyLength is the longest key a function may list in OtherDataExpected, or a caller
 // may pass another Unit under.

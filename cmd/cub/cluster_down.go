@@ -27,7 +27,7 @@ cluster that "cub cluster attach" wired in, which cub did not create, use
 "cub cluster detach" instead; down refuses it.
 
 By default the ConfigHub side is left in place — the cluster Space with its OCI
-target and argobot's Channel, the apps Space holding the Argo Application Units
+target and k8sbot's Channel, the apps Space holding the Argo Application Units
 (or, for a --controller sveltos cluster, the Sveltos ClusterProfile Units, and
 for a --controller flux cluster, the Flux OCIRepository and Kustomization
 Units), any deployment Spaces bound to the target, and the cluster's service
@@ -36,7 +36,7 @@ config outlives the cluster and can be re-applied to a new one, so tearing down
 the live cluster does not throw it away.
 
 Pass --delete-config to also delete that config: down removes every Space whose
-release target is the cluster's OCI target (the apps Space, the argobot variant
+release target is the cluster's OCI target (the apps Space, the k8sbot variant
 Space, and any deployment variant Spaces), then the cluster Space itself, then
 the service account. The cluster Space is deleted after the others because ON
 DELETE RESTRICT blocks deleting its target while those Spaces still reference
@@ -56,7 +56,7 @@ func init() {
 	clusterDownCmd.Flags().StringVar(&clusterDownArgs.name, "name", "", "cluster name (the argument; kept as a flag for older scripts)")
 	_ = clusterDownCmd.Flags().MarkHidden("name")
 	clusterDownCmd.Flags().BoolVar(&clusterDownArgs.force, "force", false, "delete the local kind cluster and files even if no matching ConfigHub Space (or context for the cluster's record) is found")
-	clusterDownCmd.Flags().BoolVar(&clusterDownArgs.deleteConfig, "delete-config", false, "also delete the ConfigHub config: the cluster's spaces (target, channel, apps, argobot, and deployment variants bound to the target) and its service account. Destructive.")
+	clusterDownCmd.Flags().BoolVar(&clusterDownArgs.deleteConfig, "delete-config", false, "also delete the ConfigHub config: the cluster's spaces (target, channel, apps, k8sbot, and deployment variants bound to the target) and its service account. Destructive.")
 	clusterCmd.AddCommand(clusterDownCmd)
 }
 
@@ -190,14 +190,14 @@ func clusterFinishConfig(out io.Writer, name string, match *clusterSpace, delete
 		}
 	case match != nil:
 		appsSlug, appsKind := match.SpaceSlug+clusterAppsSuffix(match.Controller), clusterAppsKind(match.Controller)
-		argobotSlug := clusterBotSpaceOf(match)
+		botSlug := clusterBotSpaceOf(match)
 		serviceAccountSlug := clusterServiceAccountSlug(match.ClusterName)
 		verb := "down"
 		if match.Origin == clusterOriginAttach {
 			verb = "detach"
 		}
-		fmt.Fprintf(out, "\nLeft the ConfigHub config in place: space %q (OCI target + argobot channel),\n"+
-			"space %q (%s), the argobot variant space %q (if\n"+
+		fmt.Fprintf(out, "\nLeft the ConfigHub config in place: space %q (OCI target + bot channel),\n"+
+			"space %q (%s), the bot's variant space %q (if\n"+
 			"installed), any deployment variant spaces you created, and the service\n"+
 			"account %q. Delete it all in one step with\n"+
 			"'cub cluster %s %s --delete-config', or by hand — the cluster space\n"+
@@ -205,34 +205,43 @@ func clusterFinishConfig(out io.Writer, name string, match *clusterSpace, delete
 			"its OCI target (deleting the cluster space first is blocked by those\n"+
 			"references):\n"+
 			"  cub space delete %s --recursive\n"+
-			"  cub space delete %s --recursive   # if argobot was installed\n"+
+			"  cub space delete %s --recursive   # if the bot was installed\n"+
 			"  # ...plus any deployment variant spaces bound to %s/%s...\n"+
 			"  cub space delete %s --recursive\n"+
 			"  cub serviceaccount delete %s\n",
-			match.SpaceSlug, appsSlug, appsKind, argobotSlug, serviceAccountSlug, verb, name,
-			appsSlug, argobotSlug, match.SpaceSlug, clusterTargetSlug, match.SpaceSlug, serviceAccountSlug)
+			match.SpaceSlug, appsSlug, appsKind, botSlug, serviceAccountSlug, verb, name,
+			appsSlug, botSlug, match.SpaceSlug, clusterTargetSlug, match.SpaceSlug, serviceAccountSlug)
 	}
 	fmt.Fprintf(out, "\nDone.\n")
 	return nil
 }
 
-// clusterBotSpaceOf returns the cluster's argobot variant Space slug: as
-// recorded on the cluster Space, or by the naming convention for a cluster
-// from before it was recorded.
+// clusterBotSpaceOf returns the variant Space slug of the cluster's bot, as
+// recorded on the cluster Space. An attach records it as it finishes, so a
+// cluster Space without it is either from before it was recorded, which runs
+// argobot, k8sbot's earlier name, or one this cub has not finished attaching,
+// which installs k8sbot. Whichever bot Space exists says which.
 func clusterBotSpaceOf(c *clusterSpace) string {
-	if c != nil && c.BotSpace != "" {
+	return clusterBotSpaceFor(c, clusterSpaceExists)
+}
+
+func clusterBotSpaceFor(c *clusterSpace, spaceExists func(string) (bool, error)) string {
+	if c == nil {
+		return clusterK8sbotComponent + "-"
+	}
+	if c.BotSpace != "" {
 		return c.BotSpace
 	}
-	name := clusterArgobotComponent + "-"
-	if c != nil {
-		return name + c.ClusterName
+	argobot := clusterArgobotComponent + "-" + c.ClusterName
+	if exists, err := spaceExists(argobot); err == nil && exists {
+		return argobot
 	}
-	return name
+	return clusterK8sbotComponent + "-" + c.ClusterName
 }
 
 // clusterDeleteClusterConfig deletes the ConfigHub config an attachment
 // created. It deletes the Spaces that reference the cluster's OCI target
-// cross-Space (the apps Space, the argobot variant Space, and any deployment
+// cross-Space (the apps Space, the k8sbot variant Space, and any deployment
 // variant Spaces) first, then the cluster Space that holds the target and
 // channel — that order is required because ON DELETE RESTRICT blocks deleting
 // the target while any Space still references it — and last the service

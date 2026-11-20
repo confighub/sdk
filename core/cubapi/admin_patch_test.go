@@ -189,7 +189,7 @@ func bytesContainsNull(b []byte) bool {
 // none, so that patching it replaces the arguments of the function it ran before. Without a
 // function, the description says nothing about either.
 func TestTriggerMergePatchStatesTheFunctionsArguments(t *testing.T) {
-	b, err := triggerMergePatch(goclientnew.Trigger{Slug: "rule", FunctionName: "vet-namespace"})
+	b, err := triggerMergePatch(goclientnew.Trigger{Slug: "rule", FunctionName: "vet-namespace"}, nil)
 	if err != nil {
 		t.Fatalf("triggerMergePatch: %v", err)
 	}
@@ -202,7 +202,7 @@ func TestTriggerMergePatchStatesTheFunctionsArguments(t *testing.T) {
 	}
 
 	b, err = triggerMergePatch(goclientnew.Trigger{Slug: "rule", FunctionName: "vet-cel",
-		Arguments: Arguments([]api.FunctionArgument{{ParameterName: "expression", Value: "true"}})})
+		Arguments: Arguments([]api.FunctionArgument{{ParameterName: "expression", Value: "true"}})}, nil)
 	if err != nil {
 		t.Fatalf("triggerMergePatch: %v", err)
 	}
@@ -210,11 +210,62 @@ func TestTriggerMergePatchStatesTheFunctionsArguments(t *testing.T) {
 		t.Errorf("patch[Arguments] = %#v, want the one argument", patchMap(t, b)["Arguments"])
 	}
 
-	b, err = triggerMergePatch(goclientnew.Trigger{Slug: "rule", Warn: true})
+	b, err = triggerMergePatch(goclientnew.Trigger{Slug: "rule", Warn: true}, nil)
 	if err != nil {
 		t.Fatalf("triggerMergePatch: %v", err)
 	}
 	if _, ok := patchMap(t, b)["Arguments"]; ok {
 		t.Errorf("a description without a function claims its arguments: %s", b)
+	}
+}
+
+// A Trigger described with OtherUnitSelections has exactly those: a stored selection the
+// description drops is removed, and so is a field a selection leaves empty, which a merge patch
+// would otherwise keep. An empty map removes them all; nil says nothing about them.
+func TestTriggerMergePatchStatesTheSelections(t *testing.T) {
+	existing := map[string]goclientnew.OtherUnitSelection{
+		"policies": {Where: "Labels.old = 'x'", WhereResource: "ConfigHub.ResourceType = 'v1/Service'"},
+		"dropped":  {Where: "Slug = 'gone'"},
+	}
+	b, err := triggerMergePatch(goclientnew.Trigger{Slug: "rule", OtherUnitSelections: map[string]goclientnew.OtherUnitSelection{
+		"policies": {Where: "Space.ReleaseTargetID = EvaluatingSpace.ReleaseTargetID"},
+		"added":    {WhereResource: "ConfigHub.ResourceType = 'v1/Namespace'", Where: "Slug = 'ns'"},
+	}}, existing)
+	if err != nil {
+		t.Fatalf("triggerMergePatch: %v", err)
+	}
+	selections, ok := patchMap(t, b)["OtherUnitSelections"].(map[string]any)
+	if !ok {
+		t.Fatalf("the patch states no selections: %s", b)
+	}
+	if v, ok := selections["dropped"]; !ok || v != nil {
+		t.Errorf("patch[dropped] = %#v, want null", v)
+	}
+	policies := selections["policies"].(map[string]any)
+	if policies["Where"] != "Space.ReleaseTargetID = EvaluatingSpace.ReleaseTargetID" {
+		t.Errorf("patch[policies][Where] = %#v", policies["Where"])
+	}
+	if v, ok := policies["WhereResource"]; !ok || v != nil {
+		t.Errorf("patch[policies][WhereResource] = %#v, want null", v)
+	}
+	if added := selections["added"].(map[string]any); added["Where"] != "Slug = 'ns'" {
+		t.Errorf("patch[added] = %#v", added)
+	}
+
+	b, err = triggerMergePatch(goclientnew.Trigger{Slug: "rule", OtherUnitSelections: map[string]goclientnew.OtherUnitSelection{}}, existing)
+	if err != nil {
+		t.Fatalf("triggerMergePatch: %v", err)
+	}
+	selections = patchMap(t, b)["OtherUnitSelections"].(map[string]any)
+	if len(selections) != 2 || selections["policies"] != nil || selections["dropped"] != nil {
+		t.Errorf("an empty map removes every selection: %s", b)
+	}
+
+	b, err = triggerMergePatch(goclientnew.Trigger{Slug: "rule", Warn: true}, existing)
+	if err != nil {
+		t.Fatalf("triggerMergePatch: %v", err)
+	}
+	if _, ok := patchMap(t, b)["OtherUnitSelections"]; ok {
+		t.Errorf("a description without selections claims them: %s", b)
 	}
 }

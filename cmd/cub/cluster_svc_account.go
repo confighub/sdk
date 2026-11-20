@@ -18,7 +18,7 @@ import (
 )
 
 var clusterSvcAccountBootstrapArgs struct {
-	noArgobot  bool
+	noK8sbot   bool
 	secretsDir string
 }
 
@@ -34,16 +34,16 @@ In ConfigHub it creates the cluster's identity, a service account with no
 organization role named argo-<name>, and grants its user View, Edit,
 ViewChildren and EditChildren on the cluster's OCI target: what the controller
 needs to pull the Releases of every Space that releases to the target, and
-argobot to find the target, store the cluster's facts on it and record each
-Release's live status. Claim on argobot's Channel is granted where the Channel
-is created, when argobot is installed.
+k8sbot to find the target, store the cluster's facts on it and record each
+Release's live status. Claim on k8sbot's Channel is granted where the Channel
+is created, when k8sbot is installed.
 
 In the cluster it puts the service account's credentials:
 
-  a private key       in the argobot-secrets Secret in the argobot namespace,
-                      which argobot authenticates with. Skipped with
-                      --no-k8sbot, for a cluster that will not run argobot;
-                      installing argobot later issues one.
+  a private key       in the k8sbot-secrets Secret in the k8sbot namespace,
+                      which k8sbot authenticates with. Skipped with
+                      --no-k8sbot, for a cluster that will not run k8sbot;
+                      installing k8sbot later issues one.
   a pull token        a token that does not expire, as the controller's
                       registry credentials: Argo CD's confighub-oci-creds
                       repo-creds Secret, Sveltos's confighub-gateway Secret, or
@@ -57,16 +57,16 @@ External Secrets Operator, gets them with --secrets-dir <dir>: each Secret's
 Kubernetes manifest, exactly what
 would be applied, is written to <dir>/<name>/<namespace>_<secret>.yaml instead
 of being applied. The values are in plain text, in the manifest's stringData,
-so the file is readable only by you; argobot's also holds the argobot
+so the file is readable only by you; k8sbot's also holds the k8sbot
 Namespace, which is applied. Load the values into the store, and have the
 store keep a Secret of that name in the cluster with the manifest's type,
 labels, annotations and keys.
-The controller cannot pull, nor argobot start, until it is there. Pass the same
---secrets-dir to "cub cluster attach", which then installs argobot with the key
+The controller cannot pull, nor k8sbot start, until it is there. Pass the same
+--secrets-dir to "cub cluster attach", which then installs k8sbot with the key
 in the file rather than issuing another. The key and the token belong to the
 cluster's service account, which this creates, so they cannot be put in the
 store before it runs. The Secrets Store CSI driver's secretObjects keeps a
-Secret only while a pod mounts its volume, which argobot and the controller do
+Secret only while a pod mounts its volume, which k8sbot and the controller do
 not; see "cub cluster attach --help".
 
 "cub cluster detach <name> --delete-config" undoes this with the rest of the
@@ -81,21 +81,21 @@ Examples:
 }
 
 func init() {
-	clusterSvcAccountBootstrapCmd.Flags().BoolVar(&clusterSvcAccountBootstrapArgs.noArgobot, "no-k8sbot", false, "skip argobot's private key, for a cluster that will not run argobot (installing argobot later issues one)")
+	clusterSvcAccountBootstrapCmd.Flags().BoolVar(&clusterSvcAccountBootstrapArgs.noK8sbot, "no-k8sbot", false, "skip k8sbot's private key, for a cluster that will not run k8sbot (installing k8sbot later issues one)")
 	clusterSvcAccountBootstrapCmd.Flags().StringVar(&clusterSvcAccountBootstrapArgs.secretsDir, "secrets-dir", "", clusterSecretsDirFlagUsage)
 	clusterCmd.AddCommand(clusterSvcAccountBootstrapCmd)
 }
 
 func clusterSvcAccountBootstrapCmdRun(cmd *cobra.Command, args []string) error {
 	a := clusterSvcAccountBootstrapArgs
-	return clusterSvcAccountBootstrapRun(cmd.OutOrStdout(), args[0], a.noArgobot, a.secretsDir)
+	return clusterSvcAccountBootstrapRun(cmd.OutOrStdout(), args[0], a.noK8sbot, a.secretsDir)
 }
 
 // clusterSvcAccountBootstrapRun runs the service account stage of an
 // attachment on a cluster `cub cluster controller-install` set up; the stage
 // moves its cluster Space on to clusterStageServiceAccount, so `cub cluster
 // attach` finishes it.
-func clusterSvcAccountBootstrapRun(out io.Writer, name string, noArgobot bool, secretsDirFlag string) (err error) {
+func clusterSvcAccountBootstrapRun(out io.Writer, name string, noK8sbot bool, secretsDirFlag string) (err error) {
 	if _, err := exec.LookPath("kubectl"); err != nil {
 		return fmt.Errorf("kubectl not found on PATH")
 	}
@@ -141,7 +141,7 @@ func clusterSvcAccountBootstrapRun(out io.Writer, name string, noArgobot bool, s
 		spaceSlug:      space.SpaceSlug,
 		kubeconfigPath: kubeconfigPath,
 		controller:     space.Controller,
-		noArgobot:      noArgobot,
+		noK8sbot:       noK8sbot,
 		secretsDir:     secretsDir,
 	}, inst, rollback.add); err != nil {
 		return err
@@ -152,19 +152,19 @@ func clusterSvcAccountBootstrapRun(out io.Writer, name string, noArgobot bool, s
 		name, serviceAccountSlug, space.SpaceSlug, clusterTargetSlug)
 	creds := clusterSecret{namespace: clusterControllerNamespace(space.Controller), name: clusterControllerCredsSecret(space.Controller)}
 	fmt.Fprintf(out, "  pull token: %s\n", clusterDescribeSecret(secretsDir, creds))
-	if noArgobot {
-		fmt.Fprintf(out, "  argobot key: none (--no-k8sbot)\n")
+	if noK8sbot {
+		fmt.Fprintf(out, "  k8sbot key: none (--no-k8sbot)\n")
 	} else {
-		fmt.Fprintf(out, "  argobot key: %s\n", clusterDescribeSecret(secretsDir, clusterArgobotKeySecret()))
+		fmt.Fprintf(out, "  k8sbot key: %s\n", clusterDescribeSecret(secretsDir, clusterK8sbotKeySecret()))
 	}
 	flags := ""
-	if noArgobot {
+	if noK8sbot {
 		flags += " --no-k8sbot"
 	}
 	if secretsDirFlag != "" {
 		flags += " --secrets-dir " + secretsDirFlag
 	}
-	fmt.Fprintf(out, "\nFinish wiring it into ConfigHub — the apps space, the root and argobot — with:\n  cub cluster attach %s%s\n", name, flags)
+	fmt.Fprintf(out, "\nFinish wiring it into ConfigHub — the apps space, the root and k8sbot — with:\n  cub cluster attach %s%s\n", name, flags)
 	return nil
 }
 
@@ -174,8 +174,8 @@ type clusterServiceAccountSpec struct {
 	spaceSlug      string
 	kubeconfigPath string
 	controller     string
-	// noArgobot skips argobot's key, which only argobot uses.
-	noArgobot bool
+	// noK8sbot skips k8sbot's key, which only k8sbot uses.
+	noK8sbot bool
 	// secretsDir is --secrets-dir: where the Kubernetes manifests of the
 	// credentials Secrets are written instead of being applied
 	// (clusterPutSecret).
@@ -209,14 +209,14 @@ func clusterAdoptServiceAccount(out io.Writer, spec clusterServiceAccountSpec, i
 		return fmt.Errorf("grant the service account access to the target: %w", err)
 	}
 
-	// The store can only put argobot's Secret in a namespace that is there, and
-	// nothing else creates it before argobot's Release is deployed, after this
+	// The store can only put k8sbot's Secret in a namespace that is there, and
+	// nothing else creates it before k8sbot's Release is deployed, after this
 	// stage. Applied before either wait, so the store can create both Secrets
 	// at once. It is left on failure: the store's own objects may be in it.
-	if !spec.noArgobot {
-		fmt.Fprintf(out, "Applying the %q namespace, for the secret store to put argobot's Secret in...\n", clusterArgobotNamespace)
-		if err := clusterKubectlApply(ctx, spec.kubeconfigPath, clusterArgobotNamespaceManifest(), out); err != nil {
-			return fmt.Errorf("apply the %s namespace: %w", clusterArgobotNamespace, err)
+	if !spec.noK8sbot {
+		fmt.Fprintf(out, "Applying the %q namespace, for the secret store to put k8sbot's Secret in...\n", clusterK8sbotNamespace)
+		if err := clusterKubectlApply(ctx, spec.kubeconfigPath, clusterK8sbotNamespaceManifest(), out); err != nil {
+			return fmt.Errorf("apply the %s namespace: %w", clusterK8sbotNamespace, err)
 		}
 	}
 	ociURL, ociInsecure, err := clusterControllerOCIEndpoint()
@@ -232,15 +232,15 @@ func clusterAdoptServiceAccount(out io.Writer, spec clusterServiceAccountSpec, i
 		return err
 	}
 	fmt.Fprintf(out, "Secret %s/%s: the controller can pull with it, as %s\n", namespace, name, serviceAccountSlug)
-	if !spec.noArgobot {
-		key, err := clusterWaitForSecret(out, spec.kubeconfigPath, clusterArgobotNamespace, clusterArgobotSecret, spec.existingSecretsTimeout)
+	if !spec.noK8sbot {
+		key, err := clusterWaitForSecret(out, spec.kubeconfigPath, clusterK8sbotNamespace, clusterK8sbotSecret, spec.existingSecretsTimeout)
 		if err != nil {
 			return err
 		}
-		if err := clusterRequireArgobotKey(key, serviceAccountUserID, serviceAccountSlug); err != nil {
+		if err := clusterRequireK8sbotKey(key, serviceAccountUserID, serviceAccountSlug); err != nil {
 			return err
 		}
-		fmt.Fprintf(out, "Secret %s/%s: argobot can authenticate with it, as %s\n", clusterArgobotNamespace, clusterArgobotSecret, serviceAccountSlug)
+		fmt.Fprintf(out, "Secret %s/%s: k8sbot can authenticate with it, as %s\n", clusterK8sbotNamespace, clusterK8sbotSecret, serviceAccountSlug)
 	}
 
 	patchData, err := json.Marshal(map[string]any{
@@ -258,8 +258,8 @@ func clusterAdoptServiceAccount(out io.Writer, spec clusterServiceAccountSpec, i
 // clusterBootstrapServiceAccount creates the cluster's identity on the
 // ConfigHub side and puts its credentials in the cluster. One service account,
 // used two ways: the controller pulls the cluster's Releases from the OCI
-// registry with a long-lived token of it, and argobot authenticates as it with
-// a key. It has no organization role; the Target, granted here, and argobot's
+// registry with a long-lived token of it, and k8sbot authenticates as it with
+// a key. It has no organization role; the Target, granted here, and k8sbot's
 // Channel, granted where it is created, give its user exactly the cluster's
 // deployment path. The service account is org-scoped, so it is rolled back on
 // its own rather than with a Space, and the credentials Secrets are rolled back
@@ -270,7 +270,7 @@ func clusterBootstrapServiceAccount(out io.Writer, spec clusterServiceAccountSpe
 		return clusterAdoptServiceAccount(out, spec, inst)
 	}
 	serviceAccountSlug := clusterServiceAccountSlug(spec.name)
-	fmt.Fprintf(out, "Creating service account %q (OrgRole=none; the controller pulls and argobot runs as it)...\n", serviceAccountSlug)
+	fmt.Fprintf(out, "Creating service account %q (OrgRole=none; the controller pulls and k8sbot runs as it)...\n", serviceAccountSlug)
 	serviceAccountID, serviceAccountUserID, err := clusterCreateServiceAccount(serviceAccountSlug, serviceAccountSlug,
 		map[string]string{clusterAnnotationName: spec.name})
 	if err != nil {
@@ -290,21 +290,21 @@ func clusterBootstrapServiceAccount(out io.Writer, spec clusterServiceAccountSpe
 		return fmt.Errorf("grant the service account access to the target: %w", err)
 	}
 
-	if spec.noArgobot && spec.secretsDir != "" {
+	if spec.noK8sbot && spec.secretsDir != "" {
 		// A key file left by an earlier attachment of a cluster of this name
-		// holds a key of a service account deleted since; installing argobot
+		// holds a key of a service account deleted since; installing k8sbot
 		// later would take it for this one's.
-		if err := os.Remove(clusterSecretFilePath(spec.secretsDir, clusterArgobotKeySecret())); err != nil && !os.IsNotExist(err) {
-			return fmt.Errorf("remove the stale argobot key file: %w", err)
+		if err := os.Remove(clusterSecretFilePath(spec.secretsDir, clusterK8sbotKeySecret())); err != nil && !os.IsNotExist(err) {
+			return fmt.Errorf("remove the stale k8sbot key file: %w", err)
 		}
 	}
-	if !spec.noArgobot {
-		fmt.Fprintf(out, "Issuing a key for argobot on %q...\n", serviceAccountSlug)
-		privateKey, err := clusterCreateServiceAccountKey(serviceAccountID, serviceAccountUserID, "argobot in cluster "+spec.name)
+	if !spec.noK8sbot {
+		fmt.Fprintf(out, "Issuing a key for k8sbot on %q...\n", serviceAccountSlug)
+		privateKey, err := clusterCreateServiceAccountKey(serviceAccountID, serviceAccountUserID, "k8sbot in cluster "+spec.name)
 		if err != nil {
 			return fmt.Errorf("issue the service account key: %w", err)
 		}
-		if err := clusterApplyArgobotKey(out, spec.kubeconfigPath, spec.secretsDir, privateKey, addRollback); err != nil {
+		if err := clusterApplyK8sbotKey(out, spec.kubeconfigPath, spec.secretsDir, privateKey, addRollback); err != nil {
 			return err
 		}
 	}
@@ -452,30 +452,31 @@ func clusterControllerCredsSecretFor(controller, clusterName, ociURL, pullToken 
 	return s, nil
 }
 
-// clusterHasArgobotKey reports whether argobot's key Secret is in the cluster,
-// which `cub cluster svc-account-bootstrap --no-k8sbot` leaves out.
-func clusterHasArgobotKey(kubeconfigPath string) (bool, error) {
+// clusterHasKeySecret reports whether a bot's key Secret, such as
+// clusterK8sbotKeySecret, is in the cluster, which `cub cluster
+// svc-account-bootstrap --no-k8sbot` leaves out.
+func clusterHasKeySecret(kubeconfigPath string, s clusterSecret) (bool, error) {
 	got, err := clusterKubectlOutput(ctx, kubeconfigPath,
-		"get", "secret", clusterArgobotSecret, "-n", clusterArgobotNamespace, "--ignore-not-found", "-o", "name")
+		"get", "secret", s.name, "-n", s.namespace, "--ignore-not-found", "-o", "name")
 	if err != nil {
-		return false, fmt.Errorf("check for argobot's key Secret: %w", err)
+		return false, fmt.Errorf("check for the key Secret %s/%s: %w", s.namespace, s.name, err)
 	}
 	return len(bytes.TrimSpace(got)) > 0, nil
 }
 
-// clusterRequireArgobotKeyField fails when argobot's key Secret has no
-// CONFIGHUB_AUTH_PRIVATE_KEY, the key argobot reads. cub never writes one
+// clusterRequireK8sbotKeyField fails when k8sbot's key Secret has no
+// CONFIGHUB_AUTH_PRIVATE_KEY, the key k8sbot reads. cub never writes one
 // without it; a secret store that was set up by hand might.
-func clusterRequireArgobotKeyField(kubeconfigPath string) error {
+func clusterRequireK8sbotKeyField(kubeconfigPath string) error {
 	got, err := clusterKubectlOutput(ctx, kubeconfigPath,
-		"get", "secret", clusterArgobotSecret, "-n", clusterArgobotNamespace,
+		"get", "secret", clusterK8sbotSecret, "-n", clusterK8sbotNamespace,
 		"-o", "jsonpath={.data.CONFIGHUB_AUTH_PRIVATE_KEY}")
 	if err != nil {
-		return fmt.Errorf("read argobot's key Secret: %w", err)
+		return fmt.Errorf("read k8sbot's key Secret: %w", err)
 	}
 	if len(bytes.TrimSpace(got)) == 0 {
-		return fmt.Errorf("the Secret %s/%s has no CONFIGHUB_AUTH_PRIVATE_KEY, which argobot authenticates with: add it, or delete the Secret for cub to issue a key",
-			clusterArgobotNamespace, clusterArgobotSecret)
+		return fmt.Errorf("the Secret %s/%s has no CONFIGHUB_AUTH_PRIVATE_KEY, which k8sbot authenticates with: add it, or delete the Secret for cub to issue a key",
+			clusterK8sbotNamespace, clusterK8sbotSecret)
 	}
 	return nil
 }

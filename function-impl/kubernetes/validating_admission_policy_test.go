@@ -212,6 +212,22 @@ func TestVAPNeedsAPolicy(t *testing.T) {
 	assert.ErrorContains(t, err, "pass a Unit holding one as OtherData policy")
 }
 
+// A selection of policy Units that picked none denies nothing: there is no policy to enforce. A
+// Unit named for its policies that has none is still a mistake.
+func TestVAPSelectionOfNoPolicyPasses(t *testing.T) {
+	result, err := vetVAPWith(t, vapDeployments, AdmissionPolicyInputs{PolicySelected: true})
+	require.NoError(t, err)
+	assert.True(t, result.Passed, "%v", result.Details)
+
+	_, err = vetVAPWith(t, vapDeployments, AdmissionPolicyInputs{})
+	assert.ErrorContains(t, err, "pass a Unit holding one as OtherData policy")
+
+	// What it picked is enforced as a named Unit's policies are.
+	result, err = vetVAPWith(t, vapDeployments, AdmissionPolicyInputs{Policy: parseDocs(t, replicaLimitPolicy), PolicySelected: true})
+	require.NoError(t, err)
+	assert.False(t, result.Passed)
+}
+
 func vetVAPWith(t *testing.T, data string, inputs AdmissionPolicyInputs) (api.ValidationResult, error) {
 	t.Helper()
 	docs, err := gaby.ParseAll([]byte(data))

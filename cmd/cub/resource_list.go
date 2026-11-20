@@ -4,6 +4,9 @@
 package main
 
 import (
+	"fmt"
+	"strings"
+
 	"github.com/google/uuid"
 	"github.com/spf13/cobra"
 
@@ -28,6 +31,14 @@ Attributes of the containing unit and space are addressed with a prefix -- Unit.
 Space.ComponentID, Space.Labels.Environment -- and can be combined with resource and data
 predicates. Only the fields a filter names are fetched for those entities, so filtering on the
 unit's slug does not drag the unit's configuration data along.
+
+--selected-by and --selecting match label selectors as Kubernetes does, in the named resource's
+namespace (default when it has none) and on its cluster: among the resources released to its
+Target, or in its Space when it has none. --selected-by names a NetworkPolicy, PodDisruptionBudget
+or Service and lists the workloads whose pods its selector selects; --selecting names a workload
+(such as a Deployment, StatefulSet, DaemonSet, Job or CronJob: any kind with a pod template) and
+lists the NetworkPolicies, PodDisruptionBudgets and Services whose selectors select its pods.
+Either takes a ResourceID, or [<space>/]<unit>:<type>/<name> as -o name prints it.
 
 Data paths use the same syntax as --where-data on units, including array indexes (containers.0),
 wildcards (containers.*), associative matching (containers.?name=nginx), and split paths (.|).
@@ -72,6 +83,13 @@ Examples:
   # Find resources whose data has a top-level key
   cub resource list --space my-space --where "Data ? 'spec'"
 
+  # List the NetworkPolicies, PodDisruptionBudgets and Services whose selectors select a workload's pods,
+  # named as -o name prints it, or by its ResourceID
+  cub resource list --selecting my-space/web:apps/v1/Deployment/shop/web
+
+  # List the workloads whose pods a NetworkPolicy selects
+  cub resource list --selected-by my-space/netpols:networking.k8s.io/v1/NetworkPolicy/shop/web-ingress
+
   # List resources without headers for scripting
   cub resource list --space my-space --no-headers
 
@@ -113,12 +131,23 @@ var resourceCustomColumnDependencies = map[string][]string{}
 // resourceListRawData requests each resource's original configuration.
 var resourceListRawData bool
 
+// resourceListSelectedBy and resourceListSelecting name the resources a selector match is made
+// against, and the IDs they resolve to.
+var (
+	resourceListSelectedBy, resourceListSelecting     string
+	resourceListSelectedByID, resourceListSelectingID *uuid.UUID
+)
+
 func init() {
 	addStandardListFlags(resourceListCmd)
 	enableWherePermissionFlag(resourceListCmd)
 	enableListPagingFlags(resourceListCmd)
 	resourceListCmd.Flags().BoolVar(&resourceListRawData, "raw-data", false,
 		"include each resource's configuration in its original form (YAML for Kubernetes), as RawData in --json output")
+	resourceListCmd.Flags().StringVar(&resourceListSelectedBy, "selected-by", "",
+		"list only the workloads whose pods this NetworkPolicy, PodDisruptionBudget or Service selects: a ResourceID, or [<space>/]<unit>:<type>/<name>")
+	resourceListCmd.Flags().StringVar(&resourceListSelecting, "selecting", "",
+		"list only the NetworkPolicies, PodDisruptionBudgets and Services whose selectors select this workload's pods: a ResourceID, or [<space>/]<unit>:<type>/<name>")
 	enableViewFlag(resourceListCmd)
 	resourceCmd.AddCommand(resourceListCmd)
 }
@@ -127,6 +156,19 @@ func resourceListCmdRun(cmd *cobra.Command, args []string) error {
 	filterID, err := parseFilterFlag(filter)
 	if err != nil {
 		return err
+	}
+	for _, named := range []struct {
+		ref string
+		id  **uuid.UUID
+	}{{resourceListSelectedBy, &resourceListSelectedByID}, {resourceListSelecting, &resourceListSelectingID}} {
+		if named.ref == "" {
+			continue
+		}
+		id, err := resolveResourceID(named.ref)
+		if err != nil {
+			return err
+		}
+		*named.id = &id
 	}
 
 	extendedResources, err := apiListResources(selectedSpaceID, where, selectFields, filterID)
@@ -212,5 +254,35 @@ func apiListResources(spaceID string, whereFilter string, selectParam string, fi
 		if resourceListRawData {
 			params.RawData = &resourceListRawData
 		}
+		params.SelectedBy = resourceListSelectedByID
+		params.Selecting = resourceListSelectingID
 	})
+}
+
+// resolveResourceID resolves a ResourceID, or a resource named as getResourceSlug names it:
+// [<space>/]<unit>:<type>/<name>. A type has a slash or two in it, and a name may too, so the two
+// are matched together against the Unit's resources rather than split.
+func resolveResourceID(ref string) (uuid.UUID, error) {
+	if id, err := uuid.Parse(ref); err == nil {
+		return id, nil
+	}
+	unitRef, typeAndName, ok := strings.Cut(ref, ":")
+	if !ok || unitRef == "" || typeAndName == "" {
+		return uuid.Nil, fmt.Errorf("%q names no resource: give a ResourceID, or [<space>/]<unit>:<type>/<name> as cub resource list -o name prints it", ref)
+	}
+	unitID, err := resolveUnitID(unitRef)
+	if err != nil {
+		return uuid.Nil, err
+	}
+	resources, err := cubapi.ListResources(ctx, cubClient, cubapi.NewWhere("").Eq("UnitID", unitID.String()),
+		cubapi.ListOpts{Select: cubapi.SelectFields("ResourceID,ResourceType,ResourceName")})
+	if err != nil {
+		return uuid.Nil, err
+	}
+	for _, resource := range resources {
+		if resource.Resource.ResourceType+"/"+resource.Resource.ResourceName == typeAndName {
+			return resource.Resource.ResourceID, nil
+		}
+	}
+	return uuid.Nil, fmt.Errorf("the Unit %s has no resource %s", unitRef, typeAndName)
 }

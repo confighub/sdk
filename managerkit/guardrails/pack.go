@@ -119,6 +119,9 @@ type Rule struct {
 	ExceptFrom []string
 	// OtherUnitIDs are Units passed to Function as OtherData, by key.
 	OtherUnitIDs map[string]goclientnew.UUID
+	// OtherData is what the rule reads besides its resources, selected for each Space that
+	// selects it (OtherData). A rule applied to Targets cannot read any.
+	OtherData []OtherData
 	// PolicyUnit is the Unit, <space>/<unit>, of the policies a rule installed with
 	// --policy-unit runs, recorded on its Trigger.
 	PolicyUnit string
@@ -592,19 +595,20 @@ func (p Pack) ensureRule(ctx context.Context, client *cubapi.Client, policySpace
 		}
 	}
 	t, err := cubapi.EnsureTrigger(ctx, client, goclientnew.Trigger{
-		SpaceID:       policySpaceID,
-		Slug:          r.Slug,
-		DisplayName:   r.DisplayName,
-		Description:   r.Description,
-		Event:         "Mutation",
-		ToolchainType: "Kubernetes/YAML",
-		FunctionName:  fn,
-		Arguments:     cubapi.Arguments(args),
-		OtherUnitIDs:  r.OtherUnitIDs,
-		WhereResource: r.whereResource(),
-		Warn:          warn,
-		Labels:        r.labels(p.Group),
-		Annotations:   mergeAnnotations(r.annotations(isNew), inherited, annotations),
+		SpaceID:             policySpaceID,
+		Slug:                r.Slug,
+		DisplayName:         r.DisplayName,
+		Description:         r.Description,
+		Event:               "Mutation",
+		ToolchainType:       "Kubernetes/YAML",
+		FunctionName:        fn,
+		Arguments:           cubapi.Arguments(args),
+		OtherUnitIDs:        r.OtherUnitIDs,
+		OtherUnitSelections: r.otherUnitSelections(),
+		WhereResource:       r.whereResource(),
+		Warn:                warn,
+		Labels:              r.labels(p.Group),
+		Annotations:         mergeAnnotations(r.annotations(isNew), inherited, annotations),
 	})
 	if err != nil {
 		return nil, fmt.Errorf("create trigger %s: %w", r.Slug, err)

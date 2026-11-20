@@ -36,8 +36,8 @@ var clusterAttachArgs struct {
 	controllerVersion string
 	noInstall         bool
 	noArgoCD          bool
-	noArgobot         bool
-	argobotBase       string
+	noK8sbot          bool
+	k8sbotBase        string
 	registry          string
 	k8sbotInstaller   bool
 	noPlaceholderGate bool
@@ -63,7 +63,7 @@ target — is "cub cluster controller-install", and its second — the cluster's
 service account, with its key and pull token in the cluster — is "cub cluster
 svc-account-bootstrap". Either can be run on its own first, in that order.
 Its third — the apps Space and the root — is "cub cluster app-bootstrap",
-which finishes the attachment without argobot, and its last, argobot, is "cub
+which finishes the attachment without k8sbot, and its last, k8sbot, is "cub
 cluster k8sbot-install", which installs it in a cluster attached with
 --no-k8sbot.
 Attach then picks the cluster up where they left it: it keeps the
@@ -111,7 +111,7 @@ What it sets up, in the cluster:
   root Application    bootstrapped once with kubectl; from then on Argo pulls
                       everything else from ConfigHub. It never deletes an
                       Application unless --prune is given (below).
-  argobot             unless --no-k8sbot: a bot that listens on a Channel and
+  k8sbot              unless --no-k8sbot: a bot that listens on a Channel and
                       force-syncs the matching Argo Application the moment a
                       deploy happens, instead of waiting for Argo's poll, and
                       reports each Release's live status back.
@@ -119,7 +119,7 @@ What it sets up, in the cluster:
 And in ConfigHub:
 
   <name>              the cluster Space: an OCI target that represents the
-                      cluster, and argobot's Channel. A pure namespace — it
+                      cluster, and k8sbot's Channel. A pure namespace — it
                       holds no config bundle.
   <name>-argo-apps    the apps Space: the root "app of apps" Application Unit
                       and every child Argo Application Unit. Its release target
@@ -128,7 +128,7 @@ And in ConfigHub:
   argo-<name>         a service account with no organization role, the
                       cluster's identity: the target grants its user View,
                       Edit, ViewChildren and EditChildren; Argo CD pulls with a token
-                      of it and argobot runs as it with a key.
+                      of it and k8sbot runs as it with a key.
 
 The OCI target is gated: a "no-placeholders" Trigger in the cluster Space
 blocks publishing a Release that still contains an unfilled
@@ -163,7 +163,7 @@ from the upstream manifest, with its dashboard, if the projectsveltos
 namespace has no addon-controller, and an existing Sveltos is left as found
 (--no-install fails instead of installing). The apps Space is
 <name>-sveltos-apps, its root Unit a ClusterProfile that pulls the apps
-Space's own Release, and argobot comes from "argobot-sveltos-base". The
+Space's own Release, and k8sbot comes from "k8sbot-sveltos-base". The
 dashboard is not exposed outside the cluster; reach it with "kubectl
 port-forward svc/dashboard -n projectsveltos 8080:80", and log in with a
 token from the platform-admin ServiceAccount. See "cub cluster up --help" for
@@ -174,8 +174,8 @@ upstream manifest if the flux-system namespace has no kustomize-controller,
 and an existing Flux is left as found (--no-install fails instead of
 installing). The apps Space is <name>-flux-apps, its root Unit an
 OCIRepository and Kustomization, both named confighub-root, that pull and
-apply the apps Space's own Release, and argobot comes from
-"argobot-flux-base". Flux has no UI; "kubectl -n flux-system get
+apply the apps Space's own Release, and k8sbot comes from
+"k8sbot-flux-base". Flux has no UI; "kubectl -n flux-system get
 ocirepository,kustomization" shows its state. See "cub cluster up --help" for
 how the Kustomizations, polling and --prune work.
 
@@ -184,24 +184,24 @@ holds the registry credentials of an attachment: the confighub-gateway Secret
 in projectsveltos, or the confighub-oci Secret in flux-system.
 
 Two Secrets hold ConfigHub credentials: the controller's registry credentials
-(above) and argobot's key, argobot-secrets in the argobot namespace, whose
-CONFIGHUB_AUTH_PRIVATE_KEY argobot authenticates with. Attach applies both. A
+(above) and k8sbot's key, k8sbot-secrets in the k8sbot namespace, whose
+CONFIGHUB_AUTH_PRIVATE_KEY k8sbot authenticates with. Attach applies both. A
 cluster that takes credentials only from a secret store, through the External
 Secrets Operator, gets them with --secrets-dir <dir> instead: each Secret's
 Kubernetes manifest, exactly what attach would apply, is written to
 <dir>/<name>/<namespace>_<secret>.yaml and not applied. The values are in plain
 text, in the manifest's stringData, so the file is readable only by you;
-argobot's also holds the argobot Namespace, which attach applies itself. Load
+k8sbot's also holds the k8sbot Namespace, which attach applies itself. Load
 the values into the store, and have the store keep a Secret of that name in the
 cluster with the manifest's type, labels, annotations and keys. Until it is
-there the controller cannot pull and argobot cannot start; attach does not wait
+there the controller cannot pull and k8sbot cannot start; attach does not wait
 for it. The credentials belong to the service account attach creates, so they
 cannot be put in the store beforehand, and a failed attach removes the files
 along with the service account.
 
 The Secrets Store CSI driver's secretObjects does not fit either flag on its
 own: it keeps a Secret only while a pod mounts the driver's volume, and neither
-argobot nor the controller mounts one. With it, run a pod that mounts the
+k8sbot nor the controller mounts one. With it, run a pod that mounts the
 SecretProviderClass in each Secret's namespace.
 
 With --existing-secrets, attach uses credentials already in the store instead.
@@ -210,7 +210,7 @@ Before attaching, create the cluster's service account and its credentials:
   cub serviceaccount create argo-<name>
   cub serviceaccount token create argo-<name>      # the controller's pull token
   cub serviceaccount key add argo-<name> --generate <path>
-                                                   # argobot's key; unless --no-k8sbot
+                                                   # k8sbot's key; unless --no-k8sbot
 
 load them into the store, and have it keep these Secrets in the cluster:
 
@@ -225,17 +225,17 @@ load them into the store, and have it keep these Secrets in the cluster:
   flux-system/confighub-oci         (Flux) type kubernetes.io/dockerconfigjson;
                                     an auth for the registry's host:port with
                                     username token and the token as password
-  argobot/argobot-secrets           key CONFIGHUB_AUTH_PRIVATE_KEY: the private
+  k8sbot/k8sbot-secrets             key CONFIGHUB_AUTH_PRIVATE_KEY: the private
                                     JWK the key add wrote
 
 The service account takes no organization role; attach grants it the target.
 Attach skips the check for an earlier attachment's credentials, applies the
-argobot namespace (unless --no-k8sbot), waits for each Secret up to
+k8sbot namespace (unless --no-k8sbot), waits for each Secret up to
 --existing-secrets-timeout (default 5m), since a store can only create one once
 its namespace is there and attach may be what installs the controller, and then
 checks it: the controller's by its shape and by authenticating with its token,
-argobot's by authenticating with its key, each as argo-<name>. Neither the service account nor the Secrets are removed when
-attach fails, and "cub cluster detach" leaves the Secrets, and the argobot
+k8sbot's by authenticating with its key, each as argo-<name>. Neither the service account nor the Secrets are removed when
+attach fails, and "cub cluster detach" leaves the Secrets, and the k8sbot
 namespace, in place.
 
 Examples:
@@ -245,7 +245,7 @@ Examples:
   # Attach a named context from a specific kubeconfig
   cub cluster attach prod-eu --kubeconfig ~/.kube/eu.yaml --kube-context prod-eu
 
-  # Attach a cluster that already runs Argo CD, without argobot
+  # Attach a cluster that already runs Argo CD, without k8sbot
   cub cluster attach shared --no-install --no-k8sbot
 
   # Attach a cluster through Flux, using the Flux it already runs
@@ -263,7 +263,7 @@ Examples:
 func init() {
 	clusterAttachCmd.Flags().StringVar(&clusterAttachArgs.name, "name", "", "cluster name (the argument; kept as a flag for older scripts)")
 	_ = clusterAttachCmd.Flags().MarkHidden("name")
-	clusterAttachCmd.Flags().StringVar(&clusterAttachArgs.spaceSlug, "space", "", "ConfigHub space slug for the cluster's target and argobot channel (the \"target prefix\"); the apps space is this slug + \"-argo-apps\", + \"-sveltos-apps\" with --controller sveltos, or + \"-flux-apps\" with --controller flux (defaults to <name>)")
+	clusterAttachCmd.Flags().StringVar(&clusterAttachArgs.spaceSlug, "space", "", "ConfigHub space slug for the cluster's target and k8sbot channel (the \"target prefix\"); the apps space is this slug + \"-argo-apps\", + \"-sveltos-apps\" with --controller sveltos, or + \"-flux-apps\" with --controller flux (defaults to <name>)")
 	clusterAttachCmd.Flags().StringVar(&clusterAttachArgs.provider, "provider", clusterProviderKubeconfig, "where the cluster's credentials come from: kubeconfig, eks or kind")
 	clusterAttachCmd.Flags().StringVar(&clusterAttachArgs.cluster, "cluster", "", "the cluster's name at the provider (--provider eks or kind; defaults to the cluster name)")
 	clusterAttachCmd.Flags().StringVar(&clusterAttachArgs.kubeconfig, "kubeconfig", "", "--provider kubeconfig: the kubeconfig to read the cluster from (defaults to $KUBECONFIG or ~/.kube/config)")
@@ -276,8 +276,8 @@ func init() {
 	clusterAttachCmd.Flags().BoolVar(&clusterAttachArgs.noInstall, "no-install", false, "never install the controller; fail if the cluster has none")
 	clusterAttachCmd.Flags().BoolVar(&clusterAttachArgs.noArgoCD, "no-argocd", false, "--controller argo: the same as --no-install")
 	_ = clusterAttachCmd.Flags().MarkHidden("no-argocd")
-	clusterAttachCmd.Flags().BoolVar(&clusterAttachArgs.noArgobot, "no-k8sbot", false, "skip installing argobot (the event-driven Argo CD sync, Sveltos redeploy, or Flux reconciliation, bot); 'cub cluster k8sbot-install' installs it later")
-	clusterAttachCmd.Flags().StringVar(&clusterAttachArgs.argobotBase, "k8sbot-base", "", clusterK8sbotBaseFlagUsage)
+	clusterAttachCmd.Flags().BoolVar(&clusterAttachArgs.noK8sbot, "no-k8sbot", false, "skip installing k8sbot (the event-driven Argo CD sync, Sveltos redeploy, or Flux reconciliation, bot); 'cub cluster k8sbot-install' installs it later")
+	clusterAttachCmd.Flags().StringVar(&clusterAttachArgs.k8sbotBase, "k8sbot-base", "", clusterK8sbotBaseFlagUsage)
 	clusterAttachCmd.Flags().StringVar(&clusterAttachArgs.registry, "registry", "", clusterRegistryFlagUsage)
 	clusterAttachCmd.Flags().BoolVar(&clusterAttachArgs.k8sbotInstaller, "k8sbot-installer", false, clusterK8sbotInstallerFlagUsage)
 	clusterAttachCmd.Flags().BoolVar(&clusterAttachArgs.noPlaceholderGate, "no-placeholder-gate", false, "skip the default vet-placeholders Trigger, allowing Releases with unfilled confighubplaceholder values to be published to this cluster")
@@ -302,8 +302,8 @@ type clusterAttachOptions struct {
 	controller        string
 	controllerVersion string
 	noInstall         bool
-	noArgobot         bool
-	argobotBase       string
+	noK8sbot          bool
+	k8sbotBase        string
 	registry          string
 	k8sbotInstaller   bool
 	noPlaceholderGate bool
@@ -343,8 +343,8 @@ func clusterAttachCmdRun(cmd *cobra.Command, args []string) error {
 		controller:        clusterAttachArgs.controller,
 		controllerVersion: clusterAttachArgs.controllerVersion,
 		noInstall:         clusterAttachArgs.noInstall || clusterAttachArgs.noArgoCD,
-		noArgobot:         clusterAttachArgs.noArgobot,
-		argobotBase:       clusterAttachArgs.argobotBase,
+		noK8sbot:          clusterAttachArgs.noK8sbot,
+		k8sbotBase:        clusterAttachArgs.k8sbotBase,
 		registry:          clusterAttachArgs.registry,
 		k8sbotInstaller:   clusterAttachArgs.k8sbotInstaller,
 		noPlaceholderGate: clusterAttachArgs.noPlaceholderGate,
@@ -418,9 +418,9 @@ func clusterAttachRun(out io.Writer, opts clusterAttachOptions) (err error) {
 	envFilePath := clusterEnvFilePath(opts.name)
 	secretsDir := clusterSecretsDirFor(opts.secretsDir, opts.name)
 
-	argobotSlug := ""
-	if !opts.noArgobot {
-		argobotSlug = clusterArgobotComponent + "-" + opts.name
+	k8sbotSlug := ""
+	if !opts.noK8sbot {
+		k8sbotSlug = clusterK8sbotComponent + "-" + opts.name
 	}
 	// What an earlier stage created is expected to exist; the rest is not.
 	freshSpaceSlug, freshServiceAccount := opts.spaceSlug, true
@@ -430,7 +430,7 @@ func clusterAttachRun(out io.Writer, opts clusterAttachOptions) (err error) {
 	}
 	// With --existing-secrets the service account is the operator's, and has
 	// to exist before anything is created.
-	if err := clusterRequireFreshConfigHub(opts.name, freshSpaceSlug, appsSlug, argobotSlug, freshServiceAccount && !opts.existingSecrets); err != nil {
+	if err := clusterRequireFreshConfigHub(opts.name, freshSpaceSlug, appsSlug, k8sbotSlug, freshServiceAccount && !opts.existingSecrets); err != nil {
 		return err
 	}
 	if opts.existingSecrets && freshServiceAccount {
@@ -444,25 +444,25 @@ func clusterAttachRun(out io.Writer, opts clusterAttachOptions) (err error) {
 	if err := clusterPrintControllerOCIEndpoint(out); err != nil {
 		return err
 	}
-	var argobotRepository string
-	var argobotInstaller *PluginCommand
-	if !opts.noArgobot {
-		if argobotRepository, err = clusterArgobotRepository(opts.registry); err != nil {
+	var k8sbotRepository string
+	var k8sbotInstaller *PluginCommand
+	if !opts.noK8sbot {
+		if k8sbotRepository, err = clusterK8sbotRepository(opts.registry); err != nil {
 			return err
 		}
 		if opts.k8sbotInstaller {
-			if argobotInstaller, err = clusterFindInstaller(); err != nil {
+			if k8sbotInstaller, err = clusterFindInstaller(); err != nil {
 				return err
 			}
 		}
-		if err := clusterArgobotCheckBaseKind(opts.controller, argobotInstaller != nil); err != nil {
+		if err := clusterK8sbotCheckBaseKind(opts.controller, k8sbotInstaller != nil); err != nil {
 			return err
 		}
-		mode, err := clusterChooseArgobotBase(out, opts.controller, opts.argobotBase)
+		mode, err := clusterChooseK8sbotBase(out, opts.controller, opts.k8sbotBase)
 		if err != nil {
 			return err
 		}
-		opts.argobotBase = mode
+		opts.k8sbotBase = mode
 	}
 
 	rollback := clusterBeginRollback(out)
@@ -493,7 +493,7 @@ func clusterAttachRun(out io.Writer, opts clusterAttachOptions) (err error) {
 			spaceSlug:      opts.spaceSlug,
 			kubeconfigPath: kubeconfigPath,
 			controller:     opts.controller,
-			noArgobot:      opts.noArgobot,
+			noK8sbot:       opts.noK8sbot,
 			secretsDir:     secretsDir,
 
 			existingSecrets:        opts.existingSecrets,
@@ -512,26 +512,26 @@ func clusterAttachRun(out io.Writer, opts clusterAttachOptions) (err error) {
 			controller:        opts.controller,
 			noPlaceholderGate: inst.noPlaceholderGate,
 		},
-		noArgobot:   opts.noArgobot,
-		argobotBase: opts.argobotBase,
-		prune:       opts.prune,
+		noK8sbot:   opts.noK8sbot,
+		k8sbotBase: opts.k8sbotBase,
+		prune:      opts.prune,
 	}
-	// argobot goes in before the first apps-Space Release, so the root's first
+	// k8sbot goes in before the first apps-Space Release, so the root's first
 	// sync already deploys it.
 	var installBot func() error
-	if !opts.noArgobot {
+	if !opts.noK8sbot {
 		installBot = func() error {
 			return clusterInstallK8sbot(out, clusterK8sbotSpec{
-				name:              opts.name,
-				spaceSlug:         opts.spaceSlug,
-				kubeconfigPath:    kubeconfigPath,
-				controller:        opts.controller,
-				spaceID:           inst.spaceID,
-				targetID:          inst.targetID,
-				argobotBase:       opts.argobotBase,
-				argobotRepository: argobotRepository,
-				argobotInstaller:  argobotInstaller,
-				secretsDir:        secretsDir,
+				name:             opts.name,
+				spaceSlug:        opts.spaceSlug,
+				kubeconfigPath:   kubeconfigPath,
+				controller:       opts.controller,
+				spaceID:          inst.spaceID,
+				targetID:         inst.targetID,
+				k8sbotBase:       opts.k8sbotBase,
+				k8sbotRepository: k8sbotRepository,
+				k8sbotInstaller:  k8sbotInstaller,
+				secretsDir:       secretsDir,
 			}, addRollback)
 		}
 	}
@@ -556,7 +556,7 @@ func clusterAttachRun(out io.Writer, opts clusterAttachOptions) (err error) {
 	clusterPrintControllerSummary(out, opts.name, opts.controller, kubeconfigPath, inst)
 	if secretsDir != "" {
 		fmt.Fprintf(out, "\nThe ConfigHub credentials are in %s, not in the cluster. Until your secret store puts\n"+
-			"each of them in the cluster as the Secret its file is, the controller cannot pull and argobot cannot start.\n", secretsDir)
+			"each of them in the cluster as the Secret its file is, the controller cannot pull and k8sbot cannot start.\n", secretsDir)
 	}
 	clusterPrintSummaryTail(out, result, envFilePath)
 	return nil
@@ -1155,10 +1155,10 @@ type clusterInstalled struct {
 type clusterAttachSpec struct {
 	clusterControllerSpec
 
-	noArgobot bool
-	// argobotBase is clusterArgobotBaseUpdate or clusterArgobotBaseClone, as
-	// clusterChooseArgobotBase decided it.
-	argobotBase string
+	noK8sbot bool
+	// k8sbotBase is clusterK8sbotBaseUpdate or clusterK8sbotBaseClone, as
+	// clusterChooseK8sbotBase decided it.
+	k8sbotBase string
 	// prune gives the root Argo CD Application or Flux Kustomization prune and
 	// records it on the OCI target for the deployments `cub variant create`
 	// adds (controllers argo and flux).
@@ -1219,7 +1219,7 @@ func clusterInstallController(out io.Writer, spec clusterControllerSpec, addRoll
 	// the cluster label + confighub.com/cluster-* annotations so `cub cluster
 	// list`/`down` find the cluster from it; the apps Space is derived and left
 	// unlabeled so the cluster lists once.
-	fmt.Fprintf(out, "Creating ConfigHub space %q (target + argobot channel)...\n", spec.spaceSlug)
+	fmt.Fprintf(out, "Creating ConfigHub space %q (target + k8sbot channel)...\n", spec.spaceSlug)
 	hostname, _ := os.Hostname()
 	annotations := map[string]string{
 		clusterAnnotationName:       spec.name,
@@ -1266,7 +1266,7 @@ func clusterInstallController(out io.Writer, spec clusterControllerSpec, addRoll
 	maps.Copy(targetAnnotations, uiTargetAnnotations)
 	maps.Copy(targetAnnotations, spec.targetAnnotations)
 	// Selecting the cluster Space's Triggers makes them gate every Unit bound to
-	// this target, wherever that Unit lives — the apps Space, the argobot
+	// this target, wherever that Unit lives — the apps Space, the k8sbot
 	// variant, and every deployment variant, including ones created later.
 	inst.targetID, err = clusterCreateOCITarget(spaceID, clusterTargetSlug, clusterTargetSlug,
 		targetAnnotations, clusterWhereTriggerForSpace(spaceID))
@@ -1281,9 +1281,9 @@ func clusterInstallController(out io.Writer, spec clusterControllerSpec, addRoll
 // Release, and the one kubectl apply that bootstraps the root, after which the
 // cluster is attached. The cluster's service account has been set up already,
 // with its grants on the OCI target and its credentials in the cluster.
-// installBot, when not nil, installs argobot (`cub cluster k8sbot-install`'s
+// installBot, when not nil, installs k8sbot (`cub cluster k8sbot-install`'s
 // stage) between creating the root Unit and the first publish, and
-// spec.noArgobot says whether it is given. Every ConfigHub entity it creates
+// spec.noK8sbot says whether it is given. Every ConfigHub entity it creates
 // is registered with addRollback; the caller runs those (in reverse) if
 // anything after this fails, and clusterBootstrapApps returns an error before
 // completing.
@@ -1296,21 +1296,21 @@ func clusterBootstrapApps(out io.Writer, spec clusterAttachSpec, inst clusterIns
 	spaceID, targetID := inst.spaceID, inst.targetID
 	serviceAccountSlug := clusterServiceAccountSlug(spec.name)
 
-	// The argobot annotation tells `cub variant create` whether a deploy is
+	// The k8sbot annotation tells `cub variant create` whether a deploy is
 	// picked up at once or waits for a poll, and the poll interval is the one
 	// the root gets below; prune covers deployments created later.
 	attachAnnotations := map[string]string{}
-	if !spec.noArgobot {
-		attachAnnotations[clusterAnnotationArgobot] = "true"
+	if !spec.noK8sbot {
+		attachAnnotations[clusterAnnotationK8sbot] = "true"
 	}
 	if spec.prune {
 		attachAnnotations[clusterAnnotationPrune] = "true"
 	}
 	switch spec.controller {
 	case clusterControllerSveltos:
-		attachAnnotations[clusterAnnotationSveltosPollInterval] = clusterSveltosPollInterval(!spec.noArgobot)
+		attachAnnotations[clusterAnnotationSveltosPollInterval] = clusterSveltosPollInterval(!spec.noK8sbot)
 	case clusterControllerFlux:
-		attachAnnotations[clusterAnnotationFluxPollInterval] = clusterFluxPollInterval(!spec.noArgobot)
+		attachAnnotations[clusterAnnotationFluxPollInterval] = clusterFluxPollInterval(!spec.noK8sbot)
 	}
 	targetAnnotations, err := clusterGrantTarget(spaceID, targetID, uuid.Nil, attachAnnotations)
 	if err != nil {
@@ -1351,11 +1351,11 @@ func clusterBootstrapApps(out io.Writer, spec clusterAttachSpec, inst clusterIns
 	switch {
 	case sveltos:
 		fmt.Fprintf(out, "Creating root ClusterProfile Unit %q in apps space %q...\n", clusterRootUnitSlug, appsSlug)
-		rootManifest = clusterSveltosRootProfileManifest(rootRepoURL, clusterSveltosPollInterval(!spec.noArgobot), ociInsecure)
+		rootManifest = clusterSveltosRootProfileManifest(rootRepoURL, clusterSveltosPollInterval(!spec.noK8sbot), ociInsecure)
 		rootName = clusterSveltosRootProfile
 	case flux:
 		fmt.Fprintf(out, "Creating root OCIRepository and Kustomization Unit %q in apps space %q...\n", clusterRootUnitSlug, appsSlug)
-		rootManifest = clusterFluxRootManifest(rootRepoURL, clusterFluxPollInterval(!spec.noArgobot), ociInsecure, spec.prune)
+		rootManifest = clusterFluxRootManifest(rootRepoURL, clusterFluxPollInterval(!spec.noK8sbot), ociInsecure, spec.prune)
 	default:
 		fmt.Fprintf(out, "Creating root Application Unit %q in apps space %q...\n", clusterRootUnitSlug, appsSlug)
 		rootManifest = clusterArgoRootAppManifest(appsSlug, rootRepoURL, spec.prune)
@@ -1374,23 +1374,23 @@ func clusterBootstrapApps(out io.Writer, spec clusterAttachSpec, inst clusterIns
 		return result, err
 	}
 
-	// Install argobot (unless --no-k8sbot) BEFORE the final apps-Space publish
+	// Install k8sbot (unless --no-k8sbot) BEFORE the final apps-Space publish
 	// and root bootstrap, so its child Application Unit is already in the first
 	// bundle the root pulls — the root app-of-apps then creates it on its
 	// initial sync rather than only on a later reconcile. The step creates that
 	// child Unit via `cub variant create --target` (auto-derived from the OCI
 	// target's apps-space annotation, the same path any deployment uses) and
-	// publishes argobot's own variant Release; the child Unit is left in the
+	// publishes k8sbot's own variant Release; the child Unit is left in the
 	// apps Space for the single authoritative publish below.
 	if installBot != nil {
 		if err := installBot(); err != nil {
-			return result, fmt.Errorf("install argobot: %w", err)
+			return result, fmt.Errorf("install k8sbot: %w", err)
 		}
 	}
 
 	// Publish the apps Space's Release once, after root's triggers settle, so
 	// the bundle carries root's post-trigger revision plus any Application Units
-	// argobot's install added to the Space (already trigger-settled by variant
+	// k8sbot's install added to the Space (already trigger-settled by variant
 	// create). This is the bundle the root pulls on its first sync.
 	fmt.Fprintln(out, "\nPublishing the apps space's release (populates the OCI bundle the root pulls)...")
 	if err := clusterWaitUnitTriggers(appsSpaceID, rootUnitID); err != nil {
@@ -1410,8 +1410,8 @@ func clusterBootstrapApps(out io.Writer, spec clusterAttachSpec, inst clusterIns
 	// and `detach` read them rather than deriving them, and the stage marker
 	// comes off.
 	botSpace, botChannel := "", ""
-	if !spec.noArgobot {
-		botSpace, botChannel = clusterArgobotComponent+"-"+spec.name, clusterArgobotChannelSlug
+	if !spec.noK8sbot {
+		botSpace, botChannel = clusterK8sbotComponent+"-"+spec.name, clusterK8sbotChannelSlug
 	}
 	if err := clusterFinishSpaceAnnotations(spaceID, botSpace, botChannel); err != nil {
 		return result, err
@@ -1445,7 +1445,7 @@ func clusterUIAnnotations(controller string, uiPort int) (space, target map[stri
 // what was created, on both sides. verb is "Attached" or "Done".
 func clusterPrintSummaryHead(out io.Writer, verb string, r clusterAttachResult, kubeconfigPath, envFilePath string) {
 	spec := r.spec
-	fmt.Fprintf(out, "\n%s.\n  cluster:    %s\n  context:    %s\n  kubeconfig: %s\n  env file:   %s\n  space:      %s\n  apps space: %s\n  target:     %s/%s\n  identity:   service account %s (the controller pulls with a token of it; argobot runs as it with a key)\n  root:       %s/%s\n",
+	fmt.Fprintf(out, "\n%s.\n  cluster:    %s\n  context:    %s\n  kubeconfig: %s\n  env file:   %s\n  space:      %s\n  apps space: %s\n  target:     %s/%s\n  identity:   service account %s (the controller pulls with a token of it; k8sbot runs as it with a key)\n  root:       %s/%s\n",
 		verb,
 		spec.name, contextManager.ActiveContextName(), kubeconfigPath, envFilePath,
 		spec.spaceSlug,
@@ -1453,14 +1453,14 @@ func clusterPrintSummaryHead(out io.Writer, verb string, r clusterAttachResult, 
 		spec.spaceSlug, clusterTargetSlug,
 		r.serviceAccountSlug,
 		r.appsSlug, clusterRootUnitSlug)
-	if !spec.noArgobot {
+	if !spec.noK8sbot {
 		switch spec.controller {
 		case clusterControllerSveltos:
-			fmt.Fprintf(out, "  argobot:    %s-%s (Sveltos ClusterProfile; redeploys on publish), channel %s/%s\n", clusterArgobotComponent, spec.name, spec.spaceSlug, clusterArgobotChannelSlug)
+			fmt.Fprintf(out, "  k8sbot:     %s-%s (Sveltos ClusterProfile; redeploys on publish), channel %s/%s\n", clusterK8sbotComponent, spec.name, spec.spaceSlug, clusterK8sbotChannelSlug)
 		case clusterControllerFlux:
-			fmt.Fprintf(out, "  argobot:    %s-%s (Flux Kustomization; reconciles on publish), channel %s/%s\n", clusterArgobotComponent, spec.name, spec.spaceSlug, clusterArgobotChannelSlug)
+			fmt.Fprintf(out, "  k8sbot:     %s-%s (Flux Kustomization; reconciles on publish), channel %s/%s\n", clusterK8sbotComponent, spec.name, spec.spaceSlug, clusterK8sbotChannelSlug)
 		default:
-			fmt.Fprintf(out, "  argobot:    %s-%s (Argo app; refreshes on publish), channel %s/%s\n", clusterArgobotComponent, spec.name, spec.spaceSlug, clusterArgobotChannelSlug)
+			fmt.Fprintf(out, "  k8sbot:     %s-%s (Argo app; refreshes on publish), channel %s/%s\n", clusterK8sbotComponent, spec.name, spec.spaceSlug, clusterK8sbotChannelSlug)
 		}
 	}
 	if spec.noPlaceholderGate {
@@ -1478,10 +1478,10 @@ func clusterPrintSummaryTail(out io.Writer, r clusterAttachResult, envFilePath s
 	if r.spec.controller == clusterControllerFlux {
 		fmt.Fprintf(out, "\nDeploy an app to this cluster:\n  1. cub variant create <name> <base-space> --target %s/%s [--namespace <ns>]\n  2. cub release publish <name>\nStep 1 clones <base-space> into a deployment space bound to the cluster's\ntarget and adds its Flux OCIRepository and Kustomization to the apps space\n%q; step 2 makes the deployment's config go live. ",
 			r.spec.spaceSlug, clusterTargetSlug, r.appsSlug)
-		if r.spec.noArgobot {
-			fmt.Fprintf(out, "Without argobot, step 2\nalso republishes the apps space the first time, so the root applies them.\n")
+		if r.spec.noK8sbot {
+			fmt.Fprintf(out, "Without k8sbot, step 2\nalso republishes the apps space the first time, so the root applies them.\n")
 		} else {
-			fmt.Fprintf(out, "Step 1 republishes\nthe apps space, and argobot deploys step 2's Release at once.\n")
+			fmt.Fprintf(out, "Step 1 republishes\nthe apps space, and k8sbot deploys step 2's Release at once.\n")
 		}
 		fmt.Fprintf(out, "See \"cub variant create --help\".\n")
 		return

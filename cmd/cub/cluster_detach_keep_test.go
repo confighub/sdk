@@ -10,10 +10,10 @@ import (
 	"sigs.k8s.io/yaml"
 )
 
-// Detaching a cluster whose Secrets a secret store keeps deletes argobot's
+// Detaching a cluster whose Secrets a secret store keeps deletes k8sbot's
 // resources but not its Namespace, which holds the store's Secrets.
 func TestClusterWithoutNamespaces(t *testing.T) {
-	data := "apiVersion: v1\nkind: Namespace\nmetadata:\n  name: argobot\n---\napiVersion: apps/v1\nkind: Deployment\nmetadata:\n  name: argobot\n  namespace: argobot\n---\n# a comment only\n"
+	data := "apiVersion: v1\nkind: Namespace\nmetadata:\n  name: k8sbot\n---\napiVersion: apps/v1\nkind: Deployment\nmetadata:\n  name: k8sbot\n  namespace: k8sbot\n---\n# a comment only\n"
 	got := clusterWithoutNamespaces(data)
 	var kinds []string
 	for _, doc := range strings.Split(got, "\n---") {

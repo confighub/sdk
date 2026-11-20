@@ -158,7 +158,11 @@ type FunctionInvocationRequest struct {
 	// OtherDataToolchainTypes says which OtherData came from a Unit of another ToolchainType than
 	// ConfigData's. A handler converts only its own toolchain's data, so the sender has already
 	// converted those entries to YAML, the form every function reads.
-	OtherDataToolchainTypes map[OtherDataSource]workerapi.ToolchainType `json:",omitempty" description:"The ToolchainType of each OtherData entry read from a Unit of another ToolchainType than ConfigData's. Those entries have already been converted to YAML."`
+	OtherDataToolchainTypes map[OtherDataSource]workerapi.ToolchainType `json:",omitempty" description:"The ToolchainType of each OtherData entry read from a Unit of another ToolchainType than ConfigData's, or assembled from the data of several Units. Those entries have already been converted to YAML."`
+	// OtherDataOrigins says where each document of an OtherData entry assembled from several
+	// Units came from, in the order of the documents, as a Trigger's OtherUnitSelections pass
+	// them.
+	OtherDataOrigins map[OtherDataSource][]OtherDataOrigin `json:",omitempty" description:"Where each document of an OtherData entry assembled from several Units came from, one per document in order: the selected Units a Trigger's OtherUnitSelections pass under a key."`
 	FunctionInvocationOptions
 	FunctionInvocations FunctionInvocationList `description:"List of functions to invoke and their arguments"`
 }

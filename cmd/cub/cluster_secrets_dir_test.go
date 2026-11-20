@@ -15,12 +15,12 @@ import (
 // the rollback revokes.
 func TestClusterPutSecretWritesTheFileInsteadOfApplying(t *testing.T) {
 	dir := filepath.Join(t.TempDir(), "secrets", "lab")
-	s := clusterSecret{namespace: clusterArgobotNamespace, name: clusterArgobotSecret, manifest: []byte("kind: Secret\n")}
+	s := clusterSecret{namespace: clusterK8sbotNamespace, name: clusterK8sbotSecret, manifest: []byte("kind: Secret\n")}
 	var undos []clusterUndo
 	if err := clusterPutSecret(io.Discard, "/nonexistent/kubeconfig", dir, s, func(u clusterUndo) { undos = append(undos, u) }); err != nil {
 		t.Fatalf("clusterPutSecret: %v", err)
 	}
-	path := filepath.Join(dir, "argobot_argobot-secrets.yaml")
+	path := filepath.Join(dir, "k8sbot_k8sbot-secrets.yaml")
 	if got := clusterSecretFilePath(dir, s); got != path {
 		t.Fatalf("clusterSecretFilePath = %q, want %q", got, path)
 	}

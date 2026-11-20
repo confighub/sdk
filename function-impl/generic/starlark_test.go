@@ -215,7 +215,7 @@ func TestVetStarlark_ReplicasMatchesParam(t *testing.T) {
 	t.Run("passes when replicas matches param", func(t *testing.T) {
 		args := stringArgsToFunctionArgs([]string{vetProgram, "replicas=3"})
 
-		_, output, err := genericFnVetStarlark(testResourceProvider, nil, nil, docs, args)
+		_, output, err := genericFnVetStarlark(testResourceProvider, nil, nil, docs, OtherResources{}, args)
 		require.NoError(t, err)
 
 		vr, ok := output.(api.ValidationResult)
@@ -228,7 +228,7 @@ func TestVetStarlark_ReplicasMatchesParam(t *testing.T) {
 	t.Run("fails when replicas does not match param", func(t *testing.T) {
 		args := stringArgsToFunctionArgs([]string{vetProgram, "replicas=5"})
 
-		_, output, err := genericFnVetStarlark(testResourceProvider, nil, nil, docs, args)
+		_, output, err := genericFnVetStarlark(testResourceProvider, nil, nil, docs, OtherResources{}, args)
 		require.NoError(t, err)
 
 		vr, ok := output.(api.ValidationResult)
@@ -319,7 +319,7 @@ func TestVetStarlark_WhereResourceFiltersResources(t *testing.T) {
 	args := stringArgsToFunctionArgs([]string{vetProgram})
 
 	// Without filtering, Service has no replicas so it would fail validation
-	_, output, err := genericFnVetStarlark(testResourceProvider, nil, nil, docs, args)
+	_, output, err := genericFnVetStarlark(testResourceProvider, nil, nil, docs, OtherResources{}, args)
 	require.NoError(t, err)
 	vr := output.(api.ValidationResult)
 	assert.False(t, vr.Passed, "should fail without filter because Service has no replicas")
@@ -329,7 +329,7 @@ func TestVetStarlark_WhereResourceFiltersResources(t *testing.T) {
 	options.WhereResourceExpressions, err = api.ParseAndValidateWhereResource("kind = 'Deployment'")
 	require.NoError(t, err)
 
-	_, output, err = genericFnVetStarlark(testResourceProvider, options, nil, docs, args)
+	_, output, err = genericFnVetStarlark(testResourceProvider, options, nil, docs, OtherResources{}, args)
 	require.NoError(t, err)
 	vr = output.(api.ValidationResult)
 	assert.True(t, vr.Passed, "should pass with filter targeting only Deployment")

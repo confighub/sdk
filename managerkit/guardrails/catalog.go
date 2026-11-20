@@ -112,6 +112,11 @@ type Check struct {
 	// cannot meet the restricted Pod Security Standard. A rule honors the exceptions of each,
 	// so the checks naming one rule name the same ones.
 	ExceptFrom []string
+	// OtherData is what the check reads besides the resource it checks, such as the
+	// NetworkPolicies on the cluster for a check that each workload is covered by one. A cel
+	// check reads it as other.<Key> and otherOrigins.<Key>. The checks naming one rule read the
+	// same.
+	OtherData []OtherData
 
 	// Failures, for EngineCEL, is a CEL list of failure maps, empty when the resource r passes.
 	// Each map has ResourceName, ResourceType and Path, the optional Value, and Detail, a
@@ -198,6 +203,9 @@ func (p Pack) Validate() error {
 	declared := map[string]bool{}
 	for _, r := range p.Rules {
 		declared[r.Slug] = true
+		if err := validateOtherData("rule "+r.Slug, r.AppliedTo, r.OtherData); err != nil {
+			return err
+		}
 	}
 	libraries := map[string]bool{}
 	for _, l := range p.Libraries {
@@ -258,6 +266,9 @@ func (p Pack) Validate() error {
 		}
 		if len(c.Params) > 0 && c.Engine != EngineCEL {
 			return fmt.Errorf("check %s: only cel checks take parameters", c.Name)
+		}
+		if err := validateOtherData("check "+c.Name, c.AppliedTo, c.OtherData); err != nil {
+			return err
 		}
 		for _, rule := range c.ExceptFrom {
 			if !namePattern.MatchString(rule) || rule == c.Rule || rule == c.Name {
@@ -328,6 +339,8 @@ func cannotShareRule(a, b Check) string {
 		return "they honor the exceptions of different rules"
 	case a.Library != b.Library:
 		return "their policy libraries differ"
+	case !otherDataEqual(a.OtherData, b.OtherData):
+		return "they read different other data"
 	}
 	return ""
 }
@@ -461,6 +474,7 @@ func (p Pack) ruleOf(slug string, checks []Check, params map[string]string) (Rul
 		AppliedTo:     first.AppliedTo,
 		ResourceTypes: sortedTypes(first.ResourceTypes),
 		ExceptFrom:    sortedTypes(first.ExceptFrom),
+		OtherData:     first.OtherData,
 	}
 	for _, c := range checks {
 		rule.Controls = append(rule.Controls, c.Control)

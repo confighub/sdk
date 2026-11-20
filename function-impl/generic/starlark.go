@@ -46,10 +46,13 @@ func parseParams(args []api.FunctionArgument, startIndex int) (*starlark.Dict, e
 // (e.g. functionContext["TargetID"]).
 func starlarkPredeclared(rDict *starlark.Dict, params *starlark.Dict, functionContext *starlark.Dict) starlark.StringDict {
 	predeclared := starlark.StringDict{
-		"r":      rDict,
-		"object": rDict,
-		"json":   starlarkjson.Module,
-		"re":     starlarkReModule,
+		"r":               rDict,
+		"object":          rDict,
+		"json":            starlarkjson.Module,
+		"re":              starlarkReModule,
+		"selects":         starlarkSelects,
+		"podLabels":       starlarkPodLabels,
+		"namespaceLabels": starlarkNamespaceLabels,
 	}
 	if params != nil {
 		predeclared["params"] = params
@@ -62,6 +65,83 @@ func starlarkPredeclared(rDict *starlark.Dict, params *starlark.Dict, functionCo
 		predeclared["functionContext"] = starlark.NewDict(0)
 	}
 	return predeclared
+}
+
+// starlarkSelects is selects(selector, labels): whether a Kubernetes label selector selects the
+// labels, as LabelSelectorMatches reads them.
+var starlarkSelects = starlark.NewBuiltin("selects", func(_ *starlark.Thread, fn *starlark.Builtin, args starlark.Tuple, kwargs []starlark.Tuple) (starlark.Value, error) {
+	var selector, labelValues starlark.Value
+	if err := starlark.UnpackPositionalArgs(fn.Name(), args, kwargs, 2, &selector, &labelValues); err != nil {
+		return nil, err
+	}
+	goSelector, err := starlarkToGo(selector)
+	if err != nil {
+		return nil, err
+	}
+	goLabels, err := starlarkToGo(labelValues)
+	if err != nil {
+		return nil, err
+	}
+	matched, err := LabelSelectorMatches(goSelector, goLabels)
+	if err != nil {
+		return nil, fmt.Errorf("selects: %w", err)
+	}
+	return starlark.Bool(matched), nil
+})
+
+// starlarkPodLabels is podLabels(resource): the labels of the pods a resource runs, as PodLabels
+// reads them, None for one that runs none.
+var starlarkPodLabels = starlark.NewBuiltin("podLabels", func(_ *starlark.Thread, fn *starlark.Builtin, args starlark.Tuple, kwargs []starlark.Tuple) (starlark.Value, error) {
+	var resource starlark.Value
+	if err := starlark.UnpackPositionalArgs(fn.Name(), args, kwargs, 1, &resource); err != nil {
+		return nil, err
+	}
+	goResource, err := starlarkToGo(resource)
+	if err != nil {
+		return nil, err
+	}
+	labels := PodLabels(goResource)
+	if labels == nil {
+		return starlark.None, nil
+	}
+	return goToStarlark(labels)
+})
+
+// starlarkNamespaceLabels is namespaceLabels(namespaces, name): the labels of the Namespace named
+// name among a list of Namespaces, as a namespaceSelector is matched against them
+// (NamespaceLabels).
+var starlarkNamespaceLabels = starlark.NewBuiltin("namespaceLabels", func(_ *starlark.Thread, fn *starlark.Builtin, args starlark.Tuple, kwargs []starlark.Tuple) (starlark.Value, error) {
+	var namespaces starlark.Value
+	var name string
+	if err := starlark.UnpackPositionalArgs(fn.Name(), args, kwargs, 2, &namespaces, &name); err != nil {
+		return nil, err
+	}
+	goNamespaces, err := starlarkToGo(namespaces)
+	if err != nil {
+		return nil, err
+	}
+	return goToStarlark(NamespaceLabels(goNamespaces, name))
+})
+
+// starlarkOtherData converts the OtherData a function was passed to the predeclared other and
+// otherOrigins: dicts from each key to the list of resources passed under it, and where each came
+// from, at the same positions. They are frozen, so a program cannot change what the next call to
+// it reads.
+func starlarkOtherData(other OtherResources) (starlark.StringDict, error) {
+	predeclared := starlark.StringDict{}
+	for name, values := range map[string]map[string][]any{"other": other.Resources, "otherOrigins": other.Origins} {
+		asMap := map[string]any{}
+		for key, list := range values {
+			asMap[key] = list
+		}
+		value, err := goToStarlark(asMap)
+		if err != nil {
+			return nil, fmt.Errorf("failed to convert %s to starlark values: %w", name, err)
+		}
+		value.Freeze()
+		predeclared[name] = value
+	}
+	return predeclared, nil
 }
 
 // functionContextToStarlarkDict converts a FunctionContext into a Starlark dict
@@ -117,11 +197,14 @@ func runStarlarkForResource(programName, program string, resource map[string]any
 // compileStarlarkProgram executes a Starlark program once with an empty resource dict
 // to obtain function definitions (validate, extract, etc.). The returned globals contain
 // the defined functions which can then be called per-resource.
-func compileStarlarkProgram(programName, program string, params *starlark.Dict, functionContext *starlark.Dict) (starlark.StringDict, error) {
+func compileStarlarkProgram(programName, program string, params *starlark.Dict, functionContext *starlark.Dict, extra starlark.StringDict) (starlark.StringDict, error) {
 	thread := &starlark.Thread{Name: programName}
 
 	emptyDict := starlark.NewDict(0)
 	predeclared := starlarkPredeclared(emptyDict, params, functionContext)
+	for name, value := range extra {
+		predeclared[name] = value
+	}
 
 	globals, err := starlark.ExecFileOptions(&starlarkFileOpts, thread, programName, program, predeclared)
 	if err != nil {
@@ -381,7 +464,7 @@ func registerVetStarlark(fh handler.FunctionRegistry, converter configkit.Config
 				{
 					ParameterName: "program",
 					Required:      true,
-					Description:   "Starlark program that validates resources. Must define a 'validate(r)' function that takes a resource dict and returns a dict with 'passed' (bool) and optionally 'details' (list of strings). The function is called once per resource. The 'json', 're' modules, 'params' dict, and 'functionContext' dict (ConfigHub metadata, e.g. functionContext[\"TargetID\"]) are available.",
+					Description:   "Starlark program that validates resources. Must define a 'validate(r)' function that takes a resource dict and returns a dict with 'passed' (bool) and optionally 'details' (list of strings). The function is called once per resource. The 'json', 're' modules, 'params' dict, and 'functionContext' dict (ConfigHub metadata, e.g. functionContext[\"TargetID\"]) are available. Other Units passed as OtherData, such as those a Trigger's OtherUnitSelections select, are available as 'other', a dict from each key to the list of resources passed under it, and where each came from as 'otherOrigins', at the same positions (UnitSlug, SpaceSlug, UnitID, SpaceID, RevisionNum, UnitLabels). selects(selector, labels) says whether a Kubernetes label selector selects the labels, podLabels(resource) gives the labels of the pods a resource runs, wherever its kind keeps them (None for one that runs none), and namespaceLabels(namespaces, name) the labels of a Namespace in a list as a namespaceSelector matches them.",
 					DataType:      api.DataTypeStarlark,
 					Example: `def validate(r):
   if r.get("kind") == "Deployment":
@@ -409,19 +492,24 @@ func registerVetStarlark(fh handler.FunctionRegistry, converter configkit.Config
 			Validating:            true,
 			Hermetic:              true,
 			Idempotent:            true,
-			Description:           "Fails each resource for which a Starlark program's validate(r) function, called once per resource, returns {passed: false, details: [string]}. Fix: change the resource so the program passes it; its details, or the Trigger's Description, say what it requires.",
+			Description:           "Fails each resource for which a Starlark program's validate(r) function, called once per resource, returns {passed: false, details: [string]}. The program can read other Units passed as OtherData, as other. Fix: change the resource so the program passes it; its details, or the Trigger's Description, say what it requires.",
 			FunctionType:          api.FunctionTypeCustom,
 			AffectedResourceTypes: []api.ResourceType{api.ResourceTypeAny},
+			OtherDataAnyKey:       true,
 		},
 		Function: func(fArgs handler.FunctionImplementationArguments) (gaby.Container, any, error) {
-			return genericFnVetStarlark(resourceProvider, fArgs.Options, fArgs.FunctionContext, fArgs.ParsedData, fArgs.Arguments)
+			other, err := OtherResourcesOf(fArgs)
+			if err != nil {
+				return fArgs.ParsedData, api.ValidationResultFalse, err
+			}
+			return genericFnVetStarlark(resourceProvider, fArgs.Options, fArgs.FunctionContext, fArgs.ParsedData, other, fArgs.Arguments)
 		},
 	}); err != nil {
 		slog.Error("failed to register function", "error", err)
 	}
 }
 
-func genericFnVetStarlark(resourceProvider yamlkit.ResourceProvider, options *api.FunctionOptions, functionContext *api.FunctionContext, parsedData gaby.Container, args []api.FunctionArgument) (gaby.Container, any, error) {
+func genericFnVetStarlark(resourceProvider yamlkit.ResourceProvider, options *api.FunctionOptions, functionContext *api.FunctionContext, parsedData gaby.Container, other OtherResources, args []api.FunctionArgument) (gaby.Container, any, error) {
 	program := args[0].Value.(string)
 
 	params, err := parseParams(args, 1)
@@ -435,7 +523,11 @@ func genericFnVetStarlark(resourceProvider yamlkit.ResourceProvider, options *ap
 	}
 
 	// Compile the program once to get the validate function definition
-	globals, err := compileStarlarkProgram("vet-starlark", program, params, functionContextDict)
+	otherData, err := starlarkOtherData(other)
+	if err != nil {
+		return parsedData, api.ValidationResultFalse, err
+	}
+	globals, err := compileStarlarkProgram("vet-starlark", program, params, functionContextDict, otherData)
 	if err != nil {
 		failedResult := api.ValidationResultFalse
 		failedResult.Details = []string{err.Error()}
@@ -618,7 +710,7 @@ func genericFnGetStarlark(resourceProvider yamlkit.ResourceProvider, options *ap
 	}
 
 	// Compile the program once to get the extract function definition
-	globals, err := compileStarlarkProgram("get-starlark", program, params, functionContextDict)
+	globals, err := compileStarlarkProgram("get-starlark", program, params, functionContextDict, nil)
 	if err != nil {
 		return parsedData, nil, err
 	}

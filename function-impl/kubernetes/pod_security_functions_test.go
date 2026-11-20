@@ -119,7 +119,7 @@ func vetPodSecurity(t *testing.T, data, level, version string) api.ValidationRes
 	t.Helper()
 	docs, err := gaby.ParseAll([]byte(data))
 	require.NoError(t, err)
-	_, output, err := k8sFnVetPodSecurityStandard(testResourceProvider, docs, level, version, nil, nil)
+	_, output, err := k8sFnVetPodSecurityStandard(testResourceProvider, docs, level, version, nil, nil, nil)
 	require.NoError(t, err)
 	vr, ok := output.(api.ValidationResult)
 	require.True(t, ok)
@@ -221,9 +221,9 @@ func TestVetPodSecurityStandard_PlaceholderQuantities(t *testing.T) {
 func TestVetPodSecurityStandard_InvalidArguments(t *testing.T) {
 	docs, err := gaby.ParseAll([]byte(podSecurityPlainDeployment))
 	require.NoError(t, err)
-	_, _, err = k8sFnVetPodSecurityStandard(testResourceProvider, docs, "strict", "latest", nil, nil)
+	_, _, err = k8sFnVetPodSecurityStandard(testResourceProvider, docs, "strict", "latest", nil, nil, nil)
 	assert.ErrorContains(t, err, `invalid level "strict"`)
-	_, _, err = k8sFnVetPodSecurityStandard(testResourceProvider, docs, "baseline", "1.30", nil, nil)
+	_, _, err = k8sFnVetPodSecurityStandard(testResourceProvider, docs, "baseline", "1.30", nil, nil, nil)
 	assert.ErrorContains(t, err, `invalid version "1.30"`)
 }
 
@@ -296,7 +296,7 @@ func vetPodSecurityChecks(t *testing.T, data, level, include, exclude string) ap
 	require.NoError(t, err)
 	selected, err := selectPodSecurityChecks(include, exclude)
 	require.NoError(t, err)
-	_, output, err := k8sFnVetPodSecurityStandard(testResourceProvider, docs, level, "latest", selected, nil)
+	_, output, err := k8sFnVetPodSecurityStandard(testResourceProvider, docs, level, "latest", selected, nil, nil)
 	require.NoError(t, err)
 	vr, ok := output.(api.ValidationResult)
 	require.True(t, ok)
@@ -354,4 +354,95 @@ func TestVetPodSecurityStandard_UnknownCheck(t *testing.T) {
 	assert.ErrorContains(t, err, `check: unknown check "nonsense"`)
 	_, err = selectPodSecurityChecks("", "nonsense")
 	assert.ErrorContains(t, err, `exclude-check: unknown check "nonsense"`)
+}
+
+func namespaceDoc(labels string) string {
+	return "apiVersion: v1\nkind: Namespace\nmetadata:\n  name: default\n" + labels
+}
+
+func vetPodSecurityWithNamespaces(t *testing.T, data, level, version, passed string) api.ValidationResult {
+	t.Helper()
+	docs, err := gaby.ParseAll([]byte(data))
+	require.NoError(t, err)
+	var other gaby.Container
+	if passed != "" {
+		other, err = gaby.ParseAll([]byte(passed))
+		require.NoError(t, err)
+	}
+	_, output, err := k8sFnVetPodSecurityStandard(testResourceProvider, docs, level, version, nil, namespacesByName(docs, other), nil)
+	require.NoError(t, err)
+	return output.(api.ValidationResult)
+}
+
+// With level namespace, a workload is held to the enforce label of its Namespace, passed as
+// OtherData or in the Unit, and fails when the Namespace or its label is missing. The plain
+// Deployment, in the default namespace, meets baseline and not restricted.
+func TestVetPodSecurityStandard_LevelFromNamespace(t *testing.T) {
+	restricted := namespaceDoc("  labels:\n    pod-security.kubernetes.io/enforce: restricted\n")
+	baseline := namespaceDoc("  labels:\n    pod-security.kubernetes.io/enforce: baseline\n")
+
+	vr := vetPodSecurityWithNamespaces(t, podSecurityPlainDeployment, fromNamespace, "", restricted)
+	assert.False(t, vr.Passed)
+	assert.Contains(t, issueMessages(vr), `violates PodSecurity "restricted:latest"`)
+
+	vr = vetPodSecurityWithNamespaces(t, podSecurityPlainDeployment, fromNamespace, "", baseline)
+	assert.True(t, vr.Passed, issueMessages(vr))
+
+	// The Namespace in the Unit itself counts, ahead of one passed.
+	vr = vetPodSecurityWithNamespaces(t, podSecurityPlainDeployment+"---\n"+baseline, fromNamespace, "", restricted)
+	assert.True(t, vr.Passed, issueMessages(vr))
+
+	// Of two declarations passed, the stricter counts, in either order: one without the label does
+	// not lift the level the other sets.
+	for _, passed := range []string{baseline + "---\n" + restricted, restricted + "---\n" + baseline} {
+		vr = vetPodSecurityWithNamespaces(t, podSecurityPlainDeployment, fromNamespace, "", passed)
+		assert.False(t, vr.Passed)
+		assert.Contains(t, issueMessages(vr), `violates PodSecurity "restricted:latest"`)
+	}
+	for _, passed := range []string{baseline + "---\n" + namespaceDoc(""), namespaceDoc("") + "---\n" + baseline} {
+		vr = vetPodSecurityWithNamespaces(t, podSecurityPlainDeployment, fromNamespace, "", passed)
+		assert.True(t, vr.Passed, issueMessages(vr))
+	}
+
+	vr = vetPodSecurityWithNamespaces(t, podSecurityPlainDeployment, fromNamespace, "", "")
+	assert.False(t, vr.Passed)
+	assert.Contains(t, issueMessages(vr), "the Namespace default")
+	assert.Equal(t, "missing namespace", vr.FailedAttributes[0].Issues[0].Identifier)
+
+	vr = vetPodSecurityWithNamespaces(t, podSecurityPlainDeployment, fromNamespace, "", namespaceDoc(""))
+	assert.False(t, vr.Passed)
+	assert.Equal(t, "missing "+podSecurityEnforceLabel, vr.FailedAttributes[0].Issues[0].Identifier)
+}
+
+// Of two declarations passed at one level, the one at the newer version counts, in either order.
+func TestVetPodSecurityStandard_NewerVersionOfTwoDeclarations(t *testing.T) {
+	older := namespaceDoc("  labels:\n    pod-security.kubernetes.io/enforce: restricted\n    pod-security.kubernetes.io/enforce-version: v1.29\n")
+	newer := namespaceDoc("  labels:\n    pod-security.kubernetes.io/enforce: restricted\n    pod-security.kubernetes.io/enforce-version: v1.30\n")
+	unversioned := namespaceDoc("  labels:\n    pod-security.kubernetes.io/enforce: restricted\n")
+	for _, test := range []struct{ passed, want string }{
+		{older + "---\n" + newer, "restricted:v1.30"},
+		{newer + "---\n" + older, "restricted:v1.30"},
+		{newer + "---\n" + unversioned, "restricted:latest"},
+		{unversioned + "---\n" + older, "restricted:latest"},
+	} {
+		vr := vetPodSecurityWithNamespaces(t, podSecurityPlainDeployment, fromNamespace, fromNamespace, test.passed)
+		assert.False(t, vr.Passed)
+		assert.Contains(t, issueMessages(vr), `violates PodSecurity "`+test.want+`"`)
+	}
+}
+
+// With version namespace, a workload is checked at the version its Namespace is labeled with, or
+// the latest when it has none; only a Namespace that is not found fails.
+func TestVetPodSecurityStandard_VersionFromNamespace(t *testing.T) {
+	vr := vetPodSecurityWithNamespaces(t, podSecurityPlainDeployment, "baseline", fromNamespace, namespaceDoc(""))
+	assert.True(t, vr.Passed, issueMessages(vr))
+
+	vr = vetPodSecurityWithNamespaces(t, podSecurityPlainDeployment, "restricted", fromNamespace,
+		namespaceDoc("  labels:\n    pod-security.kubernetes.io/enforce-version: v1.30\n"))
+	assert.False(t, vr.Passed)
+	assert.Contains(t, issueMessages(vr), `violates PodSecurity "restricted:v1.30"`)
+
+	vr = vetPodSecurityWithNamespaces(t, podSecurityPlainDeployment, "baseline", fromNamespace, "")
+	assert.False(t, vr.Passed)
+	assert.Equal(t, "missing namespace", vr.FailedAttributes[0].Issues[0].Identifier)
 }

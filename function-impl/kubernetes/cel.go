@@ -54,7 +54,7 @@ func registerK8sCELFunctions(fh handler.FunctionRegistry, rp *k8skit.K8sResource
 				{
 					ParameterName: "expression",
 					Required:      true,
-					Description:   "CEL expression to validate each Kubernetes resource. The resource is available as 'object' (alias 'r'). Kubernetes CEL libraries are available: quantity(), url(), ip(), cidr(), regex(), format(). Must return a bool or a map with 'passed' (bool), 'details' (list of strings), and optionally 'issues' (list of maps with Identifier and Message, naming the check each finding fails) and 'failed_attributes' (list of maps with ResourceName, ResourceType, Path, Value, and optionally Score and Issues). Params are accessible via 'params'. ConfigHub metadata is accessible via 'functionContext' (e.g. functionContext.TargetID).",
+					Description:   "CEL expression to validate each Kubernetes resource. The resource is available as 'object' (alias 'r'). Kubernetes CEL libraries are available: quantity(), url(), ip(), cidr(), regex(), format(). Must return a bool or a map with 'passed' (bool), 'details' (list of strings), and optionally 'issues' (list of maps with Identifier and Message, naming the check each finding fails) and 'failed_attributes' (list of maps with ResourceName, ResourceType, Path, Value, and optionally Score and Issues). Params are accessible via 'params'. ConfigHub metadata is accessible via 'functionContext' (e.g. functionContext.TargetID). Other Units passed as OtherData, such as those a Trigger's OtherUnitSelections select, are available as 'other', a map from each key to the list of resources passed under it, and where each came from as 'otherOrigins', at the same positions (UnitSlug, SpaceSlug, UnitID, SpaceID, RevisionNum, UnitLabels). selects(selector, labels) says whether a Kubernetes label selector selects the labels, podLabels(resource) gives the labels of the pods a resource runs, wherever its kind keeps them (null for one that runs none), and namespaceLabels(namespaces, name) the labels of a Namespace in a list as a namespaceSelector matches them, e.g. other.policies.exists(p, p.metadata.namespace == r.metadata.namespace && selects(p.spec.podSelector, podLabels(r))).",
 					DataType:      api.DataTypeCEL,
 					Example:       `object.kind != 'Deployment' || object.spec.template.spec.containers.all(c, quantity(c.resources.limits['memory']).isGreaterThan(quantity('64Mi')))`,
 				},
@@ -76,12 +76,17 @@ func registerK8sCELFunctions(fh handler.FunctionRegistry, rp *k8skit.K8sResource
 			Validating:            true,
 			Hermetic:              true,
 			Idempotent:            true,
-			Description:           "Fails each resource for which a CEL expression, evaluated once per resource with the Kubernetes admission policy libraries (quantity, url, ip, cidr, regex, format), returns false or {passed: false}. Fix: change the resource so the expression holds; its details, or the Trigger's Description, say what it requires.",
+			Description:           "Fails each resource for which a CEL expression, evaluated once per resource with the Kubernetes admission policy libraries (quantity, url, ip, cidr, regex, format), returns false or {passed: false}. The expression can read other Units passed as OtherData, as other, and match label selectors with selects(selector, labels), podLabels(resource) and namespaceLabels(namespaces, name). Fix: change the resource so the expression holds; its details, or the Trigger's Description, say what it requires.",
 			FunctionType:          api.FunctionTypeCustom,
 			AffectedResourceTypes: []api.ResourceType{api.ResourceTypeAny},
+			OtherDataAnyKey:       true,
 		},
 		Function: func(fArgs handler.FunctionImplementationArguments) (gaby.Container, any, error) {
-			return generic.GenericFnVetCEL(rp, fArgs.Options, fArgs.FunctionContext, fArgs.ParsedData, fArgs.Arguments, k8sOpts...)
+			other, err := generic.OtherResourcesOf(fArgs)
+			if err != nil {
+				return fArgs.ParsedData, api.ValidationResultFalse, err
+			}
+			return generic.GenericFnVetCELWithOtherData(rp, fArgs.Options, fArgs.FunctionContext, fArgs.ParsedData, other, fArgs.Arguments, k8sOpts...)
 		},
 	}); err != nil {
 		slog.Error("failed to register function", "error", err)

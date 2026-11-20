@@ -1553,6 +1553,9 @@
         "references": "Trigger",
         "expandable": true
       },
+      "TriggerOtherUnitIDs": {
+        "dataType": "JSON"
+      },
       "UpdatedAt": {
         "dataType": "time"
       },
@@ -1748,6 +1751,9 @@
       "OtherUnitIDs": {
         "dataType": "map[string]uuid",
         "references": "Unit"
+      },
+      "OtherUnitSelections": {
+        "dataType": "JSON"
       },
       "Permissions": {
         "dataType": "map[string]map[string]map[uuid]bool"

@@ -220,6 +220,20 @@ func TestValidateRejectsChecksThatCannotRunTogether(t *testing.T) {
 			p.Checks[3].ExceptFrom = []string{"Runs Nonroot"}
 			p.Checks[4].ExceptFrom = []string{"Runs Nonroot"}
 		},
+		"other data differs": func(p *Pack) { p.Checks[0].OtherData = netpolData() },
+		"other data on a Target": func(p *Pack) {
+			p.Checks[5].AppliedTo, p.Checks[5].OtherData = AppliedToTarget, netpolData()
+		},
+		"other data with a bad key": func(p *Pack) {
+			p.Checks[5].OtherData = []OtherData{{Key: "net pols", ResourceTypes: []string{"v1/Service"}}}
+		},
+		"other data of every resource": func(p *Pack) { p.Checks[5].OtherData = []OtherData{{Key: "everything"}} },
+		"other data key twice": func(p *Pack) {
+			p.Checks[5].OtherData = append(netpolData(), netpolData()...)
+		},
+		"declared rule on a Target": func(p *Pack) {
+			p.Rules = []Rule{{Slug: "declared", AppliedTo: AppliedToTarget, OtherData: netpolData()}}
+		},
 	} {
 		p := testCatalog()
 		p.Checks = slices.Clone(p.Checks)
@@ -329,5 +343,47 @@ func TestLayoutHonorsExceptFrom(t *testing.T) {
 	}
 	if separated := ruleNamed(t, rules, "seccomp"); !slices.Equal(separated.ExceptFrom, []string{"test-pss", "test-runs-nonroot"}) {
 		t.Errorf("separated = %+v", separated)
+	}
+}
+
+func netpolData() []OtherData {
+	return []OtherData{{Key: "policies", ResourceTypes: []string{"networking.k8s.io/v1/NetworkPolicy"}}}
+}
+
+// Checks that read other data run in one rule when they read the same, in any order, and the
+// rule's Trigger selects exactly it: by default the resources of those types on the cluster the
+// Space releases to, narrowed by a WhereResource when the check has one.
+func TestLayoutCarriesOtherData(t *testing.T) {
+	p := testCatalog()
+	p.Checks = slices.Clone(p.Checks)
+	namespaces := OtherData{Key: "namespaces", ResourceTypes: []string{"v1/Namespace"},
+		WhereResource: "metadata.labels.team IS NOT NULL", Where: "Space.Labels.Region = EvaluatingSpace.Labels.Region"}
+	p.Checks[0].OtherData = append(netpolData(), namespaces)
+	p.Checks[1].OtherData = []OtherData{namespaces, netpolData()[0]}
+	p.Checks[2].OtherData = p.Checks[1].OtherData
+	if err := p.Validate(); err != nil {
+		t.Fatalf("Validate: %v", err)
+	}
+	rules, _, err := p.layout(nil, CheckSelection{All: true, Params: map[string]string{"max-replicas.max": "3"}})
+	if err != nil {
+		t.Fatalf("layout: %v", err)
+	}
+	selections := ruleNamed(t, rules, "test-baseline").otherUnitSelections()
+	want := map[string]goclientnew.OtherUnitSelection{
+		"policies": {Where: OnSameTarget, WhereResource: "ConfigHub.ResourceType = 'networking.k8s.io/v1/NetworkPolicy'"},
+		"namespaces": {Where: "Space.Labels.Region = EvaluatingSpace.Labels.Region",
+			WhereResource: "ConfigHub.ResourceType = 'v1/Namespace' AND metadata.labels.team IS NOT NULL"},
+	}
+	if len(selections) != len(want) {
+		t.Fatalf("selections = %v, want %v", selections, want)
+	}
+	for key, selection := range want {
+		if selections[key] != selection {
+			t.Errorf("selections[%s] = %+v, want %+v", key, selections[key], selection)
+		}
+	}
+	// A rule that reads nothing else states that it has no selections.
+	if got := ruleNamed(t, rules, "test-pss").otherUnitSelections(); got == nil || len(got) != 0 {
+		t.Errorf("test-pss selections = %#v, want an empty map", got)
 	}
 }
