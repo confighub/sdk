@@ -112,6 +112,7 @@ func (ch Change) include() *string {
 // Where is required for org-wide invocation and bulk patch.
 type Selector struct {
 	Where         string // unit filter, e.g. "Slug = 'checkout'" or "SpaceID = '...'"
+	Filter        string // a Filter entity whose unit selection applies too, by ID, or space/slug as the API takes it
 	WhereData     string // filter on config data
 	WhereResource string // filter on resources within the config data
 	ResourceType  string // e.g. "apps/v1/Deployment"
@@ -306,6 +307,9 @@ func invokeRequest(ctx context.Context, c *Client, sel Selector, ch Change, dryR
 	if sel.Where != "" {
 		params.Where = &sel.Where
 	}
+	if sel.Filter != "" {
+		params.Filter = &sel.Filter
+	}
 	if sel.IncludeHidden != "" {
 		params.IncludeHidden = &sel.IncludeHidden
 	}
@@ -333,7 +337,7 @@ func invokeRequest(ctx context.Context, c *Client, sel Selector, ch Change, dryR
 		return nil, err
 	}
 	params.Guards, params.InheritedGuards, params.Clearance = gp.Guards, gp.InheritedGuards, gp.Clearance
-	opening := Selector{Where: sel.Where, WhereData: sel.WhereData, ResourceType: sel.ResourceType,
+	opening := Selector{Where: sel.Where, Filter: sel.Filter, WhereData: sel.WhereData, ResourceType: sel.ResourceType,
 		IncludeHidden: sel.IncludeHidden, ToolchainType: sel.toolchain()}
 	if params.ChangeSetId, err = ch.OpenChangeSet(ctx, c, opening); err != nil {
 		return nil, err

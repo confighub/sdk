@@ -6,14 +6,13 @@ package jsonkit
 
 import (
 	"bytes"
-	"encoding/json"
 	"fmt"
 
 	"github.com/confighub/sdk/core/configkit/yamlkit"
 	"github.com/confighub/sdk/core/constants"
 	"github.com/confighub/sdk/core/function/api"
-	"github.com/confighub/sdk/core/workerapi"
 	"github.com/confighub/sdk/core/third_party/gaby"
+	"github.com/confighub/sdk/core/workerapi"
 )
 
 // User data errors should not be logged here. They will be logged by the caller.
@@ -31,9 +30,6 @@ func NewJSONResourceProvider() *JSONResourceProviderType {
 		ResourceProviderRegistry: yamlkit.NewResourceProviderRegistry(workerapi.ToolchainAppConfigJSON),
 	}
 }
-
-
-
 
 // DefaultResourceCategory returns the default resource category to assume, which is AppConfig in this case.
 func (*JSONResourceProviderType) DefaultResourceCategory() api.ResourceCategory {
@@ -144,46 +140,35 @@ func (*JSONResourceProviderType) GetToolchainType() workerapi.ToolchainType {
 	return workerapi.ToolchainAppConfigJSON
 }
 
-// NativeToYAML converts JSON data to YAML format.
-// Key order from the JSON source is preserved.
+// NativeToYAML converts JSON data to YAML. Object members keep their order,
+// numbers keep the text they are written as, and the top-level value may be
+// of any type (see gaby.ParseJSON).
 func (*JSONResourceProviderType) NativeToYAML(data []byte) ([]byte, error) {
-	if len(data) == 0 {
+	if len(bytes.TrimSpace(data)) == 0 {
 		return []byte{}, nil
 	}
-
-	// Parse JSON with gaby (preserves key order via kyaml)
 	doc, err := gaby.ParseJSON(data)
 	if err != nil {
 		return nil, fmt.Errorf("error parsing JSON: %w", err)
 	}
-
 	return doc.Bytes(), nil
 }
 
-// YAMLToNative converts YAML data to JSON format.
+// YAMLToNative converts YAML data to JSON indented by two spaces. Keys keep
+// their order, and a number is written as its YAML text when that is valid
+// JSON (see gaby.NodeToJSON), so that YAMLToNative undoes NativeToYAML
+// exactly for JSON in that layout.
 func (*JSONResourceProviderType) YAMLToNative(yamlData []byte) ([]byte, error) {
 	if len(yamlData) == 0 {
 		return []byte{}, nil
 	}
-
-	// Parse YAML with gaby
 	doc, err := gaby.ParseYAML(yamlData)
 	if err != nil {
 		return nil, fmt.Errorf("error parsing YAML: %w", err)
 	}
-
-	// Get compact JSON from gaby (preserves key order)
-	compactJSON, err := doc.MarshalJSON()
+	out, err := gaby.NodeToJSON(doc.YNode(), "  ")
 	if err != nil {
 		return nil, fmt.Errorf("error converting YAML to JSON: %w", err)
 	}
-
-	// Re-indent for readability (json.Indent preserves key order)
-	var indented bytes.Buffer
-	if err := json.Indent(&indented, compactJSON, "", "  "); err != nil {
-		return nil, fmt.Errorf("error indenting JSON: %w", err)
-	}
-	indented.WriteByte('\n')
-
-	return indented.Bytes(), nil
+	return append(out, '\n'), nil
 }

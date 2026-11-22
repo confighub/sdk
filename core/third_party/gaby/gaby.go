@@ -122,6 +122,27 @@ type YamlDoc struct {
 	node       *yaml.RNode
 }
 
+// DeepCopy returns a copy of the document that shares no nodes with it, so that editing one
+// leaves the other as it was. It is several times cheaper than serializing and parsing again.
+func (c *YamlDoc) DeepCopy() *YamlDoc {
+	if c == nil {
+		return nil
+	}
+	return &YamlDoc{isEmptyDoc: c.isEmptyDoc, node: c.node.Copy()}
+}
+
+// DeepCopy returns a copy of every document in the container. See YamlDoc.DeepCopy.
+func (m Container) DeepCopy() Container {
+	if m == nil {
+		return nil
+	}
+	docs := make(Container, len(m))
+	for i, doc := range m {
+		docs[i] = doc.DeepCopy()
+	}
+	return docs
+}
+
 // Data returns the underlying node of the target element in the YAML structure.
 func (c *YamlDoc) Data() interface{} {
 	if c == nil {
@@ -236,7 +257,7 @@ func (c *YamlDoc) searchStrict(hierarchy ...string) (*YamlDoc, error) {
 				return nil, fmt.Errorf("failed to resolve path segment '%v': %v", pathSeg, err)
 			}
 			if fieldNode == nil {
-				return nil, fmt.Errorf("failed to resolve path segment '%v': field not found", pathSeg)
+				return nil, fmt.Errorf("failed to resolve path segment '%v': %w", pathSeg, ErrNotFound)
 			}
 			node = fieldNode
 		case yaml.SequenceNode:
@@ -323,9 +344,27 @@ func (c *YamlDoc) JSONPointer(path string) (*YamlDoc, error) {
 	return c.searchStrict(hierarchy...)
 }
 
+// JSONPointerToPath converts a JSON pointer to a dot path. Each segment is unescaped from the
+// pointer's encoding ("~1" for "/", "~0" for "~") and escaped for the dot path's ("~1" for
+// ".", "~0" for "~"), so a key holding either character still names one segment.
 func JSONPointerToPath(path string) string {
-	// Start simple
-	return strings.ReplaceAll(path, "/", ".")
+	hierarchy, err := JSONPointerToSlice(path)
+	if err != nil {
+		// Not a pointer, which has to start with "/"; convert its separators anyway.
+		return strings.ReplaceAll(path, "/", ".")
+	}
+	var b strings.Builder
+	for _, segment := range hierarchy {
+		b.WriteByte('.')
+		b.WriteString(escapeDotPathSegment(segment))
+	}
+	return b.String()
+}
+
+// escapeDotPathSegment escapes a path segment for a dot path, the reverse of
+// UnescapeDotsInPathSegment.
+func escapeDotPathSegment(segment string) string {
+	return strings.ReplaceAll(strings.ReplaceAll(segment, "~", "~0"), ".", "~1")
 }
 
 // Path searches the YAML structure following a path in dot notation,
@@ -379,6 +418,9 @@ func (c *YamlDoc) IsEmptyDoc() bool {
 }
 
 func (c *YamlDoc) IsArray() bool {
+	if c == nil || c.node == nil {
+		return false
+	}
 	return c.node.YNode().Kind == yaml.SequenceNode
 }
 
@@ -530,6 +572,7 @@ func (c *YamlDoc) setImpl(value interface{}, expandArrays bool, hierarchy ...str
 				if err != nil {
 					return nil, err
 				}
+				moveKeyLineCommentToEmptyCollection(node.YNode(), pathSeg, fieldNode.YNode())
 			}
 			node = fieldNode
 		case yaml.SequenceNode:
@@ -580,6 +623,8 @@ func (c *YamlDoc) setImpl(value interface{}, expandArrays bool, hierarchy ...str
 						} else if i == index {
 							newNode.Kind = yaml.MappingNode
 						} else {
+							newNode.Kind = yaml.ScalarNode
+							newNode.Value = "null"
 							newNode.Tag = yaml.NodeTagNull
 						}
 						err := node.PipeE(yaml.Append(newNode))
@@ -613,12 +658,96 @@ func (c *YamlDoc) setImpl(value interface{}, expandArrays bool, hierarchy ...str
 	return &YamlDoc{node: node}, nil
 }
 
+// setValue replaces the value of node. A *yaml.Node or *yaml.RNode value replaces the whole
+// node, comments and style included. Any other value is converted to YAML and keeps the node's
+// comments, and its style when its kind and tag are unchanged: a quoted string stays quoted and a
+// flow sequence stays flow, but a number set over a quoted string is written as a number. A style
+// the new value needs to be read back replaces the node's: a string that starts with a tab and
+// holds a newline is double-quoted even over a literal block.
 func setValue(node *yaml.Node, value interface{}) error {
+	switch v := value.(type) {
+	case *yaml.Node:
+		// direct copy without decoding
+		// by using yaml.Node, we solved key/value reordering problem
+		// caused by decoding YAML maps into Go's maps, and back again.
+		*node = *v
+		return nil
+	case *yaml.RNode:
+		if v == nil || v.YNode() == nil {
+			return setValue(node, nil)
+		}
+		*node = *v.YNode()
+		return nil
+	}
+	replacement := &yaml.Node{}
+	if err := buildValue(replacement, value); err != nil {
+		return err
+	}
+	if node.Kind != replacement.Kind || node.Tag != replacement.Tag {
+		node.Style = 0
+	}
+	// A style the new value needs to be read back, such as the double quotes of a string that
+	// starts with a tab and holds a newline, replaces whatever style the node had.
+	if replacement.Style != 0 {
+		node.Style = replacement.Style
+	}
+	if node.Kind != replacement.Kind {
+		// A block mapping or sequence has no line of its own for a line comment: yaml.v3
+		// renders one on the value node after whatever follows it, or not at all. Keep it
+		// with the value by making it the head comment of the first child.
+		if node.LineComment != "" && len(replacement.Content) > 0 {
+			first := replacement.Content[0]
+			first.HeadComment = joinComments(node.LineComment, first.HeadComment)
+			node.LineComment = ""
+		}
+	}
+	node.Kind = replacement.Kind
+	node.Tag = replacement.Tag
+	node.Value = replacement.Value
+	node.Content = replacement.Content
+	return nil
+}
+
+// moveKeyLineCommentToEmptyCollection moves the line comment of a mapping key onto its value
+// when the value is an empty mapping or sequence. yaml.v3 writes such a value, which is always
+// in flow style, on the line after a commented key, where it is not valid YAML; on the value it
+// renders as "key: {} # comment".
+func moveKeyLineCommentToEmptyCollection(mapping *yaml.Node, key string, value *yaml.Node) {
+	if (value.Kind != yaml.MappingNode && value.Kind != yaml.SequenceNode) || len(value.Content) > 0 {
+		return
+	}
+	for i := 0; i+1 < len(mapping.Content); i += 2 {
+		keyNode := mapping.Content[i]
+		if keyNode.Value != key || mapping.Content[i+1] != value || keyNode.LineComment == "" {
+			continue
+		}
+		value.LineComment = joinComments(keyNode.LineComment, value.LineComment)
+		keyNode.LineComment = ""
+		return
+	}
+}
+
+// joinComments joins comment text, each on its own lines, skipping empty ones.
+func joinComments(comments ...string) string {
+	var nonEmpty []string
+	for _, c := range comments {
+		if c != "" {
+			nonEmpty = append(nonEmpty, c)
+		}
+	}
+	return strings.Join(nonEmpty, "\n")
+}
+
+// buildValue fills an empty node from a Go value.
+func buildValue(node *yaml.Node, value interface{}) error {
 	switch v := value.(type) {
 	case string:
 		node.Kind = yaml.ScalarNode
 		node.Value = v
 		node.Tag = yaml.NodeTagString
+		if style := stringStyle(v); style != 0 {
+			node.Style = style
+		}
 	case int:
 		node.Kind = yaml.ScalarNode
 		node.Value = strconv.Itoa(v)
@@ -637,6 +766,7 @@ func setValue(node *yaml.Node, value interface{}) error {
 		node.Tag = yaml.NodeTagFloat
 	case map[string]interface{}:
 		node.Kind = yaml.MappingNode
+		node.Tag = yaml.NodeTagMap
 		for key, val := range v {
 			childNode := &yaml.Node{}
 			err := setValue(childNode, val)
@@ -651,6 +781,7 @@ func setValue(node *yaml.Node, value interface{}) error {
 		}
 	case *orderedmap.OrderedMap[string, interface{}]:
 		node.Kind = yaml.MappingNode
+		node.Tag = yaml.NodeTagMap
 		for pair := v.Oldest(); pair != nil; pair = pair.Next() {
 			childNode := &yaml.Node{}
 			err := setValue(childNode, pair.Value)
@@ -665,6 +796,7 @@ func setValue(node *yaml.Node, value interface{}) error {
 		}
 	case []interface{}:
 		node.Kind = yaml.SequenceNode
+		node.Tag = yaml.NodeTagSeq
 		for _, val := range v {
 			childNode := &yaml.Node{}
 			err := setValue(childNode, val)
@@ -677,11 +809,6 @@ func setValue(node *yaml.Node, value interface{}) error {
 		node.Kind = yaml.ScalarNode
 		node.Value = "null"
 		node.Tag = yaml.NodeTagNull
-	case *yaml.Node:
-		// direct copy without decoding
-		// by using yaml.Node, we solved key/value reordering problem
-		// caused by decoding YAML maps into Go's maps, and back again.
-		*node = *v
 	default:
 		return fmt.Errorf("unsupported value type: %T", value)
 	}
@@ -812,8 +939,8 @@ func (er ElementRemover) Filter(node *yaml.RNode) (*yaml.RNode, error) {
 	if seqNode.Kind != yaml.SequenceNode {
 		return node, fmt.Errorf("node is not a sequence")
 	}
-	if len(seqNode.Content) <= er.Index {
-		return node, fmt.Errorf("index out of range")
+	if er.Index < 0 || len(seqNode.Content) <= er.Index {
+		return node, ErrOutOfBounds
 	}
 	seqNode.Content = append(seqNode.Content[:er.Index], seqNode.Content[er.Index+1:]...)
 	return node, nil
@@ -861,8 +988,11 @@ func (c *YamlDoc) Delete(hierarchy ...string) error {
 		}
 	}
 	lastSeg := hierarchy[len(hierarchy)-1]
-	if index, err := strconv.Atoi(lastSeg); err == nil {
-		// lastSeg is an integer index
+	if node.YNode().Kind == yaml.SequenceNode {
+		index, err := strconv.Atoi(lastSeg)
+		if err != nil {
+			return fmt.Errorf("failed to resolve path segment '%v': invalid array index", lastSeg)
+		}
 		if err := node.PipeE(ElementRemover{Index: index}); err != nil {
 			return err
 		}
@@ -1330,8 +1460,8 @@ func injectCommentsIntoMapping(node *yaml.Node) error {
 // MergeFn merges two objects using a provided function to resolve collisions.
 //
 // The collision function receives two interface{} arguments, destination (the
-// original object) and source (the object being merged into the destination).
-// Whichever value is returned becomes the new value in the destination object
+// original object) and source (the object being merged into the destination),
+// decoded as Data decodes them. Whichever value is returned becomes the new value in the destination object
 // at the location of the collision.
 func (c *YamlDoc) MergeFn(source *YamlDoc, collisionFn func(destination, source interface{}) interface{}) error {
 	if source.node.YNode().Kind != yaml.MappingNode {
@@ -1372,11 +1502,8 @@ func (c *YamlDoc) MergeFn(source *YamlDoc, collisionFn func(destination, source 
 						}
 					} else {
 						// Not both mappings, resolve collision
-						destValue := interface{}(destValueNode)
-						sourceValue := interface{}(sourceValueNode)
-						if err != nil {
-							return err
-						}
+						destValue := (&YamlDoc{node: destValueNode}).Data()
+						sourceValue := (&YamlDoc{node: sourceValueNode}).Data()
 						resolvedValue := collisionFn(destValue, sourceValue)
 						// Set the resolved value in dest
 						newValueNode := &yaml.Node{}
@@ -1393,8 +1520,8 @@ func (c *YamlDoc) MergeFn(source *YamlDoc, collisionFn func(destination, source 
 			}
 		} else {
 			// Nodes are not both mappings, resolve collision at this node
-			destValue := interface{}(destNode)
-			sourceValue := interface{}(sourceNode)
+			destValue := (&YamlDoc{node: destNode}).Data()
+			sourceValue := (&YamlDoc{node: sourceNode}).Data()
 			resolvedValue := collisionFn(destValue, sourceValue)
 			// Set the resolved value in destNode
 			err := setValue(destNode.YNode(), resolvedValue)
@@ -1485,51 +1612,75 @@ then reassign with Set.
 
 // ArrayAppend attempts to append a value onto a YAML array at a path. If the
 // target is not a YAML array then it will be converted into one, with its
-// original contents set to the first element of the array.
+// original contents set to the first element of the array. A missing or null
+// target becomes an array holding only the value.
 func (c *YamlDoc) ArrayAppend(value interface{}, hierarchy ...string) error {
-	// Get the node at the specified hierarchy
+	return c.arrayAppendValues([]interface{}{value}, hierarchy)
+}
+
+// arrayAppendValues appends values to the array at a path, converting the target
+// into an array as ArrayAppend describes.
+func (c *YamlDoc) arrayAppendValues(values []interface{}, hierarchy []string) error {
 	targetContainer, err := c.searchStrict(hierarchy...)
 	if err != nil && !errors.Is(err, ErrNotFound) {
 		return err
 	}
-
-	var node *yaml.RNode
-	if targetContainer != nil {
-		node = targetContainer.node
+	var target *yaml.Node
+	if err == nil && targetContainer != nil && targetContainer.node != nil {
+		target = targetContainer.node.YNode()
 	}
 
-	if node != nil && node.YNode().Kind == yaml.SequenceNode {
-		// Node is a sequence, append the value
+	var elements []*yaml.Node
+	for _, value := range values {
 		valueNode := &yaml.Node{}
-		err := setValue(valueNode, value)
-		if err != nil {
+		if err := setValue(valueNode, value); err != nil {
 			return err
 		}
-		return node.PipeE(yaml.Append(valueNode))
+		elements = append(elements, valueNode)
 	}
 
-	// Create a new sequence node
-	newSequenceNode := &yaml.Node{
-		Kind: yaml.SequenceNode,
+	if target != nil && target.Kind == yaml.SequenceNode {
+		target.Content = append(target.Content, elements...)
+		return nil
 	}
-
-	// If the node exists and has data, add it as the first element
-	if node != nil {
-		// Add the existing node as the first element
-		newSequenceNode.Content = append(newSequenceNode.Content, node.YNode())
-	}
-
-	// Create a node for the new value
-	valueNode := &yaml.Node{}
-	err = setValue(valueNode, value)
-	if err != nil {
+	if target == nil {
+		_, err := c.Set(&yaml.Node{Kind: yaml.SequenceNode, Tag: yaml.NodeTagSeq, Content: elements}, hierarchy...)
 		return err
 	}
-	newSequenceNode.Content = append(newSequenceNode.Content, valueNode)
+	isNull := target.Kind == yaml.ScalarNode && target.Tag == yaml.NodeTagNull
+	if isNull && len(elements) == 0 && len(hierarchy) > 0 {
+		// An empty sequence is written in flow style, on the key's line, so it keeps the
+		// null's comments itself. Set moves a line comment on the key there too, since the
+		// encoder writes the sequence on the next line, where it is not YAML, after one. A
+		// root has no key, so it is converted in place below.
+		_, err := c.Set(&yaml.Node{
+			Kind:        yaml.SequenceNode,
+			Tag:         yaml.NodeTagSeq,
+			HeadComment: target.HeadComment,
+			LineComment: target.LineComment,
+			FootComment: target.FootComment,
+		}, hierarchy...)
+		return err
+	}
 
-	// Set the new sequence node at the path
-	_, err = c.Set(yaml.NewRNode(newSequenceNode), hierarchy...)
-	return err
+	// Convert the target in place, so it keeps its head and foot comments. Its old value is
+	// copied into the first element, and its line comment, which a block sequence has no
+	// line for, moves with it.
+	if !isNull {
+		first := *target
+		first.HeadComment, first.FootComment = "", ""
+		target.LineComment = ""
+		elements = append([]*yaml.Node{&first}, elements...)
+	} else if target.LineComment != "" && len(elements) > 0 {
+		elements[0].LineComment = joinComments(elements[0].LineComment, target.LineComment)
+		target.LineComment = ""
+	}
+	target.Kind = yaml.SequenceNode
+	target.Tag = yaml.NodeTagSeq
+	target.Value = ""
+	target.Style = 0
+	target.Content = elements
+	return nil
 }
 
 // ArrayAppendP attempts to append a value onto a YAML array at a path using dot
@@ -1547,58 +1698,10 @@ func (c *YamlDoc) ArrayAppendP(value interface{}, path string) error {
 // []interface{} during the append operation, resulting in concatenation of each
 // element, rather than appending as a single element.
 func (c *YamlDoc) ArrayConcat(value interface{}, hierarchy ...string) error {
-	// Get the node at the specified hierarchy
-	targetContainer, err := c.searchStrict(hierarchy...)
-	if err != nil && !errors.Is(err, ErrNotFound) {
-		return err
+	if values, ok := value.([]interface{}); ok {
+		return c.arrayAppendValues(values, hierarchy)
 	}
-
-	var node *yaml.RNode
-	if targetContainer != nil {
-		node = targetContainer.node
-	}
-
-	var arrayNode *yaml.Node
-	if node != nil && node.YNode().Kind == yaml.SequenceNode {
-		// Node is already a sequence
-		arrayNode = node.YNode()
-	} else {
-		// Create a new sequence node
-		arrayNode = &yaml.Node{
-			Kind: yaml.SequenceNode,
-		}
-
-		// If node exists, add it as the first element
-		if node != nil {
-			arrayNode.Content = append(arrayNode.Content, node.YNode())
-		}
-	}
-
-	// Now, handle the value
-	switch v := value.(type) {
-	case []interface{}:
-		// Expand the slice and append each element
-		for _, elem := range v {
-			elemNode := &yaml.Node{}
-			err := setValue(elemNode, elem)
-			if err != nil {
-				return err
-			}
-			arrayNode.Content = append(arrayNode.Content, elemNode)
-		}
-	default:
-		// Append the value
-		valueNode := &yaml.Node{}
-		err := setValue(valueNode, value)
-		if err != nil {
-			return err
-		}
-		arrayNode.Content = append(arrayNode.Content, valueNode)
-	}
-
-	// Set the array node at the path
-	_, err = c.Set(yaml.NewRNode(arrayNode), hierarchy...)
-	return err
+	return c.arrayAppendValues([]interface{}{value}, hierarchy)
 }
 
 // ArrayConcatP attempts to append a value onto a YAML array at a path using dot
@@ -1785,7 +1888,11 @@ func walkNode(path string, node *yaml.RNode, flat map[string]interface{}, includ
 		return walkSequenceNode(path, node, flat, includeEmpty)
 	case yaml.ScalarNode:
 		if path != "" {
-			flat[path] = node.YNode().Value
+			var value interface{}
+			if err := node.YNode().Decode(&value); err != nil {
+				return err
+			}
+			flat[path] = value
 		}
 		return nil
 	default:
@@ -1813,6 +1920,12 @@ func (c *YamlDoc) FlattenIncludeEmpty() (map[string]interface{}, error) {
 }
 
 func (c *YamlDoc) flatten(includeEmpty bool) (map[string]interface{}, error) {
+	if c == nil || c.node == nil {
+		return nil, ErrNotObjOrArray
+	}
+	if kind := c.node.YNode().Kind; kind != yaml.MappingNode && kind != yaml.SequenceNode {
+		return nil, ErrNotObjOrArray
+	}
 	flattened := make(map[string]interface{})
 	err := walkNode("", c.node, flattened, includeEmpty)
 	if err != nil {
@@ -1878,25 +1991,18 @@ func (c *YamlDoc) MarshalYAML() ([]byte, error) {
 	return []byte(str), nil
 }
 
-// MarshalJSON returns the JSON encoding of this container.
+// MarshalJSON returns the compact JSON encoding of this container, with
+// mapping keys in their order and numbers as they are written (see
+// NodeToJSON).
 func (c *YamlDoc) MarshalJSON() ([]byte, error) {
 	if c == nil || c.node == nil {
 		return EmptyDocument, nil
 	}
-	data, err := c.node.MarshalJSON()
+	data, err := NodeToJSON(c.node.YNode(), "")
 	if err != nil {
 		return EmptyDocument, err
 	}
 	return data, nil
-}
-
-// ParseJSON reads a JSON byte slice and returns a *YamlDoc.
-func ParseJSON(y []byte) (*YamlDoc, error) {
-	node, err := yaml.ConvertJSONToYamlNode(string(y))
-	if err != nil {
-		return nil, err
-	}
-	return &YamlDoc{node: node}, nil
 }
 
 // ParseYAML reads a YAML byte slice and returns a *YamlDoc.

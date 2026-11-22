@@ -24,8 +24,16 @@ var releasePublishCmd = &cobra.Command{
 Space), named as <component>/<variant>, or by the Space's slug or ID. The
 consuming Target is the Space's ReleaseTargetID, set with --release-target on `+"`cub space create`"+` or `+"`cub space update`"+`.
 
-By default each bundled Unit is captured at its head Revision. Pass --revision
-to instead pin each Unit to the highest-numbered Revision carrying a Tag. A Unit
+By default each bundled Unit is captured at its head Revision, except a Unit
+whose head is partway through a ChangeSet: one still open, or one that closed
+while the Unit was still in it. Such a Unit is captured at the Revision before
+the ChangeSet, so no Release publishes part of a change, and the rest of the
+Space can be released while one is in progress. The output names each Unit held
+back. A Unit created inside such a ChangeSet has nothing from before it, and is
+left out of the Release, and listed as skipped, when it has never been released.
+
+Pass --revision to instead pin each Unit to the highest-numbered Revision
+carrying a Tag. A Unit
 the Tag marks no Revision of is left out of the Release, and listed as skipped,
 when it has never been released; once a Unit has been released, the Tag has to
 mark one of its Revisions, since leaving it out would delete it from the Target.
@@ -77,10 +85,20 @@ bundles, which requires CreateChildren on the Space. Publishing a ChangeOrder
 also requires Use on the ChangeOrder.
 
 A publish is refused when a bundled Unit has outstanding ValidationErrors on the
-Revision it would bundle, or when that Revision is part of a ChangeSet that has not
-closed or is not where the ChangeSet ended. It is also refused when the Component
+Revision it would bundle, or when a Revision --revision names is part of a ChangeSet
+that has not closed or is not where the ChangeSet ended. It is also refused when the Component
 requires a ChangeWorkflow and the Release is not of a ChangeOrder that has one (for
 a ChangeOrder, the Component of the ChangeOrder's Space). --dry-run reports why.
+
+Release triggers -- triggers with the Release event, selected by the Space or by its
+release Target -- check what the Release bundles as a whole: each runs its validating
+functions once over the documents of the bundled Units it selects. One that fails
+refuses the Release, naming what it found, unless it is a --warn trigger, whose
+findings are recorded on the Release ("cub release get"). A Release trigger runs on its
+channel's client when it names a channel, such as a policy engine's function bot. If no
+client holds the channel, or none answers in time, the Release is refused rather than
+published unchecked, and publishing again once the client is back succeeds; a --warn
+trigger that could not run instead records that as a warning on the Release.
 
 A revision number, a Revision ID and the named revisions each pick out a
 Revision of one Unit, so they are not accepted. Slugs resolve like any other
@@ -102,6 +120,9 @@ previous Release deployed, and reports success.
 Examples:
 `+"```"+`
   cub release publish my-space
+
+  # See what would be released, and which Units an open ChangeSet holds back
+  cub release publish --dry-run my-space
 
   # Bundle each Unit at the Revision tagged "v1.2.0"
   cub release publish --revision v1.2.0 my-space
@@ -216,6 +237,7 @@ func releasePublishCmdRun(cmd *cobra.Command, args []string) error {
 		if !quiet && !isAlternativeOutput() {
 			tprint("Dry run: nothing was published. The release would be:")
 			displayReleaseDetails(res.JSON200.Release)
+			displayReleaseHeldBack(res.JSON200.HeldBack)
 			return nil
 		}
 		renderPayload(res.JSON200)
@@ -228,11 +250,15 @@ func releasePublishCmdRun(cmd *cobra.Command, args []string) error {
 	if res.JSON200.Message != "" {
 		if !quiet && !isAlternativeOutput() {
 			tprint("No change: %s", res.JSON200.Message)
+			displayReleaseHeldBack(res.JSON200.HeldBack)
 		}
 		renderPayload(res.JSON200)
 		return nil
 	}
 	displayCreateResults(release, "release", release.ReleaseID.String(), release.ReleaseID.String(), displayReleaseDetails)
+	if !quiet && !isAlternativeOutput() {
+		displayReleaseHeldBack(res.JSON200.HeldBack)
+	}
 
 	// A variant deployed to a `cub cluster up --controller sveltos` cluster has
 	// its ClusterProfile released only now that its first Release exists, and one
@@ -241,4 +267,13 @@ func releasePublishCmdRun(cmd *cobra.Command, args []string) error {
 		return err
 	}
 	return publishVariantFluxApp(cmd.OutOrStdout(), space.Space.SpaceID)
+}
+
+// displayReleaseHeldBack names the Units a publish bundled short of their head, because the head is
+// partway through a ChangeSet, and the Revision it bundled instead.
+func displayReleaseHeldBack(heldBack []goclientnew.ReleaseHeldBackUnit) {
+	for _, unit := range heldBack {
+		tprint("Held back unit %s at revision %d: its head, revision %d, is partway through changeset %s",
+			unit.UnitSlug, unit.RevisionNum, unit.HeadRevisionNum, unit.ChangeSetSlug)
+	}
 }

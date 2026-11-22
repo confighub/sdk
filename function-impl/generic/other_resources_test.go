@@ -6,6 +6,7 @@ package generic
 import (
 	"testing"
 
+	"github.com/google/cel-go/common/types"
 	"github.com/google/uuid"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -205,4 +206,55 @@ func TestVetCELAndStarlarkPodAndNamespaceLabels(t *testing.T) {
 	require.NoError(t, err)
 	vr = output.(api.ValidationResult)
 	assert.Equal(t, []string{"nothing selects db"}, vr.Details)
+}
+
+// A null in CEL reaches the helpers as nil, not as protobuf's NullValue, which reads as the number
+// 0: a null selector selects nothing, as a PodDisruptionBudget's missing selector does, null labels
+// are no labels, and a null resource runs no pods.
+func TestVetCELPassesNullToTheHelpersAsNil(t *testing.T) {
+	docs, err := gaby.ParseAll([]byte(coveredDeployments))
+	require.NoError(t, err)
+	args := stringArgsToFunctionArgs([]string{
+		`!selects(r.?spec.?selector.orValue(null), podLabels(r)) && selects({}, null) && podLabels(null) == null`,
+	})
+	_, output, err := GenericFnVetCELWithOtherData(testResourceProvider, nil, nil, docs, OtherResources{}, args)
+	require.NoError(t, err)
+	vr := output.(api.ValidationResult)
+	assert.True(t, vr.Passed, vr)
+
+	assert.Nil(t, CelToGo(types.NullValue))
+	assert.Equal(t, map[string]any{"selector": nil}, CelToGo(types.DefaultTypeAdapter.NativeToValue(map[string]any{"selector": nil})))
+}
+
+// vet-cel and vet-starlark read every resource they were given as resources, those WhereResource
+// leaves out included: here, a Deployment checked alone is covered by a NetworkPolicy beside it in
+// the same input, as a Release Trigger passes everything a Release bundles.
+func TestVetCELAndStarlarkReadResources(t *testing.T) {
+	docs, err := gaby.ParseAll([]byte(coveredDeployments + "---\n" + selectedPolicies))
+	require.NoError(t, err)
+	expressions, err := api.ParseAndValidateWhereResource("ConfigHub.ResourceType = 'apps/v1/Deployment'")
+	require.NoError(t, err)
+	deployments := &api.FunctionOptions{WhereResourceExpressions: expressions}
+
+	_, output, err := GenericFnVetCEL(testResourceProvider, deployments, nil, docs, stringArgsToFunctionArgs([]string{
+		`resources.exists(p, p.kind == 'NetworkPolicy' && p.metadata.namespace == r.metadata.namespace && selects(p.spec.podSelector, podLabels(r)))`,
+	}))
+	require.NoError(t, err)
+	vr := output.(api.ValidationResult)
+	assert.False(t, vr.Passed)
+	require.Len(t, vr.Details, 1, "only the Deployments are checked")
+	assert.Contains(t, vr.Details[0], "shop/db")
+
+	program := `def validate(r):
+  for p in resources:
+    if p["kind"] == "NetworkPolicy" and p["metadata"]["namespace"] == r["metadata"]["namespace"] and selects(p["spec"]["podSelector"], podLabels(r)):
+      return {"passed": True}
+  return {"passed": False, "details": ["nothing selects " + r["metadata"]["name"] + " of " + str(len(resources))]}
+`
+	_, output, err = genericFnVetStarlark(testResourceProvider, deployments, nil, docs, OtherResources{},
+		stringArgsToFunctionArgs([]string{program}))
+	require.NoError(t, err)
+	vr = output.(api.ValidationResult)
+	assert.False(t, vr.Passed)
+	assert.Equal(t, []string{"nothing selects db of 4"}, vr.Details)
 }

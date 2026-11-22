@@ -10,6 +10,8 @@ import (
 	"sort"
 	"strconv"
 	"strings"
+	"unicode/utf16"
+	"unicode/utf8"
 
 	"github.com/confighub/sdk/core/configkit/yamlkit"
 	"github.com/confighub/sdk/core/third_party/gaby"
@@ -35,6 +37,7 @@ func NewPropertiesParser() *PropertiesParser {
 func (p *PropertiesParser) ParseProperties(propertiesData []byte) error {
 	// Clear existing properties
 	p.properties = make(map[string]string)
+	p.keyOrder = nil
 	p.inlineComments = make(map[string]string)
 
 	reader := bytes.NewReader(propertiesData)
@@ -50,28 +53,29 @@ func (p *PropertiesParser) ParseProperties(propertiesData []byte) error {
 			continue
 		}
 
-		// Handle line continuations (backslash at end)
-		for strings.HasSuffix(line, "\\") {
+		// Handle line continuations (an unescaped backslash at the end)
+		for endsWithContinuation(line) {
 			line = line[:len(line)-1] // Remove backslash
-			if scanner.Scan() {
-				nextLine := strings.TrimSpace(scanner.Text())
-				line += nextLine
-				lineNum++
+			if !scanner.Scan() {
+				break
 			}
+			line += strings.TrimSpace(scanner.Text())
+			lineNum++
 		}
 
-		// Parse key-value pair
-		key, value, err := p.parseKeyValue(line)
-		if err != nil {
-			return fmt.Errorf("error parsing line %d: %w", lineNum, err)
+		// Parse key-value pair. The inline comment is split off before the
+		// value is unescaped, so that an escaped # doesn't start one.
+		rawKey, rawValue, ok := splitKeyValue(line)
+		if !ok {
+			return fmt.Errorf("error parsing line %d: no separator found in line: %s", lineNum, line)
 		}
+		key := unescapeProperty(rawKey)
+		cleanValue, comment := yamlkit.SplitInlineComment(rawValue)
+		value := unescapeProperty(cleanValue)
 
 		if key != "" {
-			// Strip inline comments from value
-			cleanValue, comment := yamlkit.SplitInlineComment(value)
 			if comment != "" {
 				p.inlineComments[key] = comment
-				value = cleanValue
 			}
 			if _, exists := p.properties[key]; !exists {
 				p.keyOrder = append(p.keyOrder, key)
@@ -83,73 +87,87 @@ func (p *PropertiesParser) ParseProperties(propertiesData []byte) error {
 	return scanner.Err()
 }
 
-// parseKeyValue extracts key and value from a properties line
-func (p *PropertiesParser) parseKeyValue(line string) (string, string, error) {
-	// Find the separator (= or :)
-	sepIndex := -1
-	for i, char := range line {
-		if char == '=' || char == ':' {
-			// Make sure it's not escaped
-			if i == 0 || line[i-1] != '\\' {
-				sepIndex = i
-				break
-			}
-		}
+// endsWithContinuation reports whether a line ends with a backslash that
+// isn't itself escaped, which continues the line on the next one.
+func endsWithContinuation(line string) bool {
+	n := 0
+	for i := len(line) - 1; i >= 0 && line[i] == '\\'; i-- {
+		n++
 	}
-
-	if sepIndex == -1 {
-		return "", "", fmt.Errorf("no separator found in line: %s", line)
-	}
-
-	key := strings.TrimSpace(line[:sepIndex])
-	value := strings.TrimSpace(line[sepIndex+1:])
-
-	// Unescape key and value
-	key = p.unescapeString(key)
-	value = p.unescapeString(value)
-
-	return key, value, nil
+	return n%2 == 1
 }
 
-// unescapeString handles Java Properties escaping
-func (p *PropertiesParser) unescapeString(s string) string {
-	result := strings.Builder{}
+// splitKeyValue splits a properties line at its first unescaped = or :,
+// returning the key and the value as written, with surrounding whitespace
+// removed, or false if the line has no separator.
+func splitKeyValue(line string) (key, value string, ok bool) {
+	for i := 0; i < len(line); i++ {
+		switch line[i] {
+		case '\\':
+			i++
+		case '=', ':':
+			return strings.TrimSpace(line[:i]), strings.TrimSpace(line[i+1:]), true
+		}
+	}
+	return "", "", false
+}
+
+// unescapeProperty undoes Java properties escaping: \t, \n, \r and \f, \uXXXX,
+// including surrogate pairs, and a backslash before any other character,
+// which stands for that character.
+func unescapeProperty(s string) string {
+	if !strings.Contains(s, "\\") {
+		return s
+	}
+	var result strings.Builder
 	for i := 0; i < len(s); i++ {
-		if s[i] == '\\' && i+1 < len(s) {
-			switch s[i+1] {
-			case 'n':
-				result.WriteByte('\n')
-			case 't':
-				result.WriteByte('\t')
-			case 'r':
-				result.WriteByte('\r')
-			case '\\':
-				result.WriteByte('\\')
-			case '=':
-				result.WriteByte('=')
-			case ':':
-				result.WriteByte(':')
-			case 'u':
-				// Unicode escape sequence \uXXXX
-				if i+5 < len(s) {
-					if code, err := strconv.ParseInt(s[i+2:i+6], 16, 32); err == nil {
-						result.WriteRune(rune(code))
-						i += 4 // Skip the next 4 characters
-					} else {
-						result.WriteByte(s[i+1])
-					}
-				} else {
-					result.WriteByte(s[i+1])
-				}
-			default:
-				result.WriteByte(s[i+1])
+		if s[i] != '\\' || i+1 >= len(s) {
+			result.WriteByte(s[i])
+			continue
+		}
+		i++
+		switch s[i] {
+		case 'n':
+			result.WriteByte('\n')
+		case 't':
+			result.WriteByte('\t')
+		case 'r':
+			result.WriteByte('\r')
+		case 'f':
+			result.WriteByte('\f')
+		case 'u':
+			r, ok := parseUnicodeEscape(s[i+1:])
+			if !ok {
+				result.WriteByte('u')
+				continue
 			}
-			i++ // Skip the escaped character
-		} else {
+			i += 4
+			if utf16.IsSurrogate(r) && strings.HasPrefix(s[i+1:], "\\u") {
+				if r2, ok := parseUnicodeEscape(s[i+3:]); ok {
+					if combined := utf16.DecodeRune(r, r2); combined != utf8.RuneError {
+						r = combined
+						i += 6
+					}
+				}
+			}
+			result.WriteRune(r)
+		default:
 			result.WriteByte(s[i])
 		}
 	}
 	return result.String()
+}
+
+// parseUnicodeEscape reads the four hex digits of a \u escape.
+func parseUnicodeEscape(s string) (rune, bool) {
+	if len(s) < 4 {
+		return 0, false
+	}
+	code, err := strconv.ParseUint(s[:4], 16, 32)
+	if err != nil {
+		return 0, false
+	}
+	return rune(code), true
 }
 
 // ToNestedMap converts flat properties to nested map structure
@@ -203,24 +221,9 @@ func (p *PropertiesParser) setNestedValue(m map[string]interface{}, key, value s
 	current[finalKey] = convertedValue
 }
 
-// convertValue attempts to convert string values to appropriate types
+// convertValue returns the value a property is stored as in YAML: its text.
+// Properties have no types; the application reading them interprets them.
 func (p *PropertiesParser) convertValue(value string) interface{} {
-	// Try boolean
-	if value == "true" || value == "false" {
-		return value == "true"
-	}
-
-	// Try integer
-	if intVal, err := strconv.ParseInt(value, 10, 64); err == nil {
-		return intVal
-	}
-
-	// Try float
-	if floatVal, err := strconv.ParseFloat(value, 64); err == nil {
-		return floatVal
-	}
-
-	// Return as string
 	return value
 }
 
@@ -229,9 +232,10 @@ func (p *PropertiesParser) GetProperties() map[string]string {
 	return p.properties
 }
 
-
 // NativeToYAML converts Properties data to YAML format.
 // Comments are preserved as $comment$ keys. Key order from the source is preserved.
+// Every value is a string, since properties have no types (see
+// yamlkit.TextValuedResourceProvider).
 func (*PropertiesResourceProviderType) NativeToYAML(data []byte) ([]byte, error) {
 	// Parse properties config (tracks key order)
 	parser := NewPropertiesParser()
@@ -273,7 +277,7 @@ func (*PropertiesResourceProviderType) NativeToYAML(data []byte) ([]byte, error)
 		}
 
 		// Add data value
-		if err := yamlkit.SetPath(doc, parser.convertValue(parser.properties[flatKey]), parts...); err != nil {
+		if err := yamlkit.SetPath(doc, parser.properties[flatKey], parts...); err != nil {
 			return []byte{}, err
 		}
 

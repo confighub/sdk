@@ -8,8 +8,8 @@ import (
 	"github.com/confighub/sdk/core/configkit/yamlkit"
 	"github.com/confighub/sdk/core/constants"
 	"github.com/confighub/sdk/core/function/api"
-	"github.com/confighub/sdk/core/workerapi"
 	"github.com/confighub/sdk/core/third_party/gaby"
+	"github.com/confighub/sdk/core/workerapi"
 )
 
 // User data errors should not be logged here. They will be logged by the caller.
@@ -27,9 +27,6 @@ func NewPropertiesResourceProvider() *PropertiesResourceProviderType {
 		ResourceProviderRegistry: yamlkit.NewResourceProviderRegistry(workerapi.ToolchainAppConfigProperties),
 	}
 }
-
-
-
 
 // DefaultResourceCategory returns the default resource category to asssume, which is AppConfig in this case.
 func (*PropertiesResourceProviderType) DefaultResourceCategory() api.ResourceCategory {
@@ -95,7 +92,6 @@ func (rp *PropertiesResourceProviderType) ResourceNameStableCoreGetter(doc *gaby
 	return api.ResourceName(name), nil
 }
 
-
 func (*PropertiesResourceProviderType) TypeDescription() string {
 	return "Schema"
 }
@@ -137,6 +133,13 @@ func (*PropertiesResourceProviderType) RemoveAPIVersionFromResourceType(resource
 
 func (rp *PropertiesResourceProviderType) ResourceTypesAreSimilar(resourceTypeA, resourceTypeB api.ResourceType) bool {
 	return api.SameResourceType(rp, resourceTypeA, resourceTypeB)
+}
+
+// ValuesAreText reports that every properties value is text, which functions
+// that get and set ints and bools read and write (see
+// yamlkit.TextValuedResourceProvider).
+func (*PropertiesResourceProviderType) ValuesAreText() bool {
+	return true
 }
 
 func (*PropertiesResourceProviderType) DataType() api.DataType {

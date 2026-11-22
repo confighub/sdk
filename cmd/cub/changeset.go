@@ -18,7 +18,7 @@ A ChangeSet groups the revisions of a change across many units. Open one on unit
 'cub variant changeset open' or 'cub unit update --patch --changeset <changeset>', and close it
 with 'cub variant changeset close' or 'cub unit update --patch --changeset -'. A ChangeSet created
 with --change-workflow closes only once that workflow's Final prerequisites hold; closing anyway
-takes --force-reason (with --force-close on cub unit update). The Revisions of a ChangeSet that has not closed cannot be released.
+takes --force-reason (with --force-close on cub unit update). The Revisions of a ChangeSet that has not closed cannot be released: a Release bundles a Unit partway through one at the Revision before it.
 
 ChangeSets are explained at https://docs.confighub.com/background/entities/changeset/.
 A guide for how to use ChangeSets is at https://docs.confighub.com/guide/changes/.

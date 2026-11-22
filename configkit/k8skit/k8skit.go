@@ -10,6 +10,7 @@ import (
 	"strconv"
 	"strings"
 
+	"github.com/confighub/sdk/core/configkit"
 	"github.com/confighub/sdk/core/configkit/yamlkit"
 	"github.com/confighub/sdk/core/constants"
 	"github.com/confighub/sdk/core/function/api"
@@ -423,33 +424,21 @@ func (*K8sResourceProviderType) ContextPath(contextField string) string {
 // NativeToYAML converts native YAML comments (HeadComment, LineComment, FootComment)
 // into $comment$ map keys so they have a uniform representation across all formats.
 func (*K8sResourceProviderType) NativeToYAML(data []byte) ([]byte, error) {
-	if len(data) == 0 {
-		return data, nil
-	}
-	docs, err := gaby.ParseAll(data)
-	if err != nil {
-		return data, nil
-	}
-	for _, doc := range docs {
-		doc.ExtractCommentsToKeys()
-	}
-	return docs.Bytes(), nil
+	return configkit.YAMLNativeToYAML(data)
 }
 
 // YAMLToNative converts $comment$ map keys back into native YAML comments.
 func (*K8sResourceProviderType) YAMLToNative(yamlData []byte) ([]byte, error) {
-	if len(yamlData) == 0 {
-		return yamlData, nil
-	}
-	docs, err := gaby.ParseAll(yamlData)
-	if err != nil {
-		return yamlData, nil
-	}
-	for _, doc := range docs {
-		doc.InjectCommentsFromKeys()
-	}
-	return docs.Bytes(), nil
+	return configkit.YAMLYAMLToNative(yamlData)
 }
+
+// TreeToNative converts $comment$ map keys back into comments on the documents it is given, and
+// renders them.
+func (*K8sResourceProviderType) TreeToNative(docs gaby.Container) ([]byte, error) {
+	return configkit.YAMLTreeToNative(docs)
+}
+
+var _ configkit.TreeConverter = (*K8sResourceProviderType)(nil)
 
 func (*K8sResourceProviderType) DataType() api.DataType {
 	return api.DataTypeYAML

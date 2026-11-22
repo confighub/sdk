@@ -36,7 +36,7 @@ func registerVetNoLinkFindings(fh handler.FunctionRegistry, _ configkit.ConfigCo
 					ParameterName: "reasons",
 					Required:      false,
 					Description: "Comma-separated finding reasons to fail on: NeededNotFound, ProvidedNotFound, " +
-						"ResolveFailed. Empty fails on any outstanding finding.",
+						"ResolveFailed, ReferenceNotFound. Empty fails on any outstanding finding.",
 					DataType: api.DataTypeCSV,
 					Example:  "ProvidedNotFound,ResolveFailed",
 				},
@@ -52,7 +52,7 @@ func registerVetNoLinkFindings(fh handler.FunctionRegistry, _ configkit.ConfigCo
 			Include:               []api.FunctionContextPart{api.FunctionContextLinkFindings},
 			Hermetic:              true,
 			Idempotent:            true,
-			Description:           "Fails a Unit whose Links' resolves could not find what the Links name, such as a needed path the upstream does not provide. Fix: correct the Link, or the configuration it reads, as each finding says.",
+			Description:           "Fails a Unit whose Links' resolves could not find what the Links name, such as a needed path the upstream does not provide, or a reference naming a resource its Links' upstream Units do not provide. Fix: correct the Link, or the configuration it reads, as each finding says.",
 			FunctionType:          api.FunctionTypeCustom,
 			AffectedResourceTypes: []api.ResourceType{api.ResourceTypeAny},
 		},

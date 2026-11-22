@@ -108,7 +108,8 @@ Examples:
   # Merge with specific revisions
   cub unit update --space my-space myunit --merge-source upstream-unit --merge-base Tag:v1.0 --merge-end 42
 
-  # Merge with the unit itself (self-merge)
+  # Merge with the unit itself (self-merge). The range reversed, with --squash, takes a change
+  # back and keeps what came after it, which "cub unit revert" and "cub variant revert" do for you
   cub unit update --space my-space myunit --merge-source Self --merge-base LastReleasedRevisionNum --merge-end HeadRevisionNum
 
 Patch Mode Examples:
@@ -212,6 +213,7 @@ var (
 	mergeSource             string
 	mergeBase               string
 	mergeEnd                string
+	mergeRevisions          []string
 	mergeExternalSource     string
 	mergeEnableSubtraction  bool
 	protectChange           bool
@@ -249,6 +251,7 @@ func init() {
 	unitUpdateCmd.Flags().StringVar(&mergeSource, "merge-source", "", "source unit for 3-way merge (slug or UUID)")
 	unitUpdateCmd.Flags().StringVar(&mergeBase, "merge-base", "", "base revision for 3-way merge (uses same format as --restore); with --merge-external-source, overrides the default selection of the latest MergeExternal revision")
 	unitUpdateCmd.Flags().StringVar(&mergeEnd, "merge-end", "", "end revision of the source, for a 3-way merge, an --upgrade, or a --resolve (uses same format as --restore)")
+	unitUpdateCmd.Flags().StringArrayVar(&mergeRevisions, "merge-revisions", nil, "with --upgrade or --resolve, the upstream revisions to take instead of everything pending, which is cherry-picking: a revision as --restore takes one, which names that revision or for a changeset its revisions, or a range <from>..<to>; repeatable. The link's merge pointer stays where it is, and what was taken is listed as merged above it")
 	unitUpdateCmd.Flags().StringVar(&whereMutation, "where-mutation", "", "where expression selecting this unit's mutations whose paths the merge must not overwrite, on top of the unit's guards (only used with --merge-source). On a --merge-source Self revert, which is cleared for Override guards, it and the other guards are what the revert leaves alone")
 	unitUpdateCmd.Flags().StringVar(&filterMutation, "filter-mutation", "", "filter selecting this unit's mutations whose paths the merge must not overwrite, on top of the unit's guards (only used with --merge-source)")
 	unitUpdateCmd.Flags().StringVar(&mergeExternalSource, "merge-external-source", "", "external source identifier for merge-on-update")
@@ -387,12 +390,18 @@ func checkConflictingArgs(args []string) bool {
 		if mergeBase != "" {
 			failOnError(fmt.Errorf("--merge-base cannot be used with --upgrade or --resolve; the base is the last revision merged from the source"))
 		}
+		if len(mergeRevisions) > 0 && mergeEnd != "" {
+			failOnError(fmt.Errorf("--merge-revisions names the revisions to take, so --merge-end cannot be used with it"))
+		}
 		if whereMutation != "" || filterMutation != "" {
 			failOnError(fmt.Errorf("--where-mutation and --filter-mutation can only be used with --merge-source"))
 		}
 	} else {
 		if mergeBase != "" || mergeEnd != "" {
 			failOnError(fmt.Errorf("--merge-source, --merge-external-source, --upgrade, or --resolve must be provided with --merge-base or --merge-end"))
+		}
+		if len(mergeRevisions) > 0 {
+			failOnError(fmt.Errorf("--merge-revisions can only be used with --upgrade or --resolve"))
 		}
 		if whereMutation != "" || filterMutation != "" {
 			failOnError(fmt.Errorf("--where-mutation and --filter-mutation can only be used with --merge-source"))
@@ -411,6 +420,9 @@ func checkConflictingArgs(args []string) bool {
 		}
 		if mergeEnd != "" {
 			failOnError(fmt.Errorf("--merge-end cannot be used with --change-order; the end of the range is the change order's"))
+		}
+		if len(mergeRevisions) > 0 {
+			failOnError(fmt.Errorf("--merge-revisions cannot be used with --change-order; the change order's range is what it promotes"))
 		}
 		if tag != "" {
 			failOnError(fmt.Errorf("--tag cannot be used with --change-order; the change order tags the revisions it promotes and the ones that undo it"))
@@ -675,6 +687,14 @@ func unitUpdateCmdRun(cmd *cobra.Command, args []string) error {
 		}
 		newParams.MergeEnd = &mergeEndFormatted
 	}
+	if len(mergeRevisions) > 0 && (isUpgrade || resolve != "") {
+		selectors, err := formatRevisionSelectors(mergeRevisions, defaultSpaceID())
+		if err != nil {
+			return err
+		}
+		joined := strings.Join(selectors, ",")
+		newParams.MergeRevisions = &joined
+	}
 
 	if mergeSource != "" {
 		var mergeSourceUnit *goclientnew.Unit
@@ -847,10 +867,11 @@ func unitUpdateCmdRun(cmd *cobra.Command, args []string) error {
 	displayUpdateResults(unitDetails, "unit", args[0], unitDetails.UnitID.String(), displayUnitDetails)
 	if writeResult != nil {
 		space := selectedSpaceSlug
-		if space == "" {
+		if space == "" || space == "*" {
 			space = unitDetails.SpaceID.String()
 		}
 		displayWriteConflicts(space, args[0], writeResult.Conflicts, dryRun)
+		displayMergeSelections(args[0], writeResult.MergeSelections, dryRun)
 	}
 
 	// Display what the update changed, or would change, if requested.
@@ -1037,6 +1058,14 @@ func runBulkUnitUpdate() error {
 		}
 		params.MergeEnd = &mergeEndFormatted
 	}
+	if len(mergeRevisions) > 0 && (isUpgrade || resolve != "") {
+		selectors, err := formatRevisionSelectors(mergeRevisions, defaultSpaceID())
+		if err != nil {
+			return err
+		}
+		joined := strings.Join(selectors, ",")
+		params.MergeRevisions = &joined
+	}
 
 	// Add resolve parameter if specified
 	if resolve != "" {
@@ -1166,6 +1195,7 @@ func runBulkUnitUpdate() error {
 	for i := range *responses {
 		if response := &(*responses)[i]; response.Error == nil && response.Unit != nil {
 			displayWriteConflicts(response.Unit.SpaceID.String(), response.Unit.Slug, response.Conflicts, dryRun)
+			displayMergeSelections(response.Unit.Slug, response.MergeSelections, dryRun)
 		}
 	}
 
@@ -1267,6 +1297,75 @@ func awaitTriggersRemoval(unitDetails *goclientnew.Unit) error {
 	return nil
 }
 
+// unitToAwait is a Unit a command wrote, whose Triggers it waits for.
+type unitToAwait struct{ unitID, spaceID uuid.UUID }
+
+// maxTriggerAwaitRounds bounds how many times awaitUnitsTriggers waits again for Units written
+// again after their Triggers finished.
+const maxTriggerAwaitRounds = 10
+
+// awaitUnitsTriggers waits for the Triggers of the Units a command wrote to finish, one Unit at a
+// time, and reports the validation errors and warnings they leave, so that what runs next, such as
+// a publish, does not find a Unit still awaiting them.
+//
+// A Unit can be written again once another's Triggers finish, as when the resolve of a Link from
+// it follows a change to the Unit it is to, after the wait for it has passed. So the Units are
+// waited for again until one listing of each Space, which reads every Unit at the same moment,
+// finds none of them awaiting their Triggers.
+func awaitUnitsTriggers(units []unitToAwait) error {
+	if len(units) == 0 {
+		return nil
+	}
+	printAwaitingTriggers()
+	awaiting := units
+	for rounds := 0; len(awaiting) > 0; rounds++ {
+		if rounds == maxTriggerAwaitRounds {
+			return fmt.Errorf("the triggers of %d unit(s) kept being re-run", len(awaiting))
+		}
+		for _, u := range awaiting {
+			unitDetails, err := resolveUnit(u.unitID.String(), u.spaceID.String(), "*")
+			if err != nil {
+				return err
+			}
+			if err := awaitTriggersRemoval(unitDetails.Unit); err != nil {
+				return err
+			}
+		}
+		var err error
+		if awaiting, err = unitsAwaitingTriggers(units); err != nil {
+			return err
+		}
+	}
+	return nil
+}
+
+// unitsAwaitingTriggers lists, in one listing per Space, which of the Units are awaiting their
+// Triggers.
+func unitsAwaitingTriggers(units []unitToAwait) ([]unitToAwait, error) {
+	bySpace := map[uuid.UUID]map[uuid.UUID]bool{}
+	var spaces []uuid.UUID
+	for _, u := range units {
+		if bySpace[u.spaceID] == nil {
+			bySpace[u.spaceID] = map[uuid.UUID]bool{}
+			spaces = append(spaces, u.spaceID)
+		}
+		bySpace[u.spaceID][u.unitID] = true
+	}
+	var awaiting []unitToAwait
+	for _, spaceID := range spaces {
+		listed, err := apiListUnits(spaceID.String(), "ValidationErrors.awaiting/triggers = true", "UnitID")
+		if err != nil {
+			return nil, err
+		}
+		for _, u := range listed {
+			if bySpace[spaceID][u.UnitID] {
+				awaiting = append(awaiting, unitToAwait{unitID: u.UnitID, spaceID: spaceID})
+			}
+		}
+	}
+	return awaiting, nil
+}
+
 func handleBulkCreateOrUpdateResponse(responses *[]goclientnew.UnitCreateOrUpdateResponse, statusCode int, operationName, contextInfo string) error {
 	if responses == nil {
 		return fmt.Errorf("no response data received")
@@ -1275,29 +1374,14 @@ func handleBulkCreateOrUpdateResponse(responses *[]goclientnew.UnitCreateOrUpdat
 	// Wait for triggers BEFORE calling the generic display function. A dry run wrote nothing to
 	// wait for, and a unit it would have created does not exist.
 	if wait && !dryRun {
-		successfulUnits := []*goclientnew.Unit{}
+		var written []unitToAwait
 		for _, resp := range *responses {
 			if resp.Error == nil && resp.Unit != nil {
-				successfulUnits = append(successfulUnits, resp.Unit)
+				written = append(written, unitToAwait{unitID: resp.Unit.UnitID, spaceID: resp.Unit.SpaceID})
 			}
 		}
-
-		if len(successfulUnits) > 0 {
-			printAwaitingTriggers()
-			// Wait for each successfully updated unit
-			for _, unit := range successfulUnits {
-				// The units returned don't have the extended information, so we re-fetch them with that information.
-				unitExtended, err := resolveUnit(unit.UnitID.String(), unit.SpaceID.String(), "*")
-				if err != nil {
-					return err
-				}
-				err = awaitTriggersRemoval(unitExtended.Unit)
-				if err != nil {
-					return err
-				}
-				// Update the unit in the response with the latest state
-				// Note: We can't easily update the original response, but the triggers have been awaited
-			}
+		if err := awaitUnitsTriggers(written); err != nil {
+			return err
 		}
 	}
 
@@ -1518,8 +1602,15 @@ func parseSelectedRevisionParameterIn(spaceID string, revisionSpec string, resol
 				identifier = fmt.Sprintf("%d", subtracted)
 			}
 			// The APIs take the revision number itself; it doesn't have to be resolved to an ID.
+			// The one before a number is counted here, for servers that take Before: only with a
+			// name they have to look up.
 			if isBeforeModifier {
-				return fmt.Sprintf("Before:%s", identifier), false, nil
+				before, _ := strconv.ParseInt(identifier, 10, 64)
+				before--
+				if before < 1 {
+					return "", false, fmt.Errorf("there is no revision before revision %s", identifier)
+				}
+				return strconv.FormatInt(before, 10), false, nil
 			}
 			return identifier, false, nil
 

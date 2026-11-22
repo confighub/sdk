@@ -56,7 +56,7 @@ Examples:
   # List units with upstream revisions
   cub unit list --space my-space --where "UpstreamRevisionNum > 0"
 
-  # List units that need a value and have none of it bound to a link yet
+  # List units with a needed value or a reference that no link has bound yet
   cub unit list --where "NeededPaths.*.AttributeName IS NOT NULL AND NeededPaths.*.Details.BoundLinkID IS NULL"
 
   # List units that provide a named attribute

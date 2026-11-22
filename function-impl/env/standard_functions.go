@@ -4,8 +4,6 @@
 package env
 
 import (
-	"log/slog"
-
 	"github.com/confighub/sdk/configkit/envkit"
 	"github.com/confighub/sdk/core/configkit/yamlkit"
 	"github.com/confighub/sdk/core/function/api"
@@ -13,24 +11,10 @@ import (
 	"github.com/confighub/sdk/function-impl/generic"
 )
 
-// TODO: refactor to share code that's common across ToolchainTypes
-
 func registerStandardFunctions(fh handler.FunctionRegistry, rp *envkit.EnvResourceProviderType) {
+	// Env values are text; the int and bool functions read and write their text (see
+	// yamlkit.TextValuedResourceProvider).
 	generic.RegisterStandardFunctions(fh, rp, rp)
-
-	// Env only supports string types, so unregister int and bool functions
-	if err := fh.RegisterFunction("get-bool-path", nil); err != nil {
-		slog.Error("failed to unregister function", "error", err)
-	}
-	if err := fh.RegisterFunction("set-bool-path", nil); err != nil {
-		slog.Error("failed to unregister function", "error", err)
-	}
-	if err := fh.RegisterFunction("get-int-path", nil); err != nil {
-		slog.Error("failed to unregister function", "error", err)
-	}
-	if err := fh.RegisterFunction("set-int-path", nil); err != nil {
-		slog.Error("failed to unregister function", "error", err)
-	}
 }
 
 func initStandardFunctions(rp *envkit.EnvResourceProviderType) {

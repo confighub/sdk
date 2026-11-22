@@ -4,10 +4,17 @@
 package guardrails
 
 import (
+	"context"
+	"fmt"
+	"maps"
+	"net/http"
+	"net/http/httptest"
 	"reflect"
+	"slices"
 	"strings"
 	"testing"
 
+	"github.com/confighub/sdk/core/cubapi"
 	api "github.com/confighub/sdk/core/function/api"
 )
 
@@ -120,6 +127,7 @@ func TestDecide(t *testing.T) {
 		where, filter string
 		ownSelection  bool
 		own           int
+		upstream      bool // the Space selects the Triggers in its upstream Space
 		target        bool
 		wire          string // the WhereTrigger written, when wired
 		already, skip bool
@@ -127,6 +135,8 @@ func TestDecide(t *testing.T) {
 		{name: "new Space", ownSelection: true, wire: common(false, "rbac")},
 		{name: "new Target", ownSelection: true, target: true, wire: common(true, "rbac")},
 		{name: "Space with its own Triggers", ownSelection: true, own: 2, skip: true},
+		{name: "variant of a Space with no Triggers", ownSelection: true, upstream: true, wire: common(false, "rbac")},
+		{name: "variant of a Space with Triggers", ownSelection: true, upstream: true, own: 1, skip: true},
 		{name: "adds to a selection", where: common(false, "basic", "workload"), wire: common(false, "basic", "rbac", "workload")},
 		{name: "already selects the group", where: common(false, "basic", "rbac"), already: true},
 		{name: "another policy Space", where: strings.Replace(common(false, "basic"), "'common'", "'other'", 1), skip: true},
@@ -136,7 +146,11 @@ func TestDecide(t *testing.T) {
 	} {
 		t.Run(tc.name, func(t *testing.T) {
 			var plan Plan
-			if err := pack.decide(&plan, Wiring{Space: "s"}, "common", tc.where, tc.filter, tc.ownSelection, tc.own, tc.target); err != nil {
+			w := Wiring{Space: "s"}
+			if tc.upstream && tc.own > 0 {
+				w.selectsFrom = "its upstream Space base"
+			}
+			if err := pack.decide(&plan, w, "common", tc.where, tc.filter, tc.ownSelection, tc.own, tc.target); err != nil {
 				t.Fatal(err)
 			}
 			switch {
@@ -151,8 +165,97 @@ func TestDecide(t *testing.T) {
 			case tc.skip:
 				if len(plan.Skipped) != 1 || len(plan.Wire)+len(plan.AlreadyWired) != 0 {
 					t.Errorf("plan = %+v, want skipped", plan)
+				} else if tc.upstream && !strings.Contains(plan.Skipped[0].Reason, "upstream Space") {
+					t.Errorf("reason = %q, want it to name the upstream Space", plan.Skipped[0].Reason)
 				}
 			}
 		})
+	}
+}
+
+// A variant cub variant create made from a Space selecting its own Triggers selects the Triggers
+// in that upstream Space, and a variant made from the variant copies that selection. An install
+// wires them when that Space holds none, and leaves them alone when it holds some.
+func TestPlanWiresAVariantOfASpaceWithNoTriggers(t *testing.T) {
+	const (
+		policyID   = "10000000-0000-4000-8000-000000000000"
+		emptyBase  = "20000000-0000-4000-8000-000000000000"
+		fullBase   = "30000000-0000-4000-8000-000000000000"
+		emptyChild = "40000000-0000-4000-8000-000000000000"
+		fullChild  = "50000000-0000-4000-8000-000000000000"
+		emptyGrand = "60000000-0000-4000-8000-000000000000"
+		fullGrand  = "70000000-0000-4000-8000-000000000000"
+	)
+	space := func(id, slug, where, upstream string) string {
+		s := fmt.Sprintf(`{"Space":{"SpaceID":%q,"Slug":%q,"WhereTrigger":%q`, id, slug, where)
+		if upstream != "" {
+			s += fmt.Sprintf(`,"UpstreamSpaceID":%q`, upstream)
+		}
+		return s + "}}"
+	}
+	spaces := map[string]string{
+		emptyBase:  space(emptyBase, "empty-base", "", ""),
+		fullBase:   space(fullBase, "full-base", "", ""),
+		emptyChild: space(emptyChild, "empty-prod", "SpaceID = '"+emptyBase+"'", emptyBase),
+		fullChild:  space(fullChild, "full-prod", "SpaceID = '"+fullBase+"'", fullBase),
+		emptyGrand: space(emptyGrand, "empty-prod-eu", "SpaceID = '"+emptyBase+"'", emptyChild),
+		fullGrand:  space(fullGrand, "full-prod-eu", "SpaceID = '"+fullBase+"'", fullChild),
+	}
+	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("Content-Type", "application/json")
+		where := r.URL.Query().Get("where")
+		switch strings.TrimPrefix(r.URL.Path, "/api") {
+		case "/space":
+			if strings.Contains(where, "'common'") {
+				fmt.Fprintf(w, "[%s]", space(policyID, "common", "", ""))
+				return
+			}
+			for id, s := range spaces {
+				if strings.Contains(where, id) {
+					fmt.Fprintf(w, "[%s]", s)
+					return
+				}
+			}
+			all := slices.Sorted(maps.Values(spaces))
+			fmt.Fprintf(w, "[%s]", strings.Join(all, ","))
+		case "/trigger":
+			if strings.Contains(where, fullBase) {
+				fmt.Fprintf(w, `[{"Trigger":{"Slug":"own","SpaceID":%q}}]`, fullBase)
+				return
+			}
+			_, _ = w.Write([]byte(`[]`))
+		default:
+			t.Errorf("unexpected request %s %s", r.Method, r.URL.Path)
+			w.WriteHeader(http.StatusNotFound)
+		}
+	}))
+	t.Cleanup(srv.Close)
+	client, err := cubapi.NewClient(cubapi.ClientOptions{ServerURL: srv.URL, Token: "t"})
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	plan, err := packOf("rule").PlanFor(context.Background(), client, "common",
+		[]string{"empty-base", "full-base", "empty-prod", "full-prod", "empty-prod-eu", "full-prod-eu"}, Scope{})
+	if err != nil {
+		t.Fatal(err)
+	}
+	var wired, skipped []string
+	for _, w := range plan.Wire {
+		wired = append(wired, w.Space)
+	}
+	for _, s := range plan.Skipped {
+		skipped = append(skipped, s.Space+": "+s.Reason)
+	}
+	if want := []string{"empty-base", "empty-prod", "empty-prod-eu"}; !slices.Equal(wired, want) {
+		t.Errorf("wired %q, want %q", wired, want)
+	}
+	want := []string{
+		"full-base: has 1 Trigger(s) of its own, which a guardrail selection would stop running",
+		"full-prod: selects the 1 Trigger(s) in its upstream Space full-base, which a guardrail selection would stop running",
+		"full-prod-eu: selects the 1 Trigger(s) in the Space full-base, which a guardrail selection would stop running",
+	}
+	if !slices.Equal(skipped, want) {
+		t.Errorf("skipped %q, want %q", skipped, want)
 	}
 }

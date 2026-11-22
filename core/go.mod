@@ -19,8 +19,8 @@ require (
 	github.com/wk8/go-ordered-map/v2 v2.1.8
 	gopkg.in/yaml.v3 v3.0.1
 	oras.land/oras-go/v2 v2.6.2
-	sigs.k8s.io/kustomize/kyaml v0.18.1
-	sigs.k8s.io/yaml v1.4.0
+	sigs.k8s.io/kustomize/kyaml v0.20.1
+	sigs.k8s.io/yaml v1.5.0
 )
 
 require (
@@ -56,6 +56,8 @@ require (
 	github.com/valyala/bytebufferpool v1.0.0 // indirect
 	github.com/valyala/fasttemplate v1.2.2 // indirect
 	github.com/xlab/treeprint v1.2.0 // indirect
+	go.yaml.in/yaml/v2 v2.4.2 // indirect
+	go.yaml.in/yaml/v3 v3.0.3 // indirect
 	golang.org/x/crypto v0.57.0 // indirect
 	golang.org/x/exp v0.0.0-20240719175910-8a7402abbf56 // indirect
 	golang.org/x/net v0.60.0 // indirect
@@ -70,10 +72,10 @@ require (
 	sigs.k8s.io/json v0.0.0-20241014173422-cfa47c3a1cc8 // indirect
 )
 
-// Pin kustomize to v5.5.0
+// Pin kustomize to v5.7.1
 replace (
-	sigs.k8s.io/kustomize/api => sigs.k8s.io/kustomize/api v0.18.0
-	sigs.k8s.io/kustomize/kyaml => sigs.k8s.io/kustomize/kyaml v0.18.1
+	sigs.k8s.io/kustomize/api => sigs.k8s.io/kustomize/api v0.20.1
+	sigs.k8s.io/kustomize/kyaml => sigs.k8s.io/kustomize/kyaml v0.20.1
 )
 
 // Fix CVE-2022-28948

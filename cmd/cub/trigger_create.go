@@ -52,6 +52,11 @@ Events:
 
   - Mutation: Triggered when a resource is being modified
   - PostClone: Triggered after a resource is cloned
+  - Release: Triggered when a space publishes a Release. Its validating functions run once, over
+    the documents of every unit the Release bundles that the trigger selects, so a check can see
+    several resources at once. A failure refuses the Release unless the trigger is --warn, and what
+    it found is recorded on the Release ("cub release get"), not on the units. It runs on the
+    Releases of the spaces and targets that select it, and takes no other-unit data.
 
 Toolchain Types:
 
@@ -95,6 +100,9 @@ Single Trigger Examples:
 
   # Create a trigger to label every resource with its owning team
   cub trigger create --space my-space -o json label-team Mutation Kubernetes/YAML set-label team payments
+
+  # Refuse a Release in which a multi-replica Deployment has no PodDisruptionBudget
+  cub trigger create --space my-space pdb-covered Release Kubernetes/YAML vet-starlark "$(cat pdb.star)"
 
   # Create a trigger to set default names for cloned resources
   cub trigger create --space my-space -o json rename PostClone Kubernetes/YAML set-default-names

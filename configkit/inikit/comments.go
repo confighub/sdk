@@ -80,16 +80,8 @@ func extractINIComments(source []byte) map[string]string {
 
 		// Check for inline comment after value
 		value := strings.TrimSpace(trimmed[eqIdx+1:])
-		if idx := strings.Index(value, " #"); idx >= 0 {
-			inlineText := strings.TrimSpace(value[idx+2:])
-			commentKey := yamlkit.CommentKey(yamlkit.CommentLine, key)
-			if currentSection != "" {
-				comments[currentSection+"."+commentKey] = inlineText
-			} else {
-				comments[commentKey] = inlineText
-			}
-		} else if idx := strings.Index(value, " ;"); idx >= 0 {
-			inlineText := strings.TrimSpace(value[idx+2:])
+		if idx := inlineCommentStart(value); idx >= 0 {
+			inlineText := strings.TrimSpace(value[idx+1:])
 			commentKey := yamlkit.CommentKey(yamlkit.CommentLine, key)
 			if currentSection != "" {
 				comments[currentSection+"."+commentKey] = inlineText
@@ -203,4 +195,26 @@ func injectINIComments(iniOutput []byte, comments map[string]string) []byte {
 	}
 
 	return []byte(strings.Join(result, "\n"))
+}
+
+// inlineCommentStart returns the index of the # or ; that starts an inline
+// comment in a value as written, or -1, as go-ini reads one: in a value
+// quoted with """ or backticks, only after the closing quote, and in any
+// other value, at the first # or ;.
+func inlineCommentStart(value string) int {
+	start := 0
+	for _, quote := range []string{`"""`, "`"} {
+		if strings.HasPrefix(value, quote) {
+			end := strings.LastIndex(value[len(quote):], quote)
+			if end < 0 {
+				return -1
+			}
+			start = len(quote) + end + len(quote)
+			break
+		}
+	}
+	if idx := strings.IndexAny(value[start:], "#;"); idx >= 0 {
+		return start + idx
+	}
+	return -1
 }

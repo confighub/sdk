@@ -203,11 +203,12 @@ description = A test database
 	if !strings.Contains(yamlStr, "host:") {
 		t.Errorf("Expected YAML to contain 'host:', got: %s", yamlStr)
 	}
-	if !strings.Contains(yamlStr, "port: 5432") {
-		t.Errorf("Expected YAML to contain 'port: 5432' as int, got: %s", yamlStr)
+	// INI has no types, so numbers and bools are strings.
+	if !strings.Contains(yamlStr, `port: "5432"`) {
+		t.Errorf("Expected YAML to contain 'port: \"5432\"' as a string, got: %s", yamlStr)
 	}
-	if !strings.Contains(yamlStr, "ssl_enabled: true") {
-		t.Errorf("Expected YAML to contain 'ssl_enabled: true' as bool, got: %s", yamlStr)
+	if !strings.Contains(yamlStr, `ssl_enabled: "true"`) {
+		t.Errorf("Expected YAML to contain 'ssl_enabled: \"true\"' as a string, got: %s", yamlStr)
 	}
 	if !strings.Contains(yamlStr, "description: A test database") {
 		t.Errorf("Expected YAML to contain 'description: A test database' as string, got: %s", yamlStr)
@@ -338,9 +339,9 @@ database:
 	yamlStr := string(yamlDataBack)
 	t.Logf("Round-tripped YAML:\n%s", yamlStr)
 
-	// Check that the boolean value is preserved as false (not "false" string)
-	if !strings.Contains(yamlStr, "enabled: false") {
-		t.Errorf("Expected YAML to contain 'enabled: false' as boolean, got: %s", yamlStr)
+	// INI has no types, so the bool comes back as its text.
+	if !strings.Contains(yamlStr, `enabled: "false"`) {
+		t.Errorf("Expected YAML to contain 'enabled: \"false\"', got: %s", yamlStr)
 	}
 }
 

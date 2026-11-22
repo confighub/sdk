@@ -4,6 +4,7 @@
 package cubapi
 
 import (
+	"encoding/json"
 	"errors"
 	"fmt"
 	"net/http"
@@ -154,6 +155,21 @@ func InterpretErrorGeneric(err error, resp interface{}) error {
 		}
 	}
 
+	code := 0
+	if statusCode := reflect.ValueOf(resp).MethodByName("StatusCode"); statusCode.IsValid() {
+		code = int(statusCode.Call(nil)[0].Int())
+	}
+	reportError := func(name string, body any) error {
+		message, ok := errorResponseMessage(body)
+		if !ok {
+			return fmt.Errorf("unexpected response type for %s status %d req %s: %T", name, code, requestID, body)
+		}
+		if code == http.StatusUnauthorized {
+			return fmt.Errorf("authentication problem. Try logging in (again).\nDetailed message: %s. ", message)
+		}
+		return fmt.Errorf("HTTP %d for req %s: %s", code, requestID, message)
+	}
+
 	// Iterate over fields, looking for JSON<StatusCode> that isn't 200.
 	for i := 0; i < v.NumField(); i++ {
 		field := v.Field(i)
@@ -163,18 +179,24 @@ func InterpretErrorGeneric(err error, resp interface{}) error {
 		// For a JSONxxx field, check if it's non-nil
 		// Skip JSON200 and JSON207 as they are success responses
 		if strings.HasPrefix(name, "JSON") && !strings.HasSuffix(name, "200") && !strings.HasSuffix(name, "207") && !strings.HasSuffix(name, "Default") && !field.IsNil() {
-			// Should always be a http.Response Code integer
-			res := v.MethodByName("StatusCode").Call(nil)
-			code := res[0].Int()
-			message, ok := errorResponseMessage(field.Interface())
-			if !ok {
-				return fmt.Errorf("unexpected response type for %s status %d req %s: %v", name, code, requestID, field.Type())
-			}
-			if code == 401 {
-				return fmt.Errorf("authentication problem. Try logging in (again).\nDetailed message: %s. ", message)
-			}
-			return fmt.Errorf("HTTP %d for req %s: %s", code, requestID, message)
+			return reportError(name, field.Interface())
 		}
+	}
+	// An error status the operation does not declare is decoded into JSONDefault, when the
+	// operation has one, and is otherwise only in the raw body. Either holds the server's standard
+	// error body, which says why.
+	if code >= http.StatusBadRequest {
+		if field := v.FieldByName("JSONDefault"); field.IsValid() && field.Kind() == reflect.Ptr && !field.IsNil() {
+			return reportError("JSONDefault", field.Interface())
+		}
+		if field := v.FieldByName("Body"); field.IsValid() && field.Kind() == reflect.Slice && field.Len() > 0 {
+			var standard goclientnew.StandardErrorResponse
+			if json.Unmarshal(field.Bytes(), &standard) == nil && (standard.Message != "" || standard.Error != nil) {
+				return reportError("Body", &standard)
+			}
+			return fmt.Errorf("HTTP %d for req %s: %s", code, requestID, strings.TrimSpace(string(field.Bytes())))
+		}
+		return fmt.Errorf("HTTP %d for req %s with no response body", code, requestID)
 	}
 	// This should be a nil JSON200 response
 	return errors.New("no response body from server for req " + requestID)

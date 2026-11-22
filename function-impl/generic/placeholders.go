@@ -5,6 +5,7 @@ package generic
 
 import (
 	"log/slog"
+	"strconv"
 
 	"github.com/confighub/sdk/core/configkit"
 	"github.com/confighub/sdk/core/configkit/yamlkit"
@@ -40,8 +41,7 @@ func registerGetPlaceholders(fh handler.FunctionRegistry, converter configkit.Co
 }
 
 func genericFnGetPlaceholders(resourceProvider yamlkit.ResourceProvider, _ *api.FunctionContext, parsedData gaby.Container, _ []api.FunctionArgument, options *api.FunctionOptions) (gaby.Container, any, error) {
-	paths := yamlkit.FindYAMLPathsByValue(parsedData, resourceProvider, yamlkit.StringContainsMatcher{Substring: yamlkit.PlaceHolderBlockApplyString}, options)
-	paths = append(paths, yamlkit.FindYAMLPathsByValue(parsedData, resourceProvider, yamlkit.ExactValueMatcher{Value: yamlkit.PlaceHolderBlockApplyInt}, options)...)
+	paths := findPlaceholders(parsedData, resourceProvider, options)
 	return parsedData, paths, nil
 }
 
@@ -132,11 +132,21 @@ func genericFnGetPlaceholderMutations(resourceProvider yamlkit.ResourceProvider,
 }
 
 func genericFnVetPlaceholders(resourceProvider yamlkit.ResourceProvider, _ *api.FunctionContext, parsedData gaby.Container, _ []api.FunctionArgument, options *api.FunctionOptions) (gaby.Container, any, error) {
-	paths := yamlkit.FindYAMLPathsByValue(parsedData, resourceProvider, yamlkit.StringContainsMatcher{Substring: yamlkit.PlaceHolderBlockApplyString}, options)
-	paths = append(paths, yamlkit.FindYAMLPathsByValue(parsedData, resourceProvider, yamlkit.ExactValueMatcher{Value: yamlkit.PlaceHolderBlockApplyInt}, options)...)
+	paths := findPlaceholders(parsedData, resourceProvider, options)
 	result := api.ValidationResult{
 		Passed:           len(paths) == 0,
 		FailedAttributes: paths,
 	}
 	return parsedData, result, nil
+}
+
+// findPlaceholders returns the attributes holding the placeholder string or number. In a format
+// whose values are all text (see yamlkit.TextValuedResourceProvider), the number is its text.
+func findPlaceholders(parsedData gaby.Container, resourceProvider yamlkit.ResourceProvider, options *api.FunctionOptions) api.AttributeValueList {
+	paths := yamlkit.FindYAMLPathsByValue(parsedData, resourceProvider, yamlkit.StringContainsMatcher{Substring: yamlkit.PlaceHolderBlockApplyString}, options)
+	paths = append(paths, yamlkit.FindYAMLPathsByValue(parsedData, resourceProvider, yamlkit.ExactValueMatcher{Value: yamlkit.PlaceHolderBlockApplyInt}, options)...)
+	if yamlkit.ValuesAreText(resourceProvider) {
+		paths = append(paths, yamlkit.FindYAMLPathsByValue(parsedData, resourceProvider, yamlkit.ExactValueMatcher{Value: strconv.Itoa(yamlkit.PlaceHolderBlockApplyInt)}, options)...)
+	}
+	return paths
 }

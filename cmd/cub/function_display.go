@@ -170,28 +170,14 @@ func awaitInvocationTriggers(respMsgs *[]goclientnew.FunctionInvocationsResponse
 	if !wait || dryRun {
 		return nil
 	}
-	var written []*goclientnew.FunctionInvocationsResponse
+	var written []unitToAwait
 	for i := range *respMsgs {
 		respMsg := &(*respMsgs)[i]
 		if !invocationFailed(respMsg) && respMsg.RevisionID == uuid.Nil && invocationChangedData(respMsg) {
-			written = append(written, respMsg)
+			written = append(written, unitToAwait{unitID: respMsg.UnitID, spaceID: respMsg.SpaceID})
 		}
 	}
-	if len(written) == 0 {
-		return nil
-	}
-	printAwaitingTriggers()
-	// One at a time.
-	for _, respMsg := range written {
-		unitDetails, err := resolveUnit(respMsg.UnitID.String(), respMsg.SpaceID.String(), "*")
-		if err != nil {
-			return err
-		}
-		if err := awaitTriggersRemoval(unitDetails.Unit); err != nil {
-			return err
-		}
-	}
-	return nil
+	return awaitUnitsTriggers(written)
 }
 
 // failedInvocationsError is the error a command returns when the invocation failed on some of

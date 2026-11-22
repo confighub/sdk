@@ -165,3 +165,29 @@ func TestEmptyDataIsUnchanged(t *testing.T) {
 		t.Errorf("YAMLToNative(nil) returned %q", string(restored))
 	}
 }
+
+// TestCommentOnlyDataIsUnchanged covers data with no documents but comments, such as a
+// placeholder Unit. It parses to no documents, which would render as nothing.
+func TestCommentOnlyDataIsUnchanged(t *testing.T) {
+	provider := NewAppConfigYAMLResourceProvider()
+
+	for _, data := range []string{
+		"# placeholder\n",
+		"# placeholder\n---\n# more\n",
+	} {
+		converted, err := provider.NativeToYAML([]byte(data))
+		if err != nil {
+			t.Fatalf("NativeToYAML: %v", err)
+		}
+		if string(converted) != data {
+			t.Errorf("NativeToYAML(%q) returned %q", data, string(converted))
+		}
+		restored, err := provider.YAMLToNative([]byte(data))
+		if err != nil {
+			t.Fatalf("YAMLToNative: %v", err)
+		}
+		if string(restored) != data {
+			t.Errorf("YAMLToNative(%q) returned %q", data, string(restored))
+		}
+	}
+}

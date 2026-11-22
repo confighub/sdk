@@ -61,3 +61,26 @@ func TestErrorType(t *testing.T) {
 	assert.Empty(t, ErrorType(&goclientnew.UpdateTriggerResponse{HTTPResponse: &http.Response{StatusCode: http.StatusOK}}))
 	assert.Empty(t, ErrorType((*goclientnew.UpdateTriggerResponse)(nil)))
 }
+
+// An error status the operation does not declare is still reported with what the server said:
+// decoded into JSONDefault, or, for an operation with no default response, only in the body.
+func TestInterpretErrorGenericUndeclaredStatus(t *testing.T) {
+	unavailable := &http.Response{StatusCode: http.StatusServiceUnavailable}
+	err := InterpretErrorGeneric(nil, &goclientnew.PublishReleaseResponse{
+		HTTPResponse: unavailable,
+		JSONDefault:  &goclientnew.StandardErrorResponse{Message: "no client holds the channel"},
+	})
+	assert.EqualError(t, err, "HTTP 503 for req : no client holds the channel")
+
+	err = InterpretErrorGeneric(nil, &goclientnew.PublishReleaseResponse{
+		HTTPResponse: unavailable,
+		Body:         []byte(`{"Error":{"Message":"no client holds the channel"},"Message":"no client holds the channel"}`),
+	})
+	assert.EqualError(t, err, "HTTP 503 for req : no client holds the channel")
+
+	err = InterpretErrorGeneric(nil, &goclientnew.PublishReleaseResponse{HTTPResponse: unavailable, Body: []byte("upstream unavailable\n")})
+	assert.EqualError(t, err, "HTTP 503 for req : upstream unavailable")
+
+	err = InterpretErrorGeneric(nil, &goclientnew.PublishReleaseResponse{HTTPResponse: &http.Response{StatusCode: http.StatusOK}})
+	assert.ErrorContains(t, err, "no response body")
+}

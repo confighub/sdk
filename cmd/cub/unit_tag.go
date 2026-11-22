@@ -91,6 +91,45 @@ func init() {
 	unitCmd.AddCommand(unitTagCmd)
 }
 
+// resolveTagToPlace resolves the Tag a tag command places, moves or removes: a slug, looked up in
+// spaceID when it is bare, a space/slug or a UUID; or ChangeOrder:<slug>, the change order's
+// release tag, which is the one tag a change order owns that can be moved. The change order is
+// returned for the latter.
+func resolveTagToPlace(ref, spaceID string) (uuid.UUID, *goclientnew.ChangeOrder, error) {
+	if identifier, ok := strings.CutPrefix(ref, "ChangeOrder:"); ok {
+		changeOrder, err := resolveChangeOrder(identifier, spaceID, "*")
+		if err != nil {
+			return uuid.Nil, nil, fmt.Errorf("failed to get change order: %w", err)
+		}
+		if changeOrder.ChangeOrder.ReleaseTagID == uuid.Nil {
+			return uuid.Nil, nil, fmt.Errorf("change order %s has no release tag; it was created before change orders had one", changeOrder.ChangeOrder.Slug)
+		}
+		return changeOrder.ChangeOrder.ReleaseTagID, changeOrder.ChangeOrder, nil
+	}
+	tagID, err := resolveTagIDIn(spaceID, ref)
+	if err != nil {
+		return uuid.Nil, nil, fmt.Errorf("failed to parse tag: %w", err)
+	}
+	return tagID, nil, nil
+}
+
+// tagRevisionParameter converts a tag command's --revision to the API's Revision: "-" is Remove,
+// and everything else is resolved server-side, once slugs have become UUIDs, since Tag:release-v1
+// is only meaningful to the caller.
+func tagRevisionParameter(flag string) (string, error) {
+	if flag == "-" || flag == "Remove" {
+		return "Remove", nil
+	}
+	formatted, isUUID, err := parseSelectedRevisionParameter(flag, serverResolvedRevision, 0)
+	if err != nil {
+		return "", fmt.Errorf("invalid --revision value: %w", err)
+	}
+	if isUUID {
+		formatted = fmt.Sprintf("Revision:%s", formatted)
+	}
+	return formatted, nil
+}
+
 func checkUnitTagConflictingArgs(args []string) error {
 	// Check for mutual exclusivity between --unit and --where flags
 	if len(unitIdentifiers) > 0 && where != "" {
@@ -128,40 +167,14 @@ func unitTagCmdRun(cmd *cobra.Command, args []string) error {
 		return err
 	}
 
-	// Parse the tag argument (supports space/tag format). ChangeOrder:<slug> is the change
-	// order's release tag, the one tag a change order owns that can be moved.
 	tagSlugOrID := args[0]
-	var tagID uuid.UUID
-	if identifier, ok := strings.CutPrefix(tagSlugOrID, "ChangeOrder:"); ok {
-		changeOrder, err := changeOrderByRef(identifier)
-		if err != nil {
-			return err
-		}
-		if changeOrder.ReleaseTagID == uuid.Nil {
-			return fmt.Errorf("change order %s has no release tag; it was created before change orders had one", changeOrder.Slug)
-		}
-		tagID = changeOrder.ReleaseTagID
-	} else {
-		var err error
-		if tagID, err = resolveTagID(tagSlugOrID); err != nil {
-			return fmt.Errorf("failed to parse tag: %w", err)
-		}
+	tagID, _, err := resolveTagToPlace(tagSlugOrID, defaultSpaceID())
+	if err != nil {
+		return err
 	}
-
-	// Convert "-" to "Remove" for the API. Everything else is resolved server-side, but slugs
-	// have to become UUIDs first: Tag:release-v1 is only meaningful to the caller.
-	revision := tagRevision
-	if revision == "-" || revision == "Remove" {
-		revision = "Remove"
-	} else {
-		formatted, isUUID, err := parseSelectedRevisionParameter(revision, serverResolvedRevision, 0)
-		if err != nil {
-			return fmt.Errorf("invalid --revision value: %w", err)
-		}
-		if isUUID {
-			formatted = fmt.Sprintf("Revision:%s", formatted)
-		}
-		revision = formatted
+	revision, err := tagRevisionParameter(tagRevision)
+	if err != nil {
+		return err
 	}
 
 	// Parse filter parameter

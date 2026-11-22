@@ -114,10 +114,10 @@ func formatOtherUnits(units map[string]goclientnew.UUID) string {
 	return strings.Join(entries, ",")
 }
 
-// A trigger can also select other units for each space that selects it, under a key, with
-// --other-unit-selection-where, --other-unit-selection-filter and
+// A trigger can also select other units for each space and target that selects it, under a key,
+// with --other-unit-selection-where, --other-unit-selection-filter and
 // --other-unit-selection-where-resource, each key=value. The where may name the space as
-// EvaluatingSpace. The value - clears that field of the selection, and a selection with none of
+// EvaluatingSpace, or the target as EvaluatingTarget. The value - clears that field of the selection, and a selection with none of
 // them left is removed.
 
 // otherUnitSelectionFlags holds the --other-unit-selection-* flags of the trigger commands.
@@ -131,9 +131,10 @@ var otherUnitSelectionFlags struct {
 // trigger.
 func addOtherUnitSelectionFlags(cmd *cobra.Command) {
 	cmd.Flags().StringArrayVar(&otherUnitSelectionFlags.where, "other-unit-selection-where", nil,
-		"select other units to pass the trigger's function under a key, as key=where, for each space that selects the trigger: "+
-			"a unit where expression, which may name that space as EvaluatingSpace, "+
-			"e.g. \"policies=Space.ReleaseTargetID = EvaluatingSpace.ReleaseTargetID\"; - clears it; can be repeated")
+		"select other units to pass the trigger's function under a key, as key=where, for each space and target that selects the trigger: "+
+			"a unit where expression, which may name that space as EvaluatingSpace or that target as EvaluatingTarget, "+
+			"e.g. \"policies=Space.ReleaseTargetID = EvaluatingSpace.ReleaseTargetID\" for spaces, "+
+			"\"policies=Space.ReleaseTargetID = EvaluatingTarget.TargetID\" for targets; - clears it; can be repeated")
 	cmd.Flags().StringArrayVar(&otherUnitSelectionFlags.filter, "other-unit-selection-filter", nil,
 		"a filter (From=Unit) the units selected under a key must also match, as key=filter, where filter is a slug, space/slug or UUID; - clears it; can be repeated")
 	cmd.Flags().StringArrayVar(&otherUnitSelectionFlags.whereResource, "other-unit-selection-where-resource", nil,

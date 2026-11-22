@@ -41,7 +41,7 @@ func (e *ChangeSetHeldError) Error() string {
 
 // OpenChangeSet opens a ChangeSet on every Unit sel selects, or on none, and returns how many it
 // was newly opened on. The Units are those a function invocation with sel selects: its Where,
-// WhereData, ResourceType and IncludeHidden, and its ToolchainType when set. sel.Where may not be
+// Filter, WhereData, ResourceType and IncludeHidden, and its ToolchainType when set. sel.Where may not be
 // empty, so a ChangeSet is never opened across a whole organization by accident.
 //
 // A Unit the ChangeSet is already open on stays in it. Every revision made to a Unit while the
@@ -61,7 +61,7 @@ func OpenChangeSet(ctx context.Context, c *Client, changeSetID goclientnew.UUID,
 		where = where.Eq("ToolchainType", sel.ToolchainType)
 	}
 	units, err := ListUnits(ctx, c, where,
-		ListOpts{Select: changeSetUnitSelect, Include: "SpaceID", IncludeHidden: sel.IncludeHidden},
+		ListOpts{Select: changeSetUnitSelect, Include: "SpaceID", IncludeHidden: sel.IncludeHidden, Filter: sel.Filter},
 		func(p *goclientnew.ListAllUnitsParams) {
 			if sel.WhereData != "" {
 				p.WhereData = &sel.WhereData

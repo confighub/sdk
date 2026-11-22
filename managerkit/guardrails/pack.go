@@ -23,6 +23,8 @@ import (
 	"sort"
 	"strings"
 
+	"github.com/google/uuid"
+
 	"github.com/confighub/sdk/core/configkit/yamlkit"
 	"github.com/confighub/sdk/core/constants"
 	"github.com/confighub/sdk/core/cubapi"
@@ -272,6 +274,9 @@ type Wiring struct {
 	WhereTrigger string `json:"whereTrigger"`
 
 	spaceID, targetID goclientnew.UUID
+	// selectsFrom names the other Space whose Triggers the Space selects, such as its base;
+	// empty when it selects its own or none.
+	selectsFrom string
 }
 
 // Name is the Space, or the Target as space/target.
@@ -427,14 +432,34 @@ func (p Pack) PlanFor(ctx context.Context, client *cubapi.Client, policySpace st
 		if s.Slug == policySpace || !want[s.Slug] {
 			continue
 		}
-		ownSelection := s.WhereTrigger == "" || s.WhereTrigger == fmt.Sprintf("SpaceID = '%s'", s.SpaceID)
+		// A variant made from a Space that selects its own Triggers selects the Triggers in that
+		// Space, as cub variant create writes it, and so do the variants made from it, which copy
+		// its selection. With none there, it selects nothing, as a new Space does; with some,
+		// wiring it would stop running them, as for a Space's own.
+		holder, selectsOther := selectedSpace(s.WhereTrigger)
+		selectsOther = selectsOther && holder != s.SpaceID
+		ownSelection := s.WhereTrigger == "" || s.WhereTrigger == fmt.Sprintf("SpaceID = '%s'", s.SpaceID) || selectsOther
+		if !selectsOther {
+			holder = s.SpaceID
+		}
 		own := 0
 		if ownSelection && s.TriggerFilterID == "" {
-			if own, err = cubapi.CountTriggers(ctx, client, s.SpaceID); err != nil {
+			if own, err = cubapi.CountTriggers(ctx, client, holder); err != nil {
 				return plan, err
 			}
 		}
 		w := Wiring{Space: s.Slug, spaceID: s.SpaceID}
+		if selectsOther && own > 0 {
+			// The Space by its slug, or its ID when the caller cannot read it.
+			name := holder.String()
+			if selected, err := cubapi.ResolveSpace(ctx, client, cubapi.ParseRef(name), cubapi.ResolveOpts{Select: "Slug,SpaceID"}); err == nil {
+				name = selected.Space.Slug
+			}
+			w.selectsFrom = "the Space " + name
+			if holder == s.UpstreamSpaceID {
+				w.selectsFrom = "its upstream Space " + name
+			}
+		}
 		if err := p.decide(&plan, w, policySpace, s.WhereTrigger, s.TriggerFilterID, ownSelection, own, false); err != nil {
 			return plan, err
 		}
@@ -463,6 +488,19 @@ func (p Pack) PlanFor(ctx context.Context, client *cubapi.Client, policySpace st
 	return plan, nil
 }
 
+// selectedSpacePattern is a WhereTrigger selecting the Triggers in one Space.
+var selectedSpacePattern = regexp.MustCompile(`^SpaceID = '([0-9a-fA-F-]{36})'$`)
+
+// selectedSpace is the Space whose Triggers where selects, when it selects those of one Space.
+func selectedSpace(where string) (goclientnew.UUID, bool) {
+	match := selectedSpacePattern.FindStringSubmatch(where)
+	if match == nil {
+		return goclientnew.UUID{}, false
+	}
+	id, err := uuid.Parse(match[1])
+	return goclientnew.UUID(id), err == nil
+}
+
 // decide files one Space or Target into the plan. ownSelection reports that
 // where selects only the entity's own Triggers, as a new Space does, and own is
 // how many of those there are.
@@ -487,6 +525,9 @@ func (p Pack) decide(plan *Plan, w Wiring, policySpace, where, triggerFilterID s
 		return nil
 	case ok:
 		sel = parsed.with(p.Group)
+	case ownSelection && own > 0 && w.selectsFrom != "":
+		skip(fmt.Sprintf("selects the %d Trigger(s) in %s, which a guardrail selection would stop running", own, w.selectsFrom))
+		return nil
 	case ownSelection && own > 0:
 		skip(fmt.Sprintf("has %d Trigger(s) of its own, which a guardrail selection would stop running", own))
 		return nil

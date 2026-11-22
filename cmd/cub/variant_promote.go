@@ -5,6 +5,8 @@ package main
 
 import (
 	"fmt"
+	"strconv"
+	"strings"
 
 	"github.com/cockroachdb/errors"
 	"github.com/confighub/sdk/core/cubapi"
@@ -58,6 +60,7 @@ var variantPromoteArgs struct {
 	expectedPlan      string
 	protect           bool
 	tag               string
+	revisions         []string
 	subgroup          string
 }
 
@@ -227,6 +230,7 @@ func init() {
 		". Without it, a promotion of a change order that runs an invocation or resolves Insert, Upsert, or TransformPaths links is cleared for Override guards, whatever their value, as one that merges is not; a clearance given replaces that, and --clearance '' clears nothing")
 	addGuardFlag(variantPromoteCmd)
 	variantPromoteCmd.Flags().StringVar(&variantPromoteArgs.tag, "tag", "", "tag (slug, space/slug, or UUID) to put on the revision each unit the promotion writes is left at; not with --change-order, whose own tags mark what it promotes")
+	variantPromoteCmd.Flags().StringArrayVar(&variantPromoteArgs.revisions, "revisions", nil, "upstream revisions to take instead of everything each upstream has reached, which is cherry-picking: a changeset, change order, tag or release, which names its revisions on each unit that has them, or a range <from>..<to> of them; repeatable. Revision numbers are refused, alone or at either end of a range, since each unit numbers its own. Units whose upstream they name nothing of are left unchanged, NotSelected, and the rest take what is named and nothing else, recording it as merged above their links' merge pointers. With --dry-run, each unit lists what it would take, which skips that overrides, and which earlier pending revisions wrote some of the same paths. Not with --change-order")
 	variantPromoteCmd.Flags().StringVar(&variantPromoteArgs.subgroup, "subgroup", "", "category recorded on the mutations of each write of the promotion: alphanumeric, at most 64 characters")
 	addStandardDisplayFlags(variantPromoteCmd)
 	variantCmd.AddCommand(variantPromoteCmd)
@@ -252,6 +256,24 @@ func variantPromoteCmdRun(cmd *cobra.Command, args []string) error {
 	if variantPromoteArgs.tag != "" && variantPromoteArgs.changeorderSlug != "" {
 		return errors.New("--tag cannot be used with --change-order; the change order tags the revisions it promotes")
 	}
+	if len(variantPromoteArgs.revisions) > 0 && variantPromoteArgs.changeorderSlug != "" {
+		return errors.New("--revisions cannot be used with --change-order; the change order's range is what it promotes")
+	}
+	var revisions []string
+	if len(variantPromoteArgs.revisions) > 0 {
+		// A revision number names a different change on each unit, at either end of a range.
+		for _, selector := range variantPromoteArgs.revisions {
+			from, to, _ := strings.Cut(selector, "..")
+			if isRevisionNumberSelector(from) || isRevisionNumberSelector(to) {
+				return fmt.Errorf(`%s names a revision by number, and each unit numbers its own; name a changeset, change order, tag or release, or use "cub unit update --upgrade --merge-revisions"`,
+					selector)
+			}
+		}
+		var err error
+		if revisions, err = formatRevisionSelectors(variantPromoteArgs.revisions, defaultSpaceID()); err != nil {
+			return err
+		}
+	}
 
 	req := goclientnew.PromoteRequest{
 		ChangeDescription: variantPromoteArgs.changeDescription,
@@ -264,6 +286,7 @@ func variantPromoteCmdRun(cmd *cobra.Command, args []string) error {
 		PriorRevisions:    goclientnew.PromoteRequestPriorRevisions(variantPromoteArgs.priorRevisions),
 		Protect:           variantPromoteArgs.protect,
 		Subgroup:          variantPromoteArgs.subgroup,
+		Revisions:         revisions,
 	}
 	if len(changeGuards) > 0 {
 		guards, err := parseGuardStampSpecs(changeGuards)
@@ -464,6 +487,7 @@ func displayPromoteResult(result *goclientnew.PromoteResult) {
 		for j := range space.Units {
 			if unit := &space.Units[j]; unit.Error == nil {
 				displayWriteConflicts(space.SpaceSlug, unit.Slug, unit.Conflicts, dryRun)
+				displayMergeSelections(unit.Slug, unit.MergeSelections, dryRun)
 			}
 		}
 		if shouldDisplayMutations() {
@@ -694,4 +718,11 @@ func promoteResultError(result *goclientnew.PromoteResult, namedSpace bool) erro
 		return errors.Wrapf(errors.Join(errs...), "promoted %d of %d Variant(s) of stage '%s'", promoted, considered, stage)
 	}
 	return errors.Wrapf(errors.Join(errs...), "promoted %d of %d space(s)", promoted, considered)
+}
+
+// isRevisionNumberSelector is whether a revision specification is a RevisionNum, with or without
+// Before:.
+func isRevisionNumberSelector(spec string) bool {
+	_, err := strconv.ParseInt(strings.TrimPrefix(strings.TrimSpace(spec), "Before:"), 10, 64)
+	return err == nil
 }

@@ -350,6 +350,14 @@ func parseEntityIdentifierForFilter(
 		}
 		return entityType, runUUID.String(), nil
 
+	case "AuditEvent":
+		// An audit event has no slug: it is named by its ID.
+		auditEventUUID, err := uuid.Parse(identifier)
+		if err != nil {
+			return "", "", fmt.Errorf("an audit event is named by its ID: %w", err)
+		}
+		return entityType, auditEventUUID.String(), nil
+
 	default:
 		return "", "", fmt.Errorf("unsupported entity type: %s", entityType)
 	}

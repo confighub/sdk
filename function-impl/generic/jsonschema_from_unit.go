@@ -45,7 +45,7 @@ func registerVetJSONSchemaFromUnit(fh handler.FunctionRegistry, resourceProvider
 			Validating:            true,
 			Hermetic:              true,
 			Idempotent:            true,
-			Description:           "Fails a resource that does not match the JSON Schema held by the Unit passed as OtherData schema, such as by a Trigger's OtherUnitIDs. Narrow the resources it checks with WhereResource. Fix: correct or remove the field each finding names, or change the schema.",
+			Description:           "Fails a resource that does not match the JSON Schema held by the Unit passed as OtherData schema, such as by a Trigger's OtherUnitIDs. In a properties, INI or env file, whose values are all text, a value the schema declares an integer, a number or a boolean is checked as one when its text is one. Narrow the resources it checks with WhereResource. Fix: correct or remove the field each finding names, or change the schema.",
 			FunctionType:          api.FunctionTypeCustom,
 			AffectedResourceTypes: []api.ResourceType{api.ResourceTypeAny},
 		},
@@ -66,7 +66,7 @@ func registerVetJSONSchemaFromUnit(fh handler.FunctionRegistry, resourceProvider
 // schemaData holds, the data of the Unit passed as OtherData schema.
 func GenericFnVetJSONSchemaFromUnit(resourceProvider yamlkit.ResourceProvider, options *api.FunctionOptions,
 	functionContext *api.FunctionContext, parsedData, schemaData gaby.Container, ignoreRequired bool) (gaby.Container, any, error) {
-	schema, err := schemaFromOtherData(schemaData, ignoreRequired)
+	schema, rawSchema, err := schemaFromOtherData(schemaData, ignoreRequired)
 	if err != nil {
 		return parsedData, api.ValidationResultFalse, err
 	}
@@ -77,13 +77,16 @@ func GenericFnVetJSONSchemaFromUnit(resourceProvider yamlkit.ResourceProvider, o
 	if functionContext != nil && workerapi.IsAppConfigToolchain(functionContext.ToolchainType) {
 		metadataPath = strings.TrimSuffix(resourceProvider.ContextPath(""), ".")
 	}
-	return VetAgainstSchemas(resourceProvider, options, parsedData, metadataPath, func(api.ResourceType) (*gojsonschema.Schema, error) {
+	return vetAgainstSchemas(resourceProvider, options, parsedData, metadataPath, func(api.ResourceType) (*gojsonschema.Schema, error) {
 		return schema, nil
+	}, func(api.ResourceType) any {
+		return rawSchema
 	})
 }
 
-// schemaFromOtherData compiles the one JSON Schema the schema Unit's data holds.
-func schemaFromOtherData(schemaData gaby.Container, ignoreRequired bool) (*gojsonschema.Schema, error) {
+// schemaFromOtherData compiles the one JSON Schema the schema Unit's data holds, returning it
+// and the schema decoded.
+func schemaFromOtherData(schemaData gaby.Container, ignoreRequired bool) (*gojsonschema.Schema, any, error) {
 	var documents []*gaby.YamlDoc
 	for _, doc := range schemaData {
 		if doc != nil && doc.Data() != nil {
@@ -92,30 +95,34 @@ func schemaFromOtherData(schemaData gaby.Container, ignoreRequired bool) (*gojso
 	}
 	switch len(documents) {
 	case 0:
-		return nil, errors.Newf("no schema to validate against: pass a Unit holding a JSON Schema as OtherData %s", SchemaOtherDataKey)
+		return nil, nil, errors.Newf("no schema to validate against: pass a Unit holding a JSON Schema as OtherData %s", SchemaOtherDataKey)
 	case 1:
 	default:
-		return nil, errors.Newf("the Unit passed as OtherData %s holds %d documents; it has to hold one JSON Schema", SchemaOtherDataKey, len(documents))
+		return nil, nil, errors.Newf("the Unit passed as OtherData %s holds %d documents; it has to hold one JSON Schema", SchemaOtherDataKey, len(documents))
 	}
 	// Comments in the schema Unit become $comment$ keys when it is read, which a schema would
 	// take for keywords, or within properties for property names.
 	schemaJSON, err := documents[0].MarshalJSONWithoutCommentKeys()
 	if err != nil {
-		return nil, errors.Wrapf(err, "failed to read the Unit passed as OtherData %s", SchemaOtherDataKey)
+		return nil, nil, errors.Wrapf(err, "failed to read the Unit passed as OtherData %s", SchemaOtherDataKey)
 	}
 	if ignoreRequired {
 		var schemaObject map[string]any
 		if err := json.Unmarshal(schemaJSON, &schemaObject); err != nil {
-			return nil, errors.Wrapf(err, "the Unit passed as OtherData %s does not hold a JSON Schema object", SchemaOtherDataKey)
+			return nil, nil, errors.Wrapf(err, "the Unit passed as OtherData %s does not hold a JSON Schema object", SchemaOtherDataKey)
 		}
 		delete(schemaObject, "required")
 		if schemaJSON, err = json.Marshal(schemaObject); err != nil {
-			return nil, errors.WithStack(err)
+			return nil, nil, errors.WithStack(err)
 		}
 	}
 	schema, err := gojsonschema.NewSchema(gojsonschema.NewBytesLoader(schemaJSON))
 	if err != nil {
-		return nil, errors.Wrapf(err, "the Unit passed as OtherData %s does not hold a valid JSON Schema", SchemaOtherDataKey)
+		return nil, nil, errors.Wrapf(err, "the Unit passed as OtherData %s does not hold a valid JSON Schema", SchemaOtherDataKey)
 	}
-	return schema, nil
+	var rawSchema any
+	if err := json.Unmarshal(schemaJSON, &rawSchema); err != nil {
+		return nil, nil, errors.WithStack(err)
+	}
+	return schema, rawSchema, nil
 }

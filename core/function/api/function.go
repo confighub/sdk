@@ -96,6 +96,10 @@ type FunctionSignature struct {
 	OtherDataAnyKey    bool                    `json:",omitempty" description:"The function reads OtherData under any key its caller passes, as a general-purpose function such as vet-cel does, whose expression names the keys: such as the Units a Trigger's OtherUnitSelections pass. Besides those in OtherDataExpected"`
 	OutputInfo         *FunctionOutput         `description:"Output description"`
 	Mutating           bool                    `description:"May change the configuration data"`
+	// InputType is what the function reads. Empty means configuration data, which is what
+	// nearly every function reads. AttributeValueList means the function is a reducer: it is
+	// passed the rows of one group of a reduce, as RowList, and no configuration data.
+	InputType DataType `json:",omitempty" swaggertype:"string" description:"What the function reads: empty for configuration data, or AttributeValueList for a reducer, which is passed the rows of one group of a reduce instead"`
 	// Validating says the function returns a ValidationResult judging the resources its
 	// WhereResource selects, so it passes when it selects none, unless it declares in Include
 	// that it judges something else. A Trigger running it is not invoked on a Unit with nothing

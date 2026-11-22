@@ -4,6 +4,7 @@
 package generic
 
 import (
+	"bytes"
 	"encoding/json"
 	"fmt"
 	"log/slog"
@@ -50,7 +51,7 @@ func registerVetJSONSchema(fh handler.FunctionRegistry, converter configkit.Conf
 			Validating:            true,
 			Hermetic:              true,
 			Idempotent:            true,
-			Description:           "Fails a resource that does not match the JSON Schema schema-map gives for its type. Fix: correct or remove the field each finding names.",
+			Description:           "Fails a resource that does not match the JSON Schema schema-map gives for its type. In a properties, INI or env file, whose values are all text, a value the schema declares an integer, a number or a boolean is checked as one when its text is one. Fix: correct or remove the field each finding names.",
 			FunctionType:          api.FunctionTypeCustom,
 			AffectedResourceTypes: []api.ResourceType{api.ResourceTypeAny},
 		},
@@ -105,7 +106,7 @@ func GenericFnVetJSONSchema(resourceProvider yamlkit.ResourceProvider, options *
 		metadataPath = strings.TrimSuffix(resourceProvider.ContextPath(""), ".")
 	}
 
-	return VetAgainstSchemas(resourceProvider, options, parsedData, metadataPath, func(resourceType api.ResourceType) (*gojsonschema.Schema, error) {
+	return vetAgainstSchemas(resourceProvider, options, parsedData, metadataPath, func(resourceType api.ResourceType) (*gojsonschema.Schema, error) {
 		schemaInterface, ok := schemaMap[string(resourceType)]
 		if !ok {
 			// No schema for this resource type, skip validation
@@ -120,6 +121,8 @@ func GenericFnVetJSONSchema(resourceProvider yamlkit.ResourceProvider, options *
 			return nil, errors.Wrapf(err, "invalid schema for resource type %s", resourceType)
 		}
 		return schema, nil
+	}, func(resourceType api.ResourceType) any {
+		return schemaMap[string(resourceType)]
 	})
 }
 
@@ -134,6 +137,16 @@ var ErrNoSchema = errors.New("no schema")
 // that is left out of what is validated.
 func VetAgainstSchemas(resourceProvider yamlkit.ResourceProvider, options *api.FunctionOptions, parsedData gaby.Container,
 	metadataPath string, schemaFor func(api.ResourceType) (*gojsonschema.Schema, error)) (gaby.Container, any, error) {
+	return vetAgainstSchemas(resourceProvider, options, parsedData, metadataPath, schemaFor, nil)
+}
+
+// vetAgainstSchemas is VetAgainstSchemas that, for a format whose values are all text (see
+// yamlkit.TextValuedResourceProvider), first converts the strings the schema rawSchemaFor
+// returns declares as integers, numbers or booleans to them (see CoerceTextToSchemaTypes).
+// rawSchemaFor returns the decoded schema schemaFor compiles, or nil; it may be nil itself.
+func vetAgainstSchemas(resourceProvider yamlkit.ResourceProvider, options *api.FunctionOptions, parsedData gaby.Container,
+	metadataPath string, schemaFor func(api.ResourceType) (*gojsonschema.Schema, error), rawSchemaFor func(api.ResourceType) any) (gaby.Container, any, error) {
+	coerceText := rawSchemaFor != nil && yamlkit.ValuesAreText(resourceProvider)
 	var multiErrs []error
 	details := []string{}
 	failedPaths := api.AttributeValueList{}
@@ -177,6 +190,16 @@ func VetAgainstSchemas(resourceProvider yamlkit.ResourceProvider, options *api.F
 			if err != nil {
 				errs = append(errs, errors.Wrapf(err, "failed to leave %s out of resource %s/%s", metadataPath, resourceType, resourceInfo.ResourceName))
 				return output, errs
+			}
+		}
+
+		if coerceText {
+			if rawSchema := rawSchemaFor(resourceInfo.ResourceType); rawSchema != nil {
+				docJSON, err = coerceJSONToSchemaTypes(docJSON, rawSchema)
+				if err != nil {
+					errs = append(errs, errors.Wrapf(err, "failed to read resource %s/%s", resourceType, resourceInfo.ResourceName))
+					return output, errs
+				}
 			}
 		}
 
@@ -278,4 +301,15 @@ func withoutPath(docJSON []byte, path string) ([]byte, error) {
 	}
 	delete(parent, keys[len(keys)-1])
 	return json.Marshal(doc)
+}
+
+// coerceJSONToSchemaTypes applies CoerceTextToSchemaTypes to a JSON document.
+func coerceJSONToSchemaTypes(docJSON []byte, schema any) ([]byte, error) {
+	decoder := json.NewDecoder(bytes.NewReader(docJSON))
+	decoder.UseNumber()
+	var doc any
+	if err := decoder.Decode(&doc); err != nil {
+		return nil, err
+	}
+	return json.Marshal(CoerceTextToSchemaTypes(doc, schema))
 }

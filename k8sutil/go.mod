@@ -3,8 +3,8 @@ module github.com/confighub/sdk/k8sutil
 go 1.26.0
 
 require (
-	github.com/confighub/sdk/configkit/k8skit v0.11.11
-	github.com/confighub/sdk/core v0.11.11
+	github.com/confighub/sdk/configkit/k8skit v0.0.0
+	github.com/confighub/sdk/core v0.0.0
 	github.com/stretchr/testify v1.11.1
 	k8s.io/apimachinery v0.35.1
 	k8s.io/client-go v0.35.1
@@ -71,16 +71,19 @@ require (
 	k8s.io/kube-openapi v0.0.0-20250910181357-589584f1c912 // indirect
 	k8s.io/utils v0.0.0-20251002143259-bc988d571ff4 // indirect
 	sigs.k8s.io/json v0.0.0-20250730193827-2d320260d730 // indirect
-	sigs.k8s.io/kustomize/kyaml v0.19.0 // indirect
+	sigs.k8s.io/kustomize/kyaml v0.20.1 // indirect
 	sigs.k8s.io/randfill v1.0.0 // indirect
 )
 
 replace (
+	github.com/confighub/sdk/configkit/k8skit => ../configkit/k8skit
+	github.com/confighub/sdk/configkit/yqkit => ../configkit/yqkit
+	github.com/confighub/sdk/core => ../core
 
 	// Fix CVE-2022-28948
 	gopkg.in/yaml.v3 => gopkg.in/yaml.v3 v3.0.1
 
-	// Pin kustomize to v5.5.0
-	sigs.k8s.io/kustomize/api => sigs.k8s.io/kustomize/api v0.18.0
-	sigs.k8s.io/kustomize/kyaml => sigs.k8s.io/kustomize/kyaml v0.18.1
+	// Pin kustomize to v5.7.1
+	sigs.k8s.io/kustomize/api => sigs.k8s.io/kustomize/api v0.20.1
+	sigs.k8s.io/kustomize/kyaml => sigs.k8s.io/kustomize/kyaml v0.20.1
 )

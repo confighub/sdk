@@ -165,6 +165,16 @@ type FunctionInvocationRequest struct {
 	OtherDataOrigins map[OtherDataSource][]OtherDataOrigin `json:",omitempty" description:"Where each document of an OtherData entry assembled from several Units came from, one per document in order: the selected Units a Trigger's OtherUnitSelections pass under a key."`
 	FunctionInvocationOptions
 	FunctionInvocations FunctionInvocationList `description:"List of functions to invoke and their arguments"`
+	// OutputsPerInvocation returns each function's output separately, in
+	// FunctionInvocationResponse.InvocationOutputs, rather than combined in Outputs. Combining
+	// appends outputs of the same type, so the outputs of two functions returning a ResourceList,
+	// or of one function invoked twice with different arguments, cannot be told apart.
+	OutputsPerInvocation bool `json:",omitempty" description:"If true, return each function's output separately in InvocationOutputs instead of combined in Outputs"`
+	// Rows and GroupKey are passed to a reducer, whose signature's InputType is
+	// AttributeValueList, in place of configuration data: the rows of one group of a reduce, and
+	// the key that names the group.
+	Rows     RowList `json:",omitempty" description:"The rows of one group of a reduce, passed to a reducer in place of configuration data"`
+	GroupKey string  `json:",omitempty" description:"The key of the group whose Rows are passed"`
 }
 
 // FunctionInvocationOptions contains function execution options passed in FunctionInvocationRequest.
@@ -322,6 +332,11 @@ type FunctionInvocationResponse struct {
 	FunctionInvocationSuccessResponse
 	Success       bool     `description:"True if all functions executed successfully"`
 	ErrorMessages []string `description:"Error messages from function execution; will be empty if Success is true"`
+	// InvocationOutputs holds each function's output when the request set OutputsPerInvocation,
+	// indexed as the request's FunctionInvocations, with a nil entry for a function that returned
+	// no output or did not run; Outputs is then empty. A handler that predates the option leaves
+	// it empty and combines the outputs in Outputs.
+	InvocationOutputs []map[OutputType][]byte `json:",omitempty" description:"Each function's output, indexed as FunctionInvocations, when the request set OutputsPerInvocation"`
 }
 
 const MaxConfigDataLength = 64 * 1024 * 1024     // 64MB

@@ -44,9 +44,9 @@ app:
   version: 1.0.0
 database:
   host: localhost
-  port: 5432
+  port: "5432"
   ssl:
-    enabled: true
+    enabled: "true"
 `,
 		},
 	}
@@ -193,8 +193,8 @@ database.host=localhost
 	if strings.Contains(yamlStr, "5432 #") {
 		t.Errorf("Value should not contain inline comment: %s", yamlStr)
 	}
-	if !strings.Contains(yamlStr, "port: 5432") {
-		t.Errorf("Expected 'port: 5432' as clean int value")
+	if !strings.Contains(yamlStr, `port: "5432"`) {
+		t.Errorf("Expected 'port: \"5432\"' as clean string value")
 	}
 	// Inline comment should be extracted as a comment key
 	if !strings.Contains(yamlStr, "$comment$line$port") {

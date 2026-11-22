@@ -189,6 +189,11 @@ revision each Unit the upload writes is left at, created Units included, and lea
 does not change untagged. An upload with a Unit to write that the tag already marks is
 refused before anything is written.
 
+Once the upload is written, it waits for the Triggers of the Units it wrote to finish, as
+other commands that write Units do, and reports the ValidationErrors and ValidationWarnings
+they found; a release published after it then bundles what the Triggers checked. Pass
+--wait=false to return as soon as the upload is written.
+
 Use --dry-run to see what would be created, updated, emptied, revived, or adopted
 without changing anything. Add -o mutations to see what the upload changes, or would change,
 in each Unit, path by path with the values on both sides.
@@ -267,6 +272,7 @@ func init() {
 	variantUploadCmd.Flags().BoolVar(&variantUploadArgs.noClusterApp, "no-cluster-app", false, "skip adding the Argo CD Application, Sveltos ClusterProfile, or Flux OCIRepository and Kustomization, when the upload creates its Space with a cub-cluster --target")
 	variantUploadCmd.Flags().StringVarP(&outputFormat, "output", "o", "",
 		"output format: mutations, to show what the upload changes, or would change, in each Unit, path by path with the values on both sides")
+	enableWaitFlag(variantUploadCmd)
 	variantCmd.AddCommand(variantUploadCmd)
 }
 
@@ -448,7 +454,39 @@ func variantUploadCmdRun(cmd *cobra.Command, args []string) error {
 			return err
 		}
 	}
-	return owner.apply()
+	if err := owner.apply(); err != nil {
+		return err
+	}
+	if wait {
+		return awaitUploadTriggers(result)
+	}
+	return nil
+}
+
+// awaitUploadTriggers waits for the Triggers of the Units the upload wrote to finish. A Link the
+// upload made or changed re-runs the Triggers of the Unit it is from, so that Unit is waited for
+// too, even when its data is unchanged.
+func awaitUploadTriggers(result *goclientnew.UploadResult) error {
+	var written []unitToAwait
+	for _, c := range result.Components {
+		for _, s := range c.Spaces {
+			if s.SpaceID == nil {
+				continue
+			}
+			linkedFrom := map[string]bool{}
+			for _, l := range s.Links {
+				if l.Error == nil && (l.Action == "Create" || l.Action == "Update") {
+					linkedFrom[l.FromUnit] = true
+				}
+			}
+			for _, u := range s.Units {
+				if u.Error == nil && u.UnitID != nil && (u.Action != "Unchanged" || linkedFrom[u.Slug]) {
+					written = append(written, unitToAwait{unitID: *u.UnitID, spaceID: *s.SpaceID})
+				}
+			}
+		}
+	}
+	return awaitUnitsTriggers(written)
 }
 
 // createUploadClusterApp adds the Unit that deploys each Space the upload created

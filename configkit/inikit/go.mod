@@ -3,9 +3,9 @@ module github.com/confighub/sdk/configkit/inikit
 go 1.26.0
 
 require (
-	github.com/confighub/sdk/core v0.11.11
+	github.com/confighub/sdk/core v0.0.0
 	github.com/go-ini/ini v1.67.0
-	github.com/wk8/go-ordered-map/v2 v2.1.8
+	sigs.k8s.io/kustomize/kyaml v0.20.1
 )
 
 require (
@@ -33,22 +33,25 @@ require (
 	github.com/sergi/go-diff v1.3.2-0.20230802210424-5b0b94c5c0d3 // indirect
 	github.com/swaggest/jsonschema-go v0.3.78 // indirect
 	github.com/swaggest/refl v1.4.0 // indirect
+	github.com/wk8/go-ordered-map/v2 v2.1.8 // indirect
 	github.com/xlab/treeprint v1.2.0 // indirect
+	go.yaml.in/yaml/v2 v2.4.2 // indirect
+	go.yaml.in/yaml/v3 v3.0.3 // indirect
 	golang.org/x/sys v0.48.0 // indirect
 	golang.org/x/text v0.42.0 // indirect
 	google.golang.org/protobuf v1.36.8 // indirect
 	gopkg.in/yaml.v3 v3.0.1 // indirect
 	k8s.io/kube-openapi v0.0.0-20250318190949-c8a335a9a2ff // indirect
-	sigs.k8s.io/kustomize/kyaml v0.19.0 // indirect
-	sigs.k8s.io/yaml v1.4.0 // indirect
+	sigs.k8s.io/yaml v1.5.0 // indirect
 )
 
 replace (
+	github.com/confighub/sdk/core => ../../core/
 
 	// Fix CVE-2022-28948
 	gopkg.in/yaml.v3 => gopkg.in/yaml.v3 v3.0.1
 
-	// Pin kustomize to v5.5.0
-	sigs.k8s.io/kustomize/api => sigs.k8s.io/kustomize/api v0.18.0
-	sigs.k8s.io/kustomize/kyaml => sigs.k8s.io/kustomize/kyaml v0.18.1
+	// Pin kustomize to v5.7.1
+	sigs.k8s.io/kustomize/api => sigs.k8s.io/kustomize/api v0.20.1
+	sigs.k8s.io/kustomize/kyaml => sigs.k8s.io/kustomize/kyaml v0.20.1
 )

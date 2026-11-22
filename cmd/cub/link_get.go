@@ -5,6 +5,7 @@ package main
 
 import (
 	"fmt"
+	"slices"
 	"strconv"
 	"strings"
 
@@ -131,6 +132,12 @@ func displayExtendedLinkDetails(extendedLink *goclientnew.ExtendedLink) {
 	// is what a reader looking at a Stale Link needs to know.
 	view.Append([]string{"Upstream Last Merged Rev", formatMergedRevision(linkDetails.UpstreamLastMergedRevisionNum)})
 	view.Append([]string{"Downstream Last Merged Rev", formatMergedRevision(linkDetails.DownstreamLastMergedRevisionNum)})
+	for _, run := range linkDetails.UpstreamSkipped {
+		view.Append([]string{skippedRevisionsLabel(run), skippedRevisionsReason(run)})
+	}
+	if len(linkDetails.UpstreamMergedAbove) > 0 {
+		view.Append([]string{"Upstream Revs Merged Above", revisionNumRuns(linkDetails.UpstreamMergedAbove)})
+	}
 	if linkDetails.UpstreamSpaceID != nil {
 		view.Append([]string{"Upstream Space ID", linkDetails.UpstreamSpaceID.String()})
 	}
@@ -148,6 +155,45 @@ func displayExtendedLinkDetails(extendedLink *goclientnew.ExtendedLink) {
 	appendLinkDefinitionRows(view, linkDetails)
 
 	view.Render()
+}
+
+// revisionNumRuns renders RevisionNums as runs: "4, 6-9".
+func revisionNumRuns(nums []int64) string {
+	nums = slices.Clone(nums)
+	slices.Sort(nums)
+	var parts []string
+	for i := 0; i < len(nums); {
+		j := i
+		for j+1 < len(nums) && nums[j+1] == nums[j]+1 {
+			j++
+		}
+		if i == j {
+			parts = append(parts, fmt.Sprintf("%d", nums[i]))
+		} else {
+			parts = append(parts, fmt.Sprintf("%d-%d", nums[i], nums[j]))
+		}
+		i = j + 1
+	}
+	return strings.Join(parts, ", ")
+}
+
+// skippedRevisionsReason is why a run was skipped, and whether the skip is declined.
+func skippedRevisionsReason(run goclientnew.LinkSkippedRevisions) string {
+	switch {
+	case run.Declined && run.Reason != "":
+		return run.Reason + " (declined)"
+	case run.Declined:
+		return "declined"
+	}
+	return run.Reason
+}
+
+// skippedRevisionsLabel names a run of upstream Revisions a Link skipped, one row per run.
+func skippedRevisionsLabel(run goclientnew.LinkSkippedRevisions) string {
+	if run.FromRevisionNum == run.ToRevisionNum {
+		return fmt.Sprintf("Skipped Upstream Rev %d", run.FromRevisionNum)
+	}
+	return fmt.Sprintf("Skipped Upstream Revs %d-%d", run.FromRevisionNum, run.ToRevisionNum)
 }
 
 // appendLinkDefinitionRows shows what the Link reads and writes, a row apiece: the bindings of an

@@ -221,18 +221,12 @@ func TestValidateRejectsChecksThatCannotRunTogether(t *testing.T) {
 			p.Checks[4].ExceptFrom = []string{"Runs Nonroot"}
 		},
 		"other data differs": func(p *Pack) { p.Checks[0].OtherData = netpolData() },
-		"other data on a Target": func(p *Pack) {
-			p.Checks[5].AppliedTo, p.Checks[5].OtherData = AppliedToTarget, netpolData()
-		},
 		"other data with a bad key": func(p *Pack) {
 			p.Checks[5].OtherData = []OtherData{{Key: "net pols", ResourceTypes: []string{"v1/Service"}}}
 		},
 		"other data of every resource": func(p *Pack) { p.Checks[5].OtherData = []OtherData{{Key: "everything"}} },
 		"other data key twice": func(p *Pack) {
 			p.Checks[5].OtherData = append(netpolData(), netpolData()...)
-		},
-		"declared rule on a Target": func(p *Pack) {
-			p.Rules = []Rule{{Slug: "declared", AppliedTo: AppliedToTarget, OtherData: netpolData()}}
 		},
 	} {
 		p := testCatalog()
@@ -385,5 +379,22 @@ func TestLayoutCarriesOtherData(t *testing.T) {
 	// A rule that reads nothing else states that it has no selections.
 	if got := ruleNamed(t, rules, "test-pss").otherUnitSelections(); got == nil || len(got) != 0 {
 		t.Errorf("test-pss selections = %#v, want an empty map", got)
+	}
+}
+
+// A rule applied to Targets reads other data too, selecting by default the resources released to
+// the Target evaluating it.
+func TestTargetRuleSelectsOnItsTarget(t *testing.T) {
+	p := testCatalog()
+	p.Checks = slices.Clone(p.Checks)
+	p.Checks[5].AppliedTo, p.Checks[5].OtherData = AppliedToTarget, netpolData()
+	if err := p.Validate(); err != nil {
+		t.Fatalf("Validate: %v", err)
+	}
+	rule := Rule{Slug: "declared", AppliedTo: AppliedToTarget, OtherData: netpolData()}
+	want := goclientnew.OtherUnitSelection{Where: OnThisTarget,
+		WhereResource: "ConfigHub.ResourceType = 'networking.k8s.io/v1/NetworkPolicy'"}
+	if got := rule.otherUnitSelections()["policies"]; got != want {
+		t.Errorf("selection = %+v, want %+v", got, want)
 	}
 }

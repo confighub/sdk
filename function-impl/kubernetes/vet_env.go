@@ -19,6 +19,7 @@ import (
 	"github.com/confighub/sdk/core/function/api"
 	"github.com/confighub/sdk/core/function/handler"
 	"github.com/confighub/sdk/core/third_party/gaby"
+	"github.com/confighub/sdk/function-impl/generic"
 )
 
 const configMapResourceType = api.ResourceType("v1/ConfigMap")
@@ -56,7 +57,7 @@ func registerVetEnv(fh handler.FunctionRegistry, rp *k8skit.K8sResourceProviderT
 			Validating:            true,
 			Hermetic:              true,
 			Idempotent:            true,
-			Description:           "Fails a ConfigMap's data, or a container's literal env var value, that a JSON Schema of environment variables does not allow. ConfigMaps annotated with confighub.com/ConfigMapFormat: File are skipped. The schema's top-level required properties are not checked, since one ConfigMap or container need not carry every variable; only the names of env vars set with valueFrom are checked, since their values are elsewhere. Fix: set the variable to a value the schema allows, or correct its name.",
+			Description:           "Fails a ConfigMap's data, or a container's literal env var value, that a JSON Schema of environment variables does not allow. A value the schema declares an integer, a number or a boolean is checked as one when its text is one. ConfigMaps annotated with confighub.com/ConfigMapFormat: File are skipped. The schema's top-level required properties are not checked, since one ConfigMap or container need not carry every variable; only the names of env vars set with valueFrom are checked, since their values are elsewhere. Fix: set the variable to a value the schema allows, or correct its name.",
 			FunctionType:          api.FunctionTypeCustom,
 			AffectedResourceTypes: resourceTypes,
 		},
@@ -94,7 +95,7 @@ func k8sFnVetEnv(rp *k8skit.K8sResourceProviderType, options *api.FunctionOption
 			containerName = name
 		}
 	}
-	schema, err := envSchema(schemaJSON)
+	schema, schemaObject, err := envSchema(schemaJSON)
 	if err != nil {
 		return parsedData, api.ValidationResultFalse, err
 	}
@@ -113,7 +114,7 @@ func k8sFnVetEnv(rp *k8skit.K8sResourceProviderType, options *api.FunctionOption
 		}
 		var errs []error
 		for _, vars := range sets {
-			setDetails, setFailures, err := validateEnvVars(schema, vars, resourceInfo)
+			setDetails, setFailures, err := validateEnvVars(schema, schemaObject, vars, resourceInfo)
 			if err != nil {
 				errs = append(errs, errors.Wrapf(err, "validation error for resource %s/%s", resourceInfo.ResourceType, resourceInfo.ResourceName))
 				continue
@@ -137,18 +138,19 @@ func k8sFnVetEnv(rp *k8skit.K8sResourceProviderType, options *api.FunctionOption
 
 // envSchema compiles the schema without its top-level required properties: a ConfigMap or a
 // container usually carries some of an application's variables, with the rest coming from a
-// Secret, another ConfigMap or the image. Nested required keywords are left in place.
-func envSchema(schemaJSON string) (*gojsonschema.Schema, error) {
+// Secret, another ConfigMap or the image. Nested required keywords are left in place. It
+// returns the decoded schema too.
+func envSchema(schemaJSON string) (*gojsonschema.Schema, map[string]any, error) {
 	var schemaObject map[string]any
 	if err := json.Unmarshal([]byte(schemaJSON), &schemaObject); err != nil {
-		return nil, errors.Wrap(err, "failed to parse schema JSON")
+		return nil, nil, errors.Wrap(err, "failed to parse schema JSON")
 	}
 	delete(schemaObject, "required")
 	schema, err := gojsonschema.NewSchema(gojsonschema.NewGoLoader(schemaObject))
 	if err != nil {
-		return nil, errors.Wrap(err, "invalid schema")
+		return nil, nil, errors.Wrap(err, "invalid schema")
 	}
-	return schema, nil
+	return schema, schemaObject, nil
 }
 
 // isFileConfigMap reports whether a ConfigMap is annotated as holding files, such as one
@@ -240,9 +242,12 @@ const contextDelimiter = "\x00"
 // variable is otherwise absent: any placeholder for its value could fail a keyword that looks
 // at values, such as an anyOf at the root, which reports at the root rather than at the
 // variable.
-func validateEnvVars(schema *gojsonschema.Schema, vars envVars, resourceInfo *api.ResourceInfo) ([]string, api.AttributeValueList, error) {
+func validateEnvVars(schema *gojsonschema.Schema, schemaObject map[string]any, vars envVars, resourceInfo *api.ResourceInfo) ([]string, api.AttributeValueList, error) {
 	report := &envViolations{vars: vars, resourceInfo: resourceInfo}
-	result, err := schema.Validate(gojsonschema.NewGoLoader(vars.values))
+	// Env var values are text, which an application parses, so a value the schema declares an
+	// integer, a number or a boolean is checked as one (see generic.CoerceTextToSchemaTypes).
+	values := generic.CoerceTextToSchemaTypes(maps.Clone(vars.values), schemaObject)
+	result, err := schema.Validate(gojsonschema.NewGoLoader(values))
 	if err != nil {
 		return nil, nil, err
 	}

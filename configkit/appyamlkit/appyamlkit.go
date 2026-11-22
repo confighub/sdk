@@ -5,11 +5,12 @@
 package appyamlkit
 
 import (
+	"github.com/confighub/sdk/core/configkit"
 	"github.com/confighub/sdk/core/configkit/yamlkit"
 	"github.com/confighub/sdk/core/constants"
 	"github.com/confighub/sdk/core/function/api"
-	"github.com/confighub/sdk/core/workerapi"
 	"github.com/confighub/sdk/core/third_party/gaby"
+	"github.com/confighub/sdk/core/workerapi"
 )
 
 // User data errors should not be logged here. They will be logged by the caller.
@@ -27,9 +28,6 @@ func NewAppConfigYAMLResourceProvider() *AppConfigYAMLResourceProviderType {
 		ResourceProviderRegistry: yamlkit.NewResourceProviderRegistry(workerapi.ToolchainAppConfigYAML),
 	}
 }
-
-
-
 
 // DefaultResourceCategory returns the default resource category to asssume, which is AppConfig in this case.
 func (*AppConfigYAMLResourceProviderType) DefaultResourceCategory() api.ResourceCategory {
@@ -141,33 +139,21 @@ func (rp *AppConfigYAMLResourceProviderType) ResourceTypesAreSimilar(resourceTyp
 // NativeToYAML converts native YAML comments (HeadComment, LineComment, FootComment)
 // into $comment$ map keys so they have a uniform representation across all formats.
 func (*AppConfigYAMLResourceProviderType) NativeToYAML(data []byte) ([]byte, error) {
-	if len(data) == 0 {
-		return data, nil
-	}
-	docs, err := gaby.ParseAll(data)
-	if err != nil {
-		return data, nil // If parse fails, return as-is
-	}
-	for _, doc := range docs {
-		doc.ExtractCommentsToKeys()
-	}
-	return docs.Bytes(), nil
+	return configkit.YAMLNativeToYAML(data)
 }
 
 // YAMLToNative converts $comment$ map keys back into native YAML comments.
 func (*AppConfigYAMLResourceProviderType) YAMLToNative(yamlData []byte) ([]byte, error) {
-	if len(yamlData) == 0 {
-		return yamlData, nil
-	}
-	docs, err := gaby.ParseAll(yamlData)
-	if err != nil {
-		return yamlData, nil
-	}
-	for _, doc := range docs {
-		doc.InjectCommentsFromKeys()
-	}
-	return docs.Bytes(), nil
+	return configkit.YAMLYAMLToNative(yamlData)
 }
+
+// TreeToNative converts $comment$ map keys back into comments on the documents it is given, and
+// renders them.
+func (*AppConfigYAMLResourceProviderType) TreeToNative(docs gaby.Container) ([]byte, error) {
+	return configkit.YAMLTreeToNative(docs)
+}
+
+var _ configkit.TreeConverter = (*AppConfigYAMLResourceProviderType)(nil)
 
 func (*AppConfigYAMLResourceProviderType) DataType() api.DataType {
 	return api.DataTypeYAML

@@ -13,10 +13,11 @@ import (
 	"strings"
 	"time"
 	"unicode"
+	"unicode/utf16"
+	"unicode/utf8"
 
 	"github.com/confighub/sdk/core/configkit/yamlkit"
 	"github.com/confighub/sdk/core/third_party/gaby"
-	orderedmap "github.com/wk8/go-ordered-map/v2"
 	"gopkg.in/yaml.v3"
 )
 
@@ -126,60 +127,89 @@ func (c *YAMLToPropertiesConverter) convertToString(value interface{}) string {
 	}
 }
 
-// escapeKey escapes special characters in property keys
+// escapeKey escapes special characters in property keys: whitespace, the
+// separators = and :, a # or ! that would start a comment line, backslashes,
+// and anything outside printable ASCII.
 func (c *YAMLToPropertiesConverter) escapeKey(key string) string {
 	result := strings.Builder{}
-	for _, char := range key {
+	for i, char := range key {
 		switch char {
-		case ' ', '\t', '\f':
+		case ' ', '=', ':':
 			result.WriteRune('\\')
 			result.WriteRune(char)
-		case '=', ':':
-			result.WriteRune('\\')
+		case '#', '!':
+			if i == 0 {
+				result.WriteRune('\\')
+			}
 			result.WriteRune(char)
-		case '\\':
-			result.WriteString("\\\\")
-		case '\n':
-			result.WriteString("\\n")
-		case '\r':
-			result.WriteString("\\r")
 		default:
 			if char < 32 || char > 126 {
-				// Escape non-printable or non-ASCII characters
-				result.WriteString(fmt.Sprintf("\\u%04X", char))
+				writeEscapedRune(&result, char)
 			} else {
-				result.WriteRune(char)
+				writeEscapedOrRune(&result, char)
 			}
 		}
 	}
 	return result.String()
 }
 
-// escapeValue escapes special characters in property values
+// escapeValue escapes special characters in property values: backslashes,
+// control characters and other non-printable characters, a # after a space,
+// which would start an inline comment, and leading and trailing spaces,
+// which the parser would otherwise trim.
 func (c *YAMLToPropertiesConverter) escapeValue(value string) string {
 	result := strings.Builder{}
-	for _, char := range value {
-		switch char {
-		case '\\':
-			result.WriteString("\\\\")
-		case '\n':
-			result.WriteString("\\n")
-		case '\r':
-			result.WriteString("\\r")
-		case '\t':
-			result.WriteString("\\t")
-		case '\f':
-			result.WriteString("\\f")
+	end := len(strings.TrimRight(value, " "))
+	var previous rune
+	for i, char := range value {
+		afterSpace := previous == ' ' || previous == '\t'
+		previous = char
+		switch {
+		case char == ' ' && i >= end:
+			// \u0020 rather than "\ " at the end, where the parser trims
+			// the line before reading escapes.
+			result.WriteString("\\u0020")
+		case char == ' ' && i == 0:
+			result.WriteString("\\ ")
+		case char == '#' && afterSpace:
+			result.WriteString("\\#")
+		case char < 32 || char == 127 || (char > 126 && !unicode.IsPrint(char)):
+			writeEscapedRune(&result, char)
 		default:
-			if char < 32 || (char > 126 && !unicode.IsPrint(char)) {
-				// Escape non-printable characters
-				result.WriteString(fmt.Sprintf("\\u%04X", char))
-			} else {
-				result.WriteRune(char)
-			}
+			writeEscapedOrRune(&result, char)
 		}
 	}
 	return result.String()
+}
+
+// writeEscapedOrRune writes a printable character, doubling a backslash.
+func writeEscapedOrRune(b *strings.Builder, char rune) {
+	if char == '\\' {
+		b.WriteString("\\\\")
+		return
+	}
+	b.WriteRune(char)
+}
+
+// writeEscapedRune writes a character as an escape: \t, \n, \r or \f, or
+// \uXXXX, as a surrogate pair outside the Basic Multilingual Plane.
+func writeEscapedRune(b *strings.Builder, char rune) {
+	switch char {
+	case '\t':
+		b.WriteString("\\t")
+	case '\n':
+		b.WriteString("\\n")
+	case '\r':
+		b.WriteString("\\r")
+	case '\f':
+		b.WriteString("\\f")
+	default:
+		if r1, r2 := utf16.EncodeRune(char); r1 != utf8.RuneError {
+			fmt.Fprintf(b, "\\u%04X\\u%04X", r1, r2)
+		} else {
+			fmt.Fprintf(b, "\\u%04X", char)
+		}
+	}
 }
 
 // ToProperties converts the parsed YAML to Properties format as byte slice
@@ -233,64 +263,26 @@ func (c *YAMLToPropertiesConverter) GetProperties() map[string]string {
 
 // YAMLToNative converts YAML data to Java Properties format.
 // If the YAML contains $comment$ map keys, they are converted back to # comments.
-// Key order from the YAML source is preserved.
+// Key order from the YAML source is preserved, and each value is written as
+// its YAML text, or as nothing for null (see yamlkit.ScalarText).
 func (*PropertiesResourceProviderType) YAMLToNative(yamlData []byte) ([]byte, error) {
-	// Parse YAML with gaby to preserve key order
 	doc, err := gaby.ParseYAML(yamlData)
 	if err != nil {
 		return nil, fmt.Errorf("error parsing YAML: %w", err)
 	}
 
-	// Extract comment keys from ordered data
-	cleanData, comments := yamlkit.ExtractCommentsFromData(doc.DataOrdered())
+	_, comments := yamlkit.ExtractCommentsFromData(doc.DataOrdered())
 
-	// Flatten to ordered key=value pairs
+	entries, err := yamlkit.FlattenToText(doc.YNode())
+	if err != nil {
+		return nil, err
+	}
+
 	converter := NewYAMLToPropertiesConverter()
-	var keys []string
-	flattenOrderedProps(cleanData, "", &keys, converter.properties)
-
-	// Write properties in order
 	var buf bytes.Buffer
-	writer := bufio.NewWriter(&buf)
-	for _, key := range keys {
-		value := converter.properties[key]
-		escapedKey := converter.escapeKey(key)
-		escapedValue := converter.escapeValue(value)
-		fmt.Fprintf(writer, "%s=%s\n", escapedKey, escapedValue)
-	}
-	if err := writer.Flush(); err != nil {
-		return nil, fmt.Errorf("error flushing buffer: %w", err)
+	for _, entry := range entries {
+		fmt.Fprintf(&buf, "%s=%s\n", converter.escapeKey(strings.Join(entry.Path, ".")), converter.escapeValue(entry.Text))
 	}
 
-	// Re-inject comments into Properties output
-	result := injectPropertiesComments(buf.Bytes(), comments)
-	return result, nil
-}
-
-// flattenOrderedProps recursively flattens nested structures into dot-notation keys,
-// preserving order from ordered maps.
-func flattenOrderedProps(data interface{}, prefix string, keys *[]string, result map[string]string) {
-	buildKey := func(p, k string) string {
-		if p == "" {
-			return k
-		}
-		return p + "." + k
-	}
-	switch v := data.(type) {
-	case *orderedmap.OrderedMap[string, interface{}]:
-		for pair := v.Oldest(); pair != nil; pair = pair.Next() {
-			flattenOrderedProps(pair.Value, buildKey(prefix, pair.Key), keys, result)
-		}
-	case map[string]interface{}:
-		for key, value := range v {
-			flattenOrderedProps(value, buildKey(prefix, key), keys, result)
-		}
-	case []interface{}:
-		for i, item := range v {
-			flattenOrderedProps(item, buildKey(prefix, strconv.Itoa(i)), keys, result)
-		}
-	default:
-		*keys = append(*keys, prefix)
-		result[prefix] = fmt.Sprintf("%v", v)
-	}
+	return injectPropertiesComments(buf.Bytes(), comments), nil
 }

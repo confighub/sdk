@@ -4,16 +4,16 @@ go 1.26.0
 
 require (
 	github.com/cockroachdb/errors v1.11.3
-	github.com/confighub/sdk/configkit/appyamlkit v0.11.11
-	github.com/confighub/sdk/configkit/envkit v0.11.11
-	github.com/confighub/sdk/configkit/inikit v0.11.11
-	github.com/confighub/sdk/configkit/jsonkit v0.11.11
-	github.com/confighub/sdk/configkit/k8skit v0.11.11
-	github.com/confighub/sdk/configkit/propkit v0.11.11
-	github.com/confighub/sdk/configkit/textkit v0.11.11
-	github.com/confighub/sdk/configkit/tomlkit v0.11.11
-	github.com/confighub/sdk/configkit/yqkit v0.11.11
-	github.com/confighub/sdk/core v0.11.11
+	github.com/confighub/sdk/configkit/appyamlkit v0.0.0-00010101000000-000000000000
+	github.com/confighub/sdk/configkit/envkit v0.0.0-00010101000000-000000000000
+	github.com/confighub/sdk/configkit/inikit v0.0.0-00010101000000-000000000000
+	github.com/confighub/sdk/configkit/jsonkit v0.0.0-00010101000000-000000000000
+	github.com/confighub/sdk/configkit/k8skit v0.0.0-00010101000000-000000000000
+	github.com/confighub/sdk/configkit/propkit v0.0.0-00010101000000-000000000000
+	github.com/confighub/sdk/configkit/textkit v0.0.0-00010101000000-000000000000
+	github.com/confighub/sdk/configkit/tomlkit v0.0.0-00010101000000-000000000000
+	github.com/confighub/sdk/configkit/yqkit v0.0.0-00010101000000-000000000000
+	github.com/confighub/sdk/core v0.0.0
 	github.com/google/cel-go v0.26.0
 	github.com/google/gnostic v0.7.1
 	github.com/google/uuid v1.6.0
@@ -26,6 +26,7 @@ require (
 	github.com/yannh/kubeconform v0.6.7
 	go.starlark.net v0.0.0-20260210143700-b62fd896b91b
 	golang.org/x/sync v0.23.0
+	google.golang.org/protobuf v1.36.8
 	k8s.io/api v0.35.1
 	k8s.io/apimachinery v0.35.1
 	k8s.io/apiserver v0.35.1
@@ -129,7 +130,6 @@ require (
 	golang.org/x/tools v0.49.0 // indirect
 	google.golang.org/genproto/googleapis/api v0.0.0-20250825161204-c5933d9347a5 // indirect
 	google.golang.org/genproto/googleapis/rpc v0.0.0-20250825161204-c5933d9347a5 // indirect
-	google.golang.org/protobuf v1.36.8 // indirect
 	gopkg.in/inf.v0 v0.9.1 // indirect
 	gopkg.in/op/go-logging.v1 v1.0.0-20160211212156-b2cb9fa56473 // indirect
 	gopkg.in/yaml.v3 v3.0.1 // indirect
@@ -143,11 +143,21 @@ require (
 )
 
 replace (
+	github.com/confighub/sdk/configkit/appyamlkit => ../configkit/appyamlkit
+	github.com/confighub/sdk/configkit/envkit => ../configkit/envkit
+	github.com/confighub/sdk/configkit/inikit => ../configkit/inikit
+	github.com/confighub/sdk/configkit/jsonkit => ../configkit/jsonkit
+	github.com/confighub/sdk/configkit/k8skit => ../configkit/k8skit
+	github.com/confighub/sdk/configkit/propkit => ../configkit/propkit
+	github.com/confighub/sdk/configkit/textkit => ../configkit/textkit
+	github.com/confighub/sdk/configkit/tomlkit => ../configkit/tomlkit
+	github.com/confighub/sdk/configkit/yqkit => ../configkit/yqkit
+	github.com/confighub/sdk/core => ../core
 
 	// Fix CVE-2022-28948
 	gopkg.in/yaml.v3 => gopkg.in/yaml.v3 v3.0.1
 
-	// Pin kustomize to v5.5.0
-	sigs.k8s.io/kustomize/api => sigs.k8s.io/kustomize/api v0.18.0
-	sigs.k8s.io/kustomize/kyaml => sigs.k8s.io/kustomize/kyaml v0.18.1
+	// Pin kustomize to v5.7.1
+	sigs.k8s.io/kustomize/api => sigs.k8s.io/kustomize/api v0.20.1
+	sigs.k8s.io/kustomize/kyaml => sigs.k8s.io/kustomize/kyaml v0.20.1
 )

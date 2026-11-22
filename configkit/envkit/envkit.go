@@ -9,15 +9,13 @@ import (
 	"bytes"
 	"fmt"
 	"sort"
-	"strconv"
 	"strings"
 
 	"github.com/confighub/sdk/core/configkit/yamlkit"
 	"github.com/confighub/sdk/core/constants"
 	"github.com/confighub/sdk/core/function/api"
-	"github.com/confighub/sdk/core/workerapi"
 	"github.com/confighub/sdk/core/third_party/gaby"
-	orderedmap "github.com/wk8/go-ordered-map/v2"
+	"github.com/confighub/sdk/core/workerapi"
 )
 
 // User data errors should not be logged here. They will be logged by the caller.
@@ -35,9 +33,6 @@ func NewEnvResourceProvider() *EnvResourceProviderType {
 		ResourceProviderRegistry: yamlkit.NewResourceProviderRegistry(workerapi.ToolchainAppConfigEnv),
 	}
 }
-
-
-
 
 // DefaultResourceCategory returns the default resource category to assume, which is AppConfig in this case.
 func (*EnvResourceProviderType) DefaultResourceCategory() api.ResourceCategory {
@@ -98,7 +93,6 @@ func (rp *EnvResourceProviderType) ResourceNameStableCoreGetter(doc *gaby.YamlDo
 	return api.ResourceName(name), nil
 }
 
-
 func (*EnvResourceProviderType) TypeDescription() string {
 	return "Schema"
 }
@@ -139,6 +133,13 @@ func (*EnvResourceProviderType) RemoveAPIVersionFromResourceType(resourceType ap
 
 func (rp *EnvResourceProviderType) ResourceTypesAreSimilar(resourceTypeA, resourceTypeB api.ResourceType) bool {
 	return api.SameResourceType(rp, resourceTypeA, resourceTypeB)
+}
+
+// ValuesAreText reports that every env file value is text, which functions
+// that get and set ints and bools read and write (see
+// yamlkit.TextValuedResourceProvider).
+func (*EnvResourceProviderType) ValuesAreText() bool {
+	return true
 }
 
 func (*EnvResourceProviderType) DataType() api.DataType {
@@ -300,78 +301,34 @@ func splitPath(dotPath string) []string {
 
 // YAMLToNative converts YAML data to env file format (KEY=value lines).
 // If the YAML contains $comment$ map keys, they are converted back to # comments.
-// Key order from the YAML source is preserved.
+// Key order from the YAML source is preserved, and each value is written as
+// its YAML text, or as nothing for null (see yamlkit.ScalarText).
 func (*EnvResourceProviderType) YAMLToNative(yamlData []byte) ([]byte, error) {
 	if len(yamlData) == 0 {
 		return []byte{}, nil
 	}
 
-	// Parse YAML with gaby to preserve key order
 	doc, err := gaby.ParseYAML(yamlData)
 	if err != nil {
 		return nil, fmt.Errorf("error parsing YAML: %w", err)
 	}
 
-	// Extract comment keys from ordered data
-	cleanData, comments := yamlkit.ExtractCommentsFromData(doc.DataOrdered())
+	_, comments := yamlkit.ExtractCommentsFromData(doc.DataOrdered())
 
-	// Flatten to ordered key=value pairs
-	var keys []string
-	props := make(map[string]string)
-	flattenOrdered(cleanData, "", &keys, props)
-
-	// Validate that non-configHub keys don't contain dots (env vars can't have dots).
-	for _, key := range keys {
-		if strings.Contains(key, ".") && !strings.HasPrefix(key, contextPathPrefx) {
-			return nil, fmt.Errorf("key %q contains dots, which are not valid in environment variable names; only keys under the %q prefix may use dots", key, strings.TrimSuffix(contextPathPrefx, "."))
-		}
+	entries, err := yamlkit.FlattenToText(doc.YNode())
+	if err != nil {
+		return nil, err
 	}
 
 	var buf bytes.Buffer
-	writer := bufio.NewWriter(&buf)
-	for _, key := range keys {
-		fmt.Fprintf(writer, "%s=%s\n", key, FormatValue(props[key]))
-	}
-	if err := writer.Flush(); err != nil {
-		return nil, fmt.Errorf("error flushing buffer: %w", err)
+	for _, entry := range entries {
+		key := strings.Join(entry.Path, ".")
+		// Env variable names can't have dots.
+		if strings.Contains(key, ".") && !strings.HasPrefix(key, contextPathPrefx) {
+			return nil, fmt.Errorf("key %q contains dots, which are not valid in environment variable names; only keys under the %q prefix may use dots", key, strings.TrimSuffix(contextPathPrefx, "."))
+		}
+		fmt.Fprintf(&buf, "%s=%s\n", key, FormatValue(entry.Text))
 	}
 
-	// Re-inject comments into env output
-	result := injectEnvComments(buf.Bytes(), comments)
-
-	return result, nil
-}
-
-// flattenOrdered recursively flattens nested structures into dot-notation keys,
-// preserving order from ordered maps. Keys are appended to the keys slice in order.
-func flattenOrdered(data interface{}, prefix string, keys *[]string, result map[string]string) {
-	switch v := data.(type) {
-	case *orderedmap.OrderedMap[string, interface{}]:
-		for pair := v.Oldest(); pair != nil; pair = pair.Next() {
-			newKey := pair.Key
-			if prefix != "" {
-				newKey = prefix + "." + pair.Key
-			}
-			flattenOrdered(pair.Value, newKey, keys, result)
-		}
-	case map[string]interface{}:
-		for key, value := range v {
-			newKey := key
-			if prefix != "" {
-				newKey = prefix + "." + key
-			}
-			flattenOrdered(value, newKey, keys, result)
-		}
-	case []interface{}:
-		for i, item := range v {
-			newKey := strconv.Itoa(i)
-			if prefix != "" {
-				newKey = prefix + "." + newKey
-			}
-			flattenOrdered(item, newKey, keys, result)
-		}
-	default:
-		*keys = append(*keys, prefix)
-		result[prefix] = fmt.Sprintf("%v", v)
-	}
+	return injectEnvComments(buf.Bytes(), comments), nil
 }

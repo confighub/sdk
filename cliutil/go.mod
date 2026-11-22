@@ -5,7 +5,7 @@ go 1.25.0
 toolchain go1.25.11
 
 require (
-	github.com/confighub/sdk/configkit/yqkit v0.11.11
+	github.com/confighub/sdk/configkit/yqkit v0.0.0
 	github.com/google/uuid v1.6.0
 	github.com/itchyny/gojq v0.12.17
 	github.com/spf13/cobra v1.10.2
@@ -49,11 +49,12 @@ require (
 )
 
 replace (
+	github.com/confighub/sdk/configkit/yqkit => ../configkit/yqkit
 
 	// Fix CVE-2022-28948
 	gopkg.in/yaml.v3 => gopkg.in/yaml.v3 v3.0.1
 
-	// Pin kustomize to v5.5.0
-	sigs.k8s.io/kustomize/api => sigs.k8s.io/kustomize/api v0.18.0
-	sigs.k8s.io/kustomize/kyaml => sigs.k8s.io/kustomize/kyaml v0.18.1
+	// Pin kustomize to v5.7.1
+	sigs.k8s.io/kustomize/api => sigs.k8s.io/kustomize/api v0.20.1
+	sigs.k8s.io/kustomize/kyaml => sigs.k8s.io/kustomize/kyaml v0.20.1
 )

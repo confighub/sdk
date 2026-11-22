@@ -65,6 +65,11 @@ a link whose pointers name a revision that no longer exists, which otherwise fai
 every write to that link. Because the values come from each link's own units, a
 bulk --make-current patches the matched links one at a time.
 
+On a MergeUnits or UpgradeUnit link, moving UpstreamLastMergedRevisionNum forward,
+with --make-current or --upstream-last-merged-revision, merges nothing: the
+upstream revisions it passes are recorded on the link as skipped, with the move as
+the reason, and cub link get lists them.
+
 Examples:
 `+"```"+`
   # Repair one link

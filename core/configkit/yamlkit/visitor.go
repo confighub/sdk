@@ -213,6 +213,11 @@ func VisitPaths[T api.Scalar](
 		if ok {
 			return visitor(doc, output, context, currentValue)
 		}
+		if text, isText := currentDoc.Data().(string); isText && ValuesAreText(resourceProvider) {
+			if textValue, ok := TextAs[T](text); ok {
+				return visitor(doc, output, context, textValue)
+			}
+		}
 		return output, fmt.Errorf("value %v at path %s cannot be converted to %T", currentDoc.Data(), string(context.Path), currentValue)
 	}
 	return VisitPathsDoc(parsedData, resourceTypeToPaths, keys, output, resourceProvider, docVisitor, upsert, options)
@@ -383,12 +388,17 @@ func UpdatePathsFunction[T api.Scalar](
 	options *api.FunctionOptions,
 ) error {
 
+	valuesAreText := ValuesAreText(resourceProvider)
 	visitor := func(doc *gaby.YamlDoc, output any, context VisitorContext, currentValue T) (any, error) {
 		originalValue := currentValue
 		newValue := updater(currentValue, context)
 		var err error
 		if newValue != originalValue || upsert {
-			_, err = doc.SetP(newValue, string(context.Path))
+			if valuesAreText {
+				_, err = doc.SetP(TextOf(newValue), string(context.Path))
+			} else {
+				_, err = doc.SetP(newValue, string(context.Path))
+			}
 		}
 		return output, err
 	}
@@ -444,7 +454,6 @@ func UpdatePathsFunctionDoc(
 	return err
 }
 
-
 // TODO: Refactor the layer on top of the base visitors
 
 // GetPaths traverses the specified path patterns of the specified resource types and returns
@@ -488,6 +497,7 @@ func GetPathsAnyType(
 	options *api.FunctionOptions,
 ) (api.AttributeValueList, error) {
 
+	valuesAreText := ValuesAreText(resourceProvider)
 	visitor := func(resourceDoc *gaby.YamlDoc, output any, context VisitorContext, currentDoc *gaby.YamlDoc) (any, error) {
 		attr := context.AttributeInfo
 		var currentDataType api.DataType
@@ -507,6 +517,20 @@ func GetPathsAnyType(
 			ignorePath := slices.Contains(GetVisitorOptions(resourceDoc, resourceProvider), constants.VisitorOptionIgnoreProvided)
 			if ignorePath {
 				return output, nil
+			}
+		}
+
+		// In a format whose values are all text, an int or a bool is read
+		// from its text.
+		if text, ok := currentValue.(string); ok && valuesAreText && context.EmbeddedPath == "" {
+			if dataType == api.DataTypeInt {
+				if i, ok := TextAs[int](text); ok {
+					currentValue = i
+				}
+			} else if dataType == api.DataTypeBool {
+				if b, ok := TextAs[bool](text); ok {
+					currentValue = b
+				}
 			}
 		}
 
@@ -895,4 +919,3 @@ func DeletePaths(
 	_, err := VisitPathsDoc(parsedData, resourceTypeToPaths, keys, nil, resourceProvider, docVisitor, false, options)
 	return err
 }
-

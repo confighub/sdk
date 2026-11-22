@@ -5272,9 +5272,15 @@ func SubtractMutations(identifier api.ResourceIdentifier, mutations, subtractMut
 // falling back to the resource-level index if no path-level match is found.
 // Returns the mutation index and true if found.
 //
-// parsedData and resourceProvider locate the resource's document, which is what turns a stored
-// path into the positional form callers look up by -- NeededPaths addresses array elements by
-// index. Both may be nil; the lookup then covers only the paths that match textually.
+// parsedData and resourceProvider locate the resource's document, which is what relates a stored
+// key to the path a caller looks up by. The two may name one element differently: the record
+// names an element of a list with no merge key by its content, and a caller -- NeededPaths -- by
+// its index, while either may name a merge-keyed element by its key or by its index. So both are
+// compared as written, with only the record's anchors resolved, and wholly positional. Both may be
+// nil; the lookup then covers only the paths that match textually.
+//
+// The record has to describe parsedData (see ReanchorStoredPaths): an anchor written against the
+// data before a write names the element as it was, and does not resolve once the write edits it.
 func FindMutationIndex(parsedData gaby.Container, mutationSources api.ResourceMutationList,
 	resource api.ResourceInfo, path api.ResolvedPath, resourceProvider ResourceProvider) (int64, bool) {
 	mutationSources, _ = CanonicalizeStoredMutationPaths(mutationSources, parsedData, resourceProvider)
@@ -5295,38 +5301,57 @@ func FindMutationIndex(parsedData gaby.Container, mutationSources api.ResourceMu
 		doc, _ = FindResourceDoc(parsedData, resourceProvider, &resource)
 	}
 
-	// Build a reverse lookup from positional paths to mutation info, so that an incoming path
-	// with numeric indices matches a stored entry that names the element instead. Two ways in:
-	// a stored ?key=value;@index carries the position, and a canonical ?key=value -- which is
-	// what AddMutations now writes, and has no index to strip -- resolves to one against the
+	// Build a reverse lookup from other forms of the stored keys to mutation info, so that an
+	// incoming path matches a stored entry that names an element another way. A stored
+	// ?key=value;@index carries its position; an anchor resolves to its element's index, merge
+	// keys left as they are; and every associative segment resolves to an index against the
 	// document.
-	positionalPathMap := make(map[api.ResolvedPath]*api.MutationInfo, len(rm.PathMutationMap))
+	otherForms := make(map[api.ResolvedPath]*api.MutationInfo, len(rm.PathMutationMap))
 	for p, info := range rm.PathMutationMap {
 		infoCopy := info
 		if stripped := api.ResolvedPath(StripAssociativeSegments(string(p))); stripped != p {
-			positionalPathMap[stripped] = &infoCopy
+			otherForms[stripped] = &infoCopy
 		}
 		if doc == nil {
 			continue
 		}
-		if resolved, ok := ResolveAssociativeSegments(doc, string(p)); ok && api.ResolvedPath(resolved) != p {
-			positionalPathMap[api.ResolvedPath(resolved)] = &infoCopy
+		key := string(p)
+		if anchorsResolved, ok := ResolveStoredAnchors(doc, key); ok {
+			if api.ResolvedPath(anchorsResolved) != p {
+				otherForms[api.ResolvedPath(anchorsResolved)] = &infoCopy
+			}
+			key = anchorsResolved
+		}
+		if resolved, ok := ResolveAssociativeSegments(doc, key); ok && api.ResolvedPath(resolved) != p {
+			otherForms[api.ResolvedPath(resolved)] = &infoCopy
 		}
 	}
 
-	// Walk up path segments from most specific to least specific,
-	// same pattern as the protection check at line ~793 in this file.
+	// Walk up from the most specific path to the least, trying the path as given and wholly
+	// positional at each level. Resolving rewrites associative segments one for one, so the two
+	// forms walk up together.
 	pathSegments := gaby.DotPathToSlice(string(path))
-	for len(pathSegments) > 0 {
-		candidatePath := api.ResolvedPath(JoinPathSegments(pathSegments))
-		if mutInfo, ok := rm.PathMutationMap[candidatePath]; ok {
-			return mutInfo.Index, true
+	var positionalSegments []string
+	if doc != nil {
+		if positional, ok := ResolveAssociativeSegments(doc, string(path)); ok && api.ResolvedPath(positional) != path {
+			if segments := gaby.DotPathToSlice(positional); len(segments) == len(pathSegments) {
+				positionalSegments = segments
+			}
 		}
-		// Also try matching against the positional forms of the stored paths
-		if mutInfo, ok := positionalPathMap[candidatePath]; ok {
-			return mutInfo.Index, true
+	}
+	for depth := len(pathSegments); depth > 0; depth-- {
+		candidates := []api.ResolvedPath{api.ResolvedPath(JoinPathSegments(pathSegments[:depth]))}
+		if positionalSegments != nil {
+			candidates = append(candidates, api.ResolvedPath(JoinPathSegments(positionalSegments[:depth])))
 		}
-		pathSegments = pathSegments[:len(pathSegments)-1]
+		for _, candidatePath := range candidates {
+			if mutInfo, ok := rm.PathMutationMap[candidatePath]; ok {
+				return mutInfo.Index, true
+			}
+			if mutInfo, ok := otherForms[candidatePath]; ok {
+				return mutInfo.Index, true
+			}
+		}
 	}
 
 	// No path-level match; fall back to the resource-level index.

@@ -30,3 +30,26 @@ func IsBuiltInClusterRole(name string) bool {
 	}
 	return strings.HasPrefix(name, "system:")
 }
+
+// builtInRoles are the Roles, by namespace, that the API server's bootstrap RBAC policy creates
+// in every cluster, such as the one an extension API server is bound to in order to read the
+// client CA.
+var builtInRoles = map[string]map[string]bool{
+	"kube-system": {
+		"extension-apiserver-authentication-reader":      true,
+		"system::leader-locking-kube-controller-manager": true,
+		"system::leader-locking-kube-scheduler":          true,
+		"system:controller:bootstrap-signer":             true,
+		"system:controller:cloud-provider":               true,
+		"system:controller:token-cleaner":                true,
+	},
+	"kube-public": {
+		"system:controller:bootstrap-signer": true,
+	},
+}
+
+// IsBuiltInRole reports whether the namespace has a Role of the name in every cluster, one the
+// API server's bootstrap RBAC policy creates.
+func IsBuiltInRole(namespace, name string) bool {
+	return builtInRoles[namespace][name]
+}

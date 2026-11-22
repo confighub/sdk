@@ -206,12 +206,7 @@ func stripConfigHubAndSerializeNative(converter configkit.ConfigConverter, parse
 	if len(parsedData) == 0 {
 		return nil, nil
 	}
-	// Round-trip through YAML to clone, since gaby.YamlDoc has no public DeepCopy.
-	yamlBytes := []byte(parsedData.String())
-	clone, err := gaby.ParseAll(yamlBytes)
-	if err != nil {
-		return nil, fmt.Errorf("failed to clone parsed data: %w", err)
-	}
+	clone := parsedData.DeepCopy()
 	for _, doc := range clone {
 		if doc == nil {
 			continue
@@ -219,7 +214,7 @@ func stripConfigHubAndSerializeNative(converter configkit.ConfigConverter, parse
 		// Ignore "not present" errors — DeleteP may return one if the path is missing.
 		_ = doc.DeleteP(prefix)
 	}
-	native, err := converter.YAMLToNative([]byte(clone.String()))
+	native, err := configkit.RenderNative(converter, clone)
 	if err != nil {
 		return nil, fmt.Errorf("failed to convert to native: %w", err)
 	}

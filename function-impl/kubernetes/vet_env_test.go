@@ -295,3 +295,28 @@ func TestVetEnv_InvalidSchema(t *testing.T) {
 	_, _, err = k8sFnVetEnv(testResourceProvider, &api.FunctionOptions{}, docs, []api.FunctionArgument{{Value: "{not json"}})
 	assert.Error(t, err)
 }
+
+// Env var values are text, so a schema's integer or boolean is checked against what the text
+// is, including the schema's other keywords, and the value a failure reports is the text.
+func TestVetEnv_TypedSchema(t *testing.T) {
+	schema := `{"type": "object", "properties": {
+		"PORT": {"type": "integer", "minimum": 1, "maximum": 65535},
+		"DEBUG": {"type": "boolean"}}}`
+	configMap := func(port, debug string) string {
+		return "apiVersion: v1\nkind: ConfigMap\nmetadata:\n  name: app-env\ndata:\n  PORT: \"" + port + "\"\n  DEBUG: \"" + debug + "\"\n"
+	}
+	result := vetEnvWithSchema(t, schema, configMap("8080", "true"))
+	assert.True(t, result.Passed, "details: %v", result.Details)
+
+	result = vetEnvWithSchema(t, schema, configMap("70000", "yes"))
+	assert.False(t, result.Passed)
+	assert.ElementsMatch(t, []string{"data.PORT", "data.DEBUG"}, failedPaths(t, result))
+	for _, failed := range result.FailedAttributes {
+		switch failed.Path {
+		case "data.PORT":
+			assert.Equal(t, "70000", failed.Value)
+		case "data.DEBUG":
+			assert.Equal(t, "yes", failed.Value)
+		}
+	}
+}

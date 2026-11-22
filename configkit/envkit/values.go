@@ -11,9 +11,10 @@ import (
 )
 
 // FormatValue returns value as it is written after KEY= in an env file.
-// A value with whitespace or a character an env file reader treats specially
-// is double-quoted, with backslashes, double quotes, dollar signs, backticks,
-// newlines and carriage returns escaped; any other value is written as is.
+// A value with whitespace, a control character or a character an env file
+// reader treats specially is double-quoted, with backslashes, double quotes,
+// dollar signs, backticks, newlines and carriage returns escaped; any other
+// value is written as is.
 // Escaping $ and ` keeps readers that expand variables or run commands, such
 // as dotenv libraries and shells, from doing so with the value. ParseValue
 // undoes it.
@@ -119,7 +120,18 @@ func splitQuoted(s string) (value, rest string, ok bool) {
 	return "", "", false
 }
 
-// needsQuoting reports whether a value has to be quoted to be read back as is.
+// needsQuoting reports whether a value has to be quoted to be read back as is:
+// whether it has whitespace or a character a reader treats specially, any
+// control character, or Unicode whitespace at either end, which a reader
+// trims from an unquoted value.
 func needsQuoting(value string) bool {
-	return strings.ContainsAny(value, " \t\r\n\"'\\#$`")
+	if strings.ContainsAny(value, " \t\r\n\"'\\#$`") || strings.TrimSpace(value) != value {
+		return true
+	}
+	for i := 0; i < len(value); i++ {
+		if value[i] < 0x20 || value[i] == 0x7f {
+			return true
+		}
+	}
+	return false
 }

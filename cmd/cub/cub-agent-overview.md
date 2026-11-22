@@ -118,6 +118,8 @@ cub release list --variant web/dev
 # A governed rollout: a ChangeOrder promoted Stage by Stage, approved, and released
 cub variant promote --change-order web-base/bump-image --target-stage staging --dry-run -o mutations
 cub variant approve --change-order web-base/bump-image --stage staging --dry-run
+# A fix made in review: move the change's release tag to the fixed revisions before releasing
+cub variant tag ChangeOrder:web-base/bump-image --move --stage staging
 cub release publish --revision ChangeOrder:web-base/bump-image web-staging --dry-run
 cub changeorder get --space web-base bump-image
 
@@ -125,7 +127,9 @@ cub changeorder get --space web-base bump-image
 cub unit blame --space web-dev backend --path image
 cub unit path --space web-dev backend REF
 
-# Undo: back out a ChangeOrder, or restore one Unit
+# Undo: take back a change and keep what came after, back out a ChangeOrder, or restore one Unit
+cub variant revert ChangeSet:web-base/tls-rollout --dry-run -o mutations
+cub unit revert --space web-dev backend HeadRevisionNum --dry-run -o mutations
 cub variant demote web/dev --change-order web-base/bump-image --dry-run
 cub unit update --space web-dev backend --restore Tag:release-2 --dry-run -o mutations
 

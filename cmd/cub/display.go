@@ -514,6 +514,8 @@ type ModelConstraint interface {
 		goclientnew.ExtendedChannel |
 		goclientnew.CommandRun |
 		goclientnew.ExtendedCommandRun |
+		goclientnew.AuditEvent |
+		goclientnew.ExtendedAuditEvent |
 		goclientnew.DeclaredCommand |
 		Component |
 		Context

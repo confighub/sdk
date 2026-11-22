@@ -9,11 +9,14 @@ import (
 
 type Container []*YamlDoc
 
+// commentAfterDocumentMarker matches a document marker at the start of a line followed by
+// a comment. It is anchored to the line start so that "---" inside a value is left alone.
+var commentAfterDocumentMarker = regexp.MustCompile(`(?m)^(---)([ \t]*#)`)
+
 func NormalizeYAML(y string) string {
 	y = strings.ReplaceAll(y, "\r\n", "\n")
 	// Handle comment after document separator without newline
-	re := regexp.MustCompile(`(---)([ \t]*#)`)
-	y = re.ReplaceAllString(y, "$1\n$2")
+	y = commentAfterDocumentMarker.ReplaceAllString(y, "$1\n$2")
 	// Remove leading and trailing space
 	y = strings.TrimSpace(y)
 	// Remove leading doc separator
@@ -23,6 +26,55 @@ func NormalizeYAML(y string) string {
 	// Remove leading and trailing space again, if any
 	y = strings.TrimSpace(y)
 	return y
+}
+
+// documentMarker reports whether line is a document marker -- "---", which starts a
+// document, or "...", which ends one -- and returns what follows the marker on the line.
+// YAML defines a marker as the three characters at the start of a line followed by
+// whitespace or the end of the line, so "--- !!map", "--- {a: 1}" and "--- |" start a
+// document whose content begins on the marker's line, while "----" and "---a" are not
+// markers. A comment directly after the marker, "---# text", is not YAML but is accepted,
+// since Helm charts in the wild write it.
+func documentMarker(line string) (rest string, ok bool) {
+	if !strings.HasPrefix(line, "---") && !strings.HasPrefix(line, "...") {
+		return "", false
+	}
+	rest = line[3:]
+	if rest == "" {
+		return "", true
+	}
+	switch rest[0] {
+	case ' ', '\t', '#':
+		return strings.TrimLeft(rest, " \t"), true
+	}
+	return "", false
+}
+
+// splitDocuments splits YAML text into the text of each document, at document markers.
+// A document marker at the start of a line always ends the document before it, even
+// within a block scalar, so no parsing is needed to find them. What follows "---" on its
+// line is the start of the next document. What follows "..." can only be a comment, and is
+// kept with the document it ends.
+func splitDocuments(y string) []string {
+	var chunks []string
+	var current []string
+	for line := range strings.SplitSeq(y, "\n") {
+		rest, ok := documentMarker(line)
+		if !ok {
+			current = append(current, line)
+			continue
+		}
+		startsDocument := strings.HasPrefix(line, "---")
+		if !startsDocument && rest != "" {
+			current = append(current, rest)
+		}
+		chunks = append(chunks, strings.Join(current, "\n"))
+		current = nil
+		if startsDocument && rest != "" {
+			current = append(current, rest)
+		}
+	}
+	return append(chunks, strings.Join(current, "\n"))
 }
 
 // Returns true if YAML doc is trivially empty, even no comments
@@ -47,16 +99,17 @@ func ParseAll(y []byte) (Container, error) {
 	if !hasLeadingSep {
 		// Check if there are comment lines before the first ---
 		for _, line := range strings.Split(trimmedInput, "\n") {
-			line = strings.TrimSpace(line)
-			if line == "" || strings.HasPrefix(line, "#") {
+			line = strings.TrimRight(line, " \t\r")
+			if trimmed := strings.TrimSpace(line); trimmed == "" || strings.HasPrefix(trimmed, "#") {
 				continue
 			}
-			hasLeadingSep = line == "---"
+			_, isMarker := documentMarker(line)
+			hasLeadingSep = isMarker && strings.HasPrefix(line, "---")
 			break
 		}
 	}
 
-	chunks := strings.Split(normalized, "\n---\n")
+	chunks := splitDocuments(normalized)
 	var multiDoc Container
 	// pendingComments collects comment text from empty/comment-only chunks
 	// to attach to the following document.
@@ -110,7 +163,32 @@ func ParseAll(y []byte) (Container, error) {
 		needsSep = true
 		multiDoc = append(multiDoc, container)
 	}
+	// Comments after the last document have no following document to precede, so they
+	// follow the last one instead. Comments with no document at all are not representable
+	// in a Container; callers that write data back keep the original text when it parses to
+	// no documents.
+	if len(pendingComments) > 0 && len(multiDoc) > 0 {
+		appendFootComment(multiDoc[len(multiDoc)-1], strings.Join(pendingComments, "\n"))
+	}
 	return multiDoc, nil
+}
+
+// appendFootComment adds comment text after everything else in a document.
+func appendFootComment(doc *YamlDoc, comment string) {
+	target := doc.YNode()
+	if target == nil {
+		return
+	}
+	// yaml.v3 puts a document's foot comment on the document node in some shapes, such as
+	// after a line comment, and the encoder writes only that one when both have one.
+	if document := doc.node.Document(); document != nil && document.Kind == yaml.DocumentNode && document.FootComment != "" {
+		target = document
+	}
+	if target.FootComment != "" {
+		target.FootComment += "\n" + comment
+	} else {
+		target.FootComment = comment
+	}
 }
 
 // prependHeadComment prepends comment text to the first key's HeadComment
@@ -245,9 +323,20 @@ func (m Container) Data() interface{} {
 	return m[0].Data()
 }
 
-func (m Container) String() string {
-	var sb strings.Builder
-	docCount := 0
+// DocumentRendering is one document of a Container as String renders it: Text is the document
+// itself, and Prefix what String writes before it -- nothing for the first document, "---\n"
+// between documents, or a document comment's lines followed by "---\n". A document's rendering
+// depends on nothing but the document and whether it is the first, so the documents of a Container
+// can be stored apart and joined back by concatenation.
+type DocumentRendering struct {
+	Prefix string
+	Text   string
+}
+
+// Renderings returns the documents of m as String renders them, in order, skipping the empty
+// documents String skips. Concatenating each Prefix and Text gives String's result.
+func (m Container) Renderings() []DocumentRendering {
+	var renderings []DocumentRendering
 	for _, c := range m {
 		if c == nil || c.IsEmptyDoc() {
 			continue
@@ -256,26 +345,36 @@ func (m Container) String() string {
 
 		if hasDocComment {
 			// Emit comment lines above the --- separator
+			var prefix strings.Builder
 			if docComment != "" {
 				for _, line := range strings.Split(docComment, "\n") {
 					line = strings.TrimSpace(line)
 					if line != "" && !strings.HasPrefix(line, "#") {
 						line = "# " + line
 					}
-					sb.WriteString(line)
-					sb.WriteByte('\n')
+					prefix.WriteString(line)
+					prefix.WriteByte('\n')
 				}
 			}
-			sb.WriteString("---\n")
-			sb.WriteString(c.stringWithoutDocComment())
+			prefix.WriteString("---\n")
+			renderings = append(renderings, DocumentRendering{Prefix: prefix.String(), Text: c.stringWithoutDocComment()})
 		} else {
 			// Insert --- separator between docs that don't have doc comments
-			if docCount > 0 {
-				sb.WriteString("---\n")
+			prefix := ""
+			if len(renderings) > 0 {
+				prefix = "---\n"
 			}
-			sb.WriteString(c.String())
+			renderings = append(renderings, DocumentRendering{Prefix: prefix, Text: c.String()})
 		}
-		docCount++
+	}
+	return renderings
+}
+
+func (m Container) String() string {
+	var sb strings.Builder
+	for _, rendering := range m.Renderings() {
+		sb.WriteString(rendering.Prefix)
+		sb.WriteString(rendering.Text)
 	}
 	return sb.String()
 }

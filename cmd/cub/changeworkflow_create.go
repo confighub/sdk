@@ -48,7 +48,8 @@ other way is written in a file.
 
 The gates a stage can declare are:
   Validated  no Unit the change changed, in any Space of the stage before, has ValidationErrors
-             on what a release of it would bundle there
+             on what a release of it would bundle there, and where it has not been released, a
+             release of it would pass its Release triggers
   Released   every Space of the stage before has released the change; a Space with no release
              target has nothing to release, so it passes
   Healthy    every Space of the stage before reports it Synced, Succeeded and Healthy
@@ -156,9 +157,10 @@ An attestation prerequisite requires Attestations (see "cub attestation") of eac
 reads: Count distinct users recording a Pass, of Type Approval unless another is named. By
 default an author of the change does not count (AllowAuthors), and an unrevoked Fail blocks
 (IgnoreFail). A stage's Prerequisites read what a release of the change would bundle in the
-stage before, for the Units it changed; its ReleasePrerequisites, which may name only attestation prerequisites, read what a
-release of the change order in one of the stage's spaces bundles. "cub variant approve" records
-approvals.
+stage before, for the Units it changed; its ReleasePrerequisites, which may name attestation
+prerequisites and Validated, read what a release of the change order in one of the stage's spaces
+bundles. Validated is what publishing checks of what a release bundles: no ValidationErrors on its
+Revisions, and its Release triggers passing. "cub variant approve" records approvals.
 
 BULK CHANGEWORKFLOW CREATION:
 

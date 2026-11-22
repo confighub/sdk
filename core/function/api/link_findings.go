@@ -20,6 +20,11 @@ const (
 	LinkFindingProvidedNotFound LinkFindingReason = "ProvidedNotFound"
 	// LinkFindingResolveFailed: the resolve failed, and wrote nothing. Details says why.
 	LinkFindingResolveFailed LinkFindingReason = "ResolveFailed"
+	// LinkFindingReferenceNotFound: a reference in the downstream Unit names its target with a
+	// real value rather than a placeholder, and the Link's upstream Unit provides resources of
+	// what it names, but not the one it names. Another of the Unit's Links binding the reference,
+	// or a resource in the Unit itself, satisfies it instead.
+	LinkFindingReferenceNotFound LinkFindingReason = "ReferenceNotFound"
 )
 
 // LinkFinding records something a Link's resolve could not do in the Unit the Link is from. A
@@ -30,7 +35,7 @@ const (
 // Link replaces the findings that carry its LinkID and leaves the others' alone.
 type LinkFinding struct {
 	LinkID   uuid.UUID         `json:",omitempty,omitzero" description:"The Link whose resolve recorded the finding"`
-	Reason   LinkFindingReason `description:"What the resolve could not do: NeededNotFound, ProvidedNotFound, or ResolveFailed"`
+	Reason   LinkFindingReason `description:"What the resolve could not do: NeededNotFound, ProvidedNotFound, ResolveFailed, or ReferenceNotFound"`
 	Resource ResourceInfo      `json:",omitzero" description:"The resource the finding is about, in the Unit Reason names; empty for a finding about the resolve as a whole"`
 	Path     ResolvedPath      `json:",omitempty" description:"The path the finding is about; empty for a resource-level finding"`
 	Key      string            `json:",omitempty" description:"The Key of the Link's entry the finding is about, when the entry has one"`

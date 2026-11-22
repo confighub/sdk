@@ -203,7 +203,7 @@ func (p Pack) Validate() error {
 	declared := map[string]bool{}
 	for _, r := range p.Rules {
 		declared[r.Slug] = true
-		if err := validateOtherData("rule "+r.Slug, r.AppliedTo, r.OtherData); err != nil {
+		if err := validateOtherData("rule "+r.Slug, r.OtherData); err != nil {
 			return err
 		}
 	}
@@ -267,7 +267,7 @@ func (p Pack) Validate() error {
 		if len(c.Params) > 0 && c.Engine != EngineCEL {
 			return fmt.Errorf("check %s: only cel checks take parameters", c.Name)
 		}
-		if err := validateOtherData("check "+c.Name, c.AppliedTo, c.OtherData); err != nil {
+		if err := validateOtherData("check "+c.Name, c.OtherData); err != nil {
 			return err
 		}
 		for _, rule := range c.ExceptFrom {
@@ -339,7 +339,7 @@ func cannotShareRule(a, b Check) string {
 		return "they honor the exceptions of different rules"
 	case a.Library != b.Library:
 		return "their policy libraries differ"
-	case !otherDataEqual(a.OtherData, b.OtherData):
+	case !otherDataEqual(a.AppliedTo, a.OtherData, b.OtherData):
 		return "they read different other data"
 	}
 	return ""

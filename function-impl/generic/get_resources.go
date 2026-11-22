@@ -72,8 +72,9 @@ func genericFnGetResources(converter configkit.ConfigConverter, resourceProvider
 				}
 				resourceBody = string(jsonBytes)
 			case "native":
-				yamlBytes := []byte(doc.String())
-				nativeBytes, err := converter.YAMLToNative(yamlBytes)
+				// Rendering converts the document in place, so it renders a copy: the documents
+				// are the caller's, and other functions in the invocation may read them.
+				nativeBytes, err := configkit.RenderNative(converter, gaby.Container{doc.DeepCopy()})
 				if err != nil {
 					return output, []error{err}
 				}

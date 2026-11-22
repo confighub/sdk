@@ -37,11 +37,12 @@ func extractPropertiesComments(source []byte) map[string]string {
 		}
 
 		// Handle line continuations
-		for strings.HasSuffix(trimmed, "\\") {
+		for endsWithContinuation(trimmed) {
 			trimmed = trimmed[:len(trimmed)-1]
-			if scanner.Scan() {
-				trimmed += strings.TrimSpace(scanner.Text())
+			if !scanner.Scan() {
+				break
 			}
+			trimmed += strings.TrimSpace(scanner.Text())
 		}
 
 		// Parse key from key=value or key:value
@@ -91,24 +92,21 @@ func extractPropertiesComments(source []byte) map[string]string {
 	return comments
 }
 
-// extractPropertyValue extracts the value portion from a properties line.
+// extractPropertyValue extracts the value portion from a properties line,
+// as written.
 func extractPropertyValue(line string) string {
-	for i, ch := range line {
-		if (ch == '=' || ch == ':') && (i == 0 || line[i-1] != '\\') {
-			return strings.TrimSpace(line[i+1:])
-		}
-	}
-	return ""
+	_, value, _ := splitKeyValue(line)
+	return value
 }
 
-// parsePropertyKey extracts the key from a properties line (key=value or key:value).
+// parsePropertyKey extracts the key from a properties line (key=value or
+// key:value), unescaped, as the parser reads it.
 func parsePropertyKey(line string) string {
-	for i, ch := range line {
-		if (ch == '=' || ch == ':') && (i == 0 || line[i-1] != '\\') {
-			return strings.TrimSpace(line[:i])
-		}
+	key, _, ok := splitKeyValue(line)
+	if !ok {
+		return ""
 	}
-	return ""
+	return unescapeProperty(key)
 }
 
 // injectPropertiesComments post-processes Properties encoder output to re-insert comments.

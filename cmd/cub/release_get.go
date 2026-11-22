@@ -5,6 +5,7 @@ package main
 
 import (
 	"fmt"
+	"sort"
 	"strconv"
 	"strings"
 
@@ -287,6 +288,9 @@ func displayExtendedReleaseDetails(er *goclientnew.ExtendedRelease) {
 	if len(rel.SkippedUnits) > 0 {
 		view.Append([]string{"Skipped Units", skippedUnitsSummary(rel.SkippedUnits)})
 	}
+	if len(rel.ValidationWarnings) > 0 {
+		view.Append([]string{"Release Warnings", releaseWarningsSummary(rel)})
+	}
 	view.Append([]string{"Bundle Base Name", rel.BundleBaseName})
 	view.Append([]string{"Digest", rel.Digest})
 	view.Append([]string{"Manifest Digest", rel.ManifestDigest})
@@ -370,4 +374,23 @@ func apiGetExtendedReleaseByID(releaseID uuid.UUID, selectParam string) (*goclie
 		spaceID = found[0].Release.SpaceID.String()
 	}
 	return apiGetExtendedRelease(spaceID, releaseID.String(), selectParam)
+}
+
+// releaseWarningsSummary names the Warn Release triggers that failed on what the Release bundles,
+// each with the number of units it found something in; -o json has the findings.
+func releaseWarningsSummary(rel *goclientnew.Release) string {
+	gates := make([]string, 0, len(rel.ValidationWarnings))
+	for gate := range rel.ValidationWarnings {
+		gates = append(gates, gate)
+	}
+	sort.Strings(gates)
+	entries := make([]string, 0, len(gates))
+	for _, gate := range gates {
+		entry := gate
+		if units := len(rel.ValidationFailedUnitIDs[gate]); units > 0 {
+			entry += fmt.Sprintf(" (%d units)", units)
+		}
+		entries = append(entries, entry)
+	}
+	return strings.Join(entries, ", ")
 }

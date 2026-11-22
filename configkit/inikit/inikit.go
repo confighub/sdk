@@ -7,16 +7,15 @@ package inikit
 import (
 	"bytes"
 	"fmt"
-	"strconv"
 	"strings"
 
 	"github.com/confighub/sdk/core/configkit/yamlkit"
 	"github.com/confighub/sdk/core/constants"
 	"github.com/confighub/sdk/core/function/api"
-	"github.com/confighub/sdk/core/workerapi"
 	"github.com/confighub/sdk/core/third_party/gaby"
+	"github.com/confighub/sdk/core/workerapi"
 	"github.com/go-ini/ini"
-	orderedmap "github.com/wk8/go-ordered-map/v2"
+	"sigs.k8s.io/kustomize/kyaml/yaml"
 )
 
 // User data errors should not be logged here. They will be logged by the caller.
@@ -34,9 +33,6 @@ func NewINIResourceProvider() *INIResourceProviderType {
 		ResourceProviderRegistry: yamlkit.NewResourceProviderRegistry(workerapi.ToolchainAppConfigINI),
 	}
 }
-
-
-
 
 // DefaultResourceCategory returns the default resource category to assume, which is AppConfig in this case.
 func (*INIResourceProviderType) DefaultResourceCategory() api.ResourceCategory {
@@ -102,7 +98,6 @@ func (rp *INIResourceProviderType) ResourceNameStableCoreGetter(doc *gaby.YamlDo
 	return api.ResourceName(name), nil
 }
 
-
 func (*INIResourceProviderType) TypeDescription() string {
 	return "Schema"
 }
@@ -146,6 +141,13 @@ func (rp *INIResourceProviderType) ResourceTypesAreSimilar(resourceTypeA, resour
 	return api.SameResourceType(rp, resourceTypeA, resourceTypeB)
 }
 
+// ValuesAreText reports that every INI value is text, which functions
+// that get and set ints and bools read and write (see
+// yamlkit.TextValuedResourceProvider).
+func (*INIResourceProviderType) ValuesAreText() bool {
+	return true
+}
+
 func (*INIResourceProviderType) DataType() api.DataType {
 	return api.DataTypeINI
 }
@@ -154,29 +156,10 @@ func (*INIResourceProviderType) GetToolchainType() workerapi.ToolchainType {
 	return workerapi.ToolchainAppConfigINI
 }
 
-// parseINIValue attempts to convert an INI value string to the appropriate type.
-// It tries in order: bool, int, and falls back to string.
-func parseINIValue(value string) interface{} {
-	// Try boolean
-	if value == "true" {
-		return true
-	}
-	if value == "false" {
-		return false
-	}
-
-	// Try integer
-	if intVal, err := strconv.ParseInt(value, 10, 64); err == nil {
-		return int(intVal)
-	}
-
-	// Default to string
-	return value
-}
-
-
 // NativeToYAML converts INI data to YAML format using native libraries.
 // Comments from the INI source are preserved as $comment$ map keys in the output.
+// Every value is a string, since INI has no types (see
+// yamlkit.TextValuedResourceProvider).
 // Key order from the INI source is preserved by building a gaby YamlDoc directly.
 func (*INIResourceProviderType) NativeToYAML(data []byte) ([]byte, error) {
 	if len(data) == 0 {
@@ -213,7 +196,7 @@ func (*INIResourceProviderType) NativeToYAML(data []byte) ([]byte, error) {
 		}
 
 		for _, key := range section.Keys() {
-			value := parseINIValue(key.Value())
+			value := key.Value()
 
 			var dataPath []string
 			var commentParentPath string
@@ -278,104 +261,83 @@ func appendPath(parentPath, key string) []string {
 	return []string{key}
 }
 
-// addINISectionOrdered recursively adds keys and nested sections to the INI config,
-// preserving the key order from the ordered map.
-func addINISectionOrdered(cfg *ini.File, sectionName string, data *orderedmap.OrderedMap[string, interface{}]) error {
-	// First, check if this section has any direct (non-map) keys
-	hasDirectKeys := false
-	for pair := data.Oldest(); pair != nil; pair = pair.Next() {
-		if _, isMap := pair.Value.(*orderedmap.OrderedMap[string, interface{}]); !isMap {
-			hasDirectKeys = true
-			break
-		}
+// addINISection adds the keys of a mapping to the INI section named
+// sectionName, or to the default section if it is empty, and its nested
+// mappings as sections named with dots, preserving key order. INI has no
+// lists, so a sequence is an error.
+func addINISection(cfg *ini.File, sectionName string, node *yaml.Node) error {
+	content, err := gaby.MappingEntries(node)
+	if err != nil {
+		return err
 	}
-
-	// Only create the section if it has direct keys
 	var section *ini.Section
-	if hasDirectKeys {
-		var err error
-		section, err = cfg.NewSection(sectionName)
-		if err != nil {
-			return fmt.Errorf("error creating section %s: %w", sectionName, err)
+	for i := 0; i+1 < len(content); i += 2 {
+		key := gaby.ResolveAlias(content[i]).Value
+		if yamlkit.IsCommentKey(key) {
+			continue
 		}
-	}
-
-	// Process keys in order
-	for pair := data.Oldest(); pair != nil; pair = pair.Next() {
-		key := pair.Key
-		switch v := pair.Value.(type) {
-		case *orderedmap.OrderedMap[string, interface{}]:
-			// This is a nested section - recurse with dotted section name
-			nestedSectionName := sectionName + "." + key
-			if err := addINISectionOrdered(cfg, nestedSectionName, v); err != nil {
+		value := gaby.ResolveAlias(content[i+1])
+		path := key
+		if sectionName != "" {
+			path = sectionName + "." + key
+		}
+		switch value.Kind {
+		case yaml.MappingNode:
+			if err := addINISection(cfg, path, value); err != nil {
 				return err
 			}
+		case yaml.SequenceNode:
+			return fmt.Errorf("%s is a list, which INI can't represent", path)
 		default:
-			// This is a regular key-value pair - add to current section
 			if section == nil {
-				return fmt.Errorf("internal error: section is nil for key %s.%s", sectionName, key)
+				name := sectionName
+				if name == "" {
+					name = ini.DefaultSection
+				}
+				if section, err = cfg.NewSection(name); err != nil {
+					return fmt.Errorf("error creating section %s: %w", name, err)
+				}
 			}
-			valueStr := fmt.Sprintf("%v", v)
-			_, err := section.NewKey(key, valueStr)
-			if err != nil {
-				return fmt.Errorf("error creating key %s.%s: %w", sectionName, key, err)
+			if _, err := section.NewKey(key, yamlkit.ScalarText(value)); err != nil {
+				return fmt.Errorf("error creating key %s: %w", path, err)
 			}
 		}
 	}
-
 	return nil
 }
 
 // YAMLToNative converts YAML data to INI format using native libraries.
 // If the YAML contains $comment$ map keys, they are converted back to INI comments.
-// Key order from the YAML source is preserved.
+// Key order from the YAML source is preserved, and each value is written as
+// its YAML text, or as nothing for null (see yamlkit.ScalarText).
 func (*INIResourceProviderType) YAMLToNative(yamlData []byte) ([]byte, error) {
 	if len(yamlData) == 0 {
 		return []byte{}, nil
 	}
 
-	// Parse YAML with gaby to preserve key order
 	doc, err := gaby.ParseYAML(yamlData)
 	if err != nil {
 		return nil, fmt.Errorf("error parsing YAML: %w", err)
 	}
 
-	// Extract comment keys from ordered data
-	cleanData, comments := yamlkit.ExtractCommentsFromData(doc.DataOrdered())
-	cleanMap, ok := cleanData.(*orderedmap.OrderedMap[string, interface{}])
-	if !ok {
-		return nil, fmt.Errorf("unexpected data type after extracting comments: %T", cleanData)
-	}
+	_, comments := yamlkit.ExtractCommentsFromData(doc.DataOrdered())
 
-	// Create INI file
 	cfg := ini.Empty()
-
-	// Convert ordered map to INI sections, preserving key order
-	for pair := cleanMap.Oldest(); pair != nil; pair = pair.Next() {
-		key := pair.Key
-		switch v := pair.Value.(type) {
-		case *orderedmap.OrderedMap[string, interface{}]:
-			// This is a section - process it recursively
-			if err := addINISectionOrdered(cfg, key, v); err != nil {
-				return nil, err
-			}
-		default:
-			// This is a root-level key
-			_, err := cfg.Section(ini.DefaultSection).NewKey(key, fmt.Sprintf("%v", pair.Value))
-			if err != nil {
-				return nil, fmt.Errorf("error creating root key %s: %w", key, err)
-			}
+	root := gaby.ResolveAlias(doc.YNode())
+	switch {
+	case root.Kind == yaml.MappingNode:
+		if err := addINISection(cfg, "", root); err != nil {
+			return nil, err
 		}
+	case root.Kind == yaml.ScalarNode && root.ShortTag() == yaml.NodeTagNull:
+	default:
+		return nil, fmt.Errorf("an INI document has to be a mapping of keys and sections")
 	}
 
-	// Write to buffer
 	var output bytes.Buffer
 	if _, err := cfg.WriteTo(&output); err != nil {
 		return nil, fmt.Errorf("error converting YAML to INI: %w", err)
 	}
 
-	// Re-inject comments into INI output
-	result := injectINIComments(output.Bytes(), comments)
-
-	return result, nil
+	return injectINIComments(output.Bytes(), comments), nil
 }

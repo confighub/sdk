@@ -33,7 +33,7 @@ OUTPUT
       "database.port": {
         "MutationType": "Update",
         "Index": 0,
-        "Value": "5433\n"
+        "Value": "\"5433\"\n"
       }
     },
     "Aliases": {

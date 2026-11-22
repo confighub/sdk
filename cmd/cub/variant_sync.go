@@ -118,14 +118,16 @@ func variantSyncCmdRun(_ *cobra.Command, args []string) error {
 	// The copied links resolve on their own, and their resolves write to the target's units.
 	if wait && !variantSyncArgs.dryRun {
 		awaited := map[string]bool{}
+		var written []unitToAwait
 		for _, unit := range result.Units {
 			if unit.Unit == nil || awaited[unit.Slug] {
 				continue
 			}
 			awaited[unit.Slug] = true
-			if err := awaitTriggersRemoval(unit.Unit); err != nil {
-				return err
-			}
+			written = append(written, unitToAwait{unitID: unit.Unit.UnitID, spaceID: unit.Unit.SpaceID})
+		}
+		if err := awaitUnitsTriggers(written); err != nil {
+			return err
 		}
 	}
 

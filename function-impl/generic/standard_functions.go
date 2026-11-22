@@ -60,6 +60,7 @@ func RegisterStandardFunctions(fh handler.FunctionRegistry, converter configkit.
 	registerSetStarlark(fh, converter, resourceProvider)
 	registerVetStarlark(fh, converter, resourceProvider)
 	registerGetStarlark(fh, converter, resourceProvider)
+	registerReduceStarlark(fh, converter, resourceProvider)
 	registerVetCEL(fh, converter, resourceProvider)
 	registerGetCEL(fh, converter, resourceProvider)
 	registerSetCEL(fh, converter, resourceProvider)

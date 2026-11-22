@@ -122,6 +122,17 @@ func displayTargetDetails(extendedTarget *goclientnew.ExtendedTarget) {
 		view.Append([]string{"Triggers", ""})
 	}
 	view.Append([]string{"Trigger Hash", targetDetails.TriggerHash})
+	// What each selection of other units picked: the number of units per trigger and key, since
+	// a list of IDs is unreadable; -o json has them.
+	for _, selected := range targetDetails.TriggerOtherUnitIDs {
+		trigger := selected.TriggerID.String()
+		for _, t := range extendedTarget.Triggers {
+			if t.TriggerID == selected.TriggerID {
+				trigger = t.Slug
+			}
+		}
+		view.Append([]string{"Other Units " + trigger + "/" + selected.Key, fmt.Sprintf("%d units", len(selected.UnitIDs))})
+	}
 
 	view.Append([]string{"Organization ID", targetDetails.OrganizationID.String()})
 	view.Render()

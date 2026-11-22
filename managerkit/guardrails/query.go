@@ -91,7 +91,7 @@ func listSpaces(ctx context.Context, client *cubapi.Client, whereSpace string) (
 		where = cubapi.NewWhere(whereSpace)
 	}
 	spaces, err := cubapi.ListSpaces(ctx, client, where,
-		cubapi.ListOpts{Select: "Slug,SpaceID,WhereTrigger,TriggerFilterID"})
+		cubapi.ListOpts{Select: "Slug,SpaceID,WhereTrigger,TriggerFilterID,UpstreamSpaceID"})
 	if err != nil {
 		return nil, err
 	}
@@ -104,10 +104,14 @@ func listSpaces(ctx context.Context, client *cubapi.Client, whereSpace string) (
 		if es.Space.TriggerFilterID != nil {
 			triggerFilterID = es.Space.TriggerFilterID.String()
 		}
-		infos = append(infos, spaceInfo{
+		info := spaceInfo{
 			SpaceID: es.Space.SpaceID, Slug: es.Space.Slug,
 			WhereTrigger: es.Space.WhereTrigger, TriggerFilterID: triggerFilterID,
-		})
+		}
+		if es.Space.UpstreamSpaceID != nil {
+			info.UpstreamSpaceID = *es.Space.UpstreamSpaceID
+		}
+		infos = append(infos, info)
 	}
 	return infos, nil
 }
@@ -118,6 +122,9 @@ type spaceInfo struct {
 	Slug            string
 	WhereTrigger    string
 	TriggerFilterID string
+	// UpstreamSpaceID is the Space it takes its configuration from, such as the base of a
+	// variant; nil when it has none.
+	UpstreamSpaceID goclientnew.UUID
 }
 
 // targetInfo is the Target metadata the plan reasons about.

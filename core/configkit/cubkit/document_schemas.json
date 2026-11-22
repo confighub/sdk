@@ -211,7 +211,7 @@
           "type": "array"
         },
         "ReleasePrerequisites": {
-          "description": "Gates on publishing a Release for a change order in one of the stage's Spaces, each naming one declared in AttestationPrerequisites. Evaluated over the Revisions the Release bundles.",
+          "description": "Gates on publishing a Release for a change order in one of the stage's Spaces, each naming one declared in AttestationPrerequisites, or Validated, which is what publishing checks of what the Release bundles -- its Revisions' ValidationErrors and its Release triggers -- shown among the gates. Evaluated over the Revisions the Release bundles.",
           "items": {
             "type": "string"
           },
@@ -1696,7 +1696,7 @@
           ]
         },
         "Event": {
-          "description": "Event specifies the type of event that will activate this trigger. Valid values are Mutation and PostClone",
+          "description": "Event specifies the type of event that will activate this trigger. Valid values are Mutation, PostClone and Release. A Release trigger runs its validating functions once when a Space publishes a Release, over the documents of the Units the Release bundles that the trigger selects, and a failure refuses the Release unless the trigger is Warn; its results are recorded on the Release, not on the Units.",
           "type": "string"
         },
         "FunctionName": {
@@ -1729,7 +1729,7 @@
           "additionalProperties": {
             "$ref": "#/definitions/OtherUnitSelection"
           },
-          "description": "Selections of other Units to pass to the trigger's function as OtherData, by the key the function reads them under. Each Space that selects the trigger evaluates them when it evaluates its triggers -- when it is created, when its WhereTrigger or TriggerFilterID changes, and on refresh_triggers -- and records the Units each picked in its TriggerOtherUnitIDs. A change to the data of a Unit recorded re-runs the trigger on the Space's Units it applies to, and a Unit recorded can be deleted, which removes it from the record and re-runs the trigger the same way; which Units a selection picks changes only when the Space evaluates it again. A selection's Where may name that Space as EvaluatingSpace, as in `Space.ReleaseTargetID = EvaluatingSpace.ReleaseTargetID`. Only Units of the trigger's ToolchainType are selected, and whoever makes the Space's write needs Use permission on each. The function is passed the selected Units' head data as one entry, only the resources the selection's WhereResource matches if it has one, with each document's origin in OtherDataOrigins; it runs with whatever was selected, nothing included. A key is in either OtherUnitIDs or OtherUnitSelections.",
+          "description": "Selections of other Units to pass to the trigger's function as OtherData, by the key the function reads them under. Each Space and Target that selects the trigger evaluates them when it evaluates its triggers -- when it is created, when its WhereTrigger or TriggerFilterID changes, and on refresh_triggers -- and records the Units each picked in its TriggerOtherUnitIDs. A change to the data of a Unit recorded re-runs the trigger on the Units it applies to there, and a Unit recorded can be deleted, which removes it from the record and re-runs the trigger the same way; which Units a selection picks changes only when the Space or Target evaluates it again. A selection's Where may name that Space as EvaluatingSpace, as in `Space.ReleaseTargetID = EvaluatingSpace.ReleaseTargetID`, or that Target as EvaluatingTarget, as in `Space.ReleaseTargetID = EvaluatingTarget.TargetID`; the one not evaluating it is NULL, and no comparison with it holds. Only Units of the trigger's ToolchainType are selected, and whoever makes the Space's or Target's write needs Use permission on each. The function is passed the selected Units' head data as one entry, only the resources the selection's WhereResource matches if it has one, with each document's origin in OtherDataOrigins; it runs with whatever was selected, nothing included. A key is in either OtherUnitIDs or OtherUnitSelections.",
           "type": "object"
         },
         "OtherUnits": {

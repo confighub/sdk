@@ -5,16 +5,14 @@
 package tomlkit
 
 import (
-	"bytes"
 	"fmt"
 	"strings"
 
-	"github.com/BurntSushi/toml"
 	"github.com/confighub/sdk/core/configkit/yamlkit"
 	"github.com/confighub/sdk/core/constants"
 	"github.com/confighub/sdk/core/function/api"
-	"github.com/confighub/sdk/core/workerapi"
 	"github.com/confighub/sdk/core/third_party/gaby"
+	"github.com/confighub/sdk/core/workerapi"
 )
 
 // User data errors should not be logged here. They will be logged by the caller.
@@ -32,9 +30,6 @@ func NewTOMLResourceProvider() *TOMLResourceProviderType {
 		ResourceProviderRegistry: yamlkit.NewResourceProviderRegistry(workerapi.ToolchainAppConfigTOML),
 	}
 }
-
-
-
 
 // DefaultResourceCategory returns the default resource category to assume, which is AppConfig in this case.
 func (*TOMLResourceProviderType) DefaultResourceCategory() api.ResourceCategory {
@@ -100,7 +95,6 @@ func (rp *TOMLResourceProviderType) ResourceNameStableCoreGetter(doc *gaby.YamlD
 	return api.ResourceName(name), nil
 }
 
-
 func (*TOMLResourceProviderType) TypeDescription() string {
 	return "Schema"
 }
@@ -152,74 +146,18 @@ func (*TOMLResourceProviderType) GetToolchainType() workerapi.ToolchainType {
 	return workerapi.ToolchainAppConfigTOML
 }
 
-// NativeToYAML converts TOML data to YAML format using native libraries.
+// NativeToYAML converts TOML data to YAML format.
 // Comments from the TOML source are preserved as $comment$ map keys in the output.
-// Key order from the TOML source is preserved.
+// Key order from the TOML source is preserved, and numbers and date-times
+// keep the text they are written as (see tomlToYAML).
 func (*TOMLResourceProviderType) NativeToYAML(data []byte) ([]byte, error) {
 	if len(data) == 0 {
 		return []byte{}, nil
 	}
-
-	// Parse TOML with Decode to get MetaData (preserves source key order)
-	var tomlData interface{}
-	meta, err := toml.Decode(string(data), &tomlData)
+	doc, err := tomlToYAML(data)
 	if err != nil {
-		return nil, fmt.Errorf("error parsing TOML: %w", err)
+		return nil, err
 	}
-
-	// Convert typed slices ([]map[string]any → []any) for uniform handling
-	tomlData = convertTypedSlices(tomlData)
-
-	// Extract comments from raw TOML source
-	comments := extractTOMLComments(data)
-
-	// Build a gaby YamlDoc directly using MetaData key order
-	doc := gaby.New()
-
-	for _, key := range meta.Keys() {
-		path := []string(key)
-		targetKey := path[len(path)-1]
-		parentPath := strings.Join(path[:len(path)-1], ".")
-
-		// Add head comment for this key
-		headCK := yamlkit.CommentKey(yamlkit.CommentHead, targetKey)
-		flatHead := flatCommentPath(parentPath, headCK)
-		if text, ok := comments[flatHead]; ok {
-			if err := yamlkit.SetPath(doc, text, splitPath(flatHead)...); err != nil {
-				return nil, err
-			}
-			delete(comments, flatHead)
-		}
-
-		// Look up the value in the decoded data
-		value := lookupValue(tomlData, path)
-		// Only set leaf values (skip tables/maps — gaby creates them implicitly).
-		// TOML has no null, so a nil value is a key inside an array of tables,
-		// which was set along with the array.
-		if value != nil && !isTable(value) {
-			if err := yamlkit.SetPath(doc, value, path...); err != nil {
-				return nil, err
-			}
-		}
-
-		// Add line comment for this key
-		lineCK := yamlkit.CommentKey(yamlkit.CommentLine, targetKey)
-		flatLine := flatCommentPath(parentPath, lineCK)
-		if text, ok := comments[flatLine]; ok {
-			if err := yamlkit.SetPath(doc, text, splitPath(flatLine)...); err != nil {
-				return nil, err
-			}
-			delete(comments, flatLine)
-		}
-	}
-
-	// Add any remaining comments (e.g., trailing foot comments)
-	for path, text := range comments {
-		if err := yamlkit.SetPath(doc, text, splitPath(path)...); err != nil {
-			return nil, err
-		}
-	}
-
 	return doc.Bytes(), nil
 }
 
@@ -234,54 +172,17 @@ func splitPath(dotPath string) []string {
 	return strings.Split(dotPath, ".")
 }
 
-// lookupValue navigates a nested map structure to find the value at the given path.
-func lookupValue(data interface{}, path []string) interface{} {
-	current := data
-	for _, segment := range path {
-		m, ok := current.(map[string]interface{})
-		if !ok {
-			return nil
-		}
-		current = m[segment]
-	}
-	return current
-}
-
-// isTable returns true if the value is a TOML table (map).
-func isTable(v interface{}) bool {
-	_, ok := v.(map[string]interface{})
-	return ok
-}
-
-// YAMLToNative converts YAML data to TOML format using native libraries.
+// YAMLToNative converts YAML data to TOML format.
 // If the YAML contains $comment$ map keys, they are converted back to TOML comments.
-// Note: BurntSushi's TOML encoder sorts keys alphabetically; YAML source order is
-// not preserved in the output.
+// Key order from the YAML source is preserved, apart from the keys with
+// plain values of each table coming before its sub-tables (see yamlToTOML).
 func (*TOMLResourceProviderType) YAMLToNative(yamlData []byte) ([]byte, error) {
 	if len(yamlData) == 0 {
 		return []byte{}, nil
 	}
-
-	// Parse YAML with gaby to preserve key order in the data structure.
-	// (BurntSushi's encoder will still sort alphabetically on output.)
 	doc, err := gaby.ParseYAML(yamlData)
 	if err != nil {
 		return nil, fmt.Errorf("error parsing YAML: %w", err)
 	}
-
-	// Extract comment keys from data before TOML encoding.
-	// Use Data() (unordered) since the TOML encoder sorts anyway.
-	cleanData, comments := yamlkit.ExtractCommentsFromData(doc.Data())
-
-	// Convert to TOML
-	var output bytes.Buffer
-	encoder := toml.NewEncoder(&output)
-	if err := encoder.Encode(cleanData); err != nil {
-		return nil, fmt.Errorf("error converting YAML to TOML: %w", err)
-	}
-
-	// Re-inject comments into TOML output
-	result := injectTOMLComments(output.Bytes(), comments)
-
-	return result, nil
+	return yamlToTOML(doc)
 }

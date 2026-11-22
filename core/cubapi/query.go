@@ -478,6 +478,31 @@ func ListGroups(ctx context.Context, c *Client, where Where, opts ListOpts) ([]*
 	})
 }
 
+// ListAuditEvents returns the AuditEvents of the organization matching where.
+func ListAuditEvents(ctx context.Context, c *Client, where Where, opts ListOpts) ([]*goclientnew.ExtendedAuditEvent, error) {
+	if err := where.Err(); err != nil {
+		return nil, err
+	}
+	params := &goclientnew.ListAuditEventsParams{
+		Where:           ptrIf(where.String()),
+		Select:          ptrIf(opts.Select),
+		WherePermission: enumIf[goclientnew.ListAuditEventsParamsWherePermission](opts.WherePermission),
+		Include:         ptrIf(opts.Include),
+		Filter:          ptrIf(opts.Filter),
+		Contains:        ptrIf(opts.Contains),
+		OrderBy:         ptrIf(opts.OrderBy),
+		View:            ptrIf(opts.View),
+	}
+	return ReadPages(opts, func(limit *int, token *string) (*http.Response, *[]goclientnew.ExtendedAuditEvent, error) {
+		params.Limit, params.Continue = limit, token
+		res, err := c.API.ListAuditEventsWithResponse(ctx, params)
+		if IsAPIError(err, res) {
+			return nil, nil, InterpretErrorGeneric(err, res)
+		}
+		return res.HTTPResponse, res.JSON200, nil
+	})
+}
+
 // ListTargets returns targets across the organization matching where.
 func ListTargets(ctx context.Context, c *Client, where Where, opts ListOpts) ([]*goclientnew.ExtendedTarget, error) {
 	if err := where.Err(); err != nil {
@@ -690,6 +715,34 @@ func ListTags(ctx context.Context, c *Client, where Where, opts ListOpts) ([]*go
 		}
 		return res.HTTPResponse, res.JSON200, nil
 	})
+}
+
+// ListRevisions returns Revisions across the organization matching where, such as
+// "Tags.<tag id> IS NOT NULL" for the Revisions a Tag marks.
+func ListRevisions(ctx context.Context, c *Client, where Where, opts ListOpts) ([]*goclientnew.ExtendedRevision, error) {
+	if err := where.Err(); err != nil {
+		return nil, err
+	}
+	params := &goclientnew.ListAllRevisionsParams{
+		Where:           ptrIf(where.String()),
+		Select:          ptrIf(opts.Select),
+		WherePermission: enumIf[goclientnew.ListAllRevisionsParamsWherePermission](opts.WherePermission),
+		Include:         ptrIf(opts.Include),
+		Filter:          ptrIf(opts.Filter),
+		Contains:        ptrIf(opts.Contains),
+		IncludeHidden:   ptrIf(opts.IncludeHidden),
+		OrderBy:         ptrIf(opts.OrderBy),
+		View:            ptrIf(opts.View),
+	}
+	// One request: the Revision list takes no continuation token to read further pages with.
+	if opts.Limit > 0 {
+		params.Limit = &opts.Limit
+	}
+	res, err := c.API.ListAllRevisionsWithResponse(ctx, params)
+	if IsAPIError(err, res) {
+		return nil, InterpretErrorGeneric(err, res)
+	}
+	return derefPtrs(res.JSON200), nil
 }
 
 // ListAttestations returns Attestations across the organization matching where.

@@ -104,3 +104,20 @@ func TestLinkBindingFormatting(t *testing.T) {
 		t.Errorf("unkeyed label: got %s", got)
 	}
 }
+
+// A run of skipped upstream Revisions is labeled by its range, and a run of one by its Revision.
+func TestSkippedRevisionsLabel(t *testing.T) {
+	if got := skippedRevisionsLabel(goclientnew.LinkSkippedRevisions{FromRevisionNum: 3, ToRevisionNum: 5}); got != "Skipped Upstream Revs 3-5" {
+		t.Errorf("run: got %q", got)
+	}
+	if got := skippedRevisionsLabel(goclientnew.LinkSkippedRevisions{FromRevisionNum: 6, ToRevisionNum: 6}); got != "Skipped Upstream Rev 6" {
+		t.Errorf("run of one: got %q", got)
+	}
+}
+
+// RevisionNums merged above a link's pointer read as runs, whatever order they come in.
+func TestRevisionNumRuns(t *testing.T) {
+	if got := revisionNumRuns([]int64{9, 4, 6, 7, 8}); got != "4, 6-9" {
+		t.Errorf("got %q", got)
+	}
+}

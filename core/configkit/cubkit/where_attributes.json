@@ -128,6 +128,55 @@
         "references": "Attribute"
       }
     },
+    "AuditEvent": {
+      "Action": {
+        "dataType": "string"
+      },
+      "AuditEventID": {
+        "dataType": "uuid"
+      },
+      "Grants": {
+        "dataType": "JSON"
+      },
+      "OccurredAt": {
+        "dataType": "time"
+      },
+      "OnBehalfOfUserID": {
+        "dataType": "uuid",
+        "references": "User"
+      },
+      "OrganizationID": {
+        "dataType": "uuid",
+        "references": "Organization",
+        "expandable": true
+      },
+      "Origin": {
+        "dataType": "string"
+      },
+      "Outcome": {
+        "dataType": "string"
+      },
+      "RequestID": {
+        "dataType": "string"
+      },
+      "Role": {
+        "dataType": "string"
+      },
+      "SpaceID": {
+        "dataType": "uuid",
+        "references": "Space"
+      },
+      "SubjectEntityID": {
+        "dataType": "uuid"
+      },
+      "SubjectEntityType": {
+        "dataType": "string"
+      },
+      "UserID": {
+        "dataType": "uuid",
+        "references": "User"
+      }
+    },
     "ChangeOrder": {
       "AbortedReason": {
         "dataType": "string"
@@ -949,7 +998,13 @@
         "dataType": "uuid",
         "references": "Link"
       },
+      "UpstreamMergedAbove": {
+        "dataType": "JSON"
+      },
       "UpstreamPaths": {
+        "dataType": "JSON"
+      },
+      "UpstreamSkipped": {
         "dataType": "JSON"
       },
       "UpstreamSpaceID": {
@@ -1677,6 +1732,9 @@
         "dataType": "[]uuid",
         "references": "Trigger",
         "expandable": true
+      },
+      "TriggerOtherUnitIDs": {
+        "dataType": "JSON"
       },
       "UpdatedAt": {
         "dataType": "time"

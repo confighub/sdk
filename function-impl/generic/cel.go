@@ -18,6 +18,7 @@ import (
 	"github.com/google/cel-go/common/types"
 	"github.com/google/cel-go/common/types/ref"
 	"github.com/google/cel-go/ext"
+	"google.golang.org/protobuf/types/known/structpb"
 	"sigs.k8s.io/yaml"
 )
 
@@ -213,6 +214,30 @@ func CELOtherDataVarOpts() []cel.EnvOption {
 	}
 }
 
+// CELResourcesVarOpts declares resources, every resource in the data the function was given, so
+// that an expression evaluated on one resource can read the others beside it: the rest of a Unit's
+// resources, or, run by a Release Trigger, everything the Release bundles.
+func CELResourcesVarOpts() []cel.EnvOption {
+	return []cel.EnvOption{cel.Variable("resources", cel.ListType(cel.DynType))}
+}
+
+// ResourcesOf returns every resource in parsedData as a map, for the resources variable, whatever
+// the function's WhereResource selects: a check of the resources it selects reads the others too.
+func ResourcesOf(parsedData gaby.Container) ([]any, error) {
+	resources := make([]any, 0, len(parsedData))
+	for _, doc := range parsedData {
+		var resource map[string]any
+		if err := yaml.Unmarshal(doc.Bytes(), &resource); err != nil {
+			return nil, err
+		}
+		if resource == nil {
+			continue
+		}
+		resources = append(resources, resource)
+	}
+	return resources, nil
+}
+
 // CELActivation builds the activation map for a resource with params and the
 // FunctionContext metadata, which exposes fields such as
 // functionContext.TargetID and functionContext.UnitSlug.
@@ -234,7 +259,7 @@ func registerVetCEL(fh handler.FunctionRegistry, converter configkit.ConfigConve
 				{
 					ParameterName: "expression",
 					Required:      true,
-					Description:   "CEL expression to validate each resource. The current resource is available as 'r' (alias 'object'). Must return a bool (true=pass), or a map with 'passed' (bool), 'details' (list of strings), and optionally 'issues' (list of maps with Identifier and Message, naming the check each finding fails) and 'failed_attributes' (list of maps with ResourceName, ResourceType, Path, Value, and optionally Score and Issues). The 'params' dict and 'functionContext' map (ConfigHub metadata, e.g. functionContext.TargetID) are also available. Other Units passed as OtherData, such as those a Trigger's OtherUnitSelections select, are available as 'other', a map from each key to the list of resources passed under it, and where each came from as 'otherOrigins', at the same positions (UnitSlug, SpaceSlug, UnitID, SpaceID, RevisionNum, UnitLabels). selects(selector, labels) says whether a Kubernetes label selector selects the labels, podLabels(resource) gives the labels of the pods a resource runs, wherever its kind keeps them (null for one that runs none), and namespaceLabels(namespaces, name) the labels of a Namespace in a list as a namespaceSelector matches them, e.g. other.policies.exists(p, p.metadata.namespace == r.metadata.namespace && selects(p.spec.podSelector, podLabels(r))).",
+					Description:   "CEL expression to validate each resource. The current resource is available as 'r' (alias 'object'). Must return a bool (true=pass), or a map with 'passed' (bool), 'details' (list of strings), and optionally 'issues' (list of maps with Identifier and Message, naming the check each finding fails) and 'failed_attributes' (list of maps with ResourceName, ResourceType, Path, Value, and optionally Score and Issues). The 'params' dict and 'functionContext' map (ConfigHub metadata, e.g. functionContext.TargetID) are also available, and every resource the function was given as 'resources', whatever WhereResource selects: the rest of a Unit's resources, or, run by a Release trigger, everything the Release bundles. Other Units passed as OtherData, such as those a Trigger's OtherUnitSelections select, are available as 'other', a map from each key to the list of resources passed under it, and where each came from as 'otherOrigins', at the same positions (UnitSlug, SpaceSlug, UnitID, SpaceID, RevisionNum, UnitLabels). selects(selector, labels) says whether a Kubernetes label selector selects the labels, podLabels(resource) gives the labels of the pods a resource runs, wherever its kind keeps them (null for one that runs none), and namespaceLabels(namespaces, name) the labels of a Namespace in a list as a namespaceSelector matches them, e.g. other.policies.exists(p, p.metadata.namespace == r.metadata.namespace && selects(p.spec.podSelector, podLabels(r))).",
 					DataType:      api.DataTypeCEL,
 					Example:       `r.kind != 'Deployment' || r.spec.replicas <= 10`,
 				},
@@ -294,9 +319,13 @@ func GenericFnVetCELWithOtherData(resourceProvider yamlkit.ResourceProvider, opt
 		return parsedData, api.ValidationResultFalse, err
 	}
 
-	env, err := NewCELEnv(append(CELVarOpts(), CELOtherDataVarOpts()...), extraEnvOpts...)
+	env, err := NewCELEnv(append(append(CELVarOpts(), CELOtherDataVarOpts()...), CELResourcesVarOpts()...), extraEnvOpts...)
 	if err != nil {
 		return parsedData, api.ValidationResultFalse, fmt.Errorf("failed to create CEL environment: %v", err)
+	}
+	resources, err := ResourcesOf(parsedData)
+	if err != nil {
+		return parsedData, api.ValidationResultFalse, err
 	}
 	otherResources, otherOrigins := other.Resources, other.Origins
 	if otherResources == nil {
@@ -326,6 +355,7 @@ func GenericFnVetCELWithOtherData(resourceProvider yamlkit.ResourceProvider, opt
 		activation := CELActivation(dataMap, params, functionContextMap)
 		activation["other"] = otherResources
 		activation["otherOrigins"] = otherOrigins
+		activation["resources"] = resources
 		val, _, err := program.Eval(activation)
 		if err != nil {
 			overallResult.Passed = false
@@ -577,8 +607,11 @@ func CelToGo(val ref.Val) any {
 }
 
 // celNativeToGo deeply converts CEL native values (which may contain ref.Val) to plain Go types.
+// CEL's null is protobuf's NullValue, an enum, which would otherwise reach Go as the number 0.
 func celNativeToGo(v any) any {
 	switch val := v.(type) {
+	case structpb.NullValue:
+		return nil
 	case map[ref.Val]ref.Val:
 		result := make(map[string]any, len(val))
 		for k, v := range val {

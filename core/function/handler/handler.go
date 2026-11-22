@@ -121,6 +121,16 @@ func (fh *FunctionHandler) InvokeCore(ctx context.Context, functionInvocation *a
 		return nil, err
 	}
 	serializedData := yamlData
+	// parsedData is serializedData parsed, as each function is given it. It is parsed when the
+	// first function needs it and then reused: a function that does not mutate is given a copy,
+	// which costs a fraction of a parse, so the next function finds the documents as they were.
+	// The last function, and every mutating one, is given the documents themselves, after which
+	// they are stale and are parsed again from serializedData if anything needs them. Every
+	// function therefore sees exactly what parsing serializedData before it would give: the same
+	// documents, node styles included, which a copy preserves and parsing them in some other way
+	// would not.
+	var parsedData gaby.Container
+	stale := true
 
 	// Parse and validate the request-level WhereResource filter. Per-invocation
 	// WhereResource is parsed lazily inside the loop and AND-combined with
@@ -176,10 +186,32 @@ func (fh *FunctionHandler) InvokeCore(ctx context.Context, functionInvocation *a
 	mutations := []api.ResourceMutation{}
 	mutators := []int{}
 	outputs := make(map[api.OutputType]any)
+	var invocationOutputs []map[api.OutputType]any
+	if functionInvocation.OutputsPerInvocation {
+		invocationOutputs = make([]map[api.OutputType]any, len(functionInvocation.FunctionInvocations))
+	}
 	for functionIndex, invocation := range functionInvocation.FunctionInvocations {
 		f, existed := fh.functionMap[invocation.FunctionName]
 		if !existed {
 			invocationInfo := fmt.Sprintf("invoke %s: function does not exist", invocation.FunctionName)
+			slog.Info(invocationInfo)
+			messages = append(messages, invocationInfo)
+			success = false
+			if functionInvocation.StopOnError {
+				break
+			}
+			continue
+		}
+
+		// A reducer reads the rows of a group, which only a reduce passes, and a function that reads
+		// configuration data has none to read in a reduce.
+		if f.TakesRows() != (len(functionInvocation.Rows) > 0) {
+			invocationInfo := fmt.Sprintf("invoke %s: ", invocation.FunctionName)
+			if f.TakesRows() {
+				invocationInfo += "the function reduces the rows of a group, so it can only be invoked as a reducer"
+			} else {
+				invocationInfo += "the function reads configuration data, so it cannot be invoked as a reducer"
+			}
 			slog.Info(invocationInfo)
 			messages = append(messages, invocationInfo)
 			success = false
@@ -229,19 +261,28 @@ func (fh *FunctionHandler) InvokeCore(ctx context.Context, functionInvocation *a
 			}
 		}
 
-		// TODO: We shouldn't need to re-parse if the data hasn't changed.
-
 		var newParsedData gaby.Container
 		var functionOutput any
 		var err error
-		newParsedData, err = gaby.ParseAll(serializedData)
-		if err != nil {
-			return nil, errors.Wrap(err, "configuration data parsing error")
+		if stale {
+			parsedData, err = gaby.ParseAll(serializedData)
+			if err != nil {
+				return nil, errors.Wrap(err, "configuration data parsing error")
+			}
+			stale = false
+		}
+		functionData := parsedData
+		isLast := functionIndex == len(functionInvocation.FunctionInvocations)-1
+		if !f.Mutating && !isLast {
+			functionData = parsedData.DeepCopy()
 		}
 		// Combine request-level + per-invocation WhereResource (AND).
-		// Empty per-invocation falls through to the request-level options
-		// directly without a slice allocation.
-		invocationFunctionOptions := requestFunctionOptions
+		// Empty per-invocation falls through to the request-level expressions
+		// directly without a slice allocation. Each function gets its own options, since
+		// some set fields on them (the needs/provides getters set IncludeDetails), which
+		// would otherwise carry over to the functions after them.
+		requestOptionsCopy := *requestFunctionOptions
+		invocationFunctionOptions := &requestOptionsCopy
 		if invocation.WhereResource != "" {
 			invocationExpressions, cached := invocationWhereCache[invocation.WhereResource]
 			if !cached {
@@ -266,13 +307,20 @@ func (fh *FunctionHandler) InvokeCore(ctx context.Context, functionInvocation *a
 			invocationFunctionOptions.WhereResourceExpressions = combined
 		}
 
+		inputDocuments := len(functionData)
+		if f.Mutating || isLast {
+			// It is given the documents themselves and may change them.
+			stale = true
+		}
 		newParsedData, functionOutput, err = f.Function(FunctionImplementationArguments{
 			FunctionContext:  &functionContext,
 			Options:          invocationFunctionOptions,
-			ParsedData:       newParsedData,
+			ParsedData:       functionData,
 			ParsedOtherData:  parsedOtherData,
 			OtherDataOrigins: functionInvocation.OtherDataOrigins,
 			Arguments:        arguments,
+			Rows:             functionInvocation.Rows,
+			GroupKey:         functionInvocation.GroupKey,
 		})
 		if err == nil && isFilter {
 			validationResult, ok := functionOutput.(api.ValidationResult)
@@ -297,7 +345,9 @@ func (fh *FunctionHandler) InvokeCore(ctx context.Context, functionInvocation *a
 			slog.Info(invocationInfo)
 		}
 
-		if f.Mutating {
+		// Data with no documents, such as a Unit that is only comments, renders as nothing.
+		// Rendering it would delete the comments when the function found nothing to change.
+		if f.Mutating && !(inputDocuments == 0 && len(newParsedData) == 0) {
 			newSerializedDataString := newParsedData.String()
 			newSerializedData := []byte(newSerializedDataString)
 			if !bytes.Equal(serializedData, newSerializedData) {
@@ -330,7 +380,18 @@ func (fh *FunctionHandler) InvokeCore(ctx context.Context, functionInvocation *a
 			}
 		}
 
-		if functionOutput != nil && f.OutputInfo != nil {
+		if functionOutput != nil && f.OutputInfo != nil && invocationOutputs != nil {
+			// Combined on its own, so its entries are labeled as they would be in outputs.
+			invocationOutputs[functionIndex], messages = api.CombineOutputs(
+				f.FunctionName,
+				functionContext.InstanceString(),
+				f.OutputInfo.OutputType,
+				make(map[api.OutputType]any, 1),
+				functionOutput,
+				functionIndex,
+				messages,
+			)
+		} else if functionOutput != nil && f.OutputInfo != nil {
 			outputs, messages = api.CombineOutputs(
 				f.FunctionName,
 				functionContext.InstanceString(),
@@ -363,6 +424,9 @@ func (fh *FunctionHandler) InvokeCore(ctx context.Context, functionInvocation *a
 	if len(mutators) == 0 {
 		resp.DataHash = sentHash
 	} else {
+		// Rendered from text, not from the documents: the last mutating function's documents have
+		// not been serialized and parsed again, and TreeToNative matches YAMLToNative only for
+		// documents that have.
 		nativeData, err := fh.GetConverter().YAMLToNative(serializedData)
 		// TODO: Handle this better
 		if err != nil {
@@ -376,7 +440,26 @@ func (fh *FunctionHandler) InvokeCore(ctx context.Context, functionInvocation *a
 		}
 	}
 
-	// Encode all outputs
+	var encodedOutputs map[api.OutputType][]byte
+	encodedOutputs, messages = encodeOutputs(outputs, messages)
+	resp.Outputs = encodedOutputs
+	if invocationOutputs != nil {
+		resp.InvocationOutputs = make([]map[api.OutputType][]byte, len(invocationOutputs))
+		for i, invocationOutput := range invocationOutputs {
+			if invocationOutput != nil {
+				resp.InvocationOutputs[i], messages = encodeOutputs(invocationOutput, messages)
+			}
+		}
+	}
+	resp.Success = success
+	resp.HasNewMutations = hasMutations
+	resp.Mutations = mutations
+	resp.Mutators = mutators
+	resp.ErrorMessages = messages
+	return &resp, nil
+}
+
+func encodeOutputs(outputs map[api.OutputType]any, messages []string) (map[api.OutputType][]byte, []string) {
 	encodedOutputs := make(map[api.OutputType][]byte)
 	for outputType, output := range outputs {
 		if output != nil {
@@ -388,13 +471,7 @@ func (fh *FunctionHandler) InvokeCore(ctx context.Context, functionInvocation *a
 			}
 		}
 	}
-	resp.Outputs = encodedOutputs
-	resp.Success = success
-	resp.HasNewMutations = hasMutations
-	resp.Mutations = mutations
-	resp.Mutators = mutators
-	resp.ErrorMessages = messages
-	return &resp, nil
+	return encodedOutputs, messages
 }
 
 func validateIntArg(i int, constraints api.ValueConstraints) bool {
@@ -746,6 +823,10 @@ func (fh *FunctionHandler) RegisterFunction(functionName string, registration *F
 	if existing {
 		return fmt.Errorf("function %s already registered", functionName)
 	}
+	if registration.InputType != api.DataTypeNone && !registration.TakesRows() {
+		return fmt.Errorf("function %s: InputType is empty, for configuration data, or %s, for a reducer; got %s",
+			functionName, api.DataTypeAttributeValueList, registration.InputType)
+	}
 	for _, key := range registration.OtherDataExpected {
 		if err := api.ValidateOtherDataKey(string(key)); err != nil {
 			return fmt.Errorf("function %s: %w", functionName, err)
@@ -779,6 +860,10 @@ type FunctionImplementationArguments struct {
 	// Units came from, one per document of that entry in ParsedOtherData, in order.
 	OtherDataOrigins map[api.OtherDataSource][]api.OtherDataOrigin
 	Arguments        []api.FunctionArgument
+	// Rows and GroupKey are what a reducer reads, the rows of one group of a reduce and the
+	// group's key, in place of ParsedData, which is then empty.
+	Rows     api.RowList
+	GroupKey string
 }
 
 type FunctionImplementation func(args FunctionImplementationArguments) (gaby.Container, any, error)
