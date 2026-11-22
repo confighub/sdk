@@ -27,6 +27,11 @@ dot within a key is escaped as ~1 (for example Data.metadata.labels.app~1kuberne
 TargetID mirrors the containing unit's, so it selects resources by the Target they are released to.
 Resources of units with no target have no TargetID.
 
+By default the resources listed are those of each unit's head revision. --revision
+LastReleasedRevisionNum lists those of the revision a release last published instead (for a
+backing unit, the one its entity last took): what is released, rather than what will be. A unit
+never released has none.
+
 Attributes of the containing unit and space are addressed with a prefix -- Unit.Slug,
 Space.ComponentID, Space.Labels.Environment -- and can be combined with resource and data
 predicates. Only the fields a filter names are fetched for those entities, so filtering on the
@@ -38,7 +43,8 @@ Target, or in its Space when it has none. --selected-by names a NetworkPolicy, P
 or Service and lists the workloads whose pods its selector selects; --selecting names a workload
 (such as a Deployment, StatefulSet, DaemonSet, Job or CronJob: any kind with a pod template) and
 lists the NetworkPolicies, PodDisruptionBudgets and Services whose selectors select its pods.
-Either takes a ResourceID, or [<space>/]<unit>:<type>/<name> as -o name prints it.
+Either takes a ResourceID, or [<space>/]<unit>:<type>/<name> as -o name prints it, which names a
+resource of the revision --revision lists.
 
 Data paths use the same syntax as --where-data on units, including array indexes (containers.0),
 wildcards (containers.*), associative matching (containers.?name=nginx), and split paths (.|).
@@ -90,6 +96,9 @@ Examples:
   # List the workloads whose pods a NetworkPolicy selects
   cub resource list --selected-by my-space/netpols:networking.k8s.io/v1/NetworkPolicy/shop/web-ingress
 
+  # List the Deployments released to a target, rather than those of the units' heads
+  cub resource list --revision LastReleasedRevisionNum --where "TargetID = '<target-uuid>' AND ResourceType = 'apps/v1/Deployment'"
+
   # List resources without headers for scripting
   cub resource list --space my-space --no-headers
 
@@ -131,6 +140,9 @@ var resourceCustomColumnDependencies = map[string][]string{}
 // resourceListRawData requests each resource's original configuration.
 var resourceListRawData bool
 
+// resourceListRevision names the revision of each unit whose resources are listed.
+var resourceListRevision string
+
 // resourceListSelectedBy and resourceListSelecting name the resources a selector match is made
 // against, and the IDs they resolve to.
 var (
@@ -144,6 +156,8 @@ func init() {
 	enableListPagingFlags(resourceListCmd)
 	resourceListCmd.Flags().BoolVar(&resourceListRawData, "raw-data", false,
 		"include each resource's configuration in its original form (YAML for Kubernetes), as RawData in --json output")
+	resourceListCmd.Flags().StringVar(&resourceListRevision, "revision", "",
+		"list the resources of each unit's HeadRevisionNum (the default) or LastReleasedRevisionNum")
 	resourceListCmd.Flags().StringVar(&resourceListSelectedBy, "selected-by", "",
 		"list only the workloads whose pods this NetworkPolicy, PodDisruptionBudget or Service selects: a ResourceID, or [<space>/]<unit>:<type>/<name>")
 	resourceListCmd.Flags().StringVar(&resourceListSelecting, "selecting", "",
@@ -250,7 +264,7 @@ func apiListResources(spaceID string, whereFilter string, selectParam string, fi
 		WherePermission: wherePermission,
 		IncludeHidden:   includeHidden,
 		View:            listViewFor("cub resource list"),
-	}, func(params *goclientnew.ListAllResourcesParams) {
+	}, cubapi.WithResourceRevision(resourceListRevision), func(params *goclientnew.ListAllResourcesParams) {
 		if resourceListRawData {
 			params.RawData = &resourceListRawData
 		}
@@ -260,7 +274,7 @@ func apiListResources(spaceID string, whereFilter string, selectParam string, fi
 }
 
 // resolveResourceID resolves a ResourceID, or a resource named as getResourceSlug names it:
-// [<space>/]<unit>:<type>/<name>. A type has a slash or two in it, and a name may too, so the two
+// [<space>/]<unit>:<type>/<name>, of the revision --revision lists. A type has a slash or two in it, and a name may too, so the two
 // are matched together against the Unit's resources rather than split.
 func resolveResourceID(ref string) (uuid.UUID, error) {
 	if id, err := uuid.Parse(ref); err == nil {
@@ -275,7 +289,8 @@ func resolveResourceID(ref string) (uuid.UUID, error) {
 		return uuid.Nil, err
 	}
 	resources, err := cubapi.ListResources(ctx, cubClient, cubapi.NewWhere("").Eq("UnitID", unitID.String()),
-		cubapi.ListOpts{Select: cubapi.SelectFields("ResourceID,ResourceType,ResourceName")})
+		cubapi.ListOpts{Select: cubapi.SelectFields("ResourceID,ResourceType,ResourceName")},
+		cubapi.WithResourceRevision(resourceListRevision))
 	if err != nil {
 		return uuid.Nil, err
 	}

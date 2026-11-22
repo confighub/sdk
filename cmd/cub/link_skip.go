@@ -36,8 +36,10 @@ it skipped, and takes the rest. A promotion of a change order takes its interval
 revisions too, since it names them. "cub link get" lists the skips, and "cub link unskip" takes
 them back.
 
---decline makes a skip final: the link still has not merged the revision, but it is not listed
-any more, so skips nobody will act on do not pile up. --decline=false lists it again.`
+--decline makes a skip final: the link still has not merged the revision, and no merge takes it,
+not one naming it with --merge-revisions or --revisions, nor a change order whose range holds it.
+Below the link's pointer it is not listed any more, so skips nobody will act on do not pile up.
+--decline=false makes it an ordinary skip again, which naming it takes.`
 
 const unskipRevisionsHelp = `Unskipping a revision after the link's UpstreamLastMergedRevisionNum makes it pending again: the
 next merge takes it. Unskipping one at or below it lowers UpstreamLastMergedRevisionNum to just
@@ -97,7 +99,7 @@ Examples:
 func addSkipFlags(cmd *cobra.Command, skip bool) {
 	if skip {
 		cmd.Flags().StringVar(&skipReason, "reason", "", "why the revisions are skipped, shown with them by cub link get")
-		cmd.Flags().BoolVar(&skipDecline, "decline", false, "make the skips final, so they are not listed; --decline=false lists them again")
+		cmd.Flags().BoolVar(&skipDecline, "decline", false, "make the skips final: no merge takes them, not even one naming them, and below the pointer they are not listed; --decline=false makes them ordinary skips again")
 	}
 	// A skip changes nothing about the link but what it skips, so it reads no entity and takes
 	// none of the metadata flags an update does.

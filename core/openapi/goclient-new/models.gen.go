@@ -95,6 +95,7 @@ func (e AuditGrantSource) Valid() bool {
 // Defines values for ChangeOrderPriorRevisions.
 const (
 	ChangeOrderPriorRevisionsAll     ChangeOrderPriorRevisions = "All"
+	ChangeOrderPriorRevisionsDefer   ChangeOrderPriorRevisions = "Defer"
 	ChangeOrderPriorRevisionsError   ChangeOrderPriorRevisions = "Error"
 	ChangeOrderPriorRevisionsInclude ChangeOrderPriorRevisions = "Include"
 	ChangeOrderPriorRevisionsSkip    ChangeOrderPriorRevisions = "Skip"
@@ -104,6 +105,8 @@ const (
 func (e ChangeOrderPriorRevisions) Valid() bool {
 	switch e {
 	case ChangeOrderPriorRevisionsAll:
+		return true
+	case ChangeOrderPriorRevisionsDefer:
 		return true
 	case ChangeOrderPriorRevisionsError:
 		return true
@@ -182,6 +185,7 @@ func (e MutationType) Valid() bool {
 // Defines values for PromoteRequestPriorRevisions.
 const (
 	PromoteRequestPriorRevisionsAll     PromoteRequestPriorRevisions = "All"
+	PromoteRequestPriorRevisionsDefer   PromoteRequestPriorRevisions = "Defer"
 	PromoteRequestPriorRevisionsError   PromoteRequestPriorRevisions = "Error"
 	PromoteRequestPriorRevisionsInclude PromoteRequestPriorRevisions = "Include"
 	PromoteRequestPriorRevisionsSkip    PromoteRequestPriorRevisions = "Skip"
@@ -191,6 +195,8 @@ const (
 func (e PromoteRequestPriorRevisions) Valid() bool {
 	switch e {
 	case PromoteRequestPriorRevisionsAll:
+		return true
+	case PromoteRequestPriorRevisionsDefer:
 		return true
 	case PromoteRequestPriorRevisionsError:
 		return true
@@ -731,6 +737,24 @@ func (e ListAllResourcesParamsWherePermission) Valid() bool {
 	case ListAllResourcesParamsWherePermissionUse:
 		return true
 	case ListAllResourcesParamsWherePermissionView:
+		return true
+	default:
+		return false
+	}
+}
+
+// Defines values for ListAllResourcesParamsRevision.
+const (
+	ListAllResourcesParamsRevisionHeadRevisionNum         ListAllResourcesParamsRevision = "HeadRevisionNum"
+	ListAllResourcesParamsRevisionLastReleasedRevisionNum ListAllResourcesParamsRevision = "LastReleasedRevisionNum"
+)
+
+// Valid indicates whether the value is a known member of the ListAllResourcesParamsRevision enum.
+func (e ListAllResourcesParamsRevision) Valid() bool {
+	switch e {
+	case ListAllResourcesParamsRevisionHeadRevisionNum:
+		return true
+	case ListAllResourcesParamsRevisionLastReleasedRevisionNum:
 		return true
 	default:
 		return false
@@ -1400,6 +1424,24 @@ func (e ListExtendedResourcesParamsWherePermission) Valid() bool {
 	case ListExtendedResourcesParamsWherePermissionUse:
 		return true
 	case ListExtendedResourcesParamsWherePermissionView:
+		return true
+	default:
+		return false
+	}
+}
+
+// Defines values for ListExtendedResourcesParamsRevision.
+const (
+	ListExtendedResourcesParamsRevisionHeadRevisionNum         ListExtendedResourcesParamsRevision = "HeadRevisionNum"
+	ListExtendedResourcesParamsRevisionLastReleasedRevisionNum ListExtendedResourcesParamsRevision = "LastReleasedRevisionNum"
+)
+
+// Valid indicates whether the value is a known member of the ListExtendedResourcesParamsRevision enum.
+func (e ListExtendedResourcesParamsRevision) Valid() bool {
+	switch e {
+	case ListExtendedResourcesParamsRevisionHeadRevisionNum:
+		return true
+	case ListExtendedResourcesParamsRevisionLastReleasedRevisionNum:
 		return true
 	default:
 		return false
@@ -2891,7 +2933,7 @@ type ChangeOrder struct {
 	// Permissions Permissions to access this change order.
 	Permissions *Permissions `json:"Permissions,omitempty" yaml:"Permissions,omitempty"`
 
-	// PriorRevisions How the ChangeOrder marks the Units its change does not change, and the default PriorRevisions for its promotions. Include (the default), Skip and Error mark such a Unit at the Revision its followers have taken, or at its LastReleasedRevisionNum when that is later, or at its head if it has neither, so promoting the change does not move it; a promotion then merges a changed Unit's Revisions from before the change (Include), passes over them for good (Skip), or refuses (Error). All marks every such Unit at its head, so promoting the change brings every Unit up to the Space it takes from. Immutable: the ChangeOrder's own Space is marked when it is created.
+	// PriorRevisions How the ChangeOrder marks the Units its change does not change, and the default PriorRevisions for its promotions. Include (the default), Skip, Error and Defer mark such a Unit at the Revision its followers have taken, or at its LastReleasedRevisionNum when that is later, or at its head if it has neither, so promoting the change does not move it; a promotion then merges a changed Unit's Revisions from before the change (Include), passes over them for good (Skip), refuses (Error), or takes only the change and leaves them pending, to be taken or skipped later (Defer). All marks every such Unit at its head, so promoting the change brings every Unit up to the Space it takes from. Immutable: the ChangeOrder's own Space is marked when it is created.
 	PriorRevisions ChangeOrderPriorRevisions `json:"PriorRevisions,omitempty" yaml:"PriorRevisions,omitempty"`
 
 	// PromotionFailures PromotionFailures records each promotion that did not complete: who ran it, when, into which Stage, and each Space it failed or was blocked in, with the Space's error or reason and the error of each Unit and Link whose write failed. The most recent entries are kept. Set by the server. (readonly)
@@ -2955,6 +2997,9 @@ type ChangeOrder struct {
 
 	// Stage Stage is the stage of ChangeWorkflow the change order has reached, or Completed once the last stage satisfies Final. Set by the server. (readonly)
 	Stage string `json:"Stage,omitempty" yaml:"Stage,omitempty"`
+
+	// StartRevision Where the ChangeOrder starts on each Unit of its Space, as a revision selector -- Tag:, ChangeSet:, ChangeOrder:, Release: or Revision:, optionally with Before:, but not a number, since each Unit numbers its own Revisions -- resolved on each Unit it names a Revision of. Before:ChangeOrder:<id> reissues a ChangeOrder that stopped partway together with its fix: targets that took it take only what is new, and the rest take both. Targets behind the start are handled as PriorRevisions says when the ChangeOrder is promoted, and targets past it take what of the range they have not merged. Read only at creation and not stored; the start Tag records where each Unit's interval begins. Without it, each Unit starts at the latest Revision the targets have taken, so the ChangeOrder is the change none of them has.
+	StartRevision string `json:"StartRevision,omitempty" yaml:"StartRevision,omitempty"`
 
 	// StartTagID StartTagID is the identifier of the set of Revisions immediately before the ChangeOrder, making it the half-open interval (start, end].
 	//
@@ -3028,7 +3073,7 @@ type ChangeOrder struct {
 	WhereUnit string `json:"WhereUnit,omitempty" yaml:"WhereUnit,omitempty"`
 }
 
-// ChangeOrderPriorRevisions How the ChangeOrder marks the Units its change does not change, and the default PriorRevisions for its promotions. Include (the default), Skip and Error mark such a Unit at the Revision its followers have taken, or at its LastReleasedRevisionNum when that is later, or at its head if it has neither, so promoting the change does not move it; a promotion then merges a changed Unit's Revisions from before the change (Include), passes over them for good (Skip), or refuses (Error). All marks every such Unit at its head, so promoting the change brings every Unit up to the Space it takes from. Immutable: the ChangeOrder's own Space is marked when it is created.
+// ChangeOrderPriorRevisions How the ChangeOrder marks the Units its change does not change, and the default PriorRevisions for its promotions. Include (the default), Skip, Error and Defer mark such a Unit at the Revision its followers have taken, or at its LastReleasedRevisionNum when that is later, or at its head if it has neither, so promoting the change does not move it; a promotion then merges a changed Unit's Revisions from before the change (Include), passes over them for good (Skip), refuses (Error), or takes only the change and leaves them pending, to be taken or skipped later (Defer). All marks every such Unit at its head, so promoting the change brings every Unit up to the Space it takes from. Immutable: the ChangeOrder's own Space is marked when it is created.
 type ChangeOrderPriorRevisions string
 
 // ChangeOrderReleasePriorRevisions What a Release of the ChangeOrder does with a bundled Unit's Revisions from before the change: those after its LastReleasedRevisionNum, up to the one the start Tag marks. Include (the default) releases them; Error refuses the publish, naming them and the ChangeOrders they belong to. A publish's PriorRevisions overrides it.
@@ -3457,7 +3502,7 @@ type ChangeWorkflowStage struct {
 	// Prerequisites The stage's entry gates, each naming a built-in check or one declared in CustomPrerequisites. Evaluated over every Space of the stage before this one; the first stage's are evaluated over the Space the ChangeOrder resides in, and refused for Invoke and fan-out ChangeOrders, whose change is in no Space before it is promoted.
 	Prerequisites []string `json:"Prerequisites,omitempty" yaml:"Prerequisites,omitempty"`
 
-	// ReleasePrerequisites Gates on publishing a Release for a change order in one of the stage's Spaces, each naming one declared in AttestationPrerequisites, or Validated, which is what publishing checks of what the Release bundles -- its Revisions' ValidationErrors and its Release triggers -- shown among the gates. Evaluated over the Revisions the Release bundles.
+	// ReleasePrerequisites Gates on publishing a Release for a change order in one of the stage's Spaces, each naming one declared in AttestationPrerequisites, Validated, or Distinct. Validated is what publishing checks of what the Release bundles -- its Revisions' ValidationErrors and its Release triggers -- shown among the gates. Distinct is no resource the Release bundles being released to its Target more than once: by another Unit the Release bundles, or by a Unit of any Space whose release Target is the same, as each Unit was last released. Evaluated over the Revisions the Release bundles.
 	ReleasePrerequisites []string `json:"ReleasePrerequisites,omitempty" yaml:"ReleasePrerequisites,omitempty"`
 
 	// WhereSpace Selects the stage's Spaces: a where expression over Spaces, intersected with the change order's InScopeSpaceIDs. Nothing else is implied, so a workflow can be shared across components. Empty selects every Space in the change order's scope.
@@ -4031,6 +4076,43 @@ type DiffSideResult struct {
 	//
 	// Example: 248df4b7-aa70-47b8-a036-33ac447e668d
 	UnitID openapi_types.UUID `json:"UnitID,omitempty,omitzero" yaml:"UnitID,omitempty"`
+}
+
+// DuplicateResource defines model for DuplicateResource.
+type DuplicateResource struct {
+	// Copies Each copy released to the Target.
+	Copies []DuplicateResourceCopy `json:"Copies,omitempty" yaml:"Copies,omitempty"`
+
+	// ResourceName The resource's name.
+	ResourceName string `json:"ResourceName,omitempty" yaml:"ResourceName,omitempty"`
+
+	// ResourceType The resource's type, as a copy the Release bundles writes it. Copies of one resource may write it in different API versions.
+	ResourceType string `json:"ResourceType,omitempty" yaml:"ResourceType,omitempty"`
+
+	// ToolchainType The ToolchainType of the Units releasing it.
+	ToolchainType string `json:"ToolchainType,omitempty" yaml:"ToolchainType,omitempty"`
+}
+
+// DuplicateResourceCopy defines model for DuplicateResourceCopy.
+type DuplicateResourceCopy struct {
+	// InRelease Whether the Release being published bundles this copy, rather than it having been released already.
+	InRelease bool `json:"InRelease,omitempty" yaml:"InRelease,omitempty"`
+
+	// ResourceType The type as this copy writes it.
+	ResourceType string `json:"ResourceType,omitempty" yaml:"ResourceType,omitempty"`
+
+	// SpaceID Example: 248df4b7-aa70-47b8-a036-33ac447e668d
+	SpaceID   openapi_types.UUID `json:"SpaceID,omitempty,omitzero" yaml:"SpaceID,omitempty"`
+	SpaceSlug string             `json:"SpaceSlug,omitempty" yaml:"SpaceSlug,omitempty"`
+
+	// UnitID The Unit releasing the copy. Omitted, with its Space, when the caller may not view the Unit.
+	//
+	// Example: 248df4b7-aa70-47b8-a036-33ac447e668d
+	UnitID   openapi_types.UUID `json:"UnitID,omitempty,omitzero" yaml:"UnitID,omitempty"`
+	UnitSlug string             `json:"UnitSlug,omitempty" yaml:"UnitSlug,omitempty"`
+
+	// Visible Whether the caller may view the Unit, and so whether it is named.
+	Visible bool `json:"Visible,omitempty" yaml:"Visible,omitempty"`
 }
 
 // EntityDocument defines model for EntityDocument.
@@ -5550,7 +5632,7 @@ type Link struct {
 	// UpstreamPaths Values to read from the upstream Unit when resolving a TransformPaths Link. Each NamedPath is read via get-paths and made available to DownstreamPaths expressions by its Name. Only valid when UpdateType is TransformPaths.
 	UpstreamPaths []NamedPath `json:"UpstreamPaths,omitempty" yaml:"UpstreamPaths,omitempty"`
 
-	// UpstreamSkipped The upstream Revisions this Link passed over without merging them, as runs of consecutive RevisionNums skipped for one reason, oldest first, each with why: the reason given when they were skipped by name (skip_revisions), or what moved the merge pointer past them -- an update of UpstreamLastMergedRevisionNum, a ChangeOrder promoted with PriorRevisions Skip, or a ChangeOrder restored upstream. Every merge over the Link passes over them, except a ChangeOrder's promotion, which takes its interval whole. A Revision that changed nothing is not recorded, and a declined skip is listed, marked Declined, only while it is above UpstreamLastMergedRevisionNum. Recorded only for MergeUnits and UpgradeUnit Links, and kept, below UpstreamLastMergedRevisionNum too, until the Link is moved to other Units or reversed, which clears them.
+	// UpstreamSkipped The upstream Revisions this Link passed over without merging them, as runs of consecutive RevisionNums skipped for one reason, oldest first, each with why: the reason given when they were skipped by name (skip_revisions), or what moved the merge pointer past them -- an update of UpstreamLastMergedRevisionNum, a ChangeOrder promoted with PriorRevisions Skip, or a ChangeOrder restored upstream. Every merge over the Link passes over them, except a ChangeOrder's promotion, which takes the skipped Revisions of its interval, and a merge naming them (merge_revisions); a declined skip holds against those too, until it is made an ordinary one (decline_skips=false) or removed. A Revision that changed nothing is not recorded, and a declined skip is listed, marked Declined, only while it is above UpstreamLastMergedRevisionNum. Recorded only for MergeUnits and UpgradeUnit Links, and kept, below UpstreamLastMergedRevisionNum too, until the Link is moved to other Units or reversed, which clears them.
 	UpstreamSkipped []LinkSkippedRevisions `json:"UpstreamSkipped,omitempty" yaml:"UpstreamSkipped,omitempty"`
 
 	// UpstreamSpaceID Space ID of the link this link was cloned from (if any).
@@ -5620,7 +5702,7 @@ type LinkSkippedRevisions struct {
 	// Example: 2006-01-02T15:04:05Z07:00
 	CreatedAt time.Time `json:"CreatedAt,omitempty,omitzero" yaml:"CreatedAt,omitempty"`
 
-	// Declined The skips are declined: final, not to be taken later. Declined skips are listed only above UpstreamLastMergedRevisionNum, where they still decide what the next merge takes.
+	// Declined The skips are declined: final. No merge takes the Revisions, not one naming them (merge_revisions) nor a ChangeOrder's promotion whose interval holds them, until the skips are made ordinary ones (decline_skips=false) or removed (unskip_revisions). Declined skips are listed only above UpstreamLastMergedRevisionNum, where they decide what the next merge takes; at or below it they are kept but left out.
 	Declined bool `json:"Declined,omitempty" yaml:"Declined,omitempty"`
 
 	// FromRevisionNum The upstream Unit's RevisionNum the run starts at.
@@ -5656,6 +5738,9 @@ type MergeOverlap struct {
 
 // MergeSelection defines model for MergeSelection.
 type MergeSelection struct {
+	// DeclinedHeld The Revisions named, or in a ChangeOrder's range, that the Link declined, with the reason each was skipped. A declined skip holds: no merge takes the Revision until its skip is made an ordinary one (decline_skips=false) or removed (unskip_revisions).
+	DeclinedHeld []MergeSkipOverridden `json:"DeclinedHeld,omitempty" yaml:"DeclinedHeld,omitempty"`
+
 	// LinkID The Link the Revisions were taken over.
 	//
 	// Example: 248df4b7-aa70-47b8-a036-33ac447e668d
@@ -6147,13 +6232,16 @@ type PromoteGateResult struct {
 	// Attestation For an attestation prerequisite, what was counted, whether or not the gate holds.
 	Attestation *AttestationGateResult `json:"Attestation,omitempty" yaml:"Attestation,omitempty"`
 
+	// DuplicateResources For the Distinct release prerequisite, each resource the Release bundles that is released to its Target more than once, at most 100.
+	DuplicateResources []DuplicateResource `json:"DuplicateResources,omitempty" yaml:"DuplicateResources,omitempty"`
+
 	// Message Why the gate does not hold.
 	Message string `json:"Message,omitempty" yaml:"Message,omitempty"`
 
-	// Prerequisite Promoted, Validated, Released, Healthy, or the name of a custom or attestation prerequisite.
+	// Prerequisite Promoted, Validated, Released, Healthy, Distinct, or the name of a custom or attestation prerequisite.
 	Prerequisite string `json:"Prerequisite,omitempty" yaml:"Prerequisite,omitempty"`
 
-	// Reason Why the gate does not hold, as a code: NotPromoted, PreviousStageEmpty, NotReleased, ValidationErrors, NotChecked, NotMarked, NoReleaseTarget, NoRelease, NoLiveStatus, NotSynced, Deploying, DeployFailed, Unhealthy, AttestationsMissing, AttestationRejected, ExpressionFalse, EvaluationFailed, or UnknownPrerequisite. A client that does not know a code shows Message.
+	// Reason Why the gate does not hold, as a code: NotPromoted, PreviousStageEmpty, NotReleased, ValidationErrors, NotChecked, NotMarked, NoReleaseTarget, NoRelease, NoLiveStatus, NotSynced, Deploying, DeployFailed, Unhealthy, AttestationsMissing, AttestationRejected, DuplicateResources, ExpressionFalse, EvaluationFailed, or UnknownPrerequisite. A client that does not know a code shows Message.
 	Reason    string `json:"Reason,omitempty" yaml:"Reason,omitempty"`
 	Satisfied bool   `json:"Satisfied,omitempty" yaml:"Satisfied,omitempty"`
 
@@ -6208,6 +6296,9 @@ type PromoteRequest struct {
 	// DryRun Plan the promotion, evaluate its gates, and return the same response without writing anything.
 	DryRun bool `json:"DryRun,omitempty" yaml:"DryRun,omitempty"`
 
+	// EndRevision How far up each upstream to promote instead of its head, as a revision selector -- Tag:, ChangeSet:, ChangeOrder:, Release: or Revision:, optionally with Before:, or HeadRevisionNum or LastReleasedRevisionNum -- resolved on each Unit's upstream Unit, as merge_end is on an upgrade. Each Unit takes what it has not merged up to it from where it is, so Units at different points reach the same one; Units the promotion clones are cloned at it. A Unit whose upstream it names no revision of is Unchanged, NotSelected, and one already at or past it is Unchanged. A revision number is refused, since each Unit numbers its own. Cannot be used with ChangeOrderID, whose range is the ChangeOrder's, or with Revisions.
+	EndRevision string `json:"EndRevision,omitempty" yaml:"EndRevision,omitempty"`
+
 	// ExpectedPlan The Plan a previous dry run returned. If the plan now differs, nothing is written and the request fails with 412.
 	ExpectedPlan string `json:"ExpectedPlan,omitempty" yaml:"ExpectedPlan,omitempty"`
 
@@ -6220,7 +6311,7 @@ type PromoteRequest struct {
 	// Guards Reasons to record on the paths each Unit write changes. A later operation must be cleared for them before overwriting those paths. Clearance must cover them, since a write is withheld by guards it is not cleared for, its own included.
 	Guards *GuardStamp `json:"Guards,omitempty" yaml:"Guards,omitempty"`
 
-	// PriorRevisions With a ChangeOrder, what to do for a Unit whose last merged upstream Revision is before the ChangeOrder's start there -- typically because a Link in the upstream Space, such as a TransformPaths Link, wrote Revisions after the Unit last merged. Include merges those Revisions first, as Revisions of their own that do not carry the ChangeOrder, and then the ChangeOrder's range; Skip merges only the ChangeOrder's range, as though the Unit had already merged as far as its start, and those Revisions do not arrive later; Error refuses, naming the Revisions; All merges them as Include does, and also marks every Unit in the Space the change does not change at its head, so the next promotion brings it up to this Space. Defaults to the ChangeOrder's PriorRevisions, or Include. A Unit that has merged past the ChangeOrder's start is an error whatever this says. Refused with an Insert, Upsert, or TransformPaths ChangeOrder, whose Links read their sources as they are at its end rather than merging a range.
+	// PriorRevisions With a ChangeOrder, what to do for a Unit whose last merged upstream Revision is before the ChangeOrder's start there -- typically because a Link in the upstream Space, such as a TransformPaths Link, wrote Revisions after the Unit last merged. Include merges those Revisions first, as Revisions of their own that do not carry the ChangeOrder, and then the ChangeOrder's range; Skip merges only the ChangeOrder's range, as though the Unit had already merged as far as its start, and those Revisions do not arrive later; Error refuses, naming the Revisions; All merges them as Include does, and also marks every Unit in the Space the change does not change at its head, so the next promotion brings it up to this Space; Defer merges only the ChangeOrder's range and leaves those Revisions pending, to be taken or skipped later, which is out-of-order promotion. Defaults to the ChangeOrder's PriorRevisions, or Include. A Unit that has merged past the ChangeOrder's start takes what of the change its Link has not merged -- the rest of a promotion that stopped partway and was finished by hand, say -- and is marked when it has it all. The Units' MergeSelections list, on a dry run too, the skips the promotion overrides, since it takes the skipped Revisions of the ChangeOrder's range, and with Defer the pending Revisions before the start that wrote some of the same paths. Refused with an Insert, Upsert, or TransformPaths ChangeOrder, whose Links read their sources as they are at its end rather than merging a range.
 	PriorRevisions PromoteRequestPriorRevisions `json:"PriorRevisions,omitempty" yaml:"PriorRevisions,omitempty"`
 
 	// Protect Deprecated: use Guards, as {"Override":"Upstream"}, with a Clearance admitting it. Records each Unit's Override guard on the paths its writes change -- Override=Upstream for a Unit with an upstream Unit, Override=External for one without -- with the clearance to write over one. Accepted only for an Invoke ChangeOrder and for one that follows Insert, Upsert, or TransformPaths Links: refused for a promotion that merges, which the guard holds paths against.
@@ -6252,7 +6343,7 @@ type PromoteRequest struct {
 	WhereSpace string `json:"WhereSpace,omitempty" yaml:"WhereSpace,omitempty"`
 }
 
-// PromoteRequestPriorRevisions With a ChangeOrder, what to do for a Unit whose last merged upstream Revision is before the ChangeOrder's start there -- typically because a Link in the upstream Space, such as a TransformPaths Link, wrote Revisions after the Unit last merged. Include merges those Revisions first, as Revisions of their own that do not carry the ChangeOrder, and then the ChangeOrder's range; Skip merges only the ChangeOrder's range, as though the Unit had already merged as far as its start, and those Revisions do not arrive later; Error refuses, naming the Revisions; All merges them as Include does, and also marks every Unit in the Space the change does not change at its head, so the next promotion brings it up to this Space. Defaults to the ChangeOrder's PriorRevisions, or Include. A Unit that has merged past the ChangeOrder's start is an error whatever this says. Refused with an Insert, Upsert, or TransformPaths ChangeOrder, whose Links read their sources as they are at its end rather than merging a range.
+// PromoteRequestPriorRevisions With a ChangeOrder, what to do for a Unit whose last merged upstream Revision is before the ChangeOrder's start there -- typically because a Link in the upstream Space, such as a TransformPaths Link, wrote Revisions after the Unit last merged. Include merges those Revisions first, as Revisions of their own that do not carry the ChangeOrder, and then the ChangeOrder's range; Skip merges only the ChangeOrder's range, as though the Unit had already merged as far as its start, and those Revisions do not arrive later; Error refuses, naming the Revisions; All merges them as Include does, and also marks every Unit in the Space the change does not change at its head, so the next promotion brings it up to this Space; Defer merges only the ChangeOrder's range and leaves those Revisions pending, to be taken or skipped later, which is out-of-order promotion. Defaults to the ChangeOrder's PriorRevisions, or Include. A Unit that has merged past the ChangeOrder's start takes what of the change its Link has not merged -- the rest of a promotion that stopped partway and was finished by hand, say -- and is marked when it has it all. The Units' MergeSelections list, on a dry run too, the skips the promotion overrides, since it takes the skipped Revisions of the ChangeOrder's range, and with Defer the pending Revisions before the start that wrote some of the same paths. Refused with an Insert, Upsert, or TransformPaths ChangeOrder, whose Links read their sources as they are at its end rather than merging a range.
 type PromoteRequestPriorRevisions string
 
 // PromoteResult defines model for PromoteResult.
@@ -6350,7 +6441,7 @@ type PromoteUnitResult struct {
 	PreviousHeadMutationNum int64                 `json:"PreviousHeadMutationNum,omitempty" yaml:"PreviousHeadMutationNum,omitempty"`
 	PreviousHeadRevisionNum int64                 `json:"PreviousHeadRevisionNum,omitempty" yaml:"PreviousHeadRevisionNum,omitempty"`
 
-	// Reason For Skip and Unchanged: NotCovered, CreatedAfterChangeOrder, AlreadyTaken, NotChanged when the change does not change the Unit, CreatedInSpace when the Unit was created in this Space rather than cloned into it, or NotSelected when the Revisions named name nothing of its upstream it has not merged. A Unit in the Space that the change does not change is marked once the Space's writes are done, with both Tags on the Revision the ChangeOrder's PriorRevisions names. For an applied Upgrade or Resolve: NoChange, when the Unit already held the change, so no Revision was made and the ChangeOrder's Tags mark its head.
+	// Reason For Skip and Unchanged: NotCovered, CreatedAfterChangeOrder, AlreadyTaken, NotChanged when the change does not change the Unit, CreatedInSpace when the Unit was created in this Space rather than cloned into it, or NotSelected when the Revisions named name nothing of its upstream it has not merged, or nothing but Revisions its Link declined, or EndRevision names no revision of its upstream. A Unit in the Space that the change does not change is marked once the Space's writes are done, with both Tags on the Revision the ChangeOrder's PriorRevisions names. For an applied Upgrade or Resolve: NoChange, when the Unit already held the change, so no Revision was made and the ChangeOrder's Tags mark its head.
 	Reason string `json:"Reason,omitempty" yaml:"Reason,omitempty"`
 	Slug   string `json:"Slug,omitempty" yaml:"Slug,omitempty"`
 
@@ -6627,7 +6718,7 @@ type Resource struct {
 	// ResourceType Type of the resource; Kubernetes resources are represented in the form <apiVersion>/<kind>.
 	ResourceType string `json:"ResourceType,omitempty" yaml:"ResourceType,omitempty"`
 
-	// RevisionRef Which of the Unit's Revisions this is a resource of: HeadRevisionNum. (readonly)
+	// RevisionRef Which of the Unit's Revisions this is a resource of: HeadRevisionNum, its latest, or LastReleasedRevisionNum, the one a Release last published (for a backing Unit, the one its entity last took). A resource in both is listed once for each, with a ResourceID for each. (readonly)
 	RevisionRef string `json:"RevisionRef,omitempty" yaml:"RevisionRef,omitempty"`
 
 	// SpaceID Unique identifier for a space.
@@ -17127,6 +17218,9 @@ type ListAllResourcesParams struct {
 	// Deprecated: this property has been marked as deprecated upstream, but no `x-deprecated-reason` was set
 	Offset *int `form:"offset,omitempty" json:"offset,omitempty" yaml:"offset,omitempty"`
 
+	// Revision Which Revision of each Unit to list the resources of: HeadRevisionNum, its latest (the default), or LastReleasedRevisionNum, the one a Release last published (for a backing Unit, the one its entity last took). A Unit never released has no LastReleasedRevisionNum resources. where_data, WhereResource and the resource filters of other entities read head resources.
+	Revision *ListAllResourcesParamsRevision `form:"revision,omitempty" json:"revision,omitempty" yaml:"revision,omitempty"`
+
 	// RawData Return each resource's configuration in its original toolchain-native form, as RawData on the response envelope. Off by default: the bodies are bulk, and a table view needs only the queryable Data projection.
 	RawData *bool `form:"raw_data,omitempty" json:"raw_data,omitempty" yaml:"raw_data,omitempty"`
 
@@ -17139,6 +17233,9 @@ type ListAllResourcesParams struct {
 
 // ListAllResourcesParamsWherePermission defines parameters for ListAllResources.
 type ListAllResourcesParamsWherePermission string
+
+// ListAllResourcesParamsRevision defines parameters for ListAllResources.
+type ListAllResourcesParamsRevision string
 
 // BulkDeleteReviewCommentsParams defines parameters for BulkDeleteReviewComments.
 type BulkDeleteReviewCommentsParams struct {
@@ -22343,7 +22440,7 @@ type PatchUnitParams struct {
 	// MergeEnd Merge end revision of the merge source, which provides the final configuration of the changes to merge. Also accepted with upgrade and with resolve, where it names how far along the source to take the propagation; the default there is the source's head. Naming a ChangeSet or Tag that ends a change is what leaves a change still being made at the source behind. Supports: Named revisions ('HeadRevisionNum', 'LastReleasedRevisionNum'), direct revision number (e.g., '42'), or entity references ('Tag:uuid', 'ChangeSet:uuid', 'ChangeOrder:uuid', 'Revision:uuid'). Can be prefixed with 'Before:' to select the revision immediately before the specified one (e.g., 'Before:LastReleasedRevisionNum', 'Before:42'). When using Tag or ChangeSet references, the latest revision associated with that entity is selected. 'ChangeOrder:uuid' selects the revision the change order ended at on this Unit and 'Before:ChangeOrder:uuid' the one before it began, which is what undoes a promotion however many revisions it made.
 	MergeEnd *string `form:"merge_end,omitempty" json:"merge_end,omitempty" yaml:"merge_end,omitempty"`
 
-	// MergeRevisions The upstream revisions to take, with upgrade or resolve, instead of everything the Link has not merged: cherry-picking. A comma-separated list, each entry a revision, which names that revision, or for a ChangeSet or ChangeOrder its revisions, or a range <from>..<to>, the revisions after <from> up to and including <to>; each end as merge_end takes one. The union is taken in order; revisions the Link has merged already are passed over, and so is every other revision, which stays pending or skipped. A skipped revision named is taken, and its skip removed. An entry naming nothing the upstream unit carries names nothing there, but naming no revision of it at all is refused, and so is taking part of a ChangeSet without the rest. The Link's UpstreamLastMergedRevisionNum stays where it was; the revisions taken above it are listed in its UpstreamMergedAbove. The response's MergeSelections say, for each Link, what was taken, which skips that overrode, and which earlier pending revisions wrote some of the same paths. Only UpgradeUnit and MergeUnits Links take part; cannot be used with change_order or merge_end.
+	// MergeRevisions The upstream revisions to take, with upgrade or resolve, instead of everything the Link has not merged: cherry-picking. A comma-separated list, each entry a revision, which names that revision, or for a ChangeSet or ChangeOrder its revisions, or a range <from>..<to>, the revisions after <from> up to and including <to>; each end as merge_end takes one. The union is taken in order; revisions the Link has merged already are passed over, and so is every other revision, which stays pending or skipped. A skipped revision named is taken, and its skip removed. A declined skip holds: a declined revision is passed over even when named, and listed as held, until its skip is made an ordinary one (decline_skips=false) or removed. An entry naming nothing the upstream unit carries names nothing there, but naming no revision of it at all is refused, and so is taking part of a ChangeSet without the rest. The Link's UpstreamLastMergedRevisionNum stays where it was; the revisions taken above it are listed in its UpstreamMergedAbove. The response's MergeSelections say, for each Link, what was taken, which skips that overrode, and which earlier pending revisions wrote some of the same paths. Only UpgradeUnit and MergeUnits Links take part; cannot be used with change_order or merge_end.
 	MergeRevisions *string `form:"merge_revisions,omitempty" json:"merge_revisions,omitempty" yaml:"merge_revisions,omitempty"`
 
 	// MergeExternalSource Identifier of the external source for merge-on-update. When set, computes mutations between the last MergeExternal revision and the provided data, then patches the current unit data with those mutations.
@@ -22415,7 +22512,7 @@ type PatchUnitParams struct {
 	// ChangeOrder ChangeOrder to promote, with upgrade or resolve, or to undo, with restore. The change order fixed the range when it was created -- the interval on each source Unit, marked with its Tags -- so it supplies both ends of the merge and merge_end is refused alongside it. A Unit whose source the change order does not cover is passed over rather than failed, which is what lets a bulk upgrade name a whole Space and take only the Units the change is in. A Unit whose last merged revision is past where the change order starts is an error, since merging anyway would replay what it already has; one that is short of it is handled as prior_revisions says. With resolve a selected Link whose UpdateType the change order does not follow is an error too. The revisions the promotion creates carry the ChangeOrder, and its start Tag is placed on the revision before them and its end Tag on the one it arrives at, so 'restore Before:ChangeOrder:uuid' undoes it whether it landed as one revision or as one per source revision. With restore the change order is being undone rather than promoted: the restore must be 'Before:ChangeOrder:' the same change order, the change order must have an AbortedReason -- undoing a change nobody has said is not coming is a race with whoever is still promoting it -- and a Unit the change order never marked is an error rather than passed over, since naming it says the Unit is part of the undoing. The first restore mints the change order's restore Tag and records it as RestoreTagID; every restore after that marks with the same Tag, which is what RestoredSpaceIDs is read off. A Unit the change order carried nothing for takes the restore Tag on the revision its start and end Tags are already on, and no revision is made. A Unit already carrying the restore Tag has had the change order taken back out of it and is passed over, since undoing one in a Unit happens once as promoting it into one does -- so the revisions a Unit has taken since it was undone are its own work rather than this undoing's to drop. Restoring also advances the merge pointers of the Links of the change order's UpdateType that follow the restored Unit onto the revision the restore made, so a later upgrade does not replay the change that was just taken out; the downstream Units are not restored with it, since each has to be restored and released on its own account.
 	ChangeOrder *openapi_types.UUID `form:"change_order,omitempty" json:"change_order,omitempty" yaml:"change_order,omitempty"`
 
-	// PriorRevisions With change_order, when promoting it by upgrade or resolve: what to do for a Unit whose last merged revision of its source is before the revision the change order starts at there -- typically because a Link in the source's Space, such as a TransformPaths Link, wrote revisions after the Unit last merged, and those revisions are not the change order's. Include (the default) merges them first, walking them one source revision at a time even with squash, as revisions that do not carry the change order, and places the change order's start Tag on the revision they leave, so 'restore Before:ChangeOrder:uuid' keeps them. Skip merges only the change order's range, as though the Unit's merge pointer had already been advanced to the change order's start, so what those revisions changed does not reach the Unit. Error refuses, naming the Unit, the Link, and each of those revisions with the operation and Link that made it. All merges them as Include does. A Unit that has already merged past the change order's start is an error whatever this says. Defaults to the change order's PriorRevisions.
+	// PriorRevisions With change_order, when promoting it by upgrade or resolve: what to do for a Unit whose last merged revision of its source is before the revision the change order starts at there -- typically because a Link in the source's Space, such as a TransformPaths Link, wrote revisions after the Unit last merged, and those revisions are not the change order's. Include (the default) merges them first, walking them one source revision at a time even with squash, as revisions that do not carry the change order, and places the change order's start Tag on the revision they leave, so 'restore Before:ChangeOrder:uuid' keeps them. Skip merges only the change order's range, as though the Unit's merge pointer had already been advanced to the change order's start, so what those revisions changed does not reach the Unit. Error refuses, naming the Unit, the Link, and each of those revisions with the operation and Link that made it. All merges them as Include does. Defer merges only the change order's range and leaves them pending, to be taken or skipped later: out-of-order promotion; the Link's merge pointer stays where it was, and the range is marked merged above it. A Unit that has merged past the change order's start takes what of the change its Link has not merged, and is marked when it has it all. Defaults to the change order's PriorRevisions.
 	PriorRevisions *string `form:"prior_revisions,omitempty" json:"prior_revisions,omitempty" yaml:"prior_revisions,omitempty"`
 
 	// Subgroup User-defined category for the Mutation. Must be alphanumeric, at most 64 characters. The prefix 'ConfigHub' is reserved.
@@ -22478,7 +22575,7 @@ type UpdateUnitParams struct {
 	// MergeEnd Merge end revision of the merge source, which provides the final configuration of the changes to merge. Also accepted with upgrade and with resolve, where it names how far along the source to take the propagation; the default there is the source's head. Naming a ChangeSet or Tag that ends a change is what leaves a change still being made at the source behind. Supports: Named revisions ('HeadRevisionNum', 'LastReleasedRevisionNum'), direct revision number (e.g., '42'), or entity references ('Tag:uuid', 'ChangeSet:uuid', 'ChangeOrder:uuid', 'Revision:uuid'). Can be prefixed with 'Before:' to select the revision immediately before the specified one (e.g., 'Before:LastReleasedRevisionNum', 'Before:42'). When using Tag or ChangeSet references, the latest revision associated with that entity is selected. 'ChangeOrder:uuid' selects the revision the change order ended at on this Unit and 'Before:ChangeOrder:uuid' the one before it began, which is what undoes a promotion however many revisions it made.
 	MergeEnd *string `form:"merge_end,omitempty" json:"merge_end,omitempty" yaml:"merge_end,omitempty"`
 
-	// MergeRevisions The upstream revisions to take, with upgrade or resolve, instead of everything the Link has not merged: cherry-picking. A comma-separated list, each entry a revision, which names that revision, or for a ChangeSet or ChangeOrder its revisions, or a range <from>..<to>, the revisions after <from> up to and including <to>; each end as merge_end takes one. The union is taken in order; revisions the Link has merged already are passed over, and so is every other revision, which stays pending or skipped. A skipped revision named is taken, and its skip removed. An entry naming nothing the upstream unit carries names nothing there, but naming no revision of it at all is refused, and so is taking part of a ChangeSet without the rest. The Link's UpstreamLastMergedRevisionNum stays where it was; the revisions taken above it are listed in its UpstreamMergedAbove. The response's MergeSelections say, for each Link, what was taken, which skips that overrode, and which earlier pending revisions wrote some of the same paths. Only UpgradeUnit and MergeUnits Links take part; cannot be used with change_order or merge_end.
+	// MergeRevisions The upstream revisions to take, with upgrade or resolve, instead of everything the Link has not merged: cherry-picking. A comma-separated list, each entry a revision, which names that revision, or for a ChangeSet or ChangeOrder its revisions, or a range <from>..<to>, the revisions after <from> up to and including <to>; each end as merge_end takes one. The union is taken in order; revisions the Link has merged already are passed over, and so is every other revision, which stays pending or skipped. A skipped revision named is taken, and its skip removed. A declined skip holds: a declined revision is passed over even when named, and listed as held, until its skip is made an ordinary one (decline_skips=false) or removed. An entry naming nothing the upstream unit carries names nothing there, but naming no revision of it at all is refused, and so is taking part of a ChangeSet without the rest. The Link's UpstreamLastMergedRevisionNum stays where it was; the revisions taken above it are listed in its UpstreamMergedAbove. The response's MergeSelections say, for each Link, what was taken, which skips that overrode, and which earlier pending revisions wrote some of the same paths. Only UpgradeUnit and MergeUnits Links take part; cannot be used with change_order or merge_end.
 	MergeRevisions *string `form:"merge_revisions,omitempty" json:"merge_revisions,omitempty" yaml:"merge_revisions,omitempty"`
 
 	// MergeExternalSource Identifier of the external source for merge-on-update. When set, computes mutations between the last MergeExternal revision and the provided data, then patches the current unit data with those mutations.
@@ -22550,7 +22647,7 @@ type UpdateUnitParams struct {
 	// ChangeOrder ChangeOrder to promote, with upgrade or resolve, or to undo, with restore. The change order fixed the range when it was created -- the interval on each source Unit, marked with its Tags -- so it supplies both ends of the merge and merge_end is refused alongside it. A Unit whose source the change order does not cover is passed over rather than failed, which is what lets a bulk upgrade name a whole Space and take only the Units the change is in. A Unit whose last merged revision is past where the change order starts is an error, since merging anyway would replay what it already has; one that is short of it is handled as prior_revisions says. With resolve a selected Link whose UpdateType the change order does not follow is an error too. The revisions the promotion creates carry the ChangeOrder, and its start Tag is placed on the revision before them and its end Tag on the one it arrives at, so 'restore Before:ChangeOrder:uuid' undoes it whether it landed as one revision or as one per source revision. With restore the change order is being undone rather than promoted: the restore must be 'Before:ChangeOrder:' the same change order, the change order must have an AbortedReason -- undoing a change nobody has said is not coming is a race with whoever is still promoting it -- and a Unit the change order never marked is an error rather than passed over, since naming it says the Unit is part of the undoing. The first restore mints the change order's restore Tag and records it as RestoreTagID; every restore after that marks with the same Tag, which is what RestoredSpaceIDs is read off. A Unit the change order carried nothing for takes the restore Tag on the revision its start and end Tags are already on, and no revision is made. A Unit already carrying the restore Tag has had the change order taken back out of it and is passed over, since undoing one in a Unit happens once as promoting it into one does -- so the revisions a Unit has taken since it was undone are its own work rather than this undoing's to drop. Restoring also advances the merge pointers of the Links of the change order's UpdateType that follow the restored Unit onto the revision the restore made, so a later upgrade does not replay the change that was just taken out; the downstream Units are not restored with it, since each has to be restored and released on its own account.
 	ChangeOrder *openapi_types.UUID `form:"change_order,omitempty" json:"change_order,omitempty" yaml:"change_order,omitempty"`
 
-	// PriorRevisions With change_order, when promoting it by upgrade or resolve: what to do for a Unit whose last merged revision of its source is before the revision the change order starts at there -- typically because a Link in the source's Space, such as a TransformPaths Link, wrote revisions after the Unit last merged, and those revisions are not the change order's. Include (the default) merges them first, walking them one source revision at a time even with squash, as revisions that do not carry the change order, and places the change order's start Tag on the revision they leave, so 'restore Before:ChangeOrder:uuid' keeps them. Skip merges only the change order's range, as though the Unit's merge pointer had already been advanced to the change order's start, so what those revisions changed does not reach the Unit. Error refuses, naming the Unit, the Link, and each of those revisions with the operation and Link that made it. All merges them as Include does. A Unit that has already merged past the change order's start is an error whatever this says. Defaults to the change order's PriorRevisions.
+	// PriorRevisions With change_order, when promoting it by upgrade or resolve: what to do for a Unit whose last merged revision of its source is before the revision the change order starts at there -- typically because a Link in the source's Space, such as a TransformPaths Link, wrote revisions after the Unit last merged, and those revisions are not the change order's. Include (the default) merges them first, walking them one source revision at a time even with squash, as revisions that do not carry the change order, and places the change order's start Tag on the revision they leave, so 'restore Before:ChangeOrder:uuid' keeps them. Skip merges only the change order's range, as though the Unit's merge pointer had already been advanced to the change order's start, so what those revisions changed does not reach the Unit. Error refuses, naming the Unit, the Link, and each of those revisions with the operation and Link that made it. All merges them as Include does. Defer merges only the change order's range and leaves them pending, to be taken or skipped later: out-of-order promotion; the Link's merge pointer stays where it was, and the range is marked merged above it. A Unit that has merged past the change order's start takes what of the change its Link has not merged, and is marked when it has it all. Defaults to the change order's PriorRevisions.
 	PriorRevisions *string `form:"prior_revisions,omitempty" json:"prior_revisions,omitempty" yaml:"prior_revisions,omitempty"`
 
 	// Subgroup User-defined category for the Mutation. Must be alphanumeric, at most 64 characters. The prefix 'ConfigHub' is reserved.
@@ -22984,6 +23081,9 @@ type ListExtendedResourcesParams struct {
 	// Deprecated: this property has been marked as deprecated upstream, but no `x-deprecated-reason` was set
 	Offset *int `form:"offset,omitempty" json:"offset,omitempty" yaml:"offset,omitempty"`
 
+	// Revision Which Revision of each Unit to list the resources of: HeadRevisionNum, its latest (the default), or LastReleasedRevisionNum, the one a Release last published (for a backing Unit, the one its entity last took). A Unit never released has no LastReleasedRevisionNum resources. where_data, WhereResource and the resource filters of other entities read head resources.
+	Revision *ListExtendedResourcesParamsRevision `form:"revision,omitempty" json:"revision,omitempty" yaml:"revision,omitempty"`
+
 	// RawData Return each resource's configuration in its original toolchain-native form, as RawData on the response envelope. Off by default: the bodies are bulk, and a table view needs only the queryable Data projection.
 	RawData *bool `form:"raw_data,omitempty" json:"raw_data,omitempty" yaml:"raw_data,omitempty"`
 
@@ -22996,6 +23096,9 @@ type ListExtendedResourcesParams struct {
 
 // ListExtendedResourcesParamsWherePermission defines parameters for ListExtendedResources.
 type ListExtendedResourcesParamsWherePermission string
+
+// ListExtendedResourcesParamsRevision defines parameters for ListExtendedResources.
+type ListExtendedResourcesParamsRevision string
 
 // GetExtendedResourceParams defines parameters for GetExtendedResource.
 type GetExtendedResourceParams struct {
@@ -26196,7 +26299,7 @@ type BulkPatchUnitsParams struct {
 	// MergeEnd Merge end revision of the merge source, which provides the final configuration of the changes to merge. Also accepted with upgrade and with resolve, where it names how far along the source to take the propagation; the default there is the source's head. Naming a ChangeSet or Tag that ends a change is what leaves a change still being made at the source behind. Supports: Named revisions ('HeadRevisionNum', 'LastReleasedRevisionNum'), direct revision number (e.g., '42'), or entity references ('Tag:uuid', 'ChangeSet:uuid', 'ChangeOrder:uuid', 'Revision:uuid'). Can be prefixed with 'Before:' to select the revision immediately before the specified one (e.g., 'Before:LastReleasedRevisionNum', 'Before:42'). When using Tag or ChangeSet references, the latest revision associated with that entity is selected. 'ChangeOrder:uuid' selects the revision the change order ended at on this Unit and 'Before:ChangeOrder:uuid' the one before it began, which is what undoes a promotion however many revisions it made.
 	MergeEnd *string `form:"merge_end,omitempty" json:"merge_end,omitempty" yaml:"merge_end,omitempty"`
 
-	// MergeRevisions The upstream revisions to take, with upgrade or resolve, instead of everything the Link has not merged: cherry-picking. A comma-separated list, each entry a revision, which names that revision, or for a ChangeSet or ChangeOrder its revisions, or a range <from>..<to>, the revisions after <from> up to and including <to>; each end as merge_end takes one. The union is taken in order; revisions the Link has merged already are passed over, and so is every other revision, which stays pending or skipped. A skipped revision named is taken, and its skip removed. An entry naming nothing the upstream unit carries names nothing there, but naming no revision of it at all is refused, and so is taking part of a ChangeSet without the rest. The Link's UpstreamLastMergedRevisionNum stays where it was; the revisions taken above it are listed in its UpstreamMergedAbove. The response's MergeSelections say, for each Link, what was taken, which skips that overrode, and which earlier pending revisions wrote some of the same paths. Only UpgradeUnit and MergeUnits Links take part; cannot be used with change_order or merge_end.
+	// MergeRevisions The upstream revisions to take, with upgrade or resolve, instead of everything the Link has not merged: cherry-picking. A comma-separated list, each entry a revision, which names that revision, or for a ChangeSet or ChangeOrder its revisions, or a range <from>..<to>, the revisions after <from> up to and including <to>; each end as merge_end takes one. The union is taken in order; revisions the Link has merged already are passed over, and so is every other revision, which stays pending or skipped. A skipped revision named is taken, and its skip removed. A declined skip holds: a declined revision is passed over even when named, and listed as held, until its skip is made an ordinary one (decline_skips=false) or removed. An entry naming nothing the upstream unit carries names nothing there, but naming no revision of it at all is refused, and so is taking part of a ChangeSet without the rest. The Link's UpstreamLastMergedRevisionNum stays where it was; the revisions taken above it are listed in its UpstreamMergedAbove. The response's MergeSelections say, for each Link, what was taken, which skips that overrode, and which earlier pending revisions wrote some of the same paths. Only UpgradeUnit and MergeUnits Links take part; cannot be used with change_order or merge_end.
 	MergeRevisions *string `form:"merge_revisions,omitempty" json:"merge_revisions,omitempty" yaml:"merge_revisions,omitempty"`
 
 	// MergeExternalSource Identifier of the external source for merge-on-update. When set, computes mutations between the last MergeExternal revision and the provided data, then patches the current unit data with those mutations.
@@ -26268,7 +26371,7 @@ type BulkPatchUnitsParams struct {
 	// ChangeOrder ChangeOrder to promote, with upgrade or resolve, or to undo, with restore. The change order fixed the range when it was created -- the interval on each source Unit, marked with its Tags -- so it supplies both ends of the merge and merge_end is refused alongside it. A Unit whose source the change order does not cover is passed over rather than failed, which is what lets a bulk upgrade name a whole Space and take only the Units the change is in. A Unit whose last merged revision is past where the change order starts is an error, since merging anyway would replay what it already has; one that is short of it is handled as prior_revisions says. With resolve a selected Link whose UpdateType the change order does not follow is an error too. The revisions the promotion creates carry the ChangeOrder, and its start Tag is placed on the revision before them and its end Tag on the one it arrives at, so 'restore Before:ChangeOrder:uuid' undoes it whether it landed as one revision or as one per source revision. With restore the change order is being undone rather than promoted: the restore must be 'Before:ChangeOrder:' the same change order, the change order must have an AbortedReason -- undoing a change nobody has said is not coming is a race with whoever is still promoting it -- and a Unit the change order never marked is an error rather than passed over, since naming it says the Unit is part of the undoing. The first restore mints the change order's restore Tag and records it as RestoreTagID; every restore after that marks with the same Tag, which is what RestoredSpaceIDs is read off. A Unit the change order carried nothing for takes the restore Tag on the revision its start and end Tags are already on, and no revision is made. A Unit already carrying the restore Tag has had the change order taken back out of it and is passed over, since undoing one in a Unit happens once as promoting it into one does -- so the revisions a Unit has taken since it was undone are its own work rather than this undoing's to drop. Restoring also advances the merge pointers of the Links of the change order's UpdateType that follow the restored Unit onto the revision the restore made, so a later upgrade does not replay the change that was just taken out; the downstream Units are not restored with it, since each has to be restored and released on its own account.
 	ChangeOrder *openapi_types.UUID `form:"change_order,omitempty" json:"change_order,omitempty" yaml:"change_order,omitempty"`
 
-	// PriorRevisions With change_order, when promoting it by upgrade or resolve: what to do for a Unit whose last merged revision of its source is before the revision the change order starts at there -- typically because a Link in the source's Space, such as a TransformPaths Link, wrote revisions after the Unit last merged, and those revisions are not the change order's. Include (the default) merges them first, walking them one source revision at a time even with squash, as revisions that do not carry the change order, and places the change order's start Tag on the revision they leave, so 'restore Before:ChangeOrder:uuid' keeps them. Skip merges only the change order's range, as though the Unit's merge pointer had already been advanced to the change order's start, so what those revisions changed does not reach the Unit. Error refuses, naming the Unit, the Link, and each of those revisions with the operation and Link that made it. All merges them as Include does. A Unit that has already merged past the change order's start is an error whatever this says. Defaults to the change order's PriorRevisions.
+	// PriorRevisions With change_order, when promoting it by upgrade or resolve: what to do for a Unit whose last merged revision of its source is before the revision the change order starts at there -- typically because a Link in the source's Space, such as a TransformPaths Link, wrote revisions after the Unit last merged, and those revisions are not the change order's. Include (the default) merges them first, walking them one source revision at a time even with squash, as revisions that do not carry the change order, and places the change order's start Tag on the revision they leave, so 'restore Before:ChangeOrder:uuid' keeps them. Skip merges only the change order's range, as though the Unit's merge pointer had already been advanced to the change order's start, so what those revisions changed does not reach the Unit. Error refuses, naming the Unit, the Link, and each of those revisions with the operation and Link that made it. All merges them as Include does. Defer merges only the change order's range and leaves them pending, to be taken or skipped later: out-of-order promotion; the Link's merge pointer stays where it was, and the range is marked merged above it. A Unit that has merged past the change order's start takes what of the change its Link has not merged, and is marked when it has it all. Defaults to the change order's PriorRevisions.
 	PriorRevisions *string `form:"prior_revisions,omitempty" json:"prior_revisions,omitempty" yaml:"prior_revisions,omitempty"`
 
 	// Subgroup User-defined category for the Mutation. Must be alphanumeric, at most 64 characters. The prefix 'ConfigHub' is reserved.

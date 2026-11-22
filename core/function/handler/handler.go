@@ -108,6 +108,7 @@ func (fh *FunctionHandler) InvokeCore(ctx context.Context, functionInvocation *a
 	}
 
 	functionContext := functionInvocation.FunctionContext
+	logger := loggerFrom(ctx)
 
 	// If functionContext.PreviousDataHash is set, it may not match the current ConfigData because
 	// the data could have been modified by prior function executions, so don't overwrite it.
@@ -194,7 +195,7 @@ func (fh *FunctionHandler) InvokeCore(ctx context.Context, functionInvocation *a
 		f, existed := fh.functionMap[invocation.FunctionName]
 		if !existed {
 			invocationInfo := fmt.Sprintf("invoke %s: function does not exist", invocation.FunctionName)
-			slog.Info(invocationInfo)
+			logger.Info(invocationInfo)
 			messages = append(messages, invocationInfo)
 			success = false
 			if functionInvocation.StopOnError {
@@ -212,7 +213,7 @@ func (fh *FunctionHandler) InvokeCore(ctx context.Context, functionInvocation *a
 			} else {
 				invocationInfo += "the function reads configuration data, so it cannot be invoked as a reducer"
 			}
-			slog.Info(invocationInfo)
+			logger.Info(invocationInfo)
 			messages = append(messages, invocationInfo)
 			success = false
 			if functionInvocation.StopOnError {
@@ -229,7 +230,7 @@ func (fh *FunctionHandler) InvokeCore(ctx context.Context, functionInvocation *a
 		}
 
 		invocationInfo := fmt.Sprintf("invoke %s", invocation.FunctionName)
-		if slog.Default().Enabled(context.Background(), slog.LevelDebug) {
+		if logger.Enabled(ctx, slog.LevelDebug) {
 			// TODO: Decide whether sensitive Arguments should be supported
 			for _, arg := range invocation.Arguments {
 				// Note: Values can be quite large, such as for compute-mutations and patch-mutations
@@ -251,7 +252,7 @@ func (fh *FunctionHandler) InvokeCore(ctx context.Context, functionInvocation *a
 		arguments, validationErr := ValidateAndBuildArguments(fh.GetResourceProvider(), &functionInvocation.FunctionContext, &invocation, &f.FunctionSignature)
 		if validationErr != nil {
 			invocationInfo += ": " + validationErr.Error()
-			slog.Info(invocationInfo)
+			logger.Info(invocationInfo)
 			messages = append(messages, validationErr.Error())
 			success = false
 			if functionInvocation.StopOnError {
@@ -290,7 +291,7 @@ func (fh *FunctionHandler) InvokeCore(ctx context.Context, functionInvocation *a
 				invocationExpressions, parseErr = api.ParseAndValidateWhereResource(invocation.WhereResource)
 				if parseErr != nil {
 					invocationInfo += ": " + parseErr.Error()
-					slog.Info(invocationInfo)
+					logger.Info(invocationInfo)
 					messages = append(messages, parseErr.Error())
 					success = false
 					if functionInvocation.StopOnError {
@@ -328,13 +329,13 @@ func (fh *FunctionHandler) InvokeCore(ctx context.Context, functionInvocation *a
 				err = errors.New("filter functions must return type ValidationResult")
 			} else if !validationResult.Passed {
 				invocationInfo += ": " + "did not pass"
-				slog.Info(invocationInfo)
+				logger.Info(invocationInfo)
 				break
 			}
 		}
 		if err != nil {
 			invocationInfo += ": " + err.Error()
-			slog.Info(invocationInfo)
+			logger.Info(invocationInfo)
 			messages = append(messages, err.Error())
 			success = false
 			if functionInvocation.StopOnError {
@@ -342,7 +343,7 @@ func (fh *FunctionHandler) InvokeCore(ctx context.Context, functionInvocation *a
 			}
 		} else {
 			invocationInfo += ": succeeded"
-			slog.Info(invocationInfo)
+			logger.Info(invocationInfo)
 		}
 
 		// Data with no documents, such as a Unit that is only comments, renders as nothing.

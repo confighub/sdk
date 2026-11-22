@@ -32,10 +32,17 @@ Creating one decides what the change is; promoting one takes it into the Spaces 
 
   cub variant promote my-dev --change-order my-base/release-42
 
-The change order supplies the range, so units it does not cover are passed over and a unit that has
-merged past where it starts is an error. A unit short of it merges the revisions before the start
-first, unmarked, unless --prior-revisions says Skip or Error. To promote it into the units a
-selection picks instead of a whole Space, use "cub unit update --upgrade --change-order".
+The change order supplies the range, so units it does not cover are passed over, and a unit that
+has merged past where it starts takes what of the change its link has not merged -- the rest of a
+promotion that stopped partway and was finished by hand, say -- and is marked when it has it all.
+A unit short of it merges the revisions before the start first, unmarked, unless
+--prior-revisions says Skip, Error or Defer. To promote it into the units a selection picks
+instead of a whole Space, use "cub unit update --upgrade --change-order".
+
+A promotion that stopped partway is finished by running it again, whatever was fixed by hand in
+between. If the change itself has to change, fix it upstream, create a change order over the
+change and the fix with --start Before:ChangeOrder:<first>, abort the first one, and promote the
+second: the spaces the first reached take only the fix.
 
 A change order created with --change-workflow is promoted through that workflow's stages, and the
 server holds each promotion to the entry gates of the stage it enters. Without a Space,

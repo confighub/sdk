@@ -1189,8 +1189,6 @@ func k8sFnSetPodDefaults(rp *k8skit.K8sResourceProviderType, options *api.Functi
 		if !ok {
 			return output, nil // Skip resource kinds we don't handle
 		}
-		slog.Info("traversing resource", "resourceType", string(resourceInfo.ResourceType))
-
 		var visitorErrs []error
 		for _, podSpecPath := range podSpecPaths {
 			// For some of these attributes, we don't care whether or how they were set.
@@ -1202,8 +1200,6 @@ func k8sFnSetPodDefaults(rp *k8skit.K8sResourceProviderType, options *api.Functi
 				continue
 			}
 			if !hasPodSpec {
-				slog.Info("no pod spec")
-
 				// Shouldn't happen, but be resilient
 				continue
 			}

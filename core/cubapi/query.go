@@ -801,8 +801,8 @@ func ListViews(ctx context.Context, c *Client, where Where, opts ListOpts) ([]*g
 // where. Resources are derived from unit configuration data and are read-only;
 // there is no per-space "ListAll" endpoint, so the org-level search endpoint is
 // used.
-// Resource-specific options (RawData) are set via the with mutators, which run after the
-// common where/opts are applied.
+// Resource-specific options (RawData, WithResourceRevision) are set via the with mutators, which
+// run after the common where/opts are applied.
 func ListResources(ctx context.Context, c *Client, where Where, opts ListOpts, with ...func(*goclientnew.ListAllResourcesParams)) ([]*goclientnew.ExtendedResource, error) {
 	if err := where.Err(); err != nil {
 		return nil, err
@@ -829,6 +829,14 @@ func ListResources(ctx context.Context, c *Client, where Where, opts ListOpts, w
 		}
 		return res.HTTPResponse, res.JSON200, nil
 	})
+}
+
+// WithResourceRevision lists the resources of each unit's revision ref, HeadRevisionNum or
+// LastReleasedRevisionNum, rather than its head's. An empty ref leaves the default.
+func WithResourceRevision(ref string) func(*goclientnew.ListAllResourcesParams) {
+	return func(params *goclientnew.ListAllResourcesParams) {
+		params.Revision = enumIf[goclientnew.ListAllResourcesParamsRevision](ref)
+	}
 }
 
 // ListAttributes returns attributes across the organization matching where.

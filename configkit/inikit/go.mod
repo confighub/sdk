@@ -3,7 +3,7 @@ module github.com/confighub/sdk/configkit/inikit
 go 1.26.0
 
 require (
-	github.com/confighub/sdk/core v0.11.12
+	github.com/confighub/sdk/core v0.0.0
 	github.com/go-ini/ini v1.67.0
 	sigs.k8s.io/kustomize/kyaml v0.20.1
 )
@@ -46,6 +46,7 @@ require (
 )
 
 replace (
+	github.com/confighub/sdk/core => ../../core/
 
 	// Fix CVE-2022-28948
 	gopkg.in/yaml.v3 => gopkg.in/yaml.v3 v3.0.1

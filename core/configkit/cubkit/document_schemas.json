@@ -211,7 +211,7 @@
           "type": "array"
         },
         "ReleasePrerequisites": {
-          "description": "Gates on publishing a Release for a change order in one of the stage's Spaces, each naming one declared in AttestationPrerequisites, or Validated, which is what publishing checks of what the Release bundles -- its Revisions' ValidationErrors and its Release triggers -- shown among the gates. Evaluated over the Revisions the Release bundles.",
+          "description": "Gates on publishing a Release for a change order in one of the stage's Spaces, each naming one declared in AttestationPrerequisites, Validated, or Distinct. Validated is what publishing checks of what the Release bundles -- its Revisions' ValidationErrors and its Release triggers -- shown among the gates. Distinct is no resource the Release bundles being released to its Target more than once: by another Unit the Release bundles, or by a Unit of any Space whose release Target is the same, as each Unit was last released. Evaluated over the Revisions the Release bundles.",
           "items": {
             "type": "string"
           },

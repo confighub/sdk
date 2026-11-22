@@ -61,6 +61,7 @@ var variantPromoteArgs struct {
 	protect           bool
 	tag               string
 	revisions         []string
+	to                string
 	subgroup          string
 }
 
@@ -110,15 +111,20 @@ upstream revision that has an effect, carrying that revision's change descriptio
 up both: the range arrives as one rebased diff in one revision.
 
 --change-order promotes a named change rather than everything the upstream has reached. The
-change order fixed its range when it was created, so the upgrade stops where it ends, a unit
-it does not cover is passed over, and a unit that has merged past where it starts is an error
-rather than a merge of a different range. A unit short of where it starts has not merged some
-upstream revisions that are not the change order's -- typically ones a link in the upstream
+change order fixed its range when it was created, so the upgrade stops where it ends, and a unit
+it does not cover is passed over. A unit that has merged past where it starts takes what of the
+change its link has not merged, or is marked when it has it all, which is what finishes a
+promotion that stopped partway and was finished by hand. A unit short of where it starts has not
+merged some upstream revisions that are not the change order's -- typically ones a link in the upstream
 space, such as a TransformPaths link, wrote after the unit last merged. --prior-revisions says
 what to do with them: Include (the default) merges them first, as revisions that do not carry
 the change order; Skip leaves them out, as though the unit had already merged them; Error
-refuses, naming the unit, the link, and each revision. A unit it covers but has no changes for is marked and not
-changed: its start and end tags land on the same revision. That is what lets
+refuses, naming the unit, the link, and each revision; Defer takes the change ahead of them and
+leaves them pending, for a later promotion or "cub variant skip". The dry run lists, per unit, the
+skips the change overrides, since it takes the skipped revisions of its range; the declined ones
+it holds to, which no promotion takes; and with Defer, the pending revisions it goes ahead of that
+wrote some of the same paths. A unit it covers but has no changes for is marked and not changed:
+its start and end tags land on the same revision. That is what lets
 "cub release publish --revision ChangeOrder:<slug>" pin every unit of the space. Four things
 follow from what a change order is:
 
@@ -183,6 +189,9 @@ Examples:
   # Promote one named change, leaving later upstream changes behind
   cub variant promote web-prod --change-order release-42
 
+  # Promote every unit as far as a tag, from wherever each one is
+  cub variant promote web-prod --to Tag:web-base/release-42
+
   # Promote a change that is an invocation rather than an upstream merge
   cub variant promote web-prod --change-order platform/bump-api-image
 
@@ -212,7 +221,7 @@ Examples:
 func init() {
 	variantPromoteCmd.Flags().StringVar(&variantPromoteArgs.changeDescription, "change-desc", "", "change description recorded on the upgraded and cloned units")
 	variantPromoteCmd.Flags().StringVar(&variantPromoteArgs.changesetSlug, "changeset", "", "changeset to associate the upgraded and cloned units with. With --change-order, whose tags record the promotion, it is needed only when the units are already in an open changeset, which every write to them has to name")
-	variantPromoteCmd.Flags().StringVar(&variantPromoteArgs.changeorderSlug, "change-order", "", "change order to promote instead of everything the upstream has reached: it supplies the range, units it does not cover are passed over, a unit that has merged past where it starts is an error, and one short of it is handled as --prior-revisions says. A bare slug resolves in the upstream space of the space being promoted, or in the selected space otherwise. Units the variant does not have yet are cloned at the change order's start and then upgraded through it; ones created upstream after the change order was fixed are outside it and are not cloned, and --verbose lists them")
+	variantPromoteCmd.Flags().StringVar(&variantPromoteArgs.changeorderSlug, "change-order", "", "change order to promote instead of everything the upstream has reached: it supplies the range, units it does not cover are passed over, a unit that has merged past where it starts takes what of the change its link has not merged, and one short of it is handled as --prior-revisions says. A bare slug resolves in the upstream space of the space being promoted, or in the selected space otherwise. Units the variant does not have yet are cloned at the change order's start and then upgraded through it; ones created upstream after the change order was fixed are outside it and are not cloned, and --verbose lists them")
 	variantPromoteCmd.Flags().StringVar(&variantPromoteArgs.targetStage, "target-stage", "", "stage of the change order's ChangeWorkflow to promote into, promoting every variant the stage selects: it requires --change-order, the gates of the stage before are checked once for the whole stage, and a variant that fails is reported without stopping the ones after it. A space or --where-space narrows the stage. Without it, --change-order alone advances the change into the first stage it has not reached")
 	variantPromoteCmd.Flags().StringVar(&variantPromoteArgs.whereSpace, "where-space", "", "where expression selecting the spaces to promote, instead of naming one")
 	variantPromoteCmd.Flags().StringVar(&variantPromoteArgs.filterSpace, "filter-space", "", "filter over spaces selecting the spaces to promote")
@@ -220,7 +229,7 @@ func init() {
 	variantPromoteCmd.Flags().BoolVar(&variantPromoteArgs.includeConfigData, "include-config-data", false, "return the configuration each unit write produces, or with --dry-run would produce, as ConfigData in structured output (-o json, -o yaml, -o jq=...)")
 	variantPromoteCmd.Flags().BoolVar(&variantPromoteArgs.context, "diff-context", false, "with -o mutations, also show the unchanged paths around each change: every unchanged field and element of each map and list a change is in, up to the resource")
 	variantPromoteCmd.Flags().BoolVar(&variantPromoteArgs.squash, "squash", false, "merge each unit's range as one rebased diff in one revision instead of walking it: by default a promotion re-runs the upstream's recorded function invocations against each unit where it can, and records one revision per upstream revision that has an effect there")
-	variantPromoteCmd.Flags().StringVar(&variantPromoteArgs.priorRevisions, "prior-revisions", "", "with --change-order, what to do for a unit that has not merged as far as the change order's start on its upstream: Include (the default) merges the upstream revisions before the start first, as revisions that do not carry the change order; Skip merges only the change order's range, as though the unit had already merged as far as its start, and those revisions do not arrive later; Error refuses, naming the unit, the link, and the revisions; All merges them as Include does and also marks every unit the change does not change at its head, so the next promotion brings it up to this space. Defaults to the change order's PriorRevisions")
+	variantPromoteCmd.Flags().StringVar(&variantPromoteArgs.priorRevisions, "prior-revisions", "", "with --change-order, what to do for a unit that has not merged as far as the change order's start on its upstream: Include (the default) merges the upstream revisions before the start first, as revisions that do not carry the change order; Skip merges only the change order's range, as though the unit had already merged as far as its start, and those revisions do not arrive later; Error refuses, naming the unit, the link, and the revisions; All merges them as Include does and also marks every unit the change does not change at its head, so the next promotion brings it up to this space; Defer merges only the change order's range and leaves those revisions pending, to be promoted or skipped later. Defaults to the change order's PriorRevisions")
 	variantPromoteCmd.Flags().BoolVar(&variantPromoteArgs.force, "force", false, "promote past ChangeWorkflow gates that do not hold; requires --force-reason, and is recorded on the change order")
 	variantPromoteCmd.Flags().StringVar(&variantPromoteArgs.forceReason, "force-reason", "", "why the gates are overridden; required with --force")
 	variantPromoteCmd.Flags().StringVar(&variantPromoteArgs.expectedPlan, "expected-plan", "", "the Plan a --dry-run of the same promotion returned; nothing is written if the promotion would now do anything different")
@@ -230,7 +239,8 @@ func init() {
 		". Without it, a promotion of a change order that runs an invocation or resolves Insert, Upsert, or TransformPaths links is cleared for Override guards, whatever their value, as one that merges is not; a clearance given replaces that, and --clearance '' clears nothing")
 	addGuardFlag(variantPromoteCmd)
 	variantPromoteCmd.Flags().StringVar(&variantPromoteArgs.tag, "tag", "", "tag (slug, space/slug, or UUID) to put on the revision each unit the promotion writes is left at; not with --change-order, whose own tags mark what it promotes")
-	variantPromoteCmd.Flags().StringArrayVar(&variantPromoteArgs.revisions, "revisions", nil, "upstream revisions to take instead of everything each upstream has reached, which is cherry-picking: a changeset, change order, tag or release, which names its revisions on each unit that has them, or a range <from>..<to> of them; repeatable. Revision numbers are refused, alone or at either end of a range, since each unit numbers its own. Units whose upstream they name nothing of are left unchanged, NotSelected, and the rest take what is named and nothing else, recording it as merged above their links' merge pointers. With --dry-run, each unit lists what it would take, which skips that overrides, and which earlier pending revisions wrote some of the same paths. Not with --change-order")
+	variantPromoteCmd.Flags().StringVar(&variantPromoteArgs.to, "to", "", "how far up each upstream to promote instead of its head: a tag, changeset, change order or release, optionally with Before:, or HeadRevisionNum or LastReleasedRevisionNum, resolved on each unit's upstream. Each unit takes what it has not merged up to there from where it is, so units at different points reach the same one; new units are cloned at it, and a unit whose upstream it names nothing of is left unchanged, NotSelected. Not with --change-order or --revisions")
+	variantPromoteCmd.Flags().StringArrayVar(&variantPromoteArgs.revisions, "revisions", nil, "upstream revisions to take instead of everything each upstream has reached, which is cherry-picking: a changeset, change order, tag or release, which names its revisions on each unit that has them, or a range <from>..<to> of them; repeatable. Revision numbers are refused, alone or at either end of a range, since each unit numbers its own. Units whose upstream they name nothing of are left unchanged, NotSelected, and the rest take what is named and nothing else, recording it as merged above their links' merge pointers. A revision a link declined is held, not taken. With --dry-run, each unit lists what it would take, which skips that overrides, which declined revisions it holds to, and which earlier pending revisions wrote some of the same paths. Not with --change-order")
 	variantPromoteCmd.Flags().StringVar(&variantPromoteArgs.subgroup, "subgroup", "", "category recorded on the mutations of each write of the promotion: alphanumeric, at most 64 characters")
 	addStandardDisplayFlags(variantPromoteCmd)
 	variantCmd.AddCommand(variantPromoteCmd)
@@ -258,6 +268,23 @@ func variantPromoteCmdRun(cmd *cobra.Command, args []string) error {
 	}
 	if len(variantPromoteArgs.revisions) > 0 && variantPromoteArgs.changeorderSlug != "" {
 		return errors.New("--revisions cannot be used with --change-order; the change order's range is what it promotes")
+	}
+	if variantPromoteArgs.to != "" && variantPromoteArgs.changeorderSlug != "" {
+		return errors.New("--to cannot be used with --change-order; the change order's range is what it promotes")
+	}
+	if variantPromoteArgs.to != "" && len(variantPromoteArgs.revisions) > 0 {
+		return errors.New("--to says how far to promote and --revisions which revisions to take; use one or the other")
+	}
+	var endRevision string
+	if variantPromoteArgs.to != "" {
+		if isRevisionNumberSelector(variantPromoteArgs.to) {
+			return fmt.Errorf(`--to %s names a revision by number, and each unit numbers its own; name a tag, changeset, change order or release, or use "cub unit update --upgrade --merge-end"`,
+				variantPromoteArgs.to)
+		}
+		var err error
+		if endRevision, err = formatRangeEnd(variantPromoteArgs.to, defaultSpaceID(), 0); err != nil {
+			return err
+		}
 	}
 	var revisions []string
 	if len(variantPromoteArgs.revisions) > 0 {
@@ -287,6 +314,7 @@ func variantPromoteCmdRun(cmd *cobra.Command, args []string) error {
 		Protect:           variantPromoteArgs.protect,
 		Subgroup:          variantPromoteArgs.subgroup,
 		Revisions:         revisions,
+		EndRevision:       endRevision,
 	}
 	if len(changeGuards) > 0 {
 		guards, err := parseGuardStampSpecs(changeGuards)

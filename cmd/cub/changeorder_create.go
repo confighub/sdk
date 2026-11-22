@@ -77,6 +77,12 @@ Examples:
   # each unit's end revision; the change order marks with tags of its own.
   cub changeorder create --space my-space bump-base-image --end-tag my-space/release-42-end
 
+  # Reissue a change order that stopped partway, together with the fix made since: the spaces
+  # it reached take only the fix, and the rest take both. Then abort the first one.
+  cub changeorder create --space my-space bump-base-image-2 --start Before:ChangeOrder:bump-base-image
+  cub changeorder update --space my-space bump-base-image \
+    --aborted-reason "reissued with its fix as bump-base-image-2"
+
   # Create one that propagates by running an invocation rather than by following links. The
   # change has not been made anywhere yet: "cub variant promote <space> --change-order" runs
   # the invocation in each space in scope, and the change order's tags record where it has.
@@ -130,6 +136,7 @@ var changeorderCreateArgs struct {
 	whereSpaceField  string
 	spaceFilter      string
 	endTag           string
+	start            string
 	updateType       string
 	priorRevisions   string
 	releasePrior     string
@@ -157,12 +164,13 @@ func init() {
 	changeorderCreateCmd.Flags().StringVar(&changeorderCreateArgs.whereSpaceField, "where-space-field", "", "where expression over Spaces selecting where this change order is headed, stored on it as WhereSpace and ANDed with --space-filter; the server records the spaces they select as its in-scope spaces")
 	changeorderCreateCmd.Flags().StringVar(&changeorderCreateArgs.spaceFilter, "space-filter", "", "filter over Spaces (slug, space/slug, or UUID) selecting where this change order is headed, ANDed with --where-space-field")
 	changeorderCreateCmd.Flags().StringVar(&changeorderCreateArgs.updateType, "update-type", "", "how the change order propagates: UpgradeUnit (the clone lineage, the default) or MergeUnits, which follow links and take the change from revisions the source unit already has; Insert, Upsert, or TransformPaths, which resolve the links of that type from the spaces in scope to units outside the spaces in scope at the revision each is at when the change order is created (the links must not be AutoUpdate, and the spaces in scope must be named); or Invoke, where the change is one invocation run in each space in scope and is made after the change order is created")
-	changeorderCreateCmd.Flags().StringVar(&changeorderCreateArgs.priorRevisions, "prior-revisions", "", "how the change order marks the units its change does not change, and the default --prior-revisions for its promotions: Include (the default), Skip or Error mark such a unit where its followers have it, or where it is released when that is later, so promoting the change does not move it, and differ in what a promotion does with a changed unit's revisions from before the change; All marks every such unit at its head, so promoting the change brings every unit up to the space it takes from. Fixed once the change order is created")
+	changeorderCreateCmd.Flags().StringVar(&changeorderCreateArgs.priorRevisions, "prior-revisions", "", "how the change order marks the units its change does not change, and the default --prior-revisions for its promotions: Include (the default), Skip, Error or Defer mark such a unit where its followers have it, or where it is released when that is later, so promoting the change does not move it, and differ in what a promotion does with a changed unit's revisions from before the change; All marks every such unit at its head, so promoting the change brings every unit up to the space it takes from. Fixed once the change order is created")
 	changeorderCreateCmd.Flags().StringVar(&changeorderCreateArgs.releasePrior, "release-prior-revisions", "", "what a release of the change order does with a unit's revisions from before the change -- after its last released revision, up to where the change starts: Include (the default) releases them; Error refuses, naming them and the change orders they belong to. cub release publish --prior-revisions overrides it")
 	changeorderCreateCmd.Flags().StringVar(&changeorderCreateArgs.invocation, "invocation", "", "invocation (slug, space/slug, or UUID) to run in each space in scope; required with --update-type Invoke and refused otherwise. Naming it on the change order is what holds every space to the same update -- the invoke API takes what it runs from here. Immutable once set")
 	changeorderCreateCmd.Flags().StringArrayVar(&changeorderCreateArgs.params, "param", []string{}, "value for one of the invocation's declared parameters, as name=value (can be repeated). One set for the whole change order, since a value that differed by space would make each variant a different change")
 	changeorderCreateCmd.Flags().StringVar(&changeorderCreateArgs.whereUnit, "where-unit", "", "where expression selecting which units of each space in scope the change order covers; without one it covers every unit. It takes what --where does on unit list, attributes of what a unit refers to included, as in \"Space.Labels.Environment = 'prod'\". Only for --update-type Invoke. Unlike the spaces, this is asked again on every read, so a unit added to a space afterwards counts as not having had the invocation run on it")
 	changeorderCreateCmd.Flags().StringVar(&changeorderCreateArgs.unitFilter, "unit-filter", "", "filter entity (slug, space/slug, or UUID, with From=Unit) narrowing the same selection as --where-unit, conjoined with it. Only for --update-type Invoke")
+	changeorderCreateCmd.Flags().StringVar(&changeorderCreateArgs.start, "start", "", "where the change order starts on each unit, as a revision -- a tag, changeset, change order or release, optionally with Before: -- resolved on each unit it names a revision of. Before:ChangeOrder:<slug> reissues a change order that stopped partway together with its fix: the spaces it reached take only what is new, and the rest take both. Without it, each unit starts at the latest revision the spaces it is headed for have taken, and a space behind that takes the revisions between as --prior-revisions says when promoted")
 	changeorderCreateCmd.Flags().StringVar(&changeorderCreateArgs.endTag, "end-tag", "", "tag (slug, space/slug, or UUID) marking the last revision of each unit to promote; without one, each unit's head revision is the end. The change order always creates its own start and end tags -- this one is read to find the boundary, recorded as AdoptedEndTagID, and never written to, since the change order also marks the units it carries no changes for")
 
 	// Bulk create specific flags
@@ -336,6 +344,17 @@ func runSingleChangeOrderCreate(args []string) error {
 	if changeorderCreateArgs.priorRevisions != "" {
 		newBody.PriorRevisions = goclientnew.ChangeOrderPriorRevisions(changeorderCreateArgs.priorRevisions)
 	}
+	if changeorderCreateArgs.start != "" {
+		if isRevisionNumberSelector(changeorderCreateArgs.start) {
+			return fmt.Errorf("--start %s names a revision by number, and each unit numbers its own; name a tag, changeset, change order or release",
+				changeorderCreateArgs.start)
+		}
+		start, err := formatRangeEnd(changeorderCreateArgs.start, spaceID.String(), 0)
+		if err != nil {
+			return err
+		}
+		newBody.StartRevision = start
+	}
 	if changeorderCreateArgs.releasePrior != "" {
 		newBody.ReleasePriorRevisions = goclientnew.ChangeOrderReleasePriorRevisions(changeorderCreateArgs.releasePrior)
 	}
@@ -456,6 +475,9 @@ func runBulkChangeOrderCreate() error {
 	filterID, err := parseFilterFlag(filter)
 	if err != nil {
 		return err
+	}
+	if changeorderCreateArgs.start != "" {
+		return errors.New("--start can only be used creating one change order, since it names revisions of that change order's space")
 	}
 
 	// Build WHERE clause from changeorder identifiers or use provided where clause

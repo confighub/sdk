@@ -158,9 +158,11 @@ reads: Count distinct users recording a Pass, of Type Approval unless another is
 default an author of the change does not count (AllowAuthors), and an unrevoked Fail blocks
 (IgnoreFail). A stage's Prerequisites read what a release of the change would bundle in the
 stage before, for the Units it changed; its ReleasePrerequisites, which may name attestation
-prerequisites and Validated, read what a release of the change order in one of the stage's spaces
-bundles. Validated is what publishing checks of what a release bundles: no ValidationErrors on its
-Revisions, and its Release triggers passing. "cub variant approve" records approvals.
+prerequisites, Validated and Distinct, read what a release of the change order in one of the stage's
+spaces bundles. Validated is what publishing checks of what a release bundles: no ValidationErrors on
+its Revisions, and its Release triggers passing. Distinct is no resource the release bundles being
+released to its target more than once, by two of its units or by one of them and a unit of any space
+released to the same target. "cub variant approve" records approvals.
 
 BULK CHANGEWORKFLOW CREATION:
 
