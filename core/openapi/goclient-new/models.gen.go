@@ -155,6 +155,24 @@ func (e ChannelCondition) Valid() bool {
 	}
 }
 
+// Defines values for MergeAlreadyHereKind.
+const (
+	MergeAlreadyHereKindChangeOrder MergeAlreadyHereKind = "ChangeOrder"
+	MergeAlreadyHereKindResolve     MergeAlreadyHereKind = "Resolve"
+)
+
+// Valid indicates whether the value is a known member of the MergeAlreadyHereKind enum.
+func (e MergeAlreadyHereKind) Valid() bool {
+	switch e {
+	case MergeAlreadyHereKindChangeOrder:
+		return true
+	case MergeAlreadyHereKindResolve:
+		return true
+	default:
+		return false
+	}
+}
+
 // Defines values for MutationType.
 const (
 	Add     MutationType = "Add"
@@ -5715,6 +5733,29 @@ type LinkSkippedRevisions struct {
 	ToRevisionNum int64 `json:"ToRevisionNum,omitempty" yaml:"ToRevisionNum,omitempty"`
 }
 
+// MergeAlreadyHere defines model for MergeAlreadyHere.
+type MergeAlreadyHere struct {
+	// DownstreamRevisionNum The downstream Unit's RevisionNum that made the same change.
+	DownstreamRevisionNum int64 `json:"DownstreamRevisionNum,omitempty" yaml:"DownstreamRevisionNum,omitempty"`
+
+	// EntityID The source Unit of a Resolve, or the ChangeOrder.
+	//
+	// Example: 248df4b7-aa70-47b8-a036-33ac447e668d
+	EntityID openapi_types.UUID `json:"EntityID,omitempty" yaml:"EntityID,omitempty"`
+
+	// Kind How the change was made in both: Resolve, by resolving the same source Unit at the same or a later Revision; or ChangeOrder, by the same Invoke ChangeOrder.
+	Kind MergeAlreadyHereKind `json:"Kind,omitempty" yaml:"Kind,omitempty"`
+
+	// RevisionNum The upstream RevisionNum passed over.
+	RevisionNum int64 `json:"RevisionNum,omitempty" yaml:"RevisionNum,omitempty"`
+
+	// SourceRevisionNum For a Resolve, the source Unit's RevisionNum the upstream Revision's resolve read.
+	SourceRevisionNum int64 `json:"SourceRevisionNum,omitempty" yaml:"SourceRevisionNum,omitempty"`
+}
+
+// MergeAlreadyHereKind How the change was made in both: Resolve, by resolving the same source Unit at the same or a later Revision; or ChangeOrder, by the same Invoke ChangeOrder.
+type MergeAlreadyHereKind string
+
 // MergeKeyValue defines model for MergeKeyValue.
 type MergeKeyValue struct {
 	Key   string `json:"Key,omitempty" yaml:"Key,omitempty"`
@@ -5738,6 +5779,9 @@ type MergeOverlap struct {
 
 // MergeSelection defines model for MergeSelection.
 type MergeSelection struct {
+	// AlreadyHere Pending upstream Revisions passed over because the downstream Unit already made the same change itself: by its own resolve of the same source, under the same Invoke ChangeOrder, or by merging it from elsewhere. Each is marked merged on the Link. One is passed over only when doing so leaves no older value on top: the downstream's copy wrote every path the Revision did, nothing merged before it writes those paths, and nothing from before it upstream reached the downstream after its copy.
+	AlreadyHere []MergeAlreadyHere `json:"AlreadyHere,omitempty" yaml:"AlreadyHere,omitempty"`
+
 	// DeclinedHeld The Revisions named, or in a ChangeOrder's range, that the Link declined, with the reason each was skipped. A declined skip holds: no merge takes the Revision until its skip is made an ordinary one (decline_skips=false) or removed (unskip_revisions).
 	DeclinedHeld []MergeSkipOverridden `json:"DeclinedHeld,omitempty" yaml:"DeclinedHeld,omitempty"`
 
@@ -6433,7 +6477,7 @@ type PromoteUnitResult struct {
 	// LinkIDs For a Resolve, and a Mark made by one, the Links resolved.
 	LinkIDs []UUID `json:"LinkIDs,omitempty" yaml:"LinkIDs,omitempty"`
 
-	// MergeSelections With Revisions, what the Unit's upgrade took, or on a dry run would take: the upstream revisions, the skips that overrode, and the earlier pending revisions that wrote some of the same paths.
+	// MergeSelections With Revisions, what the Unit's upgrade took, or on a dry run would take: the upstream revisions, the skips that overrode, and the earlier pending revisions that wrote some of the same paths. Any upgrade also lists the pending upstream revisions it passes over because the Unit made the same change itself (AlreadyHere).
 	MergeSelections []MergeSelection `json:"MergeSelections,omitempty" yaml:"MergeSelections,omitempty"`
 
 	// Mutations What the write changed, or on a dry run would change: the entries of the Unit's MutationSources it produced. Returned when include names Mutations.
@@ -8119,7 +8163,7 @@ type UnitCreateOrUpdateResponse struct {
 	Error *ResponseError               `json:"Error,omitempty" yaml:"Error,omitempty"`
 	Links []LinkCreateOrUpdateResponse `json:"Links,omitempty" yaml:"Links,omitempty"`
 
-	// MergeSelections For an upgrade or resolve with merge_revisions, what it took over each Link, or on a dry run would take: the upstream revisions, the skips that overrode, and the earlier pending revisions that wrote some of the same paths.
+	// MergeSelections For an upgrade or resolve with merge_revisions, what it took over each Link, or on a dry run would take: the upstream revisions, the skips that overrode, and the earlier pending revisions that wrote some of the same paths. Any merge also lists the pending upstream revisions it passed over because the Unit made the same change itself (AlreadyHere).
 	MergeSelections []MergeSelection `json:"MergeSelections,omitempty" yaml:"MergeSelections,omitempty"`
 
 	// MutationSources What set each value in the configuration the operation produced; returned when include names MutationSources.

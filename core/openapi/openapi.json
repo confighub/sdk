@@ -68254,6 +68254,45 @@
           }
         }
       },
+      "MergeAlreadyHere": {
+        "type": "object",
+        "properties": {
+          "DownstreamRevisionNum": {
+            "type": "integer",
+            "description": "The downstream Unit's RevisionNum that made the same change.",
+            "format": "int64",
+            "x-go-type-skip-optional-pointer": true
+          },
+          "EntityID": {
+            "type": "string",
+            "description": "The source Unit of a Resolve, or the ChangeOrder.",
+            "format": "uuid",
+            "example": "248df4b7-aa70-47b8-a036-33ac447e668d",
+            "x-go-type-skip-optional-pointer": true
+          },
+          "Kind": {
+            "enum": [
+              "Resolve",
+              "ChangeOrder"
+            ],
+            "type": "string",
+            "description": "How the change was made in both: Resolve, by resolving the same source Unit at the same or a later Revision; or ChangeOrder, by the same Invoke ChangeOrder.",
+            "x-go-type-skip-optional-pointer": true
+          },
+          "RevisionNum": {
+            "type": "integer",
+            "description": "The upstream RevisionNum passed over.",
+            "format": "int64",
+            "x-go-type-skip-optional-pointer": true
+          },
+          "SourceRevisionNum": {
+            "type": "integer",
+            "description": "For a Resolve, the source Unit's RevisionNum the upstream Revision's resolve read.",
+            "format": "int64",
+            "x-go-type-skip-optional-pointer": true
+          }
+        }
+      },
       "MergeKeyValue": {
         "type": "object",
         "properties": {
@@ -68301,6 +68340,14 @@
       "MergeSelection": {
         "type": "object",
         "properties": {
+          "AlreadyHere": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/MergeAlreadyHere"
+            },
+            "description": "Pending upstream Revisions passed over because the downstream Unit already made the same change itself: by its own resolve of the same source, under the same Invoke ChangeOrder, or by merging it from elsewhere. Each is marked merged on the Link. One is passed over only when doing so leaves no older value on top: the downstream's copy wrote every path the Revision did, nothing merged before it writes those paths, and nothing from before it upstream reached the downstream after its copy.",
+            "x-go-type-skip-optional-pointer": true
+          },
           "DeclinedHeld": {
             "type": "array",
             "items": {
@@ -69885,7 +69932,7 @@
             "items": {
               "$ref": "#/components/schemas/MergeSelection"
             },
-            "description": "With Revisions, what the Unit's upgrade took, or on a dry run would take: the upstream revisions, the skips that overrode, and the earlier pending revisions that wrote some of the same paths.",
+            "description": "With Revisions, what the Unit's upgrade took, or on a dry run would take: the upstream revisions, the skips that overrode, and the earlier pending revisions that wrote some of the same paths. Any upgrade also lists the pending upstream revisions it passes over because the Unit made the same change itself (AlreadyHere).",
             "x-go-type-skip-optional-pointer": true
           },
           "Mutations": {
@@ -73909,7 +73956,7 @@
             "items": {
               "$ref": "#/components/schemas/MergeSelection"
             },
-            "description": "For an upgrade or resolve with merge_revisions, what it took over each Link, or on a dry run would take: the upstream revisions, the skips that overrode, and the earlier pending revisions that wrote some of the same paths.",
+            "description": "For an upgrade or resolve with merge_revisions, what it took over each Link, or on a dry run would take: the upstream revisions, the skips that overrode, and the earlier pending revisions that wrote some of the same paths. Any merge also lists the pending upstream revisions it passed over because the Unit made the same change itself (AlreadyHere).",
             "x-go-type-skip-optional-pointer": true
           },
           "MutationSources": {
