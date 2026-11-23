@@ -101,9 +101,9 @@ published unchecked, and publishing again once the client is back succeeds; a --
 trigger that could not run instead records that as a warning on the Release.
 
 A revision number, a Revision ID and the named revisions each pick out a
-Revision of one Unit, so they are not accepted. Slugs resolve like any other
-entity slug: in --space, or across the organization when there is none, unless
-qualified as space/slug.
+Revision of one Unit, so they are not accepted. A slug is looked up in
+<variant>'s Space, unless qualified as space/slug: a ChangeOrder usually resides
+in the Component's base Space, so it is named as ChangeOrder:<base-space>/<slug>.
 
 --label, --annotation and --delete-gate set the Release's metadata at publish
 time; `+"`cub release update`"+` can change it afterwards. The bundled content
@@ -159,7 +159,7 @@ func init() {
 	enableAnnotationFlag(releasePublishCmd)
 	enableDeleteGateFlag(releasePublishCmd)
 	enableCreatePermissionFlag(releasePublishCmd)
-	releasePublishCmd.Flags().StringVar(&releasePublishRevision, "revision", "", "Which tagged Revision to bundle for each Unit, as a Tag (slug, Tag:slug, space/slug or Tag ID) or as a ChangeSet:slug or ChangeOrder:slug boundary, optionally prefixed with Before:. A Unit without a matching tagged Revision is skipped if it has never been released, and refused otherwise.")
+	releasePublishCmd.Flags().StringVar(&releasePublishRevision, "revision", "", "Which tagged Revision to bundle for each Unit, as a Tag (slug, Tag:slug, space/slug or Tag ID) or as a ChangeSet:slug or ChangeOrder:slug boundary, optionally prefixed with Before:. ChangeOrder:<slug> is how a Release is published for a ChangeOrder: it records the ChangeOrder on the Release and advances the ChangeOrder's Stage. A slug is looked up in <variant>'s Space; name one in another Space, such as a ChangeOrder in the base Space, as space/slug, or give its ID. A Unit without a matching tagged Revision is skipped if it has never been released, and refused otherwise.")
 	releasePublishCmd.Flags().StringVar(&releasePublishPrior, "prior-revisions", "", "with --revision ChangeOrder:<slug>, what to do with a unit's revisions from before the change -- after its last released revision, up to where the change starts: Include releases them; Error refuses, naming them and the change orders they belong to. Defaults to the change order's ReleasePriorRevisions")
 	releasePublishCmd.Flags().BoolVar(&releasePublishDryRun, "dry-run", false, "publish in a transaction that is rolled back: report the release that would be published, or why it would be refused, including a change order's release prerequisites, and publish nothing")
 	releasePublishCmd.Flags().StringVar(&releasePublishBundleBaseName, "bundle-base-name", "", "base filename for the release's stored bundle, without the .tar.gz suffix; defaults to the bundled Unit's slug for a single-Unit release and to the Space's slug otherwise")
@@ -213,11 +213,13 @@ func releasePublishCmdRun(cmd *cobra.Command, args []string) error {
 		// server supplies: only the ChangeOrder is sent. The state before it is not the change,
 		// so Before:ChangeOrder: names none and is sent as the Tag it resolves to.
 		if identifier, ok := strings.CutPrefix(releasePublishRevision, "ChangeOrder:"); ok {
-			changeOrder, err := changeOrderByRef(identifier)
+			// Looked up in the Space the boundary Tag above was, so that the two lookups cannot
+			// find different ChangeOrders.
+			changeOrder, err := resolveChangeOrder(identifier, space.Space.SpaceID.String(), "ChangeOrderID")
 			if err != nil {
-				return err
+				return fmt.Errorf("failed to get change order: %w", err)
 			}
-			body.ChangeOrderID = &changeOrder.ChangeOrderID
+			body.ChangeOrderID = &changeOrder.ChangeOrder.ChangeOrderID
 			body.TagID = nil
 		}
 	}
