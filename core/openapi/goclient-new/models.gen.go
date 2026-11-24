@@ -5848,7 +5848,7 @@ type Mutation struct {
 	// Guards The guards the change recorded on the paths it wrote: the operation's merged with those of the Trigger, Invocation, or Link that produced it
 	Guards *GuardStamp `json:"Guards,omitempty" yaml:"Guards,omitempty"`
 
-	// HiddenReason The reason the entity is hidden, if it is. A hidden entity is left out of List and Search results, and of what bulk operations act on, unless the include_hidden parameter names its reason or is *, or the where parameter names the entity by Slug or ID. ConfigHub/YAML Units are created hidden with the reason BackingUnit unless given another.
+	// HiddenReason The reason the Unit this entity belongs to is hidden, if it is. The entity is hidden as its Unit is, and is left out of List and Search results unless the include_hidden parameter names the reason or is *, or the request names the Unit, by its path or by UnitID.
 	HiddenReason string `json:"HiddenReason,omitempty" yaml:"HiddenReason,omitempty"`
 
 	// InheritedGuards The guards the change recorded as inherited on the paths it wrote, which clones receive and merges carry to the units downstream
@@ -6740,7 +6740,7 @@ type Resource struct {
 	// EntityType The type of entity.
 	EntityType string `json:"EntityType,omitempty" yaml:"EntityType,omitempty"`
 
-	// HiddenReason The reason the entity is hidden, if it is. A hidden entity is left out of List and Search results, and of what bulk operations act on, unless the include_hidden parameter names its reason or is *, or the where parameter names the entity by Slug or ID. ConfigHub/YAML Units are created hidden with the reason BackingUnit unless given another.
+	// HiddenReason The reason the Unit this entity belongs to is hidden, if it is. The entity is hidden as its Unit is, and is left out of List and Search results unless the include_hidden parameter names the reason or is *, or the request names the Unit, by its path or by UnitID.
 	HiddenReason string `json:"HiddenReason,omitempty" yaml:"HiddenReason,omitempty"`
 
 	// OrganizationID Unique identifier for an Organization.
@@ -6985,7 +6985,7 @@ type ReviewComment struct {
 	// EntityType The type of entity.
 	EntityType string `json:"EntityType,omitempty" yaml:"EntityType,omitempty"`
 
-	// HiddenReason The reason the entity is hidden, if it is. A hidden entity is left out of List and Search results, and of what bulk operations act on, unless the include_hidden parameter names its reason or is *, or the where parameter names the entity by Slug or ID. ConfigHub/YAML Units are created hidden with the reason BackingUnit unless given another.
+	// HiddenReason The reason the comment is hidden, if it is, such as Resolved. A hidden comment is left out of List and Search results unless the include_hidden parameter names its reason or is *, or the where parameter names the comment by ID. A comment is also left out while its Unit is hidden, unless the request names the Unit.
 	HiddenReason string `json:"HiddenReason,omitempty" yaml:"HiddenReason,omitempty"`
 
 	// OrganizationID Unique identifier for an Organization.
@@ -7098,7 +7098,7 @@ type Revision struct {
 	// EntityType The type of entity.
 	EntityType string `json:"EntityType,omitempty" yaml:"EntityType,omitempty"`
 
-	// HiddenReason The reason the entity is hidden, if it is. A hidden entity is left out of List and Search results, and of what bulk operations act on, unless the include_hidden parameter names its reason or is *, or the where parameter names the entity by Slug or ID. ConfigHub/YAML Units are created hidden with the reason BackingUnit unless given another.
+	// HiddenReason The reason the Unit this entity belongs to is hidden, if it is. The entity is hidden as its Unit is, and is left out of List and Search results unless the include_hidden parameter names the reason or is *, or the request names the Unit, by its path or by UnitID.
 	HiddenReason string           `json:"HiddenReason,omitempty" yaml:"HiddenReason,omitempty"`
 	LinkFindings *LinkFindingList `json:"LinkFindings,omitempty" yaml:"LinkFindings,omitempty"`
 
@@ -17224,6 +17224,8 @@ type ListAllResourcesParams struct {
 	// A where clause naming the entities, by their Slug or ID with `=` or `IN`, or naming HiddenReason at all, also returns hidden entities it selects.
 	//
 	// ConfigHub/YAML Units, which hold the configuration of entities, are hidden with the HiddenReason `BackingUnit`.
+	//
+	// A Resource is also hidden while its Unit is, with the Unit's HiddenReason, unless the request names the Unit: in its path, or by UnitID with `=` or `IN`.
 	IncludeHidden *string `form:"include_hidden,omitempty" json:"include_hidden,omitempty" yaml:"include_hidden,omitempty"`
 
 	// View UUID of a View whose columns to compute for each Resource, returned as ViewColumns.
@@ -17242,7 +17244,7 @@ type ListAllResourcesParams struct {
 	//
 	// Field names are case-sensitive and PascalCase, as in the JSON encoding. Sort direction defaults to ASC when the 'DIRECTION:' prefix is omitted.
 	//
-	// Supported attributes for ordering Resource: CreatedAt, HiddenReason, OrganizationID, ResourceID, ResourceIndex, ResourceName, ResourceType, SpaceID, ToolchainType, UnitID, UpdatedAt.
+	// Supported attributes for ordering Resource: CreatedAt, OrganizationID, ResourceID, ResourceIndex, ResourceName, ResourceType, SpaceID, ToolchainType, UnitID, UpdatedAt.
 	//
 	// Example: 'DESC:CreatedAt' or 'DisplayName,DESC:CreatedAt'.
 	//
@@ -17359,6 +17361,8 @@ type BulkDeleteReviewCommentsParams struct {
 	// A where clause naming the entities, by their Slug or ID with `=` or `IN`, or naming HiddenReason at all, also returns hidden entities it selects.
 	//
 	// ConfigHub/YAML Units, which hold the configuration of entities, are hidden with the HiddenReason `BackingUnit`.
+	//
+	// A ReviewComment is also hidden while its Unit is, with the Unit's HiddenReason, unless the request names the Unit: in its path, or by UnitID with `=` or `IN`.
 	IncludeHidden *string `form:"include_hidden,omitempty" json:"include_hidden,omitempty" yaml:"include_hidden,omitempty"`
 
 	// Include Include clause for expanding related entities in the response for ReviewComment.
@@ -17481,6 +17485,8 @@ type ListAllReviewCommentsParams struct {
 	// A where clause naming the entities, by their Slug or ID with `=` or `IN`, or naming HiddenReason at all, also returns hidden entities it selects.
 	//
 	// ConfigHub/YAML Units, which hold the configuration of entities, are hidden with the HiddenReason `BackingUnit`.
+	//
+	// A ReviewComment is also hidden while its Unit is, with the Unit's HiddenReason, unless the request names the Unit: in its path, or by UnitID with `=` or `IN`.
 	IncludeHidden *string `form:"include_hidden,omitempty" json:"include_hidden,omitempty" yaml:"include_hidden,omitempty"`
 
 	// View UUID of a View whose columns to compute for each ReviewComment, returned as ViewColumns.
@@ -17521,20 +17527,14 @@ type ListAllReviewCommentsParamsWherePermission string
 
 // BulkPatchReviewCommentsApplicationMergePatchPlusJSONBody defines parameters for BulkPatchReviewComments.
 type BulkPatchReviewCommentsApplicationMergePatchPlusJSONBody struct {
-	ChangeOrderID *openapi_types.UUID `json:"ChangeOrderID,omitempty" yaml:"ChangeOrderID,omitempty"`
-
-	// HiddenReason The reason the entity is hidden, if it is. A hidden entity is left out of List and Search results, and of what bulk operations act on, unless the include_hidden parameter names its reason or is *, or the where parameter names the entity by Slug or ID. ConfigHub/YAML Units are created hidden with the reason BackingUnit unless given another.
-	HiddenReason *string `json:"HiddenReason,omitempty" yaml:"HiddenReason,omitempty"`
-
-	// Path Path to which the remark is attached; optional
-	Path      *string             `json:"Path,omitempty" yaml:"Path,omitempty"`
-	ReplyToID *openapi_types.UUID `json:"ReplyToID,omitempty" yaml:"ReplyToID,omitempty"`
-
-	// Resource Resource to which the remark is attached; optional
-	Resource    *map[string]interface{} `json:"Resource,omitempty" yaml:"Resource,omitempty"`
-	RevisionID  *openapi_types.UUID     `json:"RevisionID,omitempty" yaml:"RevisionID,omitempty"`
-	RevisionNum *int                    `json:"RevisionNum,omitempty" yaml:"RevisionNum,omitempty"`
-	Text        *string                 `json:"Text,omitempty" yaml:"Text,omitempty"`
+	ChangeOrderID *openapi_types.UUID     `json:"ChangeOrderID,omitempty" yaml:"ChangeOrderID,omitempty"`
+	HiddenReason  *string                 `json:"HiddenReason,omitempty" yaml:"HiddenReason,omitempty"`
+	Path          *string                 `json:"Path,omitempty" yaml:"Path,omitempty"`
+	ReplyToID     *openapi_types.UUID     `json:"ReplyToID,omitempty" yaml:"ReplyToID,omitempty"`
+	Resource      *map[string]interface{} `json:"Resource,omitempty" yaml:"Resource,omitempty"`
+	RevisionID    *openapi_types.UUID     `json:"RevisionID,omitempty" yaml:"RevisionID,omitempty"`
+	RevisionNum   *int                    `json:"RevisionNum,omitempty" yaml:"RevisionNum,omitempty"`
+	Text          *string                 `json:"Text,omitempty" yaml:"Text,omitempty"`
 
 	// Version An entity-specific sequence number used for optimistic concurrency control. The value read must be sent in calls to Update.
 	Version *int `json:"Version,omitempty" yaml:"Version,omitempty"`
@@ -17618,6 +17618,8 @@ type BulkPatchReviewCommentsParams struct {
 	// A where clause naming the entities, by their Slug or ID with `=` or `IN`, or naming HiddenReason at all, also returns hidden entities it selects.
 	//
 	// ConfigHub/YAML Units, which hold the configuration of entities, are hidden with the HiddenReason `BackingUnit`.
+	//
+	// A ReviewComment is also hidden while its Unit is, with the Unit's HiddenReason, unless the request names the Unit: in its path, or by UnitID with `=` or `IN`.
 	IncludeHidden *string `form:"include_hidden,omitempty" json:"include_hidden,omitempty" yaml:"include_hidden,omitempty"`
 
 	// Include Include clause for expanding related entities in the response for ReviewComment.
@@ -17745,6 +17747,8 @@ type ListAllRevisionsParams struct {
 	// A where clause naming the entities, by their Slug or ID with `=` or `IN`, or naming HiddenReason at all, also returns hidden entities it selects.
 	//
 	// ConfigHub/YAML Units, which hold the configuration of entities, are hidden with the HiddenReason `BackingUnit`.
+	//
+	// A Revision is also hidden while its Unit is, with the Unit's HiddenReason, unless the request names the Unit: in its path, or by UnitID with `=` or `IN`.
 	IncludeHidden *string `form:"include_hidden,omitempty" json:"include_hidden,omitempty" yaml:"include_hidden,omitempty"`
 
 	// View UUID of a View whose columns to compute for each Revision, returned as ViewColumns.
@@ -17763,7 +17767,7 @@ type ListAllRevisionsParams struct {
 	//
 	// Field names are case-sensitive and PascalCase, as in the JSON encoding. Sort direction defaults to ASC when the 'DIRECTION:' prefix is omitted.
 	//
-	// Supported attributes for ordering Revision: ChangeSetID, CreatedAt, DataHash, Description, HiddenReason, OrganizationID, RevisionID, RevisionNum, Source, UnitID, UpdatedAt, UserAgent, UserID.
+	// Supported attributes for ordering Revision: ChangeSetID, CreatedAt, DataHash, Description, OrganizationID, RevisionID, RevisionNum, Source, UnitID, UpdatedAt, UserAgent, UserID.
 	//
 	// Example: 'DESC:CreatedAt' or 'DisplayName,DESC:CreatedAt'.
 	//
@@ -17905,6 +17909,8 @@ type SearchRevisionDataParams struct {
 	// A where clause naming the entities, by their Slug or ID with `=` or `IN`, or naming HiddenReason at all, also returns hidden entities it selects.
 	//
 	// ConfigHub/YAML Units, which hold the configuration of entities, are hidden with the HiddenReason `BackingUnit`.
+	//
+	// A Revision is also hidden while its Unit is, with the Unit's HiddenReason, unless the request names the Unit: in its path, or by UnitID with `=` or `IN`.
 	IncludeHidden *string `form:"include_hidden,omitempty" json:"include_hidden,omitempty" yaml:"include_hidden,omitempty"`
 
 	// Limit Maximum number of Revision entities to return. If not specified, all matching entities are returned. Values greater than 1000 are rejected with 400. When there may be more entities, the response has a ConfigHub-Continue header to pass as the continue parameter of the next request.
@@ -17914,7 +17920,7 @@ type SearchRevisionDataParams struct {
 	//
 	// Field names are case-sensitive and PascalCase, as in the JSON encoding. Sort direction defaults to ASC when the 'DIRECTION:' prefix is omitted.
 	//
-	// Supported attributes for ordering Revision: ChangeSetID, CreatedAt, DataHash, Description, HiddenReason, OrganizationID, RevisionID, RevisionNum, Source, UnitID, UpdatedAt, UserAgent, UserID.
+	// Supported attributes for ordering Revision: ChangeSetID, CreatedAt, DataHash, Description, OrganizationID, RevisionID, RevisionNum, Source, UnitID, UpdatedAt, UserAgent, UserID.
 	//
 	// Example: 'DESC:CreatedAt' or 'DisplayName,DESC:CreatedAt'.
 	//
@@ -18056,6 +18062,8 @@ type SearchRevisionMutationSourcesParams struct {
 	// A where clause naming the entities, by their Slug or ID with `=` or `IN`, or naming HiddenReason at all, also returns hidden entities it selects.
 	//
 	// ConfigHub/YAML Units, which hold the configuration of entities, are hidden with the HiddenReason `BackingUnit`.
+	//
+	// A Revision is also hidden while its Unit is, with the Unit's HiddenReason, unless the request names the Unit: in its path, or by UnitID with `=` or `IN`.
 	IncludeHidden *string `form:"include_hidden,omitempty" json:"include_hidden,omitempty" yaml:"include_hidden,omitempty"`
 
 	// Limit Maximum number of Revision entities to return. If not specified, all matching entities are returned. Values greater than 1000 are rejected with 400. When there may be more entities, the response has a ConfigHub-Continue header to pass as the continue parameter of the next request.
@@ -18065,7 +18073,7 @@ type SearchRevisionMutationSourcesParams struct {
 	//
 	// Field names are case-sensitive and PascalCase, as in the JSON encoding. Sort direction defaults to ASC when the 'DIRECTION:' prefix is omitted.
 	//
-	// Supported attributes for ordering Revision: ChangeSetID, CreatedAt, DataHash, Description, HiddenReason, OrganizationID, RevisionID, RevisionNum, Source, UnitID, UpdatedAt, UserAgent, UserID.
+	// Supported attributes for ordering Revision: ChangeSetID, CreatedAt, DataHash, Description, OrganizationID, RevisionID, RevisionNum, Source, UnitID, UpdatedAt, UserAgent, UserID.
 	//
 	// Example: 'DESC:CreatedAt' or 'DisplayName,DESC:CreatedAt'.
 	//
@@ -22903,6 +22911,8 @@ type ListExtendedMutationsParams struct {
 	// A where clause naming the entities, by their Slug or ID with `=` or `IN`, or naming HiddenReason at all, also returns hidden entities it selects.
 	//
 	// ConfigHub/YAML Units, which hold the configuration of entities, are hidden with the HiddenReason `BackingUnit`.
+	//
+	// A Mutation is also hidden while its Unit is, with the Unit's HiddenReason, unless the request names the Unit: in its path, or by UnitID with `=` or `IN`.
 	IncludeHidden *string `form:"include_hidden,omitempty" json:"include_hidden,omitempty" yaml:"include_hidden,omitempty"`
 
 	// View UUID of a View whose columns to compute for each Mutation, returned as ViewColumns.
@@ -22921,7 +22931,7 @@ type ListExtendedMutationsParams struct {
 	//
 	// Field names are case-sensitive and PascalCase, as in the JSON encoding. Sort direction defaults to ASC when the 'DIRECTION:' prefix is omitted.
 	//
-	// Supported attributes for ordering Mutation: ChannelID, CreatedAt, FunctionName, HiddenReason, InvocationID, LinkID, MergeBaseRevisionNum, MergeEndRevisionNum, MergeSourceID, MutationID, MutationNum, OrganizationID, ReplayOutcome, ReplayReason, RestoredRevisionNum, RevisionID, RevisionNum, Subgroup, TriggerID, UnitID, UpdatedAt.
+	// Supported attributes for ordering Mutation: ChannelID, CreatedAt, FunctionName, InvocationID, LinkID, MergeBaseRevisionNum, MergeEndRevisionNum, MergeSourceID, MutationID, MutationNum, OrganizationID, ReplayOutcome, ReplayReason, RestoredRevisionNum, RevisionID, RevisionNum, Subgroup, TriggerID, UnitID, UpdatedAt.
 	//
 	// Example: 'DESC:CreatedAt' or 'DisplayName,DESC:CreatedAt'.
 	//
@@ -23087,6 +23097,8 @@ type ListExtendedResourcesParams struct {
 	// A where clause naming the entities, by their Slug or ID with `=` or `IN`, or naming HiddenReason at all, also returns hidden entities it selects.
 	//
 	// ConfigHub/YAML Units, which hold the configuration of entities, are hidden with the HiddenReason `BackingUnit`.
+	//
+	// A Resource is also hidden while its Unit is, with the Unit's HiddenReason, unless the request names the Unit: in its path, or by UnitID with `=` or `IN`.
 	IncludeHidden *string `form:"include_hidden,omitempty" json:"include_hidden,omitempty" yaml:"include_hidden,omitempty"`
 
 	// View UUID of a View whose columns to compute for each Resource, returned as ViewColumns.
@@ -23105,7 +23117,7 @@ type ListExtendedResourcesParams struct {
 	//
 	// Field names are case-sensitive and PascalCase, as in the JSON encoding. Sort direction defaults to ASC when the 'DIRECTION:' prefix is omitted.
 	//
-	// Supported attributes for ordering Resource: CreatedAt, HiddenReason, OrganizationID, ResourceID, ResourceIndex, ResourceName, ResourceType, SpaceID, ToolchainType, UnitID, UpdatedAt.
+	// Supported attributes for ordering Resource: CreatedAt, OrganizationID, ResourceID, ResourceIndex, ResourceName, ResourceType, SpaceID, ToolchainType, UnitID, UpdatedAt.
 	//
 	// Example: 'DESC:CreatedAt' or 'DisplayName,DESC:CreatedAt'.
 	//
@@ -23279,6 +23291,8 @@ type ListReviewCommentsParams struct {
 	// A where clause naming the entities, by their Slug or ID with `=` or `IN`, or naming HiddenReason at all, also returns hidden entities it selects.
 	//
 	// ConfigHub/YAML Units, which hold the configuration of entities, are hidden with the HiddenReason `BackingUnit`.
+	//
+	// A ReviewComment is also hidden while its Unit is, with the Unit's HiddenReason, unless the request names the Unit: in its path, or by UnitID with `=` or `IN`.
 	IncludeHidden *string `form:"include_hidden,omitempty" json:"include_hidden,omitempty" yaml:"include_hidden,omitempty"`
 
 	// View UUID of a View whose columns to compute for each ReviewComment, returned as ViewColumns.
@@ -23347,20 +23361,14 @@ type GetReviewCommentParams struct {
 
 // PatchReviewCommentApplicationMergePatchPlusJSONBody defines parameters for PatchReviewComment.
 type PatchReviewCommentApplicationMergePatchPlusJSONBody struct {
-	ChangeOrderID *openapi_types.UUID `json:"ChangeOrderID,omitempty" yaml:"ChangeOrderID,omitempty"`
-
-	// HiddenReason The reason the entity is hidden, if it is. A hidden entity is left out of List and Search results, and of what bulk operations act on, unless the include_hidden parameter names its reason or is *, or the where parameter names the entity by Slug or ID. ConfigHub/YAML Units are created hidden with the reason BackingUnit unless given another.
-	HiddenReason *string `json:"HiddenReason,omitempty" yaml:"HiddenReason,omitempty"`
-
-	// Path Path to which the remark is attached; optional
-	Path      *string             `json:"Path,omitempty" yaml:"Path,omitempty"`
-	ReplyToID *openapi_types.UUID `json:"ReplyToID,omitempty" yaml:"ReplyToID,omitempty"`
-
-	// Resource Resource to which the remark is attached; optional
-	Resource    *map[string]interface{} `json:"Resource,omitempty" yaml:"Resource,omitempty"`
-	RevisionID  *openapi_types.UUID     `json:"RevisionID,omitempty" yaml:"RevisionID,omitempty"`
-	RevisionNum *int                    `json:"RevisionNum,omitempty" yaml:"RevisionNum,omitempty"`
-	Text        *string                 `json:"Text,omitempty" yaml:"Text,omitempty"`
+	ChangeOrderID *openapi_types.UUID     `json:"ChangeOrderID,omitempty" yaml:"ChangeOrderID,omitempty"`
+	HiddenReason  *string                 `json:"HiddenReason,omitempty" yaml:"HiddenReason,omitempty"`
+	Path          *string                 `json:"Path,omitempty" yaml:"Path,omitempty"`
+	ReplyToID     *openapi_types.UUID     `json:"ReplyToID,omitempty" yaml:"ReplyToID,omitempty"`
+	Resource      *map[string]interface{} `json:"Resource,omitempty" yaml:"Resource,omitempty"`
+	RevisionID    *openapi_types.UUID     `json:"RevisionID,omitempty" yaml:"RevisionID,omitempty"`
+	RevisionNum   *int                    `json:"RevisionNum,omitempty" yaml:"RevisionNum,omitempty"`
+	Text          *string                 `json:"Text,omitempty" yaml:"Text,omitempty"`
 
 	// Version An entity-specific sequence number used for optimistic concurrency control. The value read must be sent in calls to Update.
 	Version *int `json:"Version,omitempty" yaml:"Version,omitempty"`
@@ -23484,6 +23492,8 @@ type ListExtendedRevisionsParams struct {
 	// A where clause naming the entities, by their Slug or ID with `=` or `IN`, or naming HiddenReason at all, also returns hidden entities it selects.
 	//
 	// ConfigHub/YAML Units, which hold the configuration of entities, are hidden with the HiddenReason `BackingUnit`.
+	//
+	// A Revision is also hidden while its Unit is, with the Unit's HiddenReason, unless the request names the Unit: in its path, or by UnitID with `=` or `IN`.
 	IncludeHidden *string `form:"include_hidden,omitempty" json:"include_hidden,omitempty" yaml:"include_hidden,omitempty"`
 
 	// View UUID of a View whose columns to compute for each Revision, returned as ViewColumns.
@@ -23502,7 +23512,7 @@ type ListExtendedRevisionsParams struct {
 	//
 	// Field names are case-sensitive and PascalCase, as in the JSON encoding. Sort direction defaults to ASC when the 'DIRECTION:' prefix is omitted.
 	//
-	// Supported attributes for ordering Revision: ChangeSetID, CreatedAt, DataHash, Description, HiddenReason, OrganizationID, RevisionID, RevisionNum, Source, UnitID, UpdatedAt, UserAgent, UserID.
+	// Supported attributes for ordering Revision: ChangeSetID, CreatedAt, DataHash, Description, OrganizationID, RevisionID, RevisionNum, Source, UnitID, UpdatedAt, UserAgent, UserID.
 	//
 	// Example: 'DESC:CreatedAt' or 'DisplayName,DESC:CreatedAt'.
 	//

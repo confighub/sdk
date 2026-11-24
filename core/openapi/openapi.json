@@ -19668,7 +19668,7 @@
           {
             "name": "include_hidden",
             "in": "query",
-            "description": "Hidden Resource entities, those with a HiddenReason, are left out of the results, or of what a bulk operation acts on, unless this names their HiddenReason.\n\nIt is a comma-separated list of HiddenReasons, or `*` for all of them.\n\nA where clause naming the entities, by their Slug or ID with `=` or `IN`, or naming HiddenReason at all, also returns hidden entities it selects.\n\nConfigHub/YAML Units, which hold the configuration of entities, are hidden with the HiddenReason `BackingUnit`.",
+            "description": "Hidden Resource entities, those with a HiddenReason, are left out of the results, or of what a bulk operation acts on, unless this names their HiddenReason.\n\nIt is a comma-separated list of HiddenReasons, or `*` for all of them.\n\nA where clause naming the entities, by their Slug or ID with `=` or `IN`, or naming HiddenReason at all, also returns hidden entities it selects.\n\nConfigHub/YAML Units, which hold the configuration of entities, are hidden with the HiddenReason `BackingUnit`.\n\nA Resource is also hidden while its Unit is, with the Unit's HiddenReason, unless the request names the Unit: in its path, or by UnitID with `=` or `IN`.",
             "required": false,
             "schema": {
               "type": "string"
@@ -19697,10 +19697,10 @@
           {
             "name": "order_by",
             "in": "query",
-            "description": "Comma-separated list of fields to sort Resource results by, each in the form 'ASC|DESC:FieldName' or just 'FieldName'.\n\nField names are case-sensitive and PascalCase, as in the JSON encoding. Sort direction defaults to ASC when the 'DIRECTION:' prefix is omitted.\n\nSupported attributes for ordering Resource: CreatedAt, HiddenReason, OrganizationID, ResourceID, ResourceIndex, ResourceName, ResourceType, SpaceID, ToolchainType, UnitID, UpdatedAt.\n\nExample: 'DESC:CreatedAt' or 'DisplayName,DESC:CreatedAt'.\n\nResults are ordered by the Resource's ID after the fields named, and by the ID alone if none are.\n\nThe whole string must be query-encoded.",
+            "description": "Comma-separated list of fields to sort Resource results by, each in the form 'ASC|DESC:FieldName' or just 'FieldName'.\n\nField names are case-sensitive and PascalCase, as in the JSON encoding. Sort direction defaults to ASC when the 'DIRECTION:' prefix is omitted.\n\nSupported attributes for ordering Resource: CreatedAt, OrganizationID, ResourceID, ResourceIndex, ResourceName, ResourceType, SpaceID, ToolchainType, UnitID, UpdatedAt.\n\nExample: 'DESC:CreatedAt' or 'DisplayName,DESC:CreatedAt'.\n\nResults are ordered by the Resource's ID after the fields named, and by the ID alone if none are.\n\nThe whole string must be query-encoded.",
             "required": false,
             "schema": {
-              "pattern": "^\\s*(?:(?:[Aa][Ss][Cc]|[Dd][Ee][Ss][Cc])\\s*:\\s*)?(CreatedAt|HiddenReason|OrganizationID|ResourceID|ResourceIndex|ResourceName|ResourceType|SpaceID|ToolchainType|UnitID|UpdatedAt)\\s*(?:,\\s*(?:(?:[Aa][Ss][Cc]|[Dd][Ee][Ss][Cc])\\s*:\\s*)?(?:CreatedAt|HiddenReason|OrganizationID|ResourceID|ResourceIndex|ResourceName|ResourceType|SpaceID|ToolchainType|UnitID|UpdatedAt)\\s*)*$",
+              "pattern": "^\\s*(?:(?:[Aa][Ss][Cc]|[Dd][Ee][Ss][Cc])\\s*:\\s*)?(CreatedAt|OrganizationID|ResourceID|ResourceIndex|ResourceName|ResourceType|SpaceID|ToolchainType|UnitID|UpdatedAt)\\s*(?:,\\s*(?:(?:[Aa][Ss][Cc]|[Dd][Ee][Ss][Cc])\\s*:\\s*)?(?:CreatedAt|OrganizationID|ResourceID|ResourceIndex|ResourceName|ResourceType|SpaceID|ToolchainType|UnitID|UpdatedAt)\\s*)*$",
               "type": "string"
             }
           },
@@ -19912,7 +19912,7 @@
           {
             "name": "include_hidden",
             "in": "query",
-            "description": "Hidden ReviewComment entities, those with a HiddenReason, are left out of the results, or of what a bulk operation acts on, unless this names their HiddenReason.\n\nIt is a comma-separated list of HiddenReasons, or `*` for all of them.\n\nA where clause naming the entities, by their Slug or ID with `=` or `IN`, or naming HiddenReason at all, also returns hidden entities it selects.\n\nConfigHub/YAML Units, which hold the configuration of entities, are hidden with the HiddenReason `BackingUnit`.",
+            "description": "Hidden ReviewComment entities, those with a HiddenReason, are left out of the results, or of what a bulk operation acts on, unless this names their HiddenReason.\n\nIt is a comma-separated list of HiddenReasons, or `*` for all of them.\n\nA where clause naming the entities, by their Slug or ID with `=` or `IN`, or naming HiddenReason at all, also returns hidden entities it selects.\n\nConfigHub/YAML Units, which hold the configuration of entities, are hidden with the HiddenReason `BackingUnit`.\n\nA ReviewComment is also hidden while its Unit is, with the Unit's HiddenReason, unless the request names the Unit: in its path, or by UnitID with `=` or `IN`.",
             "required": false,
             "schema": {
               "type": "string"
@@ -20159,7 +20159,7 @@
           {
             "name": "include_hidden",
             "in": "query",
-            "description": "Hidden ReviewComment entities, those with a HiddenReason, are left out of the results, or of what a bulk operation acts on, unless this names their HiddenReason.\n\nIt is a comma-separated list of HiddenReasons, or `*` for all of them.\n\nA where clause naming the entities, by their Slug or ID with `=` or `IN`, or naming HiddenReason at all, also returns hidden entities it selects.\n\nConfigHub/YAML Units, which hold the configuration of entities, are hidden with the HiddenReason `BackingUnit`.",
+            "description": "Hidden ReviewComment entities, those with a HiddenReason, are left out of the results, or of what a bulk operation acts on, unless this names their HiddenReason.\n\nIt is a comma-separated list of HiddenReasons, or `*` for all of them.\n\nA where clause naming the entities, by their Slug or ID with `=` or `IN`, or naming HiddenReason at all, also returns hidden entities it selects.\n\nConfigHub/YAML Units, which hold the configuration of entities, are hidden with the HiddenReason `BackingUnit`.\n\nA ReviewComment is also hidden while its Unit is, with the Unit's HiddenReason, unless the request names the Unit: in its path, or by UnitID with `=` or `IN`.",
             "required": false,
             "schema": {
               "type": "string"
@@ -20348,7 +20348,7 @@
           {
             "name": "include_hidden",
             "in": "query",
-            "description": "Hidden ReviewComment entities, those with a HiddenReason, are left out of the results, or of what a bulk operation acts on, unless this names their HiddenReason.\n\nIt is a comma-separated list of HiddenReasons, or `*` for all of them.\n\nA where clause naming the entities, by their Slug or ID with `=` or `IN`, or naming HiddenReason at all, also returns hidden entities it selects.\n\nConfigHub/YAML Units, which hold the configuration of entities, are hidden with the HiddenReason `BackingUnit`.",
+            "description": "Hidden ReviewComment entities, those with a HiddenReason, are left out of the results, or of what a bulk operation acts on, unless this names their HiddenReason.\n\nIt is a comma-separated list of HiddenReasons, or `*` for all of them.\n\nA where clause naming the entities, by their Slug or ID with `=` or `IN`, or naming HiddenReason at all, also returns hidden entities it selects.\n\nConfigHub/YAML Units, which hold the configuration of entities, are hidden with the HiddenReason `BackingUnit`.\n\nA ReviewComment is also hidden while its Unit is, with the Unit's HiddenReason, unless the request names the Unit: in its path, or by UnitID with `=` or `IN`.",
             "required": false,
             "schema": {
               "type": "string"
@@ -20408,12 +20408,12 @@
                   },
                   "HiddenReason": {
                     "type": "string",
-                    "description": "The reason the entity is hidden, if it is. A hidden entity is left out of List and Search results, and of what bulk operations act on, unless the include_hidden parameter names its reason or is *, or the where parameter names the entity by Slug or ID. ConfigHub/YAML Units are created hidden with the reason BackingUnit unless given another.",
+                    "description": "",
                     "nullable": true
                   },
                   "Path": {
                     "type": "string",
-                    "description": "Path to which the remark is attached; optional",
+                    "description": "",
                     "nullable": true
                   },
                   "ReplyToID": {
@@ -20424,7 +20424,7 @@
                   },
                   "Resource": {
                     "type": "object",
-                    "description": "Resource to which the remark is attached; optional",
+                    "description": "",
                     "nullable": true
                   },
                   "RevisionID": {
@@ -20656,7 +20656,7 @@
           {
             "name": "include_hidden",
             "in": "query",
-            "description": "Hidden Revision entities, those with a HiddenReason, are left out of the results, or of what a bulk operation acts on, unless this names their HiddenReason.\n\nIt is a comma-separated list of HiddenReasons, or `*` for all of them.\n\nA where clause naming the entities, by their Slug or ID with `=` or `IN`, or naming HiddenReason at all, also returns hidden entities it selects.\n\nConfigHub/YAML Units, which hold the configuration of entities, are hidden with the HiddenReason `BackingUnit`.",
+            "description": "Hidden Revision entities, those with a HiddenReason, are left out of the results, or of what a bulk operation acts on, unless this names their HiddenReason.\n\nIt is a comma-separated list of HiddenReasons, or `*` for all of them.\n\nA where clause naming the entities, by their Slug or ID with `=` or `IN`, or naming HiddenReason at all, also returns hidden entities it selects.\n\nConfigHub/YAML Units, which hold the configuration of entities, are hidden with the HiddenReason `BackingUnit`.\n\nA Revision is also hidden while its Unit is, with the Unit's HiddenReason, unless the request names the Unit: in its path, or by UnitID with `=` or `IN`.",
             "required": false,
             "schema": {
               "type": "string"
@@ -20685,10 +20685,10 @@
           {
             "name": "order_by",
             "in": "query",
-            "description": "Comma-separated list of fields to sort Revision results by, each in the form 'ASC|DESC:FieldName' or just 'FieldName'.\n\nField names are case-sensitive and PascalCase, as in the JSON encoding. Sort direction defaults to ASC when the 'DIRECTION:' prefix is omitted.\n\nSupported attributes for ordering Revision: ChangeSetID, CreatedAt, DataHash, Description, HiddenReason, OrganizationID, RevisionID, RevisionNum, Source, UnitID, UpdatedAt, UserAgent, UserID.\n\nExample: 'DESC:CreatedAt' or 'DisplayName,DESC:CreatedAt'.\n\nResults are ordered by the Revision's ID after the fields named, and by the ID alone if none are.\n\nThe whole string must be query-encoded.",
+            "description": "Comma-separated list of fields to sort Revision results by, each in the form 'ASC|DESC:FieldName' or just 'FieldName'.\n\nField names are case-sensitive and PascalCase, as in the JSON encoding. Sort direction defaults to ASC when the 'DIRECTION:' prefix is omitted.\n\nSupported attributes for ordering Revision: ChangeSetID, CreatedAt, DataHash, Description, OrganizationID, RevisionID, RevisionNum, Source, UnitID, UpdatedAt, UserAgent, UserID.\n\nExample: 'DESC:CreatedAt' or 'DisplayName,DESC:CreatedAt'.\n\nResults are ordered by the Revision's ID after the fields named, and by the ID alone if none are.\n\nThe whole string must be query-encoded.",
             "required": false,
             "schema": {
-              "pattern": "^\\s*(?:(?:[Aa][Ss][Cc]|[Dd][Ee][Ss][Cc])\\s*:\\s*)?(ChangeSetID|CreatedAt|DataHash|Description|HiddenReason|OrganizationID|RevisionID|RevisionNum|Source|UnitID|UpdatedAt|UserAgent|UserID)\\s*(?:,\\s*(?:(?:[Aa][Ss][Cc]|[Dd][Ee][Ss][Cc])\\s*:\\s*)?(?:ChangeSetID|CreatedAt|DataHash|Description|HiddenReason|OrganizationID|RevisionID|RevisionNum|Source|UnitID|UpdatedAt|UserAgent|UserID)\\s*)*$",
+              "pattern": "^\\s*(?:(?:[Aa][Ss][Cc]|[Dd][Ee][Ss][Cc])\\s*:\\s*)?(ChangeSetID|CreatedAt|DataHash|Description|OrganizationID|RevisionID|RevisionNum|Source|UnitID|UpdatedAt|UserAgent|UserID)\\s*(?:,\\s*(?:(?:[Aa][Ss][Cc]|[Dd][Ee][Ss][Cc])\\s*:\\s*)?(?:ChangeSetID|CreatedAt|DataHash|Description|OrganizationID|RevisionID|RevisionNum|Source|UnitID|UpdatedAt|UserAgent|UserID)\\s*)*$",
               "type": "string"
             }
           },
@@ -20905,7 +20905,7 @@
           {
             "name": "include_hidden",
             "in": "query",
-            "description": "Hidden Revision entities, those with a HiddenReason, are left out of the results, or of what a bulk operation acts on, unless this names their HiddenReason.\n\nIt is a comma-separated list of HiddenReasons, or `*` for all of them.\n\nA where clause naming the entities, by their Slug or ID with `=` or `IN`, or naming HiddenReason at all, also returns hidden entities it selects.\n\nConfigHub/YAML Units, which hold the configuration of entities, are hidden with the HiddenReason `BackingUnit`.",
+            "description": "Hidden Revision entities, those with a HiddenReason, are left out of the results, or of what a bulk operation acts on, unless this names their HiddenReason.\n\nIt is a comma-separated list of HiddenReasons, or `*` for all of them.\n\nA where clause naming the entities, by their Slug or ID with `=` or `IN`, or naming HiddenReason at all, also returns hidden entities it selects.\n\nConfigHub/YAML Units, which hold the configuration of entities, are hidden with the HiddenReason `BackingUnit`.\n\nA Revision is also hidden while its Unit is, with the Unit's HiddenReason, unless the request names the Unit: in its path, or by UnitID with `=` or `IN`.",
             "required": false,
             "schema": {
               "type": "string"
@@ -20925,10 +20925,10 @@
           {
             "name": "order_by",
             "in": "query",
-            "description": "Comma-separated list of fields to sort Revision results by, each in the form 'ASC|DESC:FieldName' or just 'FieldName'.\n\nField names are case-sensitive and PascalCase, as in the JSON encoding. Sort direction defaults to ASC when the 'DIRECTION:' prefix is omitted.\n\nSupported attributes for ordering Revision: ChangeSetID, CreatedAt, DataHash, Description, HiddenReason, OrganizationID, RevisionID, RevisionNum, Source, UnitID, UpdatedAt, UserAgent, UserID.\n\nExample: 'DESC:CreatedAt' or 'DisplayName,DESC:CreatedAt'.\n\nResults are ordered by the Revision's ID after the fields named, and by the ID alone if none are.\n\nThe whole string must be query-encoded.",
+            "description": "Comma-separated list of fields to sort Revision results by, each in the form 'ASC|DESC:FieldName' or just 'FieldName'.\n\nField names are case-sensitive and PascalCase, as in the JSON encoding. Sort direction defaults to ASC when the 'DIRECTION:' prefix is omitted.\n\nSupported attributes for ordering Revision: ChangeSetID, CreatedAt, DataHash, Description, OrganizationID, RevisionID, RevisionNum, Source, UnitID, UpdatedAt, UserAgent, UserID.\n\nExample: 'DESC:CreatedAt' or 'DisplayName,DESC:CreatedAt'.\n\nResults are ordered by the Revision's ID after the fields named, and by the ID alone if none are.\n\nThe whole string must be query-encoded.",
             "required": false,
             "schema": {
-              "pattern": "^\\s*(?:(?:[Aa][Ss][Cc]|[Dd][Ee][Ss][Cc])\\s*:\\s*)?(ChangeSetID|CreatedAt|DataHash|Description|HiddenReason|OrganizationID|RevisionID|RevisionNum|Source|UnitID|UpdatedAt|UserAgent|UserID)\\s*(?:,\\s*(?:(?:[Aa][Ss][Cc]|[Dd][Ee][Ss][Cc])\\s*:\\s*)?(?:ChangeSetID|CreatedAt|DataHash|Description|HiddenReason|OrganizationID|RevisionID|RevisionNum|Source|UnitID|UpdatedAt|UserAgent|UserID)\\s*)*$",
+              "pattern": "^\\s*(?:(?:[Aa][Ss][Cc]|[Dd][Ee][Ss][Cc])\\s*:\\s*)?(ChangeSetID|CreatedAt|DataHash|Description|OrganizationID|RevisionID|RevisionNum|Source|UnitID|UpdatedAt|UserAgent|UserID)\\s*(?:,\\s*(?:(?:[Aa][Ss][Cc]|[Dd][Ee][Ss][Cc])\\s*:\\s*)?(?:ChangeSetID|CreatedAt|DataHash|Description|OrganizationID|RevisionID|RevisionNum|Source|UnitID|UpdatedAt|UserAgent|UserID)\\s*)*$",
               "type": "string"
             }
           },
@@ -21145,7 +21145,7 @@
           {
             "name": "include_hidden",
             "in": "query",
-            "description": "Hidden Revision entities, those with a HiddenReason, are left out of the results, or of what a bulk operation acts on, unless this names their HiddenReason.\n\nIt is a comma-separated list of HiddenReasons, or `*` for all of them.\n\nA where clause naming the entities, by their Slug or ID with `=` or `IN`, or naming HiddenReason at all, also returns hidden entities it selects.\n\nConfigHub/YAML Units, which hold the configuration of entities, are hidden with the HiddenReason `BackingUnit`.",
+            "description": "Hidden Revision entities, those with a HiddenReason, are left out of the results, or of what a bulk operation acts on, unless this names their HiddenReason.\n\nIt is a comma-separated list of HiddenReasons, or `*` for all of them.\n\nA where clause naming the entities, by their Slug or ID with `=` or `IN`, or naming HiddenReason at all, also returns hidden entities it selects.\n\nConfigHub/YAML Units, which hold the configuration of entities, are hidden with the HiddenReason `BackingUnit`.\n\nA Revision is also hidden while its Unit is, with the Unit's HiddenReason, unless the request names the Unit: in its path, or by UnitID with `=` or `IN`.",
             "required": false,
             "schema": {
               "type": "string"
@@ -21165,10 +21165,10 @@
           {
             "name": "order_by",
             "in": "query",
-            "description": "Comma-separated list of fields to sort Revision results by, each in the form 'ASC|DESC:FieldName' or just 'FieldName'.\n\nField names are case-sensitive and PascalCase, as in the JSON encoding. Sort direction defaults to ASC when the 'DIRECTION:' prefix is omitted.\n\nSupported attributes for ordering Revision: ChangeSetID, CreatedAt, DataHash, Description, HiddenReason, OrganizationID, RevisionID, RevisionNum, Source, UnitID, UpdatedAt, UserAgent, UserID.\n\nExample: 'DESC:CreatedAt' or 'DisplayName,DESC:CreatedAt'.\n\nResults are ordered by the Revision's ID after the fields named, and by the ID alone if none are.\n\nThe whole string must be query-encoded.",
+            "description": "Comma-separated list of fields to sort Revision results by, each in the form 'ASC|DESC:FieldName' or just 'FieldName'.\n\nField names are case-sensitive and PascalCase, as in the JSON encoding. Sort direction defaults to ASC when the 'DIRECTION:' prefix is omitted.\n\nSupported attributes for ordering Revision: ChangeSetID, CreatedAt, DataHash, Description, OrganizationID, RevisionID, RevisionNum, Source, UnitID, UpdatedAt, UserAgent, UserID.\n\nExample: 'DESC:CreatedAt' or 'DisplayName,DESC:CreatedAt'.\n\nResults are ordered by the Revision's ID after the fields named, and by the ID alone if none are.\n\nThe whole string must be query-encoded.",
             "required": false,
             "schema": {
-              "pattern": "^\\s*(?:(?:[Aa][Ss][Cc]|[Dd][Ee][Ss][Cc])\\s*:\\s*)?(ChangeSetID|CreatedAt|DataHash|Description|HiddenReason|OrganizationID|RevisionID|RevisionNum|Source|UnitID|UpdatedAt|UserAgent|UserID)\\s*(?:,\\s*(?:(?:[Aa][Ss][Cc]|[Dd][Ee][Ss][Cc])\\s*:\\s*)?(?:ChangeSetID|CreatedAt|DataHash|Description|HiddenReason|OrganizationID|RevisionID|RevisionNum|Source|UnitID|UpdatedAt|UserAgent|UserID)\\s*)*$",
+              "pattern": "^\\s*(?:(?:[Aa][Ss][Cc]|[Dd][Ee][Ss][Cc])\\s*:\\s*)?(ChangeSetID|CreatedAt|DataHash|Description|OrganizationID|RevisionID|RevisionNum|Source|UnitID|UpdatedAt|UserAgent|UserID)\\s*(?:,\\s*(?:(?:[Aa][Ss][Cc]|[Dd][Ee][Ss][Cc])\\s*:\\s*)?(?:ChangeSetID|CreatedAt|DataHash|Description|OrganizationID|RevisionID|RevisionNum|Source|UnitID|UpdatedAt|UserAgent|UserID)\\s*)*$",
               "type": "string"
             }
           },
@@ -46157,7 +46157,7 @@
           {
             "name": "include_hidden",
             "in": "query",
-            "description": "Hidden Mutation entities, those with a HiddenReason, are left out of the results, or of what a bulk operation acts on, unless this names their HiddenReason.\n\nIt is a comma-separated list of HiddenReasons, or `*` for all of them.\n\nA where clause naming the entities, by their Slug or ID with `=` or `IN`, or naming HiddenReason at all, also returns hidden entities it selects.\n\nConfigHub/YAML Units, which hold the configuration of entities, are hidden with the HiddenReason `BackingUnit`.",
+            "description": "Hidden Mutation entities, those with a HiddenReason, are left out of the results, or of what a bulk operation acts on, unless this names their HiddenReason.\n\nIt is a comma-separated list of HiddenReasons, or `*` for all of them.\n\nA where clause naming the entities, by their Slug or ID with `=` or `IN`, or naming HiddenReason at all, also returns hidden entities it selects.\n\nConfigHub/YAML Units, which hold the configuration of entities, are hidden with the HiddenReason `BackingUnit`.\n\nA Mutation is also hidden while its Unit is, with the Unit's HiddenReason, unless the request names the Unit: in its path, or by UnitID with `=` or `IN`.",
             "required": false,
             "schema": {
               "type": "string"
@@ -46186,10 +46186,10 @@
           {
             "name": "order_by",
             "in": "query",
-            "description": "Comma-separated list of fields to sort Mutation results by, each in the form 'ASC|DESC:FieldName' or just 'FieldName'.\n\nField names are case-sensitive and PascalCase, as in the JSON encoding. Sort direction defaults to ASC when the 'DIRECTION:' prefix is omitted.\n\nSupported attributes for ordering Mutation: ChannelID, CreatedAt, FunctionName, HiddenReason, InvocationID, LinkID, MergeBaseRevisionNum, MergeEndRevisionNum, MergeSourceID, MutationID, MutationNum, OrganizationID, ReplayOutcome, ReplayReason, RestoredRevisionNum, RevisionID, RevisionNum, Subgroup, TriggerID, UnitID, UpdatedAt.\n\nExample: 'DESC:CreatedAt' or 'DisplayName,DESC:CreatedAt'.\n\nResults are ordered by the Mutation's ID after the fields named, and by the ID alone if none are.\n\nThe whole string must be query-encoded.",
+            "description": "Comma-separated list of fields to sort Mutation results by, each in the form 'ASC|DESC:FieldName' or just 'FieldName'.\n\nField names are case-sensitive and PascalCase, as in the JSON encoding. Sort direction defaults to ASC when the 'DIRECTION:' prefix is omitted.\n\nSupported attributes for ordering Mutation: ChannelID, CreatedAt, FunctionName, InvocationID, LinkID, MergeBaseRevisionNum, MergeEndRevisionNum, MergeSourceID, MutationID, MutationNum, OrganizationID, ReplayOutcome, ReplayReason, RestoredRevisionNum, RevisionID, RevisionNum, Subgroup, TriggerID, UnitID, UpdatedAt.\n\nExample: 'DESC:CreatedAt' or 'DisplayName,DESC:CreatedAt'.\n\nResults are ordered by the Mutation's ID after the fields named, and by the ID alone if none are.\n\nThe whole string must be query-encoded.",
             "required": false,
             "schema": {
-              "pattern": "^\\s*(?:(?:[Aa][Ss][Cc]|[Dd][Ee][Ss][Cc])\\s*:\\s*)?(ChannelID|CreatedAt|FunctionName|HiddenReason|InvocationID|LinkID|MergeBaseRevisionNum|MergeEndRevisionNum|MergeSourceID|MutationID|MutationNum|OrganizationID|ReplayOutcome|ReplayReason|RestoredRevisionNum|RevisionID|RevisionNum|Subgroup|TriggerID|UnitID|UpdatedAt)\\s*(?:,\\s*(?:(?:[Aa][Ss][Cc]|[Dd][Ee][Ss][Cc])\\s*:\\s*)?(?:ChannelID|CreatedAt|FunctionName|HiddenReason|InvocationID|LinkID|MergeBaseRevisionNum|MergeEndRevisionNum|MergeSourceID|MutationID|MutationNum|OrganizationID|ReplayOutcome|ReplayReason|RestoredRevisionNum|RevisionID|RevisionNum|Subgroup|TriggerID|UnitID|UpdatedAt)\\s*)*$",
+              "pattern": "^\\s*(?:(?:[Aa][Ss][Cc]|[Dd][Ee][Ss][Cc])\\s*:\\s*)?(ChannelID|CreatedAt|FunctionName|InvocationID|LinkID|MergeBaseRevisionNum|MergeEndRevisionNum|MergeSourceID|MutationID|MutationNum|OrganizationID|ReplayOutcome|ReplayReason|RestoredRevisionNum|RevisionID|RevisionNum|Subgroup|TriggerID|UnitID|UpdatedAt)\\s*(?:,\\s*(?:(?:[Aa][Ss][Cc]|[Dd][Ee][Ss][Cc])\\s*:\\s*)?(?:ChannelID|CreatedAt|FunctionName|InvocationID|LinkID|MergeBaseRevisionNum|MergeEndRevisionNum|MergeSourceID|MutationID|MutationNum|OrganizationID|ReplayOutcome|ReplayReason|RestoredRevisionNum|RevisionID|RevisionNum|Subgroup|TriggerID|UnitID|UpdatedAt)\\s*)*$",
               "type": "string"
             }
           },
@@ -46994,7 +46994,7 @@
           {
             "name": "include_hidden",
             "in": "query",
-            "description": "Hidden Resource entities, those with a HiddenReason, are left out of the results, or of what a bulk operation acts on, unless this names their HiddenReason.\n\nIt is a comma-separated list of HiddenReasons, or `*` for all of them.\n\nA where clause naming the entities, by their Slug or ID with `=` or `IN`, or naming HiddenReason at all, also returns hidden entities it selects.\n\nConfigHub/YAML Units, which hold the configuration of entities, are hidden with the HiddenReason `BackingUnit`.",
+            "description": "Hidden Resource entities, those with a HiddenReason, are left out of the results, or of what a bulk operation acts on, unless this names their HiddenReason.\n\nIt is a comma-separated list of HiddenReasons, or `*` for all of them.\n\nA where clause naming the entities, by their Slug or ID with `=` or `IN`, or naming HiddenReason at all, also returns hidden entities it selects.\n\nConfigHub/YAML Units, which hold the configuration of entities, are hidden with the HiddenReason `BackingUnit`.\n\nA Resource is also hidden while its Unit is, with the Unit's HiddenReason, unless the request names the Unit: in its path, or by UnitID with `=` or `IN`.",
             "required": false,
             "schema": {
               "type": "string"
@@ -47023,10 +47023,10 @@
           {
             "name": "order_by",
             "in": "query",
-            "description": "Comma-separated list of fields to sort Resource results by, each in the form 'ASC|DESC:FieldName' or just 'FieldName'.\n\nField names are case-sensitive and PascalCase, as in the JSON encoding. Sort direction defaults to ASC when the 'DIRECTION:' prefix is omitted.\n\nSupported attributes for ordering Resource: CreatedAt, HiddenReason, OrganizationID, ResourceID, ResourceIndex, ResourceName, ResourceType, SpaceID, ToolchainType, UnitID, UpdatedAt.\n\nExample: 'DESC:CreatedAt' or 'DisplayName,DESC:CreatedAt'.\n\nResults are ordered by the Resource's ID after the fields named, and by the ID alone if none are.\n\nThe whole string must be query-encoded.",
+            "description": "Comma-separated list of fields to sort Resource results by, each in the form 'ASC|DESC:FieldName' or just 'FieldName'.\n\nField names are case-sensitive and PascalCase, as in the JSON encoding. Sort direction defaults to ASC when the 'DIRECTION:' prefix is omitted.\n\nSupported attributes for ordering Resource: CreatedAt, OrganizationID, ResourceID, ResourceIndex, ResourceName, ResourceType, SpaceID, ToolchainType, UnitID, UpdatedAt.\n\nExample: 'DESC:CreatedAt' or 'DisplayName,DESC:CreatedAt'.\n\nResults are ordered by the Resource's ID after the fields named, and by the ID alone if none are.\n\nThe whole string must be query-encoded.",
             "required": false,
             "schema": {
-              "pattern": "^\\s*(?:(?:[Aa][Ss][Cc]|[Dd][Ee][Ss][Cc])\\s*:\\s*)?(CreatedAt|HiddenReason|OrganizationID|ResourceID|ResourceIndex|ResourceName|ResourceType|SpaceID|ToolchainType|UnitID|UpdatedAt)\\s*(?:,\\s*(?:(?:[Aa][Ss][Cc]|[Dd][Ee][Ss][Cc])\\s*:\\s*)?(?:CreatedAt|HiddenReason|OrganizationID|ResourceID|ResourceIndex|ResourceName|ResourceType|SpaceID|ToolchainType|UnitID|UpdatedAt)\\s*)*$",
+              "pattern": "^\\s*(?:(?:[Aa][Ss][Cc]|[Dd][Ee][Ss][Cc])\\s*:\\s*)?(CreatedAt|OrganizationID|ResourceID|ResourceIndex|ResourceName|ResourceType|SpaceID|ToolchainType|UnitID|UpdatedAt)\\s*(?:,\\s*(?:(?:[Aa][Ss][Cc]|[Dd][Ee][Ss][Cc])\\s*:\\s*)?(?:CreatedAt|OrganizationID|ResourceID|ResourceIndex|ResourceName|ResourceType|SpaceID|ToolchainType|UnitID|UpdatedAt)\\s*)*$",
               "type": "string"
             }
           },
@@ -47474,7 +47474,7 @@
           {
             "name": "include_hidden",
             "in": "query",
-            "description": "Hidden ReviewComment entities, those with a HiddenReason, are left out of the results, or of what a bulk operation acts on, unless this names their HiddenReason.\n\nIt is a comma-separated list of HiddenReasons, or `*` for all of them.\n\nA where clause naming the entities, by their Slug or ID with `=` or `IN`, or naming HiddenReason at all, also returns hidden entities it selects.\n\nConfigHub/YAML Units, which hold the configuration of entities, are hidden with the HiddenReason `BackingUnit`.",
+            "description": "Hidden ReviewComment entities, those with a HiddenReason, are left out of the results, or of what a bulk operation acts on, unless this names their HiddenReason.\n\nIt is a comma-separated list of HiddenReasons, or `*` for all of them.\n\nA where clause naming the entities, by their Slug or ID with `=` or `IN`, or naming HiddenReason at all, also returns hidden entities it selects.\n\nConfigHub/YAML Units, which hold the configuration of entities, are hidden with the HiddenReason `BackingUnit`.\n\nA ReviewComment is also hidden while its Unit is, with the Unit's HiddenReason, unless the request names the Unit: in its path, or by UnitID with `=` or `IN`.",
             "required": false,
             "schema": {
               "type": "string"
@@ -48142,12 +48142,12 @@
                   },
                   "HiddenReason": {
                     "type": "string",
-                    "description": "The reason the entity is hidden, if it is. A hidden entity is left out of List and Search results, and of what bulk operations act on, unless the include_hidden parameter names its reason or is *, or the where parameter names the entity by Slug or ID. ConfigHub/YAML Units are created hidden with the reason BackingUnit unless given another.",
+                    "description": "",
                     "nullable": true
                   },
                   "Path": {
                     "type": "string",
-                    "description": "Path to which the remark is attached; optional",
+                    "description": "",
                     "nullable": true
                   },
                   "ReplyToID": {
@@ -48158,7 +48158,7 @@
                   },
                   "Resource": {
                     "type": "object",
-                    "description": "Resource to which the remark is attached; optional",
+                    "description": "",
                     "nullable": true
                   },
                   "RevisionID": {
@@ -48545,7 +48545,7 @@
           {
             "name": "include_hidden",
             "in": "query",
-            "description": "Hidden Revision entities, those with a HiddenReason, are left out of the results, or of what a bulk operation acts on, unless this names their HiddenReason.\n\nIt is a comma-separated list of HiddenReasons, or `*` for all of them.\n\nA where clause naming the entities, by their Slug or ID with `=` or `IN`, or naming HiddenReason at all, also returns hidden entities it selects.\n\nConfigHub/YAML Units, which hold the configuration of entities, are hidden with the HiddenReason `BackingUnit`.",
+            "description": "Hidden Revision entities, those with a HiddenReason, are left out of the results, or of what a bulk operation acts on, unless this names their HiddenReason.\n\nIt is a comma-separated list of HiddenReasons, or `*` for all of them.\n\nA where clause naming the entities, by their Slug or ID with `=` or `IN`, or naming HiddenReason at all, also returns hidden entities it selects.\n\nConfigHub/YAML Units, which hold the configuration of entities, are hidden with the HiddenReason `BackingUnit`.\n\nA Revision is also hidden while its Unit is, with the Unit's HiddenReason, unless the request names the Unit: in its path, or by UnitID with `=` or `IN`.",
             "required": false,
             "schema": {
               "type": "string"
@@ -48574,10 +48574,10 @@
           {
             "name": "order_by",
             "in": "query",
-            "description": "Comma-separated list of fields to sort Revision results by, each in the form 'ASC|DESC:FieldName' or just 'FieldName'.\n\nField names are case-sensitive and PascalCase, as in the JSON encoding. Sort direction defaults to ASC when the 'DIRECTION:' prefix is omitted.\n\nSupported attributes for ordering Revision: ChangeSetID, CreatedAt, DataHash, Description, HiddenReason, OrganizationID, RevisionID, RevisionNum, Source, UnitID, UpdatedAt, UserAgent, UserID.\n\nExample: 'DESC:CreatedAt' or 'DisplayName,DESC:CreatedAt'.\n\nResults are ordered by the Revision's ID after the fields named, and by the ID alone if none are.\n\nThe whole string must be query-encoded.",
+            "description": "Comma-separated list of fields to sort Revision results by, each in the form 'ASC|DESC:FieldName' or just 'FieldName'.\n\nField names are case-sensitive and PascalCase, as in the JSON encoding. Sort direction defaults to ASC when the 'DIRECTION:' prefix is omitted.\n\nSupported attributes for ordering Revision: ChangeSetID, CreatedAt, DataHash, Description, OrganizationID, RevisionID, RevisionNum, Source, UnitID, UpdatedAt, UserAgent, UserID.\n\nExample: 'DESC:CreatedAt' or 'DisplayName,DESC:CreatedAt'.\n\nResults are ordered by the Revision's ID after the fields named, and by the ID alone if none are.\n\nThe whole string must be query-encoded.",
             "required": false,
             "schema": {
-              "pattern": "^\\s*(?:(?:[Aa][Ss][Cc]|[Dd][Ee][Ss][Cc])\\s*:\\s*)?(ChangeSetID|CreatedAt|DataHash|Description|HiddenReason|OrganizationID|RevisionID|RevisionNum|Source|UnitID|UpdatedAt|UserAgent|UserID)\\s*(?:,\\s*(?:(?:[Aa][Ss][Cc]|[Dd][Ee][Ss][Cc])\\s*:\\s*)?(?:ChangeSetID|CreatedAt|DataHash|Description|HiddenReason|OrganizationID|RevisionID|RevisionNum|Source|UnitID|UpdatedAt|UserAgent|UserID)\\s*)*$",
+              "pattern": "^\\s*(?:(?:[Aa][Ss][Cc]|[Dd][Ee][Ss][Cc])\\s*:\\s*)?(ChangeSetID|CreatedAt|DataHash|Description|OrganizationID|RevisionID|RevisionNum|Source|UnitID|UpdatedAt|UserAgent|UserID)\\s*(?:,\\s*(?:(?:[Aa][Ss][Cc]|[Dd][Ee][Ss][Cc])\\s*:\\s*)?(?:ChangeSetID|CreatedAt|DataHash|Description|OrganizationID|RevisionID|RevisionNum|Source|UnitID|UpdatedAt|UserAgent|UserID)\\s*)*$",
               "type": "string"
             }
           },
@@ -68516,10 +68516,9 @@
             }
           },
           "HiddenReason": {
-            "maxLength": 64,
-            "pattern": "^([A-Za-z0-9]([\\-_.A-Za-z0-9]*[A-Za-z0-9])?)?$",
             "type": "string",
-            "description": "The reason the entity is hidden, if it is. A hidden entity is left out of List and Search results, and of what bulk operations act on, unless the include_hidden parameter names its reason or is *, or the where parameter names the entity by Slug or ID. ConfigHub/YAML Units are created hidden with the reason BackingUnit unless given another.",
+            "description": "The reason the Unit this entity belongs to is hidden, if it is. The entity is hidden as its Unit is, and is left out of List and Search results unless the include_hidden parameter names the reason or is *, or the request names the Unit, by its path or by UnitID.",
+            "readOnly": true,
             "x-confighub-where": {
               "dataType": "string"
             },
@@ -70545,10 +70544,9 @@
             "x-go-type-skip-optional-pointer": true
           },
           "HiddenReason": {
-            "maxLength": 64,
-            "pattern": "^([A-Za-z0-9]([\\-_.A-Za-z0-9]*[A-Za-z0-9])?)?$",
             "type": "string",
-            "description": "The reason the entity is hidden, if it is. A hidden entity is left out of List and Search results, and of what bulk operations act on, unless the include_hidden parameter names its reason or is *, or the where parameter names the entity by Slug or ID. ConfigHub/YAML Units are created hidden with the reason BackingUnit unless given another.",
+            "description": "The reason the Unit this entity belongs to is hidden, if it is. The entity is hidden as its Unit is, and is left out of List and Search results unless the include_hidden parameter names the reason or is *, or the request names the Unit, by its path or by UnitID.",
+            "readOnly": true,
             "x-confighub-where": {
               "dataType": "string"
             },
@@ -71117,7 +71115,7 @@
             "maxLength": 64,
             "pattern": "^([A-Za-z0-9]([\\-_.A-Za-z0-9]*[A-Za-z0-9])?)?$",
             "type": "string",
-            "description": "The reason the entity is hidden, if it is. A hidden entity is left out of List and Search results, and of what bulk operations act on, unless the include_hidden parameter names its reason or is *, or the where parameter names the entity by Slug or ID. ConfigHub/YAML Units are created hidden with the reason BackingUnit unless given another.",
+            "description": "The reason the comment is hidden, if it is, such as Resolved. A hidden comment is left out of List and Search results unless the include_hidden parameter names its reason or is *, or the where parameter names the comment by ID. A comment is also left out while its Unit is hidden, unless the request names the Unit.",
             "x-confighub-where": {
               "dataType": "string"
             },
@@ -71413,10 +71411,9 @@
             "x-go-type-skip-optional-pointer": true
           },
           "HiddenReason": {
-            "maxLength": 64,
-            "pattern": "^([A-Za-z0-9]([\\-_.A-Za-z0-9]*[A-Za-z0-9])?)?$",
             "type": "string",
-            "description": "The reason the entity is hidden, if it is. A hidden entity is left out of List and Search results, and of what bulk operations act on, unless the include_hidden parameter names its reason or is *, or the where parameter names the entity by Slug or ID. ConfigHub/YAML Units are created hidden with the reason BackingUnit unless given another.",
+            "description": "The reason the Unit this entity belongs to is hidden, if it is. The entity is hidden as its Unit is, and is left out of List and Search results unless the include_hidden parameter names the reason or is *, or the request names the Unit, by its path or by UnitID.",
+            "readOnly": true,
             "x-confighub-where": {
               "dataType": "string"
             },
