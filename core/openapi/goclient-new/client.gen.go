@@ -2698,6 +2698,13 @@ type ClientInterface interface {
 	// Corresponds with GET /space/{space_id}/unit/{unit_id}/revision/{revision_id}/mutation_sources (the `GetRevisionMutationSources` operationId).
 	GetRevisionMutationSources(ctx context.Context, spaceId openapi_types.UUID, unitId openapi_types.UUID, revisionId openapi_types.UUID, reqEditors ...RequestEditorFn) (*http.Response, error)
 
+	// UnarchiveUnit Unarchive a unit
+	//
+	// Unarchive a Unit archived by a delete with archive=true, and the Links archived with it. Its Slug is restored from the label ArchivedSlug unless another Unit in its Space has taken it since, in which case it keeps the Slug the archive gave it, which KeptSlug in the response reports; it is unarchived either way. A Link whose other Unit is still archived stays archived until that Unit is unarchived. Refused while the Unit's Space is archived. Requires Edit permission.
+	//
+	// Corresponds with POST /space/{space_id}/unit/{unit_id}/unarchive (the `UnarchiveUnit` operationId).
+	UnarchiveUnit(ctx context.Context, spaceId openapi_types.UUID, unitId openapi_types.UUID, reqEditors ...RequestEditorFn) (*http.Response, error)
+
 	// ListViews List Views
 	//
 	// Corresponds with GET /space/{space_id}/view (the `ListViews` operationId).
@@ -3069,6 +3076,13 @@ type ClientInterface interface {
 	//
 	// Corresponds with POST /unit/tag (the `BulkTagUnits` operationId).
 	BulkTagUnits(ctx context.Context, params *BulkTagUnitsParams, body BulkTagUnitsJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error)
+
+	// BulkUnarchiveUnits Unarchive units
+	//
+	// Unarchive a Unit archived by a delete with archive=true, and the Links archived with it. Its Slug is restored from the label ArchivedSlug unless another Unit in its Space has taken it since, in which case it keeps the Slug the archive gave it, which KeptSlug in the response reports; it is unarchived either way. A Link whose other Unit is still archived stays archived until that Unit is unarchived. Refused while the Unit's Space is archived. Requires Edit permission. Selects archived Units, as if include_hidden named Archived, and leaves alone a selected Unit that is not archived.
+	//
+	// Corresponds with POST /unit/unarchive (the `BulkUnarchiveUnits` operationId).
+	BulkUnarchiveUnits(ctx context.Context, params *BulkUnarchiveUnitsParams, reqEditors ...RequestEditorFn) (*http.Response, error)
 
 	// SearchUnitBlame Get what set each field of many Units across spaces
 	//
@@ -9397,6 +9411,23 @@ func (c *Client) GetRevisionMutationSources(ctx context.Context, spaceId openapi
 	return c.Client.Do(req)
 }
 
+// UnarchiveUnit Unarchive a unit
+//
+// Unarchive a Unit archived by a delete with archive=true, and the Links archived with it. Its Slug is restored from the label ArchivedSlug unless another Unit in its Space has taken it since, in which case it keeps the Slug the archive gave it, which KeptSlug in the response reports; it is unarchived either way. A Link whose other Unit is still archived stays archived until that Unit is unarchived. Refused while the Unit's Space is archived. Requires Edit permission.
+//
+// Corresponds with POST /space/{space_id}/unit/{unit_id}/unarchive (the `UnarchiveUnit` operationId).
+func (c *Client) UnarchiveUnit(ctx context.Context, spaceId openapi_types.UUID, unitId openapi_types.UUID, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewUnarchiveUnitRequest(c.Server, spaceId, unitId)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
 // ListViews List Views
 //
 // Corresponds with GET /space/{space_id}/view (the `ListViews` operationId).
@@ -10219,6 +10250,23 @@ func (c *Client) BulkTagUnitsWithBody(ctx context.Context, params *BulkTagUnitsP
 // Corresponds with POST /unit/tag (the `BulkTagUnits` operationId).
 func (c *Client) BulkTagUnits(ctx context.Context, params *BulkTagUnitsParams, body BulkTagUnitsJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error) {
 	req, err := NewBulkTagUnitsRequest(c.Server, params, body)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+// BulkUnarchiveUnits Unarchive units
+//
+// Unarchive a Unit archived by a delete with archive=true, and the Links archived with it. Its Slug is restored from the label ArchivedSlug unless another Unit in its Space has taken it since, in which case it keeps the Slug the archive gave it, which KeptSlug in the response reports; it is unarchived either way. A Link whose other Unit is still archived stays archived until that Unit is unarchived. Refused while the Unit's Space is archived. Requires Edit permission. Selects archived Units, as if include_hidden named Archived, and leaves alone a selected Unit that is not archived.
+//
+// Corresponds with POST /unit/unarchive (the `BulkUnarchiveUnits` operationId).
+func (c *Client) BulkUnarchiveUnits(ctx context.Context, params *BulkUnarchiveUnitsParams, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewBulkUnarchiveUnitsRequest(c.Server, params)
 	if err != nil {
 		return nil, err
 	}
@@ -35455,6 +35503,18 @@ func NewDeleteUnitRequest(server string, spaceId openapi_types.UUID, unitId open
 
 		}
 
+		if params.Archive != nil {
+
+			if queryFrag, err := runtime.StyleParamWithOptions("form", true, "archive", *params.Archive, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationQuery, Type: "boolean", Format: ""}); err != nil {
+				return nil, err
+			} else {
+				for _, qp := range strings.Split(queryFrag, "&") {
+					rawQueryFragments = append(rawQueryFragments, qp)
+				}
+			}
+
+		}
+
 		if encoded := queryValues.Encode(); encoded != "" {
 			rawQueryFragments = append(rawQueryFragments, encoded)
 		}
@@ -38754,6 +38814,47 @@ func NewGetRevisionMutationSourcesRequest(server string, spaceId openapi_types.U
 	}
 
 	req, err := http.NewRequest(http.MethodGet, queryURL.String(), nil)
+	if err != nil {
+		return nil, err
+	}
+
+	return req, nil
+}
+
+// NewUnarchiveUnitRequest constructs an http.Request for the UnarchiveUnit method
+func NewUnarchiveUnitRequest(server string, spaceId openapi_types.UUID, unitId openapi_types.UUID) (*http.Request, error) {
+	var err error
+
+	var pathParam0 string
+
+	pathParam0, err = runtime.StyleParamWithOptions("simple", false, "space_id", spaceId, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationPath, Type: "string", Format: "uuid"})
+	if err != nil {
+		return nil, err
+	}
+
+	var pathParam1 string
+
+	pathParam1, err = runtime.StyleParamWithOptions("simple", false, "unit_id", unitId, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationPath, Type: "string", Format: "uuid"})
+	if err != nil {
+		return nil, err
+	}
+
+	serverURL, err := url.Parse(server)
+	if err != nil {
+		return nil, err
+	}
+
+	operationPath := fmt.Sprintf("/space/%s/unit/%s/unarchive", pathParam0, pathParam1)
+	if operationPath[0] == '/' {
+		operationPath = "." + operationPath
+	}
+
+	queryURL, err := serverURL.Parse(operationPath)
+	if err != nil {
+		return nil, err
+	}
+
+	req, err := http.NewRequest(http.MethodPost, queryURL.String(), nil)
 	if err != nil {
 		return nil, err
 	}
@@ -42200,6 +42301,18 @@ func NewBulkDeleteUnitsRequest(server string, params *BulkDeleteUnitsParams) (*h
 
 		}
 
+		if params.Archive != nil {
+
+			if queryFrag, err := runtime.StyleParamWithOptions("form", true, "archive", *params.Archive, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationQuery, Type: "boolean", Format: ""}); err != nil {
+				return nil, err
+			} else {
+				for _, qp := range strings.Split(queryFrag, "&") {
+					rawQueryFragments = append(rawQueryFragments, qp)
+				}
+			}
+
+		}
+
 		if encoded := queryValues.Encode(); encoded != "" {
 			rawQueryFragments = append(rawQueryFragments, encoded)
 		}
@@ -43396,6 +43509,108 @@ func NewBulkTagUnitsRequestWithBody(server string, params *BulkTagUnitsParams, c
 	}
 
 	req.Header.Add("Content-Type", contentType)
+
+	return req, nil
+}
+
+// NewBulkUnarchiveUnitsRequest constructs an http.Request for the BulkUnarchiveUnits method
+func NewBulkUnarchiveUnitsRequest(server string, params *BulkUnarchiveUnitsParams) (*http.Request, error) {
+	var err error
+
+	serverURL, err := url.Parse(server)
+	if err != nil {
+		return nil, err
+	}
+
+	operationPath := fmt.Sprintf("/unit/unarchive")
+	if operationPath[0] == '/' {
+		operationPath = "." + operationPath
+	}
+
+	queryURL, err := serverURL.Parse(operationPath)
+	if err != nil {
+		return nil, err
+	}
+
+	if params != nil {
+		// queryValues collects non-styled parameters (passthrough, JSON)
+		// that are safe to round-trip through url.Values.Encode().
+		queryValues := queryURL.Query()
+		// rawQueryFragments collects pre-encoded query fragments from
+		// styled parameters, preserving literal commas as delimiters
+		// per the OpenAPI spec (e.g. "color=blue,black,brown").
+		var rawQueryFragments []string
+
+		if params.Where != nil {
+
+			if queryFrag, err := runtime.StyleParamWithOptions("form", true, "where", *params.Where, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationQuery, Type: "string", Format: ""}); err != nil {
+				return nil, err
+			} else {
+				for _, qp := range strings.Split(queryFrag, "&") {
+					rawQueryFragments = append(rawQueryFragments, qp)
+				}
+			}
+
+		}
+
+		if params.Filter != nil {
+
+			if queryFrag, err := runtime.StyleParamWithOptions("form", true, "filter", *params.Filter, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationQuery, Type: "string", Format: ""}); err != nil {
+				return nil, err
+			} else {
+				for _, qp := range strings.Split(queryFrag, "&") {
+					rawQueryFragments = append(rawQueryFragments, qp)
+				}
+			}
+
+		}
+
+		if params.Contains != nil {
+
+			if queryFrag, err := runtime.StyleParamWithOptions("form", true, "contains", *params.Contains, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationQuery, Type: "string", Format: ""}); err != nil {
+				return nil, err
+			} else {
+				for _, qp := range strings.Split(queryFrag, "&") {
+					rawQueryFragments = append(rawQueryFragments, qp)
+				}
+			}
+
+		}
+
+		if params.IncludeHidden != nil {
+
+			if queryFrag, err := runtime.StyleParamWithOptions("form", true, "include_hidden", *params.IncludeHidden, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationQuery, Type: "string", Format: ""}); err != nil {
+				return nil, err
+			} else {
+				for _, qp := range strings.Split(queryFrag, "&") {
+					rawQueryFragments = append(rawQueryFragments, qp)
+				}
+			}
+
+		}
+
+		if params.Include != nil {
+
+			if queryFrag, err := runtime.StyleParamWithOptions("form", true, "include", *params.Include, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationQuery, Type: "string", Format: ""}); err != nil {
+				return nil, err
+			} else {
+				for _, qp := range strings.Split(queryFrag, "&") {
+					rawQueryFragments = append(rawQueryFragments, qp)
+				}
+			}
+
+		}
+
+		if encoded := queryValues.Encode(); encoded != "" {
+			rawQueryFragments = append(rawQueryFragments, encoded)
+		}
+		queryURL.RawQuery = strings.Join(rawQueryFragments, "&")
+	}
+
+	req, err := http.NewRequest(http.MethodPost, queryURL.String(), nil)
+	if err != nil {
+		return nil, err
+	}
 
 	return req, nil
 }
@@ -48585,6 +48800,15 @@ type ClientWithResponsesInterface interface {
 	// Corresponds with GET /space/{space_id}/unit/{unit_id}/revision/{revision_id}/mutation_sources (the `GetRevisionMutationSources` operationId).
 	GetRevisionMutationSourcesWithResponse(ctx context.Context, spaceId openapi_types.UUID, unitId openapi_types.UUID, revisionId openapi_types.UUID, reqEditors ...RequestEditorFn) (*GetRevisionMutationSourcesResponse, error)
 
+	// UnarchiveUnitWithResponse Unarchive a unit
+	//
+	// Unarchive a Unit archived by a delete with archive=true, and the Links archived with it. Its Slug is restored from the label ArchivedSlug unless another Unit in its Space has taken it since, in which case it keeps the Slug the archive gave it, which KeptSlug in the response reports; it is unarchived either way. A Link whose other Unit is still archived stays archived until that Unit is unarchived. Refused while the Unit's Space is archived. Requires Edit permission.
+	//
+	// Returns a wrapper object for the known response body format(s).
+	//
+	// Corresponds with POST /space/{space_id}/unit/{unit_id}/unarchive (the `UnarchiveUnit` operationId).
+	UnarchiveUnitWithResponse(ctx context.Context, spaceId openapi_types.UUID, unitId openapi_types.UUID, reqEditors ...RequestEditorFn) (*UnarchiveUnitResponse, error)
+
 	// ListViewsWithResponse List Views
 	//
 	// Returns a wrapper object for the known response body format(s).
@@ -48980,6 +49204,15 @@ type ClientWithResponsesInterface interface {
 	//
 	// Corresponds with POST /unit/tag (the `BulkTagUnits` operationId).
 	BulkTagUnitsWithResponse(ctx context.Context, params *BulkTagUnitsParams, body BulkTagUnitsJSONRequestBody, reqEditors ...RequestEditorFn) (*BulkTagUnitsResponse, error)
+
+	// BulkUnarchiveUnitsWithResponse Unarchive units
+	//
+	// Unarchive a Unit archived by a delete with archive=true, and the Links archived with it. Its Slug is restored from the label ArchivedSlug unless another Unit in its Space has taken it since, in which case it keeps the Slug the archive gave it, which KeptSlug in the response reports; it is unarchived either way. A Link whose other Unit is still archived stays archived until that Unit is unarchived. Refused while the Unit's Space is archived. Requires Edit permission. Selects archived Units, as if include_hidden named Archived, and leaves alone a selected Unit that is not archived.
+	//
+	// Returns a wrapper object for the known response body format(s).
+	//
+	// Corresponds with POST /unit/unarchive (the `BulkUnarchiveUnits` operationId).
+	BulkUnarchiveUnitsWithResponse(ctx context.Context, params *BulkUnarchiveUnitsParams, reqEditors ...RequestEditorFn) (*BulkUnarchiveUnitsResponse, error)
 
 	// SearchUnitBlameWithResponse Get what set each field of many Units across spaces
 	//
@@ -75730,6 +75963,110 @@ func (r GetRevisionMutationSourcesResponse) ContentType() string {
 	return ""
 }
 
+type UnarchiveUnitResponse struct {
+	Body         []byte
+	HTTPResponse *http.Response
+	// JSON200 the response for an HTTP 200 `application/json` response
+	JSON200 *UnarchiveResponse
+	// JSON400 the response for an HTTP 400 `application/json` response
+	JSON400 *StandardErrorResponse
+	// JSON401 the response for an HTTP 401 `application/json` response
+	JSON401 *StandardErrorResponse
+	// JSON403 the response for an HTTP 403 `application/json` response
+	JSON403 *StandardErrorResponse
+	// JSON404 the response for an HTTP 404 `application/json` response
+	JSON404 *StandardErrorResponse
+	// JSON409 the response for an HTTP 409 `application/json` response
+	JSON409 *StandardErrorResponse
+	// JSON500 the response for an HTTP 500 `application/json` response
+	JSON500 *StandardErrorResponse
+	// JSON503 the response for an HTTP 503 `application/json` response
+	JSON503 *StandardErrorResponse
+	// JSON504 the response for an HTTP 504 `application/json` response
+	JSON504 *StandardErrorResponse
+	// JSONDefault the response for an HTTP default `application/json` response
+	JSONDefault *StandardErrorResponse
+}
+
+// GetJSON200 returns the response for an HTTP 200 `application/json` response
+func (r UnarchiveUnitResponse) GetJSON200() *UnarchiveResponse {
+	return r.JSON200
+}
+
+// GetJSON400 returns the response for an HTTP 400 `application/json` response
+func (r UnarchiveUnitResponse) GetJSON400() *StandardErrorResponse {
+	return r.JSON400
+}
+
+// GetJSON401 returns the response for an HTTP 401 `application/json` response
+func (r UnarchiveUnitResponse) GetJSON401() *StandardErrorResponse {
+	return r.JSON401
+}
+
+// GetJSON403 returns the response for an HTTP 403 `application/json` response
+func (r UnarchiveUnitResponse) GetJSON403() *StandardErrorResponse {
+	return r.JSON403
+}
+
+// GetJSON404 returns the response for an HTTP 404 `application/json` response
+func (r UnarchiveUnitResponse) GetJSON404() *StandardErrorResponse {
+	return r.JSON404
+}
+
+// GetJSON409 returns the response for an HTTP 409 `application/json` response
+func (r UnarchiveUnitResponse) GetJSON409() *StandardErrorResponse {
+	return r.JSON409
+}
+
+// GetJSON500 returns the response for an HTTP 500 `application/json` response
+func (r UnarchiveUnitResponse) GetJSON500() *StandardErrorResponse {
+	return r.JSON500
+}
+
+// GetJSON503 returns the response for an HTTP 503 `application/json` response
+func (r UnarchiveUnitResponse) GetJSON503() *StandardErrorResponse {
+	return r.JSON503
+}
+
+// GetJSON504 returns the response for an HTTP 504 `application/json` response
+func (r UnarchiveUnitResponse) GetJSON504() *StandardErrorResponse {
+	return r.JSON504
+}
+
+// GetJSONDefault returns the response for an HTTP default `application/json` response
+func (r UnarchiveUnitResponse) GetJSONDefault() *StandardErrorResponse {
+	return r.JSONDefault
+}
+
+// GetBody returns the raw response body bytes
+func (r UnarchiveUnitResponse) GetBody() []byte {
+	return r.Body
+}
+
+// Status returns HTTPResponse.Status
+func (r UnarchiveUnitResponse) Status() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Status
+	}
+	return http.StatusText(0)
+}
+
+// StatusCode returns HTTPResponse.StatusCode
+func (r UnarchiveUnitResponse) StatusCode() int {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.StatusCode
+	}
+	return 0
+}
+
+// ContentType is a convenience method to retrieve the Content-Type value from the HTTP response headers
+func (r UnarchiveUnitResponse) ContentType() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Header.Get("Content-Type")
+	}
+	return ""
+}
+
 // ListViewsResponse200Headers the declared response headers of an HTTP 200 response for ListViews
 type ListViewsResponse200Headers struct {
 	ConfigHubContinue *string
@@ -79020,6 +79357,117 @@ func (r BulkTagUnitsResponse) StatusCode() int {
 
 // ContentType is a convenience method to retrieve the Content-Type value from the HTTP response headers
 func (r BulkTagUnitsResponse) ContentType() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Header.Get("Content-Type")
+	}
+	return ""
+}
+
+type BulkUnarchiveUnitsResponse struct {
+	Body         []byte
+	HTTPResponse *http.Response
+	// JSON200 the response for an HTTP 200 `application/json` response
+	JSON200 *[]UnarchiveResponse
+	// JSON207 the response for an HTTP 207 `application/json` response
+	JSON207 *[]UnarchiveResponse
+	// JSON400 the response for an HTTP 400 `application/json` response
+	JSON400 *StandardErrorResponse
+	// JSON401 the response for an HTTP 401 `application/json` response
+	JSON401 *StandardErrorResponse
+	// JSON403 the response for an HTTP 403 `application/json` response
+	JSON403 *StandardErrorResponse
+	// JSON404 the response for an HTTP 404 `application/json` response
+	JSON404 *StandardErrorResponse
+	// JSON409 the response for an HTTP 409 `application/json` response
+	JSON409 *StandardErrorResponse
+	// JSON500 the response for an HTTP 500 `application/json` response
+	JSON500 *StandardErrorResponse
+	// JSON503 the response for an HTTP 503 `application/json` response
+	JSON503 *StandardErrorResponse
+	// JSON504 the response for an HTTP 504 `application/json` response
+	JSON504 *StandardErrorResponse
+	// JSONDefault the response for an HTTP default `application/json` response
+	JSONDefault *StandardErrorResponse
+}
+
+// GetJSON200 returns the response for an HTTP 200 `application/json` response
+func (r BulkUnarchiveUnitsResponse) GetJSON200() *[]UnarchiveResponse {
+	return r.JSON200
+}
+
+// GetJSON207 returns the response for an HTTP 207 `application/json` response
+func (r BulkUnarchiveUnitsResponse) GetJSON207() *[]UnarchiveResponse {
+	return r.JSON207
+}
+
+// GetJSON400 returns the response for an HTTP 400 `application/json` response
+func (r BulkUnarchiveUnitsResponse) GetJSON400() *StandardErrorResponse {
+	return r.JSON400
+}
+
+// GetJSON401 returns the response for an HTTP 401 `application/json` response
+func (r BulkUnarchiveUnitsResponse) GetJSON401() *StandardErrorResponse {
+	return r.JSON401
+}
+
+// GetJSON403 returns the response for an HTTP 403 `application/json` response
+func (r BulkUnarchiveUnitsResponse) GetJSON403() *StandardErrorResponse {
+	return r.JSON403
+}
+
+// GetJSON404 returns the response for an HTTP 404 `application/json` response
+func (r BulkUnarchiveUnitsResponse) GetJSON404() *StandardErrorResponse {
+	return r.JSON404
+}
+
+// GetJSON409 returns the response for an HTTP 409 `application/json` response
+func (r BulkUnarchiveUnitsResponse) GetJSON409() *StandardErrorResponse {
+	return r.JSON409
+}
+
+// GetJSON500 returns the response for an HTTP 500 `application/json` response
+func (r BulkUnarchiveUnitsResponse) GetJSON500() *StandardErrorResponse {
+	return r.JSON500
+}
+
+// GetJSON503 returns the response for an HTTP 503 `application/json` response
+func (r BulkUnarchiveUnitsResponse) GetJSON503() *StandardErrorResponse {
+	return r.JSON503
+}
+
+// GetJSON504 returns the response for an HTTP 504 `application/json` response
+func (r BulkUnarchiveUnitsResponse) GetJSON504() *StandardErrorResponse {
+	return r.JSON504
+}
+
+// GetJSONDefault returns the response for an HTTP default `application/json` response
+func (r BulkUnarchiveUnitsResponse) GetJSONDefault() *StandardErrorResponse {
+	return r.JSONDefault
+}
+
+// GetBody returns the raw response body bytes
+func (r BulkUnarchiveUnitsResponse) GetBody() []byte {
+	return r.Body
+}
+
+// Status returns HTTPResponse.Status
+func (r BulkUnarchiveUnitsResponse) Status() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Status
+	}
+	return http.StatusText(0)
+}
+
+// StatusCode returns HTTPResponse.StatusCode
+func (r BulkUnarchiveUnitsResponse) StatusCode() int {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.StatusCode
+	}
+	return 0
+}
+
+// ContentType is a convenience method to retrieve the Content-Type value from the HTTP response headers
+func (r BulkUnarchiveUnitsResponse) ContentType() string {
 	if r.HTTPResponse != nil {
 		return r.HTTPResponse.Header.Get("Content-Type")
 	}
@@ -85396,6 +85844,21 @@ func (c *ClientWithResponses) GetRevisionMutationSourcesWithResponse(ctx context
 	return ParseGetRevisionMutationSourcesResponse(rsp)
 }
 
+// UnarchiveUnitWithResponse Unarchive a unit
+//
+// Unarchive a Unit archived by a delete with archive=true, and the Links archived with it. Its Slug is restored from the label ArchivedSlug unless another Unit in its Space has taken it since, in which case it keeps the Slug the archive gave it, which KeptSlug in the response reports; it is unarchived either way. A Link whose other Unit is still archived stays archived until that Unit is unarchived. Refused while the Unit's Space is archived. Requires Edit permission.
+//
+// Returns a wrapper object for the known response body format(s).
+//
+// Corresponds with POST /space/{space_id}/unit/{unit_id}/unarchive (the `UnarchiveUnit` operationId).
+func (c *ClientWithResponses) UnarchiveUnitWithResponse(ctx context.Context, spaceId openapi_types.UUID, unitId openapi_types.UUID, reqEditors ...RequestEditorFn) (*UnarchiveUnitResponse, error) {
+	rsp, err := c.UnarchiveUnit(ctx, spaceId, unitId, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseUnarchiveUnitResponse(rsp)
+}
+
 // ListViewsWithResponse List Views
 //
 // Returns a wrapper object for the known response body format(s).
@@ -86066,6 +86529,21 @@ func (c *ClientWithResponses) BulkTagUnitsWithResponse(ctx context.Context, para
 		return nil, err
 	}
 	return ParseBulkTagUnitsResponse(rsp)
+}
+
+// BulkUnarchiveUnitsWithResponse Unarchive units
+//
+// Unarchive a Unit archived by a delete with archive=true, and the Links archived with it. Its Slug is restored from the label ArchivedSlug unless another Unit in its Space has taken it since, in which case it keeps the Slug the archive gave it, which KeptSlug in the response reports; it is unarchived either way. A Link whose other Unit is still archived stays archived until that Unit is unarchived. Refused while the Unit's Space is archived. Requires Edit permission. Selects archived Units, as if include_hidden named Archived, and leaves alone a selected Unit that is not archived.
+//
+// Returns a wrapper object for the known response body format(s).
+//
+// Corresponds with POST /unit/unarchive (the `BulkUnarchiveUnits` operationId).
+func (c *ClientWithResponses) BulkUnarchiveUnitsWithResponse(ctx context.Context, params *BulkUnarchiveUnitsParams, reqEditors ...RequestEditorFn) (*BulkUnarchiveUnitsResponse, error) {
+	rsp, err := c.BulkUnarchiveUnits(ctx, params, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseBulkUnarchiveUnitsResponse(rsp)
 }
 
 // SearchUnitBlameWithResponse Get what set each field of many Units across spaces
@@ -109597,6 +110075,95 @@ func ParseGetRevisionMutationSourcesResponse(rsp *http.Response) (*GetRevisionMu
 	return response, nil
 }
 
+// ParseUnarchiveUnitResponse parses an HTTP response from a UnarchiveUnitWithResponse call
+func ParseUnarchiveUnitResponse(rsp *http.Response) (*UnarchiveUnitResponse, error) {
+	bodyBytes, err := io.ReadAll(rsp.Body)
+	defer func() { _ = rsp.Body.Close() }()
+	if err != nil {
+		return nil, err
+	}
+
+	response := &UnarchiveUnitResponse{
+		Body:         bodyBytes,
+		HTTPResponse: rsp,
+	}
+
+	switch {
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 200:
+		var dest UnarchiveResponse
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON200 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 400:
+		var dest StandardErrorResponse
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON400 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 401:
+		var dest StandardErrorResponse
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON401 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 403:
+		var dest StandardErrorResponse
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON403 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 404:
+		var dest StandardErrorResponse
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON404 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 409:
+		var dest StandardErrorResponse
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON409 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 500:
+		var dest StandardErrorResponse
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON500 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 503:
+		var dest StandardErrorResponse
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON503 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 504:
+		var dest StandardErrorResponse
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON504 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && true:
+		var dest StandardErrorResponse
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSONDefault = &dest
+
+	}
+
+	return response, nil
+}
+
 // ParseListViewsResponse parses an HTTP response from a ListViewsWithResponse call
 func ParseListViewsResponse(rsp *http.Response) (*ListViewsResponse, error) {
 	bodyBytes, err := io.ReadAll(rsp.Body)
@@ -112526,6 +113093,102 @@ func ParseBulkTagUnitsResponse(rsp *http.Response) (*BulkTagUnitsResponse, error
 			return nil, err
 		}
 		response.JSON422 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 500:
+		var dest StandardErrorResponse
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON500 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 503:
+		var dest StandardErrorResponse
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON503 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 504:
+		var dest StandardErrorResponse
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON504 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && true:
+		var dest StandardErrorResponse
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSONDefault = &dest
+
+	}
+
+	return response, nil
+}
+
+// ParseBulkUnarchiveUnitsResponse parses an HTTP response from a BulkUnarchiveUnitsWithResponse call
+func ParseBulkUnarchiveUnitsResponse(rsp *http.Response) (*BulkUnarchiveUnitsResponse, error) {
+	bodyBytes, err := io.ReadAll(rsp.Body)
+	defer func() { _ = rsp.Body.Close() }()
+	if err != nil {
+		return nil, err
+	}
+
+	response := &BulkUnarchiveUnitsResponse{
+		Body:         bodyBytes,
+		HTTPResponse: rsp,
+	}
+
+	switch {
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 200:
+		var dest []UnarchiveResponse
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON200 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 207:
+		var dest []UnarchiveResponse
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON207 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 400:
+		var dest StandardErrorResponse
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON400 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 401:
+		var dest StandardErrorResponse
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON401 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 403:
+		var dest StandardErrorResponse
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON403 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 404:
+		var dest StandardErrorResponse
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON404 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 409:
+		var dest StandardErrorResponse
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON409 = &dest
 
 	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 500:
 		var dest StandardErrorResponse

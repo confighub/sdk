@@ -1,0 +1,29 @@
+# The plugins cub knows about, until it has downloaded the published index
+# (github.com/confighub/cub-plugins), which this file is a copy of. Typing a
+# command listed here installs the plugin that provides it and then runs the
+# command.
+#
+# An entry holds nothing specific to a plugin version: cub installs the latest
+# release from `source`. `name` is the name the plugin is installed under.
+# `prompt: false` installs without asking; the default is to ask.
+plugins:
+  - name: installer
+    source: confighub/installer
+    commands: [installer]
+    prompt: false
+  - name: helm
+    source: confighub/cub-helm
+    commands: [helm]
+    prompt: false
+  - name: demo
+    source: confighub/cub-demo
+    commands: [demo]
+    prompt: false
+  - name: commander
+    source: confighub/cub-commander
+    commands: [commander, cmdr]
+    prompt: false
+  - name: eks-inference
+    source: confighub/eks-inference
+    commands: [eksinf]
+    prompt: false

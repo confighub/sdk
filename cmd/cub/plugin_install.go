@@ -75,6 +75,7 @@ var pluginInstallCmd = &cobra.Command{
   https://github.com/org/repo          Install from latest GitHub release
   org/repo                             Shorthand for GitHub
   org/repo@v1.2.0                      Pinned GitHub release tag
+  installer                            A plugin cub knows by name
   ./bin/cub-thing                      Local binary, built on this machine
   ./dist/thing/                        Local directory (needs cub-plugin.yaml or "main")
   ./dist/thing.tar.gz                  Local archive
@@ -96,6 +97,11 @@ For repositories without releases, the repo source is downloaded automatically.
 Use --source-repo to force this behavior even when releases exist:
   cub plugin install org/repo --source-repo
   cub plugin install org/repo@branch --source-repo
+
+ConfigHub's own plugins are known to cub by name, and one is installed the
+first time a command it provides is typed. Set CUB_PLUGIN_AUTO_INSTALL to "never" to be told
+the install command instead, "ask" to be asked first, or "auto" to never be
+asked.
 
 If the plugin is already installed, install fails. Use 'cub plugin upgrade' to
 update it, or 'cub plugin uninstall' first to reinstall fresh.`),
@@ -896,8 +902,19 @@ func finalizeStaging(staged, destPath, slot, excludeSlot, source, tag string, de
 }
 
 func pluginInstallCmdRun(cmd *cobra.Command, args []string) error {
-	source := args[0]
+	source, name := args[0], pluginInstallArgs.name
+	if knownSource, knownName, ok := knownPluginSource(source); ok {
+		source = knownSource
+		if name == "" {
+			name = knownName
+		}
+	}
+	return installPluginFromSource(source, name)
+}
 
+// installPluginFromSource installs the plugin at source under name, or under
+// the name its source implies when name is empty.
+func installPluginFromSource(source, name string) error {
 	// 1. Parse source
 	src, err := parseInstallSource(source)
 	if err != nil {
@@ -905,7 +922,6 @@ func pluginInstallCmdRun(cmd *cobra.Command, args []string) error {
 	}
 
 	// 2. Determine plugin name
-	name := pluginInstallArgs.name
 	if name == "" {
 		name = derivePluginName(src)
 	}

@@ -106,9 +106,11 @@ paths:
       - description: |-
           Hidden Component entities, those with a HiddenReason, are left out of the results, or of what a bulk operation acts on, unless this names their HiddenReason.
 
-          It is a comma-separated list of HiddenReasons, or `*` for all of them.
+          It is a comma-separated list of HiddenReasons, or `*` for all of them but `Archived`.
 
           A where clause naming the entities, by their Slug or ID with `=` or `IN`, or naming HiddenReason at all, also returns hidden entities it selects.
+
+          Archived entities, which a delete with archive=true archives, are selected only when this names `Archived`, as in `Archived` or `*,Archived`; a where clause naming them returns them from a List or Search, but not from a bulk operation.
 
           ConfigHub/YAML Units, which hold the configuration of entities, are hidden with the HiddenReason `BackingUnit`.
         in: query
@@ -342,9 +344,11 @@ paths:
       - description: |-
           Hidden Component entities, those with a HiddenReason, are left out of the results, or of what a bulk operation acts on, unless this names their HiddenReason.
 
-          It is a comma-separated list of HiddenReasons, or `*` for all of them.
+          It is a comma-separated list of HiddenReasons, or `*` for all of them but `Archived`.
 
           A where clause naming the entities, by their Slug or ID with `=` or `IN`, or naming HiddenReason at all, also returns hidden entities it selects.
+
+          Archived entities, which a delete with archive=true archives, are selected only when this names `Archived`, as in `Archived` or `*,Archived`; a where clause naming them returns them from a List or Search, but not from a bulk operation.
 
           ConfigHub/YAML Units, which hold the configuration of entities, are hidden with the HiddenReason `BackingUnit`.
         in: query
@@ -680,9 +684,11 @@ paths:
       - description: |-
           Hidden ServiceAccount entities, those with a HiddenReason, are left out of the results, or of what a bulk operation acts on, unless this names their HiddenReason.
 
-          It is a comma-separated list of HiddenReasons, or `*` for all of them.
+          It is a comma-separated list of HiddenReasons, or `*` for all of them but `Archived`.
 
           A where clause naming the entities, by their Slug or ID with `=` or `IN`, or naming HiddenReason at all, also returns hidden entities it selects.
+
+          Archived entities, which a delete with archive=true archives, are selected only when this names `Archived`, as in `Archived` or `*,Archived`; a where clause naming them returns them from a List or Search, but not from a bulk operation.
 
           ConfigHub/YAML Units, which hold the configuration of entities, are hidden with the HiddenReason `BackingUnit`.
         in: query
@@ -906,9 +912,11 @@ paths:
       - description: |-
           Hidden ServiceAccount entities, those with a HiddenReason, are left out of the results, or of what a bulk operation acts on, unless this names their HiddenReason.
 
-          It is a comma-separated list of HiddenReasons, or `*` for all of them.
+          It is a comma-separated list of HiddenReasons, or `*` for all of them but `Archived`.
 
           A where clause naming the entities, by their Slug or ID with `=` or `IN`, or naming HiddenReason at all, also returns hidden entities it selects.
+
+          Archived entities, which a delete with archive=true archives, are selected only when this names `Archived`, as in `Archived` or `*,Archived`; a where clause naming them returns them from a List or Search, but not from a bulk operation.
 
           ConfigHub/YAML Units, which hold the configuration of entities, are hidden with the HiddenReason `BackingUnit`.
         in: query
@@ -1201,9 +1209,11 @@ paths:
       - description: |-
           Hidden Space entities, those with a HiddenReason, are left out of the results, or of what a bulk operation acts on, unless this names their HiddenReason.
 
-          It is a comma-separated list of HiddenReasons, or `*` for all of them.
+          It is a comma-separated list of HiddenReasons, or `*` for all of them but `Archived`.
 
           A where clause naming the entities, by their Slug or ID with `=` or `IN`, or naming HiddenReason at all, also returns hidden entities it selects.
+
+          Archived entities, which a delete with archive=true archives, are selected only when this names `Archived`, as in `Archived` or `*,Archived`; a where clause naming them returns them from a List or Search, but not from a bulk operation.
 
           ConfigHub/YAML Units, which hold the configuration of entities, are hidden with the HiddenReason `BackingUnit`.
         in: query
@@ -1461,9 +1471,11 @@ paths:
       - description: |-
           Hidden Space entities, those with a HiddenReason, are left out of the results, or of what a bulk operation acts on, unless this names their HiddenReason.
 
-          It is a comma-separated list of HiddenReasons, or `*` for all of them.
+          It is a comma-separated list of HiddenReasons, or `*` for all of them but `Archived`.
 
           A where clause naming the entities, by their Slug or ID with `=` or `IN`, or naming HiddenReason at all, also returns hidden entities it selects.
+
+          Archived entities, which a delete with archive=true archives, are selected only when this names `Archived`, as in `Archived` or `*,Archived`; a where clause naming them returns them from a List or Search, but not from a bulk operation.
 
           ConfigHub/YAML Units, which hold the configuration of entities, are hidden with the HiddenReason `BackingUnit`.
         in: query
@@ -1823,9 +1835,11 @@ paths:
       - description: |-
           Hidden Space entities, those with a HiddenReason, are left out of the results, or of what a bulk operation acts on, unless this names their HiddenReason.
 
-          It is a comma-separated list of HiddenReasons, or `*` for all of them.
+          It is a comma-separated list of HiddenReasons, or `*` for all of them but `Archived`.
 
           A where clause naming the entities, by their Slug or ID with `=` or `IN`, or naming HiddenReason at all, also returns hidden entities it selects.
+
+          Archived entities, which a delete with archive=true archives, are selected only when this names `Archived`, as in `Archived` or `*,Archived`; a where clause naming them returns them from a List or Search, but not from a bulk operation.
 
           ConfigHub/YAML Units, which hold the configuration of entities, are hidden with the HiddenReason `BackingUnit`.
         in: query
@@ -2410,9 +2424,11 @@ paths:
       - description: |-
           Hidden Attestation entities, those with a HiddenReason, are left out of the results, or of what a bulk operation acts on, unless this names their HiddenReason.
 
-          It is a comma-separated list of HiddenReasons, or `*` for all of them.
+          It is a comma-separated list of HiddenReasons, or `*` for all of them but `Archived`.
 
           A where clause naming the entities, by their Slug or ID with `=` or `IN`, or naming HiddenReason at all, also returns hidden entities it selects.
+
+          Archived entities, which a delete with archive=true archives, are selected only when this names `Archived`, as in `Archived` or `*,Archived`; a where clause naming them returns them from a List or Search, but not from a bulk operation.
 
           ConfigHub/YAML Units, which hold the configuration of entities, are hidden with the HiddenReason `BackingUnit`.
         in: query
@@ -2633,9 +2649,11 @@ paths:
       - description: |-
           Hidden Attribute entities, those with a HiddenReason, are left out of the results, or of what a bulk operation acts on, unless this names their HiddenReason.
 
-          It is a comma-separated list of HiddenReasons, or `*` for all of them.
+          It is a comma-separated list of HiddenReasons, or `*` for all of them but `Archived`.
 
           A where clause naming the entities, by their Slug or ID with `=` or `IN`, or naming HiddenReason at all, also returns hidden entities it selects.
+
+          Archived entities, which a delete with archive=true archives, are selected only when this names `Archived`, as in `Archived` or `*,Archived`; a where clause naming them returns them from a List or Search, but not from a bulk operation.
 
           ConfigHub/YAML Units, which hold the configuration of entities, are hidden with the HiddenReason `BackingUnit`.
         in: query
@@ -2912,9 +2930,11 @@ paths:
       - description: |-
           Hidden Attribute entities, those with a HiddenReason, are left out of the results, or of what a bulk operation acts on, unless this names their HiddenReason.
 
-          It is a comma-separated list of HiddenReasons, or `*` for all of them.
+          It is a comma-separated list of HiddenReasons, or `*` for all of them but `Archived`.
 
           A where clause naming the entities, by their Slug or ID with `=` or `IN`, or naming HiddenReason at all, also returns hidden entities it selects.
+
+          Archived entities, which a delete with archive=true archives, are selected only when this names `Archived`, as in `Archived` or `*,Archived`; a where clause naming them returns them from a List or Search, but not from a bulk operation.
 
           ConfigHub/YAML Units, which hold the configuration of entities, are hidden with the HiddenReason `BackingUnit`.
         in: query
@@ -3135,9 +3155,11 @@ paths:
       - description: |-
           Hidden Attribute entities, those with a HiddenReason, are left out of the results, or of what a bulk operation acts on, unless this names their HiddenReason.
 
-          It is a comma-separated list of HiddenReasons, or `*` for all of them.
+          It is a comma-separated list of HiddenReasons, or `*` for all of them but `Archived`.
 
           A where clause naming the entities, by their Slug or ID with `=` or `IN`, or naming HiddenReason at all, also returns hidden entities it selects.
+
+          Archived entities, which a delete with archive=true archives, are selected only when this names `Archived`, as in `Archived` or `*,Archived`; a where clause naming them returns them from a List or Search, but not from a bulk operation.
 
           ConfigHub/YAML Units, which hold the configuration of entities, are hidden with the HiddenReason `BackingUnit`.
         in: query
@@ -3475,9 +3497,11 @@ paths:
       - description: |-
           Hidden Attribute entities, those with a HiddenReason, are left out of the results, or of what a bulk operation acts on, unless this names their HiddenReason.
 
-          It is a comma-separated list of HiddenReasons, or `*` for all of them.
+          It is a comma-separated list of HiddenReasons, or `*` for all of them but `Archived`.
 
           A where clause naming the entities, by their Slug or ID with `=` or `IN`, or naming HiddenReason at all, also returns hidden entities it selects.
+
+          Archived entities, which a delete with archive=true archives, are selected only when this names `Archived`, as in `Archived` or `*,Archived`; a where clause naming them returns them from a List or Search, but not from a bulk operation.
 
           ConfigHub/YAML Units, which hold the configuration of entities, are hidden with the HiddenReason `BackingUnit`.
         in: query
@@ -3953,9 +3977,11 @@ paths:
       - description: |-
           Hidden Attribute entities, those with a HiddenReason, are left out of the results, or of what a bulk operation acts on, unless this names their HiddenReason.
 
-          It is a comma-separated list of HiddenReasons, or `*` for all of them.
+          It is a comma-separated list of HiddenReasons, or `*` for all of them but `Archived`.
 
           A where clause naming the entities, by their Slug or ID with `=` or `IN`, or naming HiddenReason at all, also returns hidden entities it selects.
+
+          Archived entities, which a delete with archive=true archives, are selected only when this names `Archived`, as in `Archived` or `*,Archived`; a where clause naming them returns them from a List or Search, but not from a bulk operation.
 
           ConfigHub/YAML Units, which hold the configuration of entities, are hidden with the HiddenReason `BackingUnit`.
         in: query
@@ -4510,9 +4536,11 @@ paths:
       - description: |-
           Hidden ChangeOrder entities, those with a HiddenReason, are left out of the results, or of what a bulk operation acts on, unless this names their HiddenReason.
 
-          It is a comma-separated list of HiddenReasons, or `*` for all of them.
+          It is a comma-separated list of HiddenReasons, or `*` for all of them but `Archived`.
 
           A where clause naming the entities, by their Slug or ID with `=` or `IN`, or naming HiddenReason at all, also returns hidden entities it selects.
+
+          Archived entities, which a delete with archive=true archives, are selected only when this names `Archived`, as in `Archived` or `*,Archived`; a where clause naming them returns them from a List or Search, but not from a bulk operation.
 
           ConfigHub/YAML Units, which hold the configuration of entities, are hidden with the HiddenReason `BackingUnit`.
         in: query
@@ -4788,9 +4816,11 @@ paths:
       - description: |-
           Hidden ChangeOrder entities, those with a HiddenReason, are left out of the results, or of what a bulk operation acts on, unless this names their HiddenReason.
 
-          It is a comma-separated list of HiddenReasons, or `*` for all of them.
+          It is a comma-separated list of HiddenReasons, or `*` for all of them but `Archived`.
 
           A where clause naming the entities, by their Slug or ID with `=` or `IN`, or naming HiddenReason at all, also returns hidden entities it selects.
+
+          Archived entities, which a delete with archive=true archives, are selected only when this names `Archived`, as in `Archived` or `*,Archived`; a where clause naming them returns them from a List or Search, but not from a bulk operation.
 
           ConfigHub/YAML Units, which hold the configuration of entities, are hidden with the HiddenReason `BackingUnit`.
         in: query
@@ -5011,9 +5041,11 @@ paths:
       - description: |-
           Hidden ChangeOrder entities, those with a HiddenReason, are left out of the results, or of what a bulk operation acts on, unless this names their HiddenReason.
 
-          It is a comma-separated list of HiddenReasons, or `*` for all of them.
+          It is a comma-separated list of HiddenReasons, or `*` for all of them but `Archived`.
 
           A where clause naming the entities, by their Slug or ID with `=` or `IN`, or naming HiddenReason at all, also returns hidden entities it selects.
+
+          Archived entities, which a delete with archive=true archives, are selected only when this names `Archived`, as in `Archived` or `*,Archived`; a where clause naming them returns them from a List or Search, but not from a bulk operation.
 
           ConfigHub/YAML Units, which hold the configuration of entities, are hidden with the HiddenReason `BackingUnit`.
         in: query
@@ -5383,9 +5415,11 @@ paths:
       - description: |-
           Hidden ChangeOrder entities, those with a HiddenReason, are left out of the results, or of what a bulk operation acts on, unless this names their HiddenReason.
 
-          It is a comma-separated list of HiddenReasons, or `*` for all of them.
+          It is a comma-separated list of HiddenReasons, or `*` for all of them but `Archived`.
 
           A where clause naming the entities, by their Slug or ID with `=` or `IN`, or naming HiddenReason at all, also returns hidden entities it selects.
+
+          Archived entities, which a delete with archive=true archives, are selected only when this names `Archived`, as in `Archived` or `*,Archived`; a where clause naming them returns them from a List or Search, but not from a bulk operation.
 
           ConfigHub/YAML Units, which hold the configuration of entities, are hidden with the HiddenReason `BackingUnit`.
         in: query
@@ -5842,9 +5876,11 @@ paths:
       - description: |-
           Hidden ChangeOrder entities, those with a HiddenReason, are left out of the results, or of what a bulk operation acts on, unless this names their HiddenReason.
 
-          It is a comma-separated list of HiddenReasons, or `*` for all of them.
+          It is a comma-separated list of HiddenReasons, or `*` for all of them but `Archived`.
 
           A where clause naming the entities, by their Slug or ID with `=` or `IN`, or naming HiddenReason at all, also returns hidden entities it selects.
+
+          Archived entities, which a delete with archive=true archives, are selected only when this names `Archived`, as in `Archived` or `*,Archived`; a where clause naming them returns them from a List or Search, but not from a bulk operation.
 
           ConfigHub/YAML Units, which hold the configuration of entities, are hidden with the HiddenReason `BackingUnit`.
         in: query
@@ -6071,9 +6107,11 @@ paths:
       - description: |-
           Hidden ChangeSet entities, those with a HiddenReason, are left out of the results, or of what a bulk operation acts on, unless this names their HiddenReason.
 
-          It is a comma-separated list of HiddenReasons, or `*` for all of them.
+          It is a comma-separated list of HiddenReasons, or `*` for all of them but `Archived`.
 
           A where clause naming the entities, by their Slug or ID with `=` or `IN`, or naming HiddenReason at all, also returns hidden entities it selects.
+
+          Archived entities, which a delete with archive=true archives, are selected only when this names `Archived`, as in `Archived` or `*,Archived`; a where clause naming them returns them from a List or Search, but not from a bulk operation.
 
           ConfigHub/YAML Units, which hold the configuration of entities, are hidden with the HiddenReason `BackingUnit`.
         in: query
@@ -6349,9 +6387,11 @@ paths:
       - description: |-
           Hidden ChangeSet entities, those with a HiddenReason, are left out of the results, or of what a bulk operation acts on, unless this names their HiddenReason.
 
-          It is a comma-separated list of HiddenReasons, or `*` for all of them.
+          It is a comma-separated list of HiddenReasons, or `*` for all of them but `Archived`.
 
           A where clause naming the entities, by their Slug or ID with `=` or `IN`, or naming HiddenReason at all, also returns hidden entities it selects.
+
+          Archived entities, which a delete with archive=true archives, are selected only when this names `Archived`, as in `Archived` or `*,Archived`; a where clause naming them returns them from a List or Search, but not from a bulk operation.
 
           ConfigHub/YAML Units, which hold the configuration of entities, are hidden with the HiddenReason `BackingUnit`.
         in: query
@@ -6572,9 +6612,11 @@ paths:
       - description: |-
           Hidden ChangeSet entities, those with a HiddenReason, are left out of the results, or of what a bulk operation acts on, unless this names their HiddenReason.
 
-          It is a comma-separated list of HiddenReasons, or `*` for all of them.
+          It is a comma-separated list of HiddenReasons, or `*` for all of them but `Archived`.
 
           A where clause naming the entities, by their Slug or ID with `=` or `IN`, or naming HiddenReason at all, also returns hidden entities it selects.
+
+          Archived entities, which a delete with archive=true archives, are selected only when this names `Archived`, as in `Archived` or `*,Archived`; a where clause naming them returns them from a List or Search, but not from a bulk operation.
 
           ConfigHub/YAML Units, which hold the configuration of entities, are hidden with the HiddenReason `BackingUnit`.
         in: query
@@ -6879,9 +6921,11 @@ paths:
       - description: |-
           Hidden ChangeSet entities, those with a HiddenReason, are left out of the results, or of what a bulk operation acts on, unless this names their HiddenReason.
 
-          It is a comma-separated list of HiddenReasons, or `*` for all of them.
+          It is a comma-separated list of HiddenReasons, or `*` for all of them but `Archived`.
 
           A where clause naming the entities, by their Slug or ID with `=` or `IN`, or naming HiddenReason at all, also returns hidden entities it selects.
+
+          Archived entities, which a delete with archive=true archives, are selected only when this names `Archived`, as in `Archived` or `*,Archived`; a where clause naming them returns them from a List or Search, but not from a bulk operation.
 
           ConfigHub/YAML Units, which hold the configuration of entities, are hidden with the HiddenReason `BackingUnit`.
         in: query
@@ -7281,9 +7325,11 @@ paths:
       - description: |-
           Hidden ChangeSet entities, those with a HiddenReason, are left out of the results, or of what a bulk operation acts on, unless this names their HiddenReason.
 
-          It is a comma-separated list of HiddenReasons, or `*` for all of them.
+          It is a comma-separated list of HiddenReasons, or `*` for all of them but `Archived`.
 
           A where clause naming the entities, by their Slug or ID with `=` or `IN`, or naming HiddenReason at all, also returns hidden entities it selects.
+
+          Archived entities, which a delete with archive=true archives, are selected only when this names `Archived`, as in `Archived` or `*,Archived`; a where clause naming them returns them from a List or Search, but not from a bulk operation.
 
           ConfigHub/YAML Units, which hold the configuration of entities, are hidden with the HiddenReason `BackingUnit`.
         in: query
@@ -7483,9 +7529,11 @@ paths:
       - description: |-
           Hidden ChangeWorkflow entities, those with a HiddenReason, are left out of the results, or of what a bulk operation acts on, unless this names their HiddenReason.
 
-          It is a comma-separated list of HiddenReasons, or `*` for all of them.
+          It is a comma-separated list of HiddenReasons, or `*` for all of them but `Archived`.
 
           A where clause naming the entities, by their Slug or ID with `=` or `IN`, or naming HiddenReason at all, also returns hidden entities it selects.
+
+          Archived entities, which a delete with archive=true archives, are selected only when this names `Archived`, as in `Archived` or `*,Archived`; a where clause naming them returns them from a List or Search, but not from a bulk operation.
 
           ConfigHub/YAML Units, which hold the configuration of entities, are hidden with the HiddenReason `BackingUnit`.
         in: query
@@ -7763,9 +7811,11 @@ paths:
       - description: |-
           Hidden ChangeWorkflow entities, those with a HiddenReason, are left out of the results, or of what a bulk operation acts on, unless this names their HiddenReason.
 
-          It is a comma-separated list of HiddenReasons, or `*` for all of them.
+          It is a comma-separated list of HiddenReasons, or `*` for all of them but `Archived`.
 
           A where clause naming the entities, by their Slug or ID with `=` or `IN`, or naming HiddenReason at all, also returns hidden entities it selects.
+
+          Archived entities, which a delete with archive=true archives, are selected only when this names `Archived`, as in `Archived` or `*,Archived`; a where clause naming them returns them from a List or Search, but not from a bulk operation.
 
           ConfigHub/YAML Units, which hold the configuration of entities, are hidden with the HiddenReason `BackingUnit`.
         in: query
@@ -7986,9 +8036,11 @@ paths:
       - description: |-
           Hidden ChangeWorkflow entities, those with a HiddenReason, are left out of the results, or of what a bulk operation acts on, unless this names their HiddenReason.
 
-          It is a comma-separated list of HiddenReasons, or `*` for all of them.
+          It is a comma-separated list of HiddenReasons, or `*` for all of them but `Archived`.
 
           A where clause naming the entities, by their Slug or ID with `=` or `IN`, or naming HiddenReason at all, also returns hidden entities it selects.
+
+          Archived entities, which a delete with archive=true archives, are selected only when this names `Archived`, as in `Archived` or `*,Archived`; a where clause naming them returns them from a List or Search, but not from a bulk operation.
 
           ConfigHub/YAML Units, which hold the configuration of entities, are hidden with the HiddenReason `BackingUnit`.
         in: query
@@ -8335,9 +8387,11 @@ paths:
       - description: |-
           Hidden ChangeWorkflow entities, those with a HiddenReason, are left out of the results, or of what a bulk operation acts on, unless this names their HiddenReason.
 
-          It is a comma-separated list of HiddenReasons, or `*` for all of them.
+          It is a comma-separated list of HiddenReasons, or `*` for all of them but `Archived`.
 
           A where clause naming the entities, by their Slug or ID with `=` or `IN`, or naming HiddenReason at all, also returns hidden entities it selects.
+
+          Archived entities, which a delete with archive=true archives, are selected only when this names `Archived`, as in `Archived` or `*,Archived`; a where clause naming them returns them from a List or Search, but not from a bulk operation.
 
           ConfigHub/YAML Units, which hold the configuration of entities, are hidden with the HiddenReason `BackingUnit`.
         in: query
@@ -8842,9 +8896,11 @@ paths:
       - description: |-
           Hidden ChangeWorkflow entities, those with a HiddenReason, are left out of the results, or of what a bulk operation acts on, unless this names their HiddenReason.
 
-          It is a comma-separated list of HiddenReasons, or `*` for all of them.
+          It is a comma-separated list of HiddenReasons, or `*` for all of them but `Archived`.
 
           A where clause naming the entities, by their Slug or ID with `=` or `IN`, or naming HiddenReason at all, also returns hidden entities it selects.
+
+          Archived entities, which a delete with archive=true archives, are selected only when this names `Archived`, as in `Archived` or `*,Archived`; a where clause naming them returns them from a List or Search, but not from a bulk operation.
 
           ConfigHub/YAML Units, which hold the configuration of entities, are hidden with the HiddenReason `BackingUnit`.
         in: query
@@ -9044,9 +9100,11 @@ paths:
       - description: |-
           Hidden Channel entities, those with a HiddenReason, are left out of the results, or of what a bulk operation acts on, unless this names their HiddenReason.
 
-          It is a comma-separated list of HiddenReasons, or `*` for all of them.
+          It is a comma-separated list of HiddenReasons, or `*` for all of them but `Archived`.
 
           A where clause naming the entities, by their Slug or ID with `=` or `IN`, or naming HiddenReason at all, also returns hidden entities it selects.
+
+          Archived entities, which a delete with archive=true archives, are selected only when this names `Archived`, as in `Archived` or `*,Archived`; a where clause naming them returns them from a List or Search, but not from a bulk operation.
 
           ConfigHub/YAML Units, which hold the configuration of entities, are hidden with the HiddenReason `BackingUnit`.
         in: query
@@ -9324,9 +9382,11 @@ paths:
       - description: |-
           Hidden Channel entities, those with a HiddenReason, are left out of the results, or of what a bulk operation acts on, unless this names their HiddenReason.
 
-          It is a comma-separated list of HiddenReasons, or `*` for all of them.
+          It is a comma-separated list of HiddenReasons, or `*` for all of them but `Archived`.
 
           A where clause naming the entities, by their Slug or ID with `=` or `IN`, or naming HiddenReason at all, also returns hidden entities it selects.
+
+          Archived entities, which a delete with archive=true archives, are selected only when this names `Archived`, as in `Archived` or `*,Archived`; a where clause naming them returns them from a List or Search, but not from a bulk operation.
 
           ConfigHub/YAML Units, which hold the configuration of entities, are hidden with the HiddenReason `BackingUnit`.
         in: query
@@ -9546,9 +9606,11 @@ paths:
       - description: |-
           Hidden Channel entities, those with a HiddenReason, are left out of the results, or of what a bulk operation acts on, unless this names their HiddenReason.
 
-          It is a comma-separated list of HiddenReasons, or `*` for all of them.
+          It is a comma-separated list of HiddenReasons, or `*` for all of them but `Archived`.
 
           A where clause naming the entities, by their Slug or ID with `=` or `IN`, or naming HiddenReason at all, also returns hidden entities it selects.
+
+          Archived entities, which a delete with archive=true archives, are selected only when this names `Archived`, as in `Archived` or `*,Archived`; a where clause naming them returns them from a List or Search, but not from a bulk operation.
 
           ConfigHub/YAML Units, which hold the configuration of entities, are hidden with the HiddenReason `BackingUnit`.
         in: query
@@ -9878,9 +9940,11 @@ paths:
       - description: |-
           Hidden Channel entities, those with a HiddenReason, are left out of the results, or of what a bulk operation acts on, unless this names their HiddenReason.
 
-          It is a comma-separated list of HiddenReasons, or `*` for all of them.
+          It is a comma-separated list of HiddenReasons, or `*` for all of them but `Archived`.
 
           A where clause naming the entities, by their Slug or ID with `=` or `IN`, or naming HiddenReason at all, also returns hidden entities it selects.
+
+          Archived entities, which a delete with archive=true archives, are selected only when this names `Archived`, as in `Archived` or `*,Archived`; a where clause naming them returns them from a List or Search, but not from a bulk operation.
 
           ConfigHub/YAML Units, which hold the configuration of entities, are hidden with the HiddenReason `BackingUnit`.
         in: query
@@ -10368,9 +10432,11 @@ paths:
       - description: |-
           Hidden Channel entities, those with a HiddenReason, are left out of the results, or of what a bulk operation acts on, unless this names their HiddenReason.
 
-          It is a comma-separated list of HiddenReasons, or `*` for all of them.
+          It is a comma-separated list of HiddenReasons, or `*` for all of them but `Archived`.
 
           A where clause naming the entities, by their Slug or ID with `=` or `IN`, or naming HiddenReason at all, also returns hidden entities it selects.
+
+          Archived entities, which a delete with archive=true archives, are selected only when this names `Archived`, as in `Archived` or `*,Archived`; a where clause naming them returns them from a List or Search, but not from a bulk operation.
 
           ConfigHub/YAML Units, which hold the configuration of entities, are hidden with the HiddenReason `BackingUnit`.
         in: query
@@ -10687,9 +10753,11 @@ paths:
       - description: |-
           Hidden CommandRun entities, those with a HiddenReason, are left out of the results, or of what a bulk operation acts on, unless this names their HiddenReason.
 
-          It is a comma-separated list of HiddenReasons, or `*` for all of them.
+          It is a comma-separated list of HiddenReasons, or `*` for all of them but `Archived`.
 
           A where clause naming the entities, by their Slug or ID with `=` or `IN`, or naming HiddenReason at all, also returns hidden entities it selects.
+
+          Archived entities, which a delete with archive=true archives, are selected only when this names `Archived`, as in `Archived` or `*,Archived`; a where clause naming them returns them from a List or Search, but not from a bulk operation.
 
           ConfigHub/YAML Units, which hold the configuration of entities, are hidden with the HiddenReason `BackingUnit`.
         in: query
@@ -10954,9 +11022,11 @@ paths:
       - description: |-
           Hidden Component entities, those with a HiddenReason, are left out of the results, or of what a bulk operation acts on, unless this names their HiddenReason.
 
-          It is a comma-separated list of HiddenReasons, or `*` for all of them.
+          It is a comma-separated list of HiddenReasons, or `*` for all of them but `Archived`.
 
           A where clause naming the entities, by their Slug or ID with `=` or `IN`, or naming HiddenReason at all, also returns hidden entities it selects.
+
+          Archived entities, which a delete with archive=true archives, are selected only when this names `Archived`, as in `Archived` or `*,Archived`; a where clause naming them returns them from a List or Search, but not from a bulk operation.
 
           ConfigHub/YAML Units, which hold the configuration of entities, are hidden with the HiddenReason `BackingUnit`.
         in: query
@@ -12125,9 +12195,11 @@ paths:
       - description: |-
           Hidden Filter entities, those with a HiddenReason, are left out of the results, or of what a bulk operation acts on, unless this names their HiddenReason.
 
-          It is a comma-separated list of HiddenReasons, or `*` for all of them.
+          It is a comma-separated list of HiddenReasons, or `*` for all of them but `Archived`.
 
           A where clause naming the entities, by their Slug or ID with `=` or `IN`, or naming HiddenReason at all, also returns hidden entities it selects.
+
+          Archived entities, which a delete with archive=true archives, are selected only when this names `Archived`, as in `Archived` or `*,Archived`; a where clause naming them returns them from a List or Search, but not from a bulk operation.
 
           ConfigHub/YAML Units, which hold the configuration of entities, are hidden with the HiddenReason `BackingUnit`.
         in: query
@@ -12404,9 +12476,11 @@ paths:
       - description: |-
           Hidden Filter entities, those with a HiddenReason, are left out of the results, or of what a bulk operation acts on, unless this names their HiddenReason.
 
-          It is a comma-separated list of HiddenReasons, or `*` for all of them.
+          It is a comma-separated list of HiddenReasons, or `*` for all of them but `Archived`.
 
           A where clause naming the entities, by their Slug or ID with `=` or `IN`, or naming HiddenReason at all, also returns hidden entities it selects.
+
+          Archived entities, which a delete with archive=true archives, are selected only when this names `Archived`, as in `Archived` or `*,Archived`; a where clause naming them returns them from a List or Search, but not from a bulk operation.
 
           ConfigHub/YAML Units, which hold the configuration of entities, are hidden with the HiddenReason `BackingUnit`.
         in: query
@@ -12640,9 +12714,11 @@ paths:
       - description: |-
           Hidden Filter entities, those with a HiddenReason, are left out of the results, or of what a bulk operation acts on, unless this names their HiddenReason.
 
-          It is a comma-separated list of HiddenReasons, or `*` for all of them.
+          It is a comma-separated list of HiddenReasons, or `*` for all of them but `Archived`.
 
           A where clause naming the entities, by their Slug or ID with `=` or `IN`, or naming HiddenReason at all, also returns hidden entities it selects.
+
+          Archived entities, which a delete with archive=true archives, are selected only when this names `Archived`, as in `Archived` or `*,Archived`; a where clause naming them returns them from a List or Search, but not from a bulk operation.
 
           ConfigHub/YAML Units, which hold the configuration of entities, are hidden with the HiddenReason `BackingUnit`.
         in: query
@@ -12979,9 +13055,11 @@ paths:
       - description: |-
           Hidden Filter entities, those with a HiddenReason, are left out of the results, or of what a bulk operation acts on, unless this names their HiddenReason.
 
-          It is a comma-separated list of HiddenReasons, or `*` for all of them.
+          It is a comma-separated list of HiddenReasons, or `*` for all of them but `Archived`.
 
           A where clause naming the entities, by their Slug or ID with `=` or `IN`, or naming HiddenReason at all, also returns hidden entities it selects.
+
+          Archived entities, which a delete with archive=true archives, are selected only when this names `Archived`, as in `Archived` or `*,Archived`; a where clause naming them returns them from a List or Search, but not from a bulk operation.
 
           ConfigHub/YAML Units, which hold the configuration of entities, are hidden with the HiddenReason `BackingUnit`.
         in: query
@@ -13475,9 +13553,11 @@ paths:
       - description: |-
           Hidden Filter entities, those with a HiddenReason, are left out of the results, or of what a bulk operation acts on, unless this names their HiddenReason.
 
-          It is a comma-separated list of HiddenReasons, or `*` for all of them.
+          It is a comma-separated list of HiddenReasons, or `*` for all of them but `Archived`.
 
           A where clause naming the entities, by their Slug or ID with `=` or `IN`, or naming HiddenReason at all, also returns hidden entities it selects.
+
+          Archived entities, which a delete with archive=true archives, are selected only when this names `Archived`, as in `Archived` or `*,Archived`; a where clause naming them returns them from a List or Search, but not from a bulk operation.
 
           ConfigHub/YAML Units, which hold the configuration of entities, are hidden with the HiddenReason `BackingUnit`.
         in: query
@@ -13878,9 +13958,11 @@ paths:
       - description: |-
           Hidden Unit entities, those with a HiddenReason, are left out of the results, or of what a bulk operation acts on, unless this names their HiddenReason.
 
-          It is a comma-separated list of HiddenReasons, or `*` for all of them.
+          It is a comma-separated list of HiddenReasons, or `*` for all of them but `Archived`.
 
           A where clause naming the entities, by their Slug or ID with `=` or `IN`, or naming HiddenReason at all, also returns hidden entities it selects.
+
+          Archived entities, which a delete with archive=true archives, are selected only when this names `Archived`, as in `Archived` or `*,Archived`; a where clause naming them returns them from a List or Search, but not from a bulk operation.
 
           ConfigHub/YAML Units, which hold the configuration of entities, are hidden with the HiddenReason `BackingUnit`.
         in: query
@@ -14148,9 +14230,11 @@ paths:
       - description: |-
           Hidden Unit entities, those with a HiddenReason, are left out of the results, or of what a bulk operation acts on, unless this names their HiddenReason.
 
-          It is a comma-separated list of HiddenReasons, or `*` for all of them.
+          It is a comma-separated list of HiddenReasons, or `*` for all of them but `Archived`.
 
           A where clause naming the entities, by their Slug or ID with `=` or `IN`, or naming HiddenReason at all, also returns hidden entities it selects.
+
+          Archived entities, which a delete with archive=true archives, are selected only when this names `Archived`, as in `Archived` or `*,Archived`; a where clause naming them returns them from a List or Search, but not from a bulk operation.
 
           ConfigHub/YAML Units, which hold the configuration of entities, are hidden with the HiddenReason `BackingUnit`.
         in: query
@@ -14429,9 +14513,11 @@ paths:
       - description: |-
           Hidden Group entities, those with a HiddenReason, are left out of the results, or of what a bulk operation acts on, unless this names their HiddenReason.
 
-          It is a comma-separated list of HiddenReasons, or `*` for all of them.
+          It is a comma-separated list of HiddenReasons, or `*` for all of them but `Archived`.
 
           A where clause naming the entities, by their Slug or ID with `=` or `IN`, or naming HiddenReason at all, also returns hidden entities it selects.
+
+          Archived entities, which a delete with archive=true archives, are selected only when this names `Archived`, as in `Archived` or `*,Archived`; a where clause naming them returns them from a List or Search, but not from a bulk operation.
 
           ConfigHub/YAML Units, which hold the configuration of entities, are hidden with the HiddenReason `BackingUnit`.
         in: query
@@ -14938,9 +15024,11 @@ paths:
       - description: |-
           Hidden Invocation entities, those with a HiddenReason, are left out of the results, or of what a bulk operation acts on, unless this names their HiddenReason.
 
-          It is a comma-separated list of HiddenReasons, or `*` for all of them.
+          It is a comma-separated list of HiddenReasons, or `*` for all of them but `Archived`.
 
           A where clause naming the entities, by their Slug or ID with `=` or `IN`, or naming HiddenReason at all, also returns hidden entities it selects.
+
+          Archived entities, which a delete with archive=true archives, are selected only when this names `Archived`, as in `Archived` or `*,Archived`; a where clause naming them returns them from a List or Search, but not from a bulk operation.
 
           ConfigHub/YAML Units, which hold the configuration of entities, are hidden with the HiddenReason `BackingUnit`.
         in: query
@@ -15219,9 +15307,11 @@ paths:
       - description: |-
           Hidden Invocation entities, those with a HiddenReason, are left out of the results, or of what a bulk operation acts on, unless this names their HiddenReason.
 
-          It is a comma-separated list of HiddenReasons, or `*` for all of them.
+          It is a comma-separated list of HiddenReasons, or `*` for all of them but `Archived`.
 
           A where clause naming the entities, by their Slug or ID with `=` or `IN`, or naming HiddenReason at all, also returns hidden entities it selects.
+
+          Archived entities, which a delete with archive=true archives, are selected only when this names `Archived`, as in `Archived` or `*,Archived`; a where clause naming them returns them from a List or Search, but not from a bulk operation.
 
           ConfigHub/YAML Units, which hold the configuration of entities, are hidden with the HiddenReason `BackingUnit`.
         in: query
@@ -15444,9 +15534,11 @@ paths:
       - description: |-
           Hidden Invocation entities, those with a HiddenReason, are left out of the results, or of what a bulk operation acts on, unless this names their HiddenReason.
 
-          It is a comma-separated list of HiddenReasons, or `*` for all of them.
+          It is a comma-separated list of HiddenReasons, or `*` for all of them but `Archived`.
 
           A where clause naming the entities, by their Slug or ID with `=` or `IN`, or naming HiddenReason at all, also returns hidden entities it selects.
+
+          Archived entities, which a delete with archive=true archives, are selected only when this names `Archived`, as in `Archived` or `*,Archived`; a where clause naming them returns them from a List or Search, but not from a bulk operation.
 
           ConfigHub/YAML Units, which hold the configuration of entities, are hidden with the HiddenReason `BackingUnit`.
         in: query
@@ -15805,9 +15897,11 @@ paths:
       - description: |-
           Hidden Invocation entities, those with a HiddenReason, are left out of the results, or of what a bulk operation acts on, unless this names their HiddenReason.
 
-          It is a comma-separated list of HiddenReasons, or `*` for all of them.
+          It is a comma-separated list of HiddenReasons, or `*` for all of them but `Archived`.
 
           A where clause naming the entities, by their Slug or ID with `=` or `IN`, or naming HiddenReason at all, also returns hidden entities it selects.
+
+          Archived entities, which a delete with archive=true archives, are selected only when this names `Archived`, as in `Archived` or `*,Archived`; a where clause naming them returns them from a List or Search, but not from a bulk operation.
 
           ConfigHub/YAML Units, which hold the configuration of entities, are hidden with the HiddenReason `BackingUnit`.
         in: query
@@ -16324,9 +16418,11 @@ paths:
       - description: |-
           Hidden Invocation entities, those with a HiddenReason, are left out of the results, or of what a bulk operation acts on, unless this names their HiddenReason.
 
-          It is a comma-separated list of HiddenReasons, or `*` for all of them.
+          It is a comma-separated list of HiddenReasons, or `*` for all of them but `Archived`.
 
           A where clause naming the entities, by their Slug or ID with `=` or `IN`, or naming HiddenReason at all, also returns hidden entities it selects.
+
+          Archived entities, which a delete with archive=true archives, are selected only when this names `Archived`, as in `Archived` or `*,Archived`; a where clause naming them returns them from a List or Search, but not from a bulk operation.
 
           ConfigHub/YAML Units, which hold the configuration of entities, are hidden with the HiddenReason `BackingUnit`.
         in: query
@@ -16526,9 +16622,11 @@ paths:
       - description: |-
           Hidden Link entities, those with a HiddenReason, are left out of the results, or of what a bulk operation acts on, unless this names their HiddenReason.
 
-          It is a comma-separated list of HiddenReasons, or `*` for all of them.
+          It is a comma-separated list of HiddenReasons, or `*` for all of them but `Archived`.
 
           A where clause naming the entities, by their Slug or ID with `=` or `IN`, or naming HiddenReason at all, also returns hidden entities it selects.
+
+          Archived entities, which a delete with archive=true archives, are selected only when this names `Archived`, as in `Archived` or `*,Archived`; a where clause naming them returns them from a List or Search, but not from a bulk operation.
 
           ConfigHub/YAML Units, which hold the configuration of entities, are hidden with the HiddenReason `BackingUnit`.
         in: query
@@ -16805,9 +16903,11 @@ paths:
       - description: |-
           Hidden Link entities, those with a HiddenReason, are left out of the results, or of what a bulk operation acts on, unless this names their HiddenReason.
 
-          It is a comma-separated list of HiddenReasons, or `*` for all of them.
+          It is a comma-separated list of HiddenReasons, or `*` for all of them but `Archived`.
 
           A where clause naming the entities, by their Slug or ID with `=` or `IN`, or naming HiddenReason at all, also returns hidden entities it selects.
+
+          Archived entities, which a delete with archive=true archives, are selected only when this names `Archived`, as in `Archived` or `*,Archived`; a where clause naming them returns them from a List or Search, but not from a bulk operation.
 
           ConfigHub/YAML Units, which hold the configuration of entities, are hidden with the HiddenReason `BackingUnit`.
         in: query
@@ -17027,9 +17127,11 @@ paths:
       - description: |-
           Hidden Link entities, those with a HiddenReason, are left out of the results, or of what a bulk operation acts on, unless this names their HiddenReason.
 
-          It is a comma-separated list of HiddenReasons, or `*` for all of them.
+          It is a comma-separated list of HiddenReasons, or `*` for all of them but `Archived`.
 
           A where clause naming the entities, by their Slug or ID with `=` or `IN`, or naming HiddenReason at all, also returns hidden entities it selects.
+
+          Archived entities, which a delete with archive=true archives, are selected only when this names `Archived`, as in `Archived` or `*,Archived`; a where clause naming them returns them from a List or Search, but not from a bulk operation.
 
           ConfigHub/YAML Units, which hold the configuration of entities, are hidden with the HiddenReason `BackingUnit`.
         in: query
@@ -17644,9 +17746,11 @@ paths:
       - description: |-
           Hidden Link entities, those with a HiddenReason, are left out of the results, or of what a bulk operation acts on, unless this names their HiddenReason.
 
-          It is a comma-separated list of HiddenReasons, or `*` for all of them.
+          It is a comma-separated list of HiddenReasons, or `*` for all of them but `Archived`.
 
           A where clause naming the entities, by their Slug or ID with `=` or `IN`, or naming HiddenReason at all, also returns hidden entities it selects.
+
+          Archived entities, which a delete with archive=true archives, are selected only when this names `Archived`, as in `Archived` or `*,Archived`; a where clause naming them returns them from a List or Search, but not from a bulk operation.
 
           ConfigHub/YAML Units, which hold the configuration of entities, are hidden with the HiddenReason `BackingUnit`.
         in: query
@@ -18585,9 +18689,11 @@ paths:
       - description: |-
           Hidden Organization entities, those with a HiddenReason, are left out of the results, or of what a bulk operation acts on, unless this names their HiddenReason.
 
-          It is a comma-separated list of HiddenReasons, or `*` for all of them.
+          It is a comma-separated list of HiddenReasons, or `*` for all of them but `Archived`.
 
           A where clause naming the entities, by their Slug or ID with `=` or `IN`, or naming HiddenReason at all, also returns hidden entities it selects.
+
+          Archived entities, which a delete with archive=true archives, are selected only when this names `Archived`, as in `Archived` or `*,Archived`; a where clause naming them returns them from a List or Search, but not from a bulk operation.
 
           ConfigHub/YAML Units, which hold the configuration of entities, are hidden with the HiddenReason `BackingUnit`.
         in: query
@@ -19705,9 +19811,11 @@ paths:
       - description: |-
           Hidden Release entities, those with a HiddenReason, are left out of the results, or of what a bulk operation acts on, unless this names their HiddenReason.
 
-          It is a comma-separated list of HiddenReasons, or `*` for all of them.
+          It is a comma-separated list of HiddenReasons, or `*` for all of them but `Archived`.
 
           A where clause naming the entities, by their Slug or ID with `=` or `IN`, or naming HiddenReason at all, also returns hidden entities it selects.
+
+          Archived entities, which a delete with archive=true archives, are selected only when this names `Archived`, as in `Archived` or `*,Archived`; a where clause naming them returns them from a List or Search, but not from a bulk operation.
 
           ConfigHub/YAML Units, which hold the configuration of entities, are hidden with the HiddenReason `BackingUnit`.
         in: query
@@ -19990,9 +20098,11 @@ paths:
       - description: |-
           Hidden Resource entities, those with a HiddenReason, are left out of the results, or of what a bulk operation acts on, unless this names their HiddenReason.
 
-          It is a comma-separated list of HiddenReasons, or `*` for all of them.
+          It is a comma-separated list of HiddenReasons, or `*` for all of them but `Archived`.
 
           A where clause naming the entities, by their Slug or ID with `=` or `IN`, or naming HiddenReason at all, also returns hidden entities it selects.
+
+          Archived entities, which a delete with archive=true archives, are selected only when this names `Archived`, as in `Archived` or `*,Archived`; a where clause naming them returns them from a List or Search, but not from a bulk operation.
 
           ConfigHub/YAML Units, which hold the configuration of entities, are hidden with the HiddenReason `BackingUnit`.
 
@@ -20267,9 +20377,11 @@ paths:
       - description: |-
           Hidden ReviewComment entities, those with a HiddenReason, are left out of the results, or of what a bulk operation acts on, unless this names their HiddenReason.
 
-          It is a comma-separated list of HiddenReasons, or `*` for all of them.
+          It is a comma-separated list of HiddenReasons, or `*` for all of them but `Archived`.
 
           A where clause naming the entities, by their Slug or ID with `=` or `IN`, or naming HiddenReason at all, also returns hidden entities it selects.
+
+          Archived entities, which a delete with archive=true archives, are selected only when this names `Archived`, as in `Archived` or `*,Archived`; a where clause naming them returns them from a List or Search, but not from a bulk operation.
 
           ConfigHub/YAML Units, which hold the configuration of entities, are hidden with the HiddenReason `BackingUnit`.
 
@@ -20538,9 +20650,11 @@ paths:
       - description: |-
           Hidden ReviewComment entities, those with a HiddenReason, are left out of the results, or of what a bulk operation acts on, unless this names their HiddenReason.
 
-          It is a comma-separated list of HiddenReasons, or `*` for all of them.
+          It is a comma-separated list of HiddenReasons, or `*` for all of them but `Archived`.
 
           A where clause naming the entities, by their Slug or ID with `=` or `IN`, or naming HiddenReason at all, also returns hidden entities it selects.
+
+          Archived entities, which a delete with archive=true archives, are selected only when this names `Archived`, as in `Archived` or `*,Archived`; a where clause naming them returns them from a List or Search, but not from a bulk operation.
 
           ConfigHub/YAML Units, which hold the configuration of entities, are hidden with the HiddenReason `BackingUnit`.
 
@@ -20764,9 +20878,11 @@ paths:
       - description: |-
           Hidden ReviewComment entities, those with a HiddenReason, are left out of the results, or of what a bulk operation acts on, unless this names their HiddenReason.
 
-          It is a comma-separated list of HiddenReasons, or `*` for all of them.
+          It is a comma-separated list of HiddenReasons, or `*` for all of them but `Archived`.
 
           A where clause naming the entities, by their Slug or ID with `=` or `IN`, or naming HiddenReason at all, also returns hidden entities it selects.
+
+          Archived entities, which a delete with archive=true archives, are selected only when this names `Archived`, as in `Archived` or `*,Archived`; a where clause naming them returns them from a List or Search, but not from a bulk operation.
 
           ConfigHub/YAML Units, which hold the configuration of entities, are hidden with the HiddenReason `BackingUnit`.
 
@@ -21094,9 +21210,11 @@ paths:
       - description: |-
           Hidden Revision entities, those with a HiddenReason, are left out of the results, or of what a bulk operation acts on, unless this names their HiddenReason.
 
-          It is a comma-separated list of HiddenReasons, or `*` for all of them.
+          It is a comma-separated list of HiddenReasons, or `*` for all of them but `Archived`.
 
           A where clause naming the entities, by their Slug or ID with `=` or `IN`, or naming HiddenReason at all, also returns hidden entities it selects.
+
+          Archived entities, which a delete with archive=true archives, are selected only when this names `Archived`, as in `Archived` or `*,Archived`; a where clause naming them returns them from a List or Search, but not from a bulk operation.
 
           ConfigHub/YAML Units, which hold the configuration of entities, are hidden with the HiddenReason `BackingUnit`.
 
@@ -21393,9 +21511,11 @@ paths:
       - description: |-
           Hidden Revision entities, those with a HiddenReason, are left out of the results, or of what a bulk operation acts on, unless this names their HiddenReason.
 
-          It is a comma-separated list of HiddenReasons, or `*` for all of them.
+          It is a comma-separated list of HiddenReasons, or `*` for all of them but `Archived`.
 
           A where clause naming the entities, by their Slug or ID with `=` or `IN`, or naming HiddenReason at all, also returns hidden entities it selects.
+
+          Archived entities, which a delete with archive=true archives, are selected only when this names `Archived`, as in `Archived` or `*,Archived`; a where clause naming them returns them from a List or Search, but not from a bulk operation.
 
           ConfigHub/YAML Units, which hold the configuration of entities, are hidden with the HiddenReason `BackingUnit`.
 
@@ -21678,9 +21798,11 @@ paths:
       - description: |-
           Hidden Revision entities, those with a HiddenReason, are left out of the results, or of what a bulk operation acts on, unless this names their HiddenReason.
 
-          It is a comma-separated list of HiddenReasons, or `*` for all of them.
+          It is a comma-separated list of HiddenReasons, or `*` for all of them but `Archived`.
 
           A where clause naming the entities, by their Slug or ID with `=` or `IN`, or naming HiddenReason at all, also returns hidden entities it selects.
+
+          Archived entities, which a delete with archive=true archives, are selected only when this names `Archived`, as in `Archived` or `*,Archived`; a where clause naming them returns them from a List or Search, but not from a bulk operation.
 
           ConfigHub/YAML Units, which hold the configuration of entities, are hidden with the HiddenReason `BackingUnit`.
 
@@ -21960,9 +22082,11 @@ paths:
       - description: |-
           Hidden ServiceAccount entities, those with a HiddenReason, are left out of the results, or of what a bulk operation acts on, unless this names their HiddenReason.
 
-          It is a comma-separated list of HiddenReasons, or `*` for all of them.
+          It is a comma-separated list of HiddenReasons, or `*` for all of them but `Archived`.
 
           A where clause naming the entities, by their Slug or ID with `=` or `IN`, or naming HiddenReason at all, also returns hidden entities it selects.
+
+          Archived entities, which a delete with archive=true archives, are selected only when this names `Archived`, as in `Archived` or `*,Archived`; a where clause naming them returns them from a List or Search, but not from a bulk operation.
 
           ConfigHub/YAML Units, which hold the configuration of entities, are hidden with the HiddenReason `BackingUnit`.
         in: query
@@ -22722,9 +22846,11 @@ paths:
       - description: |-
           Hidden UserKey entities, those with a HiddenReason, are left out of the results, or of what a bulk operation acts on, unless this names their HiddenReason.
 
-          It is a comma-separated list of HiddenReasons, or `*` for all of them.
+          It is a comma-separated list of HiddenReasons, or `*` for all of them but `Archived`.
 
           A where clause naming the entities, by their Slug or ID with `=` or `IN`, or naming HiddenReason at all, also returns hidden entities it selects.
+
+          Archived entities, which a delete with archive=true archives, are selected only when this names `Archived`, as in `Archived` or `*,Archived`; a where clause naming them returns them from a List or Search, but not from a bulk operation.
 
           ConfigHub/YAML Units, which hold the configuration of entities, are hidden with the HiddenReason `BackingUnit`.
         in: query
@@ -23219,9 +23345,11 @@ paths:
       - description: |-
           Hidden UserToken entities, those with a HiddenReason, are left out of the results, or of what a bulk operation acts on, unless this names their HiddenReason.
 
-          It is a comma-separated list of HiddenReasons, or `*` for all of them.
+          It is a comma-separated list of HiddenReasons, or `*` for all of them but `Archived`.
 
           A where clause naming the entities, by their Slug or ID with `=` or `IN`, or naming HiddenReason at all, also returns hidden entities it selects.
+
+          Archived entities, which a delete with archive=true archives, are selected only when this names `Archived`, as in `Archived` or `*,Archived`; a where clause naming them returns them from a List or Search, but not from a bulk operation.
 
           ConfigHub/YAML Units, which hold the configuration of entities, are hidden with the HiddenReason `BackingUnit`.
         in: query
@@ -23853,9 +23981,11 @@ paths:
       - description: |-
           Hidden Space entities, those with a HiddenReason, are left out of the results, or of what a bulk operation acts on, unless this names their HiddenReason.
 
-          It is a comma-separated list of HiddenReasons, or `*` for all of them.
+          It is a comma-separated list of HiddenReasons, or `*` for all of them but `Archived`.
 
           A where clause naming the entities, by their Slug or ID with `=` or `IN`, or naming HiddenReason at all, also returns hidden entities it selects.
+
+          Archived entities, which a delete with archive=true archives, are selected only when this names `Archived`, as in `Archived` or `*,Archived`; a where clause naming them returns them from a List or Search, but not from a bulk operation.
 
           ConfigHub/YAML Units, which hold the configuration of entities, are hidden with the HiddenReason `BackingUnit`.
         in: query
@@ -24748,9 +24878,11 @@ paths:
       - description: |-
           Hidden Attestation entities, those with a HiddenReason, are left out of the results, or of what a bulk operation acts on, unless this names their HiddenReason.
 
-          It is a comma-separated list of HiddenReasons, or `*` for all of them.
+          It is a comma-separated list of HiddenReasons, or `*` for all of them but `Archived`.
 
           A where clause naming the entities, by their Slug or ID with `=` or `IN`, or naming HiddenReason at all, also returns hidden entities it selects.
+
+          Archived entities, which a delete with archive=true archives, are selected only when this names `Archived`, as in `Archived` or `*,Archived`; a where clause naming them returns them from a List or Search, but not from a bulk operation.
 
           ConfigHub/YAML Units, which hold the configuration of entities, are hidden with the HiddenReason `BackingUnit`.
         in: query
@@ -25223,9 +25355,11 @@ paths:
       - description: |-
           Hidden Attribute entities, those with a HiddenReason, are left out of the results, or of what a bulk operation acts on, unless this names their HiddenReason.
 
-          It is a comma-separated list of HiddenReasons, or `*` for all of them.
+          It is a comma-separated list of HiddenReasons, or `*` for all of them but `Archived`.
 
           A where clause naming the entities, by their Slug or ID with `=` or `IN`, or naming HiddenReason at all, also returns hidden entities it selects.
+
+          Archived entities, which a delete with archive=true archives, are selected only when this names `Archived`, as in `Archived` or `*,Archived`; a where clause naming them returns them from a List or Search, but not from a bulk operation.
 
           ConfigHub/YAML Units, which hold the configuration of entities, are hidden with the HiddenReason `BackingUnit`.
         in: query
@@ -26282,9 +26416,11 @@ paths:
       - description: |-
           Hidden ChangeOrder entities, those with a HiddenReason, are left out of the results, or of what a bulk operation acts on, unless this names their HiddenReason.
 
-          It is a comma-separated list of HiddenReasons, or `*` for all of them.
+          It is a comma-separated list of HiddenReasons, or `*` for all of them but `Archived`.
 
           A where clause naming the entities, by their Slug or ID with `=` or `IN`, or naming HiddenReason at all, also returns hidden entities it selects.
+
+          Archived entities, which a delete with archive=true archives, are selected only when this names `Archived`, as in `Archived` or `*,Archived`; a where clause naming them returns them from a List or Search, but not from a bulk operation.
 
           ConfigHub/YAML Units, which hold the configuration of entities, are hidden with the HiddenReason `BackingUnit`.
         in: query
@@ -27306,9 +27442,11 @@ paths:
       - description: |-
           Hidden ChangeSet entities, those with a HiddenReason, are left out of the results, or of what a bulk operation acts on, unless this names their HiddenReason.
 
-          It is a comma-separated list of HiddenReasons, or `*` for all of them.
+          It is a comma-separated list of HiddenReasons, or `*` for all of them but `Archived`.
 
           A where clause naming the entities, by their Slug or ID with `=` or `IN`, or naming HiddenReason at all, also returns hidden entities it selects.
+
+          Archived entities, which a delete with archive=true archives, are selected only when this names `Archived`, as in `Archived` or `*,Archived`; a where clause naming them returns them from a List or Search, but not from a bulk operation.
 
           ConfigHub/YAML Units, which hold the configuration of entities, are hidden with the HiddenReason `BackingUnit`.
         in: query
@@ -28157,9 +28295,11 @@ paths:
       - description: |-
           Hidden ChangeWorkflow entities, those with a HiddenReason, are left out of the results, or of what a bulk operation acts on, unless this names their HiddenReason.
 
-          It is a comma-separated list of HiddenReasons, or `*` for all of them.
+          It is a comma-separated list of HiddenReasons, or `*` for all of them but `Archived`.
 
           A where clause naming the entities, by their Slug or ID with `=` or `IN`, or naming HiddenReason at all, also returns hidden entities it selects.
+
+          Archived entities, which a delete with archive=true archives, are selected only when this names `Archived`, as in `Archived` or `*,Archived`; a where clause naming them returns them from a List or Search, but not from a bulk operation.
 
           ConfigHub/YAML Units, which hold the configuration of entities, are hidden with the HiddenReason `BackingUnit`.
         in: query
@@ -29218,9 +29358,11 @@ paths:
       - description: |-
           Hidden Channel entities, those with a HiddenReason, are left out of the results, or of what a bulk operation acts on, unless this names their HiddenReason.
 
-          It is a comma-separated list of HiddenReasons, or `*` for all of them.
+          It is a comma-separated list of HiddenReasons, or `*` for all of them but `Archived`.
 
           A where clause naming the entities, by their Slug or ID with `=` or `IN`, or naming HiddenReason at all, also returns hidden entities it selects.
+
+          Archived entities, which a delete with archive=true archives, are selected only when this names `Archived`, as in `Archived` or `*,Archived`; a where clause naming them returns them from a List or Search, but not from a bulk operation.
 
           ConfigHub/YAML Units, which hold the configuration of entities, are hidden with the HiddenReason `BackingUnit`.
         in: query
@@ -30743,9 +30885,11 @@ paths:
       - description: |-
           Hidden CommandRun entities, those with a HiddenReason, are left out of the results, or of what a bulk operation acts on, unless this names their HiddenReason.
 
-          It is a comma-separated list of HiddenReasons, or `*` for all of them.
+          It is a comma-separated list of HiddenReasons, or `*` for all of them but `Archived`.
 
           A where clause naming the entities, by their Slug or ID with `=` or `IN`, or naming HiddenReason at all, also returns hidden entities it selects.
+
+          Archived entities, which a delete with archive=true archives, are selected only when this names `Archived`, as in `Archived` or `*,Archived`; a where clause naming them returns them from a List or Search, but not from a bulk operation.
 
           ConfigHub/YAML Units, which hold the configuration of entities, are hidden with the HiddenReason `BackingUnit`.
         in: query
@@ -31504,9 +31648,11 @@ paths:
       - description: |-
           Hidden Filter entities, those with a HiddenReason, are left out of the results, or of what a bulk operation acts on, unless this names their HiddenReason.
 
-          It is a comma-separated list of HiddenReasons, or `*` for all of them.
+          It is a comma-separated list of HiddenReasons, or `*` for all of them but `Archived`.
 
           A where clause naming the entities, by their Slug or ID with `=` or `IN`, or naming HiddenReason at all, also returns hidden entities it selects.
+
+          Archived entities, which a delete with archive=true archives, are selected only when this names `Archived`, as in `Archived` or `*,Archived`; a where clause naming them returns them from a List or Search, but not from a bulk operation.
 
           ConfigHub/YAML Units, which hold the configuration of entities, are hidden with the HiddenReason `BackingUnit`.
         in: query
@@ -32736,9 +32882,11 @@ paths:
       - description: |-
           Hidden Unit entities, those with a HiddenReason, are left out of the results, or of what a bulk operation acts on, unless this names their HiddenReason.
 
-          It is a comma-separated list of HiddenReasons, or `*` for all of them.
+          It is a comma-separated list of HiddenReasons, or `*` for all of them but `Archived`.
 
           A where clause naming the entities, by their Slug or ID with `=` or `IN`, or naming HiddenReason at all, also returns hidden entities it selects.
+
+          Archived entities, which a delete with archive=true archives, are selected only when this names `Archived`, as in `Archived` or `*,Archived`; a where clause naming them returns them from a List or Search, but not from a bulk operation.
 
           ConfigHub/YAML Units, which hold the configuration of entities, are hidden with the HiddenReason `BackingUnit`.
         in: query
@@ -33006,9 +33154,11 @@ paths:
       - description: |-
           Hidden Unit entities, those with a HiddenReason, are left out of the results, or of what a bulk operation acts on, unless this names their HiddenReason.
 
-          It is a comma-separated list of HiddenReasons, or `*` for all of them.
+          It is a comma-separated list of HiddenReasons, or `*` for all of them but `Archived`.
 
           A where clause naming the entities, by their Slug or ID with `=` or `IN`, or naming HiddenReason at all, also returns hidden entities it selects.
+
+          Archived entities, which a delete with archive=true archives, are selected only when this names `Archived`, as in `Archived` or `*,Archived`; a where clause naming them returns them from a List or Search, but not from a bulk operation.
 
           ConfigHub/YAML Units, which hold the configuration of entities, are hidden with the HiddenReason `BackingUnit`.
         in: query
@@ -33310,9 +33460,11 @@ paths:
       - description: |-
           Hidden Invocation entities, those with a HiddenReason, are left out of the results, or of what a bulk operation acts on, unless this names their HiddenReason.
 
-          It is a comma-separated list of HiddenReasons, or `*` for all of them.
+          It is a comma-separated list of HiddenReasons, or `*` for all of them but `Archived`.
 
           A where clause naming the entities, by their Slug or ID with `=` or `IN`, or naming HiddenReason at all, also returns hidden entities it selects.
+
+          Archived entities, which a delete with archive=true archives, are selected only when this names `Archived`, as in `Archived` or `*,Archived`; a where clause naming them returns them from a List or Search, but not from a bulk operation.
 
           ConfigHub/YAML Units, which hold the configuration of entities, are hidden with the HiddenReason `BackingUnit`.
         in: query
@@ -34376,9 +34528,11 @@ paths:
       - description: |-
           Hidden Link entities, those with a HiddenReason, are left out of the results, or of what a bulk operation acts on, unless this names their HiddenReason.
 
-          It is a comma-separated list of HiddenReasons, or `*` for all of them.
+          It is a comma-separated list of HiddenReasons, or `*` for all of them but `Archived`.
 
           A where clause naming the entities, by their Slug or ID with `=` or `IN`, or naming HiddenReason at all, also returns hidden entities it selects.
+
+          Archived entities, which a delete with archive=true archives, are selected only when this names `Archived`, as in `Archived` or `*,Archived`; a where clause naming them returns them from a List or Search, but not from a bulk operation.
 
           ConfigHub/YAML Units, which hold the configuration of entities, are hidden with the HiddenReason `BackingUnit`.
         in: query
@@ -35602,9 +35756,11 @@ paths:
       - description: |-
           Hidden Release entities, those with a HiddenReason, are left out of the results, or of what a bulk operation acts on, unless this names their HiddenReason.
 
-          It is a comma-separated list of HiddenReasons, or `*` for all of them.
+          It is a comma-separated list of HiddenReasons, or `*` for all of them but `Archived`.
 
           A where clause naming the entities, by their Slug or ID with `=` or `IN`, or naming HiddenReason at all, also returns hidden entities it selects.
+
+          Archived entities, which a delete with archive=true archives, are selected only when this names `Archived`, as in `Archived` or `*,Archived`; a where clause naming them returns them from a List or Search, but not from a bulk operation.
 
           ConfigHub/YAML Units, which hold the configuration of entities, are hidden with the HiddenReason `BackingUnit`.
         in: query
@@ -36634,9 +36790,11 @@ paths:
       - description: |-
           Hidden Tag entities, those with a HiddenReason, are left out of the results, or of what a bulk operation acts on, unless this names their HiddenReason.
 
-          It is a comma-separated list of HiddenReasons, or `*` for all of them.
+          It is a comma-separated list of HiddenReasons, or `*` for all of them but `Archived`.
 
           A where clause naming the entities, by their Slug or ID with `=` or `IN`, or naming HiddenReason at all, also returns hidden entities it selects.
+
+          Archived entities, which a delete with archive=true archives, are selected only when this names `Archived`, as in `Archived` or `*,Archived`; a where clause naming them returns them from a List or Search, but not from a bulk operation.
 
           ConfigHub/YAML Units, which hold the configuration of entities, are hidden with the HiddenReason `BackingUnit`.
         in: query
@@ -37480,9 +37638,11 @@ paths:
       - description: |-
           Hidden Target entities, those with a HiddenReason, are left out of the results, or of what a bulk operation acts on, unless this names their HiddenReason.
 
-          It is a comma-separated list of HiddenReasons, or `*` for all of them.
+          It is a comma-separated list of HiddenReasons, or `*` for all of them but `Archived`.
 
           A where clause naming the entities, by their Slug or ID with `=` or `IN`, or naming HiddenReason at all, also returns hidden entities it selects.
+
+          Archived entities, which a delete with archive=true archives, are selected only when this names `Archived`, as in `Archived` or `*,Archived`; a where clause naming them returns them from a List or Search, but not from a bulk operation.
 
           ConfigHub/YAML Units, which hold the configuration of entities, are hidden with the HiddenReason `BackingUnit`.
         in: query
@@ -38550,9 +38710,11 @@ paths:
       - description: |-
           Hidden Trigger entities, those with a HiddenReason, are left out of the results, or of what a bulk operation acts on, unless this names their HiddenReason.
 
-          It is a comma-separated list of HiddenReasons, or `*` for all of them.
+          It is a comma-separated list of HiddenReasons, or `*` for all of them but `Archived`.
 
           A where clause naming the entities, by their Slug or ID with `=` or `IN`, or naming HiddenReason at all, also returns hidden entities it selects.
+
+          Archived entities, which a delete with archive=true archives, are selected only when this names `Archived`, as in `Archived` or `*,Archived`; a where clause naming them returns them from a List or Search, but not from a bulk operation.
 
           ConfigHub/YAML Units, which hold the configuration of entities, are hidden with the HiddenReason `BackingUnit`.
         in: query
@@ -39697,9 +39859,11 @@ paths:
       - description: |-
           Hidden Unit entities, those with a HiddenReason, are left out of the results, or of what a bulk operation acts on, unless this names their HiddenReason.
 
-          It is a comma-separated list of HiddenReasons, or `*` for all of them.
+          It is a comma-separated list of HiddenReasons, or `*` for all of them but `Archived`.
 
           A where clause naming the entities, by their Slug or ID with `=` or `IN`, or naming HiddenReason at all, also returns hidden entities it selects.
+
+          Archived entities, which a delete with archive=true archives, are selected only when this names `Archived`, as in `Archived` or `*,Archived`; a where clause naming them returns them from a List or Search, but not from a bulk operation.
 
           ConfigHub/YAML Units, which hold the configuration of entities, are hidden with the HiddenReason `BackingUnit`.
         in: query
@@ -40097,6 +40261,18 @@ paths:
           to everything the recursive delete removes.
         in: query
         name: detach
+        required: false
+        schema:
+          type: boolean
+      - description: 'If true, archive the entities rather than delete them: each
+          is kept, with its history, hidden with the HiddenReason Archived, and given
+          a Slug the server assigns from its ID, so that its own Slug is free. The
+          Slug it had is kept in the label ArchivedSlug. An archived entity can be
+          read, unarchived, or deleted for good, which a delete without archive does.
+          Delete gates refuse an archive as they refuse a delete, and so do references
+          from entities the request does not archive, except those held by history.'
+        in: query
+        name: archive
         required: false
         schema:
           type: boolean
@@ -42228,9 +42404,11 @@ paths:
       - description: |-
           Hidden Mutation entities, those with a HiddenReason, are left out of the results, or of what a bulk operation acts on, unless this names their HiddenReason.
 
-          It is a comma-separated list of HiddenReasons, or `*` for all of them.
+          It is a comma-separated list of HiddenReasons, or `*` for all of them but `Archived`.
 
           A where clause naming the entities, by their Slug or ID with `=` or `IN`, or naming HiddenReason at all, also returns hidden entities it selects.
+
+          Archived entities, which a delete with archive=true archives, are selected only when this names `Archived`, as in `Archived` or `*,Archived`; a where clause naming them returns them from a List or Search, but not from a bulk operation.
 
           ConfigHub/YAML Units, which hold the configuration of entities, are hidden with the HiddenReason `BackingUnit`.
 
@@ -42931,9 +43109,11 @@ paths:
       - description: |-
           Hidden Resource entities, those with a HiddenReason, are left out of the results, or of what a bulk operation acts on, unless this names their HiddenReason.
 
-          It is a comma-separated list of HiddenReasons, or `*` for all of them.
+          It is a comma-separated list of HiddenReasons, or `*` for all of them but `Archived`.
 
           A where clause naming the entities, by their Slug or ID with `=` or `IN`, or naming HiddenReason at all, also returns hidden entities it selects.
+
+          Archived entities, which a delete with archive=true archives, are selected only when this names `Archived`, as in `Archived` or `*,Archived`; a where clause naming them returns them from a List or Search, but not from a bulk operation.
 
           ConfigHub/YAML Units, which hold the configuration of entities, are hidden with the HiddenReason `BackingUnit`.
 
@@ -43408,9 +43588,11 @@ paths:
       - description: |-
           Hidden ReviewComment entities, those with a HiddenReason, are left out of the results, or of what a bulk operation acts on, unless this names their HiddenReason.
 
-          It is a comma-separated list of HiddenReasons, or `*` for all of them.
+          It is a comma-separated list of HiddenReasons, or `*` for all of them but `Archived`.
 
           A where clause naming the entities, by their Slug or ID with `=` or `IN`, or naming HiddenReason at all, also returns hidden entities it selects.
+
+          Archived entities, which a delete with archive=true archives, are selected only when this names `Archived`, as in `Archived` or `*,Archived`; a where clause naming them returns them from a List or Search, but not from a bulk operation.
 
           ConfigHub/YAML Units, which hold the configuration of entities, are hidden with the HiddenReason `BackingUnit`.
 
@@ -44262,9 +44444,11 @@ paths:
       - description: |-
           Hidden Revision entities, those with a HiddenReason, are left out of the results, or of what a bulk operation acts on, unless this names their HiddenReason.
 
-          It is a comma-separated list of HiddenReasons, or `*` for all of them.
+          It is a comma-separated list of HiddenReasons, or `*` for all of them but `Archived`.
 
           A where clause naming the entities, by their Slug or ID with `=` or `IN`, or naming HiddenReason at all, also returns hidden entities it selects.
+
+          Archived entities, which a delete with archive=true archives, are selected only when this names `Archived`, as in `Archived` or `*,Archived`; a where clause naming them returns them from a List or Search, but not from a bulk operation.
 
           ConfigHub/YAML Units, which hold the configuration of entities, are hidden with the HiddenReason `BackingUnit`.
 
@@ -44695,6 +44879,97 @@ paths:
       summary: Get the selected Revision's mutation sources
       tags:
       - Revision
+  /space/{space_id}/unit/{unit_id}/unarchive:
+    post:
+      description: Unarchive a Unit archived by a delete with archive=true, and the
+        Links archived with it. Its Slug is restored from the label ArchivedSlug unless
+        another Unit in its Space has taken it since, in which case it keeps the Slug
+        the archive gave it, which KeptSlug in the response reports; it is unarchived
+        either way. A Link whose other Unit is still archived stays archived until
+        that Unit is unarchived. Refused while the Unit's Space is archived. Requires
+        Edit permission.
+      operationId: UnarchiveUnit
+      parameters:
+      - description: Unique identifier for a space_id
+        in: path
+        name: space_id
+        required: true
+        schema:
+          format: uuid
+          type: string
+      - description: Unique identifier for a unit_id
+        in: path
+        name: unit_id
+        required: true
+        schema:
+          format: uuid
+          type: string
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UnarchiveResponse'
+          description: Response to unarchiving an entity.
+        "400":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/StandardErrorResponse'
+          description: Unit request is invalid (Bad Request).
+        "401":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/StandardErrorResponse'
+          description: Unauthorized access.
+        "403":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/StandardErrorResponse'
+          description: Forbidden access.
+        "404":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/StandardErrorResponse'
+          description: Unit not found.
+        "409":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/StandardErrorResponse'
+          description: Unit data conflict. Data has changed since last read.
+        "500":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/StandardErrorResponse'
+          description: Something went wrong while processing Unit.
+        "503":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/StandardErrorResponse'
+          description: Something Unit needs is not available now, such as a client
+            holding a Channel a function runs on. Retry later.
+        "504":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/StandardErrorResponse'
+          description: Something Unit waited on did not answer in time, such as a
+            function run on a Channel.
+        default:
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/StandardErrorResponse'
+          description: Unexpected error.
+      summary: Unarchive a unit
+      tags:
+      - Unit
   /space/{space_id}/view:
     get:
       description: List Views
@@ -44835,9 +45110,11 @@ paths:
       - description: |-
           Hidden View entities, those with a HiddenReason, are left out of the results, or of what a bulk operation acts on, unless this names their HiddenReason.
 
-          It is a comma-separated list of HiddenReasons, or `*` for all of them.
+          It is a comma-separated list of HiddenReasons, or `*` for all of them but `Archived`.
 
           A where clause naming the entities, by their Slug or ID with `=` or `IN`, or naming HiddenReason at all, also returns hidden entities it selects.
+
+          Archived entities, which a delete with archive=true archives, are selected only when this names `Archived`, as in `Archived` or `*,Archived`; a where clause naming them returns them from a List or Search, but not from a bulk operation.
 
           ConfigHub/YAML Units, which hold the configuration of entities, are hidden with the HiddenReason `BackingUnit`.
         in: query
@@ -45829,9 +46106,11 @@ paths:
       - description: |-
           Hidden Tag entities, those with a HiddenReason, are left out of the results, or of what a bulk operation acts on, unless this names their HiddenReason.
 
-          It is a comma-separated list of HiddenReasons, or `*` for all of them.
+          It is a comma-separated list of HiddenReasons, or `*` for all of them but `Archived`.
 
           A where clause naming the entities, by their Slug or ID with `=` or `IN`, or naming HiddenReason at all, also returns hidden entities it selects.
+
+          Archived entities, which a delete with archive=true archives, are selected only when this names `Archived`, as in `Archived` or `*,Archived`; a where clause naming them returns them from a List or Search, but not from a bulk operation.
 
           ConfigHub/YAML Units, which hold the configuration of entities, are hidden with the HiddenReason `BackingUnit`.
         in: query
@@ -46107,9 +46386,11 @@ paths:
       - description: |-
           Hidden Tag entities, those with a HiddenReason, are left out of the results, or of what a bulk operation acts on, unless this names their HiddenReason.
 
-          It is a comma-separated list of HiddenReasons, or `*` for all of them.
+          It is a comma-separated list of HiddenReasons, or `*` for all of them but `Archived`.
 
           A where clause naming the entities, by their Slug or ID with `=` or `IN`, or naming HiddenReason at all, also returns hidden entities it selects.
+
+          Archived entities, which a delete with archive=true archives, are selected only when this names `Archived`, as in `Archived` or `*,Archived`; a where clause naming them returns them from a List or Search, but not from a bulk operation.
 
           ConfigHub/YAML Units, which hold the configuration of entities, are hidden with the HiddenReason `BackingUnit`.
         in: query
@@ -46329,9 +46610,11 @@ paths:
       - description: |-
           Hidden Tag entities, those with a HiddenReason, are left out of the results, or of what a bulk operation acts on, unless this names their HiddenReason.
 
-          It is a comma-separated list of HiddenReasons, or `*` for all of them.
+          It is a comma-separated list of HiddenReasons, or `*` for all of them but `Archived`.
 
           A where clause naming the entities, by their Slug or ID with `=` or `IN`, or naming HiddenReason at all, also returns hidden entities it selects.
+
+          Archived entities, which a delete with archive=true archives, are selected only when this names `Archived`, as in `Archived` or `*,Archived`; a where clause naming them returns them from a List or Search, but not from a bulk operation.
 
           ConfigHub/YAML Units, which hold the configuration of entities, are hidden with the HiddenReason `BackingUnit`.
         in: query
@@ -46620,9 +46903,11 @@ paths:
       - description: |-
           Hidden Tag entities, those with a HiddenReason, are left out of the results, or of what a bulk operation acts on, unless this names their HiddenReason.
 
-          It is a comma-separated list of HiddenReasons, or `*` for all of them.
+          It is a comma-separated list of HiddenReasons, or `*` for all of them but `Archived`.
 
           A where clause naming the entities, by their Slug or ID with `=` or `IN`, or naming HiddenReason at all, also returns hidden entities it selects.
+
+          Archived entities, which a delete with archive=true archives, are selected only when this names `Archived`, as in `Archived` or `*,Archived`; a where clause naming them returns them from a List or Search, but not from a bulk operation.
 
           ConfigHub/YAML Units, which hold the configuration of entities, are hidden with the HiddenReason `BackingUnit`.
         in: query
@@ -47005,9 +47290,11 @@ paths:
       - description: |-
           Hidden Tag entities, those with a HiddenReason, are left out of the results, or of what a bulk operation acts on, unless this names their HiddenReason.
 
-          It is a comma-separated list of HiddenReasons, or `*` for all of them.
+          It is a comma-separated list of HiddenReasons, or `*` for all of them but `Archived`.
 
           A where clause naming the entities, by their Slug or ID with `=` or `IN`, or naming HiddenReason at all, also returns hidden entities it selects.
+
+          Archived entities, which a delete with archive=true archives, are selected only when this names `Archived`, as in `Archived` or `*,Archived`; a where clause naming them returns them from a List or Search, but not from a bulk operation.
 
           ConfigHub/YAML Units, which hold the configuration of entities, are hidden with the HiddenReason `BackingUnit`.
         in: query
@@ -47207,9 +47494,11 @@ paths:
       - description: |-
           Hidden Target entities, those with a HiddenReason, are left out of the results, or of what a bulk operation acts on, unless this names their HiddenReason.
 
-          It is a comma-separated list of HiddenReasons, or `*` for all of them.
+          It is a comma-separated list of HiddenReasons, or `*` for all of them but `Archived`.
 
           A where clause naming the entities, by their Slug or ID with `=` or `IN`, or naming HiddenReason at all, also returns hidden entities it selects.
+
+          Archived entities, which a delete with archive=true archives, are selected only when this names `Archived`, as in `Archived` or `*,Archived`; a where clause naming them returns them from a List or Search, but not from a bulk operation.
 
           ConfigHub/YAML Units, which hold the configuration of entities, are hidden with the HiddenReason `BackingUnit`.
         in: query
@@ -47503,9 +47792,11 @@ paths:
       - description: |-
           Hidden Target entities, those with a HiddenReason, are left out of the results, or of what a bulk operation acts on, unless this names their HiddenReason.
 
-          It is a comma-separated list of HiddenReasons, or `*` for all of them.
+          It is a comma-separated list of HiddenReasons, or `*` for all of them but `Archived`.
 
           A where clause naming the entities, by their Slug or ID with `=` or `IN`, or naming HiddenReason at all, also returns hidden entities it selects.
+
+          Archived entities, which a delete with archive=true archives, are selected only when this names `Archived`, as in `Archived` or `*,Archived`; a where clause naming them returns them from a List or Search, but not from a bulk operation.
 
           ConfigHub/YAML Units, which hold the configuration of entities, are hidden with the HiddenReason `BackingUnit`.
         in: query
@@ -47725,9 +48016,11 @@ paths:
       - description: |-
           Hidden Target entities, those with a HiddenReason, are left out of the results, or of what a bulk operation acts on, unless this names their HiddenReason.
 
-          It is a comma-separated list of HiddenReasons, or `*` for all of them.
+          It is a comma-separated list of HiddenReasons, or `*` for all of them but `Archived`.
 
           A where clause naming the entities, by their Slug or ID with `=` or `IN`, or naming HiddenReason at all, also returns hidden entities it selects.
+
+          Archived entities, which a delete with archive=true archives, are selected only when this names `Archived`, as in `Archived` or `*,Archived`; a where clause naming them returns them from a List or Search, but not from a bulk operation.
 
           ConfigHub/YAML Units, which hold the configuration of entities, are hidden with the HiddenReason `BackingUnit`.
         in: query
@@ -48063,9 +48356,11 @@ paths:
       - description: |-
           Hidden Target entities, those with a HiddenReason, are left out of the results, or of what a bulk operation acts on, unless this names their HiddenReason.
 
-          It is a comma-separated list of HiddenReasons, or `*` for all of them.
+          It is a comma-separated list of HiddenReasons, or `*` for all of them but `Archived`.
 
           A where clause naming the entities, by their Slug or ID with `=` or `IN`, or naming HiddenReason at all, also returns hidden entities it selects.
+
+          Archived entities, which a delete with archive=true archives, are selected only when this names `Archived`, as in `Archived` or `*,Archived`; a where clause naming them returns them from a List or Search, but not from a bulk operation.
 
           ConfigHub/YAML Units, which hold the configuration of entities, are hidden with the HiddenReason `BackingUnit`.
         in: query
@@ -48551,9 +48846,11 @@ paths:
       - description: |-
           Hidden Target entities, those with a HiddenReason, are left out of the results, or of what a bulk operation acts on, unless this names their HiddenReason.
 
-          It is a comma-separated list of HiddenReasons, or `*` for all of them.
+          It is a comma-separated list of HiddenReasons, or `*` for all of them but `Archived`.
 
           A where clause naming the entities, by their Slug or ID with `=` or `IN`, or naming HiddenReason at all, also returns hidden entities it selects.
+
+          Archived entities, which a delete with archive=true archives, are selected only when this names `Archived`, as in `Archived` or `*,Archived`; a where clause naming them returns them from a List or Search, but not from a bulk operation.
 
           ConfigHub/YAML Units, which hold the configuration of entities, are hidden with the HiddenReason `BackingUnit`.
         in: query
@@ -48755,9 +49052,11 @@ paths:
       - description: |-
           Hidden Trigger entities, those with a HiddenReason, are left out of the results, or of what a bulk operation acts on, unless this names their HiddenReason.
 
-          It is a comma-separated list of HiddenReasons, or `*` for all of them.
+          It is a comma-separated list of HiddenReasons, or `*` for all of them but `Archived`.
 
           A where clause naming the entities, by their Slug or ID with `=` or `IN`, or naming HiddenReason at all, also returns hidden entities it selects.
+
+          Archived entities, which a delete with archive=true archives, are selected only when this names `Archived`, as in `Archived` or `*,Archived`; a where clause naming them returns them from a List or Search, but not from a bulk operation.
 
           ConfigHub/YAML Units, which hold the configuration of entities, are hidden with the HiddenReason `BackingUnit`.
         in: query
@@ -49036,9 +49335,11 @@ paths:
       - description: |-
           Hidden Trigger entities, those with a HiddenReason, are left out of the results, or of what a bulk operation acts on, unless this names their HiddenReason.
 
-          It is a comma-separated list of HiddenReasons, or `*` for all of them.
+          It is a comma-separated list of HiddenReasons, or `*` for all of them but `Archived`.
 
           A where clause naming the entities, by their Slug or ID with `=` or `IN`, or naming HiddenReason at all, also returns hidden entities it selects.
+
+          Archived entities, which a delete with archive=true archives, are selected only when this names `Archived`, as in `Archived` or `*,Archived`; a where clause naming them returns them from a List or Search, but not from a bulk operation.
 
           ConfigHub/YAML Units, which hold the configuration of entities, are hidden with the HiddenReason `BackingUnit`.
         in: query
@@ -49260,9 +49561,11 @@ paths:
       - description: |-
           Hidden Trigger entities, those with a HiddenReason, are left out of the results, or of what a bulk operation acts on, unless this names their HiddenReason.
 
-          It is a comma-separated list of HiddenReasons, or `*` for all of them.
+          It is a comma-separated list of HiddenReasons, or `*` for all of them but `Archived`.
 
           A where clause naming the entities, by their Slug or ID with `=` or `IN`, or naming HiddenReason at all, also returns hidden entities it selects.
+
+          Archived entities, which a delete with archive=true archives, are selected only when this names `Archived`, as in `Archived` or `*,Archived`; a where clause naming them returns them from a List or Search, but not from a bulk operation.
 
           ConfigHub/YAML Units, which hold the configuration of entities, are hidden with the HiddenReason `BackingUnit`.
         in: query
@@ -49665,9 +49968,11 @@ paths:
       - description: |-
           Hidden Trigger entities, those with a HiddenReason, are left out of the results, or of what a bulk operation acts on, unless this names their HiddenReason.
 
-          It is a comma-separated list of HiddenReasons, or `*` for all of them.
+          It is a comma-separated list of HiddenReasons, or `*` for all of them but `Archived`.
 
           A where clause naming the entities, by their Slug or ID with `=` or `IN`, or naming HiddenReason at all, also returns hidden entities it selects.
+
+          Archived entities, which a delete with archive=true archives, are selected only when this names `Archived`, as in `Archived` or `*,Archived`; a where clause naming them returns them from a List or Search, but not from a bulk operation.
 
           ConfigHub/YAML Units, which hold the configuration of entities, are hidden with the HiddenReason `BackingUnit`.
         in: query
@@ -50230,9 +50535,11 @@ paths:
       - description: |-
           Hidden Trigger entities, those with a HiddenReason, are left out of the results, or of what a bulk operation acts on, unless this names their HiddenReason.
 
-          It is a comma-separated list of HiddenReasons, or `*` for all of them.
+          It is a comma-separated list of HiddenReasons, or `*` for all of them but `Archived`.
 
           A where clause naming the entities, by their Slug or ID with `=` or `IN`, or naming HiddenReason at all, also returns hidden entities it selects.
+
+          Archived entities, which a delete with archive=true archives, are selected only when this names `Archived`, as in `Archived` or `*,Archived`; a where clause naming them returns them from a List or Search, but not from a bulk operation.
 
           ConfigHub/YAML Units, which hold the configuration of entities, are hidden with the HiddenReason `BackingUnit`.
         in: query
@@ -50434,9 +50741,11 @@ paths:
       - description: |-
           Hidden Unit entities, those with a HiddenReason, are left out of the results, or of what a bulk operation acts on, unless this names their HiddenReason.
 
-          It is a comma-separated list of HiddenReasons, or `*` for all of them.
+          It is a comma-separated list of HiddenReasons, or `*` for all of them but `Archived`.
 
           A where clause naming the entities, by their Slug or ID with `=` or `IN`, or naming HiddenReason at all, also returns hidden entities it selects.
+
+          Archived entities, which a delete with archive=true archives, are selected only when this names `Archived`, as in `Archived` or `*,Archived`; a where clause naming them returns them from a List or Search, but not from a bulk operation.
 
           ConfigHub/YAML Units, which hold the configuration of entities, are hidden with the HiddenReason `BackingUnit`.
         in: query
@@ -50485,6 +50794,18 @@ paths:
           to everything the recursive delete removes.
         in: query
         name: detach
+        required: false
+        schema:
+          type: boolean
+      - description: 'If true, archive the entities rather than delete them: each
+          is kept, with its history, hidden with the HiddenReason Archived, and given
+          a Slug the server assigns from its ID, so that its own Slug is free. The
+          Slug it had is kept in the label ArchivedSlug. An archived entity can be
+          read, unarchived, or deleted for good, which a delete without archive does.
+          Delete gates refuse an archive as they refuse a delete, and so do references
+          from entities the request does not archive, except those held by history.'
+        in: query
+        name: archive
         required: false
         schema:
           type: boolean
@@ -50724,9 +51045,11 @@ paths:
       - description: |-
           Hidden Unit entities, those with a HiddenReason, are left out of the results, or of what a bulk operation acts on, unless this names their HiddenReason.
 
-          It is a comma-separated list of HiddenReasons, or `*` for all of them.
+          It is a comma-separated list of HiddenReasons, or `*` for all of them but `Archived`.
 
           A where clause naming the entities, by their Slug or ID with `=` or `IN`, or naming HiddenReason at all, also returns hidden entities it selects.
+
+          Archived entities, which a delete with archive=true archives, are selected only when this names `Archived`, as in `Archived` or `*,Archived`; a where clause naming them returns them from a List or Search, but not from a bulk operation.
 
           ConfigHub/YAML Units, which hold the configuration of entities, are hidden with the HiddenReason `BackingUnit`.
         in: query
@@ -51022,9 +51345,11 @@ paths:
       - description: |-
           Hidden Unit entities, those with a HiddenReason, are left out of the results, or of what a bulk operation acts on, unless this names their HiddenReason.
 
-          It is a comma-separated list of HiddenReasons, or `*` for all of them.
+          It is a comma-separated list of HiddenReasons, or `*` for all of them but `Archived`.
 
           A where clause naming the entities, by their Slug or ID with `=` or `IN`, or naming HiddenReason at all, also returns hidden entities it selects.
+
+          Archived entities, which a delete with archive=true archives, are selected only when this names `Archived`, as in `Archived` or `*,Archived`; a where clause naming them returns them from a List or Search, but not from a bulk operation.
 
           ConfigHub/YAML Units, which hold the configuration of entities, are hidden with the HiddenReason `BackingUnit`.
         in: query
@@ -51710,9 +52035,11 @@ paths:
       - description: |-
           Hidden Unit entities, those with a HiddenReason, are left out of the results, or of what a bulk operation acts on, unless this names their HiddenReason.
 
-          It is a comma-separated list of HiddenReasons, or `*` for all of them.
+          It is a comma-separated list of HiddenReasons, or `*` for all of them but `Archived`.
 
           A where clause naming the entities, by their Slug or ID with `=` or `IN`, or naming HiddenReason at all, also returns hidden entities it selects.
+
+          Archived entities, which a delete with archive=true archives, are selected only when this names `Archived`, as in `Archived` or `*,Archived`; a where clause naming them returns them from a List or Search, but not from a bulk operation.
 
           ConfigHub/YAML Units, which hold the configuration of entities, are hidden with the HiddenReason `BackingUnit`.
         in: query
@@ -52214,9 +52541,11 @@ paths:
       - description: |-
           Hidden Unit entities, those with a HiddenReason, are left out of the results, or of what a bulk operation acts on, unless this names their HiddenReason.
 
-          It is a comma-separated list of HiddenReasons, or `*` for all of them.
+          It is a comma-separated list of HiddenReasons, or `*` for all of them but `Archived`.
 
           A where clause naming the entities, by their Slug or ID with `=` or `IN`, or naming HiddenReason at all, also returns hidden entities it selects.
+
+          Archived entities, which a delete with archive=true archives, are selected only when this names `Archived`, as in `Archived` or `*,Archived`; a where clause naming them returns them from a List or Search, but not from a bulk operation.
 
           ConfigHub/YAML Units, which hold the configuration of entities, are hidden with the HiddenReason `BackingUnit`.
         in: query
@@ -52418,9 +52747,11 @@ paths:
       - description: |-
           Hidden Unit entities, those with a HiddenReason, are left out of the results, or of what a bulk operation acts on, unless this names their HiddenReason.
 
-          It is a comma-separated list of HiddenReasons, or `*` for all of them.
+          It is a comma-separated list of HiddenReasons, or `*` for all of them but `Archived`.
 
           A where clause naming the entities, by their Slug or ID with `=` or `IN`, or naming HiddenReason at all, also returns hidden entities it selects.
+
+          Archived entities, which a delete with archive=true archives, are selected only when this names `Archived`, as in `Archived` or `*,Archived`; a where clause naming them returns them from a List or Search, but not from a bulk operation.
 
           ConfigHub/YAML Units, which hold the configuration of entities, are hidden with the HiddenReason `BackingUnit`.
         in: query
@@ -52530,6 +52861,206 @@ paths:
                 $ref: '#/components/schemas/StandardErrorResponse'
           description: Unexpected error.
       summary: Bulk tag multiple units
+      tags:
+      - Unit
+  /unit/unarchive:
+    post:
+      description: Unarchive a Unit archived by a delete with archive=true, and the
+        Links archived with it. Its Slug is restored from the label ArchivedSlug unless
+        another Unit in its Space has taken it since, in which case it keeps the Slug
+        the archive gave it, which KeptSlug in the response reports; it is unarchived
+        either way. A Link whose other Unit is still archived stays archived until
+        that Unit is unarchived. Refused while the Unit's Space is archived. Requires
+        Edit permission. Selects archived Units, as if include_hidden named Archived,
+        and leaves alone a selected Unit that is not archived.
+      operationId: BulkUnarchiveUnits
+      parameters:
+      - description: |-
+          The specified string is an expression for the purpose of filtering
+          the list of Units returned. The expression syntax was inspired by SQL.
+          It supports conjunctions using `AND` of relational expressions of the form *attribute*
+          *operator* *attribute_or_literal*. The attribute names are case-sensitive and PascalCase,
+          as in the JSON encoding.
+          Strings support the following operators: `<`, `>`, `<=`, `>=`, `=`, `!=`, `LIKE`, `NOT LIKE`, `ILIKE`, `~~`, `!~~`, `~`, `~*`, `!~`, `!~*`, `IN`, `NOT IN`.
+          String pattern operators: `LIKE` and `~~` for pattern matching with `%` and `_` wildcards,
+          `ILIKE` for case-insensitive pattern matching, `NOT LIKE` and `!~~` for negated pattern matching.
+          String regex operators: `~` for regex matching, `~*` for case-insensitive regex,
+          `!~` and `!~*` for regex not matching (case-sensitive and insensitive).
+          Integers support the following operators: `<`, `>`, `<=`, `>=`, `=`, `!=`, `IN`, `NOT IN`.
+          UUIDs and boolean attributes support equality and inequality only.
+          UUID and time literals must be quoted as string literals.
+          String literals are quoted with single quotes, such as `'string'`.
+          Time literals use the same form as when serialized as JSON,
+          such as: `CreatedAt > '2025-02-18T23:16:34'`.
+          Integer and boolean literals are also supported for attributes of those types.
+          Arrays support the `?` operator to to match any element of the array,
+          as in `FromLinkID ? '7c61626f-ddbe-41af-93f6-b69f4ab6d308'`.
+          Arrays can perform LEN() to check for length, as in `LEN(FromLinkID) > 0`.
+          An attribute naming a list of other entities can be filtered on their attributes with a `*` segment,
+          as in `FromLink.*.Slug = 'upgrade-app'`, which holds when any element satisfies it.
+          Without the `*` such a reference is an error, since it names no single value to compare.
+          Map support the dot notation to specify a particular map key, as in `Labels.tier = 'Backend'`.
+          Maps support `IS NULL` and `IS NOT NULL` with dot notation to check for key absence or presence,
+          as in `Labels.tier IS NULL` (key doesn't exist) or `Labels.tier IS NOT NULL` (key exists).
+          Comparison results can be tested with `IS TRUE`, `IS FALSE`, `IS NOT TRUE`, and `IS NOT FALSE`.
+          These are useful for nullable columns: `MergeSourceID = '<uuid>' IS NOT FALSE` matches rows where MergeSourceID equals the value OR is NULL.
+          The `IN` and `NOT IN` operators accept a comma-separated list of values in parentheses,
+          such as `Slug IN ('slugone', 'slugtwo')` or `Labels.environment IN ('prod', 'staging')`.
+          Conjunctions are supported using the `AND` operator.
+          An example conjunction is:
+          `CreatedAt >= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.
+
+          Supported attributes for filtering on Unit: Annotations, ApplyGates, ApplyWarnings, ChangeSetID, Conflicts, CreatedAt, DataHash, DeleteGates, DestroyGates, DisplayName, FromLinkID, HeadRevisionID, HeadRevisionNum, HiddenReason, Labels, LastChangeDescription, LastReleasedRevisionNum, LinkFindings, MutationSources, NeededPaths, OrganizationID, PathAnnotations, Permissions, ProvidedPaths, Slug, SpaceID, TargetID, ToolchainType, UnitID, Unreleasable, UpdatedAt, UpstreamRevisionNum, UpstreamSpaceID, UpstreamUnitID, ValidationErrors, ValidationPassed, ValidationResults, ValidationSkipped, ValidationTriggerIDs, ValidationWarnings, ValueTriggerIDs, Values.
+
+          Finding all units created by cloning can be done using the expression `UpstreamRevisionNum > 0`. Clones of a specific unit can be found by additionally filtering based on `UpstreamUnitID`. Units never released can be found using `LastReleasedRevisionNum = 0`. Units with unreleased changes can be found with `HeadRevisionNum > LastReleasedRevisionNum AND ReleaseTargetID IS NOT NULL AND Unreleasable = false`.
+
+          The whole string must be query-encoded.
+        in: query
+        name: where
+        required: false
+        schema:
+          type: string
+      - description: |-
+          UUID of a Filter entity to apply to the Unit list.
+
+          The Filter must be in the same Organization as the user credentials.
+
+          The Filter's From field must match the entity type being filtered (Unit).
+
+          For Space-resident entities, if the Filter has a FromSpaceID, it must match the operation's SpaceID.
+
+          The Filter's Where clause will be combined with any explicit 'where' parameter using AND logic.
+
+          If both 'filter' and 'where' parameters are specified, they are combined with AND logic.
+        in: query
+        name: filter
+        required: false
+        schema:
+          type: string
+      - description: |-
+          Free text search that approximately matches the specified string against string fields and map keys/values.
+
+          The search is case-insensitive and uses pattern matching to find entities containing the text.
+
+          Searchable string fields include attributes like Slug, DisplayName, and string-typed custom fields.
+
+          For map fields (like Labels and Annotations), the search matches both map keys and values.
+
+          The search uses OR logic across all searchable fields, so matching any field will return the entity.
+
+          If both 'where' and 'contains' parameters are specified, they are combined with AND logic.
+
+          Searchable fields for Unit include string and map-type attributes from the queryable attributes list.
+
+          The whole string must be query-encoded.
+        in: query
+        name: contains
+        required: false
+        schema:
+          type: string
+      - description: |-
+          Hidden Unit entities, those with a HiddenReason, are left out of the results, or of what a bulk operation acts on, unless this names their HiddenReason.
+
+          It is a comma-separated list of HiddenReasons, or `*` for all of them but `Archived`.
+
+          A where clause naming the entities, by their Slug or ID with `=` or `IN`, or naming HiddenReason at all, also returns hidden entities it selects.
+
+          Archived entities, which a delete with archive=true archives, are selected only when this names `Archived`, as in `Archived` or `*,Archived`; a where clause naming them returns them from a List or Search, but not from a bulk operation.
+
+          ConfigHub/YAML Units, which hold the configuration of entities, are hidden with the HiddenReason `BackingUnit`.
+        in: query
+        name: include_hidden
+        required: false
+        schema:
+          type: string
+      - description: |-
+          Include clause for expanding related entities in the response for Unit.
+          The attribute names are case-sensitive, PascalCase, and
+          expected in a comma-separated list format as in the JSON encoding.
+
+          Supported attributes for Unit are ChangeSetID, FromLinkID, HeadMutationNum, HeadRevisionNum, LastReleasedRevisionNum, OrganizationID, Permissions, SpaceID, TargetID, UpstreamSpaceID, UpstreamUnitID.
+
+          The whole string must be query-encoded.
+        in: query
+        name: include
+        required: false
+        schema:
+          pattern: ^\s*(ChangeSetID|FromLinkID|HeadMutationNum|HeadRevisionNum|LastReleasedRevisionNum|OrganizationID|Permissions|SpaceID|TargetID|UpstreamSpaceID|UpstreamUnitID)\s*(?:,\s*(?:ChangeSetID|FromLinkID|HeadMutationNum|HeadRevisionNum|LastReleasedRevisionNum|OrganizationID|Permissions|SpaceID|TargetID|UpstreamSpaceID|UpstreamUnitID)\s*)*$
+          type: string
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                items:
+                  $ref: '#/components/schemas/UnarchiveResponse'
+                type: array
+          description: OK
+        "207":
+          content:
+            application/json:
+              schema:
+                items:
+                  $ref: '#/components/schemas/UnarchiveResponse'
+                type: array
+          description: 'Multi-Status: some Units were unarchived and others were not'
+        "400":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/StandardErrorResponse'
+          description: Unit request is invalid (Bad Request).
+        "401":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/StandardErrorResponse'
+          description: Unauthorized access.
+        "403":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/StandardErrorResponse'
+          description: Forbidden access.
+        "404":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/StandardErrorResponse'
+          description: Unit not found.
+        "409":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/StandardErrorResponse'
+          description: Unit data conflict. Data has changed since last read.
+        "500":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/StandardErrorResponse'
+          description: Something went wrong while processing Unit.
+        "503":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/StandardErrorResponse'
+          description: Something Unit needs is not available now, such as a client
+            holding a Channel a function runs on. Retry later.
+        "504":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/StandardErrorResponse'
+          description: Something Unit waited on did not answer in time, such as a
+            function run on a Channel.
+        default:
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/StandardErrorResponse'
+          description: Unexpected error.
+      summary: Unarchive units
       tags:
       - Unit
   /unit_blame:
@@ -52647,9 +53178,11 @@ paths:
       - description: |-
           Hidden Unit entities, those with a HiddenReason, are left out of the results, or of what a bulk operation acts on, unless this names their HiddenReason.
 
-          It is a comma-separated list of HiddenReasons, or `*` for all of them.
+          It is a comma-separated list of HiddenReasons, or `*` for all of them but `Archived`.
 
           A where clause naming the entities, by their Slug or ID with `=` or `IN`, or naming HiddenReason at all, also returns hidden entities it selects.
+
+          Archived entities, which a delete with archive=true archives, are selected only when this names `Archived`, as in `Archived` or `*,Archived`; a where clause naming them returns them from a List or Search, but not from a bulk operation.
 
           ConfigHub/YAML Units, which hold the configuration of entities, are hidden with the HiddenReason `BackingUnit`.
         in: query
@@ -53037,9 +53570,11 @@ paths:
       - description: |-
           Hidden Unit entities, those with a HiddenReason, are left out of the results, or of what a bulk operation acts on, unless this names their HiddenReason.
 
-          It is a comma-separated list of HiddenReasons, or `*` for all of them.
+          It is a comma-separated list of HiddenReasons, or `*` for all of them but `Archived`.
 
           A where clause naming the entities, by their Slug or ID with `=` or `IN`, or naming HiddenReason at all, also returns hidden entities it selects.
+
+          Archived entities, which a delete with archive=true archives, are selected only when this names `Archived`, as in `Archived` or `*,Archived`; a where clause naming them returns them from a List or Search, but not from a bulk operation.
 
           ConfigHub/YAML Units, which hold the configuration of entities, are hidden with the HiddenReason `BackingUnit`.
         in: query
@@ -53356,9 +53891,11 @@ paths:
       - description: |-
           Hidden Unit entities, those with a HiddenReason, are left out of the results, or of what a bulk operation acts on, unless this names their HiddenReason.
 
-          It is a comma-separated list of HiddenReasons, or `*` for all of them.
+          It is a comma-separated list of HiddenReasons, or `*` for all of them but `Archived`.
 
           A where clause naming the entities, by their Slug or ID with `=` or `IN`, or naming HiddenReason at all, also returns hidden entities it selects.
+
+          Archived entities, which a delete with archive=true archives, are selected only when this names `Archived`, as in `Archived` or `*,Archived`; a where clause naming them returns them from a List or Search, but not from a bulk operation.
 
           ConfigHub/YAML Units, which hold the configuration of entities, are hidden with the HiddenReason `BackingUnit`.
         in: query
@@ -53733,9 +54270,11 @@ paths:
       - description: |-
           Hidden Unit entities, those with a HiddenReason, are left out of the results, or of what a bulk operation acts on, unless this names their HiddenReason.
 
-          It is a comma-separated list of HiddenReasons, or `*` for all of them.
+          It is a comma-separated list of HiddenReasons, or `*` for all of them but `Archived`.
 
           A where clause naming the entities, by their Slug or ID with `=` or `IN`, or naming HiddenReason at all, also returns hidden entities it selects.
+
+          Archived entities, which a delete with archive=true archives, are selected only when this names `Archived`, as in `Archived` or `*,Archived`; a where clause naming them returns them from a List or Search, but not from a bulk operation.
 
           ConfigHub/YAML Units, which hold the configuration of entities, are hidden with the HiddenReason `BackingUnit`.
         in: query
@@ -54165,9 +54704,11 @@ paths:
       - description: |-
           Hidden User entities, those with a HiddenReason, are left out of the results, or of what a bulk operation acts on, unless this names their HiddenReason.
 
-          It is a comma-separated list of HiddenReasons, or `*` for all of them.
+          It is a comma-separated list of HiddenReasons, or `*` for all of them but `Archived`.
 
           A where clause naming the entities, by their Slug or ID with `=` or `IN`, or naming HiddenReason at all, also returns hidden entities it selects.
+
+          Archived entities, which a delete with archive=true archives, are selected only when this names `Archived`, as in `Archived` or `*,Archived`; a where clause naming them returns them from a List or Search, but not from a bulk operation.
 
           ConfigHub/YAML Units, which hold the configuration of entities, are hidden with the HiddenReason `BackingUnit`.
         in: query
@@ -54474,9 +55015,11 @@ paths:
       - description: |-
           Hidden View entities, those with a HiddenReason, are left out of the results, or of what a bulk operation acts on, unless this names their HiddenReason.
 
-          It is a comma-separated list of HiddenReasons, or `*` for all of them.
+          It is a comma-separated list of HiddenReasons, or `*` for all of them but `Archived`.
 
           A where clause naming the entities, by their Slug or ID with `=` or `IN`, or naming HiddenReason at all, also returns hidden entities it selects.
+
+          Archived entities, which a delete with archive=true archives, are selected only when this names `Archived`, as in `Archived` or `*,Archived`; a where clause naming them returns them from a List or Search, but not from a bulk operation.
 
           ConfigHub/YAML Units, which hold the configuration of entities, are hidden with the HiddenReason `BackingUnit`.
         in: query
@@ -54753,9 +55296,11 @@ paths:
       - description: |-
           Hidden View entities, those with a HiddenReason, are left out of the results, or of what a bulk operation acts on, unless this names their HiddenReason.
 
-          It is a comma-separated list of HiddenReasons, or `*` for all of them.
+          It is a comma-separated list of HiddenReasons, or `*` for all of them but `Archived`.
 
           A where clause naming the entities, by their Slug or ID with `=` or `IN`, or naming HiddenReason at all, also returns hidden entities it selects.
+
+          Archived entities, which a delete with archive=true archives, are selected only when this names `Archived`, as in `Archived` or `*,Archived`; a where clause naming them returns them from a List or Search, but not from a bulk operation.
 
           ConfigHub/YAML Units, which hold the configuration of entities, are hidden with the HiddenReason `BackingUnit`.
         in: query
@@ -54975,9 +55520,11 @@ paths:
       - description: |-
           Hidden View entities, those with a HiddenReason, are left out of the results, or of what a bulk operation acts on, unless this names their HiddenReason.
 
-          It is a comma-separated list of HiddenReasons, or `*` for all of them.
+          It is a comma-separated list of HiddenReasons, or `*` for all of them but `Archived`.
 
           A where clause naming the entities, by their Slug or ID with `=` or `IN`, or naming HiddenReason at all, also returns hidden entities it selects.
+
+          Archived entities, which a delete with archive=true archives, are selected only when this names `Archived`, as in `Archived` or `*,Archived`; a where clause naming them returns them from a List or Search, but not from a bulk operation.
 
           ConfigHub/YAML Units, which hold the configuration of entities, are hidden with the HiddenReason `BackingUnit`.
         in: query
@@ -55317,9 +55864,11 @@ paths:
       - description: |-
           Hidden View entities, those with a HiddenReason, are left out of the results, or of what a bulk operation acts on, unless this names their HiddenReason.
 
-          It is a comma-separated list of HiddenReasons, or `*` for all of them.
+          It is a comma-separated list of HiddenReasons, or `*` for all of them but `Archived`.
 
           A where clause naming the entities, by their Slug or ID with `=` or `IN`, or naming HiddenReason at all, also returns hidden entities it selects.
+
+          Archived entities, which a delete with archive=true archives, are selected only when this names `Archived`, as in `Archived` or `*,Archived`; a where clause naming them returns them from a List or Search, but not from a bulk operation.
 
           ConfigHub/YAML Units, which hold the configuration of entities, are hidden with the HiddenReason `BackingUnit`.
         in: query
@@ -55815,9 +56364,11 @@ paths:
       - description: |-
           Hidden View entities, those with a HiddenReason, are left out of the results, or of what a bulk operation acts on, unless this names their HiddenReason.
 
-          It is a comma-separated list of HiddenReasons, or `*` for all of them.
+          It is a comma-separated list of HiddenReasons, or `*` for all of them but `Archived`.
 
           A where clause naming the entities, by their Slug or ID with `=` or `IN`, or naming HiddenReason at all, also returns hidden entities it selects.
+
+          Archived entities, which a delete with archive=true archives, are selected only when this names `Archived`, as in `Archived` or `*,Archived`; a where clause naming them returns them from a List or Search, but not from a bulk operation.
 
           ConfigHub/YAML Units, which hold the configuration of entities, are hidden with the HiddenReason `BackingUnit`.
         in: query
@@ -56995,11 +57546,11 @@ components:
         are only listed and read through the API.'
       properties:
         Action:
-          description: 'The verb, as a code: Create, Update, Patch, Delete, Move,
-            Detach, Hide, Permission, Tag, Upload, Promote, RequestReview, DismissReview,
-            AdvanceStage, RefreshStage, AddMember, RemoveMember, AddBotUser, RemoveBotUser,
-            Login, TokenExchange, RefreshToken, BrowserSession, EnableUser, DisableUser,
-            DeleteUser, EnableOrganization, DisableOrganization, DeleteOrganization,
+          description: 'The verb, as a code: Create, Update, Patch, Delete, Archive,
+            Unarchive, Move, Detach, Hide, Permission, Tag, Upload, Promote, RequestReview,
+            DismissReview, AdvanceStage, RefreshStage, AddMember, RemoveMember, AddBotUser,
+            RemoveBotUser, Login, TokenExchange, RefreshToken, BrowserSession, EnableUser,
+            DisableUser, DeleteUser, EnableOrganization, DisableOrganization, DeleteOrganization,
             SetQuota, Grant, Revoke. The entity acted on is SubjectEntityType, and
             whether it was allowed is Outcome. (readonly)'
           readOnly: true
@@ -67836,6 +68387,24 @@ components:
       example: 248df4b7-aa70-47b8-a036-33ac447e668d
       format: uuid
       type: string
+    UnarchiveResponse:
+      description: Response to unarchiving an entity.
+      properties:
+        Error:
+          allOf:
+          - $ref: '#/components/schemas/ResponseError'
+          description: Error information if the unarchive failed.
+        KeptSlug:
+          description: The Slug the entity had before it was archived, when another
+            entity has taken it since. The entity keeps the Slug the archive gave
+            it, id followed by its ID, and can be renamed.
+          type: string
+          x-go-type-skip-optional-pointer: true
+        Message:
+          description: What was unarchived.
+          type: string
+          x-go-type-skip-optional-pointer: true
+      type: object
     Unit:
       description: Unit is the core unit of operation in ConfigHub. It contains a
         blob of configuration Data of a single supported Config Type (configuration

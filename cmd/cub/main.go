@@ -253,6 +253,10 @@ func main() {
 				// The command resolved to a plugin but failed to exec — show why.
 				failOnError(pluginErr)
 			}
+			// No installed plugin has the command; a known plugin may.
+			if known, knownErr := handleKnownPluginCommand(pluginArgs); known {
+				failOnError(knownErr)
+			}
 			// No such plugin command — show the original Cobra error.
 			failOnError(err)
 		}

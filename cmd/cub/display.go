@@ -604,6 +604,14 @@ func displayDeleteResults(entityName, slug, id string, response any) {
 	renderPayload(response)
 }
 
+// displayArchiveResults reports an archive, and the Slug the entity has now, made from its ID.
+func displayArchiveResults(entityName, slug, id string, response any) {
+	if !quiet && !isAlternativeOutput() {
+		tprint("Successfully archived %s %s (now id%s)", entityName, slug, id)
+	}
+	renderPayload(response)
+}
+
 // displayBulkDeleteResults handles the display of bulk delete operation results
 func displayBulkDeleteResults(responses200 *[]goclientnew.DeleteResponse, responses207 *[]goclientnew.DeleteResponse, statusCode int, entityName, operationName, contextInfo string) error {
 	var responses *[]goclientnew.DeleteResponse
@@ -807,4 +815,3 @@ func jsonOneLine(v any) string {
 	}
 	return string(encoded)
 }
-

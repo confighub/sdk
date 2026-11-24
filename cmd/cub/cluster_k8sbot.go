@@ -645,13 +645,20 @@ func clusterK8sbotManifests(controller, repository string, out io.Writer) (manif
 	return manifests, ref, nil
 }
 
-// clusterFindInstaller finds ConfigHub's installer, installed as a cub plugin
-// (cub plugin install confighub/installer), for --k8sbot-installer. cub runs
+// clusterFindInstaller finds ConfigHub's installer, installed as a cub plugin,
+// for --k8sbot-installer, and installs it when it is not there yet. cub runs
 // the plugin's own entrypoint, never an "installer" found on PATH, which on
 // macOS is the system's package installer.
 func clusterFindInstaller() (*PluginCommand, error) {
+	if installer, ok := resolvePluginCommand(clusterInstallerPlugin); ok {
+		return installer, nil
+	}
+	known, err := installKnownPlugin(clusterInstallerPlugin)
+	if err != nil {
+		return nil, fmt.Errorf("--k8sbot-installer needs ConfigHub's installer as a cub plugin: %w", err)
+	}
 	installer, ok := resolvePluginCommand(clusterInstallerPlugin)
-	if !ok {
+	if !known || !ok {
 		return nil, fmt.Errorf("--k8sbot-installer needs ConfigHub's installer as a cub plugin; install it with: cub plugin install confighub/installer")
 	}
 	return installer, nil

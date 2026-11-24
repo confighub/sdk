@@ -280,17 +280,25 @@ var pluginCmd = &cobra.Command{
 var pluginListCmd = &cobra.Command{
 	Use:   "list",
 	Short: "List installed plugins",
-	Long:  getCommandHelp("List installed plugins", ""),
-	RunE:  pluginListCmdRun,
+	Long: getCommandHelp("List installed plugins", `With --all, the list also has the plugins cub knows and can install that are
+not installed. Typing a command one of them provides installs it, as does
+'cub plugin install <name>'.`),
+	RunE: pluginListCmdRun,
 }
+
+var pluginListAll bool
 
 func init() {
 	addStandardDisplayFlags(pluginListCmd)
+	pluginListCmd.Flags().BoolVar(&pluginListAll, "all", false, "Also list the plugins cub knows and can install that are not installed")
 	pluginCmd.AddCommand(pluginListCmd)
 	rootCmd.AddCommand(pluginCmd)
 }
 
 func pluginListCmdRun(cmd *cobra.Command, args []string) error {
+	if pluginListAll {
+		return pluginListAllRun()
+	}
 	plugins := discoverPlugins()
 
 	if isAlternativeOutput() {

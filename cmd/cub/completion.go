@@ -255,7 +255,7 @@ var refArgKinds = map[string][]*refKind{
 	"tag get": {kindTag}, "tag update": {kindTag}, "tag delete": {kindTag},
 	"target get": {kindTarget}, "target update": {kindTarget}, "target delete": {kindTarget},
 	"trigger get": {kindTrigger}, "trigger update": {kindTrigger}, "trigger delete": {kindTrigger},
-	"unit get": {kindUnit}, "unit update": {kindUnit}, "unit delete": {kindUnit}, "unit open": {kindUnit},
+	"unit get": {kindUnit}, "unit update": {kindUnit}, "unit delete": {kindUnit}, "unit unarchive": {kindUnit}, "unit open": {kindUnit},
 	"unit blame": {kindUnit}, "unit conflicts": {kindUnit},
 	"unit data": {kindUnit}, "unit diff": {kindUnit}, "unit data-edit": {kindUnit}, "unit mutation-sources": {kindUnit},
 	"unit path": {kindUnit}, "unit revert": {kindUnit},

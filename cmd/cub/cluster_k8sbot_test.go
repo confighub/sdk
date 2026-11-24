@@ -10,7 +10,6 @@ import (
 	"path/filepath"
 	"slices"
 	"strings"
-	"sync"
 	"testing"
 
 	"github.com/google/uuid"
@@ -153,20 +152,26 @@ func TestClusterFindInstaller(t *testing.T) {
 	onPath := t.TempDir()
 	createExecutableFile(t, filepath.Join(onPath, "installer"), "#!/bin/sh\necho installer 0.3.0")
 	t.Setenv("PATH", onPath)
+	t.Setenv(pluginAutoInstallEnv, pluginAutoInstallNever)
 	if _, err := clusterFindInstaller(); err == nil || !strings.Contains(err.Error(), "cub plugin install confighub/installer") {
 		t.Errorf("clusterFindInstaller() without the plugin: err = %v; want the plugin install command", err)
 	}
 
+	// Without the plugin, cub installs it.
 	dir := filepath.Join(pluginsDir, "installer")
-	if err := os.MkdirAll(filepath.Join(dir, "bin"), 0o755); err != nil {
-		t.Fatal(err)
+	origInstall := knownPluginInstall
+	t.Cleanup(func() { knownPluginInstall = origInstall })
+	knownPluginInstall = func(source, name string) error {
+		if source != "confighub/installer" || name != "installer" {
+			t.Errorf("installed %q as %q, want confighub/installer as installer", source, name)
+		}
+		if err := os.MkdirAll(filepath.Join(dir, "bin"), 0o755); err != nil {
+			return err
+		}
+		createExecutableFile(t, filepath.Join(dir, "bin", "installer"), "#!/bin/sh\necho installer 0.3.0")
+		return os.WriteFile(filepath.Join(dir, "cub-plugin.yaml"), []byte("entrypoint: bin/installer\n"), 0o644)
 	}
-	createExecutableFile(t, filepath.Join(dir, "bin", "installer"), "#!/bin/sh\necho installer 0.3.0")
-	if err := os.WriteFile(filepath.Join(dir, "cub-plugin.yaml"), []byte("entrypoint: bin/installer\n"), 0o644); err != nil {
-		t.Fatal(err)
-	}
-	pluginCache = nil
-	pluginCacheOnce = sync.Once{}
+	t.Setenv(pluginAutoInstallEnv, "")
 	got, err := clusterFindInstaller()
 	if err != nil {
 		t.Fatal(err)

@@ -43,6 +43,17 @@ to it as part of the delete, which leaves each clone without an upstream unit:
 `+"```"+`
   cub unit delete --detach base-unit
 `+"```"+`
+
+--archive keeps the unit rather than deleting it: it and its history stay, hidden with the reason
+Archived, and its links and the links to it are archived with it. It is given a slug made from its
+ID, so its own slug is free, and is no longer released, resolved or selected. List archived units
+with --include-hidden=Archived, and bring one back with cub unit unarchive. Delete an archived unit
+to remove it for good:
+`+"```"+`
+  cub unit delete --archive my-unit
+  cub unit list --include-hidden=Archived --where "Labels.ArchivedSlug = 'my-unit'"
+  cub unit unarchive id<unit-uuid>
+`+"```"+`
 `, ""),
 	Args:        cobra.MaximumNArgs(1), // Allow 0 or 1 args (0 for bulk mode)
 	RunE:        unitDeleteCmdRun,
@@ -55,6 +66,7 @@ func init() {
 	enableFilterFlag(unitDeleteCmd)
 	unitDeleteCmd.Flags().StringSliceVar(&unitIdentifiers, "unit", []string{}, "target specific units by slug or UUID for bulk delete (can be repeated or comma-separated)")
 	addDetachFlag(unitDeleteCmd)
+	addArchiveFlag(unitDeleteCmd)
 	unitCmd.AddCommand(unitDeleteCmd)
 }
 
@@ -115,6 +127,7 @@ func runBulkUnitDelete() error {
 		params.Filter = &filterID
 	}
 	params.Detach = detachParam()
+	params.Archive = archiveParam()
 
 	// Call the bulk delete API
 	bulkRes, err := cubClientNew.BulkDeleteUnitsWithResponse(ctx, params)
@@ -123,7 +136,11 @@ func runBulkUnitDelete() error {
 	}
 
 	// Handle the response
-	return handleBulkUnitDeleteResponse(bulkRes.JSON200, bulkRes.JSON207, bulkRes.StatusCode(), "delete", effectiveWhere)
+	operation := "delete"
+	if deleteArchive {
+		operation = "archive"
+	}
+	return handleBulkUnitDeleteResponse(bulkRes.JSON200, bulkRes.JSON207, bulkRes.StatusCode(), operation, effectiveWhere)
 }
 
 func unitDeleteCmdRun(cmd *cobra.Command, args []string) error {
@@ -139,11 +156,15 @@ func unitDeleteCmdRun(cmd *cobra.Command, args []string) error {
 		return err
 	}
 	deleteRes, err := cubClientNew.DeleteUnitWithResponse(ctx, unitDetails.Unit.SpaceID, unitDetails.Unit.UnitID,
-		&goclientnew.DeleteUnitParams{Detach: detachParam()})
+		&goclientnew.DeleteUnitParams{Detach: detachParam(), Archive: archiveParam()})
 	if cubapi.IsAPIError(err, deleteRes) {
 		return cubapi.InterpretErrorGeneric(err, deleteRes)
 	}
 
+	if deleteArchive {
+		displayArchiveResults("unit", args[0], unitDetails.Unit.UnitID.String(), deleteRes)
+		return nil
+	}
 	displayDeleteResults("unit", args[0], unitDetails.Unit.UnitID.String(), deleteRes)
 	return nil
 }

@@ -103,7 +103,7 @@ func enableDisplayNameFlag(cmd *cobra.Command) {
 }
 
 func enableHiddenReasonFlag(cmd *cobra.Command) {
-	cmd.Flags().StringVar(&hiddenReasonFlag, "hidden-reason", "", "hide the entity, giving the reason as a name such as Archived: lists and bulk operations leave it out unless --include-hidden names the reason (use '-' to clear, which shows the entity again)")
+	cmd.Flags().StringVar(&hiddenReasonFlag, "hidden-reason", "", "hide the entity, giving the reason as a name such as Retired: lists and bulk operations leave it out unless --include-hidden names the reason (use '-' to clear, which shows the entity again). Archived is not one a client sets: delete --archive archives an entity")
 }
 
 // setDisplayNameAndHiddenReason applies --display-name and --hidden-reason to an entity that is
@@ -332,7 +332,7 @@ func enableWherePermissionFlag(cmd *cobra.Command) {
 // enableIncludeHiddenFlag goes with --where: whatever selects entities, to list or to act on,
 // leaves out hidden ones unless asked for them.
 func enableIncludeHiddenFlag(cmd *cobra.Command) {
-	cmd.Flags().StringVar(&includeHidden, "include-hidden", "", "Also select hidden entities, to list or to act on: those hidden for the given HiddenReasons, comma-separated, as in --include-hidden=BackingUnit, or for any reason when given no value or \"*\". ConfigHub/YAML Units, which hold the configuration of other entities, are hidden with the reason BackingUnit. A --where naming entities by Slug or ID selects them whether hidden or not")
+	cmd.Flags().StringVar(&includeHidden, "include-hidden", "", "Also select hidden entities, to list or to act on: those hidden for the given HiddenReasons, comma-separated, as in --include-hidden=BackingUnit, or for any reason but Archived when given no value or \"*\". ConfigHub/YAML Units, which hold the configuration of other entities, are hidden with the reason BackingUnit. Archived entities are selected only when the reasons name Archived, as in --include-hidden=Archived or --include-hidden='*,Archived'. A --where naming entities by Slug or ID lists them whether hidden or not, but a bulk operation acts on archived ones only when --include-hidden names Archived")
 	cmd.Flags().Lookup("include-hidden").NoOptDefVal = "*"
 }
 
@@ -494,6 +494,22 @@ var deleteDetach bool
 func addDetachFlag(cmd *cobra.Command) {
 	cmd.Flags().BoolVar(&deleteDetach, "detach", false,
 		"Remove the references other entities have to what is deleted, instead of refusing the delete while any remain")
+}
+
+var deleteArchive bool
+
+// addArchiveFlag adds --archive to a delete of entities that can be archived.
+func addArchiveFlag(cmd *cobra.Command) {
+	cmd.Flags().BoolVar(&deleteArchive, "archive", false,
+		"Archive rather than delete: keep each entity, with its history, hidden with the reason Archived and named by a Slug made from its ID, until it is unarchived or deleted for good")
+}
+
+// archiveParam is the archive query parameter --archive sets.
+func archiveParam() *bool {
+	if !deleteArchive {
+		return nil
+	}
+	return &deleteArchive
 }
 
 // detachParam is the detach query parameter --detach sets.
