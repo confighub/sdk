@@ -2,7 +2,7 @@ module github.com/confighub/sdk/configkit/envkit
 
 go 1.26.0
 
-require github.com/confighub/sdk/core v0.0.0
+require github.com/confighub/sdk/core v0.11.18
 
 require (
 	github.com/bahlo/generic-list-go v0.2.0 // indirect
@@ -42,4 +42,3 @@ require (
 	sigs.k8s.io/yaml v1.5.0 // indirect
 )
 
-replace github.com/confighub/sdk/core => ../../core
