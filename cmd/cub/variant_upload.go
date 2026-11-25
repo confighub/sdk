@@ -849,6 +849,11 @@ func reportUploadResult(result *goclientnew.UploadResult) {
 					tprint("  %-9s %s: %s", "FAILED", u.Slug, errString(u.Error))
 					continue
 				}
+				// Written, or left as it was, but its rendering is not set up.
+				if u.RenderingError != nil {
+					tprint("  %-9s %s: %s", u.Action, u.Slug, errString(u.RenderingError))
+					continue
+				}
 				if u.Action == "Unchanged" {
 					unchanged++
 					continue

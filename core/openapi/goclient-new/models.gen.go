@@ -8707,6 +8707,9 @@ type UploadUnitResult struct {
 	// Mutations What the write changed, or on a dry run would change: the entries of the Unit's MutationSources it produced. Returned when include names Mutations.
 	Mutations *ResourceMutationList `json:"Mutations,omitempty" yaml:"Mutations,omitempty"`
 
+	// RenderingError For an AppConfig Unit, why its rendering (the render Invocation, the placeholder Unit it renders into, and the Link carrying the rendering) could not be set up. The Unit itself was not refused: Error is set when it was.
+	RenderingError *ResponseError `json:"RenderingError,omitempty" yaml:"RenderingError,omitempty"`
+
 	// Resource The resource identity this Unit is keyed by.
 	Resource string `json:"Resource,omitempty" yaml:"Resource,omitempty"`
 

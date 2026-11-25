@@ -163,6 +163,10 @@ func reportApplyResult(result *goclientnew.UploadResult, showMutations bool) int
 					if u.Error != nil {
 						failed++
 						tprint("%-9s Unit %s: %s", "FAILED", u.Slug, errString(u.Error))
+					} else if u.RenderingError != nil {
+						// Written, or left as it was, so not counted as failed; but its rendering
+						// is not set up.
+						tprint("%-9s Unit %s: %s", u.Action, u.Slug, errString(u.RenderingError))
 					} else if u.Action != "Unchanged" {
 						tprint("%-9s Unit %s", u.Action, u.Slug)
 					}
