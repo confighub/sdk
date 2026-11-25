@@ -123,7 +123,7 @@ Patch Mode Examples:
   cub unit update --space my-space --patch --where "Slug LIKE 'app-%'" --change-desc "Metadata review" --label reviewed=2024-01
 
   # Bulk patch across all spaces with metadata
-  cub unit update --patch --where "UpstreamRevisionNum > 0" --change-desc "Upgrade all" --upgrade
+  cub unit update --patch --where "UpstreamUnitID IS NOT NULL" --change-desc "Upgrade all" --upgrade
 
   # Bulk restore with change description
   cub unit update --space my-space --patch --where "Slug IN ('unit1', 'unit2')" --restore LastReleasedRevisionNum --change-desc "Restored to last released revision"

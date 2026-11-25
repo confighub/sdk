@@ -11,11 +11,11 @@ import (
 	"io"
 	"maps"
 	"os"
-	"os/exec"
 	"path"
 	"slices"
 	"strings"
 
+	"github.com/confighub/installer/pkg/installer"
 	"github.com/confighub/sdk/core/cubapi"
 	"github.com/confighub/sdk/core/function/api"
 	"github.com/confighub/sdk/core/ocibundle"
@@ -82,9 +82,6 @@ const (
 	// clusterK8sbotRecordUnitSlug is the hidden Unit an installer upload keeps
 	// its answers in. A base holding one was installed with the installer.
 	clusterK8sbotRecordUnitSlug = "installer"
-	// clusterInstallerPlugin is the cub plugin command that runs ConfigHub's
-	// installer, as `cub installer`.
-	clusterInstallerPlugin = "installer"
 	// clusterK8sbotContainer is the container name in k8sbot's Deployment.
 	clusterK8sbotContainer = "k8sbot"
 	// clusterK8sbotSecret is the out-of-band Secret k8sbot reads its service
@@ -157,7 +154,7 @@ const clusterRegistryFlagUsage = "where to pull k8sbot's image from: ghcr, gcr, 
 
 // clusterK8sbotInstallerFlagUsage is the --k8sbot-installer help of the
 // commands that install k8sbot.
-const clusterK8sbotInstallerFlagUsage = "install k8sbot's shared base Space with ConfigHub's installer, from its installer package, rather than from the deployment its image carries; needs the installer cub plugin (cub plugin install confighub/installer)"
+const clusterK8sbotInstallerFlagUsage = "install k8sbot's shared base Space with ConfigHub's installer, from its installer package, rather than from the deployment its image carries"
 
 // clusterK8sbotBaseFlagUsage is the --k8sbot-base help of the commands that
 // install k8sbot.
@@ -197,9 +194,9 @@ type clusterK8sbotSpec struct {
 	// k8sbotRepository is the image repository k8sbot is pulled from, as
 	// clusterK8sbotRepository read --registry.
 	k8sbotRepository string
-	// k8sbotInstaller is the installer plugin that installs k8sbot's base, as
-	// clusterFindInstaller found it; nil installs it from k8sbot's image.
-	k8sbotInstaller *PluginCommand
+	// k8sbotInstaller installs k8sbot's base with ConfigHub's installer, from
+	// k8sbot's installer package, rather than from k8sbot's image.
+	k8sbotInstaller bool
 	// standalone is true for `cub cluster k8sbot-install` on a cluster attached
 	// already: its root runs, so the stage marks the target as k8sbot's,
 	// records the bot on the cluster Space, and republishes the apps Space
@@ -337,7 +334,7 @@ func clusterInstallK8sbot(out io.Writer, spec clusterK8sbotSpec, registerRollbac
 					return err
 				}
 				fmt.Fprintf(out, "Rolling back: cub channel delete %s/%s\n", spec.spaceSlug, clusterK8sbotChannelSlug)
-				res, err := cubClientNew.DeleteChannelWithResponse(ctx, spec.spaceID, channel.Channel.ChannelID)
+				res, err := cubClientNew.DeleteChannelWithResponse(ctx, spec.spaceID, channel.Channel.ChannelID, nil)
 				if cubapi.IsAPIError(err, res) {
 					return cubapi.InterpretErrorGeneric(err, res)
 				}
@@ -645,25 +642,6 @@ func clusterK8sbotManifests(controller, repository string, out io.Writer) (manif
 	return manifests, ref, nil
 }
 
-// clusterFindInstaller finds ConfigHub's installer, installed as a cub plugin,
-// for --k8sbot-installer, and installs it when it is not there yet. cub runs
-// the plugin's own entrypoint, never an "installer" found on PATH, which on
-// macOS is the system's package installer.
-func clusterFindInstaller() (*PluginCommand, error) {
-	if installer, ok := resolvePluginCommand(clusterInstallerPlugin); ok {
-		return installer, nil
-	}
-	known, err := installKnownPlugin(clusterInstallerPlugin)
-	if err != nil {
-		return nil, fmt.Errorf("--k8sbot-installer needs ConfigHub's installer as a cub plugin: %w", err)
-	}
-	installer, ok := resolvePluginCommand(clusterInstallerPlugin)
-	if !known || !ok {
-		return nil, fmt.Errorf("--k8sbot-installer needs ConfigHub's installer as a cub plugin; install it with: cub plugin install confighub/installer")
-	}
-	return installer, nil
-}
-
 // clusterK8sbotPackageComponent is the installer package's component for a
 // controller.
 func clusterK8sbotPackageComponent(controller string) string {
@@ -675,11 +653,11 @@ func clusterK8sbotPackageComponent(controller string) string {
 
 // clusterK8sbotInstallBase installs k8sbot's shared base Space with the
 // installer, from the newest release of k8sbot's installer package: no
-// Channel, Target or URL, which each cluster's variant sets. setup is given the
+// Channel, Target or URL, which each cluster's variant sets. Setup is given the
 // base Space, so it reads its earlier answers from that Space's installer
 // record, and never another install of k8sbot's; the upload creates the Space
 // when it doesn't exist yet.
-func clusterK8sbotInstallBase(out io.Writer, installer *PluginCommand, controller, repository string) error {
+func clusterK8sbotInstallBase(out io.Writer, controller, repository string) error {
 	baseVariant, baseSpace := clusterK8sbotBase(controller)
 	packageRepository := clusterK8sbotPackageRepository(repository)
 	version, err := ocibundle.NewestRelease(ctx, packageRepository, clusterK8sbotPullOptions())
@@ -692,32 +670,34 @@ func clusterK8sbotInstallBase(out io.Writer, installer *PluginCommand, controlle
 	}
 	defer os.RemoveAll(workDir)
 
-	ref := ocibundle.Scheme + packageRepository + ":" + version
-	setup := []string{"setup", "--pull", ref, "--work-dir", workDir, "--space", baseSpace,
-		"--non-interactive", "--namespace", clusterK8sbotNamespace,
-		"--select", clusterK8sbotPackageComponent(controller)}
-	if repository != clusterK8sbotGHCR {
-		// The package runs the k8sbot release of its own version.
-		setup = append(setup, "--set-image", clusterK8sbotGHCR+"="+repository+":v"+version)
-	}
-	fmt.Fprintf(out, "Installing k8sbot base component from %s with the installer plugin...\n", ref)
-	if err := clusterRunInstaller(installer, setup...); err != nil {
+	// Read anonymously, as the newest release was: the package is public.
+	inst, err := newCubInstaller(out, true)
+	if err != nil {
 		return err
 	}
-	return clusterRunInstaller(installer, "upload", "--work-dir", workDir, "--space", baseSpace,
-		"--variant", baseVariant, "--yes")
-}
-
-// clusterRunInstaller runs the installer plugin as `cub installer` would,
-// streaming its output, with the environment a plugin gets: the cub context in
-// effect and its token.
-func clusterRunInstaller(installer *PluginCommand, args ...string) error {
-	c := exec.CommandContext(ctx, installer.Entrypoint, append(slices.Clone(installer.Args), args...)...)
-	c.Env = pluginEnv()
-	c.Stdout = os.Stdout
-	c.Stderr = os.Stderr
-	if err := c.Run(); err != nil {
-		return fmt.Errorf("installer %s: %w", strings.Join(args, " "), err)
+	ref := ocibundle.Scheme + packageRepository + ":" + version
+	opts := installer.InstallOptions{
+		Space: baseSpace,
+		Setup: installer.SetupOptions{
+			WorkDir:   workDir,
+			Pull:      ref,
+			Namespace: clusterK8sbotNamespace,
+			Select:    []string{clusterK8sbotPackageComponent(controller)},
+		},
+		Upload: installer.UploadOptions{Variant: baseVariant},
+	}
+	if repository != clusterK8sbotGHCR {
+		// The package runs the k8sbot release of its own version.
+		opts.Setup.SetImage = map[string]string{clusterK8sbotGHCR: repository + ":v" + version}
+	}
+	fmt.Fprintf(out, "Installing k8sbot base component from %s with the installer...\n", ref)
+	// Install prints what the upload did to out.
+	result, err := inst.Install(ctx, opts)
+	if err != nil {
+		return fmt.Errorf("install k8sbot's base: %w", err)
+	}
+	if result.Upload.Failed() {
+		return fmt.Errorf("install k8sbot's base: some writes failed; the rest landed, and installing again retries the failures")
 	}
 	return nil
 }
@@ -734,9 +714,9 @@ type clusterK8sbotOptions struct {
 	serviceAccountUserID uuid.UUID // the cluster service account's user, granted Claim on the Channel
 	apiURLForContainer   string    // ConfigHub API URL as k8sbot (in-cluster) reaches it
 	kubeconfigPath       string
-	baseMode             string         // clusterK8sbotBaseUpdate or clusterK8sbotBaseClone, from clusterChooseK8sbotBase
-	repository           string         // k8sbot's image repository, from clusterK8sbotRepository
-	installer            *PluginCommand // the installer plugin that installs the base, from clusterFindInstaller; nil installs it from k8sbot's image
+	baseMode             string // clusterK8sbotBaseUpdate or clusterK8sbotBaseClone, from clusterChooseK8sbotBase
+	repository           string // k8sbot's image repository, from clusterK8sbotRepository
+	installer            bool   // install the base with ConfigHub's installer, from k8sbot's installer package, rather than from k8sbot's image
 }
 
 // clusterDeployK8sbot deploys k8sbot for a freshly attached cluster: k8sbot
@@ -760,7 +740,7 @@ func clusterDeployK8sbot(out io.Writer, o clusterK8sbotOptions) error {
 	// 1. Ensure the shared base component exists. With --k8sbot-base clone an
 	// existing base is not updated.
 	switch {
-	case o.installer != nil:
+	case o.installer:
 		// The installer's upload is create-or-update, and reads the base's
 		// earlier answers from its installer record.
 		if o.baseMode == clusterK8sbotBaseClone {
@@ -773,7 +753,7 @@ func clusterDeployK8sbot(out io.Writer, o clusterK8sbotOptions) error {
 				break
 			}
 		}
-		if err := clusterK8sbotInstallBase(out, o.installer, o.controller, o.repository); err != nil {
+		if err := clusterK8sbotInstallBase(out, o.controller, o.repository); err != nil {
 			return fmt.Errorf("install k8sbot base component: %w", err)
 		}
 	default:
@@ -834,7 +814,7 @@ func clusterDeployK8sbot(out io.Writer, o clusterK8sbotOptions) error {
 	// key stays a secretKeyRef to the Secret clusterBootstrapServiceAccount
 	// applied out of band.
 	fmt.Fprintln(out, "Configuring k8sbot (CONFIGHUB_URL, CONFIGHUB_CHANNEL, CONFIGHUB_TARGET)...")
-	if err := clusterConfigureK8sbot(space.SpaceID, o.installer != nil, map[string]string{
+	if err := clusterConfigureK8sbot(space.SpaceID, o.installer, map[string]string{
 		"CONFIGHUB_URL":     o.apiURLForContainer,
 		"CONFIGHUB_CHANNEL": channelRef,
 		"CONFIGHUB_TARGET":  o.ociTargetRef,

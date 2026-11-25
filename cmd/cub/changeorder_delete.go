@@ -16,6 +16,12 @@ var changeorderDeleteCmd = &cobra.Command{
 	Short: "Delete a changeorder or multiple changeorders",
 	Long: getCommandHelp(`Delete a changeorder or multiple changeorders using bulk operations.
 
+--archive keeps the change order rather than deleting it: it stays, hidden with the reason Archived
+and named by a slug made from its ID, until it is unarchived with cub changeorder unarchive. One
+that is not finished is aborted first, with the reason Archived, and stays aborted when it is
+unarchived. The tags it made are archived with it and follow its new name. Delete an archived change
+order to delete it for good.
+
 Single changeorder delete:
 `+"```"+`
   cub changeorder delete my-changeorder
@@ -62,6 +68,7 @@ func init() {
 	enableFilterFlag(changeorderDeleteCmd)
 	changeorderDeleteCmd.Flags().StringSliceVar(&changeorderDeleteIdentifiers, "changeorder", []string{}, "target specific changeorders by slug or UUID for bulk delete (can be repeated or comma-separated)")
 	addDetachFlag(changeorderDeleteCmd)
+	addArchiveFlag(changeorderDeleteCmd)
 	changeorderCmd.AddCommand(changeorderDeleteCmd)
 }
 
@@ -122,6 +129,7 @@ func runBulkChangeOrderDelete() error {
 		params.Filter = &filterID
 	}
 	params.Detach = detachParam()
+	params.Archive = archiveParam()
 
 	// Call the bulk delete API
 	bulkRes, err := cubClientNew.BulkDeleteChangeOrdersWithResponse(ctx, params)
@@ -146,12 +154,12 @@ func changeorderDeleteCmdRun(cmd *cobra.Command, args []string) error {
 		return err
 	}
 	deleteRes, err := cubClientNew.DeleteChangeOrderWithResponse(ctx, changeorderDetails.ChangeOrder.SpaceID, changeorderDetails.ChangeOrder.ChangeOrderID,
-		&goclientnew.DeleteChangeOrderParams{Detach: detachParam()})
+		&goclientnew.DeleteChangeOrderParams{Detach: detachParam(), Archive: archiveParam()})
 	if cubapi.IsAPIError(err, deleteRes) {
 		return cubapi.InterpretErrorGeneric(err, deleteRes)
 	}
 
-	displayDeleteResults("changeorder", args[0], changeorderDetails.ChangeOrder.ChangeOrderID.String(), deleteRes)
+	displayDeleteOrArchiveResults("changeorder", args[0], changeorderDetails.ChangeOrder.ChangeOrderID.String(), deleteRes)
 	return nil
 }
 

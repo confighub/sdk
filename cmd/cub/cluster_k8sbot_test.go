@@ -6,8 +6,6 @@ package main
 import (
 	"encoding/json"
 	"io"
-	"os"
-	"path/filepath"
 	"slices"
 	"strings"
 	"testing"
@@ -142,41 +140,5 @@ func TestClusterK8sbotPackageRepository(t *testing.T) {
 		if got := clusterK8sbotPackageRepository(repository); got != want {
 			t.Errorf("clusterK8sbotPackageRepository(%q) = %q, want %q", repository, got, want)
 		}
-	}
-}
-
-// --k8sbot-installer runs the installer cub plugin's own entrypoint, never an
-// "installer" on PATH, such as the one macOS has in /usr/sbin.
-func TestClusterFindInstaller(t *testing.T) {
-	pluginsDir := setupPluginTest(t)
-	onPath := t.TempDir()
-	createExecutableFile(t, filepath.Join(onPath, "installer"), "#!/bin/sh\necho installer 0.3.0")
-	t.Setenv("PATH", onPath)
-	t.Setenv(pluginAutoInstallEnv, pluginAutoInstallNever)
-	if _, err := clusterFindInstaller(); err == nil || !strings.Contains(err.Error(), "cub plugin install confighub/installer") {
-		t.Errorf("clusterFindInstaller() without the plugin: err = %v; want the plugin install command", err)
-	}
-
-	// Without the plugin, cub installs it.
-	dir := filepath.Join(pluginsDir, "installer")
-	origInstall := knownPluginInstall
-	t.Cleanup(func() { knownPluginInstall = origInstall })
-	knownPluginInstall = func(source, name string) error {
-		if source != "confighub/installer" || name != "installer" {
-			t.Errorf("installed %q as %q, want confighub/installer as installer", source, name)
-		}
-		if err := os.MkdirAll(filepath.Join(dir, "bin"), 0o755); err != nil {
-			return err
-		}
-		createExecutableFile(t, filepath.Join(dir, "bin", "installer"), "#!/bin/sh\necho installer 0.3.0")
-		return os.WriteFile(filepath.Join(dir, "cub-plugin.yaml"), []byte("entrypoint: bin/installer\n"), 0o644)
-	}
-	t.Setenv(pluginAutoInstallEnv, "")
-	got, err := clusterFindInstaller()
-	if err != nil {
-		t.Fatal(err)
-	}
-	if got.Entrypoint != filepath.Join(dir, "bin", "installer") {
-		t.Errorf("entrypoint = %q, want the plugin's %s", got.Entrypoint, filepath.Join(dir, "bin", "installer"))
 	}
 }

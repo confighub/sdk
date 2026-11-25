@@ -4699,6 +4699,8 @@ type ExtendedServiceAccount struct {
 
 // ExtendedSpace defines model for ExtendedSpace.
 type ExtendedSpace struct {
+	ArchivedUnitCount int64 `json:"ArchivedUnitCount,omitempty" yaml:"ArchivedUnitCount,omitempty"`
+
 	// AttributeFilter Defines an entity filter.
 	AttributeFilter *Filter     `json:"AttributeFilter,omitempty" yaml:"AttributeFilter,omitempty"`
 	Attributes      []Attribute `json:"Attributes,omitempty" yaml:"Attributes,omitempty"`
@@ -5993,7 +5995,7 @@ type MutationInfo struct {
 	// Protected In the protection argument of the patch-mutations and reset functions, that the operation must leave the path alone. On a Unit's stored MutationSources, deprecated and no longer read: a local override a merge must not overwrite is an Override guard, in the Unit's PathAnnotations. True on paths stored as local overrides before that
 	Protected bool `json:"Protected,omitempty" yaml:"Protected,omitempty"`
 
-	// Value Removed configuration data if MutationType is Delete and otherwise the new data
+	// Value Removed configuration data if MutationType is Delete and otherwise the new data. Empty on the resource-level entry of a Unit's or Revision's stored MutationSources, which records which Mutation added, replaced or deleted a resource but not its body: read the body from the data of that Mutation's Revision, or of the Revision before it for a Delete
 	Value string `json:"Value,omitempty" yaml:"Value,omitempty"`
 }
 
@@ -9114,6 +9116,9 @@ type BulkDeleteComponentsParams struct {
 	// Continue The token from the ConfigHub-Continue header of the previous request, to act on the Component entities after the last one it acted on. The request's other parameters, except limit, must be the same as those of the request that returned the token.
 	Continue *string `form:"continue,omitempty" json:"continue,omitempty" yaml:"continue,omitempty"`
 
+	// Archive If true, archive the entities rather than delete them: each is kept, with its history, hidden with the HiddenReason Archived, and given a Slug the server assigns from its ID, so that its own Slug is free. The Slug it had is kept in the label ArchivedSlug. An archived entity can be read, unarchived, or deleted for good, which a delete without archive does. Delete gates refuse an archive as they refuse a delete, and so do references from entities the request does not archive, except those held by history.
+	Archive *bool `form:"archive,omitempty" json:"archive,omitempty" yaml:"archive,omitempty"`
+
 	// FromBackingUnits Prune: of the Components selected, delete those whose backing Unit is empty, which says the Component should not exist, and keep the Unit, empty and backing nothing, so that it keeps the Component's history and a document that comes back revives it. The others are left alone and are not in the response, so a broad selection deletes only what was emptied.
 	FromBackingUnits *bool `form:"from_backing_units,omitempty" json:"from_backing_units,omitempty" yaml:"from_backing_units,omitempty"`
 }
@@ -9255,6 +9260,104 @@ type BulkPatchComponentsParams struct {
 
 	// DryRun If true, report what the write would do without doing it: the write runs, including every check it makes, and is then rolled back. The response is the one the write would return, with the entities as they would be written. An entity a dry run creates is given an ID that the real create will not reuse.
 	DryRun *bool `form:"dry_run,omitempty" json:"dry_run,omitempty" yaml:"dry_run,omitempty"`
+}
+
+// BulkUnarchiveComponentsParams defines parameters for BulkUnarchiveComponents.
+type BulkUnarchiveComponentsParams struct {
+	// Where The specified string is an expression for the purpose of filtering
+	// the list of Components returned. The expression syntax was inspired by SQL.
+	// It supports conjunctions using `AND` of relational expressions of the form *attribute*
+	// *operator* *attribute_or_literal*. The attribute names are case-sensitive and PascalCase,
+	// as in the JSON encoding.
+	// Strings support the following operators: `<`, `>`, `<=`, `>=`, `=`, `!=`, `LIKE`, `NOT LIKE`, `ILIKE`, `~~`, `!~~`, `~`, `~*`, `!~`, `!~*`, `IN`, `NOT IN`.
+	// String pattern operators: `LIKE` and `~~` for pattern matching with `%` and `_` wildcards,
+	// `ILIKE` for case-insensitive pattern matching, `NOT LIKE` and `!~~` for negated pattern matching.
+	// String regex operators: `~` for regex matching, `~*` for case-insensitive regex,
+	// `!~` and `!~*` for regex not matching (case-sensitive and insensitive).
+	// Integers support the following operators: `<`, `>`, `<=`, `>=`, `=`, `!=`, `IN`, `NOT IN`.
+	// UUIDs and boolean attributes support equality and inequality only.
+	// UUID and time literals must be quoted as string literals.
+	// String literals are quoted with single quotes, such as `'string'`.
+	// Time literals use the same form as when serialized as JSON,
+	// such as: `CreatedAt > '2025-02-18T23:16:34'`.
+	// Integer and boolean literals are also supported for attributes of those types.
+	// Arrays support the `?` operator to to match any element of the array,
+	// as in `FromLinkID ? '7c61626f-ddbe-41af-93f6-b69f4ab6d308'`.
+	// Arrays can perform LEN() to check for length, as in `LEN(FromLinkID) > 0`.
+	// An attribute naming a list of other entities can be filtered on their attributes with a `*` segment,
+	// as in `FromLink.*.Slug = 'upgrade-app'`, which holds when any element satisfies it.
+	// Without the `*` such a reference is an error, since it names no single value to compare.
+	// Map support the dot notation to specify a particular map key, as in `Labels.tier = 'Backend'`.
+	// Maps support `IS NULL` and `IS NOT NULL` with dot notation to check for key absence or presence,
+	// as in `Labels.tier IS NULL` (key doesn't exist) or `Labels.tier IS NOT NULL` (key exists).
+	// Comparison results can be tested with `IS TRUE`, `IS FALSE`, `IS NOT TRUE`, and `IS NOT FALSE`.
+	// These are useful for nullable columns: `MergeSourceID = '<uuid>' IS NOT FALSE` matches rows where MergeSourceID equals the value OR is NULL.
+	// The `IN` and `NOT IN` operators accept a comma-separated list of values in parentheses,
+	// such as `Slug IN ('slugone', 'slugtwo')` or `Labels.environment IN ('prod', 'staging')`.
+	// Conjunctions are supported using the `AND` operator.
+	// An example conjunction is:
+	// `CreatedAt >= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.
+	//
+	// Supported attributes for filtering on Component: AllowedChangeWorkflowIDs, Annotations, BackingUnitID, ComponentID, CreatedAt, DeleteGates, DisplayName, HiddenReason, Labels, OrganizationID, Permissions, RequireChangeTracking, RequireChangeWorkflow, Slug, UpdatedAt, UpstreamComponentID.
+	//
+	// The whole string must be query-encoded.
+	Where *string `form:"where,omitempty" json:"where,omitempty" yaml:"where,omitempty"`
+
+	// Filter UUID of a Filter entity to apply to the Component list.
+	//
+	// The Filter must be in the same Organization as the user credentials.
+	//
+	// The Filter's From field must match the entity type being filtered (Component).
+	//
+	// For Space-resident entities, if the Filter has a FromSpaceID, it must match the operation's SpaceID.
+	//
+	// The Filter's Where clause will be combined with any explicit 'where' parameter using AND logic.
+	//
+	// If both 'filter' and 'where' parameters are specified, they are combined with AND logic.
+	Filter *string `form:"filter,omitempty" json:"filter,omitempty" yaml:"filter,omitempty"`
+
+	// Contains Free text search that approximately matches the specified string against string fields and map keys/values.
+	//
+	// The search is case-insensitive and uses pattern matching to find entities containing the text.
+	//
+	// Searchable string fields include attributes like Slug, DisplayName, and string-typed custom fields.
+	//
+	// For map fields (like Labels and Annotations), the search matches both map keys and values.
+	//
+	// The search uses OR logic across all searchable fields, so matching any field will return the entity.
+	//
+	// If both 'where' and 'contains' parameters are specified, they are combined with AND logic.
+	//
+	// Searchable fields for Component include string and map-type attributes from the queryable attributes list.
+	//
+	// The whole string must be query-encoded.
+	Contains *string `form:"contains,omitempty" json:"contains,omitempty" yaml:"contains,omitempty"`
+
+	// IncludeHidden Hidden Component entities, those with a HiddenReason, are left out of the results, or of what a bulk operation acts on, unless this names their HiddenReason.
+	//
+	// It is a comma-separated list of HiddenReasons, or `*` for all of them but `Archived`.
+	//
+	// A where clause naming the entities, by their Slug or ID with `=` or `IN`, or naming HiddenReason at all, also returns hidden entities it selects.
+	//
+	// Archived entities, which a delete with archive=true archives, are selected only when this names `Archived`, as in `Archived` or `*,Archived`; a where clause naming them returns them from a List or Search, but not from a bulk operation.
+	//
+	// ConfigHub/YAML Units, which hold the configuration of entities, are hidden with the HiddenReason `BackingUnit`.
+	IncludeHidden *string `form:"include_hidden,omitempty" json:"include_hidden,omitempty" yaml:"include_hidden,omitempty"`
+
+	// Include Include clause for expanding related entities in the response for Component.
+	// The attribute names are case-sensitive, PascalCase, and
+	// expected in a comma-separated list format as in the JSON encoding.
+	//
+	// Supported attributes for Component are AllowedChangeWorkflowIDs, OrganizationID, Permissions.
+	//
+	// The whole string must be query-encoded.
+	Include *string `form:"include,omitempty" json:"include,omitempty" yaml:"include,omitempty"`
+
+	// Limit Maximum number of Component entities to act on, in ID order. A request that names limit or continue also stops when it runs short of time, and returns a ConfigHub-Continue header to pass as the continue parameter of the next request; keep sending requests until a response has none. If neither is specified, the request acts on every selected entity.
+	Limit *int `form:"limit,omitempty" json:"limit,omitempty" yaml:"limit,omitempty"`
+
+	// Continue The token from the ConfigHub-Continue header of the previous request, to act on the Component entities after the last one it acted on. The request's other parameters, except limit, must be the same as those of the request that returned the token.
+	Continue *string `form:"continue,omitempty" json:"continue,omitempty" yaml:"continue,omitempty"`
 }
 
 // BulkDeleteServiceAccountsParams defines parameters for BulkDeleteServiceAccounts.
@@ -9579,14 +9682,17 @@ type BulkDeleteSpacesParams struct {
 	// Continue The token from the ConfigHub-Continue header of the previous request, to act on the Space entities after the last one it acted on. The request's other parameters, except limit, must be the same as those of the request that returned the token.
 	Continue *string `form:"continue,omitempty" json:"continue,omitempty" yaml:"continue,omitempty"`
 
-	// Recursive Valid values are true and false. False is the default if unspecified. If true, recursively delete all entities within the deleted space(s) so long as none have delete gates.
+	// Recursive Valid values are true and false. False is the default if unspecified. If true, recursively delete all entities within the deleted space(s) so long as none have delete gates. With archive=true, archive them instead.
 	Recursive *string `form:"recursive,omitempty" json:"recursive,omitempty" yaml:"recursive,omitempty"`
 
-	// RecursiveForce Valid values are true and false. False is the default if unspecified. If true, recursively delete all entities within the deleted space(s) regardless whether any have delete gates.
+	// RecursiveForce Valid values are true and false. False is the default if unspecified. If true, recursively delete all entities within the deleted space(s) regardless whether any have delete gates. With archive=true, archive them instead.
 	RecursiveForce *string `form:"recursive_force,omitempty" json:"recursive_force,omitempty" yaml:"recursive_force,omitempty"`
 
 	// Detach If true, remove the references to the deleted entities from entities the request does not delete, instead of refusing the delete while any remain. References that cannot be removed still refuse it. For a Space, applies to everything the recursive delete removes.
 	Detach *bool `form:"detach,omitempty" json:"detach,omitempty" yaml:"detach,omitempty"`
+
+	// Archive If true, archive the entities rather than delete them: each is kept, with its history, hidden with the HiddenReason Archived, and given a Slug the server assigns from its ID, so that its own Slug is free. The Slug it had is kept in the label ArchivedSlug. An archived entity can be read, unarchived, or deleted for good, which a delete without archive does. Delete gates refuse an archive as they refuse a delete, and so do references from entities the request does not archive, except those held by history.
+	Archive *bool `form:"archive,omitempty" json:"archive,omitempty" yaml:"archive,omitempty"`
 
 	// FromBackingUnits Prune: of the Spaces selected, delete those whose backing Unit is empty, which says the Space should not exist, and keep the Unit, empty and backing nothing, so that it keeps the Space's history and a document that comes back revives it. The others are left alone and are not in the response, so a broad selection deletes only what was emptied.
 	FromBackingUnits *bool `form:"from_backing_units,omitempty" json:"from_backing_units,omitempty" yaml:"from_backing_units,omitempty"`
@@ -9938,6 +10044,107 @@ type BulkCreateSpacesParams struct {
 	DryRun *bool `form:"dry_run,omitempty" json:"dry_run,omitempty" yaml:"dry_run,omitempty"`
 }
 
+// BulkUnarchiveSpacesParams defines parameters for BulkUnarchiveSpaces.
+type BulkUnarchiveSpacesParams struct {
+	// Where The specified string is an expression for the purpose of filtering
+	// the list of Spaces returned. The expression syntax was inspired by SQL.
+	// It supports conjunctions using `AND` of relational expressions of the form *attribute*
+	// *operator* *attribute_or_literal*. The attribute names are case-sensitive and PascalCase,
+	// as in the JSON encoding.
+	// Strings support the following operators: `<`, `>`, `<=`, `>=`, `=`, `!=`, `LIKE`, `NOT LIKE`, `ILIKE`, `~~`, `!~~`, `~`, `~*`, `!~`, `!~*`, `IN`, `NOT IN`.
+	// String pattern operators: `LIKE` and `~~` for pattern matching with `%` and `_` wildcards,
+	// `ILIKE` for case-insensitive pattern matching, `NOT LIKE` and `!~~` for negated pattern matching.
+	// String regex operators: `~` for regex matching, `~*` for case-insensitive regex,
+	// `!~` and `!~*` for regex not matching (case-sensitive and insensitive).
+	// Integers support the following operators: `<`, `>`, `<=`, `>=`, `=`, `!=`, `IN`, `NOT IN`.
+	// UUIDs and boolean attributes support equality and inequality only.
+	// UUID and time literals must be quoted as string literals.
+	// String literals are quoted with single quotes, such as `'string'`.
+	// Time literals use the same form as when serialized as JSON,
+	// such as: `CreatedAt > '2025-02-18T23:16:34'`.
+	// Integer and boolean literals are also supported for attributes of those types.
+	// Arrays support the `?` operator to to match any element of the array,
+	// as in `FromLinkID ? '7c61626f-ddbe-41af-93f6-b69f4ab6d308'`.
+	// Arrays can perform LEN() to check for length, as in `LEN(FromLinkID) > 0`.
+	// An attribute naming a list of other entities can be filtered on their attributes with a `*` segment,
+	// as in `FromLink.*.Slug = 'upgrade-app'`, which holds when any element satisfies it.
+	// Without the `*` such a reference is an error, since it names no single value to compare.
+	// Map support the dot notation to specify a particular map key, as in `Labels.tier = 'Backend'`.
+	// Maps support `IS NULL` and `IS NOT NULL` with dot notation to check for key absence or presence,
+	// as in `Labels.tier IS NULL` (key doesn't exist) or `Labels.tier IS NOT NULL` (key exists).
+	// Comparison results can be tested with `IS TRUE`, `IS FALSE`, `IS NOT TRUE`, and `IS NOT FALSE`.
+	// These are useful for nullable columns: `MergeSourceID = '<uuid>' IS NOT FALSE` matches rows where MergeSourceID equals the value OR is NULL.
+	// The `IN` and `NOT IN` operators accept a comma-separated list of values in parentheses,
+	// such as `Slug IN ('slugone', 'slugtwo')` or `Labels.environment IN ('prod', 'staging')`.
+	// Conjunctions are supported using the `AND` operator.
+	// An example conjunction is:
+	// `CreatedAt >= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.
+	//
+	// Supported attributes for filtering on Space: Annotations, AttributeFilterID, AttributeHash, AttributeIDs, BackingUnitID, ComponentID, CreatedAt, DeleteGates, DisplayName, HiddenReason, Labels, OCIRepositoryURL, OrganizationID, Permissions, ReleaseTargetID, Slug, SpaceID, TriggerFilterID, TriggerHash, TriggerIDs, TriggerOtherUnitIDs, UpdatedAt, UpstreamSpaceID.
+	//
+	// The whole string must be query-encoded.
+	Where *string `form:"where,omitempty" json:"where,omitempty" yaml:"where,omitempty"`
+
+	// Filter UUID of a Filter entity to apply to the Space list.
+	//
+	// The Filter must be in the same Organization as the user credentials.
+	//
+	// The Filter's From field must match the entity type being filtered (Space).
+	//
+	// For Space-resident entities, if the Filter has a FromSpaceID, it must match the operation's SpaceID.
+	//
+	// The Filter's Where clause will be combined with any explicit 'where' parameter using AND logic.
+	//
+	// If both 'filter' and 'where' parameters are specified, they are combined with AND logic.
+	Filter *string `form:"filter,omitempty" json:"filter,omitempty" yaml:"filter,omitempty"`
+
+	// Contains Free text search that approximately matches the specified string against string fields and map keys/values.
+	//
+	// The search is case-insensitive and uses pattern matching to find entities containing the text.
+	//
+	// Searchable string fields include attributes like Slug, DisplayName, and string-typed custom fields.
+	//
+	// For map fields (like Labels and Annotations), the search matches both map keys and values.
+	//
+	// The search uses OR logic across all searchable fields, so matching any field will return the entity.
+	//
+	// If both 'where' and 'contains' parameters are specified, they are combined with AND logic.
+	//
+	// Searchable fields for Space include string and map-type attributes from the queryable attributes list.
+	//
+	// The whole string must be query-encoded.
+	Contains *string `form:"contains,omitempty" json:"contains,omitempty" yaml:"contains,omitempty"`
+
+	// IncludeHidden Hidden Space entities, those with a HiddenReason, are left out of the results, or of what a bulk operation acts on, unless this names their HiddenReason.
+	//
+	// It is a comma-separated list of HiddenReasons, or `*` for all of them but `Archived`.
+	//
+	// A where clause naming the entities, by their Slug or ID with `=` or `IN`, or naming HiddenReason at all, also returns hidden entities it selects.
+	//
+	// Archived entities, which a delete with archive=true archives, are selected only when this names `Archived`, as in `Archived` or `*,Archived`; a where clause naming them returns them from a List or Search, but not from a bulk operation.
+	//
+	// ConfigHub/YAML Units, which hold the configuration of entities, are hidden with the HiddenReason `BackingUnit`.
+	IncludeHidden *string `form:"include_hidden,omitempty" json:"include_hidden,omitempty" yaml:"include_hidden,omitempty"`
+
+	// Include Include clause for expanding related entities in the response for Space.
+	// The attribute names are case-sensitive, PascalCase, and
+	// expected in a comma-separated list format as in the JSON encoding.
+	//
+	// Supported attributes for Space are AttributeFilterID, AttributeIDs, ComponentID, OrganizationID, Permissions, ReleaseTargetID, TriggerFilterID, TriggerIDs, UpstreamSpaceID.
+	//
+	// The whole string must be query-encoded.
+	Include *string `form:"include,omitempty" json:"include,omitempty" yaml:"include,omitempty"`
+
+	// Limit Maximum number of Space entities to act on, in ID order. A request that names limit or continue also stops when it runs short of time, and returns a ConfigHub-Continue header to pass as the continue parameter of the next request; keep sending requests until a response has none. If neither is specified, the request acts on every selected entity.
+	Limit *int `form:"limit,omitempty" json:"limit,omitempty" yaml:"limit,omitempty"`
+
+	// Continue The token from the ConfigHub-Continue header of the previous request, to act on the Space entities after the last one it acted on. The request's other parameters, except limit, must be the same as those of the request that returned the token.
+	Continue *string `form:"continue,omitempty" json:"continue,omitempty" yaml:"continue,omitempty"`
+
+	// Recursive If true, also unarchive what was archived with the Space. A Space archived recursively is refused without it.
+	Recursive *bool `form:"recursive,omitempty" json:"recursive,omitempty" yaml:"recursive,omitempty"`
+}
+
 // AttestParams defines parameters for Attest.
 type AttestParams struct {
 	// DryRun Resolve the Revisions that would be covered and return the same response without writing anything.
@@ -10184,6 +10391,9 @@ type BulkDeleteAttributesParams struct {
 
 	// Continue The token from the ConfigHub-Continue header of the previous request, to act on the Attribute entities after the last one it acted on. The request's other parameters, except limit, must be the same as those of the request that returned the token.
 	Continue *string `form:"continue,omitempty" json:"continue,omitempty" yaml:"continue,omitempty"`
+
+	// Archive If true, archive the entities rather than delete them: each is kept, with its history, hidden with the HiddenReason Archived, and given a Slug the server assigns from its ID, so that its own Slug is free. The Slug it had is kept in the label ArchivedSlug. An archived entity can be read, unarchived, or deleted for good, which a delete without archive does. Delete gates refuse an archive as they refuse a delete, and so do references from entities the request does not archive, except those held by history.
+	Archive *bool `form:"archive,omitempty" json:"archive,omitempty" yaml:"archive,omitempty"`
 
 	// FromBackingUnits Prune: of the Attributes selected, delete those whose backing Unit is empty, which says the Attribute should not exist, and keep the Unit, empty and backing nothing, so that it keeps the Attribute's history and a document that comes back revives it. The others are left alone and are not in the response, so a broad selection deletes only what was emptied.
 	FromBackingUnits *bool `form:"from_backing_units,omitempty" json:"from_backing_units,omitempty" yaml:"from_backing_units,omitempty"`
@@ -10806,6 +11016,104 @@ type BulkMoveAttributesParams struct {
 	DryRun *bool `form:"dry_run,omitempty" json:"dry_run,omitempty" yaml:"dry_run,omitempty"`
 }
 
+// BulkUnarchiveAttributesParams defines parameters for BulkUnarchiveAttributes.
+type BulkUnarchiveAttributesParams struct {
+	// Where The specified string is an expression for the purpose of filtering
+	// the list of Attributes returned. The expression syntax was inspired by SQL.
+	// It supports conjunctions using `AND` of relational expressions of the form *attribute*
+	// *operator* *attribute_or_literal*. The attribute names are case-sensitive and PascalCase,
+	// as in the JSON encoding.
+	// Strings support the following operators: `<`, `>`, `<=`, `>=`, `=`, `!=`, `LIKE`, `NOT LIKE`, `ILIKE`, `~~`, `!~~`, `~`, `~*`, `!~`, `!~*`, `IN`, `NOT IN`.
+	// String pattern operators: `LIKE` and `~~` for pattern matching with `%` and `_` wildcards,
+	// `ILIKE` for case-insensitive pattern matching, `NOT LIKE` and `!~~` for negated pattern matching.
+	// String regex operators: `~` for regex matching, `~*` for case-insensitive regex,
+	// `!~` and `!~*` for regex not matching (case-sensitive and insensitive).
+	// Integers support the following operators: `<`, `>`, `<=`, `>=`, `=`, `!=`, `IN`, `NOT IN`.
+	// UUIDs and boolean attributes support equality and inequality only.
+	// UUID and time literals must be quoted as string literals.
+	// String literals are quoted with single quotes, such as `'string'`.
+	// Time literals use the same form as when serialized as JSON,
+	// such as: `CreatedAt > '2025-02-18T23:16:34'`.
+	// Integer and boolean literals are also supported for attributes of those types.
+	// Arrays support the `?` operator to to match any element of the array,
+	// as in `FromLinkID ? '7c61626f-ddbe-41af-93f6-b69f4ab6d308'`.
+	// Arrays can perform LEN() to check for length, as in `LEN(FromLinkID) > 0`.
+	// An attribute naming a list of other entities can be filtered on their attributes with a `*` segment,
+	// as in `FromLink.*.Slug = 'upgrade-app'`, which holds when any element satisfies it.
+	// Without the `*` such a reference is an error, since it names no single value to compare.
+	// Map support the dot notation to specify a particular map key, as in `Labels.tier = 'Backend'`.
+	// Maps support `IS NULL` and `IS NOT NULL` with dot notation to check for key absence or presence,
+	// as in `Labels.tier IS NULL` (key doesn't exist) or `Labels.tier IS NOT NULL` (key exists).
+	// Comparison results can be tested with `IS TRUE`, `IS FALSE`, `IS NOT TRUE`, and `IS NOT FALSE`.
+	// These are useful for nullable columns: `MergeSourceID = '<uuid>' IS NOT FALSE` matches rows where MergeSourceID equals the value OR is NULL.
+	// The `IN` and `NOT IN` operators accept a comma-separated list of values in parentheses,
+	// such as `Slug IN ('slugone', 'slugtwo')` or `Labels.environment IN ('prod', 'staging')`.
+	// Conjunctions are supported using the `AND` operator.
+	// An example conjunction is:
+	// `CreatedAt >= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.
+	//
+	// Supported attributes for filtering on Attribute: Annotations, AttributeID, BackingUnitID, CreatedAt, DataType, DeleteGates, DisplayName, Hash, HiddenReason, Labels, OrganizationID, Parameters, Permissions, ResourceTypePaths, Slug, SpaceID, ToolchainType, UpdatedAt, UpstreamAttributeID.
+	//
+	// The whole string must be query-encoded.
+	Where *string `form:"where,omitempty" json:"where,omitempty" yaml:"where,omitempty"`
+
+	// Filter UUID of a Filter entity to apply to the Attribute list.
+	//
+	// The Filter must be in the same Organization as the user credentials.
+	//
+	// The Filter's From field must match the entity type being filtered (Attribute).
+	//
+	// For Space-resident entities, if the Filter has a FromSpaceID, it must match the operation's SpaceID.
+	//
+	// The Filter's Where clause will be combined with any explicit 'where' parameter using AND logic.
+	//
+	// If both 'filter' and 'where' parameters are specified, they are combined with AND logic.
+	Filter *string `form:"filter,omitempty" json:"filter,omitempty" yaml:"filter,omitempty"`
+
+	// Contains Free text search that approximately matches the specified string against string fields and map keys/values.
+	//
+	// The search is case-insensitive and uses pattern matching to find entities containing the text.
+	//
+	// Searchable string fields include attributes like Slug, DisplayName, and string-typed custom fields.
+	//
+	// For map fields (like Labels and Annotations), the search matches both map keys and values.
+	//
+	// The search uses OR logic across all searchable fields, so matching any field will return the entity.
+	//
+	// If both 'where' and 'contains' parameters are specified, they are combined with AND logic.
+	//
+	// Searchable fields for Attribute include string and map-type attributes from the queryable attributes list.
+	//
+	// The whole string must be query-encoded.
+	Contains *string `form:"contains,omitempty" json:"contains,omitempty" yaml:"contains,omitempty"`
+
+	// IncludeHidden Hidden Attribute entities, those with a HiddenReason, are left out of the results, or of what a bulk operation acts on, unless this names their HiddenReason.
+	//
+	// It is a comma-separated list of HiddenReasons, or `*` for all of them but `Archived`.
+	//
+	// A where clause naming the entities, by their Slug or ID with `=` or `IN`, or naming HiddenReason at all, also returns hidden entities it selects.
+	//
+	// Archived entities, which a delete with archive=true archives, are selected only when this names `Archived`, as in `Archived` or `*,Archived`; a where clause naming them returns them from a List or Search, but not from a bulk operation.
+	//
+	// ConfigHub/YAML Units, which hold the configuration of entities, are hidden with the HiddenReason `BackingUnit`.
+	IncludeHidden *string `form:"include_hidden,omitempty" json:"include_hidden,omitempty" yaml:"include_hidden,omitempty"`
+
+	// Include Include clause for expanding related entities in the response for Attribute.
+	// The attribute names are case-sensitive, PascalCase, and
+	// expected in a comma-separated list format as in the JSON encoding.
+	//
+	// Supported attributes for Attribute are OrganizationID, Permissions, SpaceID.
+	//
+	// The whole string must be query-encoded.
+	Include *string `form:"include,omitempty" json:"include,omitempty" yaml:"include,omitempty"`
+
+	// Limit Maximum number of Attribute entities to act on, in ID order. A request that names limit or continue also stops when it runs short of time, and returns a ConfigHub-Continue header to pass as the continue parameter of the next request; keep sending requests until a response has none. If neither is specified, the request acts on every selected entity.
+	Limit *int `form:"limit,omitempty" json:"limit,omitempty" yaml:"limit,omitempty"`
+
+	// Continue The token from the ConfigHub-Continue header of the previous request, to act on the Attribute entities after the last one it acted on. The request's other parameters, except limit, must be the same as those of the request that returned the token.
+	Continue *string `form:"continue,omitempty" json:"continue,omitempty" yaml:"continue,omitempty"`
+}
+
 // ListAuditEventsParams defines parameters for ListAuditEvents.
 type ListAuditEventsParams struct {
 	// Where The specified string is an expression for the purpose of filtering
@@ -11060,6 +11368,9 @@ type BulkDeleteChangeOrdersParams struct {
 
 	// Detach If true, remove the references to the deleted entities from entities the request does not delete, instead of refusing the delete while any remain. References that cannot be removed still refuse it. For a Space, applies to everything the recursive delete removes.
 	Detach *bool `form:"detach,omitempty" json:"detach,omitempty" yaml:"detach,omitempty"`
+
+	// Archive If true, archive the entities rather than delete them: each is kept, with its history, hidden with the HiddenReason Archived, and given a Slug the server assigns from its ID, so that its own Slug is free. The Slug it had is kept in the label ArchivedSlug. An archived entity can be read, unarchived, or deleted for good, which a delete without archive does. Delete gates refuse an archive as they refuse a delete, and so do references from entities the request does not archive, except those held by history.
+	Archive *bool `form:"archive,omitempty" json:"archive,omitempty" yaml:"archive,omitempty"`
 }
 
 // ListAllChangeOrdersParams defines parameters for ListAllChangeOrders.
@@ -11660,6 +11971,104 @@ type BulkRefreshChangeOrderStagesParams struct {
 	DryRun *bool `form:"dry_run,omitempty" json:"dry_run,omitempty" yaml:"dry_run,omitempty"`
 }
 
+// BulkUnarchiveChangeOrdersParams defines parameters for BulkUnarchiveChangeOrders.
+type BulkUnarchiveChangeOrdersParams struct {
+	// Where The specified string is an expression for the purpose of filtering
+	// the list of ChangeOrders returned. The expression syntax was inspired by SQL.
+	// It supports conjunctions using `AND` of relational expressions of the form *attribute*
+	// *operator* *attribute_or_literal*. The attribute names are case-sensitive and PascalCase,
+	// as in the JSON encoding.
+	// Strings support the following operators: `<`, `>`, `<=`, `>=`, `=`, `!=`, `LIKE`, `NOT LIKE`, `ILIKE`, `~~`, `!~~`, `~`, `~*`, `!~`, `!~*`, `IN`, `NOT IN`.
+	// String pattern operators: `LIKE` and `~~` for pattern matching with `%` and `_` wildcards,
+	// `ILIKE` for case-insensitive pattern matching, `NOT LIKE` and `!~~` for negated pattern matching.
+	// String regex operators: `~` for regex matching, `~*` for case-insensitive regex,
+	// `!~` and `!~*` for regex not matching (case-sensitive and insensitive).
+	// Integers support the following operators: `<`, `>`, `<=`, `>=`, `=`, `!=`, `IN`, `NOT IN`.
+	// UUIDs and boolean attributes support equality and inequality only.
+	// UUID and time literals must be quoted as string literals.
+	// String literals are quoted with single quotes, such as `'string'`.
+	// Time literals use the same form as when serialized as JSON,
+	// such as: `CreatedAt > '2025-02-18T23:16:34'`.
+	// Integer and boolean literals are also supported for attributes of those types.
+	// Arrays support the `?` operator to to match any element of the array,
+	// as in `FromLinkID ? '7c61626f-ddbe-41af-93f6-b69f4ab6d308'`.
+	// Arrays can perform LEN() to check for length, as in `LEN(FromLinkID) > 0`.
+	// An attribute naming a list of other entities can be filtered on their attributes with a `*` segment,
+	// as in `FromLink.*.Slug = 'upgrade-app'`, which holds when any element satisfies it.
+	// Without the `*` such a reference is an error, since it names no single value to compare.
+	// Map support the dot notation to specify a particular map key, as in `Labels.tier = 'Backend'`.
+	// Maps support `IS NULL` and `IS NOT NULL` with dot notation to check for key absence or presence,
+	// as in `Labels.tier IS NULL` (key doesn't exist) or `Labels.tier IS NOT NULL` (key exists).
+	// Comparison results can be tested with `IS TRUE`, `IS FALSE`, `IS NOT TRUE`, and `IS NOT FALSE`.
+	// These are useful for nullable columns: `MergeSourceID = '<uuid>' IS NOT FALSE` matches rows where MergeSourceID equals the value OR is NULL.
+	// The `IN` and `NOT IN` operators accept a comma-separated list of values in parentheses,
+	// such as `Slug IN ('slugone', 'slugtwo')` or `Labels.environment IN ('prod', 'staging')`.
+	// Conjunctions are supported using the `AND` operator.
+	// An example conjunction is:
+	// `CreatedAt >= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.
+	//
+	// Supported attributes for filtering on ChangeOrder: AbortedReason, AdoptedEndTagID, Annotations, ChangeOrderID, ChangeWorkflow, ChangeWorkflowID, CreatedAt, DeleteGates, Description, DisplayName, EndTagID, HiddenReason, InScopeSpaceIDs, InvocationID, Labels, OrganizationID, Parameters, Permissions, PriorRevisions, PromotionFailures, PromotionOverrides, Promotions, ReleasePriorRevisions, ReleaseTagID, ReleasedRestoredSpaceIDs, ReleasedSpaceIDs, Releases, ResolvedSpaceIDs, RestoreTagID, RestoredSpaceIDs, ReviewRequests, SkippedUnits, Slug, SpaceFilterID, SpaceID, Stage, StartTagID, State, UnitFilterID, UpdateType, UpdatedAt, UserID, WhereSpace, WhereUnit.
+	//
+	// The whole string must be query-encoded.
+	Where *string `form:"where,omitempty" json:"where,omitempty" yaml:"where,omitempty"`
+
+	// Filter UUID of a Filter entity to apply to the ChangeOrder list.
+	//
+	// The Filter must be in the same Organization as the user credentials.
+	//
+	// The Filter's From field must match the entity type being filtered (ChangeOrder).
+	//
+	// For Space-resident entities, if the Filter has a FromSpaceID, it must match the operation's SpaceID.
+	//
+	// The Filter's Where clause will be combined with any explicit 'where' parameter using AND logic.
+	//
+	// If both 'filter' and 'where' parameters are specified, they are combined with AND logic.
+	Filter *string `form:"filter,omitempty" json:"filter,omitempty" yaml:"filter,omitempty"`
+
+	// Contains Free text search that approximately matches the specified string against string fields and map keys/values.
+	//
+	// The search is case-insensitive and uses pattern matching to find entities containing the text.
+	//
+	// Searchable string fields include attributes like Slug, DisplayName, and string-typed custom fields.
+	//
+	// For map fields (like Labels and Annotations), the search matches both map keys and values.
+	//
+	// The search uses OR logic across all searchable fields, so matching any field will return the entity.
+	//
+	// If both 'where' and 'contains' parameters are specified, they are combined with AND logic.
+	//
+	// Searchable fields for ChangeOrder include string and map-type attributes from the queryable attributes list.
+	//
+	// The whole string must be query-encoded.
+	Contains *string `form:"contains,omitempty" json:"contains,omitempty" yaml:"contains,omitempty"`
+
+	// IncludeHidden Hidden ChangeOrder entities, those with a HiddenReason, are left out of the results, or of what a bulk operation acts on, unless this names their HiddenReason.
+	//
+	// It is a comma-separated list of HiddenReasons, or `*` for all of them but `Archived`.
+	//
+	// A where clause naming the entities, by their Slug or ID with `=` or `IN`, or naming HiddenReason at all, also returns hidden entities it selects.
+	//
+	// Archived entities, which a delete with archive=true archives, are selected only when this names `Archived`, as in `Archived` or `*,Archived`; a where clause naming them returns them from a List or Search, but not from a bulk operation.
+	//
+	// ConfigHub/YAML Units, which hold the configuration of entities, are hidden with the HiddenReason `BackingUnit`.
+	IncludeHidden *string `form:"include_hidden,omitempty" json:"include_hidden,omitempty" yaml:"include_hidden,omitempty"`
+
+	// Include Include clause for expanding related entities in the response for ChangeOrder.
+	// The attribute names are case-sensitive, PascalCase, and
+	// expected in a comma-separated list format as in the JSON encoding.
+	//
+	// Supported attributes for ChangeOrder are EndTagID, InvocationID, OrganizationID, Permissions, ReleaseTagID, RestoreTagID, SpaceFilterID, SpaceID, StartTagID, UnitFilterID.
+	//
+	// The whole string must be query-encoded.
+	Include *string `form:"include,omitempty" json:"include,omitempty" yaml:"include,omitempty"`
+
+	// Limit Maximum number of ChangeOrder entities to act on, in ID order. A request that names limit or continue also stops when it runs short of time, and returns a ConfigHub-Continue header to pass as the continue parameter of the next request; keep sending requests until a response has none. If neither is specified, the request acts on every selected entity.
+	Limit *int `form:"limit,omitempty" json:"limit,omitempty" yaml:"limit,omitempty"`
+
+	// Continue The token from the ConfigHub-Continue header of the previous request, to act on the ChangeOrder entities after the last one it acted on. The request's other parameters, except limit, must be the same as those of the request that returned the token.
+	Continue *string `form:"continue,omitempty" json:"continue,omitempty" yaml:"continue,omitempty"`
+}
+
 // BulkDeleteChangeSetsParams defines parameters for BulkDeleteChangeSets.
 type BulkDeleteChangeSetsParams struct {
 	// Where The specified string is an expression for the purpose of filtering
@@ -11759,6 +12168,9 @@ type BulkDeleteChangeSetsParams struct {
 
 	// Detach If true, remove the references to the deleted entities from entities the request does not delete, instead of refusing the delete while any remain. References that cannot be removed still refuse it. For a Space, applies to everything the recursive delete removes.
 	Detach *bool `form:"detach,omitempty" json:"detach,omitempty" yaml:"detach,omitempty"`
+
+	// Archive If true, archive the entities rather than delete them: each is kept, with its history, hidden with the HiddenReason Archived, and given a Slug the server assigns from its ID, so that its own Slug is free. The Slug it had is kept in the label ArchivedSlug. An archived entity can be read, unarchived, or deleted for good, which a delete without archive does. Delete gates refuse an archive as they refuse a delete, and so do references from entities the request does not archive, except those held by history.
+	Archive *bool `form:"archive,omitempty" json:"archive,omitempty" yaml:"archive,omitempty"`
 }
 
 // ListAllChangeSetsParams defines parameters for ListAllChangeSets.
@@ -12324,6 +12736,104 @@ type BulkMoveChangeSetsParams struct {
 	DryRun *bool `form:"dry_run,omitempty" json:"dry_run,omitempty" yaml:"dry_run,omitempty"`
 }
 
+// BulkUnarchiveChangeSetsParams defines parameters for BulkUnarchiveChangeSets.
+type BulkUnarchiveChangeSetsParams struct {
+	// Where The specified string is an expression for the purpose of filtering
+	// the list of ChangeSets returned. The expression syntax was inspired by SQL.
+	// It supports conjunctions using `AND` of relational expressions of the form *attribute*
+	// *operator* *attribute_or_literal*. The attribute names are case-sensitive and PascalCase,
+	// as in the JSON encoding.
+	// Strings support the following operators: `<`, `>`, `<=`, `>=`, `=`, `!=`, `LIKE`, `NOT LIKE`, `ILIKE`, `~~`, `!~~`, `~`, `~*`, `!~`, `!~*`, `IN`, `NOT IN`.
+	// String pattern operators: `LIKE` and `~~` for pattern matching with `%` and `_` wildcards,
+	// `ILIKE` for case-insensitive pattern matching, `NOT LIKE` and `!~~` for negated pattern matching.
+	// String regex operators: `~` for regex matching, `~*` for case-insensitive regex,
+	// `!~` and `!~*` for regex not matching (case-sensitive and insensitive).
+	// Integers support the following operators: `<`, `>`, `<=`, `>=`, `=`, `!=`, `IN`, `NOT IN`.
+	// UUIDs and boolean attributes support equality and inequality only.
+	// UUID and time literals must be quoted as string literals.
+	// String literals are quoted with single quotes, such as `'string'`.
+	// Time literals use the same form as when serialized as JSON,
+	// such as: `CreatedAt > '2025-02-18T23:16:34'`.
+	// Integer and boolean literals are also supported for attributes of those types.
+	// Arrays support the `?` operator to to match any element of the array,
+	// as in `FromLinkID ? '7c61626f-ddbe-41af-93f6-b69f4ab6d308'`.
+	// Arrays can perform LEN() to check for length, as in `LEN(FromLinkID) > 0`.
+	// An attribute naming a list of other entities can be filtered on their attributes with a `*` segment,
+	// as in `FromLink.*.Slug = 'upgrade-app'`, which holds when any element satisfies it.
+	// Without the `*` such a reference is an error, since it names no single value to compare.
+	// Map support the dot notation to specify a particular map key, as in `Labels.tier = 'Backend'`.
+	// Maps support `IS NULL` and `IS NOT NULL` with dot notation to check for key absence or presence,
+	// as in `Labels.tier IS NULL` (key doesn't exist) or `Labels.tier IS NOT NULL` (key exists).
+	// Comparison results can be tested with `IS TRUE`, `IS FALSE`, `IS NOT TRUE`, and `IS NOT FALSE`.
+	// These are useful for nullable columns: `MergeSourceID = '<uuid>' IS NOT FALSE` matches rows where MergeSourceID equals the value OR is NULL.
+	// The `IN` and `NOT IN` operators accept a comma-separated list of values in parentheses,
+	// such as `Slug IN ('slugone', 'slugtwo')` or `Labels.environment IN ('prod', 'staging')`.
+	// Conjunctions are supported using the `AND` operator.
+	// An example conjunction is:
+	// `CreatedAt >= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.
+	//
+	// Supported attributes for filtering on ChangeSet: Annotations, ChangeSetID, ChangeWorkflow, ChangeWorkflowID, CloseOverride, CreatedAt, DeleteGates, Description, DisplayName, EndTagID, HiddenReason, InScopeSpaceIDs, Labels, OrganizationID, Permissions, ReviewRequests, Slug, SpaceID, StartTagID, StartTagIsPriorRevision, State, UpdatedAt, UserID.
+	//
+	// The whole string must be query-encoded.
+	Where *string `form:"where,omitempty" json:"where,omitempty" yaml:"where,omitempty"`
+
+	// Filter UUID of a Filter entity to apply to the ChangeSet list.
+	//
+	// The Filter must be in the same Organization as the user credentials.
+	//
+	// The Filter's From field must match the entity type being filtered (ChangeSet).
+	//
+	// For Space-resident entities, if the Filter has a FromSpaceID, it must match the operation's SpaceID.
+	//
+	// The Filter's Where clause will be combined with any explicit 'where' parameter using AND logic.
+	//
+	// If both 'filter' and 'where' parameters are specified, they are combined with AND logic.
+	Filter *string `form:"filter,omitempty" json:"filter,omitempty" yaml:"filter,omitempty"`
+
+	// Contains Free text search that approximately matches the specified string against string fields and map keys/values.
+	//
+	// The search is case-insensitive and uses pattern matching to find entities containing the text.
+	//
+	// Searchable string fields include attributes like Slug, DisplayName, and string-typed custom fields.
+	//
+	// For map fields (like Labels and Annotations), the search matches both map keys and values.
+	//
+	// The search uses OR logic across all searchable fields, so matching any field will return the entity.
+	//
+	// If both 'where' and 'contains' parameters are specified, they are combined with AND logic.
+	//
+	// Searchable fields for ChangeSet include string and map-type attributes from the queryable attributes list.
+	//
+	// The whole string must be query-encoded.
+	Contains *string `form:"contains,omitempty" json:"contains,omitempty" yaml:"contains,omitempty"`
+
+	// IncludeHidden Hidden ChangeSet entities, those with a HiddenReason, are left out of the results, or of what a bulk operation acts on, unless this names their HiddenReason.
+	//
+	// It is a comma-separated list of HiddenReasons, or `*` for all of them but `Archived`.
+	//
+	// A where clause naming the entities, by their Slug or ID with `=` or `IN`, or naming HiddenReason at all, also returns hidden entities it selects.
+	//
+	// Archived entities, which a delete with archive=true archives, are selected only when this names `Archived`, as in `Archived` or `*,Archived`; a where clause naming them returns them from a List or Search, but not from a bulk operation.
+	//
+	// ConfigHub/YAML Units, which hold the configuration of entities, are hidden with the HiddenReason `BackingUnit`.
+	IncludeHidden *string `form:"include_hidden,omitempty" json:"include_hidden,omitempty" yaml:"include_hidden,omitempty"`
+
+	// Include Include clause for expanding related entities in the response for ChangeSet.
+	// The attribute names are case-sensitive, PascalCase, and
+	// expected in a comma-separated list format as in the JSON encoding.
+	//
+	// Supported attributes for ChangeSet are EndTagID, OrganizationID, Permissions, SpaceID, StartTagID.
+	//
+	// The whole string must be query-encoded.
+	Include *string `form:"include,omitempty" json:"include,omitempty" yaml:"include,omitempty"`
+
+	// Limit Maximum number of ChangeSet entities to act on, in ID order. A request that names limit or continue also stops when it runs short of time, and returns a ConfigHub-Continue header to pass as the continue parameter of the next request; keep sending requests until a response has none. If neither is specified, the request acts on every selected entity.
+	Limit *int `form:"limit,omitempty" json:"limit,omitempty" yaml:"limit,omitempty"`
+
+	// Continue The token from the ConfigHub-Continue header of the previous request, to act on the ChangeSet entities after the last one it acted on. The request's other parameters, except limit, must be the same as those of the request that returned the token.
+	Continue *string `form:"continue,omitempty" json:"continue,omitempty" yaml:"continue,omitempty"`
+}
+
 // BulkDeleteChangeWorkflowsParams defines parameters for BulkDeleteChangeWorkflows.
 type BulkDeleteChangeWorkflowsParams struct {
 	// Where The specified string is an expression for the purpose of filtering
@@ -12420,6 +12930,9 @@ type BulkDeleteChangeWorkflowsParams struct {
 
 	// Continue The token from the ConfigHub-Continue header of the previous request, to act on the ChangeWorkflow entities after the last one it acted on. The request's other parameters, except limit, must be the same as those of the request that returned the token.
 	Continue *string `form:"continue,omitempty" json:"continue,omitempty" yaml:"continue,omitempty"`
+
+	// Archive If true, archive the entities rather than delete them: each is kept, with its history, hidden with the HiddenReason Archived, and given a Slug the server assigns from its ID, so that its own Slug is free. The Slug it had is kept in the label ArchivedSlug. An archived entity can be read, unarchived, or deleted for good, which a delete without archive does. Delete gates refuse an archive as they refuse a delete, and so do references from entities the request does not archive, except those held by history.
+	Archive *bool `form:"archive,omitempty" json:"archive,omitempty" yaml:"archive,omitempty"`
 
 	// FromBackingUnits Prune: of the ChangeWorkflows selected, delete those whose backing Unit is empty, which says the ChangeWorkflow should not exist, and keep the Unit, empty and backing nothing, so that it keeps the ChangeWorkflow's history and a document that comes back revives it. The others are left alone and are not in the response, so a broad selection deletes only what was emptied.
 	FromBackingUnits *bool `form:"from_backing_units,omitempty" json:"from_backing_units,omitempty" yaml:"from_backing_units,omitempty"`
@@ -13065,6 +13578,104 @@ type BulkMoveChangeWorkflowsParams struct {
 	DryRun *bool `form:"dry_run,omitempty" json:"dry_run,omitempty" yaml:"dry_run,omitempty"`
 }
 
+// BulkUnarchiveChangeWorkflowsParams defines parameters for BulkUnarchiveChangeWorkflows.
+type BulkUnarchiveChangeWorkflowsParams struct {
+	// Where The specified string is an expression for the purpose of filtering
+	// the list of ChangeWorkflows returned. The expression syntax was inspired by SQL.
+	// It supports conjunctions using `AND` of relational expressions of the form *attribute*
+	// *operator* *attribute_or_literal*. The attribute names are case-sensitive and PascalCase,
+	// as in the JSON encoding.
+	// Strings support the following operators: `<`, `>`, `<=`, `>=`, `=`, `!=`, `LIKE`, `NOT LIKE`, `ILIKE`, `~~`, `!~~`, `~`, `~*`, `!~`, `!~*`, `IN`, `NOT IN`.
+	// String pattern operators: `LIKE` and `~~` for pattern matching with `%` and `_` wildcards,
+	// `ILIKE` for case-insensitive pattern matching, `NOT LIKE` and `!~~` for negated pattern matching.
+	// String regex operators: `~` for regex matching, `~*` for case-insensitive regex,
+	// `!~` and `!~*` for regex not matching (case-sensitive and insensitive).
+	// Integers support the following operators: `<`, `>`, `<=`, `>=`, `=`, `!=`, `IN`, `NOT IN`.
+	// UUIDs and boolean attributes support equality and inequality only.
+	// UUID and time literals must be quoted as string literals.
+	// String literals are quoted with single quotes, such as `'string'`.
+	// Time literals use the same form as when serialized as JSON,
+	// such as: `CreatedAt > '2025-02-18T23:16:34'`.
+	// Integer and boolean literals are also supported for attributes of those types.
+	// Arrays support the `?` operator to to match any element of the array,
+	// as in `FromLinkID ? '7c61626f-ddbe-41af-93f6-b69f4ab6d308'`.
+	// Arrays can perform LEN() to check for length, as in `LEN(FromLinkID) > 0`.
+	// An attribute naming a list of other entities can be filtered on their attributes with a `*` segment,
+	// as in `FromLink.*.Slug = 'upgrade-app'`, which holds when any element satisfies it.
+	// Without the `*` such a reference is an error, since it names no single value to compare.
+	// Map support the dot notation to specify a particular map key, as in `Labels.tier = 'Backend'`.
+	// Maps support `IS NULL` and `IS NOT NULL` with dot notation to check for key absence or presence,
+	// as in `Labels.tier IS NULL` (key doesn't exist) or `Labels.tier IS NOT NULL` (key exists).
+	// Comparison results can be tested with `IS TRUE`, `IS FALSE`, `IS NOT TRUE`, and `IS NOT FALSE`.
+	// These are useful for nullable columns: `MergeSourceID = '<uuid>' IS NOT FALSE` matches rows where MergeSourceID equals the value OR is NULL.
+	// The `IN` and `NOT IN` operators accept a comma-separated list of values in parentheses,
+	// such as `Slug IN ('slugone', 'slugtwo')` or `Labels.environment IN ('prod', 'staging')`.
+	// Conjunctions are supported using the `AND` operator.
+	// An example conjunction is:
+	// `CreatedAt >= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.
+	//
+	// Supported attributes for filtering on ChangeWorkflow: Annotations, AttestationPrerequisites, BackingUnitID, ChangeWorkflowID, CreatedAt, CustomPrerequisites, DeleteGates, DisplayName, Final, Hash, HiddenReason, Labels, OrganizationID, Permissions, Slug, SpaceID, Stages, UpdatedAt, UpstreamChangeWorkflowID.
+	//
+	// The whole string must be query-encoded.
+	Where *string `form:"where,omitempty" json:"where,omitempty" yaml:"where,omitempty"`
+
+	// Filter UUID of a Filter entity to apply to the ChangeWorkflow list.
+	//
+	// The Filter must be in the same Organization as the user credentials.
+	//
+	// The Filter's From field must match the entity type being filtered (ChangeWorkflow).
+	//
+	// For Space-resident entities, if the Filter has a FromSpaceID, it must match the operation's SpaceID.
+	//
+	// The Filter's Where clause will be combined with any explicit 'where' parameter using AND logic.
+	//
+	// If both 'filter' and 'where' parameters are specified, they are combined with AND logic.
+	Filter *string `form:"filter,omitempty" json:"filter,omitempty" yaml:"filter,omitempty"`
+
+	// Contains Free text search that approximately matches the specified string against string fields and map keys/values.
+	//
+	// The search is case-insensitive and uses pattern matching to find entities containing the text.
+	//
+	// Searchable string fields include attributes like Slug, DisplayName, and string-typed custom fields.
+	//
+	// For map fields (like Labels and Annotations), the search matches both map keys and values.
+	//
+	// The search uses OR logic across all searchable fields, so matching any field will return the entity.
+	//
+	// If both 'where' and 'contains' parameters are specified, they are combined with AND logic.
+	//
+	// Searchable fields for ChangeWorkflow include string and map-type attributes from the queryable attributes list.
+	//
+	// The whole string must be query-encoded.
+	Contains *string `form:"contains,omitempty" json:"contains,omitempty" yaml:"contains,omitempty"`
+
+	// IncludeHidden Hidden ChangeWorkflow entities, those with a HiddenReason, are left out of the results, or of what a bulk operation acts on, unless this names their HiddenReason.
+	//
+	// It is a comma-separated list of HiddenReasons, or `*` for all of them but `Archived`.
+	//
+	// A where clause naming the entities, by their Slug or ID with `=` or `IN`, or naming HiddenReason at all, also returns hidden entities it selects.
+	//
+	// Archived entities, which a delete with archive=true archives, are selected only when this names `Archived`, as in `Archived` or `*,Archived`; a where clause naming them returns them from a List or Search, but not from a bulk operation.
+	//
+	// ConfigHub/YAML Units, which hold the configuration of entities, are hidden with the HiddenReason `BackingUnit`.
+	IncludeHidden *string `form:"include_hidden,omitempty" json:"include_hidden,omitempty" yaml:"include_hidden,omitempty"`
+
+	// Include Include clause for expanding related entities in the response for ChangeWorkflow.
+	// The attribute names are case-sensitive, PascalCase, and
+	// expected in a comma-separated list format as in the JSON encoding.
+	//
+	// Supported attributes for ChangeWorkflow are OrganizationID, Permissions, SpaceID.
+	//
+	// The whole string must be query-encoded.
+	Include *string `form:"include,omitempty" json:"include,omitempty" yaml:"include,omitempty"`
+
+	// Limit Maximum number of ChangeWorkflow entities to act on, in ID order. A request that names limit or continue also stops when it runs short of time, and returns a ConfigHub-Continue header to pass as the continue parameter of the next request; keep sending requests until a response has none. If neither is specified, the request acts on every selected entity.
+	Limit *int `form:"limit,omitempty" json:"limit,omitempty" yaml:"limit,omitempty"`
+
+	// Continue The token from the ConfigHub-Continue header of the previous request, to act on the ChangeWorkflow entities after the last one it acted on. The request's other parameters, except limit, must be the same as those of the request that returned the token.
+	Continue *string `form:"continue,omitempty" json:"continue,omitempty" yaml:"continue,omitempty"`
+}
+
 // BulkDeleteChannelsParams defines parameters for BulkDeleteChannels.
 type BulkDeleteChannelsParams struct {
 	// Where The specified string is an expression for the purpose of filtering
@@ -13161,6 +13772,9 @@ type BulkDeleteChannelsParams struct {
 
 	// Continue The token from the ConfigHub-Continue header of the previous request, to act on the Channel entities after the last one it acted on. The request's other parameters, except limit, must be the same as those of the request that returned the token.
 	Continue *string `form:"continue,omitempty" json:"continue,omitempty" yaml:"continue,omitempty"`
+
+	// Archive If true, archive the entities rather than delete them: each is kept, with its history, hidden with the HiddenReason Archived, and given a Slug the server assigns from its ID, so that its own Slug is free. The Slug it had is kept in the label ArchivedSlug. An archived entity can be read, unarchived, or deleted for good, which a delete without archive does. Delete gates refuse an archive as they refuse a delete, and so do references from entities the request does not archive, except those held by history.
+	Archive *bool `form:"archive,omitempty" json:"archive,omitempty" yaml:"archive,omitempty"`
 
 	// FromBackingUnits Prune: of the Channels selected, delete those whose backing Unit is empty, which says the Channel should not exist, and keep the Unit, empty and backing nothing, so that it keeps the Channel's history and a document that comes back revives it. The others are left alone and are not in the response, so a broad selection deletes only what was emptied.
 	FromBackingUnits *bool `form:"from_backing_units,omitempty" json:"from_backing_units,omitempty" yaml:"from_backing_units,omitempty"`
@@ -13788,6 +14402,104 @@ type BulkMoveChannelsParams struct {
 	DryRun *bool `form:"dry_run,omitempty" json:"dry_run,omitempty" yaml:"dry_run,omitempty"`
 }
 
+// BulkUnarchiveChannelsParams defines parameters for BulkUnarchiveChannels.
+type BulkUnarchiveChannelsParams struct {
+	// Where The specified string is an expression for the purpose of filtering
+	// the list of Channels returned. The expression syntax was inspired by SQL.
+	// It supports conjunctions using `AND` of relational expressions of the form *attribute*
+	// *operator* *attribute_or_literal*. The attribute names are case-sensitive and PascalCase,
+	// as in the JSON encoding.
+	// Strings support the following operators: `<`, `>`, `<=`, `>=`, `=`, `!=`, `LIKE`, `NOT LIKE`, `ILIKE`, `~~`, `!~~`, `~`, `~*`, `!~`, `!~*`, `IN`, `NOT IN`.
+	// String pattern operators: `LIKE` and `~~` for pattern matching with `%` and `_` wildcards,
+	// `ILIKE` for case-insensitive pattern matching, `NOT LIKE` and `!~~` for negated pattern matching.
+	// String regex operators: `~` for regex matching, `~*` for case-insensitive regex,
+	// `!~` and `!~*` for regex not matching (case-sensitive and insensitive).
+	// Integers support the following operators: `<`, `>`, `<=`, `>=`, `=`, `!=`, `IN`, `NOT IN`.
+	// UUIDs and boolean attributes support equality and inequality only.
+	// UUID and time literals must be quoted as string literals.
+	// String literals are quoted with single quotes, such as `'string'`.
+	// Time literals use the same form as when serialized as JSON,
+	// such as: `CreatedAt > '2025-02-18T23:16:34'`.
+	// Integer and boolean literals are also supported for attributes of those types.
+	// Arrays support the `?` operator to to match any element of the array,
+	// as in `FromLinkID ? '7c61626f-ddbe-41af-93f6-b69f4ab6d308'`.
+	// Arrays can perform LEN() to check for length, as in `LEN(FromLinkID) > 0`.
+	// An attribute naming a list of other entities can be filtered on their attributes with a `*` segment,
+	// as in `FromLink.*.Slug = 'upgrade-app'`, which holds when any element satisfies it.
+	// Without the `*` such a reference is an error, since it names no single value to compare.
+	// Map support the dot notation to specify a particular map key, as in `Labels.tier = 'Backend'`.
+	// Maps support `IS NULL` and `IS NOT NULL` with dot notation to check for key absence or presence,
+	// as in `Labels.tier IS NULL` (key doesn't exist) or `Labels.tier IS NOT NULL` (key exists).
+	// Comparison results can be tested with `IS TRUE`, `IS FALSE`, `IS NOT TRUE`, and `IS NOT FALSE`.
+	// These are useful for nullable columns: `MergeSourceID = '<uuid>' IS NOT FALSE` matches rows where MergeSourceID equals the value OR is NULL.
+	// The `IN` and `NOT IN` operators accept a comma-separated list of values in parentheses,
+	// such as `Slug IN ('slugone', 'slugtwo')` or `Labels.environment IN ('prod', 'staging')`.
+	// Conjunctions are supported using the `AND` operator.
+	// An example conjunction is:
+	// `CreatedAt >= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.
+	//
+	// Supported attributes for filtering on Channel: Annotations, BackingUnitID, ChannelID, Commands, Condition, CreatedAt, DeleteGates, DisplayName, EventPosition, HiddenReason, IPAddress, Labels, LastMessage, LastSeenAt, OrganizationID, Permissions, Slug, SpaceID, Subscriptions, UpdatedAt, UpstreamChannelID.
+	//
+	// The whole string must be query-encoded.
+	Where *string `form:"where,omitempty" json:"where,omitempty" yaml:"where,omitempty"`
+
+	// Filter UUID of a Filter entity to apply to the Channel list.
+	//
+	// The Filter must be in the same Organization as the user credentials.
+	//
+	// The Filter's From field must match the entity type being filtered (Channel).
+	//
+	// For Space-resident entities, if the Filter has a FromSpaceID, it must match the operation's SpaceID.
+	//
+	// The Filter's Where clause will be combined with any explicit 'where' parameter using AND logic.
+	//
+	// If both 'filter' and 'where' parameters are specified, they are combined with AND logic.
+	Filter *string `form:"filter,omitempty" json:"filter,omitempty" yaml:"filter,omitempty"`
+
+	// Contains Free text search that approximately matches the specified string against string fields and map keys/values.
+	//
+	// The search is case-insensitive and uses pattern matching to find entities containing the text.
+	//
+	// Searchable string fields include attributes like Slug, DisplayName, and string-typed custom fields.
+	//
+	// For map fields (like Labels and Annotations), the search matches both map keys and values.
+	//
+	// The search uses OR logic across all searchable fields, so matching any field will return the entity.
+	//
+	// If both 'where' and 'contains' parameters are specified, they are combined with AND logic.
+	//
+	// Searchable fields for Channel include string and map-type attributes from the queryable attributes list.
+	//
+	// The whole string must be query-encoded.
+	Contains *string `form:"contains,omitempty" json:"contains,omitempty" yaml:"contains,omitempty"`
+
+	// IncludeHidden Hidden Channel entities, those with a HiddenReason, are left out of the results, or of what a bulk operation acts on, unless this names their HiddenReason.
+	//
+	// It is a comma-separated list of HiddenReasons, or `*` for all of them but `Archived`.
+	//
+	// A where clause naming the entities, by their Slug or ID with `=` or `IN`, or naming HiddenReason at all, also returns hidden entities it selects.
+	//
+	// Archived entities, which a delete with archive=true archives, are selected only when this names `Archived`, as in `Archived` or `*,Archived`; a where clause naming them returns them from a List or Search, but not from a bulk operation.
+	//
+	// ConfigHub/YAML Units, which hold the configuration of entities, are hidden with the HiddenReason `BackingUnit`.
+	IncludeHidden *string `form:"include_hidden,omitempty" json:"include_hidden,omitempty" yaml:"include_hidden,omitempty"`
+
+	// Include Include clause for expanding related entities in the response for Channel.
+	// The attribute names are case-sensitive, PascalCase, and
+	// expected in a comma-separated list format as in the JSON encoding.
+	//
+	// Supported attributes for Channel are OrganizationID, Permissions, SpaceID.
+	//
+	// The whole string must be query-encoded.
+	Include *string `form:"include,omitempty" json:"include,omitempty" yaml:"include,omitempty"`
+
+	// Limit Maximum number of Channel entities to act on, in ID order. A request that names limit or continue also stops when it runs short of time, and returns a ConfigHub-Continue header to pass as the continue parameter of the next request; keep sending requests until a response has none. If neither is specified, the request acts on every selected entity.
+	Limit *int `form:"limit,omitempty" json:"limit,omitempty" yaml:"limit,omitempty"`
+
+	// Continue The token from the ConfigHub-Continue header of the previous request, to act on the Channel entities after the last one it acted on. The request's other parameters, except limit, must be the same as those of the request that returned the token.
+	Continue *string `form:"continue,omitempty" json:"continue,omitempty" yaml:"continue,omitempty"`
+}
+
 // ListAllCommandsParams defines parameters for ListAllCommands.
 type ListAllCommandsParams struct {
 	// Command List only the Channels declaring this command.
@@ -14097,6 +14809,12 @@ type CreateComponentParams struct {
 	DryRun *bool `form:"dry_run,omitempty" json:"dry_run,omitempty" yaml:"dry_run,omitempty"`
 }
 
+// DeleteComponentParams defines parameters for DeleteComponent.
+type DeleteComponentParams struct {
+	// Archive If true, archive the entities rather than delete them: each is kept, with its history, hidden with the HiddenReason Archived, and given a Slug the server assigns from its ID, so that its own Slug is free. The Slug it had is kept in the label ArchivedSlug. An archived entity can be read, unarchived, or deleted for good, which a delete without archive does. Delete gates refuse an archive as they refuse a delete, and so do references from entities the request does not archive, except those held by history.
+	Archive *bool `form:"archive,omitempty" json:"archive,omitempty" yaml:"archive,omitempty"`
+}
+
 // GetComponentParams defines parameters for GetComponent.
 type GetComponentParams struct {
 	// Include Include clause for expanding related entities in the response for Component.
@@ -14284,6 +15002,9 @@ type BulkDeleteFiltersParams struct {
 
 	// Continue The token from the ConfigHub-Continue header of the previous request, to act on the Filter entities after the last one it acted on. The request's other parameters, except limit, must be the same as those of the request that returned the token.
 	Continue *string `form:"continue,omitempty" json:"continue,omitempty" yaml:"continue,omitempty"`
+
+	// Archive If true, archive the entities rather than delete them: each is kept, with its history, hidden with the HiddenReason Archived, and given a Slug the server assigns from its ID, so that its own Slug is free. The Slug it had is kept in the label ArchivedSlug. An archived entity can be read, unarchived, or deleted for good, which a delete without archive does. Delete gates refuse an archive as they refuse a delete, and so do references from entities the request does not archive, except those held by history.
+	Archive *bool `form:"archive,omitempty" json:"archive,omitempty" yaml:"archive,omitempty"`
 
 	// FromBackingUnits Prune: of the Filters selected, delete those whose backing Unit is empty, which says the Filter should not exist, and keep the Unit, empty and backing nothing, so that it keeps the Filter's history and a document that comes back revives it. The others are left alone and are not in the response, so a broad selection deletes only what was emptied.
 	FromBackingUnits *bool `form:"from_backing_units,omitempty" json:"from_backing_units,omitempty" yaml:"from_backing_units,omitempty"`
@@ -14923,6 +15644,104 @@ type BulkMoveFiltersParams struct {
 	DryRun *bool `form:"dry_run,omitempty" json:"dry_run,omitempty" yaml:"dry_run,omitempty"`
 }
 
+// BulkUnarchiveFiltersParams defines parameters for BulkUnarchiveFilters.
+type BulkUnarchiveFiltersParams struct {
+	// Where The specified string is an expression for the purpose of filtering
+	// the list of Filters returned. The expression syntax was inspired by SQL.
+	// It supports conjunctions using `AND` of relational expressions of the form *attribute*
+	// *operator* *attribute_or_literal*. The attribute names are case-sensitive and PascalCase,
+	// as in the JSON encoding.
+	// Strings support the following operators: `<`, `>`, `<=`, `>=`, `=`, `!=`, `LIKE`, `NOT LIKE`, `ILIKE`, `~~`, `!~~`, `~`, `~*`, `!~`, `!~*`, `IN`, `NOT IN`.
+	// String pattern operators: `LIKE` and `~~` for pattern matching with `%` and `_` wildcards,
+	// `ILIKE` for case-insensitive pattern matching, `NOT LIKE` and `!~~` for negated pattern matching.
+	// String regex operators: `~` for regex matching, `~*` for case-insensitive regex,
+	// `!~` and `!~*` for regex not matching (case-sensitive and insensitive).
+	// Integers support the following operators: `<`, `>`, `<=`, `>=`, `=`, `!=`, `IN`, `NOT IN`.
+	// UUIDs and boolean attributes support equality and inequality only.
+	// UUID and time literals must be quoted as string literals.
+	// String literals are quoted with single quotes, such as `'string'`.
+	// Time literals use the same form as when serialized as JSON,
+	// such as: `CreatedAt > '2025-02-18T23:16:34'`.
+	// Integer and boolean literals are also supported for attributes of those types.
+	// Arrays support the `?` operator to to match any element of the array,
+	// as in `FromLinkID ? '7c61626f-ddbe-41af-93f6-b69f4ab6d308'`.
+	// Arrays can perform LEN() to check for length, as in `LEN(FromLinkID) > 0`.
+	// An attribute naming a list of other entities can be filtered on their attributes with a `*` segment,
+	// as in `FromLink.*.Slug = 'upgrade-app'`, which holds when any element satisfies it.
+	// Without the `*` such a reference is an error, since it names no single value to compare.
+	// Map support the dot notation to specify a particular map key, as in `Labels.tier = 'Backend'`.
+	// Maps support `IS NULL` and `IS NOT NULL` with dot notation to check for key absence or presence,
+	// as in `Labels.tier IS NULL` (key doesn't exist) or `Labels.tier IS NOT NULL` (key exists).
+	// Comparison results can be tested with `IS TRUE`, `IS FALSE`, `IS NOT TRUE`, and `IS NOT FALSE`.
+	// These are useful for nullable columns: `MergeSourceID = '<uuid>' IS NOT FALSE` matches rows where MergeSourceID equals the value OR is NULL.
+	// The `IN` and `NOT IN` operators accept a comma-separated list of values in parentheses,
+	// such as `Slug IN ('slugone', 'slugtwo')` or `Labels.environment IN ('prod', 'staging')`.
+	// Conjunctions are supported using the `AND` operator.
+	// An example conjunction is:
+	// `CreatedAt >= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.
+	//
+	// Supported attributes for filtering on Filter: Annotations, BackingUnitID, CreatedAt, DeleteGates, DisplayName, FilterID, From, FromSpaceID, Hash, HiddenReason, IncludeHidden, Labels, OrganizationID, Permissions, ResourceType, Slug, SpaceID, UpdatedAt, UpstreamFilterID, Where, WhereData.
+	//
+	// The whole string must be query-encoded.
+	Where *string `form:"where,omitempty" json:"where,omitempty" yaml:"where,omitempty"`
+
+	// Filter UUID of a Filter entity to apply to the Filter list.
+	//
+	// The Filter must be in the same Organization as the user credentials.
+	//
+	// The Filter's From field must match the entity type being filtered (Filter).
+	//
+	// For Space-resident entities, if the Filter has a FromSpaceID, it must match the operation's SpaceID.
+	//
+	// The Filter's Where clause will be combined with any explicit 'where' parameter using AND logic.
+	//
+	// If both 'filter' and 'where' parameters are specified, they are combined with AND logic.
+	Filter *string `form:"filter,omitempty" json:"filter,omitempty" yaml:"filter,omitempty"`
+
+	// Contains Free text search that approximately matches the specified string against string fields and map keys/values.
+	//
+	// The search is case-insensitive and uses pattern matching to find entities containing the text.
+	//
+	// Searchable string fields include attributes like Slug, DisplayName, and string-typed custom fields.
+	//
+	// For map fields (like Labels and Annotations), the search matches both map keys and values.
+	//
+	// The search uses OR logic across all searchable fields, so matching any field will return the entity.
+	//
+	// If both 'where' and 'contains' parameters are specified, they are combined with AND logic.
+	//
+	// Searchable fields for Filter include string and map-type attributes from the queryable attributes list.
+	//
+	// The whole string must be query-encoded.
+	Contains *string `form:"contains,omitempty" json:"contains,omitempty" yaml:"contains,omitempty"`
+
+	// IncludeHidden Hidden Filter entities, those with a HiddenReason, are left out of the results, or of what a bulk operation acts on, unless this names their HiddenReason.
+	//
+	// It is a comma-separated list of HiddenReasons, or `*` for all of them but `Archived`.
+	//
+	// A where clause naming the entities, by their Slug or ID with `=` or `IN`, or naming HiddenReason at all, also returns hidden entities it selects.
+	//
+	// Archived entities, which a delete with archive=true archives, are selected only when this names `Archived`, as in `Archived` or `*,Archived`; a where clause naming them returns them from a List or Search, but not from a bulk operation.
+	//
+	// ConfigHub/YAML Units, which hold the configuration of entities, are hidden with the HiddenReason `BackingUnit`.
+	IncludeHidden *string `form:"include_hidden,omitempty" json:"include_hidden,omitempty" yaml:"include_hidden,omitempty"`
+
+	// Include Include clause for expanding related entities in the response for Filter.
+	// The attribute names are case-sensitive, PascalCase, and
+	// expected in a comma-separated list format as in the JSON encoding.
+	//
+	// Supported attributes for Filter are FromSpaceID, OrganizationID, Permissions, SpaceID.
+	//
+	// The whole string must be query-encoded.
+	Include *string `form:"include,omitempty" json:"include,omitempty" yaml:"include,omitempty"`
+
+	// Limit Maximum number of Filter entities to act on, in ID order. A request that names limit or continue also stops when it runs short of time, and returns a ConfigHub-Continue header to pass as the continue parameter of the next request; keep sending requests until a response has none. If neither is specified, the request acts on every selected entity.
+	Limit *int `form:"limit,omitempty" json:"limit,omitempty" yaml:"limit,omitempty"`
+
+	// Continue The token from the ConfigHub-Continue header of the previous request, to act on the Filter entities after the last one it acted on. The request's other parameters, except limit, must be the same as those of the request that returned the token.
+	Continue *string `form:"continue,omitempty" json:"continue,omitempty" yaml:"continue,omitempty"`
+}
+
 // ListOrgFunctionsParams defines parameters for ListOrgFunctions.
 type ListOrgFunctionsParams struct {
 	// ExecutorSpace Space ID or slug whose executor to use for listing or invoking builtin functions
@@ -15431,6 +16250,9 @@ type BulkDeleteInvocationsParams struct {
 
 	// Continue The token from the ConfigHub-Continue header of the previous request, to act on the Invocation entities after the last one it acted on. The request's other parameters, except limit, must be the same as those of the request that returned the token.
 	Continue *string `form:"continue,omitempty" json:"continue,omitempty" yaml:"continue,omitempty"`
+
+	// Archive If true, archive the entities rather than delete them: each is kept, with its history, hidden with the HiddenReason Archived, and given a Slug the server assigns from its ID, so that its own Slug is free. The Slug it had is kept in the label ArchivedSlug. An archived entity can be read, unarchived, or deleted for good, which a delete without archive does. Delete gates refuse an archive as they refuse a delete, and so do references from entities the request does not archive, except those held by history.
+	Archive *bool `form:"archive,omitempty" json:"archive,omitempty" yaml:"archive,omitempty"`
 
 	// FromBackingUnits Prune: of the Invocations selected, delete those whose backing Unit is empty, which says the Invocation should not exist, and keep the Unit, empty and backing nothing, so that it keeps the Invocation's history and a document that comes back revives it. The others are left alone and are not in the response, so a broad selection deletes only what was emptied.
 	FromBackingUnits *bool `form:"from_backing_units,omitempty" json:"from_backing_units,omitempty" yaml:"from_backing_units,omitempty"`
@@ -16072,6 +16894,104 @@ type BulkMoveInvocationsParams struct {
 	DryRun *bool `form:"dry_run,omitempty" json:"dry_run,omitempty" yaml:"dry_run,omitempty"`
 }
 
+// BulkUnarchiveInvocationsParams defines parameters for BulkUnarchiveInvocations.
+type BulkUnarchiveInvocationsParams struct {
+	// Where The specified string is an expression for the purpose of filtering
+	// the list of Invocations returned. The expression syntax was inspired by SQL.
+	// It supports conjunctions using `AND` of relational expressions of the form *attribute*
+	// *operator* *attribute_or_literal*. The attribute names are case-sensitive and PascalCase,
+	// as in the JSON encoding.
+	// Strings support the following operators: `<`, `>`, `<=`, `>=`, `=`, `!=`, `LIKE`, `NOT LIKE`, `ILIKE`, `~~`, `!~~`, `~`, `~*`, `!~`, `!~*`, `IN`, `NOT IN`.
+	// String pattern operators: `LIKE` and `~~` for pattern matching with `%` and `_` wildcards,
+	// `ILIKE` for case-insensitive pattern matching, `NOT LIKE` and `!~~` for negated pattern matching.
+	// String regex operators: `~` for regex matching, `~*` for case-insensitive regex,
+	// `!~` and `!~*` for regex not matching (case-sensitive and insensitive).
+	// Integers support the following operators: `<`, `>`, `<=`, `>=`, `=`, `!=`, `IN`, `NOT IN`.
+	// UUIDs and boolean attributes support equality and inequality only.
+	// UUID and time literals must be quoted as string literals.
+	// String literals are quoted with single quotes, such as `'string'`.
+	// Time literals use the same form as when serialized as JSON,
+	// such as: `CreatedAt > '2025-02-18T23:16:34'`.
+	// Integer and boolean literals are also supported for attributes of those types.
+	// Arrays support the `?` operator to to match any element of the array,
+	// as in `FromLinkID ? '7c61626f-ddbe-41af-93f6-b69f4ab6d308'`.
+	// Arrays can perform LEN() to check for length, as in `LEN(FromLinkID) > 0`.
+	// An attribute naming a list of other entities can be filtered on their attributes with a `*` segment,
+	// as in `FromLink.*.Slug = 'upgrade-app'`, which holds when any element satisfies it.
+	// Without the `*` such a reference is an error, since it names no single value to compare.
+	// Map support the dot notation to specify a particular map key, as in `Labels.tier = 'Backend'`.
+	// Maps support `IS NULL` and `IS NOT NULL` with dot notation to check for key absence or presence,
+	// as in `Labels.tier IS NULL` (key doesn't exist) or `Labels.tier IS NOT NULL` (key exists).
+	// Comparison results can be tested with `IS TRUE`, `IS FALSE`, `IS NOT TRUE`, and `IS NOT FALSE`.
+	// These are useful for nullable columns: `MergeSourceID = '<uuid>' IS NOT FALSE` matches rows where MergeSourceID equals the value OR is NULL.
+	// The `IN` and `NOT IN` operators accept a comma-separated list of values in parentheses,
+	// such as `Slug IN ('slugone', 'slugtwo')` or `Labels.environment IN ('prod', 'staging')`.
+	// Conjunctions are supported using the `AND` operator.
+	// An example conjunction is:
+	// `CreatedAt >= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.
+	//
+	// Supported attributes for filtering on Invocation: Annotations, BackingUnitID, ChannelID, Clearance, CreatedAt, DeleteGates, DisplayName, FunctionInvocations, Guards, Hash, HiddenReason, InvocationID, Labels, OrganizationID, OtherUnitIDs, Parameters, Permissions, Slug, SpaceID, ToolchainType, UpdatedAt, UpstreamInvocationID.
+	//
+	// The whole string must be query-encoded.
+	Where *string `form:"where,omitempty" json:"where,omitempty" yaml:"where,omitempty"`
+
+	// Filter UUID of a Filter entity to apply to the Invocation list.
+	//
+	// The Filter must be in the same Organization as the user credentials.
+	//
+	// The Filter's From field must match the entity type being filtered (Invocation).
+	//
+	// For Space-resident entities, if the Filter has a FromSpaceID, it must match the operation's SpaceID.
+	//
+	// The Filter's Where clause will be combined with any explicit 'where' parameter using AND logic.
+	//
+	// If both 'filter' and 'where' parameters are specified, they are combined with AND logic.
+	Filter *string `form:"filter,omitempty" json:"filter,omitempty" yaml:"filter,omitempty"`
+
+	// Contains Free text search that approximately matches the specified string against string fields and map keys/values.
+	//
+	// The search is case-insensitive and uses pattern matching to find entities containing the text.
+	//
+	// Searchable string fields include attributes like Slug, DisplayName, and string-typed custom fields.
+	//
+	// For map fields (like Labels and Annotations), the search matches both map keys and values.
+	//
+	// The search uses OR logic across all searchable fields, so matching any field will return the entity.
+	//
+	// If both 'where' and 'contains' parameters are specified, they are combined with AND logic.
+	//
+	// Searchable fields for Invocation include string and map-type attributes from the queryable attributes list.
+	//
+	// The whole string must be query-encoded.
+	Contains *string `form:"contains,omitempty" json:"contains,omitempty" yaml:"contains,omitempty"`
+
+	// IncludeHidden Hidden Invocation entities, those with a HiddenReason, are left out of the results, or of what a bulk operation acts on, unless this names their HiddenReason.
+	//
+	// It is a comma-separated list of HiddenReasons, or `*` for all of them but `Archived`.
+	//
+	// A where clause naming the entities, by their Slug or ID with `=` or `IN`, or naming HiddenReason at all, also returns hidden entities it selects.
+	//
+	// Archived entities, which a delete with archive=true archives, are selected only when this names `Archived`, as in `Archived` or `*,Archived`; a where clause naming them returns them from a List or Search, but not from a bulk operation.
+	//
+	// ConfigHub/YAML Units, which hold the configuration of entities, are hidden with the HiddenReason `BackingUnit`.
+	IncludeHidden *string `form:"include_hidden,omitempty" json:"include_hidden,omitempty" yaml:"include_hidden,omitempty"`
+
+	// Include Include clause for expanding related entities in the response for Invocation.
+	// The attribute names are case-sensitive, PascalCase, and
+	// expected in a comma-separated list format as in the JSON encoding.
+	//
+	// Supported attributes for Invocation are ChannelID, OrganizationID, Permissions, SpaceID.
+	//
+	// The whole string must be query-encoded.
+	Include *string `form:"include,omitempty" json:"include,omitempty" yaml:"include,omitempty"`
+
+	// Limit Maximum number of Invocation entities to act on, in ID order. A request that names limit or continue also stops when it runs short of time, and returns a ConfigHub-Continue header to pass as the continue parameter of the next request; keep sending requests until a response has none. If neither is specified, the request acts on every selected entity.
+	Limit *int `form:"limit,omitempty" json:"limit,omitempty" yaml:"limit,omitempty"`
+
+	// Continue The token from the ConfigHub-Continue header of the previous request, to act on the Invocation entities after the last one it acted on. The request's other parameters, except limit, must be the same as those of the request that returned the token.
+	Continue *string `form:"continue,omitempty" json:"continue,omitempty" yaml:"continue,omitempty"`
+}
+
 // BulkDeleteLinksParams defines parameters for BulkDeleteLinks.
 type BulkDeleteLinksParams struct {
 	// Where The specified string is an expression for the purpose of filtering
@@ -16168,6 +17088,9 @@ type BulkDeleteLinksParams struct {
 
 	// Continue The token from the ConfigHub-Continue header of the previous request, to act on the Link entities after the last one it acted on. The request's other parameters, except limit, must be the same as those of the request that returned the token.
 	Continue *string `form:"continue,omitempty" json:"continue,omitempty" yaml:"continue,omitempty"`
+
+	// Archive If true, archive the entities rather than delete them: each is kept, with its history, hidden with the HiddenReason Archived, and given a Slug the server assigns from its ID, so that its own Slug is free. The Slug it had is kept in the label ArchivedSlug. An archived entity can be read, unarchived, or deleted for good, which a delete without archive does. Delete gates refuse an archive as they refuse a delete, and so do references from entities the request does not archive, except those held by history.
+	Archive *bool `form:"archive,omitempty" json:"archive,omitempty" yaml:"archive,omitempty"`
 
 	// FromBackingUnits Prune: of the Links selected, delete those whose backing Unit is empty, which says the Link should not exist, and keep the Unit, empty and backing nothing, so that it keeps the Link's history and a document that comes back revives it. The others are left alone and are not in the response, so a broad selection deletes only what was emptied.
 	FromBackingUnits *bool `form:"from_backing_units,omitempty" json:"from_backing_units,omitempty" yaml:"from_backing_units,omitempty"`
@@ -16798,6 +17721,104 @@ type BulkCreateLinksParams struct {
 	DryRun *bool `form:"dry_run,omitempty" json:"dry_run,omitempty" yaml:"dry_run,omitempty"`
 }
 
+// BulkUnarchiveLinksParams defines parameters for BulkUnarchiveLinks.
+type BulkUnarchiveLinksParams struct {
+	// Where The specified string is an expression for the purpose of filtering
+	// the list of Links returned. The expression syntax was inspired by SQL.
+	// It supports conjunctions using `AND` of relational expressions of the form *attribute*
+	// *operator* *attribute_or_literal*. The attribute names are case-sensitive and PascalCase,
+	// as in the JSON encoding.
+	// Strings support the following operators: `<`, `>`, `<=`, `>=`, `=`, `!=`, `LIKE`, `NOT LIKE`, `ILIKE`, `~~`, `!~~`, `~`, `~*`, `!~`, `!~*`, `IN`, `NOT IN`.
+	// String pattern operators: `LIKE` and `~~` for pattern matching with `%` and `_` wildcards,
+	// `ILIKE` for case-insensitive pattern matching, `NOT LIKE` and `!~~` for negated pattern matching.
+	// String regex operators: `~` for regex matching, `~*` for case-insensitive regex,
+	// `!~` and `!~*` for regex not matching (case-sensitive and insensitive).
+	// Integers support the following operators: `<`, `>`, `<=`, `>=`, `=`, `!=`, `IN`, `NOT IN`.
+	// UUIDs and boolean attributes support equality and inequality only.
+	// UUID and time literals must be quoted as string literals.
+	// String literals are quoted with single quotes, such as `'string'`.
+	// Time literals use the same form as when serialized as JSON,
+	// such as: `CreatedAt > '2025-02-18T23:16:34'`.
+	// Integer and boolean literals are also supported for attributes of those types.
+	// Arrays support the `?` operator to to match any element of the array,
+	// as in `FromLinkID ? '7c61626f-ddbe-41af-93f6-b69f4ab6d308'`.
+	// Arrays can perform LEN() to check for length, as in `LEN(FromLinkID) > 0`.
+	// An attribute naming a list of other entities can be filtered on their attributes with a `*` segment,
+	// as in `FromLink.*.Slug = 'upgrade-app'`, which holds when any element satisfies it.
+	// Without the `*` such a reference is an error, since it names no single value to compare.
+	// Map support the dot notation to specify a particular map key, as in `Labels.tier = 'Backend'`.
+	// Maps support `IS NULL` and `IS NOT NULL` with dot notation to check for key absence or presence,
+	// as in `Labels.tier IS NULL` (key doesn't exist) or `Labels.tier IS NOT NULL` (key exists).
+	// Comparison results can be tested with `IS TRUE`, `IS FALSE`, `IS NOT TRUE`, and `IS NOT FALSE`.
+	// These are useful for nullable columns: `MergeSourceID = '<uuid>' IS NOT FALSE` matches rows where MergeSourceID equals the value OR is NULL.
+	// The `IN` and `NOT IN` operators accept a comma-separated list of values in parentheses,
+	// such as `Slug IN ('slugone', 'slugtwo')` or `Labels.environment IN ('prod', 'staging')`.
+	// Conjunctions are supported using the `AND` operator.
+	// An example conjunction is:
+	// `CreatedAt >= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.
+	//
+	// Supported attributes for filtering on Link: Annotations, AutoUpdate, BackingUnitID, Bindings, Clearance, CreatedAt, DeleteGates, DisplayName, DownstreamLastMergedRevisionNum, DownstreamPaths, DownstreamSetters, FromUnitID, Guards, Hash, HiddenReason, Labels, LinkID, ManualBindings, MergeEnableSubtraction, OrganizationID, Permissions, Protect, Slug, SpaceID, Squash, Stale, ToSpaceID, ToUnitID, TransformInvocationID, UpdateType, UpdatedAt, UpstreamGetters, UpstreamLastMergedRevisionNum, UpstreamLinkID, UpstreamMergedAbove, UpstreamPaths, UpstreamSkipped, UpstreamSpaceID.
+	//
+	// The whole string must be query-encoded.
+	Where *string `form:"where,omitempty" json:"where,omitempty" yaml:"where,omitempty"`
+
+	// Filter UUID of a Filter entity to apply to the Link list.
+	//
+	// The Filter must be in the same Organization as the user credentials.
+	//
+	// The Filter's From field must match the entity type being filtered (Link).
+	//
+	// For Space-resident entities, if the Filter has a FromSpaceID, it must match the operation's SpaceID.
+	//
+	// The Filter's Where clause will be combined with any explicit 'where' parameter using AND logic.
+	//
+	// If both 'filter' and 'where' parameters are specified, they are combined with AND logic.
+	Filter *string `form:"filter,omitempty" json:"filter,omitempty" yaml:"filter,omitempty"`
+
+	// Contains Free text search that approximately matches the specified string against string fields and map keys/values.
+	//
+	// The search is case-insensitive and uses pattern matching to find entities containing the text.
+	//
+	// Searchable string fields include attributes like Slug, DisplayName, and string-typed custom fields.
+	//
+	// For map fields (like Labels and Annotations), the search matches both map keys and values.
+	//
+	// The search uses OR logic across all searchable fields, so matching any field will return the entity.
+	//
+	// If both 'where' and 'contains' parameters are specified, they are combined with AND logic.
+	//
+	// Searchable fields for Link include string and map-type attributes from the queryable attributes list.
+	//
+	// The whole string must be query-encoded.
+	Contains *string `form:"contains,omitempty" json:"contains,omitempty" yaml:"contains,omitempty"`
+
+	// IncludeHidden Hidden Link entities, those with a HiddenReason, are left out of the results, or of what a bulk operation acts on, unless this names their HiddenReason.
+	//
+	// It is a comma-separated list of HiddenReasons, or `*` for all of them but `Archived`.
+	//
+	// A where clause naming the entities, by their Slug or ID with `=` or `IN`, or naming HiddenReason at all, also returns hidden entities it selects.
+	//
+	// Archived entities, which a delete with archive=true archives, are selected only when this names `Archived`, as in `Archived` or `*,Archived`; a where clause naming them returns them from a List or Search, but not from a bulk operation.
+	//
+	// ConfigHub/YAML Units, which hold the configuration of entities, are hidden with the HiddenReason `BackingUnit`.
+	IncludeHidden *string `form:"include_hidden,omitempty" json:"include_hidden,omitempty" yaml:"include_hidden,omitempty"`
+
+	// Include Include clause for expanding related entities in the response for Link.
+	// The attribute names are case-sensitive, PascalCase, and
+	// expected in a comma-separated list format as in the JSON encoding.
+	//
+	// Supported attributes for Link are FromUnitID, OrganizationID, Permissions, SpaceID, ToSpaceID, ToUnitID, TransformInvocationID.
+	//
+	// The whole string must be query-encoded.
+	Include *string `form:"include,omitempty" json:"include,omitempty" yaml:"include,omitempty"`
+
+	// Limit Maximum number of Link entities to act on, in ID order. A request that names limit or continue also stops when it runs short of time, and returns a ConfigHub-Continue header to pass as the continue parameter of the next request; keep sending requests until a response has none. If neither is specified, the request acts on every selected entity.
+	Limit *int `form:"limit,omitempty" json:"limit,omitempty" yaml:"limit,omitempty"`
+
+	// Continue The token from the ConfigHub-Continue header of the previous request, to act on the Link entities after the last one it acted on. The request's other parameters, except limit, must be the same as those of the request that returned the token.
+	Continue *string `form:"continue,omitempty" json:"continue,omitempty" yaml:"continue,omitempty"`
+}
+
 // ListOrganizationsParams defines parameters for ListOrganizations.
 type ListOrganizationsParams struct {
 	// Where The specified string is an expression for the purpose of filtering
@@ -17237,6 +18258,104 @@ type ListAllReleasesParamsWherePermission string
 
 // ListAllReleasesParamsDistinctOn defines parameters for ListAllReleases.
 type ListAllReleasesParamsDistinctOn string
+
+// BulkUnarchiveReleasesParams defines parameters for BulkUnarchiveReleases.
+type BulkUnarchiveReleasesParams struct {
+	// Where The specified string is an expression for the purpose of filtering
+	// the list of Releases returned. The expression syntax was inspired by SQL.
+	// It supports conjunctions using `AND` of relational expressions of the form *attribute*
+	// *operator* *attribute_or_literal*. The attribute names are case-sensitive and PascalCase,
+	// as in the JSON encoding.
+	// Strings support the following operators: `<`, `>`, `<=`, `>=`, `=`, `!=`, `LIKE`, `NOT LIKE`, `ILIKE`, `~~`, `!~~`, `~`, `~*`, `!~`, `!~*`, `IN`, `NOT IN`.
+	// String pattern operators: `LIKE` and `~~` for pattern matching with `%` and `_` wildcards,
+	// `ILIKE` for case-insensitive pattern matching, `NOT LIKE` and `!~~` for negated pattern matching.
+	// String regex operators: `~` for regex matching, `~*` for case-insensitive regex,
+	// `!~` and `!~*` for regex not matching (case-sensitive and insensitive).
+	// Integers support the following operators: `<`, `>`, `<=`, `>=`, `=`, `!=`, `IN`, `NOT IN`.
+	// UUIDs and boolean attributes support equality and inequality only.
+	// UUID and time literals must be quoted as string literals.
+	// String literals are quoted with single quotes, such as `'string'`.
+	// Time literals use the same form as when serialized as JSON,
+	// such as: `CreatedAt > '2025-02-18T23:16:34'`.
+	// Integer and boolean literals are also supported for attributes of those types.
+	// Arrays support the `?` operator to to match any element of the array,
+	// as in `FromLinkID ? '7c61626f-ddbe-41af-93f6-b69f4ab6d308'`.
+	// Arrays can perform LEN() to check for length, as in `LEN(FromLinkID) > 0`.
+	// An attribute naming a list of other entities can be filtered on their attributes with a `*` segment,
+	// as in `FromLink.*.Slug = 'upgrade-app'`, which holds when any element satisfies it.
+	// Without the `*` such a reference is an error, since it names no single value to compare.
+	// Map support the dot notation to specify a particular map key, as in `Labels.tier = 'Backend'`.
+	// Maps support `IS NULL` and `IS NOT NULL` with dot notation to check for key absence or presence,
+	// as in `Labels.tier IS NULL` (key doesn't exist) or `Labels.tier IS NOT NULL` (key exists).
+	// Comparison results can be tested with `IS TRUE`, `IS FALSE`, `IS NOT TRUE`, and `IS NOT FALSE`.
+	// These are useful for nullable columns: `MergeSourceID = '<uuid>' IS NOT FALSE` matches rows where MergeSourceID equals the value OR is NULL.
+	// The `IN` and `NOT IN` operators accept a comma-separated list of values in parentheses,
+	// such as `Slug IN ('slugone', 'slugtwo')` or `Labels.environment IN ('prod', 'staging')`.
+	// Conjunctions are supported using the `AND` operator.
+	// An example conjunction is:
+	// `CreatedAt >= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.
+	//
+	// Supported attributes for filtering on Release: Annotations, ChangeOrderID, CreatedAt, DeleteGates, Digest, HiddenReason, Labels, LiveStatus, ManifestDigest, OCIRepositoryURL, OrganizationID, Permissions, Published, ReleaseID, ReleaseNum, SkippedUnits, SpaceID, TagID, TargetID, UnitCount, UpdatedAt, UserID.
+	//
+	// The whole string must be query-encoded.
+	Where *string `form:"where,omitempty" json:"where,omitempty" yaml:"where,omitempty"`
+
+	// Filter UUID of a Filter entity to apply to the Release list.
+	//
+	// The Filter must be in the same Organization as the user credentials.
+	//
+	// The Filter's From field must match the entity type being filtered (Release).
+	//
+	// For Space-resident entities, if the Filter has a FromSpaceID, it must match the operation's SpaceID.
+	//
+	// The Filter's Where clause will be combined with any explicit 'where' parameter using AND logic.
+	//
+	// If both 'filter' and 'where' parameters are specified, they are combined with AND logic.
+	Filter *string `form:"filter,omitempty" json:"filter,omitempty" yaml:"filter,omitempty"`
+
+	// Contains Free text search that approximately matches the specified string against string fields and map keys/values.
+	//
+	// The search is case-insensitive and uses pattern matching to find entities containing the text.
+	//
+	// Searchable string fields include attributes like Slug, DisplayName, and string-typed custom fields.
+	//
+	// For map fields (like Labels and Annotations), the search matches both map keys and values.
+	//
+	// The search uses OR logic across all searchable fields, so matching any field will return the entity.
+	//
+	// If both 'where' and 'contains' parameters are specified, they are combined with AND logic.
+	//
+	// Searchable fields for Release include string and map-type attributes from the queryable attributes list.
+	//
+	// The whole string must be query-encoded.
+	Contains *string `form:"contains,omitempty" json:"contains,omitempty" yaml:"contains,omitempty"`
+
+	// IncludeHidden Hidden Release entities, those with a HiddenReason, are left out of the results, or of what a bulk operation acts on, unless this names their HiddenReason.
+	//
+	// It is a comma-separated list of HiddenReasons, or `*` for all of them but `Archived`.
+	//
+	// A where clause naming the entities, by their Slug or ID with `=` or `IN`, or naming HiddenReason at all, also returns hidden entities it selects.
+	//
+	// Archived entities, which a delete with archive=true archives, are selected only when this names `Archived`, as in `Archived` or `*,Archived`; a where clause naming them returns them from a List or Search, but not from a bulk operation.
+	//
+	// ConfigHub/YAML Units, which hold the configuration of entities, are hidden with the HiddenReason `BackingUnit`.
+	IncludeHidden *string `form:"include_hidden,omitempty" json:"include_hidden,omitempty" yaml:"include_hidden,omitempty"`
+
+	// Include Include clause for expanding related entities in the response for Release.
+	// The attribute names are case-sensitive, PascalCase, and
+	// expected in a comma-separated list format as in the JSON encoding.
+	//
+	// Supported attributes for Release are ChangeOrderID, OrganizationID, Permissions, SpaceID, TagID, TargetID, UserID.
+	//
+	// The whole string must be query-encoded.
+	Include *string `form:"include,omitempty" json:"include,omitempty" yaml:"include,omitempty"`
+
+	// Limit Maximum number of Release entities to act on, in ID order. A request that names limit or continue also stops when it runs short of time, and returns a ConfigHub-Continue header to pass as the continue parameter of the next request; keep sending requests until a response has none. If neither is specified, the request acts on every selected entity.
+	Limit *int `form:"limit,omitempty" json:"limit,omitempty" yaml:"limit,omitempty"`
+
+	// Continue The token from the ConfigHub-Continue header of the previous request, to act on the Release entities after the last one it acted on. The request's other parameters, except limit, must be the same as those of the request that returned the token.
+	Continue *string `form:"continue,omitempty" json:"continue,omitempty" yaml:"continue,omitempty"`
+}
 
 // ListAllResourcesParams defines parameters for ListAllResources.
 type ListAllResourcesParams struct {
@@ -18864,14 +19983,17 @@ type CreateSpaceParams struct {
 
 // DeleteSpaceParams defines parameters for DeleteSpace.
 type DeleteSpaceParams struct {
-	// Recursive Valid values are true and false. False is the default if unspecified. If true, recursively delete all entities within the deleted space(s) so long as none have delete gates.
+	// Recursive Valid values are true and false. False is the default if unspecified. If true, recursively delete all entities within the deleted space(s) so long as none have delete gates. With archive=true, archive them instead.
 	Recursive *string `form:"recursive,omitempty" json:"recursive,omitempty" yaml:"recursive,omitempty"`
 
-	// RecursiveForce Valid values are true and false. False is the default if unspecified. If true, recursively delete all entities within the deleted space(s) regardless whether any have delete gates.
+	// RecursiveForce Valid values are true and false. False is the default if unspecified. If true, recursively delete all entities within the deleted space(s) regardless whether any have delete gates. With archive=true, archive them instead.
 	RecursiveForce *string `form:"recursive_force,omitempty" json:"recursive_force,omitempty" yaml:"recursive_force,omitempty"`
 
 	// Detach If true, remove the references to the deleted entities from entities the request does not delete, instead of refusing the delete while any remain. References that cannot be removed still refuse it. For a Space, applies to everything the recursive delete removes.
 	Detach *bool `form:"detach,omitempty" json:"detach,omitempty" yaml:"detach,omitempty"`
+
+	// Archive If true, archive the entities rather than delete them: each is kept, with its history, hidden with the HiddenReason Archived, and given a Slug the server assigns from its ID, so that its own Slug is free. The Slug it had is kept in the label ArchivedSlug. An archived entity can be read, unarchived, or deleted for good, which a delete without archive does. Delete gates refuse an archive as they refuse a delete, and so do references from entities the request does not archive, except those held by history.
+	Archive *bool `form:"archive,omitempty" json:"archive,omitempty" yaml:"archive,omitempty"`
 }
 
 // GetSpaceParams defines parameters for GetSpace.
@@ -19277,6 +20399,12 @@ type CreateAttributeParams struct {
 	DryRun *bool `form:"dry_run,omitempty" json:"dry_run,omitempty" yaml:"dry_run,omitempty"`
 }
 
+// DeleteAttributeParams defines parameters for DeleteAttribute.
+type DeleteAttributeParams struct {
+	// Archive If true, archive the entities rather than delete them: each is kept, with its history, hidden with the HiddenReason Archived, and given a Slug the server assigns from its ID, so that its own Slug is free. The Slug it had is kept in the label ArchivedSlug. An archived entity can be read, unarchived, or deleted for good, which a delete without archive does. Delete gates refuse an archive as they refuse a delete, and so do references from entities the request does not archive, except those held by history.
+	Archive *bool `form:"archive,omitempty" json:"archive,omitempty" yaml:"archive,omitempty"`
+}
+
 // GetAttributeParams defines parameters for GetAttribute.
 type GetAttributeParams struct {
 	// Include Include clause for expanding related entities in the response for Attribute.
@@ -19504,6 +20632,9 @@ type CreateChangeOrderParams struct {
 type DeleteChangeOrderParams struct {
 	// Detach If true, remove the references to the deleted entities from entities the request does not delete, instead of refusing the delete while any remain. References that cannot be removed still refuse it. For a Space, applies to everything the recursive delete removes.
 	Detach *bool `form:"detach,omitempty" json:"detach,omitempty" yaml:"detach,omitempty"`
+
+	// Archive If true, archive the entities rather than delete them: each is kept, with its history, hidden with the HiddenReason Archived, and given a Slug the server assigns from its ID, so that its own Slug is free. The Slug it had is kept in the label ArchivedSlug. An archived entity can be read, unarchived, or deleted for good, which a delete without archive does. Delete gates refuse an archive as they refuse a delete, and so do references from entities the request does not archive, except those held by history.
+	Archive *bool `form:"archive,omitempty" json:"archive,omitempty" yaml:"archive,omitempty"`
 }
 
 // GetChangeOrderParams defines parameters for GetChangeOrder.
@@ -19750,6 +20881,9 @@ type CreateChangeSetParams struct {
 type DeleteChangeSetParams struct {
 	// Detach If true, remove the references to the deleted entities from entities the request does not delete, instead of refusing the delete while any remain. References that cannot be removed still refuse it. For a Space, applies to everything the recursive delete removes.
 	Detach *bool `form:"detach,omitempty" json:"detach,omitempty" yaml:"detach,omitempty"`
+
+	// Archive If true, archive the entities rather than delete them: each is kept, with its history, hidden with the HiddenReason Archived, and given a Slug the server assigns from its ID, so that its own Slug is free. The Slug it had is kept in the label ArchivedSlug. An archived entity can be read, unarchived, or deleted for good, which a delete without archive does. Delete gates refuse an archive as they refuse a delete, and so do references from entities the request does not archive, except those held by history.
+	Archive *bool `form:"archive,omitempty" json:"archive,omitempty" yaml:"archive,omitempty"`
 }
 
 // GetChangeSetParams defines parameters for GetChangeSet.
@@ -19968,6 +21102,12 @@ type CreateChangeWorkflowParams struct {
 
 	// DryRun If true, report what the write would do without doing it: the write runs, including every check it makes, and is then rolled back. The response is the one the write would return, with the entities as they would be written. An entity a dry run creates is given an ID that the real create will not reuse.
 	DryRun *bool `form:"dry_run,omitempty" json:"dry_run,omitempty" yaml:"dry_run,omitempty"`
+}
+
+// DeleteChangeWorkflowParams defines parameters for DeleteChangeWorkflow.
+type DeleteChangeWorkflowParams struct {
+	// Archive If true, archive the entities rather than delete them: each is kept, with its history, hidden with the HiddenReason Archived, and given a Slug the server assigns from its ID, so that its own Slug is free. The Slug it had is kept in the label ArchivedSlug. An archived entity can be read, unarchived, or deleted for good, which a delete without archive does. Delete gates refuse an archive as they refuse a delete, and so do references from entities the request does not archive, except those held by history.
+	Archive *bool `form:"archive,omitempty" json:"archive,omitempty" yaml:"archive,omitempty"`
 }
 
 // GetChangeWorkflowParams defines parameters for GetChangeWorkflow.
@@ -20201,6 +21341,12 @@ type CreateChannelParams struct {
 
 	// DryRun If true, report what the write would do without doing it: the write runs, including every check it makes, and is then rolled back. The response is the one the write would return, with the entities as they would be written. An entity a dry run creates is given an ID that the real create will not reuse.
 	DryRun *bool `form:"dry_run,omitempty" json:"dry_run,omitempty" yaml:"dry_run,omitempty"`
+}
+
+// DeleteChannelParams defines parameters for DeleteChannel.
+type DeleteChannelParams struct {
+	// Archive If true, archive the entities rather than delete them: each is kept, with its history, hidden with the HiddenReason Archived, and given a Slug the server assigns from its ID, so that its own Slug is free. The Slug it had is kept in the label ArchivedSlug. An archived entity can be read, unarchived, or deleted for good, which a delete without archive does. Delete gates refuse an archive as they refuse a delete, and so do references from entities the request does not archive, except those held by history.
+	Archive *bool `form:"archive,omitempty" json:"archive,omitempty" yaml:"archive,omitempty"`
 }
 
 // GetChannelParams defines parameters for GetChannel.
@@ -20624,6 +21770,12 @@ type CreateFilterParams struct {
 
 	// DryRun If true, report what the write would do without doing it: the write runs, including every check it makes, and is then rolled back. The response is the one the write would return, with the entities as they would be written. An entity a dry run creates is given an ID that the real create will not reuse.
 	DryRun *bool `form:"dry_run,omitempty" json:"dry_run,omitempty" yaml:"dry_run,omitempty"`
+}
+
+// DeleteFilterParams defines parameters for DeleteFilter.
+type DeleteFilterParams struct {
+	// Archive If true, archive the entities rather than delete them: each is kept, with its history, hidden with the HiddenReason Archived, and given a Slug the server assigns from its ID, so that its own Slug is free. The Slug it had is kept in the label ArchivedSlug. An archived entity can be read, unarchived, or deleted for good, which a delete without archive does. Delete gates refuse an archive as they refuse a delete, and so do references from entities the request does not archive, except those held by history.
+	Archive *bool `form:"archive,omitempty" json:"archive,omitempty" yaml:"archive,omitempty"`
 }
 
 // GetFilterParams defines parameters for GetFilter.
@@ -21120,6 +22272,12 @@ type CreateInvocationParams struct {
 	DryRun *bool `form:"dry_run,omitempty" json:"dry_run,omitempty" yaml:"dry_run,omitempty"`
 }
 
+// DeleteInvocationParams defines parameters for DeleteInvocation.
+type DeleteInvocationParams struct {
+	// Archive If true, archive the entities rather than delete them: each is kept, with its history, hidden with the HiddenReason Archived, and given a Slug the server assigns from its ID, so that its own Slug is free. The Slug it had is kept in the label ArchivedSlug. An archived entity can be read, unarchived, or deleted for good, which a delete without archive does. Delete gates refuse an archive as they refuse a delete, and so do references from entities the request does not archive, except those held by history.
+	Archive *bool `form:"archive,omitempty" json:"archive,omitempty" yaml:"archive,omitempty"`
+}
+
 // GetInvocationParams defines parameters for GetInvocation.
 type GetInvocationParams struct {
 	// Include Include clause for expanding related entities in the response for Invocation.
@@ -21346,6 +22504,12 @@ type CreateLinkParams struct {
 
 	// DryRun If true, report what the write would do without doing it: the write runs, including every check it makes, and is then rolled back. The response is the one the write would return, with the entities as they would be written. An entity a dry run creates is given an ID that the real create will not reuse.
 	DryRun *bool `form:"dry_run,omitempty" json:"dry_run,omitempty" yaml:"dry_run,omitempty"`
+}
+
+// DeleteLinkParams defines parameters for DeleteLink.
+type DeleteLinkParams struct {
+	// Archive If true, archive the entities rather than delete them: each is kept, with its history, hidden with the HiddenReason Archived, and given a Slug the server assigns from its ID, so that its own Slug is free. The Slug it had is kept in the label ArchivedSlug. An archived entity can be read, unarchived, or deleted for good, which a delete without archive does. Delete gates refuse an archive as they refuse a delete, and so do references from entities the request does not archive, except those held by history.
+	Archive *bool `form:"archive,omitempty" json:"archive,omitempty" yaml:"archive,omitempty"`
 }
 
 // GetLinkParams defines parameters for GetLink.
@@ -21608,6 +22772,9 @@ type ListExtendedReleasesParamsWherePermission string
 type DeleteReleaseParams struct {
 	// Detach If true, remove the references to the deleted entities from entities the request does not delete, instead of refusing the delete while any remain. References that cannot be removed still refuse it. For a Space, applies to everything the recursive delete removes.
 	Detach *bool `form:"detach,omitempty" json:"detach,omitempty" yaml:"detach,omitempty"`
+
+	// Archive If true, archive the entities rather than delete them: each is kept, with its history, hidden with the HiddenReason Archived, and given a Slug the server assigns from its ID, so that its own Slug is free. The Slug it had is kept in the label ArchivedSlug. An archived entity can be read, unarchived, or deleted for good, which a delete without archive does. Delete gates refuse an archive as they refuse a delete, and so do references from entities the request does not archive, except those held by history.
+	Archive *bool `form:"archive,omitempty" json:"archive,omitempty" yaml:"archive,omitempty"`
 }
 
 // GetExtendedReleaseParams defines parameters for GetExtendedRelease.
@@ -21821,6 +22988,9 @@ type CreateTagParams struct {
 type DeleteTagParams struct {
 	// Detach If true, remove the references to the deleted entities from entities the request does not delete, instead of refusing the delete while any remain. References that cannot be removed still refuse it. For a Space, applies to everything the recursive delete removes.
 	Detach *bool `form:"detach,omitempty" json:"detach,omitempty" yaml:"detach,omitempty"`
+
+	// Archive If true, archive the entities rather than delete them: each is kept, with its history, hidden with the HiddenReason Archived, and given a Slug the server assigns from its ID, so that its own Slug is free. The Slug it had is kept in the label ArchivedSlug. An archived entity can be read, unarchived, or deleted for good, which a delete without archive does. Delete gates refuse an archive as they refuse a delete, and so do references from entities the request does not archive, except those held by history.
+	Archive *bool `form:"archive,omitempty" json:"archive,omitempty" yaml:"archive,omitempty"`
 }
 
 // GetTagParams defines parameters for GetTag.
@@ -22040,6 +23210,9 @@ type CreateTargetParams struct {
 
 // DeleteTargetParams defines parameters for DeleteTarget.
 type DeleteTargetParams struct {
+	// Archive If true, archive the entities rather than delete them: each is kept, with its history, hidden with the HiddenReason Archived, and given a Slug the server assigns from its ID, so that its own Slug is free. The Slug it had is kept in the label ArchivedSlug. An archived entity can be read, unarchived, or deleted for good, which a delete without archive does. Delete gates refuse an archive as they refuse a delete, and so do references from entities the request does not archive, except those held by history.
+	Archive *bool `form:"archive,omitempty" json:"archive,omitempty" yaml:"archive,omitempty"`
+
 	// Detach If true, remove the references to the deleted entities from entities the request does not delete, instead of refusing the delete while any remain. References that cannot be removed still refuse it. For a Space, applies to everything the recursive delete removes.
 	Detach *bool `form:"detach,omitempty" json:"detach,omitempty" yaml:"detach,omitempty"`
 }
@@ -22276,6 +23449,12 @@ type CreateTriggerParams struct {
 	DryRun *bool `form:"dry_run,omitempty" json:"dry_run,omitempty" yaml:"dry_run,omitempty"`
 }
 
+// DeleteTriggerParams defines parameters for DeleteTrigger.
+type DeleteTriggerParams struct {
+	// Archive If true, archive the entities rather than delete them: each is kept, with its history, hidden with the HiddenReason Archived, and given a Slug the server assigns from its ID, so that its own Slug is free. The Slug it had is kept in the label ArchivedSlug. An archived entity can be read, unarchived, or deleted for good, which a delete without archive does. Delete gates refuse an archive as they refuse a delete, and so do references from entities the request does not archive, except those held by history.
+	Archive *bool `form:"archive,omitempty" json:"archive,omitempty" yaml:"archive,omitempty"`
+}
+
 // GetTriggerParams defines parameters for GetTrigger.
 type GetTriggerParams struct {
 	// Include Include clause for expanding related entities in the response for Trigger.
@@ -22362,6 +23541,12 @@ type UpdateTriggerParams struct {
 type UpdateTriggerDocumentParams struct {
 	// DryRun If true, report what the write would do without doing it: the write runs, including every check it makes, and is then rolled back. The response is the one the write would return, with the entities as they would be written. An entity a dry run creates is given an ID that the real create will not reuse.
 	DryRun *bool `form:"dry_run,omitempty" json:"dry_run,omitempty" yaml:"dry_run,omitempty"`
+}
+
+// UnarchiveSpaceParams defines parameters for UnarchiveSpace.
+type UnarchiveSpaceParams struct {
+	// Recursive If true, also unarchive what was archived with the Space. A Space archived recursively is refused without it.
+	Recursive *bool `form:"recursive,omitempty" json:"recursive,omitempty" yaml:"recursive,omitempty"`
 }
 
 // ListUnitsParams defines parameters for ListUnits.
@@ -23901,6 +25086,12 @@ type CreateViewParams struct {
 	DryRun *bool `form:"dry_run,omitempty" json:"dry_run,omitempty" yaml:"dry_run,omitempty"`
 }
 
+// DeleteViewParams defines parameters for DeleteView.
+type DeleteViewParams struct {
+	// Archive If true, archive the entities rather than delete them: each is kept, with its history, hidden with the HiddenReason Archived, and given a Slug the server assigns from its ID, so that its own Slug is free. The Slug it had is kept in the label ArchivedSlug. An archived entity can be read, unarchived, or deleted for good, which a delete without archive does. Delete gates refuse an archive as they refuse a delete, and so do references from entities the request does not archive, except those held by history.
+	Archive *bool `form:"archive,omitempty" json:"archive,omitempty" yaml:"archive,omitempty"`
+}
+
 // GetViewParams defines parameters for GetView.
 type GetViewParams struct {
 	// Include Include clause for expanding related entities in the response for View.
@@ -24071,6 +25262,9 @@ type BulkDeleteTagsParams struct {
 
 	// Detach If true, remove the references to the deleted entities from entities the request does not delete, instead of refusing the delete while any remain. References that cannot be removed still refuse it. For a Space, applies to everything the recursive delete removes.
 	Detach *bool `form:"detach,omitempty" json:"detach,omitempty" yaml:"detach,omitempty"`
+
+	// Archive If true, archive the entities rather than delete them: each is kept, with its history, hidden with the HiddenReason Archived, and given a Slug the server assigns from its ID, so that its own Slug is free. The Slug it had is kept in the label ArchivedSlug. An archived entity can be read, unarchived, or deleted for good, which a delete without archive does. Delete gates refuse an archive as they refuse a delete, and so do references from entities the request does not archive, except those held by history.
+	Archive *bool `form:"archive,omitempty" json:"archive,omitempty" yaml:"archive,omitempty"`
 }
 
 // ListAllTagsParams defines parameters for ListAllTags.
@@ -24630,6 +25824,104 @@ type BulkMoveTagsParams struct {
 	DryRun *bool `form:"dry_run,omitempty" json:"dry_run,omitempty" yaml:"dry_run,omitempty"`
 }
 
+// BulkUnarchiveTagsParams defines parameters for BulkUnarchiveTags.
+type BulkUnarchiveTagsParams struct {
+	// Where The specified string is an expression for the purpose of filtering
+	// the list of Tags returned. The expression syntax was inspired by SQL.
+	// It supports conjunctions using `AND` of relational expressions of the form *attribute*
+	// *operator* *attribute_or_literal*. The attribute names are case-sensitive and PascalCase,
+	// as in the JSON encoding.
+	// Strings support the following operators: `<`, `>`, `<=`, `>=`, `=`, `!=`, `LIKE`, `NOT LIKE`, `ILIKE`, `~~`, `!~~`, `~`, `~*`, `!~`, `!~*`, `IN`, `NOT IN`.
+	// String pattern operators: `LIKE` and `~~` for pattern matching with `%` and `_` wildcards,
+	// `ILIKE` for case-insensitive pattern matching, `NOT LIKE` and `!~~` for negated pattern matching.
+	// String regex operators: `~` for regex matching, `~*` for case-insensitive regex,
+	// `!~` and `!~*` for regex not matching (case-sensitive and insensitive).
+	// Integers support the following operators: `<`, `>`, `<=`, `>=`, `=`, `!=`, `IN`, `NOT IN`.
+	// UUIDs and boolean attributes support equality and inequality only.
+	// UUID and time literals must be quoted as string literals.
+	// String literals are quoted with single quotes, such as `'string'`.
+	// Time literals use the same form as when serialized as JSON,
+	// such as: `CreatedAt > '2025-02-18T23:16:34'`.
+	// Integer and boolean literals are also supported for attributes of those types.
+	// Arrays support the `?` operator to to match any element of the array,
+	// as in `FromLinkID ? '7c61626f-ddbe-41af-93f6-b69f4ab6d308'`.
+	// Arrays can perform LEN() to check for length, as in `LEN(FromLinkID) > 0`.
+	// An attribute naming a list of other entities can be filtered on their attributes with a `*` segment,
+	// as in `FromLink.*.Slug = 'upgrade-app'`, which holds when any element satisfies it.
+	// Without the `*` such a reference is an error, since it names no single value to compare.
+	// Map support the dot notation to specify a particular map key, as in `Labels.tier = 'Backend'`.
+	// Maps support `IS NULL` and `IS NOT NULL` with dot notation to check for key absence or presence,
+	// as in `Labels.tier IS NULL` (key doesn't exist) or `Labels.tier IS NOT NULL` (key exists).
+	// Comparison results can be tested with `IS TRUE`, `IS FALSE`, `IS NOT TRUE`, and `IS NOT FALSE`.
+	// These are useful for nullable columns: `MergeSourceID = '<uuid>' IS NOT FALSE` matches rows where MergeSourceID equals the value OR is NULL.
+	// The `IN` and `NOT IN` operators accept a comma-separated list of values in parentheses,
+	// such as `Slug IN ('slugone', 'slugtwo')` or `Labels.environment IN ('prod', 'staging')`.
+	// Conjunctions are supported using the `AND` operator.
+	// An example conjunction is:
+	// `CreatedAt >= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.
+	//
+	// Supported attributes for filtering on Tag: Annotations, ChangeOrderID, ChangeSetID, CreatedAt, DeleteGates, DisplayName, HiddenReason, Labels, OrganizationID, Permissions, ReleaseID, Slug, SpaceID, TagID, UpdatedAt.
+	//
+	// The whole string must be query-encoded.
+	Where *string `form:"where,omitempty" json:"where,omitempty" yaml:"where,omitempty"`
+
+	// Filter UUID of a Filter entity to apply to the Tag list.
+	//
+	// The Filter must be in the same Organization as the user credentials.
+	//
+	// The Filter's From field must match the entity type being filtered (Tag).
+	//
+	// For Space-resident entities, if the Filter has a FromSpaceID, it must match the operation's SpaceID.
+	//
+	// The Filter's Where clause will be combined with any explicit 'where' parameter using AND logic.
+	//
+	// If both 'filter' and 'where' parameters are specified, they are combined with AND logic.
+	Filter *string `form:"filter,omitempty" json:"filter,omitempty" yaml:"filter,omitempty"`
+
+	// Contains Free text search that approximately matches the specified string against string fields and map keys/values.
+	//
+	// The search is case-insensitive and uses pattern matching to find entities containing the text.
+	//
+	// Searchable string fields include attributes like Slug, DisplayName, and string-typed custom fields.
+	//
+	// For map fields (like Labels and Annotations), the search matches both map keys and values.
+	//
+	// The search uses OR logic across all searchable fields, so matching any field will return the entity.
+	//
+	// If both 'where' and 'contains' parameters are specified, they are combined with AND logic.
+	//
+	// Searchable fields for Tag include string and map-type attributes from the queryable attributes list.
+	//
+	// The whole string must be query-encoded.
+	Contains *string `form:"contains,omitempty" json:"contains,omitempty" yaml:"contains,omitempty"`
+
+	// IncludeHidden Hidden Tag entities, those with a HiddenReason, are left out of the results, or of what a bulk operation acts on, unless this names their HiddenReason.
+	//
+	// It is a comma-separated list of HiddenReasons, or `*` for all of them but `Archived`.
+	//
+	// A where clause naming the entities, by their Slug or ID with `=` or `IN`, or naming HiddenReason at all, also returns hidden entities it selects.
+	//
+	// Archived entities, which a delete with archive=true archives, are selected only when this names `Archived`, as in `Archived` or `*,Archived`; a where clause naming them returns them from a List or Search, but not from a bulk operation.
+	//
+	// ConfigHub/YAML Units, which hold the configuration of entities, are hidden with the HiddenReason `BackingUnit`.
+	IncludeHidden *string `form:"include_hidden,omitempty" json:"include_hidden,omitempty" yaml:"include_hidden,omitempty"`
+
+	// Include Include clause for expanding related entities in the response for Tag.
+	// The attribute names are case-sensitive, PascalCase, and
+	// expected in a comma-separated list format as in the JSON encoding.
+	//
+	// Supported attributes for Tag are ChangeSetID, OrganizationID, Permissions, SpaceID.
+	//
+	// The whole string must be query-encoded.
+	Include *string `form:"include,omitempty" json:"include,omitempty" yaml:"include,omitempty"`
+
+	// Limit Maximum number of Tag entities to act on, in ID order. A request that names limit or continue also stops when it runs short of time, and returns a ConfigHub-Continue header to pass as the continue parameter of the next request; keep sending requests until a response has none. If neither is specified, the request acts on every selected entity.
+	Limit *int `form:"limit,omitempty" json:"limit,omitempty" yaml:"limit,omitempty"`
+
+	// Continue The token from the ConfigHub-Continue header of the previous request, to act on the Tag entities after the last one it acted on. The request's other parameters, except limit, must be the same as those of the request that returned the token.
+	Continue *string `form:"continue,omitempty" json:"continue,omitempty" yaml:"continue,omitempty"`
+}
+
 // BulkDeleteTargetsParams defines parameters for BulkDeleteTargets.
 type BulkDeleteTargetsParams struct {
 	// Where The specified string is an expression for the purpose of filtering
@@ -24729,6 +26021,9 @@ type BulkDeleteTargetsParams struct {
 
 	// Detach If true, remove the references to the deleted entities from entities the request does not delete, instead of refusing the delete while any remain. References that cannot be removed still refuse it. For a Space, applies to everything the recursive delete removes.
 	Detach *bool `form:"detach,omitempty" json:"detach,omitempty" yaml:"detach,omitempty"`
+
+	// Archive If true, archive the entities rather than delete them: each is kept, with its history, hidden with the HiddenReason Archived, and given a Slug the server assigns from its ID, so that its own Slug is free. The Slug it had is kept in the label ArchivedSlug. An archived entity can be read, unarchived, or deleted for good, which a delete without archive does. Delete gates refuse an archive as they refuse a delete, and so do references from entities the request does not archive, except those held by history.
+	Archive *bool `form:"archive,omitempty" json:"archive,omitempty" yaml:"archive,omitempty"`
 
 	// FromBackingUnits Prune: of the Targets selected, delete those whose backing Unit is empty, which says the Target should not exist, and keep the Unit, empty and backing nothing, so that it keeps the Target's history and a document that comes back revives it. The others are left alone and are not in the response, so a broad selection deletes only what was emptied.
 	FromBackingUnits *bool `form:"from_backing_units,omitempty" json:"from_backing_units,omitempty" yaml:"from_backing_units,omitempty"`
@@ -25359,6 +26654,104 @@ type BulkMoveTargetsParams struct {
 	DryRun *bool `form:"dry_run,omitempty" json:"dry_run,omitempty" yaml:"dry_run,omitempty"`
 }
 
+// BulkUnarchiveTargetsParams defines parameters for BulkUnarchiveTargets.
+type BulkUnarchiveTargetsParams struct {
+	// Where The specified string is an expression for the purpose of filtering
+	// the list of Targets returned. The expression syntax was inspired by SQL.
+	// It supports conjunctions using `AND` of relational expressions of the form *attribute*
+	// *operator* *attribute_or_literal*. The attribute names are case-sensitive and PascalCase,
+	// as in the JSON encoding.
+	// Strings support the following operators: `<`, `>`, `<=`, `>=`, `=`, `!=`, `LIKE`, `NOT LIKE`, `ILIKE`, `~~`, `!~~`, `~`, `~*`, `!~`, `!~*`, `IN`, `NOT IN`.
+	// String pattern operators: `LIKE` and `~~` for pattern matching with `%` and `_` wildcards,
+	// `ILIKE` for case-insensitive pattern matching, `NOT LIKE` and `!~~` for negated pattern matching.
+	// String regex operators: `~` for regex matching, `~*` for case-insensitive regex,
+	// `!~` and `!~*` for regex not matching (case-sensitive and insensitive).
+	// Integers support the following operators: `<`, `>`, `<=`, `>=`, `=`, `!=`, `IN`, `NOT IN`.
+	// UUIDs and boolean attributes support equality and inequality only.
+	// UUID and time literals must be quoted as string literals.
+	// String literals are quoted with single quotes, such as `'string'`.
+	// Time literals use the same form as when serialized as JSON,
+	// such as: `CreatedAt > '2025-02-18T23:16:34'`.
+	// Integer and boolean literals are also supported for attributes of those types.
+	// Arrays support the `?` operator to to match any element of the array,
+	// as in `FromLinkID ? '7c61626f-ddbe-41af-93f6-b69f4ab6d308'`.
+	// Arrays can perform LEN() to check for length, as in `LEN(FromLinkID) > 0`.
+	// An attribute naming a list of other entities can be filtered on their attributes with a `*` segment,
+	// as in `FromLink.*.Slug = 'upgrade-app'`, which holds when any element satisfies it.
+	// Without the `*` such a reference is an error, since it names no single value to compare.
+	// Map support the dot notation to specify a particular map key, as in `Labels.tier = 'Backend'`.
+	// Maps support `IS NULL` and `IS NOT NULL` with dot notation to check for key absence or presence,
+	// as in `Labels.tier IS NULL` (key doesn't exist) or `Labels.tier IS NOT NULL` (key exists).
+	// Comparison results can be tested with `IS TRUE`, `IS FALSE`, `IS NOT TRUE`, and `IS NOT FALSE`.
+	// These are useful for nullable columns: `MergeSourceID = '<uuid>' IS NOT FALSE` matches rows where MergeSourceID equals the value OR is NULL.
+	// The `IN` and `NOT IN` operators accept a comma-separated list of values in parentheses,
+	// such as `Slug IN ('slugone', 'slugtwo')` or `Labels.environment IN ('prod', 'staging')`.
+	// Conjunctions are supported using the `AND` operator.
+	// An example conjunction is:
+	// `CreatedAt >= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.
+	//
+	// Supported attributes for filtering on Target: Annotations, BackingUnitID, CreatedAt, DeleteGates, DisplayName, Facts, HiddenReason, Labels, OrganizationID, Permissions, Slug, SpaceID, TargetID, TriggerFilterID, TriggerHash, TriggerIDs, TriggerOtherUnitIDs, UpdatedAt, UpstreamTargetID.
+	//
+	// The whole string must be query-encoded.
+	Where *string `form:"where,omitempty" json:"where,omitempty" yaml:"where,omitempty"`
+
+	// Filter UUID of a Filter entity to apply to the Target list.
+	//
+	// The Filter must be in the same Organization as the user credentials.
+	//
+	// The Filter's From field must match the entity type being filtered (Target).
+	//
+	// For Space-resident entities, if the Filter has a FromSpaceID, it must match the operation's SpaceID.
+	//
+	// The Filter's Where clause will be combined with any explicit 'where' parameter using AND logic.
+	//
+	// If both 'filter' and 'where' parameters are specified, they are combined with AND logic.
+	Filter *string `form:"filter,omitempty" json:"filter,omitempty" yaml:"filter,omitempty"`
+
+	// Contains Free text search that approximately matches the specified string against string fields and map keys/values.
+	//
+	// The search is case-insensitive and uses pattern matching to find entities containing the text.
+	//
+	// Searchable string fields include attributes like Slug, DisplayName, and string-typed custom fields.
+	//
+	// For map fields (like Labels and Annotations), the search matches both map keys and values.
+	//
+	// The search uses OR logic across all searchable fields, so matching any field will return the entity.
+	//
+	// If both 'where' and 'contains' parameters are specified, they are combined with AND logic.
+	//
+	// Searchable fields for Target include string and map-type attributes from the queryable attributes list.
+	//
+	// The whole string must be query-encoded.
+	Contains *string `form:"contains,omitempty" json:"contains,omitempty" yaml:"contains,omitempty"`
+
+	// IncludeHidden Hidden Target entities, those with a HiddenReason, are left out of the results, or of what a bulk operation acts on, unless this names their HiddenReason.
+	//
+	// It is a comma-separated list of HiddenReasons, or `*` for all of them but `Archived`.
+	//
+	// A where clause naming the entities, by their Slug or ID with `=` or `IN`, or naming HiddenReason at all, also returns hidden entities it selects.
+	//
+	// Archived entities, which a delete with archive=true archives, are selected only when this names `Archived`, as in `Archived` or `*,Archived`; a where clause naming them returns them from a List or Search, but not from a bulk operation.
+	//
+	// ConfigHub/YAML Units, which hold the configuration of entities, are hidden with the HiddenReason `BackingUnit`.
+	IncludeHidden *string `form:"include_hidden,omitempty" json:"include_hidden,omitempty" yaml:"include_hidden,omitempty"`
+
+	// Include Include clause for expanding related entities in the response for Target.
+	// The attribute names are case-sensitive, PascalCase, and
+	// expected in a comma-separated list format as in the JSON encoding.
+	//
+	// Supported attributes for Target are OrganizationID, Permissions, SpaceID, TriggerFilterID, TriggerIDs.
+	//
+	// The whole string must be query-encoded.
+	Include *string `form:"include,omitempty" json:"include,omitempty" yaml:"include,omitempty"`
+
+	// Limit Maximum number of Target entities to act on, in ID order. A request that names limit or continue also stops when it runs short of time, and returns a ConfigHub-Continue header to pass as the continue parameter of the next request; keep sending requests until a response has none. If neither is specified, the request acts on every selected entity.
+	Limit *int `form:"limit,omitempty" json:"limit,omitempty" yaml:"limit,omitempty"`
+
+	// Continue The token from the ConfigHub-Continue header of the previous request, to act on the Target entities after the last one it acted on. The request's other parameters, except limit, must be the same as those of the request that returned the token.
+	Continue *string `form:"continue,omitempty" json:"continue,omitempty" yaml:"continue,omitempty"`
+}
+
 // BulkDeleteTriggersParams defines parameters for BulkDeleteTriggers.
 type BulkDeleteTriggersParams struct {
 	// Where The specified string is an expression for the purpose of filtering
@@ -25457,6 +26850,9 @@ type BulkDeleteTriggersParams struct {
 
 	// Continue The token from the ConfigHub-Continue header of the previous request, to act on the Trigger entities after the last one it acted on. The request's other parameters, except limit, must be the same as those of the request that returned the token.
 	Continue *string `form:"continue,omitempty" json:"continue,omitempty" yaml:"continue,omitempty"`
+
+	// Archive If true, archive the entities rather than delete them: each is kept, with its history, hidden with the HiddenReason Archived, and given a Slug the server assigns from its ID, so that its own Slug is free. The Slug it had is kept in the label ArchivedSlug. An archived entity can be read, unarchived, or deleted for good, which a delete without archive does. Delete gates refuse an archive as they refuse a delete, and so do references from entities the request does not archive, except those held by history.
+	Archive *bool `form:"archive,omitempty" json:"archive,omitempty" yaml:"archive,omitempty"`
 
 	// FromBackingUnits Prune: of the Triggers selected, delete those whose backing Unit is empty, which says the Trigger should not exist, and keep the Unit, empty and backing nothing, so that it keeps the Trigger's history and a document that comes back revives it. The others are left alone and are not in the response, so a broad selection deletes only what was emptied.
 	FromBackingUnits *bool `form:"from_backing_units,omitempty" json:"from_backing_units,omitempty" yaml:"from_backing_units,omitempty"`
@@ -26128,6 +27524,104 @@ type BulkMoveTriggersParams struct {
 
 	// DryRun Report what the move would do, and what would stop it, without moving anything
 	DryRun *bool `form:"dry_run,omitempty" json:"dry_run,omitempty" yaml:"dry_run,omitempty"`
+}
+
+// BulkUnarchiveTriggersParams defines parameters for BulkUnarchiveTriggers.
+type BulkUnarchiveTriggersParams struct {
+	// Where The specified string is an expression for the purpose of filtering
+	// the list of Triggers returned. The expression syntax was inspired by SQL.
+	// It supports conjunctions using `AND` of relational expressions of the form *attribute*
+	// *operator* *attribute_or_literal*. The attribute names are case-sensitive and PascalCase,
+	// as in the JSON encoding.
+	// Strings support the following operators: `<`, `>`, `<=`, `>=`, `=`, `!=`, `LIKE`, `NOT LIKE`, `ILIKE`, `~~`, `!~~`, `~`, `~*`, `!~`, `!~*`, `IN`, `NOT IN`.
+	// String pattern operators: `LIKE` and `~~` for pattern matching with `%` and `_` wildcards,
+	// `ILIKE` for case-insensitive pattern matching, `NOT LIKE` and `!~~` for negated pattern matching.
+	// String regex operators: `~` for regex matching, `~*` for case-insensitive regex,
+	// `!~` and `!~*` for regex not matching (case-sensitive and insensitive).
+	// Integers support the following operators: `<`, `>`, `<=`, `>=`, `=`, `!=`, `IN`, `NOT IN`.
+	// UUIDs and boolean attributes support equality and inequality only.
+	// UUID and time literals must be quoted as string literals.
+	// String literals are quoted with single quotes, such as `'string'`.
+	// Time literals use the same form as when serialized as JSON,
+	// such as: `CreatedAt > '2025-02-18T23:16:34'`.
+	// Integer and boolean literals are also supported for attributes of those types.
+	// Arrays support the `?` operator to to match any element of the array,
+	// as in `FromLinkID ? '7c61626f-ddbe-41af-93f6-b69f4ab6d308'`.
+	// Arrays can perform LEN() to check for length, as in `LEN(FromLinkID) > 0`.
+	// An attribute naming a list of other entities can be filtered on their attributes with a `*` segment,
+	// as in `FromLink.*.Slug = 'upgrade-app'`, which holds when any element satisfies it.
+	// Without the `*` such a reference is an error, since it names no single value to compare.
+	// Map support the dot notation to specify a particular map key, as in `Labels.tier = 'Backend'`.
+	// Maps support `IS NULL` and `IS NOT NULL` with dot notation to check for key absence or presence,
+	// as in `Labels.tier IS NULL` (key doesn't exist) or `Labels.tier IS NOT NULL` (key exists).
+	// Comparison results can be tested with `IS TRUE`, `IS FALSE`, `IS NOT TRUE`, and `IS NOT FALSE`.
+	// These are useful for nullable columns: `MergeSourceID = '<uuid>' IS NOT FALSE` matches rows where MergeSourceID equals the value OR is NULL.
+	// The `IN` and `NOT IN` operators accept a comma-separated list of values in parentheses,
+	// such as `Slug IN ('slugone', 'slugtwo')` or `Labels.environment IN ('prod', 'staging')`.
+	// Conjunctions are supported using the `AND` operator.
+	// An example conjunction is:
+	// `CreatedAt >= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.
+	//
+	// Supported attributes for filtering on Trigger: Annotations, Arguments, BackingUnitID, ChannelID, Clearance, CreatedAt, DeleteGates, Description, Disabled, DisplayName, Event, FunctionName, Guards, Hash, HiddenReason, InvocationID, Labels, OrganizationID, OtherUnitIDs, OtherUnitSelections, Permissions, Protect, Slug, SpaceID, ToolchainType, TriggerID, UnitFilterID, UpdatedAt, UpstreamTriggerID, Validating, Warn, WhereResource, WhereUnit.
+	//
+	// The whole string must be query-encoded.
+	Where *string `form:"where,omitempty" json:"where,omitempty" yaml:"where,omitempty"`
+
+	// Filter UUID of a Filter entity to apply to the Trigger list.
+	//
+	// The Filter must be in the same Organization as the user credentials.
+	//
+	// The Filter's From field must match the entity type being filtered (Trigger).
+	//
+	// For Space-resident entities, if the Filter has a FromSpaceID, it must match the operation's SpaceID.
+	//
+	// The Filter's Where clause will be combined with any explicit 'where' parameter using AND logic.
+	//
+	// If both 'filter' and 'where' parameters are specified, they are combined with AND logic.
+	Filter *string `form:"filter,omitempty" json:"filter,omitempty" yaml:"filter,omitempty"`
+
+	// Contains Free text search that approximately matches the specified string against string fields and map keys/values.
+	//
+	// The search is case-insensitive and uses pattern matching to find entities containing the text.
+	//
+	// Searchable string fields include attributes like Slug, DisplayName, and string-typed custom fields.
+	//
+	// For map fields (like Labels and Annotations), the search matches both map keys and values.
+	//
+	// The search uses OR logic across all searchable fields, so matching any field will return the entity.
+	//
+	// If both 'where' and 'contains' parameters are specified, they are combined with AND logic.
+	//
+	// Searchable fields for Trigger include string and map-type attributes from the queryable attributes list.
+	//
+	// The whole string must be query-encoded.
+	Contains *string `form:"contains,omitempty" json:"contains,omitempty" yaml:"contains,omitempty"`
+
+	// IncludeHidden Hidden Trigger entities, those with a HiddenReason, are left out of the results, or of what a bulk operation acts on, unless this names their HiddenReason.
+	//
+	// It is a comma-separated list of HiddenReasons, or `*` for all of them but `Archived`.
+	//
+	// A where clause naming the entities, by their Slug or ID with `=` or `IN`, or naming HiddenReason at all, also returns hidden entities it selects.
+	//
+	// Archived entities, which a delete with archive=true archives, are selected only when this names `Archived`, as in `Archived` or `*,Archived`; a where clause naming them returns them from a List or Search, but not from a bulk operation.
+	//
+	// ConfigHub/YAML Units, which hold the configuration of entities, are hidden with the HiddenReason `BackingUnit`.
+	IncludeHidden *string `form:"include_hidden,omitempty" json:"include_hidden,omitempty" yaml:"include_hidden,omitempty"`
+
+	// Include Include clause for expanding related entities in the response for Trigger.
+	// The attribute names are case-sensitive, PascalCase, and
+	// expected in a comma-separated list format as in the JSON encoding.
+	//
+	// Supported attributes for Trigger are ChannelID, InvocationID, OrganizationID, Permissions, SpaceID, UnitFilterID.
+	//
+	// The whole string must be query-encoded.
+	Include *string `form:"include,omitempty" json:"include,omitempty" yaml:"include,omitempty"`
+
+	// Limit Maximum number of Trigger entities to act on, in ID order. A request that names limit or continue also stops when it runs short of time, and returns a ConfigHub-Continue header to pass as the continue parameter of the next request; keep sending requests until a response has none. If neither is specified, the request acts on every selected entity.
+	Limit *int `form:"limit,omitempty" json:"limit,omitempty" yaml:"limit,omitempty"`
+
+	// Continue The token from the ConfigHub-Continue header of the previous request, to act on the Trigger entities after the last one it acted on. The request's other parameters, except limit, must be the same as those of the request that returned the token.
+	Continue *string `form:"continue,omitempty" json:"continue,omitempty" yaml:"continue,omitempty"`
 }
 
 // BulkDeleteUnitsParams defines parameters for BulkDeleteUnits.
@@ -27207,6 +28701,12 @@ type BulkUnarchiveUnitsParams struct {
 	//
 	// The whole string must be query-encoded.
 	Include *string `form:"include,omitempty" json:"include,omitempty" yaml:"include,omitempty"`
+
+	// Limit Maximum number of Unit entities to act on, in ID order. A request that names limit or continue also stops when it runs short of time, and returns a ConfigHub-Continue header to pass as the continue parameter of the next request; keep sending requests until a response has none. If neither is specified, the request acts on every selected entity.
+	Limit *int `form:"limit,omitempty" json:"limit,omitempty" yaml:"limit,omitempty"`
+
+	// Continue The token from the ConfigHub-Continue header of the previous request, to act on the Unit entities after the last one it acted on. The request's other parameters, except limit, must be the same as those of the request that returned the token.
+	Continue *string `form:"continue,omitempty" json:"continue,omitempty" yaml:"continue,omitempty"`
 }
 
 // SearchUnitBlameParams defines parameters for SearchUnitBlame.
@@ -28094,6 +29594,9 @@ type BulkDeleteViewsParams struct {
 	// Continue The token from the ConfigHub-Continue header of the previous request, to act on the View entities after the last one it acted on. The request's other parameters, except limit, must be the same as those of the request that returned the token.
 	Continue *string `form:"continue,omitempty" json:"continue,omitempty" yaml:"continue,omitempty"`
 
+	// Archive If true, archive the entities rather than delete them: each is kept, with its history, hidden with the HiddenReason Archived, and given a Slug the server assigns from its ID, so that its own Slug is free. The Slug it had is kept in the label ArchivedSlug. An archived entity can be read, unarchived, or deleted for good, which a delete without archive does. Delete gates refuse an archive as they refuse a delete, and so do references from entities the request does not archive, except those held by history.
+	Archive *bool `form:"archive,omitempty" json:"archive,omitempty" yaml:"archive,omitempty"`
+
 	// FromBackingUnits Prune: of the Views selected, delete those whose backing Unit is empty, which says the View should not exist, and keep the Unit, empty and backing nothing, so that it keeps the View's history and a document that comes back revives it. The others are left alone and are not in the response, so a broad selection deletes only what was emptied.
 	FromBackingUnits *bool `form:"from_backing_units,omitempty" json:"from_backing_units,omitempty" yaml:"from_backing_units,omitempty"`
 }
@@ -28724,6 +30227,104 @@ type BulkMoveViewsParams struct {
 
 	// DryRun Report what the move would do, and what would stop it, without moving anything
 	DryRun *bool `form:"dry_run,omitempty" json:"dry_run,omitempty" yaml:"dry_run,omitempty"`
+}
+
+// BulkUnarchiveViewsParams defines parameters for BulkUnarchiveViews.
+type BulkUnarchiveViewsParams struct {
+	// Where The specified string is an expression for the purpose of filtering
+	// the list of Views returned. The expression syntax was inspired by SQL.
+	// It supports conjunctions using `AND` of relational expressions of the form *attribute*
+	// *operator* *attribute_or_literal*. The attribute names are case-sensitive and PascalCase,
+	// as in the JSON encoding.
+	// Strings support the following operators: `<`, `>`, `<=`, `>=`, `=`, `!=`, `LIKE`, `NOT LIKE`, `ILIKE`, `~~`, `!~~`, `~`, `~*`, `!~`, `!~*`, `IN`, `NOT IN`.
+	// String pattern operators: `LIKE` and `~~` for pattern matching with `%` and `_` wildcards,
+	// `ILIKE` for case-insensitive pattern matching, `NOT LIKE` and `!~~` for negated pattern matching.
+	// String regex operators: `~` for regex matching, `~*` for case-insensitive regex,
+	// `!~` and `!~*` for regex not matching (case-sensitive and insensitive).
+	// Integers support the following operators: `<`, `>`, `<=`, `>=`, `=`, `!=`, `IN`, `NOT IN`.
+	// UUIDs and boolean attributes support equality and inequality only.
+	// UUID and time literals must be quoted as string literals.
+	// String literals are quoted with single quotes, such as `'string'`.
+	// Time literals use the same form as when serialized as JSON,
+	// such as: `CreatedAt > '2025-02-18T23:16:34'`.
+	// Integer and boolean literals are also supported for attributes of those types.
+	// Arrays support the `?` operator to to match any element of the array,
+	// as in `FromLinkID ? '7c61626f-ddbe-41af-93f6-b69f4ab6d308'`.
+	// Arrays can perform LEN() to check for length, as in `LEN(FromLinkID) > 0`.
+	// An attribute naming a list of other entities can be filtered on their attributes with a `*` segment,
+	// as in `FromLink.*.Slug = 'upgrade-app'`, which holds when any element satisfies it.
+	// Without the `*` such a reference is an error, since it names no single value to compare.
+	// Map support the dot notation to specify a particular map key, as in `Labels.tier = 'Backend'`.
+	// Maps support `IS NULL` and `IS NOT NULL` with dot notation to check for key absence or presence,
+	// as in `Labels.tier IS NULL` (key doesn't exist) or `Labels.tier IS NOT NULL` (key exists).
+	// Comparison results can be tested with `IS TRUE`, `IS FALSE`, `IS NOT TRUE`, and `IS NOT FALSE`.
+	// These are useful for nullable columns: `MergeSourceID = '<uuid>' IS NOT FALSE` matches rows where MergeSourceID equals the value OR is NULL.
+	// The `IN` and `NOT IN` operators accept a comma-separated list of values in parentheses,
+	// such as `Slug IN ('slugone', 'slugtwo')` or `Labels.environment IN ('prod', 'staging')`.
+	// Conjunctions are supported using the `AND` operator.
+	// An example conjunction is:
+	// `CreatedAt >= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.
+	//
+	// Supported attributes for filtering on View: Annotations, BackingUnitID, Columns, CreatedAt, DisplayName, FilterID, GroupBy, Hash, HiddenReason, Labels, Of, OrderBy, OrderByDirection, OrganizationID, Permissions, Slug, SpaceID, UpdatedAt, UpstreamViewID, ViewID.
+	//
+	// The whole string must be query-encoded.
+	Where *string `form:"where,omitempty" json:"where,omitempty" yaml:"where,omitempty"`
+
+	// Filter UUID of a Filter entity to apply to the View list.
+	//
+	// The Filter must be in the same Organization as the user credentials.
+	//
+	// The Filter's From field must match the entity type being filtered (View).
+	//
+	// For Space-resident entities, if the Filter has a FromSpaceID, it must match the operation's SpaceID.
+	//
+	// The Filter's Where clause will be combined with any explicit 'where' parameter using AND logic.
+	//
+	// If both 'filter' and 'where' parameters are specified, they are combined with AND logic.
+	Filter *string `form:"filter,omitempty" json:"filter,omitempty" yaml:"filter,omitempty"`
+
+	// Contains Free text search that approximately matches the specified string against string fields and map keys/values.
+	//
+	// The search is case-insensitive and uses pattern matching to find entities containing the text.
+	//
+	// Searchable string fields include attributes like Slug, DisplayName, and string-typed custom fields.
+	//
+	// For map fields (like Labels and Annotations), the search matches both map keys and values.
+	//
+	// The search uses OR logic across all searchable fields, so matching any field will return the entity.
+	//
+	// If both 'where' and 'contains' parameters are specified, they are combined with AND logic.
+	//
+	// Searchable fields for View include string and map-type attributes from the queryable attributes list.
+	//
+	// The whole string must be query-encoded.
+	Contains *string `form:"contains,omitempty" json:"contains,omitempty" yaml:"contains,omitempty"`
+
+	// IncludeHidden Hidden View entities, those with a HiddenReason, are left out of the results, or of what a bulk operation acts on, unless this names their HiddenReason.
+	//
+	// It is a comma-separated list of HiddenReasons, or `*` for all of them but `Archived`.
+	//
+	// A where clause naming the entities, by their Slug or ID with `=` or `IN`, or naming HiddenReason at all, also returns hidden entities it selects.
+	//
+	// Archived entities, which a delete with archive=true archives, are selected only when this names `Archived`, as in `Archived` or `*,Archived`; a where clause naming them returns them from a List or Search, but not from a bulk operation.
+	//
+	// ConfigHub/YAML Units, which hold the configuration of entities, are hidden with the HiddenReason `BackingUnit`.
+	IncludeHidden *string `form:"include_hidden,omitempty" json:"include_hidden,omitempty" yaml:"include_hidden,omitempty"`
+
+	// Include Include clause for expanding related entities in the response for View.
+	// The attribute names are case-sensitive, PascalCase, and
+	// expected in a comma-separated list format as in the JSON encoding.
+	//
+	// Supported attributes for View are FilterID, OrganizationID, Permissions, SpaceID.
+	//
+	// The whole string must be query-encoded.
+	Include *string `form:"include,omitempty" json:"include,omitempty" yaml:"include,omitempty"`
+
+	// Limit Maximum number of View entities to act on, in ID order. A request that names limit or continue also stops when it runs short of time, and returns a ConfigHub-Continue header to pass as the continue parameter of the next request; keep sending requests until a response has none. If neither is specified, the request acts on every selected entity.
+	Limit *int `form:"limit,omitempty" json:"limit,omitempty" yaml:"limit,omitempty"`
+
+	// Continue The token from the ConfigHub-Continue header of the previous request, to act on the View entities after the last one it acted on. The request's other parameters, except limit, must be the same as those of the request that returned the token.
+	Continue *string `form:"continue,omitempty" json:"continue,omitempty" yaml:"continue,omitempty"`
 }
 
 // BulkPatchComponentsApplicationMergePatchPlusJSONRequestBody defines body for BulkPatchComponents for application/merge-patch+json ContentType.

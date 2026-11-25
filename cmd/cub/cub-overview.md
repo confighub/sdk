@@ -64,6 +64,7 @@ Other functional areas include:
 - `auth`, `context`, `completion`, `version`, and `upgrade`, which replaces cub with its latest release
 - `function` and `run`, which invoke functions
 - `variant`, which works on the variants of a Component as a whole
+- `package`, which installs installer packages, such as `k8sbot`, into a Space
 - `apply`, which creates and updates entities from YAML documents
 - `k8s`, which reads the Kubernetes resources in Units and talks to clusters
 - `cluster`, which wires a cluster to ConfigHub through Argo CD, Flux or Sveltos
@@ -222,6 +223,17 @@ and the `Variant` label suffix). The cloned units can be retargeted:
 
 ```
 cub variant create test website/prod --space-pattern "template:{{.Component.Slug}}-{{.Labels.Variant}}" --target infra/test-cluster
+```
+
+### Packages
+
+Install a package into a Space: cub pulls it, asks for what its flags do not answer, renders it, and
+uploads it. A bare name is a package ConfigHub publishes, at its newest release unless a version is
+given. Installing again re-enters the Space's earlier install, so it upgrades:
+
+```
+cub package install k8sbot --space k8sbot-base --select argocd --namespace confighubbot
+cub package install k8sbot:0.2.12 --space k8sbot-base
 ```
 
 ### Links

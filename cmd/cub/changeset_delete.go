@@ -16,6 +16,13 @@ var changesetDeleteCmd = &cobra.Command{
 	Short: "Delete a changeset or multiple changesets",
 	Long: getCommandHelp(`Delete a changeset or multiple changesets using bulk operations.
 
+--archive keeps the change set rather than deleting it: it stays, hidden with the reason Archived
+and named by a slug made from its ID, until it is unarchived with cub changeset unarchive. Its start
+and end tags are archived with it and follow its new name, so that a new change set can take its
+name and name its tags alike. The revisions made in it keep their marks; units still open in it
+refuse the archive, unless --detach detaches them. Delete an archived change set to delete it for
+good.
+
 Single changeset delete:
 `+"```"+`
   cub changeset delete my-changeset
@@ -62,6 +69,7 @@ func init() {
 	enableFilterFlag(changesetDeleteCmd)
 	changesetDeleteCmd.Flags().StringSliceVar(&changesetDeleteIdentifiers, "changeset", []string{}, "target specific changesets by slug or UUID for bulk delete (can be repeated or comma-separated)")
 	addDetachFlag(changesetDeleteCmd)
+	addArchiveFlag(changesetDeleteCmd)
 	changesetCmd.AddCommand(changesetDeleteCmd)
 }
 
@@ -122,6 +130,7 @@ func runBulkChangeSetDelete() error {
 		params.Filter = &filterID
 	}
 	params.Detach = detachParam()
+	params.Archive = archiveParam()
 
 	// Call the bulk delete API
 	bulkRes, err := cubClientNew.BulkDeleteChangeSetsWithResponse(ctx, params)
@@ -146,12 +155,12 @@ func changesetDeleteCmdRun(cmd *cobra.Command, args []string) error {
 		return err
 	}
 	deleteRes, err := cubClientNew.DeleteChangeSetWithResponse(ctx, changesetDetails.ChangeSet.SpaceID, changesetDetails.ChangeSet.ChangeSetID,
-		&goclientnew.DeleteChangeSetParams{Detach: detachParam()})
+		&goclientnew.DeleteChangeSetParams{Detach: detachParam(), Archive: archiveParam()})
 	if cubapi.IsAPIError(err, deleteRes) {
 		return cubapi.InterpretErrorGeneric(err, deleteRes)
 	}
 
-	displayDeleteResults("changeset", args[0], changesetDetails.ChangeSet.ChangeSetID.String(), deleteRes)
+	displayDeleteOrArchiveResults("changeset", args[0], changesetDetails.ChangeSet.ChangeSetID.String(), deleteRes)
 	return nil
 }
 

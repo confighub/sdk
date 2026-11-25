@@ -19,6 +19,11 @@ var triggerDeleteCmd = &cobra.Command{
 Deleting a trigger takes back the guards it set on the paths it last wrote, in every unit it
 wrote, since nothing maintains them any more. What it wrote stays.
 
+--archive keeps the trigger rather than deleting it: it stays, hidden with the reason Archived and
+named by a slug made from its ID, with its backing unit archived with it, and runs nowhere until it
+is unarchived with cub trigger unarchive. Its guards are taken back, as for a delete. Delete an
+archived trigger to delete it for good.
+
 Single trigger delete:
 `+"```"+`
   cub trigger delete my-trigger
@@ -58,6 +63,7 @@ var (
 func init() {
 	addStandardDeleteFlags(triggerDeleteCmd)
 	addPruneFlag(triggerDeleteCmd, "Trigger")
+	addArchiveFlag(triggerDeleteCmd)
 	enableWhereFlag(triggerDeleteCmd)
 	enableFilterFlag(triggerDeleteCmd)
 	addTriggerPackFlag(triggerDeleteCmd)
@@ -119,6 +125,7 @@ func runBulkTriggerDelete() error {
 	}
 	params.IncludeHidden = includeHiddenParam()
 	params.FromBackingUnits = fromBackingUnitsParam()
+	params.Archive = archiveParam()
 	if filterID != "" {
 		params.Filter = &filterID
 	}
@@ -148,12 +155,13 @@ func triggerDeleteCmdRun(cmd *cobra.Command, args []string) error {
 	if err != nil {
 		return err
 	}
-	deleteRes, err := cubClientNew.DeleteTriggerWithResponse(ctx, triggerDetails.Trigger.SpaceID, triggerDetails.Trigger.TriggerID)
+	deleteRes, err := cubClientNew.DeleteTriggerWithResponse(ctx, triggerDetails.Trigger.SpaceID, triggerDetails.Trigger.TriggerID,
+		&goclientnew.DeleteTriggerParams{Archive: archiveParam()})
 	if cubapi.IsAPIError(err, deleteRes) {
 		return cubapi.InterpretErrorGeneric(err, deleteRes)
 	}
 
-	displayDeleteResults("trigger", args[0], triggerDetails.Trigger.TriggerID.String(), deleteRes)
+	displayDeleteOrArchiveResults("trigger", args[0], triggerDetails.Trigger.TriggerID.String(), deleteRes)
 	return nil
 }
 

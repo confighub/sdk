@@ -8,6 +8,7 @@ import (
 	"os"
 	"strings"
 
+	"github.com/confighub/installer/pkg/installer"
 	"github.com/spf13/cobra"
 	"github.com/spf13/pflag"
 )
@@ -190,6 +191,11 @@ func globalPreRun(cmd *cobra.Command, args []string) error {
 }
 
 func main() {
+	// Rendering an installer package (cub package install, cub cluster up
+	// --k8sbot-installer) runs kustomize, whose transform step re-executes this
+	// binary; this is that run.
+	installer.RunTransformerIfRequested()
+
 	var err error
 	// An empty directory means "work it out", which cubapi.DefaultConfigDir does
 	// from CUB_CONFIG. Deciding it here as well only made the two disagree.

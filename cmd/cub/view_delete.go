@@ -16,6 +16,10 @@ var viewDeleteCmd = &cobra.Command{
 	Short: "Delete a view or multiple views",
 	Long: getCommandHelp(`Delete a view or multiple views using bulk operations.
 
+--archive keeps the view rather than deleting it: it stays, hidden with the reason Archived and
+named by a slug made from its ID, with its backing unit archived with it, until it is unarchived
+with cub view unarchive. Delete an archived view to delete it for good.
+
 Single view delete:
 `+"```"+`
   cub view delete my-view
@@ -54,6 +58,7 @@ var (
 
 func init() {
 	addStandardDeleteFlags(viewDeleteCmd)
+	addArchiveFlag(viewDeleteCmd)
 	addPruneFlag(viewDeleteCmd, "View")
 	enableWhereFlag(viewDeleteCmd)
 	enableFilterFlag(viewDeleteCmd)
@@ -115,6 +120,7 @@ func runBulkViewDelete() error {
 	}
 	params.IncludeHidden = includeHiddenParam()
 	params.FromBackingUnits = fromBackingUnitsParam()
+	params.Archive = archiveParam()
 	if filterID != "" {
 		params.Filter = &filterID
 	}
@@ -141,12 +147,13 @@ func viewDeleteCmdRun(cmd *cobra.Command, args []string) error {
 	if err != nil {
 		return err
 	}
-	deleteRes, err := cubClientNew.DeleteViewWithResponse(ctx, viewDetails.View.SpaceID, viewDetails.View.ViewID)
+	deleteRes, err := cubClientNew.DeleteViewWithResponse(ctx, viewDetails.View.SpaceID, viewDetails.View.ViewID,
+		&goclientnew.DeleteViewParams{Archive: archiveParam()})
 	if cubapi.IsAPIError(err, deleteRes) {
 		return cubapi.InterpretErrorGeneric(err, deleteRes)
 	}
 
-	displayDeleteResults("view", args[0], viewDetails.View.ViewID.String(), deleteRes)
+	displayDeleteOrArchiveResults("view", args[0], viewDetails.View.ViewID.String(), deleteRes)
 	return nil
 }
 

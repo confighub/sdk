@@ -17,6 +17,11 @@ var linkDeleteCmd = &cobra.Command{
 	Short: "Delete a link or multiple links",
 	Long: getCommandHelp(`Delete a link or multiple links using bulk operations.
 
+--archive keeps the link rather than deleting it: it stays, hidden with the reason Archived and
+named by a slug made from its ID, with its backing unit archived with it, until it is unarchived
+with cub link unarchive. Its unit no longer takes values through it, and is resolved again without
+it. Delete an archived link to delete it for good.
+
 Deleting a link takes back the guards it set on the paths it last wrote, since nothing maintains
 them any more. A NeedsProvides link also sets what it filled back to a placeholder.
 
@@ -55,6 +60,7 @@ var (
 
 func init() {
 	addStandardDeleteFlags(linkDeleteCmd)
+	addArchiveFlag(linkDeleteCmd)
 	addPruneFlag(linkDeleteCmd, "Link")
 	enableWaitFlag(linkDeleteCmd)
 	enableWhereFlag(linkDeleteCmd)
@@ -181,6 +187,7 @@ func callBulkDeleteLinks(effectiveWhere, filterID, containsClause string) (*gocl
 	}
 	params.IncludeHidden = includeHiddenParam()
 	params.FromBackingUnits = fromBackingUnitsParam()
+	params.Archive = archiveParam()
 	if filterID != "" {
 		params.Filter = &filterID
 	}
@@ -207,11 +214,12 @@ func linkDeleteCmdRun(cmd *cobra.Command, args []string) error {
 		return err
 	}
 
-	deleteRes, err := cubClientNew.DeleteLinkWithResponse(ctx, linkDetails.Link.SpaceID, linkDetails.Link.LinkID)
+	deleteRes, err := cubClientNew.DeleteLinkWithResponse(ctx, linkDetails.Link.SpaceID, linkDetails.Link.LinkID,
+		&goclientnew.DeleteLinkParams{Archive: archiveParam()})
 	if cubapi.IsAPIError(err, deleteRes) {
 		return cubapi.InterpretErrorGeneric(err, deleteRes)
 	}
-	displayDeleteResults("link", args[0], linkDetails.Link.LinkID.String(), deleteRes)
+	displayDeleteOrArchiveResults("link", args[0], linkDetails.Link.LinkID.String(), deleteRes)
 	if wait {
 		printAwaitingTriggers()
 		fromUnitID := linkDetails.Link.FromUnitID

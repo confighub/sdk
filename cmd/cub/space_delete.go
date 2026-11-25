@@ -44,6 +44,18 @@ request, remove the references first, or pass --detach to remove them as part of
 `+"```"+`
   cub space delete --recursive --detach cluster-space
 `+"```"+`
+
+--archive keeps the space rather than deleting it, and with --recursive, everything in it: each is
+hidden with the reason Archived, its history kept. The space is given a slug made from its ID, so
+its own slug is free; what it holds keeps its slugs. Its units are no longer released, resolved or
+selected, its triggers no longer run, and its unfinished change orders are aborted. List archived
+spaces with --include-hidden=Archived, and bring one back, with what was archived with it, with
+cub space unarchive --recursive. Delete an archived space recursively to remove it for good:
+`+"```"+`
+  cub space delete --recursive --archive my-space
+  cub space list --include-hidden=Archived --where "Labels.ArchivedSlug = 'my-space'"
+  cub space unarchive --recursive id<space-uuid>
+`+"```"+`
 `, ""),
 	Args: cobra.MaximumNArgs(1), // Allow 0 or 1 args (0 for bulk mode)
 	RunE: spaceDeleteCmdRun,
@@ -64,6 +76,7 @@ func init() {
 	spaceDeleteCmd.Flags().BoolVar(&recursive, "recursive", false, "Recursively delete all entities within the deleted space(s) if none have delete gates.")
 	spaceDeleteCmd.Flags().BoolVar(&recursiveForce, "recursive-force", false, "Recursively delete all entities within the deleted space(s) regardless whether any have delete gates.")
 	addDetachFlag(spaceDeleteCmd)
+	addArchiveFlag(spaceDeleteCmd)
 	spaceCmd.AddCommand(spaceDeleteCmd)
 }
 
@@ -131,6 +144,7 @@ func runBulkSpaceDelete() error {
 		params.RecursiveForce = &recursiveForceParam
 	}
 	params.Detach = detachParam()
+	params.Archive = archiveParam()
 
 	// Call the bulk delete API
 	bulkRes, err := cubClientNew.BulkDeleteSpacesWithResponse(ctx, params)
@@ -139,7 +153,11 @@ func runBulkSpaceDelete() error {
 	}
 
 	// Handle the response
-	return handleBulkSpaceDeleteResponse(bulkRes.JSON200, bulkRes.JSON207, bulkRes.StatusCode(), deleteOperationName(), effectiveWhere)
+	operation := deleteOperationName()
+	if deleteArchive {
+		operation = "archive"
+	}
+	return handleBulkSpaceDeleteResponse(bulkRes.JSON200, bulkRes.JSON207, bulkRes.StatusCode(), operation, effectiveWhere)
 }
 
 func spaceDeleteCmdRun(cmd *cobra.Command, args []string) error {
@@ -165,9 +183,14 @@ func spaceDeleteCmdRun(cmd *cobra.Command, args []string) error {
 		params.RecursiveForce = &recursiveForceParam
 	}
 	params.Detach = detachParam()
+	params.Archive = archiveParam()
 	deleteRes, err := cubClientNew.DeleteSpaceWithResponse(ctx, spaceID, params)
 	if cubapi.IsAPIError(err, deleteRes) {
 		return cubapi.InterpretErrorGeneric(err, deleteRes)
+	}
+	if deleteArchive {
+		displayArchiveResults("space", args[0], spaceID.String(), deleteRes)
+		return nil
 	}
 	displayDeleteResults("space", args[0], spaceID.String(), deleteRes)
 	return nil

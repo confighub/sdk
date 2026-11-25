@@ -189,6 +189,9 @@ func displayExtendedSpaceDetails(extendedSpace *goclientnew.ExtendedSpace) {
 	view.Append([]string{"# Warned Units", fmt.Sprintf("%d", extendedSpace.WarnedUnitCount)})
 	view.Append([]string{"# Upgradable Units", fmt.Sprintf("%d", extendedSpace.UpgradableUnitCount)})
 	view.Append([]string{"# Unlinked Units", fmt.Sprintf("%d", extendedSpace.UnlinkedUnitCount)})
+	if extendedSpace.ArchivedUnitCount > 0 {
+		view.Append([]string{"# Archived Units", fmt.Sprintf("%d", extendedSpace.ArchivedUnitCount)})
+	}
 	view.Append([]string{"# Filters", fmt.Sprintf("%d", extendedSpace.TotalFilterCount)})
 	view.Append([]string{"# Views", fmt.Sprintf("%d", extendedSpace.TotalViewCount)})
 	view.Append([]string{"# Tags", fmt.Sprintf("%d", extendedSpace.TotalTagCount)})

@@ -16,6 +16,11 @@ var changeworkflowDeleteCmd = &cobra.Command{
 	Short: "Delete a change workflow or multiple change workflows",
 	Long: getCommandHelp(`Delete a change workflow or multiple change workflows using bulk operations.
 
+--archive keeps the change workflow rather than deleting it: it stays, hidden with the reason
+Archived and named by a slug made from its ID, with its backing unit archived with it, until it is
+unarchived with cub changeworkflow unarchive. It is refused while a component allows it. Delete an
+archived change workflow to delete it for good.
+
 A change order that named the workflow keeps the annotation naming it, so deleting a workflow a
 rollout is still moving under leaves that rollout with nothing to advance through. Abort the change
 order, or keep the workflow until it is done.
@@ -50,6 +55,7 @@ var (
 
 func init() {
 	addStandardDeleteFlags(changeworkflowDeleteCmd)
+	addArchiveFlag(changeworkflowDeleteCmd)
 	addPruneFlag(changeworkflowDeleteCmd, "ChangeWorkflow")
 	enableWhereFlag(changeworkflowDeleteCmd)
 	enableFilterFlag(changeworkflowDeleteCmd)
@@ -110,6 +116,7 @@ func runBulkChangeWorkflowDelete() error {
 	}
 	params.IncludeHidden = includeHiddenParam()
 	params.FromBackingUnits = fromBackingUnitsParam()
+	params.Archive = archiveParam()
 	if filterID != "" {
 		params.Filter = &filterID
 	}
@@ -137,12 +144,13 @@ func changeworkflowDeleteCmdRun(cmd *cobra.Command, args []string) error {
 		return err
 	}
 	deleteRes, err := cubClientNew.DeleteChangeWorkflowWithResponse(ctx,
-		changeWorkflowDetails.ChangeWorkflow.SpaceID, changeWorkflowDetails.ChangeWorkflow.ChangeWorkflowID)
+		changeWorkflowDetails.ChangeWorkflow.SpaceID, changeWorkflowDetails.ChangeWorkflow.ChangeWorkflowID,
+		&goclientnew.DeleteChangeWorkflowParams{Archive: archiveParam()})
 	if cubapi.IsAPIError(err, deleteRes) {
 		return cubapi.InterpretErrorGeneric(err, deleteRes)
 	}
 
-	displayDeleteResults("changeworkflow", args[0],
+	displayDeleteOrArchiveResults("changeworkflow", args[0],
 		changeWorkflowDetails.ChangeWorkflow.ChangeWorkflowID.String(), deleteRes)
 	return nil
 }

@@ -19,6 +19,11 @@ var releaseDeleteCmd = &cobra.Command{
 	Annotations: map[string]string{"OrgLevel": ""},
 	Long: getCommandHelp(`Delete a release, identified by its globally-unique release ID.
 
+--archive keeps the release rather than deleting it: it, its bundle and its tag stay, hidden with
+the reason Archived, until it is unarchived with cub release unarchive. Like deleting it, archiving
+changes what is served to the cluster behind the release Target, and needs the same permissions. The
+revisions it bundled keep their marks.
+
 Deletion removes the release and its stored bundle. To take a release out of
 service while retaining it, use `+"`cub release withdraw`"+` instead.
 
@@ -47,6 +52,7 @@ A release is not deleted while it, or the tag it made, marks revisions. The erro
 func init() {
 	addStandardDeleteFlags(releaseDeleteCmd)
 	addDetachFlag(releaseDeleteCmd)
+	addArchiveFlag(releaseDeleteCmd)
 	releaseCmd.AddCommand(releaseDeleteCmd)
 }
 
@@ -68,12 +74,20 @@ func releaseDeleteCmdRun(cmd *cobra.Command, args []string) error {
 	deleteRes, err := cubClientNew.DeleteReleaseWithResponse(ctx,
 		releaseSpaceID,
 		releaseID,
-		&goclientnew.DeleteReleaseParams{Detach: detachParam()},
+		&goclientnew.DeleteReleaseParams{Detach: detachParam(), Archive: archiveParam()},
 	)
 	if cubapi.IsAPIError(err, deleteRes) {
 		return cubapi.InterpretErrorGeneric(err, deleteRes)
 	}
 
+	// A Release has no slug for an archive to change.
+	if deleteArchive {
+		if !quiet && !isAlternativeOutput() {
+			tprint("Successfully archived release %s", releaseID)
+		}
+		renderPayload(deleteRes)
+		return nil
+	}
 	displayDeleteResults("release", args[0], releaseID.String(), deleteRes)
 	return nil
 }

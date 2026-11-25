@@ -16,6 +16,11 @@ var filterDeleteCmd = &cobra.Command{
 	Short: "Delete a filter or multiple filters",
 	Long: getCommandHelp(`Delete a filter or multiple filters using bulk operations.
 
+--archive keeps the filter rather than deleting it: it stays, hidden with the reason Archived and
+named by a slug made from its ID, with its backing unit archived with it, until it is unarchived
+with cub filter unarchive. It is refused while a live entity selects with it. Delete an archived
+filter to delete it for good.
+
 Single filter delete:
 `+"```"+`
   cub filter delete my-filter
@@ -51,6 +56,7 @@ var (
 
 func init() {
 	addStandardDeleteFlags(filterDeleteCmd)
+	addArchiveFlag(filterDeleteCmd)
 	addPruneFlag(filterDeleteCmd, "Filter")
 	enableWhereFlag(filterDeleteCmd)
 	enableFilterFlag(filterDeleteCmd)
@@ -112,6 +118,7 @@ func runBulkFilterDelete() error {
 	}
 	params.IncludeHidden = includeHiddenParam()
 	params.FromBackingUnits = fromBackingUnitsParam()
+	params.Archive = archiveParam()
 	if filterID != "" {
 		params.Filter = &filterID
 	}
@@ -141,12 +148,13 @@ func filterDeleteCmdRun(cmd *cobra.Command, args []string) error {
 	if err != nil {
 		return err
 	}
-	deleteRes, err := cubClientNew.DeleteFilterWithResponse(ctx, filterDetails.Filter.SpaceID, filterDetails.Filter.FilterID)
+	deleteRes, err := cubClientNew.DeleteFilterWithResponse(ctx, filterDetails.Filter.SpaceID, filterDetails.Filter.FilterID,
+		&goclientnew.DeleteFilterParams{Archive: archiveParam()})
 	if cubapi.IsAPIError(err, deleteRes) {
 		return cubapi.InterpretErrorGeneric(err, deleteRes)
 	}
 
-	displayDeleteResults("filter", args[0], filterDetails.Filter.FilterID.String(), deleteRes)
+	displayDeleteOrArchiveResults("filter", args[0], filterDetails.Filter.FilterID.String(), deleteRes)
 	return nil
 }
 

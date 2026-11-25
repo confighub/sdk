@@ -6,6 +6,12 @@ GOPATH ?= $(shell go env GOPATH)
 GOBIN?=${GOPATH}/bin
 SHA_SUM := $(shell git rev-parse HEAD)
 CUB_CMD?=./bin/cub
+# kustomize_disable_go_plugin_support drops kustomize's import of Go's plugin
+# package, which only loads .so Go plugins; cub loads none. With cgo on, the
+# import keeps every exported method in a binary that links kustomize's plugin
+# loader, as one embedding the installer does (10 MB); with cgo off, it costs
+# nothing, but the builds stay alike.
+CUB_TAGS?=kustomize_disable_go_plugin_support
 RELEASE?= # 'true|1' Set to true to build a release version of the CLI
 # VERSION and the API version it has to agree with are declared in version.mk, which sits
 # beside this file in both layouts this Makefile is built in.
@@ -74,9 +80,9 @@ CUB_CMD_ABS=$(abspath $(CUB_CMD))
 .PHONY: build-cli
 build-cli: ## Build the CLI
 ifdef RELEASE
-	cd ./cmd/cub && go build $(LDFLAGS) -v -o $(CUB_CMD_ABS)-${OS}-${ARCH} .
+	cd ./cmd/cub && go build -tags '$(CUB_TAGS)' $(LDFLAGS) -v -o $(CUB_CMD_ABS)-${OS}-${ARCH} .
 else
-	cd ./cmd/cub && go build $(LDFLAGS) -v -o $(CUB_CMD_ABS) .
+	cd ./cmd/cub && go build -tags '$(CUB_TAGS)' $(LDFLAGS) -v -o $(CUB_CMD_ABS) .
 endif
 
 K8S_MF_CMD?=./bin/k8s-mf

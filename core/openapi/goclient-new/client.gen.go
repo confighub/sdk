@@ -119,6 +119,13 @@ type ClientInterface interface {
 	// Corresponds with PATCH /_component (the `BulkPatchComponents` operationId).
 	BulkPatchComponentsWithApplicationMergePatchPlusJSONBody(ctx context.Context, params *BulkPatchComponentsParams, body BulkPatchComponentsApplicationMergePatchPlusJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error)
 
+	// BulkUnarchiveComponents Unarchive components
+	//
+	// Unarchive a Component archived by a delete with archive=true. Its backing Unit, archived with it, is unarchived with it. Its Slug is restored from the label ArchivedSlug unless another Component has taken it since, in which case it keeps the Slug the archive gave it, which KeptSlug in the response reports; it is unarchived either way. Refused while its Space is archived, while it was archived with another entity, which unarchiving that one brings back, and while it names an entity that is still archived. Requires Edit permission. Selects archived Components, as if include_hidden named Archived, and leaves alone a selected Component that is not archived.
+	//
+	// Corresponds with POST /_component/unarchive (the `BulkUnarchiveComponents` operationId).
+	BulkUnarchiveComponents(ctx context.Context, params *BulkUnarchiveComponentsParams, reqEditors ...RequestEditorFn) (*http.Response, error)
+
 	// BulkDeleteServiceAccounts Bulk delete multiple service accounts
 	//
 	// Delete multiple service accounts selected by query parameters.
@@ -186,6 +193,13 @@ type ClientInterface interface {
 	//
 	// Corresponds with POST /_space (the `BulkCreateSpaces` operationId).
 	BulkCreateSpacesWithApplicationMergePatchPlusJSONBody(ctx context.Context, params *BulkCreateSpacesParams, body BulkCreateSpacesApplicationMergePatchPlusJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error)
+
+	// BulkUnarchiveSpaces Unarchive spaces
+	//
+	// Unarchive a Space archived by a delete with archive=true. Its Slug is restored from the label ArchivedSlug unless another Space has taken it since, in which case it keeps the Slug the archive gave it, which KeptSlug in the response reports; it is unarchived either way. A Space archived recursively is unarchived only recursively, which unarchives what its archive archived, and nothing archived before or since. Refused while what it would bring back names an entity that is still archived, such as a Target in another archived Space. ChangeOrders the archive aborted stay aborted. Requires Edit permission. Selects archived Spaces, as if include_hidden named Archived, and leaves alone a selected Space that is not archived.
+	//
+	// Corresponds with POST /_space/unarchive (the `BulkUnarchiveSpaces` operationId).
+	BulkUnarchiveSpaces(ctx context.Context, params *BulkUnarchiveSpacesParams, reqEditors ...RequestEditorFn) (*http.Response, error)
 
 	// AttestWithBody Record Attestations across Spaces
 	//
@@ -280,6 +294,13 @@ type ClientInterface interface {
 	// Corresponds with POST /attribute/move (the `BulkMoveAttributes` operationId).
 	BulkMoveAttributes(ctx context.Context, params *BulkMoveAttributesParams, body BulkMoveAttributesJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error)
 
+	// BulkUnarchiveAttributes Unarchive attributes
+	//
+	// Unarchive a Attribute archived by a delete with archive=true. Its backing Unit, archived with it, is unarchived with it. Its Slug is restored from the label ArchivedSlug unless another Attribute has taken it since, in which case it keeps the Slug the archive gave it, which KeptSlug in the response reports; it is unarchived either way. Refused while its Space is archived, while it was archived with another entity, which unarchiving that one brings back, and while it names an entity that is still archived. Requires Edit permission. Selects archived Attributes, as if include_hidden named Archived, and leaves alone a selected Attribute that is not archived.
+	//
+	// Corresponds with POST /attribute/unarchive (the `BulkUnarchiveAttributes` operationId).
+	BulkUnarchiveAttributes(ctx context.Context, params *BulkUnarchiveAttributesParams, reqEditors ...RequestEditorFn) (*http.Response, error)
+
 	// ListAuditEvents List AuditEvents
 	//
 	// Corresponds with GET /audit_event (the `ListAuditEvents` operationId).
@@ -346,6 +367,13 @@ type ClientInterface interface {
 	//
 	// Corresponds with POST /change_order/refresh_stage (the `BulkRefreshChangeOrderStages` operationId).
 	BulkRefreshChangeOrderStages(ctx context.Context, params *BulkRefreshChangeOrderStagesParams, reqEditors ...RequestEditorFn) (*http.Response, error)
+
+	// BulkUnarchiveChangeOrders Unarchive change orders
+	//
+	// Unarchive a ChangeOrder archived by a delete with archive=true. Its Slug is restored from the label ArchivedSlug unless another ChangeOrder has taken it since, in which case it keeps the Slug the archive gave it, which KeptSlug in the response reports; it is unarchived either way. Refused while its Space is archived, while it was archived with another entity, which unarchiving that one brings back, and while it names an entity that is still archived. Requires Edit permission. Selects archived ChangeOrders, as if include_hidden named Archived, and leaves alone a selected ChangeOrder that is not archived.
+	//
+	// Corresponds with POST /change_order/unarchive (the `BulkUnarchiveChangeOrders` operationId).
+	BulkUnarchiveChangeOrders(ctx context.Context, params *BulkUnarchiveChangeOrdersParams, reqEditors ...RequestEditorFn) (*http.Response, error)
 
 	// BulkDeleteChangeSets Bulk delete multiple change sets
 	//
@@ -415,6 +443,13 @@ type ClientInterface interface {
 	// Corresponds with POST /change_set/move (the `BulkMoveChangeSets` operationId).
 	BulkMoveChangeSets(ctx context.Context, params *BulkMoveChangeSetsParams, body BulkMoveChangeSetsJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error)
 
+	// BulkUnarchiveChangeSets Unarchive change sets
+	//
+	// Unarchive a ChangeSet archived by a delete with archive=true. Its Slug is restored from the label ArchivedSlug unless another ChangeSet has taken it since, in which case it keeps the Slug the archive gave it, which KeptSlug in the response reports; it is unarchived either way. Refused while its Space is archived, while it was archived with another entity, which unarchiving that one brings back, and while it names an entity that is still archived. Requires Edit permission. Selects archived ChangeSets, as if include_hidden named Archived, and leaves alone a selected ChangeSet that is not archived.
+	//
+	// Corresponds with POST /change_set/unarchive (the `BulkUnarchiveChangeSets` operationId).
+	BulkUnarchiveChangeSets(ctx context.Context, params *BulkUnarchiveChangeSetsParams, reqEditors ...RequestEditorFn) (*http.Response, error)
+
 	// BulkDeleteChangeWorkflows Bulk delete multiple change workflows
 	//
 	// Delete multiple change workflows selected by query parameters.
@@ -482,6 +517,13 @@ type ClientInterface interface {
 	//
 	// Corresponds with POST /change_workflow/move (the `BulkMoveChangeWorkflows` operationId).
 	BulkMoveChangeWorkflows(ctx context.Context, params *BulkMoveChangeWorkflowsParams, body BulkMoveChangeWorkflowsJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error)
+
+	// BulkUnarchiveChangeWorkflows Unarchive change workflows
+	//
+	// Unarchive a ChangeWorkflow archived by a delete with archive=true. Its backing Unit, archived with it, is unarchived with it. Its Slug is restored from the label ArchivedSlug unless another ChangeWorkflow has taken it since, in which case it keeps the Slug the archive gave it, which KeptSlug in the response reports; it is unarchived either way. Refused while its Space is archived, while it was archived with another entity, which unarchiving that one brings back, and while it names an entity that is still archived. Requires Edit permission. Selects archived ChangeWorkflows, as if include_hidden named Archived, and leaves alone a selected ChangeWorkflow that is not archived.
+	//
+	// Corresponds with POST /change_workflow/unarchive (the `BulkUnarchiveChangeWorkflows` operationId).
+	BulkUnarchiveChangeWorkflows(ctx context.Context, params *BulkUnarchiveChangeWorkflowsParams, reqEditors ...RequestEditorFn) (*http.Response, error)
 
 	// BulkDeleteChannels Bulk delete multiple channels
 	//
@@ -551,6 +593,13 @@ type ClientInterface interface {
 	// Corresponds with POST /channel/move (the `BulkMoveChannels` operationId).
 	BulkMoveChannels(ctx context.Context, params *BulkMoveChannelsParams, body BulkMoveChannelsJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error)
 
+	// BulkUnarchiveChannels Unarchive channels
+	//
+	// Unarchive a Channel archived by a delete with archive=true. Its backing Unit, archived with it, is unarchived with it. Its Slug is restored from the label ArchivedSlug unless another Channel has taken it since, in which case it keeps the Slug the archive gave it, which KeptSlug in the response reports; it is unarchived either way. Refused while its Space is archived, while it was archived with another entity, which unarchiving that one brings back, and while it names an entity that is still archived. Requires Edit permission. Selects archived Channels, as if include_hidden named Archived, and leaves alone a selected Channel that is not archived.
+	//
+	// Corresponds with POST /channel/unarchive (the `BulkUnarchiveChannels` operationId).
+	BulkUnarchiveChannels(ctx context.Context, params *BulkUnarchiveChannelsParams, reqEditors ...RequestEditorFn) (*http.Response, error)
+
 	// ListAllCommands List the commands declared across the Organization
 	//
 	// Corresponds with GET /command (the `ListAllCommands` operationId).
@@ -583,7 +632,7 @@ type ClientInterface interface {
 	// DeleteComponent Delete Component
 	//
 	// Corresponds with DELETE /component/{component_id} (the `DeleteComponent` operationId).
-	DeleteComponent(ctx context.Context, componentId openapi_types.UUID, reqEditors ...RequestEditorFn) (*http.Response, error)
+	DeleteComponent(ctx context.Context, componentId openapi_types.UUID, params *DeleteComponentParams, reqEditors ...RequestEditorFn) (*http.Response, error)
 
 	// GetComponent Get Component
 	//
@@ -642,6 +691,13 @@ type ClientInterface interface {
 	//
 	// Corresponds with POST /component/{component_id}/document (the `UpdateComponentDocument` operationId).
 	UpdateComponentDocument(ctx context.Context, componentId openapi_types.UUID, params *UpdateComponentDocumentParams, body UpdateComponentDocumentJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error)
+
+	// UnarchiveComponent Unarchive a component
+	//
+	// Unarchive a Component archived by a delete with archive=true. Its backing Unit, archived with it, is unarchived with it. Its Slug is restored from the label ArchivedSlug unless another Component has taken it since, in which case it keeps the Slug the archive gave it, which KeptSlug in the response reports; it is unarchived either way. Refused while its Space is archived, while it was archived with another entity, which unarchiving that one brings back, and while it names an entity that is still archived. Requires Edit permission.
+	//
+	// Corresponds with POST /component/{component_id}/unarchive (the `UnarchiveComponent` operationId).
+	UnarchiveComponent(ctx context.Context, componentId openapi_types.UUID, reqEditors ...RequestEditorFn) (*http.Response, error)
 
 	// DemoteWithBody Undo an aborted ChangeOrder in the Spaces it reached
 	//
@@ -746,6 +802,13 @@ type ClientInterface interface {
 	//
 	// Corresponds with POST /filter/move (the `BulkMoveFilters` operationId).
 	BulkMoveFilters(ctx context.Context, params *BulkMoveFiltersParams, body BulkMoveFiltersJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error)
+
+	// BulkUnarchiveFilters Unarchive filters
+	//
+	// Unarchive a Filter archived by a delete with archive=true. Its backing Unit, archived with it, is unarchived with it. Its Slug is restored from the label ArchivedSlug unless another Filter has taken it since, in which case it keeps the Slug the archive gave it, which KeptSlug in the response reports; it is unarchived either way. Refused while its Space is archived, while it was archived with another entity, which unarchiving that one brings back, and while it names an entity that is still archived. Requires Edit permission. Selects archived Filters, as if include_hidden named Archived, and leaves alone a selected Filter that is not archived.
+	//
+	// Corresponds with POST /filter/unarchive (the `BulkUnarchiveFilters` operationId).
+	BulkUnarchiveFilters(ctx context.Context, params *BulkUnarchiveFiltersParams, reqEditors ...RequestEditorFn) (*http.Response, error)
 
 	// ListOrgFunctions List retrieves a map of Functions across the Organization
 	//
@@ -885,6 +948,13 @@ type ClientInterface interface {
 	// Corresponds with POST /invocation/move (the `BulkMoveInvocations` operationId).
 	BulkMoveInvocations(ctx context.Context, params *BulkMoveInvocationsParams, body BulkMoveInvocationsJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error)
 
+	// BulkUnarchiveInvocations Unarchive invocations
+	//
+	// Unarchive a Invocation archived by a delete with archive=true. Its backing Unit, archived with it, is unarchived with it. Its Slug is restored from the label ArchivedSlug unless another Invocation has taken it since, in which case it keeps the Slug the archive gave it, which KeptSlug in the response reports; it is unarchived either way. Refused while its Space is archived, while it was archived with another entity, which unarchiving that one brings back, and while it names an entity that is still archived. Requires Edit permission. Selects archived Invocations, as if include_hidden named Archived, and leaves alone a selected Invocation that is not archived.
+	//
+	// Corresponds with POST /invocation/unarchive (the `BulkUnarchiveInvocations` operationId).
+	BulkUnarchiveInvocations(ctx context.Context, params *BulkUnarchiveInvocationsParams, reqEditors ...RequestEditorFn) (*http.Response, error)
+
 	// BulkDeleteLinks Bulk delete multiple links
 	//
 	// Delete multiple links selected by query parameters.
@@ -934,6 +1004,13 @@ type ClientInterface interface {
 	//
 	// Corresponds with POST /link (the `BulkCreateLinks` operationId).
 	BulkCreateLinksWithApplicationMergePatchPlusJSONBody(ctx context.Context, params *BulkCreateLinksParams, body BulkCreateLinksApplicationMergePatchPlusJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error)
+
+	// BulkUnarchiveLinks Unarchive links
+	//
+	// Unarchive a Link archived by a delete with archive=true. Its backing Unit, archived with it, is unarchived with it. Its Slug is restored from the label ArchivedSlug unless another Link has taken it since, in which case it keeps the Slug the archive gave it, which KeptSlug in the response reports; it is unarchived either way. Refused while its Space is archived, while it was archived with another entity, which unarchiving that one brings back, and while it names an entity that is still archived. Requires Edit permission. Selects archived Links, as if include_hidden named Archived, and leaves alone a selected Link that is not archived.
+	//
+	// Corresponds with POST /link/unarchive (the `BulkUnarchiveLinks` operationId).
+	BulkUnarchiveLinks(ctx context.Context, params *BulkUnarchiveLinksParams, reqEditors ...RequestEditorFn) (*http.Response, error)
 
 	// GetMe Get the current user's information
 	//
@@ -1077,6 +1154,13 @@ type ClientInterface interface {
 	//
 	// Corresponds with GET /release (the `ListAllReleases` operationId).
 	ListAllReleases(ctx context.Context, params *ListAllReleasesParams, reqEditors ...RequestEditorFn) (*http.Response, error)
+
+	// BulkUnarchiveReleases Unarchive releases
+	//
+	// Unarchive a Release archived by a delete with archive=true. Its Slug is restored from the label ArchivedSlug unless another Release has taken it since, in which case it keeps the Slug the archive gave it, which KeptSlug in the response reports; it is unarchived either way. Refused while its Space is archived, while it was archived with another entity, which unarchiving that one brings back, and while it names an entity that is still archived. Requires Edit permission. Selects archived Releases, as if include_hidden named Archived, and leaves alone a selected Release that is not archived.
+	//
+	// Corresponds with POST /release/unarchive (the `BulkUnarchiveReleases` operationId).
+	BulkUnarchiveReleases(ctx context.Context, params *BulkUnarchiveReleasesParams, reqEditors ...RequestEditorFn) (*http.Response, error)
 
 	// ListAllResources List of Resources across spaces
 	//
@@ -1387,7 +1471,7 @@ type ClientInterface interface {
 	// DeleteAttribute Delete Attribute
 	//
 	// Corresponds with DELETE /space/{space_id}/attribute/{attribute_id} (the `DeleteAttribute` operationId).
-	DeleteAttribute(ctx context.Context, spaceId openapi_types.UUID, attributeId openapi_types.UUID, reqEditors ...RequestEditorFn) (*http.Response, error)
+	DeleteAttribute(ctx context.Context, spaceId openapi_types.UUID, attributeId openapi_types.UUID, params *DeleteAttributeParams, reqEditors ...RequestEditorFn) (*http.Response, error)
 
 	// GetAttribute Get Attribute
 	//
@@ -1446,6 +1530,13 @@ type ClientInterface interface {
 	//
 	// Corresponds with POST /space/{space_id}/attribute/{attribute_id}/document (the `UpdateAttributeDocument` operationId).
 	UpdateAttributeDocument(ctx context.Context, spaceId openapi_types.UUID, attributeId openapi_types.UUID, params *UpdateAttributeDocumentParams, body UpdateAttributeDocumentJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error)
+
+	// UnarchiveAttribute Unarchive a attribute
+	//
+	// Unarchive a Attribute archived by a delete with archive=true. Its backing Unit, archived with it, is unarchived with it. Its Slug is restored from the label ArchivedSlug unless another Attribute has taken it since, in which case it keeps the Slug the archive gave it, which KeptSlug in the response reports; it is unarchived either way. Refused while its Space is archived, while it was archived with another entity, which unarchiving that one brings back, and while it names an entity that is still archived. Requires Edit permission.
+	//
+	// Corresponds with POST /space/{space_id}/attribute/{attribute_id}/unarchive (the `UnarchiveAttribute` operationId).
+	UnarchiveAttribute(ctx context.Context, spaceId openapi_types.UUID, attributeId openapi_types.UUID, reqEditors ...RequestEditorFn) (*http.Response, error)
 
 	// ListChangeOrders List ChangeOrders
 	//
@@ -1511,6 +1602,13 @@ type ClientInterface interface {
 	// Corresponds with POST /space/{space_id}/change_order/{change_order_id}/refresh_stage (the `RefreshChangeOrderStage` operationId).
 	RefreshChangeOrderStage(ctx context.Context, spaceId openapi_types.UUID, changeOrderId openapi_types.UUID, params *RefreshChangeOrderStageParams, reqEditors ...RequestEditorFn) (*http.Response, error)
 
+	// UnarchiveChangeOrder Unarchive a change order
+	//
+	// Unarchive a ChangeOrder archived by a delete with archive=true. Its Slug is restored from the label ArchivedSlug unless another ChangeOrder has taken it since, in which case it keeps the Slug the archive gave it, which KeptSlug in the response reports; it is unarchived either way. Refused while its Space is archived, while it was archived with another entity, which unarchiving that one brings back, and while it names an entity that is still archived. Requires Edit permission.
+	//
+	// Corresponds with POST /space/{space_id}/change_order/{change_order_id}/unarchive (the `UnarchiveChangeOrder` operationId).
+	UnarchiveChangeOrder(ctx context.Context, spaceId openapi_types.UUID, changeOrderId openapi_types.UUID, reqEditors ...RequestEditorFn) (*http.Response, error)
+
 	// ListChangeSets List ChangeSets
 	//
 	// Corresponds with GET /space/{space_id}/change_set (the `ListChangeSets` operationId).
@@ -1568,6 +1666,13 @@ type ClientInterface interface {
 	// Corresponds with PUT /space/{space_id}/change_set/{change_set_id} (the `UpdateChangeSet` operationId).
 	UpdateChangeSet(ctx context.Context, spaceId openapi_types.UUID, changeSetId openapi_types.UUID, params *UpdateChangeSetParams, body UpdateChangeSetJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error)
 
+	// UnarchiveChangeSet Unarchive a change set
+	//
+	// Unarchive a ChangeSet archived by a delete with archive=true. Its Slug is restored from the label ArchivedSlug unless another ChangeSet has taken it since, in which case it keeps the Slug the archive gave it, which KeptSlug in the response reports; it is unarchived either way. Refused while its Space is archived, while it was archived with another entity, which unarchiving that one brings back, and while it names an entity that is still archived. Requires Edit permission.
+	//
+	// Corresponds with POST /space/{space_id}/change_set/{change_set_id}/unarchive (the `UnarchiveChangeSet` operationId).
+	UnarchiveChangeSet(ctx context.Context, spaceId openapi_types.UUID, changeSetId openapi_types.UUID, reqEditors ...RequestEditorFn) (*http.Response, error)
+
 	// ListChangeWorkflows List ChangeWorkflows
 	//
 	// Corresponds with GET /space/{space_id}/change_workflow (the `ListChangeWorkflows` operationId).
@@ -1590,7 +1695,7 @@ type ClientInterface interface {
 	// DeleteChangeWorkflow Delete ChangeWorkflow
 	//
 	// Corresponds with DELETE /space/{space_id}/change_workflow/{change_workflow_id} (the `DeleteChangeWorkflow` operationId).
-	DeleteChangeWorkflow(ctx context.Context, spaceId openapi_types.UUID, changeWorkflowId openapi_types.UUID, reqEditors ...RequestEditorFn) (*http.Response, error)
+	DeleteChangeWorkflow(ctx context.Context, spaceId openapi_types.UUID, changeWorkflowId openapi_types.UUID, params *DeleteChangeWorkflowParams, reqEditors ...RequestEditorFn) (*http.Response, error)
 
 	// GetChangeWorkflow Get ChangeWorkflow
 	//
@@ -1650,6 +1755,13 @@ type ClientInterface interface {
 	// Corresponds with POST /space/{space_id}/change_workflow/{change_workflow_id}/document (the `UpdateChangeWorkflowDocument` operationId).
 	UpdateChangeWorkflowDocument(ctx context.Context, spaceId openapi_types.UUID, changeWorkflowId openapi_types.UUID, params *UpdateChangeWorkflowDocumentParams, body UpdateChangeWorkflowDocumentJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error)
 
+	// UnarchiveChangeWorkflow Unarchive a change workflow
+	//
+	// Unarchive a ChangeWorkflow archived by a delete with archive=true. Its backing Unit, archived with it, is unarchived with it. Its Slug is restored from the label ArchivedSlug unless another ChangeWorkflow has taken it since, in which case it keeps the Slug the archive gave it, which KeptSlug in the response reports; it is unarchived either way. Refused while its Space is archived, while it was archived with another entity, which unarchiving that one brings back, and while it names an entity that is still archived. Requires Edit permission.
+	//
+	// Corresponds with POST /space/{space_id}/change_workflow/{change_workflow_id}/unarchive (the `UnarchiveChangeWorkflow` operationId).
+	UnarchiveChangeWorkflow(ctx context.Context, spaceId openapi_types.UUID, changeWorkflowId openapi_types.UUID, reqEditors ...RequestEditorFn) (*http.Response, error)
+
 	// ListChannels List Channels
 	//
 	// Corresponds with GET /space/{space_id}/channel (the `ListChannels` operationId).
@@ -1672,7 +1784,7 @@ type ClientInterface interface {
 	// DeleteChannel Delete Channel
 	//
 	// Corresponds with DELETE /space/{space_id}/channel/{channel_id} (the `DeleteChannel` operationId).
-	DeleteChannel(ctx context.Context, spaceId openapi_types.UUID, channelId openapi_types.UUID, reqEditors ...RequestEditorFn) (*http.Response, error)
+	DeleteChannel(ctx context.Context, spaceId openapi_types.UUID, channelId openapi_types.UUID, params *DeleteChannelParams, reqEditors ...RequestEditorFn) (*http.Response, error)
 
 	// GetChannel Get Channel
 	//
@@ -1782,6 +1894,13 @@ type ClientInterface interface {
 	// Corresponds with POST /space/{space_id}/channel/{channel_id}/poll (the `PollChannel` operationId).
 	PollChannel(ctx context.Context, spaceId openapi_types.UUID, channelId openapi_types.UUID, body PollChannelJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error)
 
+	// UnarchiveChannel Unarchive a channel
+	//
+	// Unarchive a Channel archived by a delete with archive=true. Its backing Unit, archived with it, is unarchived with it. Its Slug is restored from the label ArchivedSlug unless another Channel has taken it since, in which case it keeps the Slug the archive gave it, which KeptSlug in the response reports; it is unarchived either way. Refused while its Space is archived, while it was archived with another entity, which unarchiving that one brings back, and while it names an entity that is still archived. Requires Edit permission.
+	//
+	// Corresponds with POST /space/{space_id}/channel/{channel_id}/unarchive (the `UnarchiveChannel` operationId).
+	UnarchiveChannel(ctx context.Context, spaceId openapi_types.UUID, channelId openapi_types.UUID, reqEditors ...RequestEditorFn) (*http.Response, error)
+
 	// ListCommands List the commands runnable in the Space
 	//
 	// The commands the Space's Channels declare, with each one's signature and the Channel that declares it.
@@ -1873,7 +1992,7 @@ type ClientInterface interface {
 	// DeleteFilter Delete Filter
 	//
 	// Corresponds with DELETE /space/{space_id}/filter/{filter_id} (the `DeleteFilter` operationId).
-	DeleteFilter(ctx context.Context, spaceId openapi_types.UUID, filterId openapi_types.UUID, reqEditors ...RequestEditorFn) (*http.Response, error)
+	DeleteFilter(ctx context.Context, spaceId openapi_types.UUID, filterId openapi_types.UUID, params *DeleteFilterParams, reqEditors ...RequestEditorFn) (*http.Response, error)
 
 	// GetFilter Get Filter
 	//
@@ -1932,6 +2051,13 @@ type ClientInterface interface {
 	//
 	// Corresponds with POST /space/{space_id}/filter/{filter_id}/document (the `UpdateFilterDocument` operationId).
 	UpdateFilterDocument(ctx context.Context, spaceId openapi_types.UUID, filterId openapi_types.UUID, params *UpdateFilterDocumentParams, body UpdateFilterDocumentJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error)
+
+	// UnarchiveFilter Unarchive a filter
+	//
+	// Unarchive a Filter archived by a delete with archive=true. Its backing Unit, archived with it, is unarchived with it. Its Slug is restored from the label ArchivedSlug unless another Filter has taken it since, in which case it keeps the Slug the archive gave it, which KeptSlug in the response reports; it is unarchived either way. Refused while its Space is archived, while it was archived with another entity, which unarchiving that one brings back, and while it names an entity that is still archived. Requires Edit permission.
+	//
+	// Corresponds with POST /space/{space_id}/filter/{filter_id}/unarchive (the `UnarchiveFilter` operationId).
+	UnarchiveFilter(ctx context.Context, spaceId openapi_types.UUID, filterId openapi_types.UUID, reqEditors ...RequestEditorFn) (*http.Response, error)
 
 	// ListFunctions List retrieves a map of Functions
 	//
@@ -1992,7 +2118,7 @@ type ClientInterface interface {
 	// DeleteInvocation Delete Invocation
 	//
 	// Corresponds with DELETE /space/{space_id}/invocation/{invocation_id} (the `DeleteInvocation` operationId).
-	DeleteInvocation(ctx context.Context, spaceId openapi_types.UUID, invocationId openapi_types.UUID, reqEditors ...RequestEditorFn) (*http.Response, error)
+	DeleteInvocation(ctx context.Context, spaceId openapi_types.UUID, invocationId openapi_types.UUID, params *DeleteInvocationParams, reqEditors ...RequestEditorFn) (*http.Response, error)
 
 	// GetInvocation Get Invocation
 	//
@@ -2052,6 +2178,13 @@ type ClientInterface interface {
 	// Corresponds with POST /space/{space_id}/invocation/{invocation_id}/document (the `UpdateInvocationDocument` operationId).
 	UpdateInvocationDocument(ctx context.Context, spaceId openapi_types.UUID, invocationId openapi_types.UUID, params *UpdateInvocationDocumentParams, body UpdateInvocationDocumentJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error)
 
+	// UnarchiveInvocation Unarchive a invocation
+	//
+	// Unarchive a Invocation archived by a delete with archive=true. Its backing Unit, archived with it, is unarchived with it. Its Slug is restored from the label ArchivedSlug unless another Invocation has taken it since, in which case it keeps the Slug the archive gave it, which KeptSlug in the response reports; it is unarchived either way. Refused while its Space is archived, while it was archived with another entity, which unarchiving that one brings back, and while it names an entity that is still archived. Requires Edit permission.
+	//
+	// Corresponds with POST /space/{space_id}/invocation/{invocation_id}/unarchive (the `UnarchiveInvocation` operationId).
+	UnarchiveInvocation(ctx context.Context, spaceId openapi_types.UUID, invocationId openapi_types.UUID, reqEditors ...RequestEditorFn) (*http.Response, error)
+
 	// ListLinks List Links
 	//
 	// Corresponds with GET /space/{space_id}/link (the `ListLinks` operationId).
@@ -2074,7 +2207,7 @@ type ClientInterface interface {
 	// DeleteLink Delete Link
 	//
 	// Corresponds with DELETE /space/{space_id}/link/{link_id} (the `DeleteLink` operationId).
-	DeleteLink(ctx context.Context, spaceId openapi_types.UUID, linkId openapi_types.UUID, reqEditors ...RequestEditorFn) (*http.Response, error)
+	DeleteLink(ctx context.Context, spaceId openapi_types.UUID, linkId openapi_types.UUID, params *DeleteLinkParams, reqEditors ...RequestEditorFn) (*http.Response, error)
 
 	// GetLink Get Link
 	//
@@ -2133,6 +2266,13 @@ type ClientInterface interface {
 	//
 	// Corresponds with POST /space/{space_id}/link/{link_id}/document (the `UpdateLinkDocument` operationId).
 	UpdateLinkDocument(ctx context.Context, spaceId openapi_types.UUID, linkId openapi_types.UUID, params *UpdateLinkDocumentParams, body UpdateLinkDocumentJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error)
+
+	// UnarchiveLink Unarchive a link
+	//
+	// Unarchive a Link archived by a delete with archive=true. Its backing Unit, archived with it, is unarchived with it. Its Slug is restored from the label ArchivedSlug unless another Link has taken it since, in which case it keeps the Slug the archive gave it, which KeptSlug in the response reports; it is unarchived either way. Refused while its Space is archived, while it was archived with another entity, which unarchiving that one brings back, and while it names an entity that is still archived. Requires Edit permission.
+	//
+	// Corresponds with POST /space/{space_id}/link/{link_id}/unarchive (the `UnarchiveLink` operationId).
+	UnarchiveLink(ctx context.Context, spaceId openapi_types.UUID, linkId openapi_types.UUID, reqEditors ...RequestEditorFn) (*http.Response, error)
 
 	// ListExtendedReleases List ExtendedReleases
 	//
@@ -2212,6 +2352,13 @@ type ClientInterface interface {
 	// Corresponds with GET /space/{space_id}/release/{release_id}/data (the `DownloadReleaseData` operationId).
 	DownloadReleaseData(ctx context.Context, spaceId openapi_types.UUID, releaseId openapi_types.UUID, reqEditors ...RequestEditorFn) (*http.Response, error)
 
+	// UnarchiveRelease Unarchive a release
+	//
+	// Unarchive a Release archived by a delete with archive=true. Its Slug is restored from the label ArchivedSlug unless another Release has taken it since, in which case it keeps the Slug the archive gave it, which KeptSlug in the response reports; it is unarchived either way. Refused while its Space is archived, while it was archived with another entity, which unarchiving that one brings back, and while it names an entity that is still archived. Requires Edit permission.
+	//
+	// Corresponds with POST /space/{space_id}/release/{release_id}/unarchive (the `UnarchiveRelease` operationId).
+	UnarchiveRelease(ctx context.Context, spaceId openapi_types.UUID, releaseId openapi_types.UUID, reqEditors ...RequestEditorFn) (*http.Response, error)
+
 	// WithdrawRelease Withdraw the selected Release
 	//
 	// Withdraw the selected Release, clearing its Published flag so it is no longer available for download. The Release itself is retained; delete it to remove it entirely. Withdrawing changes what is served to the cluster behind the release Target, so it requires TargetEditChildren on the Release's Space as well as Edit on the Release.
@@ -2275,6 +2422,13 @@ type ClientInterface interface {
 	//
 	// Corresponds with PUT /space/{space_id}/tag/{tag_id} (the `UpdateTag` operationId).
 	UpdateTag(ctx context.Context, spaceId openapi_types.UUID, tagId openapi_types.UUID, params *UpdateTagParams, body UpdateTagJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error)
+
+	// UnarchiveTag Unarchive a tag
+	//
+	// Unarchive a Tag archived by a delete with archive=true. Its Slug is restored from the label ArchivedSlug unless another Tag has taken it since, in which case it keeps the Slug the archive gave it, which KeptSlug in the response reports; it is unarchived either way. Refused while its Space is archived, while it was archived with another entity, which unarchiving that one brings back, and while it names an entity that is still archived. Requires Edit permission.
+	//
+	// Corresponds with POST /space/{space_id}/tag/{tag_id}/unarchive (the `UnarchiveTag` operationId).
+	UnarchiveTag(ctx context.Context, spaceId openapi_types.UUID, tagId openapi_types.UUID, reqEditors ...RequestEditorFn) (*http.Response, error)
 
 	// ListTargets List Targets
 	//
@@ -2358,6 +2512,13 @@ type ClientInterface interface {
 	// Corresponds with POST /space/{space_id}/target/{target_id}/document (the `UpdateTargetDocument` operationId).
 	UpdateTargetDocument(ctx context.Context, spaceId openapi_types.UUID, targetId openapi_types.UUID, params *UpdateTargetDocumentParams, body UpdateTargetDocumentJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error)
 
+	// UnarchiveTarget Unarchive a target
+	//
+	// Unarchive a Target archived by a delete with archive=true. Its backing Unit, archived with it, is unarchived with it. Its Slug is restored from the label ArchivedSlug unless another Target has taken it since, in which case it keeps the Slug the archive gave it, which KeptSlug in the response reports; it is unarchived either way. Refused while its Space is archived, while it was archived with another entity, which unarchiving that one brings back, and while it names an entity that is still archived. Requires Edit permission.
+	//
+	// Corresponds with POST /space/{space_id}/target/{target_id}/unarchive (the `UnarchiveTarget` operationId).
+	UnarchiveTarget(ctx context.Context, spaceId openapi_types.UUID, targetId openapi_types.UUID, reqEditors ...RequestEditorFn) (*http.Response, error)
+
 	// ListTriggers List Triggers
 	//
 	// Corresponds with GET /space/{space_id}/trigger (the `ListTriggers` operationId).
@@ -2380,7 +2541,7 @@ type ClientInterface interface {
 	// DeleteTrigger Delete Trigger
 	//
 	// Corresponds with DELETE /space/{space_id}/trigger/{trigger_id} (the `DeleteTrigger` operationId).
-	DeleteTrigger(ctx context.Context, spaceId openapi_types.UUID, triggerId openapi_types.UUID, reqEditors ...RequestEditorFn) (*http.Response, error)
+	DeleteTrigger(ctx context.Context, spaceId openapi_types.UUID, triggerId openapi_types.UUID, params *DeleteTriggerParams, reqEditors ...RequestEditorFn) (*http.Response, error)
 
 	// GetTrigger Get Trigger
 	//
@@ -2439,6 +2600,20 @@ type ClientInterface interface {
 	//
 	// Corresponds with POST /space/{space_id}/trigger/{trigger_id}/document (the `UpdateTriggerDocument` operationId).
 	UpdateTriggerDocument(ctx context.Context, spaceId openapi_types.UUID, triggerId openapi_types.UUID, params *UpdateTriggerDocumentParams, body UpdateTriggerDocumentJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error)
+
+	// UnarchiveTrigger Unarchive a trigger
+	//
+	// Unarchive a Trigger archived by a delete with archive=true. Its backing Unit, archived with it, is unarchived with it. Its Slug is restored from the label ArchivedSlug unless another Trigger has taken it since, in which case it keeps the Slug the archive gave it, which KeptSlug in the response reports; it is unarchived either way. Refused while its Space is archived, while it was archived with another entity, which unarchiving that one brings back, and while it names an entity that is still archived. Requires Edit permission.
+	//
+	// Corresponds with POST /space/{space_id}/trigger/{trigger_id}/unarchive (the `UnarchiveTrigger` operationId).
+	UnarchiveTrigger(ctx context.Context, spaceId openapi_types.UUID, triggerId openapi_types.UUID, reqEditors ...RequestEditorFn) (*http.Response, error)
+
+	// UnarchiveSpace Unarchive a space
+	//
+	// Unarchive a Space archived by a delete with archive=true. Its Slug is restored from the label ArchivedSlug unless another Space has taken it since, in which case it keeps the Slug the archive gave it, which KeptSlug in the response reports; it is unarchived either way. A Space archived recursively is unarchived only recursively, which unarchives what its archive archived, and nothing archived before or since. Refused while what it would bring back names an entity that is still archived, such as a Target in another archived Space. ChangeOrders the archive aborted stay aborted. Requires Edit permission.
+	//
+	// Corresponds with POST /space/{space_id}/unarchive (the `UnarchiveSpace` operationId).
+	UnarchiveSpace(ctx context.Context, spaceId openapi_types.UUID, params *UnarchiveSpaceParams, reqEditors ...RequestEditorFn) (*http.Response, error)
 
 	// ListUnits List Units
 	//
@@ -2727,7 +2902,7 @@ type ClientInterface interface {
 	// DeleteView Delete View
 	//
 	// Corresponds with DELETE /space/{space_id}/view/{view_id} (the `DeleteView` operationId).
-	DeleteView(ctx context.Context, spaceId openapi_types.UUID, viewId openapi_types.UUID, reqEditors ...RequestEditorFn) (*http.Response, error)
+	DeleteView(ctx context.Context, spaceId openapi_types.UUID, viewId openapi_types.UUID, params *DeleteViewParams, reqEditors ...RequestEditorFn) (*http.Response, error)
 
 	// GetView Get View
 	//
@@ -2786,6 +2961,13 @@ type ClientInterface interface {
 	//
 	// Corresponds with POST /space/{space_id}/view/{view_id}/document (the `UpdateViewDocument` operationId).
 	UpdateViewDocument(ctx context.Context, spaceId openapi_types.UUID, viewId openapi_types.UUID, params *UpdateViewDocumentParams, body UpdateViewDocumentJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error)
+
+	// UnarchiveView Unarchive a view
+	//
+	// Unarchive a View archived by a delete with archive=true. Its backing Unit, archived with it, is unarchived with it. Its Slug is restored from the label ArchivedSlug unless another View has taken it since, in which case it keeps the Slug the archive gave it, which KeptSlug in the response reports; it is unarchived either way. Refused while its Space is archived, while it was archived with another entity, which unarchiving that one brings back, and while it names an entity that is still archived. Requires Edit permission.
+	//
+	// Corresponds with POST /space/{space_id}/view/{view_id}/unarchive (the `UnarchiveView` operationId).
+	UnarchiveView(ctx context.Context, spaceId openapi_types.UUID, viewId openapi_types.UUID, reqEditors ...RequestEditorFn) (*http.Response, error)
 
 	// BulkDeleteTags Bulk delete multiple tags
 	//
@@ -2855,6 +3037,13 @@ type ClientInterface interface {
 	// Corresponds with POST /tag/move (the `BulkMoveTags` operationId).
 	BulkMoveTags(ctx context.Context, params *BulkMoveTagsParams, body BulkMoveTagsJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error)
 
+	// BulkUnarchiveTags Unarchive tags
+	//
+	// Unarchive a Tag archived by a delete with archive=true. Its Slug is restored from the label ArchivedSlug unless another Tag has taken it since, in which case it keeps the Slug the archive gave it, which KeptSlug in the response reports; it is unarchived either way. Refused while its Space is archived, while it was archived with another entity, which unarchiving that one brings back, and while it names an entity that is still archived. Requires Edit permission. Selects archived Tags, as if include_hidden named Archived, and leaves alone a selected Tag that is not archived.
+	//
+	// Corresponds with POST /tag/unarchive (the `BulkUnarchiveTags` operationId).
+	BulkUnarchiveTags(ctx context.Context, params *BulkUnarchiveTagsParams, reqEditors ...RequestEditorFn) (*http.Response, error)
+
 	// BulkDeleteTargets Bulk delete multiple targets
 	//
 	// Delete multiple targets selected by query parameters.
@@ -2923,6 +3112,13 @@ type ClientInterface interface {
 	// Corresponds with POST /target/move (the `BulkMoveTargets` operationId).
 	BulkMoveTargets(ctx context.Context, params *BulkMoveTargetsParams, body BulkMoveTargetsJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error)
 
+	// BulkUnarchiveTargets Unarchive targets
+	//
+	// Unarchive a Target archived by a delete with archive=true. Its backing Unit, archived with it, is unarchived with it. Its Slug is restored from the label ArchivedSlug unless another Target has taken it since, in which case it keeps the Slug the archive gave it, which KeptSlug in the response reports; it is unarchived either way. Refused while its Space is archived, while it was archived with another entity, which unarchiving that one brings back, and while it names an entity that is still archived. Requires Edit permission. Selects archived Targets, as if include_hidden named Archived, and leaves alone a selected Target that is not archived.
+	//
+	// Corresponds with POST /target/unarchive (the `BulkUnarchiveTargets` operationId).
+	BulkUnarchiveTargets(ctx context.Context, params *BulkUnarchiveTargetsParams, reqEditors ...RequestEditorFn) (*http.Response, error)
+
 	// BulkDeleteTriggers Bulk delete multiple triggers
 	//
 	// Delete multiple triggers selected by query parameters.
@@ -2990,6 +3186,13 @@ type ClientInterface interface {
 	//
 	// Corresponds with POST /trigger/move (the `BulkMoveTriggers` operationId).
 	BulkMoveTriggers(ctx context.Context, params *BulkMoveTriggersParams, body BulkMoveTriggersJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error)
+
+	// BulkUnarchiveTriggers Unarchive triggers
+	//
+	// Unarchive a Trigger archived by a delete with archive=true. Its backing Unit, archived with it, is unarchived with it. Its Slug is restored from the label ArchivedSlug unless another Trigger has taken it since, in which case it keeps the Slug the archive gave it, which KeptSlug in the response reports; it is unarchived either way. Refused while its Space is archived, while it was archived with another entity, which unarchiving that one brings back, and while it names an entity that is still archived. Requires Edit permission. Selects archived Triggers, as if include_hidden named Archived, and leaves alone a selected Trigger that is not archived.
+	//
+	// Corresponds with POST /trigger/unarchive (the `BulkUnarchiveTriggers` operationId).
+	BulkUnarchiveTriggers(ctx context.Context, params *BulkUnarchiveTriggersParams, reqEditors ...RequestEditorFn) (*http.Response, error)
 
 	// BulkDeleteUnits Bulk delete multiple units
 	//
@@ -3207,6 +3410,13 @@ type ClientInterface interface {
 	//
 	// Corresponds with POST /view/move (the `BulkMoveViews` operationId).
 	BulkMoveViews(ctx context.Context, params *BulkMoveViewsParams, body BulkMoveViewsJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error)
+
+	// BulkUnarchiveViews Unarchive views
+	//
+	// Unarchive a View archived by a delete with archive=true. Its backing Unit, archived with it, is unarchived with it. Its Slug is restored from the label ArchivedSlug unless another View has taken it since, in which case it keeps the Slug the archive gave it, which KeptSlug in the response reports; it is unarchived either way. Refused while its Space is archived, while it was archived with another entity, which unarchiving that one brings back, and while it names an entity that is still archived. Requires Edit permission. Selects archived Views, as if include_hidden named Archived, and leaves alone a selected View that is not archived.
+	//
+	// Corresponds with POST /view/unarchive (the `BulkUnarchiveViews` operationId).
+	BulkUnarchiveViews(ctx context.Context, params *BulkUnarchiveViewsParams, reqEditors ...RequestEditorFn) (*http.Response, error)
 }
 
 // BulkDeleteComponents Bulk delete multiple components
@@ -3254,6 +3464,23 @@ func (c *Client) BulkPatchComponentsWithBody(ctx context.Context, params *BulkPa
 // Corresponds with PATCH /_component (the `BulkPatchComponents` operationId).
 func (c *Client) BulkPatchComponentsWithApplicationMergePatchPlusJSONBody(ctx context.Context, params *BulkPatchComponentsParams, body BulkPatchComponentsApplicationMergePatchPlusJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error) {
 	req, err := NewBulkPatchComponentsRequestWithApplicationMergePatchPlusJSONBody(c.Server, params, body)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+// BulkUnarchiveComponents Unarchive components
+//
+// Unarchive a Component archived by a delete with archive=true. Its backing Unit, archived with it, is unarchived with it. Its Slug is restored from the label ArchivedSlug unless another Component has taken it since, in which case it keeps the Slug the archive gave it, which KeptSlug in the response reports; it is unarchived either way. Refused while its Space is archived, while it was archived with another entity, which unarchiving that one brings back, and while it names an entity that is still archived. Requires Edit permission. Selects archived Components, as if include_hidden named Archived, and leaves alone a selected Component that is not archived.
+//
+// Corresponds with POST /_component/unarchive (the `BulkUnarchiveComponents` operationId).
+func (c *Client) BulkUnarchiveComponents(ctx context.Context, params *BulkUnarchiveComponentsParams, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewBulkUnarchiveComponentsRequest(c.Server, params)
 	if err != nil {
 		return nil, err
 	}
@@ -3402,6 +3629,23 @@ func (c *Client) BulkCreateSpacesWithBody(ctx context.Context, params *BulkCreat
 // Corresponds with POST /_space (the `BulkCreateSpaces` operationId).
 func (c *Client) BulkCreateSpacesWithApplicationMergePatchPlusJSONBody(ctx context.Context, params *BulkCreateSpacesParams, body BulkCreateSpacesApplicationMergePatchPlusJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error) {
 	req, err := NewBulkCreateSpacesRequestWithApplicationMergePatchPlusJSONBody(c.Server, params, body)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+// BulkUnarchiveSpaces Unarchive spaces
+//
+// Unarchive a Space archived by a delete with archive=true. Its Slug is restored from the label ArchivedSlug unless another Space has taken it since, in which case it keeps the Slug the archive gave it, which KeptSlug in the response reports; it is unarchived either way. A Space archived recursively is unarchived only recursively, which unarchives what its archive archived, and nothing archived before or since. Refused while what it would bring back names an entity that is still archived, such as a Target in another archived Space. ChangeOrders the archive aborted stay aborted. Requires Edit permission. Selects archived Spaces, as if include_hidden named Archived, and leaves alone a selected Space that is not archived.
+//
+// Corresponds with POST /_space/unarchive (the `BulkUnarchiveSpaces` operationId).
+func (c *Client) BulkUnarchiveSpaces(ctx context.Context, params *BulkUnarchiveSpacesParams, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewBulkUnarchiveSpacesRequest(c.Server, params)
 	if err != nil {
 		return nil, err
 	}
@@ -3615,6 +3859,23 @@ func (c *Client) BulkMoveAttributes(ctx context.Context, params *BulkMoveAttribu
 	return c.Client.Do(req)
 }
 
+// BulkUnarchiveAttributes Unarchive attributes
+//
+// Unarchive a Attribute archived by a delete with archive=true. Its backing Unit, archived with it, is unarchived with it. Its Slug is restored from the label ArchivedSlug unless another Attribute has taken it since, in which case it keeps the Slug the archive gave it, which KeptSlug in the response reports; it is unarchived either way. Refused while its Space is archived, while it was archived with another entity, which unarchiving that one brings back, and while it names an entity that is still archived. Requires Edit permission. Selects archived Attributes, as if include_hidden named Archived, and leaves alone a selected Attribute that is not archived.
+//
+// Corresponds with POST /attribute/unarchive (the `BulkUnarchiveAttributes` operationId).
+func (c *Client) BulkUnarchiveAttributes(ctx context.Context, params *BulkUnarchiveAttributesParams, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewBulkUnarchiveAttributesRequest(c.Server, params)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
 // ListAuditEvents List AuditEvents
 //
 // Corresponds with GET /audit_event (the `ListAuditEvents` operationId).
@@ -3762,6 +4023,23 @@ func (c *Client) BulkCreateChangeOrdersWithApplicationMergePatchPlusJSONBody(ctx
 // Corresponds with POST /change_order/refresh_stage (the `BulkRefreshChangeOrderStages` operationId).
 func (c *Client) BulkRefreshChangeOrderStages(ctx context.Context, params *BulkRefreshChangeOrderStagesParams, reqEditors ...RequestEditorFn) (*http.Response, error) {
 	req, err := NewBulkRefreshChangeOrderStagesRequest(c.Server, params)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+// BulkUnarchiveChangeOrders Unarchive change orders
+//
+// Unarchive a ChangeOrder archived by a delete with archive=true. Its Slug is restored from the label ArchivedSlug unless another ChangeOrder has taken it since, in which case it keeps the Slug the archive gave it, which KeptSlug in the response reports; it is unarchived either way. Refused while its Space is archived, while it was archived with another entity, which unarchiving that one brings back, and while it names an entity that is still archived. Requires Edit permission. Selects archived ChangeOrders, as if include_hidden named Archived, and leaves alone a selected ChangeOrder that is not archived.
+//
+// Corresponds with POST /change_order/unarchive (the `BulkUnarchiveChangeOrders` operationId).
+func (c *Client) BulkUnarchiveChangeOrders(ctx context.Context, params *BulkUnarchiveChangeOrdersParams, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewBulkUnarchiveChangeOrdersRequest(c.Server, params)
 	if err != nil {
 		return nil, err
 	}
@@ -3920,6 +4198,23 @@ func (c *Client) BulkMoveChangeSets(ctx context.Context, params *BulkMoveChangeS
 	return c.Client.Do(req)
 }
 
+// BulkUnarchiveChangeSets Unarchive change sets
+//
+// Unarchive a ChangeSet archived by a delete with archive=true. Its Slug is restored from the label ArchivedSlug unless another ChangeSet has taken it since, in which case it keeps the Slug the archive gave it, which KeptSlug in the response reports; it is unarchived either way. Refused while its Space is archived, while it was archived with another entity, which unarchiving that one brings back, and while it names an entity that is still archived. Requires Edit permission. Selects archived ChangeSets, as if include_hidden named Archived, and leaves alone a selected ChangeSet that is not archived.
+//
+// Corresponds with POST /change_set/unarchive (the `BulkUnarchiveChangeSets` operationId).
+func (c *Client) BulkUnarchiveChangeSets(ctx context.Context, params *BulkUnarchiveChangeSetsParams, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewBulkUnarchiveChangeSetsRequest(c.Server, params)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
 // BulkDeleteChangeWorkflows Bulk delete multiple change workflows
 //
 // Delete multiple change workflows selected by query parameters.
@@ -4058,6 +4353,23 @@ func (c *Client) BulkMoveChangeWorkflowsWithBody(ctx context.Context, params *Bu
 // Corresponds with POST /change_workflow/move (the `BulkMoveChangeWorkflows` operationId).
 func (c *Client) BulkMoveChangeWorkflows(ctx context.Context, params *BulkMoveChangeWorkflowsParams, body BulkMoveChangeWorkflowsJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error) {
 	req, err := NewBulkMoveChangeWorkflowsRequest(c.Server, params, body)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+// BulkUnarchiveChangeWorkflows Unarchive change workflows
+//
+// Unarchive a ChangeWorkflow archived by a delete with archive=true. Its backing Unit, archived with it, is unarchived with it. Its Slug is restored from the label ArchivedSlug unless another ChangeWorkflow has taken it since, in which case it keeps the Slug the archive gave it, which KeptSlug in the response reports; it is unarchived either way. Refused while its Space is archived, while it was archived with another entity, which unarchiving that one brings back, and while it names an entity that is still archived. Requires Edit permission. Selects archived ChangeWorkflows, as if include_hidden named Archived, and leaves alone a selected ChangeWorkflow that is not archived.
+//
+// Corresponds with POST /change_workflow/unarchive (the `BulkUnarchiveChangeWorkflows` operationId).
+func (c *Client) BulkUnarchiveChangeWorkflows(ctx context.Context, params *BulkUnarchiveChangeWorkflowsParams, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewBulkUnarchiveChangeWorkflowsRequest(c.Server, params)
 	if err != nil {
 		return nil, err
 	}
@@ -4216,6 +4528,23 @@ func (c *Client) BulkMoveChannels(ctx context.Context, params *BulkMoveChannelsP
 	return c.Client.Do(req)
 }
 
+// BulkUnarchiveChannels Unarchive channels
+//
+// Unarchive a Channel archived by a delete with archive=true. Its backing Unit, archived with it, is unarchived with it. Its Slug is restored from the label ArchivedSlug unless another Channel has taken it since, in which case it keeps the Slug the archive gave it, which KeptSlug in the response reports; it is unarchived either way. Refused while its Space is archived, while it was archived with another entity, which unarchiving that one brings back, and while it names an entity that is still archived. Requires Edit permission. Selects archived Channels, as if include_hidden named Archived, and leaves alone a selected Channel that is not archived.
+//
+// Corresponds with POST /channel/unarchive (the `BulkUnarchiveChannels` operationId).
+func (c *Client) BulkUnarchiveChannels(ctx context.Context, params *BulkUnarchiveChannelsParams, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewBulkUnarchiveChannelsRequest(c.Server, params)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
 // ListAllCommands List the commands declared across the Organization
 //
 // Corresponds with GET /command (the `ListAllCommands` operationId).
@@ -4298,8 +4627,8 @@ func (c *Client) CreateComponent(ctx context.Context, params *CreateComponentPar
 // DeleteComponent Delete Component
 //
 // Corresponds with DELETE /component/{component_id} (the `DeleteComponent` operationId).
-func (c *Client) DeleteComponent(ctx context.Context, componentId openapi_types.UUID, reqEditors ...RequestEditorFn) (*http.Response, error) {
-	req, err := NewDeleteComponentRequest(c.Server, componentId)
+func (c *Client) DeleteComponent(ctx context.Context, componentId openapi_types.UUID, params *DeleteComponentParams, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewDeleteComponentRequest(c.Server, componentId, params)
 	if err != nil {
 		return nil, err
 	}
@@ -4438,6 +4767,23 @@ func (c *Client) UpdateComponentDocumentWithBody(ctx context.Context, componentI
 // Corresponds with POST /component/{component_id}/document (the `UpdateComponentDocument` operationId).
 func (c *Client) UpdateComponentDocument(ctx context.Context, componentId openapi_types.UUID, params *UpdateComponentDocumentParams, body UpdateComponentDocumentJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error) {
 	req, err := NewUpdateComponentDocumentRequest(c.Server, componentId, params, body)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+// UnarchiveComponent Unarchive a component
+//
+// Unarchive a Component archived by a delete with archive=true. Its backing Unit, archived with it, is unarchived with it. Its Slug is restored from the label ArchivedSlug unless another Component has taken it since, in which case it keeps the Slug the archive gave it, which KeptSlug in the response reports; it is unarchived either way. Refused while its Space is archived, while it was archived with another entity, which unarchiving that one brings back, and while it names an entity that is still archived. Requires Edit permission.
+//
+// Corresponds with POST /component/{component_id}/unarchive (the `UnarchiveComponent` operationId).
+func (c *Client) UnarchiveComponent(ctx context.Context, componentId openapi_types.UUID, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewUnarchiveComponentRequest(c.Server, componentId)
 	if err != nil {
 		return nil, err
 	}
@@ -4662,6 +5008,23 @@ func (c *Client) BulkMoveFiltersWithBody(ctx context.Context, params *BulkMoveFi
 // Corresponds with POST /filter/move (the `BulkMoveFilters` operationId).
 func (c *Client) BulkMoveFilters(ctx context.Context, params *BulkMoveFiltersParams, body BulkMoveFiltersJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error) {
 	req, err := NewBulkMoveFiltersRequest(c.Server, params, body)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+// BulkUnarchiveFilters Unarchive filters
+//
+// Unarchive a Filter archived by a delete with archive=true. Its backing Unit, archived with it, is unarchived with it. Its Slug is restored from the label ArchivedSlug unless another Filter has taken it since, in which case it keeps the Slug the archive gave it, which KeptSlug in the response reports; it is unarchived either way. Refused while its Space is archived, while it was archived with another entity, which unarchiving that one brings back, and while it names an entity that is still archived. Requires Edit permission. Selects archived Filters, as if include_hidden named Archived, and leaves alone a selected Filter that is not archived.
+//
+// Corresponds with POST /filter/unarchive (the `BulkUnarchiveFilters` operationId).
+func (c *Client) BulkUnarchiveFilters(ctx context.Context, params *BulkUnarchiveFiltersParams, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewBulkUnarchiveFiltersRequest(c.Server, params)
 	if err != nil {
 		return nil, err
 	}
@@ -4990,6 +5353,23 @@ func (c *Client) BulkMoveInvocations(ctx context.Context, params *BulkMoveInvoca
 	return c.Client.Do(req)
 }
 
+// BulkUnarchiveInvocations Unarchive invocations
+//
+// Unarchive a Invocation archived by a delete with archive=true. Its backing Unit, archived with it, is unarchived with it. Its Slug is restored from the label ArchivedSlug unless another Invocation has taken it since, in which case it keeps the Slug the archive gave it, which KeptSlug in the response reports; it is unarchived either way. Refused while its Space is archived, while it was archived with another entity, which unarchiving that one brings back, and while it names an entity that is still archived. Requires Edit permission. Selects archived Invocations, as if include_hidden named Archived, and leaves alone a selected Invocation that is not archived.
+//
+// Corresponds with POST /invocation/unarchive (the `BulkUnarchiveInvocations` operationId).
+func (c *Client) BulkUnarchiveInvocations(ctx context.Context, params *BulkUnarchiveInvocationsParams, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewBulkUnarchiveInvocationsRequest(c.Server, params)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
 // BulkDeleteLinks Bulk delete multiple links
 //
 // Delete multiple links selected by query parameters.
@@ -5090,6 +5470,23 @@ func (c *Client) BulkCreateLinksWithBody(ctx context.Context, params *BulkCreate
 // Corresponds with POST /link (the `BulkCreateLinks` operationId).
 func (c *Client) BulkCreateLinksWithApplicationMergePatchPlusJSONBody(ctx context.Context, params *BulkCreateLinksParams, body BulkCreateLinksApplicationMergePatchPlusJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error) {
 	req, err := NewBulkCreateLinksRequestWithApplicationMergePatchPlusJSONBody(c.Server, params, body)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+// BulkUnarchiveLinks Unarchive links
+//
+// Unarchive a Link archived by a delete with archive=true. Its backing Unit, archived with it, is unarchived with it. Its Slug is restored from the label ArchivedSlug unless another Link has taken it since, in which case it keeps the Slug the archive gave it, which KeptSlug in the response reports; it is unarchived either way. Refused while its Space is archived, while it was archived with another entity, which unarchiving that one brings back, and while it names an entity that is still archived. Requires Edit permission. Selects archived Links, as if include_hidden named Archived, and leaves alone a selected Link that is not archived.
+//
+// Corresponds with POST /link/unarchive (the `BulkUnarchiveLinks` operationId).
+func (c *Client) BulkUnarchiveLinks(ctx context.Context, params *BulkUnarchiveLinksParams, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewBulkUnarchiveLinksRequest(c.Server, params)
 	if err != nil {
 		return nil, err
 	}
@@ -5443,6 +5840,23 @@ func (c *Client) Promote(ctx context.Context, params *PromoteParams, body Promot
 // Corresponds with GET /release (the `ListAllReleases` operationId).
 func (c *Client) ListAllReleases(ctx context.Context, params *ListAllReleasesParams, reqEditors ...RequestEditorFn) (*http.Response, error) {
 	req, err := NewListAllReleasesRequest(c.Server, params)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+// BulkUnarchiveReleases Unarchive releases
+//
+// Unarchive a Release archived by a delete with archive=true. Its Slug is restored from the label ArchivedSlug unless another Release has taken it since, in which case it keeps the Slug the archive gave it, which KeptSlug in the response reports; it is unarchived either way. Refused while its Space is archived, while it was archived with another entity, which unarchiving that one brings back, and while it names an entity that is still archived. Requires Edit permission. Selects archived Releases, as if include_hidden named Archived, and leaves alone a selected Release that is not archived.
+//
+// Corresponds with POST /release/unarchive (the `BulkUnarchiveReleases` operationId).
+func (c *Client) BulkUnarchiveReleases(ctx context.Context, params *BulkUnarchiveReleasesParams, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewBulkUnarchiveReleasesRequest(c.Server, params)
 	if err != nil {
 		return nil, err
 	}
@@ -6202,8 +6616,8 @@ func (c *Client) CreateAttribute(ctx context.Context, spaceId openapi_types.UUID
 // DeleteAttribute Delete Attribute
 //
 // Corresponds with DELETE /space/{space_id}/attribute/{attribute_id} (the `DeleteAttribute` operationId).
-func (c *Client) DeleteAttribute(ctx context.Context, spaceId openapi_types.UUID, attributeId openapi_types.UUID, reqEditors ...RequestEditorFn) (*http.Response, error) {
-	req, err := NewDeleteAttributeRequest(c.Server, spaceId, attributeId)
+func (c *Client) DeleteAttribute(ctx context.Context, spaceId openapi_types.UUID, attributeId openapi_types.UUID, params *DeleteAttributeParams, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewDeleteAttributeRequest(c.Server, spaceId, attributeId, params)
 	if err != nil {
 		return nil, err
 	}
@@ -6342,6 +6756,23 @@ func (c *Client) UpdateAttributeDocumentWithBody(ctx context.Context, spaceId op
 // Corresponds with POST /space/{space_id}/attribute/{attribute_id}/document (the `UpdateAttributeDocument` operationId).
 func (c *Client) UpdateAttributeDocument(ctx context.Context, spaceId openapi_types.UUID, attributeId openapi_types.UUID, params *UpdateAttributeDocumentParams, body UpdateAttributeDocumentJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error) {
 	req, err := NewUpdateAttributeDocumentRequest(c.Server, spaceId, attributeId, params, body)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+// UnarchiveAttribute Unarchive a attribute
+//
+// Unarchive a Attribute archived by a delete with archive=true. Its backing Unit, archived with it, is unarchived with it. Its Slug is restored from the label ArchivedSlug unless another Attribute has taken it since, in which case it keeps the Slug the archive gave it, which KeptSlug in the response reports; it is unarchived either way. Refused while its Space is archived, while it was archived with another entity, which unarchiving that one brings back, and while it names an entity that is still archived. Requires Edit permission.
+//
+// Corresponds with POST /space/{space_id}/attribute/{attribute_id}/unarchive (the `UnarchiveAttribute` operationId).
+func (c *Client) UnarchiveAttribute(ctx context.Context, spaceId openapi_types.UUID, attributeId openapi_types.UUID, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewUnarchiveAttributeRequest(c.Server, spaceId, attributeId)
 	if err != nil {
 		return nil, err
 	}
@@ -6516,6 +6947,23 @@ func (c *Client) RefreshChangeOrderStage(ctx context.Context, spaceId openapi_ty
 	return c.Client.Do(req)
 }
 
+// UnarchiveChangeOrder Unarchive a change order
+//
+// Unarchive a ChangeOrder archived by a delete with archive=true. Its Slug is restored from the label ArchivedSlug unless another ChangeOrder has taken it since, in which case it keeps the Slug the archive gave it, which KeptSlug in the response reports; it is unarchived either way. Refused while its Space is archived, while it was archived with another entity, which unarchiving that one brings back, and while it names an entity that is still archived. Requires Edit permission.
+//
+// Corresponds with POST /space/{space_id}/change_order/{change_order_id}/unarchive (the `UnarchiveChangeOrder` operationId).
+func (c *Client) UnarchiveChangeOrder(ctx context.Context, spaceId openapi_types.UUID, changeOrderId openapi_types.UUID, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewUnarchiveChangeOrderRequest(c.Server, spaceId, changeOrderId)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
 // ListChangeSets List ChangeSets
 //
 // Corresponds with GET /space/{space_id}/change_set (the `ListChangeSets` operationId).
@@ -6663,6 +7111,23 @@ func (c *Client) UpdateChangeSet(ctx context.Context, spaceId openapi_types.UUID
 	return c.Client.Do(req)
 }
 
+// UnarchiveChangeSet Unarchive a change set
+//
+// Unarchive a ChangeSet archived by a delete with archive=true. Its Slug is restored from the label ArchivedSlug unless another ChangeSet has taken it since, in which case it keeps the Slug the archive gave it, which KeptSlug in the response reports; it is unarchived either way. Refused while its Space is archived, while it was archived with another entity, which unarchiving that one brings back, and while it names an entity that is still archived. Requires Edit permission.
+//
+// Corresponds with POST /space/{space_id}/change_set/{change_set_id}/unarchive (the `UnarchiveChangeSet` operationId).
+func (c *Client) UnarchiveChangeSet(ctx context.Context, spaceId openapi_types.UUID, changeSetId openapi_types.UUID, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewUnarchiveChangeSetRequest(c.Server, spaceId, changeSetId)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
 // ListChangeWorkflows List ChangeWorkflows
 //
 // Corresponds with GET /space/{space_id}/change_workflow (the `ListChangeWorkflows` operationId).
@@ -6715,8 +7180,8 @@ func (c *Client) CreateChangeWorkflow(ctx context.Context, spaceId openapi_types
 // DeleteChangeWorkflow Delete ChangeWorkflow
 //
 // Corresponds with DELETE /space/{space_id}/change_workflow/{change_workflow_id} (the `DeleteChangeWorkflow` operationId).
-func (c *Client) DeleteChangeWorkflow(ctx context.Context, spaceId openapi_types.UUID, changeWorkflowId openapi_types.UUID, reqEditors ...RequestEditorFn) (*http.Response, error) {
-	req, err := NewDeleteChangeWorkflowRequest(c.Server, spaceId, changeWorkflowId)
+func (c *Client) DeleteChangeWorkflow(ctx context.Context, spaceId openapi_types.UUID, changeWorkflowId openapi_types.UUID, params *DeleteChangeWorkflowParams, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewDeleteChangeWorkflowRequest(c.Server, spaceId, changeWorkflowId, params)
 	if err != nil {
 		return nil, err
 	}
@@ -6865,6 +7330,23 @@ func (c *Client) UpdateChangeWorkflowDocument(ctx context.Context, spaceId opena
 	return c.Client.Do(req)
 }
 
+// UnarchiveChangeWorkflow Unarchive a change workflow
+//
+// Unarchive a ChangeWorkflow archived by a delete with archive=true. Its backing Unit, archived with it, is unarchived with it. Its Slug is restored from the label ArchivedSlug unless another ChangeWorkflow has taken it since, in which case it keeps the Slug the archive gave it, which KeptSlug in the response reports; it is unarchived either way. Refused while its Space is archived, while it was archived with another entity, which unarchiving that one brings back, and while it names an entity that is still archived. Requires Edit permission.
+//
+// Corresponds with POST /space/{space_id}/change_workflow/{change_workflow_id}/unarchive (the `UnarchiveChangeWorkflow` operationId).
+func (c *Client) UnarchiveChangeWorkflow(ctx context.Context, spaceId openapi_types.UUID, changeWorkflowId openapi_types.UUID, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewUnarchiveChangeWorkflowRequest(c.Server, spaceId, changeWorkflowId)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
 // ListChannels List Channels
 //
 // Corresponds with GET /space/{space_id}/channel (the `ListChannels` operationId).
@@ -6917,8 +7399,8 @@ func (c *Client) CreateChannel(ctx context.Context, spaceId openapi_types.UUID, 
 // DeleteChannel Delete Channel
 //
 // Corresponds with DELETE /space/{space_id}/channel/{channel_id} (the `DeleteChannel` operationId).
-func (c *Client) DeleteChannel(ctx context.Context, spaceId openapi_types.UUID, channelId openapi_types.UUID, reqEditors ...RequestEditorFn) (*http.Response, error) {
-	req, err := NewDeleteChannelRequest(c.Server, spaceId, channelId)
+func (c *Client) DeleteChannel(ctx context.Context, spaceId openapi_types.UUID, channelId openapi_types.UUID, params *DeleteChannelParams, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewDeleteChannelRequest(c.Server, spaceId, channelId, params)
 	if err != nil {
 		return nil, err
 	}
@@ -7177,6 +7659,23 @@ func (c *Client) PollChannel(ctx context.Context, spaceId openapi_types.UUID, ch
 	return c.Client.Do(req)
 }
 
+// UnarchiveChannel Unarchive a channel
+//
+// Unarchive a Channel archived by a delete with archive=true. Its backing Unit, archived with it, is unarchived with it. Its Slug is restored from the label ArchivedSlug unless another Channel has taken it since, in which case it keeps the Slug the archive gave it, which KeptSlug in the response reports; it is unarchived either way. Refused while its Space is archived, while it was archived with another entity, which unarchiving that one brings back, and while it names an entity that is still archived. Requires Edit permission.
+//
+// Corresponds with POST /space/{space_id}/channel/{channel_id}/unarchive (the `UnarchiveChannel` operationId).
+func (c *Client) UnarchiveChannel(ctx context.Context, spaceId openapi_types.UUID, channelId openapi_types.UUID, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewUnarchiveChannelRequest(c.Server, spaceId, channelId)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
 // ListCommands List the commands runnable in the Space
 //
 // The commands the Space's Channels declare, with each one's signature and the Channel that declares it.
@@ -7388,8 +7887,8 @@ func (c *Client) CreateFilter(ctx context.Context, spaceId openapi_types.UUID, p
 // DeleteFilter Delete Filter
 //
 // Corresponds with DELETE /space/{space_id}/filter/{filter_id} (the `DeleteFilter` operationId).
-func (c *Client) DeleteFilter(ctx context.Context, spaceId openapi_types.UUID, filterId openapi_types.UUID, reqEditors ...RequestEditorFn) (*http.Response, error) {
-	req, err := NewDeleteFilterRequest(c.Server, spaceId, filterId)
+func (c *Client) DeleteFilter(ctx context.Context, spaceId openapi_types.UUID, filterId openapi_types.UUID, params *DeleteFilterParams, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewDeleteFilterRequest(c.Server, spaceId, filterId, params)
 	if err != nil {
 		return nil, err
 	}
@@ -7528,6 +8027,23 @@ func (c *Client) UpdateFilterDocumentWithBody(ctx context.Context, spaceId opena
 // Corresponds with POST /space/{space_id}/filter/{filter_id}/document (the `UpdateFilterDocument` operationId).
 func (c *Client) UpdateFilterDocument(ctx context.Context, spaceId openapi_types.UUID, filterId openapi_types.UUID, params *UpdateFilterDocumentParams, body UpdateFilterDocumentJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error) {
 	req, err := NewUpdateFilterDocumentRequest(c.Server, spaceId, filterId, params, body)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+// UnarchiveFilter Unarchive a filter
+//
+// Unarchive a Filter archived by a delete with archive=true. Its backing Unit, archived with it, is unarchived with it. Its Slug is restored from the label ArchivedSlug unless another Filter has taken it since, in which case it keeps the Slug the archive gave it, which KeptSlug in the response reports; it is unarchived either way. Refused while its Space is archived, while it was archived with another entity, which unarchiving that one brings back, and while it names an entity that is still archived. Requires Edit permission.
+//
+// Corresponds with POST /space/{space_id}/filter/{filter_id}/unarchive (the `UnarchiveFilter` operationId).
+func (c *Client) UnarchiveFilter(ctx context.Context, spaceId openapi_types.UUID, filterId openapi_types.UUID, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewUnarchiveFilterRequest(c.Server, spaceId, filterId)
 	if err != nil {
 		return nil, err
 	}
@@ -7677,8 +8193,8 @@ func (c *Client) CreateInvocation(ctx context.Context, spaceId openapi_types.UUI
 // DeleteInvocation Delete Invocation
 //
 // Corresponds with DELETE /space/{space_id}/invocation/{invocation_id} (the `DeleteInvocation` operationId).
-func (c *Client) DeleteInvocation(ctx context.Context, spaceId openapi_types.UUID, invocationId openapi_types.UUID, reqEditors ...RequestEditorFn) (*http.Response, error) {
-	req, err := NewDeleteInvocationRequest(c.Server, spaceId, invocationId)
+func (c *Client) DeleteInvocation(ctx context.Context, spaceId openapi_types.UUID, invocationId openapi_types.UUID, params *DeleteInvocationParams, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewDeleteInvocationRequest(c.Server, spaceId, invocationId, params)
 	if err != nil {
 		return nil, err
 	}
@@ -7827,6 +8343,23 @@ func (c *Client) UpdateInvocationDocument(ctx context.Context, spaceId openapi_t
 	return c.Client.Do(req)
 }
 
+// UnarchiveInvocation Unarchive a invocation
+//
+// Unarchive a Invocation archived by a delete with archive=true. Its backing Unit, archived with it, is unarchived with it. Its Slug is restored from the label ArchivedSlug unless another Invocation has taken it since, in which case it keeps the Slug the archive gave it, which KeptSlug in the response reports; it is unarchived either way. Refused while its Space is archived, while it was archived with another entity, which unarchiving that one brings back, and while it names an entity that is still archived. Requires Edit permission.
+//
+// Corresponds with POST /space/{space_id}/invocation/{invocation_id}/unarchive (the `UnarchiveInvocation` operationId).
+func (c *Client) UnarchiveInvocation(ctx context.Context, spaceId openapi_types.UUID, invocationId openapi_types.UUID, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewUnarchiveInvocationRequest(c.Server, spaceId, invocationId)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
 // ListLinks List Links
 //
 // Corresponds with GET /space/{space_id}/link (the `ListLinks` operationId).
@@ -7879,8 +8412,8 @@ func (c *Client) CreateLink(ctx context.Context, spaceId openapi_types.UUID, par
 // DeleteLink Delete Link
 //
 // Corresponds with DELETE /space/{space_id}/link/{link_id} (the `DeleteLink` operationId).
-func (c *Client) DeleteLink(ctx context.Context, spaceId openapi_types.UUID, linkId openapi_types.UUID, reqEditors ...RequestEditorFn) (*http.Response, error) {
-	req, err := NewDeleteLinkRequest(c.Server, spaceId, linkId)
+func (c *Client) DeleteLink(ctx context.Context, spaceId openapi_types.UUID, linkId openapi_types.UUID, params *DeleteLinkParams, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewDeleteLinkRequest(c.Server, spaceId, linkId, params)
 	if err != nil {
 		return nil, err
 	}
@@ -8019,6 +8552,23 @@ func (c *Client) UpdateLinkDocumentWithBody(ctx context.Context, spaceId openapi
 // Corresponds with POST /space/{space_id}/link/{link_id}/document (the `UpdateLinkDocument` operationId).
 func (c *Client) UpdateLinkDocument(ctx context.Context, spaceId openapi_types.UUID, linkId openapi_types.UUID, params *UpdateLinkDocumentParams, body UpdateLinkDocumentJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error) {
 	req, err := NewUpdateLinkDocumentRequest(c.Server, spaceId, linkId, params, body)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+// UnarchiveLink Unarchive a link
+//
+// Unarchive a Link archived by a delete with archive=true. Its backing Unit, archived with it, is unarchived with it. Its Slug is restored from the label ArchivedSlug unless another Link has taken it since, in which case it keeps the Slug the archive gave it, which KeptSlug in the response reports; it is unarchived either way. Refused while its Space is archived, while it was archived with another entity, which unarchiving that one brings back, and while it names an entity that is still archived. Requires Edit permission.
+//
+// Corresponds with POST /space/{space_id}/link/{link_id}/unarchive (the `UnarchiveLink` operationId).
+func (c *Client) UnarchiveLink(ctx context.Context, spaceId openapi_types.UUID, linkId openapi_types.UUID, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewUnarchiveLinkRequest(c.Server, spaceId, linkId)
 	if err != nil {
 		return nil, err
 	}
@@ -8207,6 +8757,23 @@ func (c *Client) DownloadReleaseData(ctx context.Context, spaceId openapi_types.
 	return c.Client.Do(req)
 }
 
+// UnarchiveRelease Unarchive a release
+//
+// Unarchive a Release archived by a delete with archive=true. Its Slug is restored from the label ArchivedSlug unless another Release has taken it since, in which case it keeps the Slug the archive gave it, which KeptSlug in the response reports; it is unarchived either way. Refused while its Space is archived, while it was archived with another entity, which unarchiving that one brings back, and while it names an entity that is still archived. Requires Edit permission.
+//
+// Corresponds with POST /space/{space_id}/release/{release_id}/unarchive (the `UnarchiveRelease` operationId).
+func (c *Client) UnarchiveRelease(ctx context.Context, spaceId openapi_types.UUID, releaseId openapi_types.UUID, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewUnarchiveReleaseRequest(c.Server, spaceId, releaseId)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
 // WithdrawRelease Withdraw the selected Release
 //
 // Withdraw the selected Release, clearing its Published flag so it is no longer available for download. The Release itself is retained; delete it to remove it entirely. Withdrawing changes what is served to the cluster behind the release Target, so it requires TargetEditChildren on the Release's Space as well as Edit on the Release.
@@ -8361,6 +8928,23 @@ func (c *Client) UpdateTagWithBody(ctx context.Context, spaceId openapi_types.UU
 // Corresponds with PUT /space/{space_id}/tag/{tag_id} (the `UpdateTag` operationId).
 func (c *Client) UpdateTag(ctx context.Context, spaceId openapi_types.UUID, tagId openapi_types.UUID, params *UpdateTagParams, body UpdateTagJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error) {
 	req, err := NewUpdateTagRequest(c.Server, spaceId, tagId, params, body)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+// UnarchiveTag Unarchive a tag
+//
+// Unarchive a Tag archived by a delete with archive=true. Its Slug is restored from the label ArchivedSlug unless another Tag has taken it since, in which case it keeps the Slug the archive gave it, which KeptSlug in the response reports; it is unarchived either way. Refused while its Space is archived, while it was archived with another entity, which unarchiving that one brings back, and while it names an entity that is still archived. Requires Edit permission.
+//
+// Corresponds with POST /space/{space_id}/tag/{tag_id}/unarchive (the `UnarchiveTag` operationId).
+func (c *Client) UnarchiveTag(ctx context.Context, spaceId openapi_types.UUID, tagId openapi_types.UUID, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewUnarchiveTagRequest(c.Server, spaceId, tagId)
 	if err != nil {
 		return nil, err
 	}
@@ -8573,6 +9157,23 @@ func (c *Client) UpdateTargetDocument(ctx context.Context, spaceId openapi_types
 	return c.Client.Do(req)
 }
 
+// UnarchiveTarget Unarchive a target
+//
+// Unarchive a Target archived by a delete with archive=true. Its backing Unit, archived with it, is unarchived with it. Its Slug is restored from the label ArchivedSlug unless another Target has taken it since, in which case it keeps the Slug the archive gave it, which KeptSlug in the response reports; it is unarchived either way. Refused while its Space is archived, while it was archived with another entity, which unarchiving that one brings back, and while it names an entity that is still archived. Requires Edit permission.
+//
+// Corresponds with POST /space/{space_id}/target/{target_id}/unarchive (the `UnarchiveTarget` operationId).
+func (c *Client) UnarchiveTarget(ctx context.Context, spaceId openapi_types.UUID, targetId openapi_types.UUID, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewUnarchiveTargetRequest(c.Server, spaceId, targetId)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
 // ListTriggers List Triggers
 //
 // Corresponds with GET /space/{space_id}/trigger (the `ListTriggers` operationId).
@@ -8625,8 +9226,8 @@ func (c *Client) CreateTrigger(ctx context.Context, spaceId openapi_types.UUID, 
 // DeleteTrigger Delete Trigger
 //
 // Corresponds with DELETE /space/{space_id}/trigger/{trigger_id} (the `DeleteTrigger` operationId).
-func (c *Client) DeleteTrigger(ctx context.Context, spaceId openapi_types.UUID, triggerId openapi_types.UUID, reqEditors ...RequestEditorFn) (*http.Response, error) {
-	req, err := NewDeleteTriggerRequest(c.Server, spaceId, triggerId)
+func (c *Client) DeleteTrigger(ctx context.Context, spaceId openapi_types.UUID, triggerId openapi_types.UUID, params *DeleteTriggerParams, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewDeleteTriggerRequest(c.Server, spaceId, triggerId, params)
 	if err != nil {
 		return nil, err
 	}
@@ -8765,6 +9366,40 @@ func (c *Client) UpdateTriggerDocumentWithBody(ctx context.Context, spaceId open
 // Corresponds with POST /space/{space_id}/trigger/{trigger_id}/document (the `UpdateTriggerDocument` operationId).
 func (c *Client) UpdateTriggerDocument(ctx context.Context, spaceId openapi_types.UUID, triggerId openapi_types.UUID, params *UpdateTriggerDocumentParams, body UpdateTriggerDocumentJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error) {
 	req, err := NewUpdateTriggerDocumentRequest(c.Server, spaceId, triggerId, params, body)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+// UnarchiveTrigger Unarchive a trigger
+//
+// Unarchive a Trigger archived by a delete with archive=true. Its backing Unit, archived with it, is unarchived with it. Its Slug is restored from the label ArchivedSlug unless another Trigger has taken it since, in which case it keeps the Slug the archive gave it, which KeptSlug in the response reports; it is unarchived either way. Refused while its Space is archived, while it was archived with another entity, which unarchiving that one brings back, and while it names an entity that is still archived. Requires Edit permission.
+//
+// Corresponds with POST /space/{space_id}/trigger/{trigger_id}/unarchive (the `UnarchiveTrigger` operationId).
+func (c *Client) UnarchiveTrigger(ctx context.Context, spaceId openapi_types.UUID, triggerId openapi_types.UUID, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewUnarchiveTriggerRequest(c.Server, spaceId, triggerId)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+// UnarchiveSpace Unarchive a space
+//
+// Unarchive a Space archived by a delete with archive=true. Its Slug is restored from the label ArchivedSlug unless another Space has taken it since, in which case it keeps the Slug the archive gave it, which KeptSlug in the response reports; it is unarchived either way. A Space archived recursively is unarchived only recursively, which unarchives what its archive archived, and nothing archived before or since. Refused while what it would bring back names an entity that is still archived, such as a Target in another archived Space. ChangeOrders the archive aborted stay aborted. Requires Edit permission.
+//
+// Corresponds with POST /space/{space_id}/unarchive (the `UnarchiveSpace` operationId).
+func (c *Client) UnarchiveSpace(ctx context.Context, spaceId openapi_types.UUID, params *UnarchiveSpaceParams, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewUnarchiveSpaceRequest(c.Server, spaceId, params)
 	if err != nil {
 		return nil, err
 	}
@@ -9480,8 +10115,8 @@ func (c *Client) CreateView(ctx context.Context, spaceId openapi_types.UUID, par
 // DeleteView Delete View
 //
 // Corresponds with DELETE /space/{space_id}/view/{view_id} (the `DeleteView` operationId).
-func (c *Client) DeleteView(ctx context.Context, spaceId openapi_types.UUID, viewId openapi_types.UUID, reqEditors ...RequestEditorFn) (*http.Response, error) {
-	req, err := NewDeleteViewRequest(c.Server, spaceId, viewId)
+func (c *Client) DeleteView(ctx context.Context, spaceId openapi_types.UUID, viewId openapi_types.UUID, params *DeleteViewParams, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewDeleteViewRequest(c.Server, spaceId, viewId, params)
 	if err != nil {
 		return nil, err
 	}
@@ -9620,6 +10255,23 @@ func (c *Client) UpdateViewDocumentWithBody(ctx context.Context, spaceId openapi
 // Corresponds with POST /space/{space_id}/view/{view_id}/document (the `UpdateViewDocument` operationId).
 func (c *Client) UpdateViewDocument(ctx context.Context, spaceId openapi_types.UUID, viewId openapi_types.UUID, params *UpdateViewDocumentParams, body UpdateViewDocumentJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error) {
 	req, err := NewUpdateViewDocumentRequest(c.Server, spaceId, viewId, params, body)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+// UnarchiveView Unarchive a view
+//
+// Unarchive a View archived by a delete with archive=true. Its backing Unit, archived with it, is unarchived with it. Its Slug is restored from the label ArchivedSlug unless another View has taken it since, in which case it keeps the Slug the archive gave it, which KeptSlug in the response reports; it is unarchived either way. Refused while its Space is archived, while it was archived with another entity, which unarchiving that one brings back, and while it names an entity that is still archived. Requires Edit permission.
+//
+// Corresponds with POST /space/{space_id}/view/{view_id}/unarchive (the `UnarchiveView` operationId).
+func (c *Client) UnarchiveView(ctx context.Context, spaceId openapi_types.UUID, viewId openapi_types.UUID, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewUnarchiveViewRequest(c.Server, spaceId, viewId)
 	if err != nil {
 		return nil, err
 	}
@@ -9778,6 +10430,23 @@ func (c *Client) BulkMoveTags(ctx context.Context, params *BulkMoveTagsParams, b
 	return c.Client.Do(req)
 }
 
+// BulkUnarchiveTags Unarchive tags
+//
+// Unarchive a Tag archived by a delete with archive=true. Its Slug is restored from the label ArchivedSlug unless another Tag has taken it since, in which case it keeps the Slug the archive gave it, which KeptSlug in the response reports; it is unarchived either way. Refused while its Space is archived, while it was archived with another entity, which unarchiving that one brings back, and while it names an entity that is still archived. Requires Edit permission. Selects archived Tags, as if include_hidden named Archived, and leaves alone a selected Tag that is not archived.
+//
+// Corresponds with POST /tag/unarchive (the `BulkUnarchiveTags` operationId).
+func (c *Client) BulkUnarchiveTags(ctx context.Context, params *BulkUnarchiveTagsParams, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewBulkUnarchiveTagsRequest(c.Server, params)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
 // BulkDeleteTargets Bulk delete multiple targets
 //
 // Delete multiple targets selected by query parameters.
@@ -9926,6 +10595,23 @@ func (c *Client) BulkMoveTargets(ctx context.Context, params *BulkMoveTargetsPar
 	return c.Client.Do(req)
 }
 
+// BulkUnarchiveTargets Unarchive targets
+//
+// Unarchive a Target archived by a delete with archive=true. Its backing Unit, archived with it, is unarchived with it. Its Slug is restored from the label ArchivedSlug unless another Target has taken it since, in which case it keeps the Slug the archive gave it, which KeptSlug in the response reports; it is unarchived either way. Refused while its Space is archived, while it was archived with another entity, which unarchiving that one brings back, and while it names an entity that is still archived. Requires Edit permission. Selects archived Targets, as if include_hidden named Archived, and leaves alone a selected Target that is not archived.
+//
+// Corresponds with POST /target/unarchive (the `BulkUnarchiveTargets` operationId).
+func (c *Client) BulkUnarchiveTargets(ctx context.Context, params *BulkUnarchiveTargetsParams, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewBulkUnarchiveTargetsRequest(c.Server, params)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
 // BulkDeleteTriggers Bulk delete multiple triggers
 //
 // Delete multiple triggers selected by query parameters.
@@ -10064,6 +10750,23 @@ func (c *Client) BulkMoveTriggersWithBody(ctx context.Context, params *BulkMoveT
 // Corresponds with POST /trigger/move (the `BulkMoveTriggers` operationId).
 func (c *Client) BulkMoveTriggers(ctx context.Context, params *BulkMoveTriggersParams, body BulkMoveTriggersJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error) {
 	req, err := NewBulkMoveTriggersRequest(c.Server, params, body)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+// BulkUnarchiveTriggers Unarchive triggers
+//
+// Unarchive a Trigger archived by a delete with archive=true. Its backing Unit, archived with it, is unarchived with it. Its Slug is restored from the label ArchivedSlug unless another Trigger has taken it since, in which case it keeps the Slug the archive gave it, which KeptSlug in the response reports; it is unarchived either way. Refused while its Space is archived, while it was archived with another entity, which unarchiving that one brings back, and while it names an entity that is still archived. Requires Edit permission. Selects archived Triggers, as if include_hidden named Archived, and leaves alone a selected Trigger that is not archived.
+//
+// Corresponds with POST /trigger/unarchive (the `BulkUnarchiveTriggers` operationId).
+func (c *Client) BulkUnarchiveTriggers(ctx context.Context, params *BulkUnarchiveTriggersParams, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewBulkUnarchiveTriggersRequest(c.Server, params)
 	if err != nil {
 		return nil, err
 	}
@@ -10561,6 +11264,23 @@ func (c *Client) BulkMoveViews(ctx context.Context, params *BulkMoveViewsParams,
 	return c.Client.Do(req)
 }
 
+// BulkUnarchiveViews Unarchive views
+//
+// Unarchive a View archived by a delete with archive=true. Its backing Unit, archived with it, is unarchived with it. Its Slug is restored from the label ArchivedSlug unless another View has taken it since, in which case it keeps the Slug the archive gave it, which KeptSlug in the response reports; it is unarchived either way. Refused while its Space is archived, while it was archived with another entity, which unarchiving that one brings back, and while it names an entity that is still archived. Requires Edit permission. Selects archived Views, as if include_hidden named Archived, and leaves alone a selected View that is not archived.
+//
+// Corresponds with POST /view/unarchive (the `BulkUnarchiveViews` operationId).
+func (c *Client) BulkUnarchiveViews(ctx context.Context, params *BulkUnarchiveViewsParams, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewBulkUnarchiveViewsRequest(c.Server, params)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
 // NewBulkDeleteComponentsRequest constructs an http.Request for the BulkDeleteComponents method
 func NewBulkDeleteComponentsRequest(server string, params *BulkDeleteComponentsParams) (*http.Request, error) {
 	var err error
@@ -10664,6 +11384,18 @@ func NewBulkDeleteComponentsRequest(server string, params *BulkDeleteComponentsP
 		if params.Continue != nil {
 
 			if queryFrag, err := runtime.StyleParamWithOptions("form", true, "continue", *params.Continue, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationQuery, Type: "string", Format: ""}); err != nil {
+				return nil, err
+			} else {
+				for _, qp := range strings.Split(queryFrag, "&") {
+					rawQueryFragments = append(rawQueryFragments, qp)
+				}
+			}
+
+		}
+
+		if params.Archive != nil {
+
+			if queryFrag, err := runtime.StyleParamWithOptions("form", true, "archive", *params.Archive, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationQuery, Type: "boolean", Format: ""}); err != nil {
 				return nil, err
 			} else {
 				for _, qp := range strings.Split(queryFrag, "&") {
@@ -10882,6 +11614,132 @@ func NewBulkPatchComponentsRequestWithBody(server string, params *BulkPatchCompo
 	}
 
 	req.Header.Add("Content-Type", contentType)
+
+	return req, nil
+}
+
+// NewBulkUnarchiveComponentsRequest constructs an http.Request for the BulkUnarchiveComponents method
+func NewBulkUnarchiveComponentsRequest(server string, params *BulkUnarchiveComponentsParams) (*http.Request, error) {
+	var err error
+
+	serverURL, err := url.Parse(server)
+	if err != nil {
+		return nil, err
+	}
+
+	operationPath := fmt.Sprintf("/_component/unarchive")
+	if operationPath[0] == '/' {
+		operationPath = "." + operationPath
+	}
+
+	queryURL, err := serverURL.Parse(operationPath)
+	if err != nil {
+		return nil, err
+	}
+
+	if params != nil {
+		// queryValues collects non-styled parameters (passthrough, JSON)
+		// that are safe to round-trip through url.Values.Encode().
+		queryValues := queryURL.Query()
+		// rawQueryFragments collects pre-encoded query fragments from
+		// styled parameters, preserving literal commas as delimiters
+		// per the OpenAPI spec (e.g. "color=blue,black,brown").
+		var rawQueryFragments []string
+
+		if params.Where != nil {
+
+			if queryFrag, err := runtime.StyleParamWithOptions("form", true, "where", *params.Where, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationQuery, Type: "string", Format: ""}); err != nil {
+				return nil, err
+			} else {
+				for _, qp := range strings.Split(queryFrag, "&") {
+					rawQueryFragments = append(rawQueryFragments, qp)
+				}
+			}
+
+		}
+
+		if params.Filter != nil {
+
+			if queryFrag, err := runtime.StyleParamWithOptions("form", true, "filter", *params.Filter, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationQuery, Type: "string", Format: ""}); err != nil {
+				return nil, err
+			} else {
+				for _, qp := range strings.Split(queryFrag, "&") {
+					rawQueryFragments = append(rawQueryFragments, qp)
+				}
+			}
+
+		}
+
+		if params.Contains != nil {
+
+			if queryFrag, err := runtime.StyleParamWithOptions("form", true, "contains", *params.Contains, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationQuery, Type: "string", Format: ""}); err != nil {
+				return nil, err
+			} else {
+				for _, qp := range strings.Split(queryFrag, "&") {
+					rawQueryFragments = append(rawQueryFragments, qp)
+				}
+			}
+
+		}
+
+		if params.IncludeHidden != nil {
+
+			if queryFrag, err := runtime.StyleParamWithOptions("form", true, "include_hidden", *params.IncludeHidden, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationQuery, Type: "string", Format: ""}); err != nil {
+				return nil, err
+			} else {
+				for _, qp := range strings.Split(queryFrag, "&") {
+					rawQueryFragments = append(rawQueryFragments, qp)
+				}
+			}
+
+		}
+
+		if params.Include != nil {
+
+			if queryFrag, err := runtime.StyleParamWithOptions("form", true, "include", *params.Include, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationQuery, Type: "string", Format: ""}); err != nil {
+				return nil, err
+			} else {
+				for _, qp := range strings.Split(queryFrag, "&") {
+					rawQueryFragments = append(rawQueryFragments, qp)
+				}
+			}
+
+		}
+
+		if params.Limit != nil {
+
+			if queryFrag, err := runtime.StyleParamWithOptions("form", true, "limit", *params.Limit, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationQuery, Type: "integer", Format: ""}); err != nil {
+				return nil, err
+			} else {
+				for _, qp := range strings.Split(queryFrag, "&") {
+					rawQueryFragments = append(rawQueryFragments, qp)
+				}
+			}
+
+		}
+
+		if params.Continue != nil {
+
+			if queryFrag, err := runtime.StyleParamWithOptions("form", true, "continue", *params.Continue, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationQuery, Type: "string", Format: ""}); err != nil {
+				return nil, err
+			} else {
+				for _, qp := range strings.Split(queryFrag, "&") {
+					rawQueryFragments = append(rawQueryFragments, qp)
+				}
+			}
+
+		}
+
+		if encoded := queryValues.Encode(); encoded != "" {
+			rawQueryFragments = append(rawQueryFragments, encoded)
+		}
+		queryURL.RawQuery = strings.Join(rawQueryFragments, "&")
+	}
+
+	req, err := http.NewRequest(http.MethodPost, queryURL.String(), nil)
+	if err != nil {
+		return nil, err
+	}
 
 	return req, nil
 }
@@ -11302,6 +12160,18 @@ func NewBulkDeleteSpacesRequest(server string, params *BulkDeleteSpacesParams) (
 		if params.Detach != nil {
 
 			if queryFrag, err := runtime.StyleParamWithOptions("form", true, "detach", *params.Detach, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationQuery, Type: "boolean", Format: ""}); err != nil {
+				return nil, err
+			} else {
+				for _, qp := range strings.Split(queryFrag, "&") {
+					rawQueryFragments = append(rawQueryFragments, qp)
+				}
+			}
+
+		}
+
+		if params.Archive != nil {
+
+			if queryFrag, err := runtime.StyleParamWithOptions("form", true, "archive", *params.Archive, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationQuery, Type: "boolean", Format: ""}); err != nil {
 				return nil, err
 			} else {
 				for _, qp := range strings.Split(queryFrag, "&") {
@@ -11807,6 +12677,144 @@ func NewBulkCreateSpacesRequestWithBody(server string, params *BulkCreateSpacesP
 	return req, nil
 }
 
+// NewBulkUnarchiveSpacesRequest constructs an http.Request for the BulkUnarchiveSpaces method
+func NewBulkUnarchiveSpacesRequest(server string, params *BulkUnarchiveSpacesParams) (*http.Request, error) {
+	var err error
+
+	serverURL, err := url.Parse(server)
+	if err != nil {
+		return nil, err
+	}
+
+	operationPath := fmt.Sprintf("/_space/unarchive")
+	if operationPath[0] == '/' {
+		operationPath = "." + operationPath
+	}
+
+	queryURL, err := serverURL.Parse(operationPath)
+	if err != nil {
+		return nil, err
+	}
+
+	if params != nil {
+		// queryValues collects non-styled parameters (passthrough, JSON)
+		// that are safe to round-trip through url.Values.Encode().
+		queryValues := queryURL.Query()
+		// rawQueryFragments collects pre-encoded query fragments from
+		// styled parameters, preserving literal commas as delimiters
+		// per the OpenAPI spec (e.g. "color=blue,black,brown").
+		var rawQueryFragments []string
+
+		if params.Where != nil {
+
+			if queryFrag, err := runtime.StyleParamWithOptions("form", true, "where", *params.Where, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationQuery, Type: "string", Format: ""}); err != nil {
+				return nil, err
+			} else {
+				for _, qp := range strings.Split(queryFrag, "&") {
+					rawQueryFragments = append(rawQueryFragments, qp)
+				}
+			}
+
+		}
+
+		if params.Filter != nil {
+
+			if queryFrag, err := runtime.StyleParamWithOptions("form", true, "filter", *params.Filter, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationQuery, Type: "string", Format: ""}); err != nil {
+				return nil, err
+			} else {
+				for _, qp := range strings.Split(queryFrag, "&") {
+					rawQueryFragments = append(rawQueryFragments, qp)
+				}
+			}
+
+		}
+
+		if params.Contains != nil {
+
+			if queryFrag, err := runtime.StyleParamWithOptions("form", true, "contains", *params.Contains, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationQuery, Type: "string", Format: ""}); err != nil {
+				return nil, err
+			} else {
+				for _, qp := range strings.Split(queryFrag, "&") {
+					rawQueryFragments = append(rawQueryFragments, qp)
+				}
+			}
+
+		}
+
+		if params.IncludeHidden != nil {
+
+			if queryFrag, err := runtime.StyleParamWithOptions("form", true, "include_hidden", *params.IncludeHidden, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationQuery, Type: "string", Format: ""}); err != nil {
+				return nil, err
+			} else {
+				for _, qp := range strings.Split(queryFrag, "&") {
+					rawQueryFragments = append(rawQueryFragments, qp)
+				}
+			}
+
+		}
+
+		if params.Include != nil {
+
+			if queryFrag, err := runtime.StyleParamWithOptions("form", true, "include", *params.Include, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationQuery, Type: "string", Format: ""}); err != nil {
+				return nil, err
+			} else {
+				for _, qp := range strings.Split(queryFrag, "&") {
+					rawQueryFragments = append(rawQueryFragments, qp)
+				}
+			}
+
+		}
+
+		if params.Limit != nil {
+
+			if queryFrag, err := runtime.StyleParamWithOptions("form", true, "limit", *params.Limit, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationQuery, Type: "integer", Format: ""}); err != nil {
+				return nil, err
+			} else {
+				for _, qp := range strings.Split(queryFrag, "&") {
+					rawQueryFragments = append(rawQueryFragments, qp)
+				}
+			}
+
+		}
+
+		if params.Continue != nil {
+
+			if queryFrag, err := runtime.StyleParamWithOptions("form", true, "continue", *params.Continue, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationQuery, Type: "string", Format: ""}); err != nil {
+				return nil, err
+			} else {
+				for _, qp := range strings.Split(queryFrag, "&") {
+					rawQueryFragments = append(rawQueryFragments, qp)
+				}
+			}
+
+		}
+
+		if params.Recursive != nil {
+
+			if queryFrag, err := runtime.StyleParamWithOptions("form", true, "recursive", *params.Recursive, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationQuery, Type: "boolean", Format: ""}); err != nil {
+				return nil, err
+			} else {
+				for _, qp := range strings.Split(queryFrag, "&") {
+					rawQueryFragments = append(rawQueryFragments, qp)
+				}
+			}
+
+		}
+
+		if encoded := queryValues.Encode(); encoded != "" {
+			rawQueryFragments = append(rawQueryFragments, encoded)
+		}
+		queryURL.RawQuery = strings.Join(rawQueryFragments, "&")
+	}
+
+	req, err := http.NewRequest(http.MethodPost, queryURL.String(), nil)
+	if err != nil {
+		return nil, err
+	}
+
+	return req, nil
+}
+
 // NewAttestRequest calls the generic Attest builder with application/json body
 func NewAttestRequest(server string, params *AttestParams, body AttestJSONRequestBody) (*http.Request, error) {
 	var bodyReader io.Reader
@@ -12151,6 +13159,18 @@ func NewBulkDeleteAttributesRequest(server string, params *BulkDeleteAttributesP
 		if params.Continue != nil {
 
 			if queryFrag, err := runtime.StyleParamWithOptions("form", true, "continue", *params.Continue, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationQuery, Type: "string", Format: ""}); err != nil {
+				return nil, err
+			} else {
+				for _, qp := range strings.Split(queryFrag, "&") {
+					rawQueryFragments = append(rawQueryFragments, qp)
+				}
+			}
+
+		}
+
+		if params.Archive != nil {
+
+			if queryFrag, err := runtime.StyleParamWithOptions("form", true, "archive", *params.Archive, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationQuery, Type: "boolean", Format: ""}); err != nil {
 				return nil, err
 			} else {
 				for _, qp := range strings.Split(queryFrag, "&") {
@@ -12909,6 +13929,132 @@ func NewBulkMoveAttributesRequestWithBody(server string, params *BulkMoveAttribu
 	return req, nil
 }
 
+// NewBulkUnarchiveAttributesRequest constructs an http.Request for the BulkUnarchiveAttributes method
+func NewBulkUnarchiveAttributesRequest(server string, params *BulkUnarchiveAttributesParams) (*http.Request, error) {
+	var err error
+
+	serverURL, err := url.Parse(server)
+	if err != nil {
+		return nil, err
+	}
+
+	operationPath := fmt.Sprintf("/attribute/unarchive")
+	if operationPath[0] == '/' {
+		operationPath = "." + operationPath
+	}
+
+	queryURL, err := serverURL.Parse(operationPath)
+	if err != nil {
+		return nil, err
+	}
+
+	if params != nil {
+		// queryValues collects non-styled parameters (passthrough, JSON)
+		// that are safe to round-trip through url.Values.Encode().
+		queryValues := queryURL.Query()
+		// rawQueryFragments collects pre-encoded query fragments from
+		// styled parameters, preserving literal commas as delimiters
+		// per the OpenAPI spec (e.g. "color=blue,black,brown").
+		var rawQueryFragments []string
+
+		if params.Where != nil {
+
+			if queryFrag, err := runtime.StyleParamWithOptions("form", true, "where", *params.Where, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationQuery, Type: "string", Format: ""}); err != nil {
+				return nil, err
+			} else {
+				for _, qp := range strings.Split(queryFrag, "&") {
+					rawQueryFragments = append(rawQueryFragments, qp)
+				}
+			}
+
+		}
+
+		if params.Filter != nil {
+
+			if queryFrag, err := runtime.StyleParamWithOptions("form", true, "filter", *params.Filter, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationQuery, Type: "string", Format: ""}); err != nil {
+				return nil, err
+			} else {
+				for _, qp := range strings.Split(queryFrag, "&") {
+					rawQueryFragments = append(rawQueryFragments, qp)
+				}
+			}
+
+		}
+
+		if params.Contains != nil {
+
+			if queryFrag, err := runtime.StyleParamWithOptions("form", true, "contains", *params.Contains, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationQuery, Type: "string", Format: ""}); err != nil {
+				return nil, err
+			} else {
+				for _, qp := range strings.Split(queryFrag, "&") {
+					rawQueryFragments = append(rawQueryFragments, qp)
+				}
+			}
+
+		}
+
+		if params.IncludeHidden != nil {
+
+			if queryFrag, err := runtime.StyleParamWithOptions("form", true, "include_hidden", *params.IncludeHidden, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationQuery, Type: "string", Format: ""}); err != nil {
+				return nil, err
+			} else {
+				for _, qp := range strings.Split(queryFrag, "&") {
+					rawQueryFragments = append(rawQueryFragments, qp)
+				}
+			}
+
+		}
+
+		if params.Include != nil {
+
+			if queryFrag, err := runtime.StyleParamWithOptions("form", true, "include", *params.Include, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationQuery, Type: "string", Format: ""}); err != nil {
+				return nil, err
+			} else {
+				for _, qp := range strings.Split(queryFrag, "&") {
+					rawQueryFragments = append(rawQueryFragments, qp)
+				}
+			}
+
+		}
+
+		if params.Limit != nil {
+
+			if queryFrag, err := runtime.StyleParamWithOptions("form", true, "limit", *params.Limit, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationQuery, Type: "integer", Format: ""}); err != nil {
+				return nil, err
+			} else {
+				for _, qp := range strings.Split(queryFrag, "&") {
+					rawQueryFragments = append(rawQueryFragments, qp)
+				}
+			}
+
+		}
+
+		if params.Continue != nil {
+
+			if queryFrag, err := runtime.StyleParamWithOptions("form", true, "continue", *params.Continue, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationQuery, Type: "string", Format: ""}); err != nil {
+				return nil, err
+			} else {
+				for _, qp := range strings.Split(queryFrag, "&") {
+					rawQueryFragments = append(rawQueryFragments, qp)
+				}
+			}
+
+		}
+
+		if encoded := queryValues.Encode(); encoded != "" {
+			rawQueryFragments = append(rawQueryFragments, encoded)
+		}
+		queryURL.RawQuery = strings.Join(rawQueryFragments, "&")
+	}
+
+	req, err := http.NewRequest(http.MethodPost, queryURL.String(), nil)
+	if err != nil {
+		return nil, err
+	}
+
+	return req, nil
+}
+
 // NewListAuditEventsRequest constructs an http.Request for the ListAuditEvents method
 func NewListAuditEventsRequest(server string, params *ListAuditEventsParams) (*http.Request, error) {
 	var err error
@@ -13259,6 +14405,18 @@ func NewBulkDeleteChangeOrdersRequest(server string, params *BulkDeleteChangeOrd
 		if params.Detach != nil {
 
 			if queryFrag, err := runtime.StyleParamWithOptions("form", true, "detach", *params.Detach, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationQuery, Type: "boolean", Format: ""}); err != nil {
+				return nil, err
+			} else {
+				for _, qp := range strings.Split(queryFrag, "&") {
+					rawQueryFragments = append(rawQueryFragments, qp)
+				}
+			}
+
+		}
+
+		if params.Archive != nil {
+
+			if queryFrag, err := runtime.StyleParamWithOptions("form", true, "archive", *params.Archive, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationQuery, Type: "boolean", Format: ""}); err != nil {
 				return nil, err
 			} else {
 				for _, qp := range strings.Split(queryFrag, "&") {
@@ -13980,6 +15138,132 @@ func NewBulkRefreshChangeOrderStagesRequest(server string, params *BulkRefreshCh
 	return req, nil
 }
 
+// NewBulkUnarchiveChangeOrdersRequest constructs an http.Request for the BulkUnarchiveChangeOrders method
+func NewBulkUnarchiveChangeOrdersRequest(server string, params *BulkUnarchiveChangeOrdersParams) (*http.Request, error) {
+	var err error
+
+	serverURL, err := url.Parse(server)
+	if err != nil {
+		return nil, err
+	}
+
+	operationPath := fmt.Sprintf("/change_order/unarchive")
+	if operationPath[0] == '/' {
+		operationPath = "." + operationPath
+	}
+
+	queryURL, err := serverURL.Parse(operationPath)
+	if err != nil {
+		return nil, err
+	}
+
+	if params != nil {
+		// queryValues collects non-styled parameters (passthrough, JSON)
+		// that are safe to round-trip through url.Values.Encode().
+		queryValues := queryURL.Query()
+		// rawQueryFragments collects pre-encoded query fragments from
+		// styled parameters, preserving literal commas as delimiters
+		// per the OpenAPI spec (e.g. "color=blue,black,brown").
+		var rawQueryFragments []string
+
+		if params.Where != nil {
+
+			if queryFrag, err := runtime.StyleParamWithOptions("form", true, "where", *params.Where, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationQuery, Type: "string", Format: ""}); err != nil {
+				return nil, err
+			} else {
+				for _, qp := range strings.Split(queryFrag, "&") {
+					rawQueryFragments = append(rawQueryFragments, qp)
+				}
+			}
+
+		}
+
+		if params.Filter != nil {
+
+			if queryFrag, err := runtime.StyleParamWithOptions("form", true, "filter", *params.Filter, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationQuery, Type: "string", Format: ""}); err != nil {
+				return nil, err
+			} else {
+				for _, qp := range strings.Split(queryFrag, "&") {
+					rawQueryFragments = append(rawQueryFragments, qp)
+				}
+			}
+
+		}
+
+		if params.Contains != nil {
+
+			if queryFrag, err := runtime.StyleParamWithOptions("form", true, "contains", *params.Contains, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationQuery, Type: "string", Format: ""}); err != nil {
+				return nil, err
+			} else {
+				for _, qp := range strings.Split(queryFrag, "&") {
+					rawQueryFragments = append(rawQueryFragments, qp)
+				}
+			}
+
+		}
+
+		if params.IncludeHidden != nil {
+
+			if queryFrag, err := runtime.StyleParamWithOptions("form", true, "include_hidden", *params.IncludeHidden, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationQuery, Type: "string", Format: ""}); err != nil {
+				return nil, err
+			} else {
+				for _, qp := range strings.Split(queryFrag, "&") {
+					rawQueryFragments = append(rawQueryFragments, qp)
+				}
+			}
+
+		}
+
+		if params.Include != nil {
+
+			if queryFrag, err := runtime.StyleParamWithOptions("form", true, "include", *params.Include, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationQuery, Type: "string", Format: ""}); err != nil {
+				return nil, err
+			} else {
+				for _, qp := range strings.Split(queryFrag, "&") {
+					rawQueryFragments = append(rawQueryFragments, qp)
+				}
+			}
+
+		}
+
+		if params.Limit != nil {
+
+			if queryFrag, err := runtime.StyleParamWithOptions("form", true, "limit", *params.Limit, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationQuery, Type: "integer", Format: ""}); err != nil {
+				return nil, err
+			} else {
+				for _, qp := range strings.Split(queryFrag, "&") {
+					rawQueryFragments = append(rawQueryFragments, qp)
+				}
+			}
+
+		}
+
+		if params.Continue != nil {
+
+			if queryFrag, err := runtime.StyleParamWithOptions("form", true, "continue", *params.Continue, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationQuery, Type: "string", Format: ""}); err != nil {
+				return nil, err
+			} else {
+				for _, qp := range strings.Split(queryFrag, "&") {
+					rawQueryFragments = append(rawQueryFragments, qp)
+				}
+			}
+
+		}
+
+		if encoded := queryValues.Encode(); encoded != "" {
+			rawQueryFragments = append(rawQueryFragments, encoded)
+		}
+		queryURL.RawQuery = strings.Join(rawQueryFragments, "&")
+	}
+
+	req, err := http.NewRequest(http.MethodPost, queryURL.String(), nil)
+	if err != nil {
+		return nil, err
+	}
+
+	return req, nil
+}
+
 // NewBulkDeleteChangeSetsRequest constructs an http.Request for the BulkDeleteChangeSets method
 func NewBulkDeleteChangeSetsRequest(server string, params *BulkDeleteChangeSetsParams) (*http.Request, error) {
 	var err error
@@ -14095,6 +15379,18 @@ func NewBulkDeleteChangeSetsRequest(server string, params *BulkDeleteChangeSetsP
 		if params.Detach != nil {
 
 			if queryFrag, err := runtime.StyleParamWithOptions("form", true, "detach", *params.Detach, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationQuery, Type: "boolean", Format: ""}); err != nil {
+				return nil, err
+			} else {
+				for _, qp := range strings.Split(queryFrag, "&") {
+					rawQueryFragments = append(rawQueryFragments, qp)
+				}
+			}
+
+		}
+
+		if params.Archive != nil {
+
+			if queryFrag, err := runtime.StyleParamWithOptions("form", true, "archive", *params.Archive, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationQuery, Type: "boolean", Format: ""}); err != nil {
 				return nil, err
 			} else {
 				for _, qp := range strings.Split(queryFrag, "&") {
@@ -14793,6 +16089,132 @@ func NewBulkMoveChangeSetsRequestWithBody(server string, params *BulkMoveChangeS
 	return req, nil
 }
 
+// NewBulkUnarchiveChangeSetsRequest constructs an http.Request for the BulkUnarchiveChangeSets method
+func NewBulkUnarchiveChangeSetsRequest(server string, params *BulkUnarchiveChangeSetsParams) (*http.Request, error) {
+	var err error
+
+	serverURL, err := url.Parse(server)
+	if err != nil {
+		return nil, err
+	}
+
+	operationPath := fmt.Sprintf("/change_set/unarchive")
+	if operationPath[0] == '/' {
+		operationPath = "." + operationPath
+	}
+
+	queryURL, err := serverURL.Parse(operationPath)
+	if err != nil {
+		return nil, err
+	}
+
+	if params != nil {
+		// queryValues collects non-styled parameters (passthrough, JSON)
+		// that are safe to round-trip through url.Values.Encode().
+		queryValues := queryURL.Query()
+		// rawQueryFragments collects pre-encoded query fragments from
+		// styled parameters, preserving literal commas as delimiters
+		// per the OpenAPI spec (e.g. "color=blue,black,brown").
+		var rawQueryFragments []string
+
+		if params.Where != nil {
+
+			if queryFrag, err := runtime.StyleParamWithOptions("form", true, "where", *params.Where, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationQuery, Type: "string", Format: ""}); err != nil {
+				return nil, err
+			} else {
+				for _, qp := range strings.Split(queryFrag, "&") {
+					rawQueryFragments = append(rawQueryFragments, qp)
+				}
+			}
+
+		}
+
+		if params.Filter != nil {
+
+			if queryFrag, err := runtime.StyleParamWithOptions("form", true, "filter", *params.Filter, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationQuery, Type: "string", Format: ""}); err != nil {
+				return nil, err
+			} else {
+				for _, qp := range strings.Split(queryFrag, "&") {
+					rawQueryFragments = append(rawQueryFragments, qp)
+				}
+			}
+
+		}
+
+		if params.Contains != nil {
+
+			if queryFrag, err := runtime.StyleParamWithOptions("form", true, "contains", *params.Contains, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationQuery, Type: "string", Format: ""}); err != nil {
+				return nil, err
+			} else {
+				for _, qp := range strings.Split(queryFrag, "&") {
+					rawQueryFragments = append(rawQueryFragments, qp)
+				}
+			}
+
+		}
+
+		if params.IncludeHidden != nil {
+
+			if queryFrag, err := runtime.StyleParamWithOptions("form", true, "include_hidden", *params.IncludeHidden, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationQuery, Type: "string", Format: ""}); err != nil {
+				return nil, err
+			} else {
+				for _, qp := range strings.Split(queryFrag, "&") {
+					rawQueryFragments = append(rawQueryFragments, qp)
+				}
+			}
+
+		}
+
+		if params.Include != nil {
+
+			if queryFrag, err := runtime.StyleParamWithOptions("form", true, "include", *params.Include, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationQuery, Type: "string", Format: ""}); err != nil {
+				return nil, err
+			} else {
+				for _, qp := range strings.Split(queryFrag, "&") {
+					rawQueryFragments = append(rawQueryFragments, qp)
+				}
+			}
+
+		}
+
+		if params.Limit != nil {
+
+			if queryFrag, err := runtime.StyleParamWithOptions("form", true, "limit", *params.Limit, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationQuery, Type: "integer", Format: ""}); err != nil {
+				return nil, err
+			} else {
+				for _, qp := range strings.Split(queryFrag, "&") {
+					rawQueryFragments = append(rawQueryFragments, qp)
+				}
+			}
+
+		}
+
+		if params.Continue != nil {
+
+			if queryFrag, err := runtime.StyleParamWithOptions("form", true, "continue", *params.Continue, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationQuery, Type: "string", Format: ""}); err != nil {
+				return nil, err
+			} else {
+				for _, qp := range strings.Split(queryFrag, "&") {
+					rawQueryFragments = append(rawQueryFragments, qp)
+				}
+			}
+
+		}
+
+		if encoded := queryValues.Encode(); encoded != "" {
+			rawQueryFragments = append(rawQueryFragments, encoded)
+		}
+		queryURL.RawQuery = strings.Join(rawQueryFragments, "&")
+	}
+
+	req, err := http.NewRequest(http.MethodPost, queryURL.String(), nil)
+	if err != nil {
+		return nil, err
+	}
+
+	return req, nil
+}
+
 // NewBulkDeleteChangeWorkflowsRequest constructs an http.Request for the BulkDeleteChangeWorkflows method
 func NewBulkDeleteChangeWorkflowsRequest(server string, params *BulkDeleteChangeWorkflowsParams) (*http.Request, error) {
 	var err error
@@ -14896,6 +16318,18 @@ func NewBulkDeleteChangeWorkflowsRequest(server string, params *BulkDeleteChange
 		if params.Continue != nil {
 
 			if queryFrag, err := runtime.StyleParamWithOptions("form", true, "continue", *params.Continue, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationQuery, Type: "string", Format: ""}); err != nil {
+				return nil, err
+			} else {
+				for _, qp := range strings.Split(queryFrag, "&") {
+					rawQueryFragments = append(rawQueryFragments, qp)
+				}
+			}
+
+		}
+
+		if params.Archive != nil {
+
+			if queryFrag, err := runtime.StyleParamWithOptions("form", true, "archive", *params.Archive, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationQuery, Type: "boolean", Format: ""}); err != nil {
 				return nil, err
 			} else {
 				for _, qp := range strings.Split(queryFrag, "&") {
@@ -15690,6 +17124,132 @@ func NewBulkMoveChangeWorkflowsRequestWithBody(server string, params *BulkMoveCh
 	return req, nil
 }
 
+// NewBulkUnarchiveChangeWorkflowsRequest constructs an http.Request for the BulkUnarchiveChangeWorkflows method
+func NewBulkUnarchiveChangeWorkflowsRequest(server string, params *BulkUnarchiveChangeWorkflowsParams) (*http.Request, error) {
+	var err error
+
+	serverURL, err := url.Parse(server)
+	if err != nil {
+		return nil, err
+	}
+
+	operationPath := fmt.Sprintf("/change_workflow/unarchive")
+	if operationPath[0] == '/' {
+		operationPath = "." + operationPath
+	}
+
+	queryURL, err := serverURL.Parse(operationPath)
+	if err != nil {
+		return nil, err
+	}
+
+	if params != nil {
+		// queryValues collects non-styled parameters (passthrough, JSON)
+		// that are safe to round-trip through url.Values.Encode().
+		queryValues := queryURL.Query()
+		// rawQueryFragments collects pre-encoded query fragments from
+		// styled parameters, preserving literal commas as delimiters
+		// per the OpenAPI spec (e.g. "color=blue,black,brown").
+		var rawQueryFragments []string
+
+		if params.Where != nil {
+
+			if queryFrag, err := runtime.StyleParamWithOptions("form", true, "where", *params.Where, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationQuery, Type: "string", Format: ""}); err != nil {
+				return nil, err
+			} else {
+				for _, qp := range strings.Split(queryFrag, "&") {
+					rawQueryFragments = append(rawQueryFragments, qp)
+				}
+			}
+
+		}
+
+		if params.Filter != nil {
+
+			if queryFrag, err := runtime.StyleParamWithOptions("form", true, "filter", *params.Filter, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationQuery, Type: "string", Format: ""}); err != nil {
+				return nil, err
+			} else {
+				for _, qp := range strings.Split(queryFrag, "&") {
+					rawQueryFragments = append(rawQueryFragments, qp)
+				}
+			}
+
+		}
+
+		if params.Contains != nil {
+
+			if queryFrag, err := runtime.StyleParamWithOptions("form", true, "contains", *params.Contains, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationQuery, Type: "string", Format: ""}); err != nil {
+				return nil, err
+			} else {
+				for _, qp := range strings.Split(queryFrag, "&") {
+					rawQueryFragments = append(rawQueryFragments, qp)
+				}
+			}
+
+		}
+
+		if params.IncludeHidden != nil {
+
+			if queryFrag, err := runtime.StyleParamWithOptions("form", true, "include_hidden", *params.IncludeHidden, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationQuery, Type: "string", Format: ""}); err != nil {
+				return nil, err
+			} else {
+				for _, qp := range strings.Split(queryFrag, "&") {
+					rawQueryFragments = append(rawQueryFragments, qp)
+				}
+			}
+
+		}
+
+		if params.Include != nil {
+
+			if queryFrag, err := runtime.StyleParamWithOptions("form", true, "include", *params.Include, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationQuery, Type: "string", Format: ""}); err != nil {
+				return nil, err
+			} else {
+				for _, qp := range strings.Split(queryFrag, "&") {
+					rawQueryFragments = append(rawQueryFragments, qp)
+				}
+			}
+
+		}
+
+		if params.Limit != nil {
+
+			if queryFrag, err := runtime.StyleParamWithOptions("form", true, "limit", *params.Limit, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationQuery, Type: "integer", Format: ""}); err != nil {
+				return nil, err
+			} else {
+				for _, qp := range strings.Split(queryFrag, "&") {
+					rawQueryFragments = append(rawQueryFragments, qp)
+				}
+			}
+
+		}
+
+		if params.Continue != nil {
+
+			if queryFrag, err := runtime.StyleParamWithOptions("form", true, "continue", *params.Continue, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationQuery, Type: "string", Format: ""}); err != nil {
+				return nil, err
+			} else {
+				for _, qp := range strings.Split(queryFrag, "&") {
+					rawQueryFragments = append(rawQueryFragments, qp)
+				}
+			}
+
+		}
+
+		if encoded := queryValues.Encode(); encoded != "" {
+			rawQueryFragments = append(rawQueryFragments, encoded)
+		}
+		queryURL.RawQuery = strings.Join(rawQueryFragments, "&")
+	}
+
+	req, err := http.NewRequest(http.MethodPost, queryURL.String(), nil)
+	if err != nil {
+		return nil, err
+	}
+
+	return req, nil
+}
+
 // NewBulkDeleteChannelsRequest constructs an http.Request for the BulkDeleteChannels method
 func NewBulkDeleteChannelsRequest(server string, params *BulkDeleteChannelsParams) (*http.Request, error) {
 	var err error
@@ -15793,6 +17353,18 @@ func NewBulkDeleteChannelsRequest(server string, params *BulkDeleteChannelsParam
 		if params.Continue != nil {
 
 			if queryFrag, err := runtime.StyleParamWithOptions("form", true, "continue", *params.Continue, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationQuery, Type: "string", Format: ""}); err != nil {
+				return nil, err
+			} else {
+				for _, qp := range strings.Split(queryFrag, "&") {
+					rawQueryFragments = append(rawQueryFragments, qp)
+				}
+			}
+
+		}
+
+		if params.Archive != nil {
+
+			if queryFrag, err := runtime.StyleParamWithOptions("form", true, "archive", *params.Archive, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationQuery, Type: "boolean", Format: ""}); err != nil {
 				return nil, err
 			} else {
 				for _, qp := range strings.Split(queryFrag, "&") {
@@ -16587,6 +18159,132 @@ func NewBulkMoveChannelsRequestWithBody(server string, params *BulkMoveChannelsP
 	return req, nil
 }
 
+// NewBulkUnarchiveChannelsRequest constructs an http.Request for the BulkUnarchiveChannels method
+func NewBulkUnarchiveChannelsRequest(server string, params *BulkUnarchiveChannelsParams) (*http.Request, error) {
+	var err error
+
+	serverURL, err := url.Parse(server)
+	if err != nil {
+		return nil, err
+	}
+
+	operationPath := fmt.Sprintf("/channel/unarchive")
+	if operationPath[0] == '/' {
+		operationPath = "." + operationPath
+	}
+
+	queryURL, err := serverURL.Parse(operationPath)
+	if err != nil {
+		return nil, err
+	}
+
+	if params != nil {
+		// queryValues collects non-styled parameters (passthrough, JSON)
+		// that are safe to round-trip through url.Values.Encode().
+		queryValues := queryURL.Query()
+		// rawQueryFragments collects pre-encoded query fragments from
+		// styled parameters, preserving literal commas as delimiters
+		// per the OpenAPI spec (e.g. "color=blue,black,brown").
+		var rawQueryFragments []string
+
+		if params.Where != nil {
+
+			if queryFrag, err := runtime.StyleParamWithOptions("form", true, "where", *params.Where, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationQuery, Type: "string", Format: ""}); err != nil {
+				return nil, err
+			} else {
+				for _, qp := range strings.Split(queryFrag, "&") {
+					rawQueryFragments = append(rawQueryFragments, qp)
+				}
+			}
+
+		}
+
+		if params.Filter != nil {
+
+			if queryFrag, err := runtime.StyleParamWithOptions("form", true, "filter", *params.Filter, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationQuery, Type: "string", Format: ""}); err != nil {
+				return nil, err
+			} else {
+				for _, qp := range strings.Split(queryFrag, "&") {
+					rawQueryFragments = append(rawQueryFragments, qp)
+				}
+			}
+
+		}
+
+		if params.Contains != nil {
+
+			if queryFrag, err := runtime.StyleParamWithOptions("form", true, "contains", *params.Contains, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationQuery, Type: "string", Format: ""}); err != nil {
+				return nil, err
+			} else {
+				for _, qp := range strings.Split(queryFrag, "&") {
+					rawQueryFragments = append(rawQueryFragments, qp)
+				}
+			}
+
+		}
+
+		if params.IncludeHidden != nil {
+
+			if queryFrag, err := runtime.StyleParamWithOptions("form", true, "include_hidden", *params.IncludeHidden, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationQuery, Type: "string", Format: ""}); err != nil {
+				return nil, err
+			} else {
+				for _, qp := range strings.Split(queryFrag, "&") {
+					rawQueryFragments = append(rawQueryFragments, qp)
+				}
+			}
+
+		}
+
+		if params.Include != nil {
+
+			if queryFrag, err := runtime.StyleParamWithOptions("form", true, "include", *params.Include, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationQuery, Type: "string", Format: ""}); err != nil {
+				return nil, err
+			} else {
+				for _, qp := range strings.Split(queryFrag, "&") {
+					rawQueryFragments = append(rawQueryFragments, qp)
+				}
+			}
+
+		}
+
+		if params.Limit != nil {
+
+			if queryFrag, err := runtime.StyleParamWithOptions("form", true, "limit", *params.Limit, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationQuery, Type: "integer", Format: ""}); err != nil {
+				return nil, err
+			} else {
+				for _, qp := range strings.Split(queryFrag, "&") {
+					rawQueryFragments = append(rawQueryFragments, qp)
+				}
+			}
+
+		}
+
+		if params.Continue != nil {
+
+			if queryFrag, err := runtime.StyleParamWithOptions("form", true, "continue", *params.Continue, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationQuery, Type: "string", Format: ""}); err != nil {
+				return nil, err
+			} else {
+				for _, qp := range strings.Split(queryFrag, "&") {
+					rawQueryFragments = append(rawQueryFragments, qp)
+				}
+			}
+
+		}
+
+		if encoded := queryValues.Encode(); encoded != "" {
+			rawQueryFragments = append(rawQueryFragments, encoded)
+		}
+		queryURL.RawQuery = strings.Join(rawQueryFragments, "&")
+	}
+
+	req, err := http.NewRequest(http.MethodPost, queryURL.String(), nil)
+	if err != nil {
+		return nil, err
+	}
+
+	return req, nil
+}
+
 // NewListAllCommandsRequest constructs an http.Request for the ListAllCommands method
 func NewListAllCommandsRequest(server string, params *ListAllCommandsParams) (*http.Request, error) {
 	var err error
@@ -17093,7 +18791,7 @@ func NewCreateComponentRequestWithBody(server string, params *CreateComponentPar
 }
 
 // NewDeleteComponentRequest constructs an http.Request for the DeleteComponent method
-func NewDeleteComponentRequest(server string, componentId openapi_types.UUID) (*http.Request, error) {
+func NewDeleteComponentRequest(server string, componentId openapi_types.UUID, params *DeleteComponentParams) (*http.Request, error) {
 	var err error
 
 	var pathParam0 string
@@ -17116,6 +18814,33 @@ func NewDeleteComponentRequest(server string, componentId openapi_types.UUID) (*
 	queryURL, err := serverURL.Parse(operationPath)
 	if err != nil {
 		return nil, err
+	}
+
+	if params != nil {
+		// queryValues collects non-styled parameters (passthrough, JSON)
+		// that are safe to round-trip through url.Values.Encode().
+		queryValues := queryURL.Query()
+		// rawQueryFragments collects pre-encoded query fragments from
+		// styled parameters, preserving literal commas as delimiters
+		// per the OpenAPI spec (e.g. "color=blue,black,brown").
+		var rawQueryFragments []string
+
+		if params.Archive != nil {
+
+			if queryFrag, err := runtime.StyleParamWithOptions("form", true, "archive", *params.Archive, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationQuery, Type: "boolean", Format: ""}); err != nil {
+				return nil, err
+			} else {
+				for _, qp := range strings.Split(queryFrag, "&") {
+					rawQueryFragments = append(rawQueryFragments, qp)
+				}
+			}
+
+		}
+
+		if encoded := queryValues.Encode(); encoded != "" {
+			rawQueryFragments = append(rawQueryFragments, encoded)
+		}
+		queryURL.RawQuery = strings.Join(rawQueryFragments, "&")
 	}
 
 	req, err := http.NewRequest(http.MethodDelete, queryURL.String(), nil)
@@ -17455,6 +19180,40 @@ func NewUpdateComponentDocumentRequestWithBody(server string, componentId openap
 	return req, nil
 }
 
+// NewUnarchiveComponentRequest constructs an http.Request for the UnarchiveComponent method
+func NewUnarchiveComponentRequest(server string, componentId openapi_types.UUID) (*http.Request, error) {
+	var err error
+
+	var pathParam0 string
+
+	pathParam0, err = runtime.StyleParamWithOptions("simple", false, "component_id", componentId, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationPath, Type: "string", Format: "uuid"})
+	if err != nil {
+		return nil, err
+	}
+
+	serverURL, err := url.Parse(server)
+	if err != nil {
+		return nil, err
+	}
+
+	operationPath := fmt.Sprintf("/component/%s/unarchive", pathParam0)
+	if operationPath[0] == '/' {
+		operationPath = "." + operationPath
+	}
+
+	queryURL, err := serverURL.Parse(operationPath)
+	if err != nil {
+		return nil, err
+	}
+
+	req, err := http.NewRequest(http.MethodPost, queryURL.String(), nil)
+	if err != nil {
+		return nil, err
+	}
+
+	return req, nil
+}
+
 // NewDemoteRequest calls the generic Demote builder with application/json body
 func NewDemoteRequest(server string, params *DemoteParams, body DemoteJSONRequestBody) (*http.Request, error) {
 	var bodyReader io.Reader
@@ -17716,6 +19475,18 @@ func NewBulkDeleteFiltersRequest(server string, params *BulkDeleteFiltersParams)
 		if params.Continue != nil {
 
 			if queryFrag, err := runtime.StyleParamWithOptions("form", true, "continue", *params.Continue, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationQuery, Type: "string", Format: ""}); err != nil {
+				return nil, err
+			} else {
+				for _, qp := range strings.Split(queryFrag, "&") {
+					rawQueryFragments = append(rawQueryFragments, qp)
+				}
+			}
+
+		}
+
+		if params.Archive != nil {
+
+			if queryFrag, err := runtime.StyleParamWithOptions("form", true, "archive", *params.Archive, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationQuery, Type: "boolean", Format: ""}); err != nil {
 				return nil, err
 			} else {
 				for _, qp := range strings.Split(queryFrag, "&") {
@@ -18530,6 +20301,132 @@ func NewBulkMoveFiltersRequestWithBody(server string, params *BulkMoveFiltersPar
 	}
 
 	req.Header.Add("Content-Type", contentType)
+
+	return req, nil
+}
+
+// NewBulkUnarchiveFiltersRequest constructs an http.Request for the BulkUnarchiveFilters method
+func NewBulkUnarchiveFiltersRequest(server string, params *BulkUnarchiveFiltersParams) (*http.Request, error) {
+	var err error
+
+	serverURL, err := url.Parse(server)
+	if err != nil {
+		return nil, err
+	}
+
+	operationPath := fmt.Sprintf("/filter/unarchive")
+	if operationPath[0] == '/' {
+		operationPath = "." + operationPath
+	}
+
+	queryURL, err := serverURL.Parse(operationPath)
+	if err != nil {
+		return nil, err
+	}
+
+	if params != nil {
+		// queryValues collects non-styled parameters (passthrough, JSON)
+		// that are safe to round-trip through url.Values.Encode().
+		queryValues := queryURL.Query()
+		// rawQueryFragments collects pre-encoded query fragments from
+		// styled parameters, preserving literal commas as delimiters
+		// per the OpenAPI spec (e.g. "color=blue,black,brown").
+		var rawQueryFragments []string
+
+		if params.Where != nil {
+
+			if queryFrag, err := runtime.StyleParamWithOptions("form", true, "where", *params.Where, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationQuery, Type: "string", Format: ""}); err != nil {
+				return nil, err
+			} else {
+				for _, qp := range strings.Split(queryFrag, "&") {
+					rawQueryFragments = append(rawQueryFragments, qp)
+				}
+			}
+
+		}
+
+		if params.Filter != nil {
+
+			if queryFrag, err := runtime.StyleParamWithOptions("form", true, "filter", *params.Filter, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationQuery, Type: "string", Format: ""}); err != nil {
+				return nil, err
+			} else {
+				for _, qp := range strings.Split(queryFrag, "&") {
+					rawQueryFragments = append(rawQueryFragments, qp)
+				}
+			}
+
+		}
+
+		if params.Contains != nil {
+
+			if queryFrag, err := runtime.StyleParamWithOptions("form", true, "contains", *params.Contains, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationQuery, Type: "string", Format: ""}); err != nil {
+				return nil, err
+			} else {
+				for _, qp := range strings.Split(queryFrag, "&") {
+					rawQueryFragments = append(rawQueryFragments, qp)
+				}
+			}
+
+		}
+
+		if params.IncludeHidden != nil {
+
+			if queryFrag, err := runtime.StyleParamWithOptions("form", true, "include_hidden", *params.IncludeHidden, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationQuery, Type: "string", Format: ""}); err != nil {
+				return nil, err
+			} else {
+				for _, qp := range strings.Split(queryFrag, "&") {
+					rawQueryFragments = append(rawQueryFragments, qp)
+				}
+			}
+
+		}
+
+		if params.Include != nil {
+
+			if queryFrag, err := runtime.StyleParamWithOptions("form", true, "include", *params.Include, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationQuery, Type: "string", Format: ""}); err != nil {
+				return nil, err
+			} else {
+				for _, qp := range strings.Split(queryFrag, "&") {
+					rawQueryFragments = append(rawQueryFragments, qp)
+				}
+			}
+
+		}
+
+		if params.Limit != nil {
+
+			if queryFrag, err := runtime.StyleParamWithOptions("form", true, "limit", *params.Limit, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationQuery, Type: "integer", Format: ""}); err != nil {
+				return nil, err
+			} else {
+				for _, qp := range strings.Split(queryFrag, "&") {
+					rawQueryFragments = append(rawQueryFragments, qp)
+				}
+			}
+
+		}
+
+		if params.Continue != nil {
+
+			if queryFrag, err := runtime.StyleParamWithOptions("form", true, "continue", *params.Continue, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationQuery, Type: "string", Format: ""}); err != nil {
+				return nil, err
+			} else {
+				for _, qp := range strings.Split(queryFrag, "&") {
+					rawQueryFragments = append(rawQueryFragments, qp)
+				}
+			}
+
+		}
+
+		if encoded := queryValues.Encode(); encoded != "" {
+			rawQueryFragments = append(rawQueryFragments, encoded)
+		}
+		queryURL.RawQuery = strings.Join(rawQueryFragments, "&")
+	}
+
+	req, err := http.NewRequest(http.MethodPost, queryURL.String(), nil)
+	if err != nil {
+		return nil, err
+	}
 
 	return req, nil
 }
@@ -19538,6 +21435,18 @@ func NewBulkDeleteInvocationsRequest(server string, params *BulkDeleteInvocation
 
 		}
 
+		if params.Archive != nil {
+
+			if queryFrag, err := runtime.StyleParamWithOptions("form", true, "archive", *params.Archive, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationQuery, Type: "boolean", Format: ""}); err != nil {
+				return nil, err
+			} else {
+				for _, qp := range strings.Split(queryFrag, "&") {
+					rawQueryFragments = append(rawQueryFragments, qp)
+				}
+			}
+
+		}
+
 		if params.FromBackingUnits != nil {
 
 			if queryFrag, err := runtime.StyleParamWithOptions("form", true, "from_backing_units", *params.FromBackingUnits, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationQuery, Type: "boolean", Format: ""}); err != nil {
@@ -20323,6 +22232,132 @@ func NewBulkMoveInvocationsRequestWithBody(server string, params *BulkMoveInvoca
 	return req, nil
 }
 
+// NewBulkUnarchiveInvocationsRequest constructs an http.Request for the BulkUnarchiveInvocations method
+func NewBulkUnarchiveInvocationsRequest(server string, params *BulkUnarchiveInvocationsParams) (*http.Request, error) {
+	var err error
+
+	serverURL, err := url.Parse(server)
+	if err != nil {
+		return nil, err
+	}
+
+	operationPath := fmt.Sprintf("/invocation/unarchive")
+	if operationPath[0] == '/' {
+		operationPath = "." + operationPath
+	}
+
+	queryURL, err := serverURL.Parse(operationPath)
+	if err != nil {
+		return nil, err
+	}
+
+	if params != nil {
+		// queryValues collects non-styled parameters (passthrough, JSON)
+		// that are safe to round-trip through url.Values.Encode().
+		queryValues := queryURL.Query()
+		// rawQueryFragments collects pre-encoded query fragments from
+		// styled parameters, preserving literal commas as delimiters
+		// per the OpenAPI spec (e.g. "color=blue,black,brown").
+		var rawQueryFragments []string
+
+		if params.Where != nil {
+
+			if queryFrag, err := runtime.StyleParamWithOptions("form", true, "where", *params.Where, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationQuery, Type: "string", Format: ""}); err != nil {
+				return nil, err
+			} else {
+				for _, qp := range strings.Split(queryFrag, "&") {
+					rawQueryFragments = append(rawQueryFragments, qp)
+				}
+			}
+
+		}
+
+		if params.Filter != nil {
+
+			if queryFrag, err := runtime.StyleParamWithOptions("form", true, "filter", *params.Filter, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationQuery, Type: "string", Format: ""}); err != nil {
+				return nil, err
+			} else {
+				for _, qp := range strings.Split(queryFrag, "&") {
+					rawQueryFragments = append(rawQueryFragments, qp)
+				}
+			}
+
+		}
+
+		if params.Contains != nil {
+
+			if queryFrag, err := runtime.StyleParamWithOptions("form", true, "contains", *params.Contains, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationQuery, Type: "string", Format: ""}); err != nil {
+				return nil, err
+			} else {
+				for _, qp := range strings.Split(queryFrag, "&") {
+					rawQueryFragments = append(rawQueryFragments, qp)
+				}
+			}
+
+		}
+
+		if params.IncludeHidden != nil {
+
+			if queryFrag, err := runtime.StyleParamWithOptions("form", true, "include_hidden", *params.IncludeHidden, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationQuery, Type: "string", Format: ""}); err != nil {
+				return nil, err
+			} else {
+				for _, qp := range strings.Split(queryFrag, "&") {
+					rawQueryFragments = append(rawQueryFragments, qp)
+				}
+			}
+
+		}
+
+		if params.Include != nil {
+
+			if queryFrag, err := runtime.StyleParamWithOptions("form", true, "include", *params.Include, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationQuery, Type: "string", Format: ""}); err != nil {
+				return nil, err
+			} else {
+				for _, qp := range strings.Split(queryFrag, "&") {
+					rawQueryFragments = append(rawQueryFragments, qp)
+				}
+			}
+
+		}
+
+		if params.Limit != nil {
+
+			if queryFrag, err := runtime.StyleParamWithOptions("form", true, "limit", *params.Limit, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationQuery, Type: "integer", Format: ""}); err != nil {
+				return nil, err
+			} else {
+				for _, qp := range strings.Split(queryFrag, "&") {
+					rawQueryFragments = append(rawQueryFragments, qp)
+				}
+			}
+
+		}
+
+		if params.Continue != nil {
+
+			if queryFrag, err := runtime.StyleParamWithOptions("form", true, "continue", *params.Continue, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationQuery, Type: "string", Format: ""}); err != nil {
+				return nil, err
+			} else {
+				for _, qp := range strings.Split(queryFrag, "&") {
+					rawQueryFragments = append(rawQueryFragments, qp)
+				}
+			}
+
+		}
+
+		if encoded := queryValues.Encode(); encoded != "" {
+			rawQueryFragments = append(rawQueryFragments, encoded)
+		}
+		queryURL.RawQuery = strings.Join(rawQueryFragments, "&")
+	}
+
+	req, err := http.NewRequest(http.MethodPost, queryURL.String(), nil)
+	if err != nil {
+		return nil, err
+	}
+
+	return req, nil
+}
+
 // NewBulkDeleteLinksRequest constructs an http.Request for the BulkDeleteLinks method
 func NewBulkDeleteLinksRequest(server string, params *BulkDeleteLinksParams) (*http.Request, error) {
 	var err error
@@ -20426,6 +22461,18 @@ func NewBulkDeleteLinksRequest(server string, params *BulkDeleteLinksParams) (*h
 		if params.Continue != nil {
 
 			if queryFrag, err := runtime.StyleParamWithOptions("form", true, "continue", *params.Continue, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationQuery, Type: "string", Format: ""}); err != nil {
+				return nil, err
+			} else {
+				for _, qp := range strings.Split(queryFrag, "&") {
+					rawQueryFragments = append(rawQueryFragments, qp)
+				}
+			}
+
+		}
+
+		if params.Archive != nil {
+
+			if queryFrag, err := runtime.StyleParamWithOptions("form", true, "archive", *params.Archive, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationQuery, Type: "boolean", Format: ""}); err != nil {
 				return nil, err
 			} else {
 				for _, qp := range strings.Split(queryFrag, "&") {
@@ -21113,6 +23160,132 @@ func NewBulkCreateLinksRequestWithBody(server string, params *BulkCreateLinksPar
 	}
 
 	req.Header.Add("Content-Type", contentType)
+
+	return req, nil
+}
+
+// NewBulkUnarchiveLinksRequest constructs an http.Request for the BulkUnarchiveLinks method
+func NewBulkUnarchiveLinksRequest(server string, params *BulkUnarchiveLinksParams) (*http.Request, error) {
+	var err error
+
+	serverURL, err := url.Parse(server)
+	if err != nil {
+		return nil, err
+	}
+
+	operationPath := fmt.Sprintf("/link/unarchive")
+	if operationPath[0] == '/' {
+		operationPath = "." + operationPath
+	}
+
+	queryURL, err := serverURL.Parse(operationPath)
+	if err != nil {
+		return nil, err
+	}
+
+	if params != nil {
+		// queryValues collects non-styled parameters (passthrough, JSON)
+		// that are safe to round-trip through url.Values.Encode().
+		queryValues := queryURL.Query()
+		// rawQueryFragments collects pre-encoded query fragments from
+		// styled parameters, preserving literal commas as delimiters
+		// per the OpenAPI spec (e.g. "color=blue,black,brown").
+		var rawQueryFragments []string
+
+		if params.Where != nil {
+
+			if queryFrag, err := runtime.StyleParamWithOptions("form", true, "where", *params.Where, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationQuery, Type: "string", Format: ""}); err != nil {
+				return nil, err
+			} else {
+				for _, qp := range strings.Split(queryFrag, "&") {
+					rawQueryFragments = append(rawQueryFragments, qp)
+				}
+			}
+
+		}
+
+		if params.Filter != nil {
+
+			if queryFrag, err := runtime.StyleParamWithOptions("form", true, "filter", *params.Filter, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationQuery, Type: "string", Format: ""}); err != nil {
+				return nil, err
+			} else {
+				for _, qp := range strings.Split(queryFrag, "&") {
+					rawQueryFragments = append(rawQueryFragments, qp)
+				}
+			}
+
+		}
+
+		if params.Contains != nil {
+
+			if queryFrag, err := runtime.StyleParamWithOptions("form", true, "contains", *params.Contains, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationQuery, Type: "string", Format: ""}); err != nil {
+				return nil, err
+			} else {
+				for _, qp := range strings.Split(queryFrag, "&") {
+					rawQueryFragments = append(rawQueryFragments, qp)
+				}
+			}
+
+		}
+
+		if params.IncludeHidden != nil {
+
+			if queryFrag, err := runtime.StyleParamWithOptions("form", true, "include_hidden", *params.IncludeHidden, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationQuery, Type: "string", Format: ""}); err != nil {
+				return nil, err
+			} else {
+				for _, qp := range strings.Split(queryFrag, "&") {
+					rawQueryFragments = append(rawQueryFragments, qp)
+				}
+			}
+
+		}
+
+		if params.Include != nil {
+
+			if queryFrag, err := runtime.StyleParamWithOptions("form", true, "include", *params.Include, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationQuery, Type: "string", Format: ""}); err != nil {
+				return nil, err
+			} else {
+				for _, qp := range strings.Split(queryFrag, "&") {
+					rawQueryFragments = append(rawQueryFragments, qp)
+				}
+			}
+
+		}
+
+		if params.Limit != nil {
+
+			if queryFrag, err := runtime.StyleParamWithOptions("form", true, "limit", *params.Limit, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationQuery, Type: "integer", Format: ""}); err != nil {
+				return nil, err
+			} else {
+				for _, qp := range strings.Split(queryFrag, "&") {
+					rawQueryFragments = append(rawQueryFragments, qp)
+				}
+			}
+
+		}
+
+		if params.Continue != nil {
+
+			if queryFrag, err := runtime.StyleParamWithOptions("form", true, "continue", *params.Continue, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationQuery, Type: "string", Format: ""}); err != nil {
+				return nil, err
+			} else {
+				for _, qp := range strings.Split(queryFrag, "&") {
+					rawQueryFragments = append(rawQueryFragments, qp)
+				}
+			}
+
+		}
+
+		if encoded := queryValues.Encode(); encoded != "" {
+			rawQueryFragments = append(rawQueryFragments, encoded)
+		}
+		queryURL.RawQuery = strings.Join(rawQueryFragments, "&")
+	}
+
+	req, err := http.NewRequest(http.MethodPost, queryURL.String(), nil)
+	if err != nil {
+		return nil, err
+	}
 
 	return req, nil
 }
@@ -22161,6 +24334,132 @@ func NewListAllReleasesRequest(server string, params *ListAllReleasesParams) (*h
 	}
 
 	req, err := http.NewRequest(http.MethodGet, queryURL.String(), nil)
+	if err != nil {
+		return nil, err
+	}
+
+	return req, nil
+}
+
+// NewBulkUnarchiveReleasesRequest constructs an http.Request for the BulkUnarchiveReleases method
+func NewBulkUnarchiveReleasesRequest(server string, params *BulkUnarchiveReleasesParams) (*http.Request, error) {
+	var err error
+
+	serverURL, err := url.Parse(server)
+	if err != nil {
+		return nil, err
+	}
+
+	operationPath := fmt.Sprintf("/release/unarchive")
+	if operationPath[0] == '/' {
+		operationPath = "." + operationPath
+	}
+
+	queryURL, err := serverURL.Parse(operationPath)
+	if err != nil {
+		return nil, err
+	}
+
+	if params != nil {
+		// queryValues collects non-styled parameters (passthrough, JSON)
+		// that are safe to round-trip through url.Values.Encode().
+		queryValues := queryURL.Query()
+		// rawQueryFragments collects pre-encoded query fragments from
+		// styled parameters, preserving literal commas as delimiters
+		// per the OpenAPI spec (e.g. "color=blue,black,brown").
+		var rawQueryFragments []string
+
+		if params.Where != nil {
+
+			if queryFrag, err := runtime.StyleParamWithOptions("form", true, "where", *params.Where, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationQuery, Type: "string", Format: ""}); err != nil {
+				return nil, err
+			} else {
+				for _, qp := range strings.Split(queryFrag, "&") {
+					rawQueryFragments = append(rawQueryFragments, qp)
+				}
+			}
+
+		}
+
+		if params.Filter != nil {
+
+			if queryFrag, err := runtime.StyleParamWithOptions("form", true, "filter", *params.Filter, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationQuery, Type: "string", Format: ""}); err != nil {
+				return nil, err
+			} else {
+				for _, qp := range strings.Split(queryFrag, "&") {
+					rawQueryFragments = append(rawQueryFragments, qp)
+				}
+			}
+
+		}
+
+		if params.Contains != nil {
+
+			if queryFrag, err := runtime.StyleParamWithOptions("form", true, "contains", *params.Contains, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationQuery, Type: "string", Format: ""}); err != nil {
+				return nil, err
+			} else {
+				for _, qp := range strings.Split(queryFrag, "&") {
+					rawQueryFragments = append(rawQueryFragments, qp)
+				}
+			}
+
+		}
+
+		if params.IncludeHidden != nil {
+
+			if queryFrag, err := runtime.StyleParamWithOptions("form", true, "include_hidden", *params.IncludeHidden, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationQuery, Type: "string", Format: ""}); err != nil {
+				return nil, err
+			} else {
+				for _, qp := range strings.Split(queryFrag, "&") {
+					rawQueryFragments = append(rawQueryFragments, qp)
+				}
+			}
+
+		}
+
+		if params.Include != nil {
+
+			if queryFrag, err := runtime.StyleParamWithOptions("form", true, "include", *params.Include, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationQuery, Type: "string", Format: ""}); err != nil {
+				return nil, err
+			} else {
+				for _, qp := range strings.Split(queryFrag, "&") {
+					rawQueryFragments = append(rawQueryFragments, qp)
+				}
+			}
+
+		}
+
+		if params.Limit != nil {
+
+			if queryFrag, err := runtime.StyleParamWithOptions("form", true, "limit", *params.Limit, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationQuery, Type: "integer", Format: ""}); err != nil {
+				return nil, err
+			} else {
+				for _, qp := range strings.Split(queryFrag, "&") {
+					rawQueryFragments = append(rawQueryFragments, qp)
+				}
+			}
+
+		}
+
+		if params.Continue != nil {
+
+			if queryFrag, err := runtime.StyleParamWithOptions("form", true, "continue", *params.Continue, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationQuery, Type: "string", Format: ""}); err != nil {
+				return nil, err
+			} else {
+				for _, qp := range strings.Split(queryFrag, "&") {
+					rawQueryFragments = append(rawQueryFragments, qp)
+				}
+			}
+
+		}
+
+		if encoded := queryValues.Encode(); encoded != "" {
+			rawQueryFragments = append(rawQueryFragments, encoded)
+		}
+		queryURL.RawQuery = strings.Join(rawQueryFragments, "&")
+	}
+
+	req, err := http.NewRequest(http.MethodPost, queryURL.String(), nil)
 	if err != nil {
 		return nil, err
 	}
@@ -24964,6 +27263,18 @@ func NewDeleteSpaceRequest(server string, spaceId openapi_types.UUID, params *De
 
 		}
 
+		if params.Archive != nil {
+
+			if queryFrag, err := runtime.StyleParamWithOptions("form", true, "archive", *params.Archive, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationQuery, Type: "boolean", Format: ""}); err != nil {
+				return nil, err
+			} else {
+				for _, qp := range strings.Split(queryFrag, "&") {
+					rawQueryFragments = append(rawQueryFragments, qp)
+				}
+			}
+
+		}
+
 		if encoded := queryValues.Encode(); encoded != "" {
 			rawQueryFragments = append(rawQueryFragments, encoded)
 		}
@@ -25850,7 +28161,7 @@ func NewCreateAttributeRequestWithBody(server string, spaceId openapi_types.UUID
 }
 
 // NewDeleteAttributeRequest constructs an http.Request for the DeleteAttribute method
-func NewDeleteAttributeRequest(server string, spaceId openapi_types.UUID, attributeId openapi_types.UUID) (*http.Request, error) {
+func NewDeleteAttributeRequest(server string, spaceId openapi_types.UUID, attributeId openapi_types.UUID, params *DeleteAttributeParams) (*http.Request, error) {
 	var err error
 
 	var pathParam0 string
@@ -25880,6 +28191,33 @@ func NewDeleteAttributeRequest(server string, spaceId openapi_types.UUID, attrib
 	queryURL, err := serverURL.Parse(operationPath)
 	if err != nil {
 		return nil, err
+	}
+
+	if params != nil {
+		// queryValues collects non-styled parameters (passthrough, JSON)
+		// that are safe to round-trip through url.Values.Encode().
+		queryValues := queryURL.Query()
+		// rawQueryFragments collects pre-encoded query fragments from
+		// styled parameters, preserving literal commas as delimiters
+		// per the OpenAPI spec (e.g. "color=blue,black,brown").
+		var rawQueryFragments []string
+
+		if params.Archive != nil {
+
+			if queryFrag, err := runtime.StyleParamWithOptions("form", true, "archive", *params.Archive, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationQuery, Type: "boolean", Format: ""}); err != nil {
+				return nil, err
+			} else {
+				for _, qp := range strings.Split(queryFrag, "&") {
+					rawQueryFragments = append(rawQueryFragments, qp)
+				}
+			}
+
+		}
+
+		if encoded := queryValues.Encode(); encoded != "" {
+			rawQueryFragments = append(rawQueryFragments, encoded)
+		}
+		queryURL.RawQuery = strings.Join(rawQueryFragments, "&")
 	}
 
 	req, err := http.NewRequest(http.MethodDelete, queryURL.String(), nil)
@@ -26254,6 +28592,47 @@ func NewUpdateAttributeDocumentRequestWithBody(server string, spaceId openapi_ty
 	return req, nil
 }
 
+// NewUnarchiveAttributeRequest constructs an http.Request for the UnarchiveAttribute method
+func NewUnarchiveAttributeRequest(server string, spaceId openapi_types.UUID, attributeId openapi_types.UUID) (*http.Request, error) {
+	var err error
+
+	var pathParam0 string
+
+	pathParam0, err = runtime.StyleParamWithOptions("simple", false, "space_id", spaceId, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationPath, Type: "string", Format: "uuid"})
+	if err != nil {
+		return nil, err
+	}
+
+	var pathParam1 string
+
+	pathParam1, err = runtime.StyleParamWithOptions("simple", false, "attribute_id", attributeId, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationPath, Type: "string", Format: "uuid"})
+	if err != nil {
+		return nil, err
+	}
+
+	serverURL, err := url.Parse(server)
+	if err != nil {
+		return nil, err
+	}
+
+	operationPath := fmt.Sprintf("/space/%s/attribute/%s/unarchive", pathParam0, pathParam1)
+	if operationPath[0] == '/' {
+		operationPath = "." + operationPath
+	}
+
+	queryURL, err := serverURL.Parse(operationPath)
+	if err != nil {
+		return nil, err
+	}
+
+	req, err := http.NewRequest(http.MethodPost, queryURL.String(), nil)
+	if err != nil {
+		return nil, err
+	}
+
+	return req, nil
+}
+
 // NewListChangeOrdersRequest constructs an http.Request for the ListChangeOrders method
 func NewListChangeOrdersRequest(server string, spaceId openapi_types.UUID, params *ListChangeOrdersParams) (*http.Request, error) {
 	var err error
@@ -26566,6 +28945,18 @@ func NewDeleteChangeOrderRequest(server string, spaceId openapi_types.UUID, chan
 		if params.Detach != nil {
 
 			if queryFrag, err := runtime.StyleParamWithOptions("form", true, "detach", *params.Detach, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationQuery, Type: "boolean", Format: ""}); err != nil {
+				return nil, err
+			} else {
+				for _, qp := range strings.Split(queryFrag, "&") {
+					rawQueryFragments = append(rawQueryFragments, qp)
+				}
+			}
+
+		}
+
+		if params.Archive != nil {
+
+			if queryFrag, err := runtime.StyleParamWithOptions("form", true, "archive", *params.Archive, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationQuery, Type: "boolean", Format: ""}); err != nil {
 				return nil, err
 			} else {
 				for _, qp := range strings.Split(queryFrag, "&") {
@@ -26923,6 +29314,47 @@ func NewRefreshChangeOrderStageRequest(server string, spaceId openapi_types.UUID
 	return req, nil
 }
 
+// NewUnarchiveChangeOrderRequest constructs an http.Request for the UnarchiveChangeOrder method
+func NewUnarchiveChangeOrderRequest(server string, spaceId openapi_types.UUID, changeOrderId openapi_types.UUID) (*http.Request, error) {
+	var err error
+
+	var pathParam0 string
+
+	pathParam0, err = runtime.StyleParamWithOptions("simple", false, "space_id", spaceId, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationPath, Type: "string", Format: "uuid"})
+	if err != nil {
+		return nil, err
+	}
+
+	var pathParam1 string
+
+	pathParam1, err = runtime.StyleParamWithOptions("simple", false, "change_order_id", changeOrderId, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationPath, Type: "string", Format: "uuid"})
+	if err != nil {
+		return nil, err
+	}
+
+	serverURL, err := url.Parse(server)
+	if err != nil {
+		return nil, err
+	}
+
+	operationPath := fmt.Sprintf("/space/%s/change_order/%s/unarchive", pathParam0, pathParam1)
+	if operationPath[0] == '/' {
+		operationPath = "." + operationPath
+	}
+
+	queryURL, err := serverURL.Parse(operationPath)
+	if err != nil {
+		return nil, err
+	}
+
+	req, err := http.NewRequest(http.MethodPost, queryURL.String(), nil)
+	if err != nil {
+		return nil, err
+	}
+
+	return req, nil
+}
+
 // NewListChangeSetsRequest constructs an http.Request for the ListChangeSets method
 func NewListChangeSetsRequest(server string, spaceId openapi_types.UUID, params *ListChangeSetsParams) (*http.Request, error) {
 	var err error
@@ -27244,6 +29676,18 @@ func NewDeleteChangeSetRequest(server string, spaceId openapi_types.UUID, change
 
 		}
 
+		if params.Archive != nil {
+
+			if queryFrag, err := runtime.StyleParamWithOptions("form", true, "archive", *params.Archive, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationQuery, Type: "boolean", Format: ""}); err != nil {
+				return nil, err
+			} else {
+				for _, qp := range strings.Split(queryFrag, "&") {
+					rawQueryFragments = append(rawQueryFragments, qp)
+				}
+			}
+
+		}
+
 		if encoded := queryValues.Encode(); encoded != "" {
 			rawQueryFragments = append(rawQueryFragments, encoded)
 		}
@@ -27496,6 +29940,47 @@ func NewUpdateChangeSetRequestWithBody(server string, spaceId openapi_types.UUID
 	}
 
 	req.Header.Add("Content-Type", contentType)
+
+	return req, nil
+}
+
+// NewUnarchiveChangeSetRequest constructs an http.Request for the UnarchiveChangeSet method
+func NewUnarchiveChangeSetRequest(server string, spaceId openapi_types.UUID, changeSetId openapi_types.UUID) (*http.Request, error) {
+	var err error
+
+	var pathParam0 string
+
+	pathParam0, err = runtime.StyleParamWithOptions("simple", false, "space_id", spaceId, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationPath, Type: "string", Format: "uuid"})
+	if err != nil {
+		return nil, err
+	}
+
+	var pathParam1 string
+
+	pathParam1, err = runtime.StyleParamWithOptions("simple", false, "change_set_id", changeSetId, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationPath, Type: "string", Format: "uuid"})
+	if err != nil {
+		return nil, err
+	}
+
+	serverURL, err := url.Parse(server)
+	if err != nil {
+		return nil, err
+	}
+
+	operationPath := fmt.Sprintf("/space/%s/change_set/%s/unarchive", pathParam0, pathParam1)
+	if operationPath[0] == '/' {
+		operationPath = "." + operationPath
+	}
+
+	queryURL, err := serverURL.Parse(operationPath)
+	if err != nil {
+		return nil, err
+	}
+
+	req, err := http.NewRequest(http.MethodPost, queryURL.String(), nil)
+	if err != nil {
+		return nil, err
+	}
 
 	return req, nil
 }
@@ -27780,7 +30265,7 @@ func NewCreateChangeWorkflowRequestWithBody(server string, spaceId openapi_types
 }
 
 // NewDeleteChangeWorkflowRequest constructs an http.Request for the DeleteChangeWorkflow method
-func NewDeleteChangeWorkflowRequest(server string, spaceId openapi_types.UUID, changeWorkflowId openapi_types.UUID) (*http.Request, error) {
+func NewDeleteChangeWorkflowRequest(server string, spaceId openapi_types.UUID, changeWorkflowId openapi_types.UUID, params *DeleteChangeWorkflowParams) (*http.Request, error) {
 	var err error
 
 	var pathParam0 string
@@ -27810,6 +30295,33 @@ func NewDeleteChangeWorkflowRequest(server string, spaceId openapi_types.UUID, c
 	queryURL, err := serverURL.Parse(operationPath)
 	if err != nil {
 		return nil, err
+	}
+
+	if params != nil {
+		// queryValues collects non-styled parameters (passthrough, JSON)
+		// that are safe to round-trip through url.Values.Encode().
+		queryValues := queryURL.Query()
+		// rawQueryFragments collects pre-encoded query fragments from
+		// styled parameters, preserving literal commas as delimiters
+		// per the OpenAPI spec (e.g. "color=blue,black,brown").
+		var rawQueryFragments []string
+
+		if params.Archive != nil {
+
+			if queryFrag, err := runtime.StyleParamWithOptions("form", true, "archive", *params.Archive, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationQuery, Type: "boolean", Format: ""}); err != nil {
+				return nil, err
+			} else {
+				for _, qp := range strings.Split(queryFrag, "&") {
+					rawQueryFragments = append(rawQueryFragments, qp)
+				}
+			}
+
+		}
+
+		if encoded := queryValues.Encode(); encoded != "" {
+			rawQueryFragments = append(rawQueryFragments, encoded)
+		}
+		queryURL.RawQuery = strings.Join(rawQueryFragments, "&")
 	}
 
 	req, err := http.NewRequest(http.MethodDelete, queryURL.String(), nil)
@@ -28184,6 +30696,47 @@ func NewUpdateChangeWorkflowDocumentRequestWithBody(server string, spaceId opena
 	return req, nil
 }
 
+// NewUnarchiveChangeWorkflowRequest constructs an http.Request for the UnarchiveChangeWorkflow method
+func NewUnarchiveChangeWorkflowRequest(server string, spaceId openapi_types.UUID, changeWorkflowId openapi_types.UUID) (*http.Request, error) {
+	var err error
+
+	var pathParam0 string
+
+	pathParam0, err = runtime.StyleParamWithOptions("simple", false, "space_id", spaceId, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationPath, Type: "string", Format: "uuid"})
+	if err != nil {
+		return nil, err
+	}
+
+	var pathParam1 string
+
+	pathParam1, err = runtime.StyleParamWithOptions("simple", false, "change_workflow_id", changeWorkflowId, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationPath, Type: "string", Format: "uuid"})
+	if err != nil {
+		return nil, err
+	}
+
+	serverURL, err := url.Parse(server)
+	if err != nil {
+		return nil, err
+	}
+
+	operationPath := fmt.Sprintf("/space/%s/change_workflow/%s/unarchive", pathParam0, pathParam1)
+	if operationPath[0] == '/' {
+		operationPath = "." + operationPath
+	}
+
+	queryURL, err := serverURL.Parse(operationPath)
+	if err != nil {
+		return nil, err
+	}
+
+	req, err := http.NewRequest(http.MethodPost, queryURL.String(), nil)
+	if err != nil {
+		return nil, err
+	}
+
+	return req, nil
+}
+
 // NewListChannelsRequest constructs an http.Request for the ListChannels method
 func NewListChannelsRequest(server string, spaceId openapi_types.UUID, params *ListChannelsParams) (*http.Request, error) {
 	var err error
@@ -28464,7 +31017,7 @@ func NewCreateChannelRequestWithBody(server string, spaceId openapi_types.UUID, 
 }
 
 // NewDeleteChannelRequest constructs an http.Request for the DeleteChannel method
-func NewDeleteChannelRequest(server string, spaceId openapi_types.UUID, channelId openapi_types.UUID) (*http.Request, error) {
+func NewDeleteChannelRequest(server string, spaceId openapi_types.UUID, channelId openapi_types.UUID, params *DeleteChannelParams) (*http.Request, error) {
 	var err error
 
 	var pathParam0 string
@@ -28494,6 +31047,33 @@ func NewDeleteChannelRequest(server string, spaceId openapi_types.UUID, channelI
 	queryURL, err := serverURL.Parse(operationPath)
 	if err != nil {
 		return nil, err
+	}
+
+	if params != nil {
+		// queryValues collects non-styled parameters (passthrough, JSON)
+		// that are safe to round-trip through url.Values.Encode().
+		queryValues := queryURL.Query()
+		// rawQueryFragments collects pre-encoded query fragments from
+		// styled parameters, preserving literal commas as delimiters
+		// per the OpenAPI spec (e.g. "color=blue,black,brown").
+		var rawQueryFragments []string
+
+		if params.Archive != nil {
+
+			if queryFrag, err := runtime.StyleParamWithOptions("form", true, "archive", *params.Archive, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationQuery, Type: "boolean", Format: ""}); err != nil {
+				return nil, err
+			} else {
+				for _, qp := range strings.Split(queryFrag, "&") {
+					rawQueryFragments = append(rawQueryFragments, qp)
+				}
+			}
+
+		}
+
+		if encoded := queryValues.Encode(); encoded != "" {
+			rawQueryFragments = append(rawQueryFragments, encoded)
+		}
+		queryURL.RawQuery = strings.Join(rawQueryFragments, "&")
 	}
 
 	req, err := http.NewRequest(http.MethodDelete, queryURL.String(), nil)
@@ -29084,6 +31664,47 @@ func NewPollChannelRequestWithBody(server string, spaceId openapi_types.UUID, ch
 	}
 
 	req.Header.Add("Content-Type", contentType)
+
+	return req, nil
+}
+
+// NewUnarchiveChannelRequest constructs an http.Request for the UnarchiveChannel method
+func NewUnarchiveChannelRequest(server string, spaceId openapi_types.UUID, channelId openapi_types.UUID) (*http.Request, error) {
+	var err error
+
+	var pathParam0 string
+
+	pathParam0, err = runtime.StyleParamWithOptions("simple", false, "space_id", spaceId, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationPath, Type: "string", Format: "uuid"})
+	if err != nil {
+		return nil, err
+	}
+
+	var pathParam1 string
+
+	pathParam1, err = runtime.StyleParamWithOptions("simple", false, "channel_id", channelId, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationPath, Type: "string", Format: "uuid"})
+	if err != nil {
+		return nil, err
+	}
+
+	serverURL, err := url.Parse(server)
+	if err != nil {
+		return nil, err
+	}
+
+	operationPath := fmt.Sprintf("/space/%s/channel/%s/unarchive", pathParam0, pathParam1)
+	if operationPath[0] == '/' {
+		operationPath = "." + operationPath
+	}
+
+	queryURL, err := serverURL.Parse(operationPath)
+	if err != nil {
+		return nil, err
+	}
+
+	req, err := http.NewRequest(http.MethodPost, queryURL.String(), nil)
+	if err != nil {
+		return nil, err
+	}
 
 	return req, nil
 }
@@ -29949,7 +32570,7 @@ func NewCreateFilterRequestWithBody(server string, spaceId openapi_types.UUID, p
 }
 
 // NewDeleteFilterRequest constructs an http.Request for the DeleteFilter method
-func NewDeleteFilterRequest(server string, spaceId openapi_types.UUID, filterId openapi_types.UUID) (*http.Request, error) {
+func NewDeleteFilterRequest(server string, spaceId openapi_types.UUID, filterId openapi_types.UUID, params *DeleteFilterParams) (*http.Request, error) {
 	var err error
 
 	var pathParam0 string
@@ -29979,6 +32600,33 @@ func NewDeleteFilterRequest(server string, spaceId openapi_types.UUID, filterId 
 	queryURL, err := serverURL.Parse(operationPath)
 	if err != nil {
 		return nil, err
+	}
+
+	if params != nil {
+		// queryValues collects non-styled parameters (passthrough, JSON)
+		// that are safe to round-trip through url.Values.Encode().
+		queryValues := queryURL.Query()
+		// rawQueryFragments collects pre-encoded query fragments from
+		// styled parameters, preserving literal commas as delimiters
+		// per the OpenAPI spec (e.g. "color=blue,black,brown").
+		var rawQueryFragments []string
+
+		if params.Archive != nil {
+
+			if queryFrag, err := runtime.StyleParamWithOptions("form", true, "archive", *params.Archive, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationQuery, Type: "boolean", Format: ""}); err != nil {
+				return nil, err
+			} else {
+				for _, qp := range strings.Split(queryFrag, "&") {
+					rawQueryFragments = append(rawQueryFragments, qp)
+				}
+			}
+
+		}
+
+		if encoded := queryValues.Encode(); encoded != "" {
+			rawQueryFragments = append(rawQueryFragments, encoded)
+		}
+		queryURL.RawQuery = strings.Join(rawQueryFragments, "&")
 	}
 
 	req, err := http.NewRequest(http.MethodDelete, queryURL.String(), nil)
@@ -30349,6 +32997,47 @@ func NewUpdateFilterDocumentRequestWithBody(server string, spaceId openapi_types
 	}
 
 	req.Header.Add("Content-Type", contentType)
+
+	return req, nil
+}
+
+// NewUnarchiveFilterRequest constructs an http.Request for the UnarchiveFilter method
+func NewUnarchiveFilterRequest(server string, spaceId openapi_types.UUID, filterId openapi_types.UUID) (*http.Request, error) {
+	var err error
+
+	var pathParam0 string
+
+	pathParam0, err = runtime.StyleParamWithOptions("simple", false, "space_id", spaceId, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationPath, Type: "string", Format: "uuid"})
+	if err != nil {
+		return nil, err
+	}
+
+	var pathParam1 string
+
+	pathParam1, err = runtime.StyleParamWithOptions("simple", false, "filter_id", filterId, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationPath, Type: "string", Format: "uuid"})
+	if err != nil {
+		return nil, err
+	}
+
+	serverURL, err := url.Parse(server)
+	if err != nil {
+		return nil, err
+	}
+
+	operationPath := fmt.Sprintf("/space/%s/filter/%s/unarchive", pathParam0, pathParam1)
+	if operationPath[0] == '/' {
+		operationPath = "." + operationPath
+	}
+
+	queryURL, err := serverURL.Parse(operationPath)
+	if err != nil {
+		return nil, err
+	}
+
+	req, err := http.NewRequest(http.MethodPost, queryURL.String(), nil)
+	if err != nil {
+		return nil, err
+	}
 
 	return req, nil
 }
@@ -31226,7 +33915,7 @@ func NewCreateInvocationRequestWithBody(server string, spaceId openapi_types.UUI
 }
 
 // NewDeleteInvocationRequest constructs an http.Request for the DeleteInvocation method
-func NewDeleteInvocationRequest(server string, spaceId openapi_types.UUID, invocationId openapi_types.UUID) (*http.Request, error) {
+func NewDeleteInvocationRequest(server string, spaceId openapi_types.UUID, invocationId openapi_types.UUID, params *DeleteInvocationParams) (*http.Request, error) {
 	var err error
 
 	var pathParam0 string
@@ -31256,6 +33945,33 @@ func NewDeleteInvocationRequest(server string, spaceId openapi_types.UUID, invoc
 	queryURL, err := serverURL.Parse(operationPath)
 	if err != nil {
 		return nil, err
+	}
+
+	if params != nil {
+		// queryValues collects non-styled parameters (passthrough, JSON)
+		// that are safe to round-trip through url.Values.Encode().
+		queryValues := queryURL.Query()
+		// rawQueryFragments collects pre-encoded query fragments from
+		// styled parameters, preserving literal commas as delimiters
+		// per the OpenAPI spec (e.g. "color=blue,black,brown").
+		var rawQueryFragments []string
+
+		if params.Archive != nil {
+
+			if queryFrag, err := runtime.StyleParamWithOptions("form", true, "archive", *params.Archive, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationQuery, Type: "boolean", Format: ""}); err != nil {
+				return nil, err
+			} else {
+				for _, qp := range strings.Split(queryFrag, "&") {
+					rawQueryFragments = append(rawQueryFragments, qp)
+				}
+			}
+
+		}
+
+		if encoded := queryValues.Encode(); encoded != "" {
+			rawQueryFragments = append(rawQueryFragments, encoded)
+		}
+		queryURL.RawQuery = strings.Join(rawQueryFragments, "&")
 	}
 
 	req, err := http.NewRequest(http.MethodDelete, queryURL.String(), nil)
@@ -31630,6 +34346,47 @@ func NewUpdateInvocationDocumentRequestWithBody(server string, spaceId openapi_t
 	return req, nil
 }
 
+// NewUnarchiveInvocationRequest constructs an http.Request for the UnarchiveInvocation method
+func NewUnarchiveInvocationRequest(server string, spaceId openapi_types.UUID, invocationId openapi_types.UUID) (*http.Request, error) {
+	var err error
+
+	var pathParam0 string
+
+	pathParam0, err = runtime.StyleParamWithOptions("simple", false, "space_id", spaceId, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationPath, Type: "string", Format: "uuid"})
+	if err != nil {
+		return nil, err
+	}
+
+	var pathParam1 string
+
+	pathParam1, err = runtime.StyleParamWithOptions("simple", false, "invocation_id", invocationId, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationPath, Type: "string", Format: "uuid"})
+	if err != nil {
+		return nil, err
+	}
+
+	serverURL, err := url.Parse(server)
+	if err != nil {
+		return nil, err
+	}
+
+	operationPath := fmt.Sprintf("/space/%s/invocation/%s/unarchive", pathParam0, pathParam1)
+	if operationPath[0] == '/' {
+		operationPath = "." + operationPath
+	}
+
+	queryURL, err := serverURL.Parse(operationPath)
+	if err != nil {
+		return nil, err
+	}
+
+	req, err := http.NewRequest(http.MethodPost, queryURL.String(), nil)
+	if err != nil {
+		return nil, err
+	}
+
+	return req, nil
+}
+
 // NewListLinksRequest constructs an http.Request for the ListLinks method
 func NewListLinksRequest(server string, spaceId openapi_types.UUID, params *ListLinksParams) (*http.Request, error) {
 	var err error
@@ -31910,7 +34667,7 @@ func NewCreateLinkRequestWithBody(server string, spaceId openapi_types.UUID, par
 }
 
 // NewDeleteLinkRequest constructs an http.Request for the DeleteLink method
-func NewDeleteLinkRequest(server string, spaceId openapi_types.UUID, linkId openapi_types.UUID) (*http.Request, error) {
+func NewDeleteLinkRequest(server string, spaceId openapi_types.UUID, linkId openapi_types.UUID, params *DeleteLinkParams) (*http.Request, error) {
 	var err error
 
 	var pathParam0 string
@@ -31940,6 +34697,33 @@ func NewDeleteLinkRequest(server string, spaceId openapi_types.UUID, linkId open
 	queryURL, err := serverURL.Parse(operationPath)
 	if err != nil {
 		return nil, err
+	}
+
+	if params != nil {
+		// queryValues collects non-styled parameters (passthrough, JSON)
+		// that are safe to round-trip through url.Values.Encode().
+		queryValues := queryURL.Query()
+		// rawQueryFragments collects pre-encoded query fragments from
+		// styled parameters, preserving literal commas as delimiters
+		// per the OpenAPI spec (e.g. "color=blue,black,brown").
+		var rawQueryFragments []string
+
+		if params.Archive != nil {
+
+			if queryFrag, err := runtime.StyleParamWithOptions("form", true, "archive", *params.Archive, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationQuery, Type: "boolean", Format: ""}); err != nil {
+				return nil, err
+			} else {
+				for _, qp := range strings.Split(queryFrag, "&") {
+					rawQueryFragments = append(rawQueryFragments, qp)
+				}
+			}
+
+		}
+
+		if encoded := queryValues.Encode(); encoded != "" {
+			rawQueryFragments = append(rawQueryFragments, encoded)
+		}
+		queryURL.RawQuery = strings.Join(rawQueryFragments, "&")
 	}
 
 	req, err := http.NewRequest(http.MethodDelete, queryURL.String(), nil)
@@ -32422,6 +35206,47 @@ func NewUpdateLinkDocumentRequestWithBody(server string, spaceId openapi_types.U
 	return req, nil
 }
 
+// NewUnarchiveLinkRequest constructs an http.Request for the UnarchiveLink method
+func NewUnarchiveLinkRequest(server string, spaceId openapi_types.UUID, linkId openapi_types.UUID) (*http.Request, error) {
+	var err error
+
+	var pathParam0 string
+
+	pathParam0, err = runtime.StyleParamWithOptions("simple", false, "space_id", spaceId, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationPath, Type: "string", Format: "uuid"})
+	if err != nil {
+		return nil, err
+	}
+
+	var pathParam1 string
+
+	pathParam1, err = runtime.StyleParamWithOptions("simple", false, "link_id", linkId, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationPath, Type: "string", Format: "uuid"})
+	if err != nil {
+		return nil, err
+	}
+
+	serverURL, err := url.Parse(server)
+	if err != nil {
+		return nil, err
+	}
+
+	operationPath := fmt.Sprintf("/space/%s/link/%s/unarchive", pathParam0, pathParam1)
+	if operationPath[0] == '/' {
+		operationPath = "." + operationPath
+	}
+
+	queryURL, err := serverURL.Parse(operationPath)
+	if err != nil {
+		return nil, err
+	}
+
+	req, err := http.NewRequest(http.MethodPost, queryURL.String(), nil)
+	if err != nil {
+		return nil, err
+	}
+
+	return req, nil
+}
+
 // NewListExtendedReleasesRequest constructs an http.Request for the ListExtendedReleases method
 func NewListExtendedReleasesRequest(server string, spaceId openapi_types.UUID, params *ListExtendedReleasesParams) (*http.Request, error) {
 	var err error
@@ -32695,6 +35520,18 @@ func NewDeleteReleaseRequest(server string, spaceId openapi_types.UUID, releaseI
 		if params.Detach != nil {
 
 			if queryFrag, err := runtime.StyleParamWithOptions("form", true, "detach", *params.Detach, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationQuery, Type: "boolean", Format: ""}); err != nil {
+				return nil, err
+			} else {
+				for _, qp := range strings.Split(queryFrag, "&") {
+					rawQueryFragments = append(rawQueryFragments, qp)
+				}
+			}
+
+		}
+
+		if params.Archive != nil {
+
+			if queryFrag, err := runtime.StyleParamWithOptions("form", true, "archive", *params.Archive, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationQuery, Type: "boolean", Format: ""}); err != nil {
 				return nil, err
 			} else {
 				for _, qp := range strings.Split(queryFrag, "&") {
@@ -32994,6 +35831,47 @@ func NewDownloadReleaseDataRequest(server string, spaceId openapi_types.UUID, re
 	}
 
 	req, err := http.NewRequest(http.MethodGet, queryURL.String(), nil)
+	if err != nil {
+		return nil, err
+	}
+
+	return req, nil
+}
+
+// NewUnarchiveReleaseRequest constructs an http.Request for the UnarchiveRelease method
+func NewUnarchiveReleaseRequest(server string, spaceId openapi_types.UUID, releaseId openapi_types.UUID) (*http.Request, error) {
+	var err error
+
+	var pathParam0 string
+
+	pathParam0, err = runtime.StyleParamWithOptions("simple", false, "space_id", spaceId, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationPath, Type: "string", Format: "uuid"})
+	if err != nil {
+		return nil, err
+	}
+
+	var pathParam1 string
+
+	pathParam1, err = runtime.StyleParamWithOptions("simple", false, "release_id", releaseId, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationPath, Type: "string", Format: "uuid"})
+	if err != nil {
+		return nil, err
+	}
+
+	serverURL, err := url.Parse(server)
+	if err != nil {
+		return nil, err
+	}
+
+	operationPath := fmt.Sprintf("/space/%s/release/%s/unarchive", pathParam0, pathParam1)
+	if operationPath[0] == '/' {
+		operationPath = "." + operationPath
+	}
+
+	queryURL, err := serverURL.Parse(operationPath)
+	if err != nil {
+		return nil, err
+	}
+
+	req, err := http.NewRequest(http.MethodPost, queryURL.String(), nil)
 	if err != nil {
 		return nil, err
 	}
@@ -33363,6 +36241,18 @@ func NewDeleteTagRequest(server string, spaceId openapi_types.UUID, tagId openap
 
 		}
 
+		if params.Archive != nil {
+
+			if queryFrag, err := runtime.StyleParamWithOptions("form", true, "archive", *params.Archive, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationQuery, Type: "boolean", Format: ""}); err != nil {
+				return nil, err
+			} else {
+				for _, qp := range strings.Split(queryFrag, "&") {
+					rawQueryFragments = append(rawQueryFragments, qp)
+				}
+			}
+
+		}
+
 		if encoded := queryValues.Encode(); encoded != "" {
 			rawQueryFragments = append(rawQueryFragments, encoded)
 		}
@@ -33615,6 +36505,47 @@ func NewUpdateTagRequestWithBody(server string, spaceId openapi_types.UUID, tagI
 	}
 
 	req.Header.Add("Content-Type", contentType)
+
+	return req, nil
+}
+
+// NewUnarchiveTagRequest constructs an http.Request for the UnarchiveTag method
+func NewUnarchiveTagRequest(server string, spaceId openapi_types.UUID, tagId openapi_types.UUID) (*http.Request, error) {
+	var err error
+
+	var pathParam0 string
+
+	pathParam0, err = runtime.StyleParamWithOptions("simple", false, "space_id", spaceId, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationPath, Type: "string", Format: "uuid"})
+	if err != nil {
+		return nil, err
+	}
+
+	var pathParam1 string
+
+	pathParam1, err = runtime.StyleParamWithOptions("simple", false, "tag_id", tagId, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationPath, Type: "string", Format: "uuid"})
+	if err != nil {
+		return nil, err
+	}
+
+	serverURL, err := url.Parse(server)
+	if err != nil {
+		return nil, err
+	}
+
+	operationPath := fmt.Sprintf("/space/%s/tag/%s/unarchive", pathParam0, pathParam1)
+	if operationPath[0] == '/' {
+		operationPath = "." + operationPath
+	}
+
+	queryURL, err := serverURL.Parse(operationPath)
+	if err != nil {
+		return nil, err
+	}
+
+	req, err := http.NewRequest(http.MethodPost, queryURL.String(), nil)
+	if err != nil {
+		return nil, err
+	}
 
 	return req, nil
 }
@@ -33939,6 +36870,18 @@ func NewDeleteTargetRequest(server string, spaceId openapi_types.UUID, targetId 
 		// styled parameters, preserving literal commas as delimiters
 		// per the OpenAPI spec (e.g. "color=blue,black,brown").
 		var rawQueryFragments []string
+
+		if params.Archive != nil {
+
+			if queryFrag, err := runtime.StyleParamWithOptions("form", true, "archive", *params.Archive, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationQuery, Type: "boolean", Format: ""}); err != nil {
+				return nil, err
+			} else {
+				for _, qp := range strings.Split(queryFrag, "&") {
+					rawQueryFragments = append(rawQueryFragments, qp)
+				}
+			}
+
+		}
 
 		if params.Detach != nil {
 
@@ -34354,6 +37297,47 @@ func NewUpdateTargetDocumentRequestWithBody(server string, spaceId openapi_types
 	return req, nil
 }
 
+// NewUnarchiveTargetRequest constructs an http.Request for the UnarchiveTarget method
+func NewUnarchiveTargetRequest(server string, spaceId openapi_types.UUID, targetId openapi_types.UUID) (*http.Request, error) {
+	var err error
+
+	var pathParam0 string
+
+	pathParam0, err = runtime.StyleParamWithOptions("simple", false, "space_id", spaceId, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationPath, Type: "string", Format: "uuid"})
+	if err != nil {
+		return nil, err
+	}
+
+	var pathParam1 string
+
+	pathParam1, err = runtime.StyleParamWithOptions("simple", false, "target_id", targetId, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationPath, Type: "string", Format: "uuid"})
+	if err != nil {
+		return nil, err
+	}
+
+	serverURL, err := url.Parse(server)
+	if err != nil {
+		return nil, err
+	}
+
+	operationPath := fmt.Sprintf("/space/%s/target/%s/unarchive", pathParam0, pathParam1)
+	if operationPath[0] == '/' {
+		operationPath = "." + operationPath
+	}
+
+	queryURL, err := serverURL.Parse(operationPath)
+	if err != nil {
+		return nil, err
+	}
+
+	req, err := http.NewRequest(http.MethodPost, queryURL.String(), nil)
+	if err != nil {
+		return nil, err
+	}
+
+	return req, nil
+}
+
 // NewListTriggersRequest constructs an http.Request for the ListTriggers method
 func NewListTriggersRequest(server string, spaceId openapi_types.UUID, params *ListTriggersParams) (*http.Request, error) {
 	var err error
@@ -34634,7 +37618,7 @@ func NewCreateTriggerRequestWithBody(server string, spaceId openapi_types.UUID, 
 }
 
 // NewDeleteTriggerRequest constructs an http.Request for the DeleteTrigger method
-func NewDeleteTriggerRequest(server string, spaceId openapi_types.UUID, triggerId openapi_types.UUID) (*http.Request, error) {
+func NewDeleteTriggerRequest(server string, spaceId openapi_types.UUID, triggerId openapi_types.UUID, params *DeleteTriggerParams) (*http.Request, error) {
 	var err error
 
 	var pathParam0 string
@@ -34664,6 +37648,33 @@ func NewDeleteTriggerRequest(server string, spaceId openapi_types.UUID, triggerI
 	queryURL, err := serverURL.Parse(operationPath)
 	if err != nil {
 		return nil, err
+	}
+
+	if params != nil {
+		// queryValues collects non-styled parameters (passthrough, JSON)
+		// that are safe to round-trip through url.Values.Encode().
+		queryValues := queryURL.Query()
+		// rawQueryFragments collects pre-encoded query fragments from
+		// styled parameters, preserving literal commas as delimiters
+		// per the OpenAPI spec (e.g. "color=blue,black,brown").
+		var rawQueryFragments []string
+
+		if params.Archive != nil {
+
+			if queryFrag, err := runtime.StyleParamWithOptions("form", true, "archive", *params.Archive, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationQuery, Type: "boolean", Format: ""}); err != nil {
+				return nil, err
+			} else {
+				for _, qp := range strings.Split(queryFrag, "&") {
+					rawQueryFragments = append(rawQueryFragments, qp)
+				}
+			}
+
+		}
+
+		if encoded := queryValues.Encode(); encoded != "" {
+			rawQueryFragments = append(rawQueryFragments, encoded)
+		}
+		queryURL.RawQuery = strings.Join(rawQueryFragments, "&")
 	}
 
 	req, err := http.NewRequest(http.MethodDelete, queryURL.String(), nil)
@@ -35034,6 +38045,108 @@ func NewUpdateTriggerDocumentRequestWithBody(server string, spaceId openapi_type
 	}
 
 	req.Header.Add("Content-Type", contentType)
+
+	return req, nil
+}
+
+// NewUnarchiveTriggerRequest constructs an http.Request for the UnarchiveTrigger method
+func NewUnarchiveTriggerRequest(server string, spaceId openapi_types.UUID, triggerId openapi_types.UUID) (*http.Request, error) {
+	var err error
+
+	var pathParam0 string
+
+	pathParam0, err = runtime.StyleParamWithOptions("simple", false, "space_id", spaceId, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationPath, Type: "string", Format: "uuid"})
+	if err != nil {
+		return nil, err
+	}
+
+	var pathParam1 string
+
+	pathParam1, err = runtime.StyleParamWithOptions("simple", false, "trigger_id", triggerId, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationPath, Type: "string", Format: "uuid"})
+	if err != nil {
+		return nil, err
+	}
+
+	serverURL, err := url.Parse(server)
+	if err != nil {
+		return nil, err
+	}
+
+	operationPath := fmt.Sprintf("/space/%s/trigger/%s/unarchive", pathParam0, pathParam1)
+	if operationPath[0] == '/' {
+		operationPath = "." + operationPath
+	}
+
+	queryURL, err := serverURL.Parse(operationPath)
+	if err != nil {
+		return nil, err
+	}
+
+	req, err := http.NewRequest(http.MethodPost, queryURL.String(), nil)
+	if err != nil {
+		return nil, err
+	}
+
+	return req, nil
+}
+
+// NewUnarchiveSpaceRequest constructs an http.Request for the UnarchiveSpace method
+func NewUnarchiveSpaceRequest(server string, spaceId openapi_types.UUID, params *UnarchiveSpaceParams) (*http.Request, error) {
+	var err error
+
+	var pathParam0 string
+
+	pathParam0, err = runtime.StyleParamWithOptions("simple", false, "space_id", spaceId, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationPath, Type: "string", Format: "uuid"})
+	if err != nil {
+		return nil, err
+	}
+
+	serverURL, err := url.Parse(server)
+	if err != nil {
+		return nil, err
+	}
+
+	operationPath := fmt.Sprintf("/space/%s/unarchive", pathParam0)
+	if operationPath[0] == '/' {
+		operationPath = "." + operationPath
+	}
+
+	queryURL, err := serverURL.Parse(operationPath)
+	if err != nil {
+		return nil, err
+	}
+
+	if params != nil {
+		// queryValues collects non-styled parameters (passthrough, JSON)
+		// that are safe to round-trip through url.Values.Encode().
+		queryValues := queryURL.Query()
+		// rawQueryFragments collects pre-encoded query fragments from
+		// styled parameters, preserving literal commas as delimiters
+		// per the OpenAPI spec (e.g. "color=blue,black,brown").
+		var rawQueryFragments []string
+
+		if params.Recursive != nil {
+
+			if queryFrag, err := runtime.StyleParamWithOptions("form", true, "recursive", *params.Recursive, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationQuery, Type: "boolean", Format: ""}); err != nil {
+				return nil, err
+			} else {
+				for _, qp := range strings.Split(queryFrag, "&") {
+					rawQueryFragments = append(rawQueryFragments, qp)
+				}
+			}
+
+		}
+
+		if encoded := queryValues.Encode(); encoded != "" {
+			rawQueryFragments = append(rawQueryFragments, encoded)
+		}
+		queryURL.RawQuery = strings.Join(rawQueryFragments, "&")
+	}
+
+	req, err := http.NewRequest(http.MethodPost, queryURL.String(), nil)
+	if err != nil {
+		return nil, err
+	}
 
 	return req, nil
 }
@@ -39142,7 +42255,7 @@ func NewCreateViewRequestWithBody(server string, spaceId openapi_types.UUID, par
 }
 
 // NewDeleteViewRequest constructs an http.Request for the DeleteView method
-func NewDeleteViewRequest(server string, spaceId openapi_types.UUID, viewId openapi_types.UUID) (*http.Request, error) {
+func NewDeleteViewRequest(server string, spaceId openapi_types.UUID, viewId openapi_types.UUID, params *DeleteViewParams) (*http.Request, error) {
 	var err error
 
 	var pathParam0 string
@@ -39172,6 +42285,33 @@ func NewDeleteViewRequest(server string, spaceId openapi_types.UUID, viewId open
 	queryURL, err := serverURL.Parse(operationPath)
 	if err != nil {
 		return nil, err
+	}
+
+	if params != nil {
+		// queryValues collects non-styled parameters (passthrough, JSON)
+		// that are safe to round-trip through url.Values.Encode().
+		queryValues := queryURL.Query()
+		// rawQueryFragments collects pre-encoded query fragments from
+		// styled parameters, preserving literal commas as delimiters
+		// per the OpenAPI spec (e.g. "color=blue,black,brown").
+		var rawQueryFragments []string
+
+		if params.Archive != nil {
+
+			if queryFrag, err := runtime.StyleParamWithOptions("form", true, "archive", *params.Archive, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationQuery, Type: "boolean", Format: ""}); err != nil {
+				return nil, err
+			} else {
+				for _, qp := range strings.Split(queryFrag, "&") {
+					rawQueryFragments = append(rawQueryFragments, qp)
+				}
+			}
+
+		}
+
+		if encoded := queryValues.Encode(); encoded != "" {
+			rawQueryFragments = append(rawQueryFragments, encoded)
+		}
+		queryURL.RawQuery = strings.Join(rawQueryFragments, "&")
 	}
 
 	req, err := http.NewRequest(http.MethodDelete, queryURL.String(), nil)
@@ -39546,6 +42686,47 @@ func NewUpdateViewDocumentRequestWithBody(server string, spaceId openapi_types.U
 	return req, nil
 }
 
+// NewUnarchiveViewRequest constructs an http.Request for the UnarchiveView method
+func NewUnarchiveViewRequest(server string, spaceId openapi_types.UUID, viewId openapi_types.UUID) (*http.Request, error) {
+	var err error
+
+	var pathParam0 string
+
+	pathParam0, err = runtime.StyleParamWithOptions("simple", false, "space_id", spaceId, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationPath, Type: "string", Format: "uuid"})
+	if err != nil {
+		return nil, err
+	}
+
+	var pathParam1 string
+
+	pathParam1, err = runtime.StyleParamWithOptions("simple", false, "view_id", viewId, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationPath, Type: "string", Format: "uuid"})
+	if err != nil {
+		return nil, err
+	}
+
+	serverURL, err := url.Parse(server)
+	if err != nil {
+		return nil, err
+	}
+
+	operationPath := fmt.Sprintf("/space/%s/view/%s/unarchive", pathParam0, pathParam1)
+	if operationPath[0] == '/' {
+		operationPath = "." + operationPath
+	}
+
+	queryURL, err := serverURL.Parse(operationPath)
+	if err != nil {
+		return nil, err
+	}
+
+	req, err := http.NewRequest(http.MethodPost, queryURL.String(), nil)
+	if err != nil {
+		return nil, err
+	}
+
+	return req, nil
+}
+
 // NewBulkDeleteTagsRequest constructs an http.Request for the BulkDeleteTags method
 func NewBulkDeleteTagsRequest(server string, params *BulkDeleteTagsParams) (*http.Request, error) {
 	var err error
@@ -39661,6 +42842,18 @@ func NewBulkDeleteTagsRequest(server string, params *BulkDeleteTagsParams) (*htt
 		if params.Detach != nil {
 
 			if queryFrag, err := runtime.StyleParamWithOptions("form", true, "detach", *params.Detach, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationQuery, Type: "boolean", Format: ""}); err != nil {
+				return nil, err
+			} else {
+				for _, qp := range strings.Split(queryFrag, "&") {
+					rawQueryFragments = append(rawQueryFragments, qp)
+				}
+			}
+
+		}
+
+		if params.Archive != nil {
+
+			if queryFrag, err := runtime.StyleParamWithOptions("form", true, "archive", *params.Archive, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationQuery, Type: "boolean", Format: ""}); err != nil {
 				return nil, err
 			} else {
 				for _, qp := range strings.Split(queryFrag, "&") {
@@ -40359,6 +43552,132 @@ func NewBulkMoveTagsRequestWithBody(server string, params *BulkMoveTagsParams, c
 	return req, nil
 }
 
+// NewBulkUnarchiveTagsRequest constructs an http.Request for the BulkUnarchiveTags method
+func NewBulkUnarchiveTagsRequest(server string, params *BulkUnarchiveTagsParams) (*http.Request, error) {
+	var err error
+
+	serverURL, err := url.Parse(server)
+	if err != nil {
+		return nil, err
+	}
+
+	operationPath := fmt.Sprintf("/tag/unarchive")
+	if operationPath[0] == '/' {
+		operationPath = "." + operationPath
+	}
+
+	queryURL, err := serverURL.Parse(operationPath)
+	if err != nil {
+		return nil, err
+	}
+
+	if params != nil {
+		// queryValues collects non-styled parameters (passthrough, JSON)
+		// that are safe to round-trip through url.Values.Encode().
+		queryValues := queryURL.Query()
+		// rawQueryFragments collects pre-encoded query fragments from
+		// styled parameters, preserving literal commas as delimiters
+		// per the OpenAPI spec (e.g. "color=blue,black,brown").
+		var rawQueryFragments []string
+
+		if params.Where != nil {
+
+			if queryFrag, err := runtime.StyleParamWithOptions("form", true, "where", *params.Where, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationQuery, Type: "string", Format: ""}); err != nil {
+				return nil, err
+			} else {
+				for _, qp := range strings.Split(queryFrag, "&") {
+					rawQueryFragments = append(rawQueryFragments, qp)
+				}
+			}
+
+		}
+
+		if params.Filter != nil {
+
+			if queryFrag, err := runtime.StyleParamWithOptions("form", true, "filter", *params.Filter, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationQuery, Type: "string", Format: ""}); err != nil {
+				return nil, err
+			} else {
+				for _, qp := range strings.Split(queryFrag, "&") {
+					rawQueryFragments = append(rawQueryFragments, qp)
+				}
+			}
+
+		}
+
+		if params.Contains != nil {
+
+			if queryFrag, err := runtime.StyleParamWithOptions("form", true, "contains", *params.Contains, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationQuery, Type: "string", Format: ""}); err != nil {
+				return nil, err
+			} else {
+				for _, qp := range strings.Split(queryFrag, "&") {
+					rawQueryFragments = append(rawQueryFragments, qp)
+				}
+			}
+
+		}
+
+		if params.IncludeHidden != nil {
+
+			if queryFrag, err := runtime.StyleParamWithOptions("form", true, "include_hidden", *params.IncludeHidden, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationQuery, Type: "string", Format: ""}); err != nil {
+				return nil, err
+			} else {
+				for _, qp := range strings.Split(queryFrag, "&") {
+					rawQueryFragments = append(rawQueryFragments, qp)
+				}
+			}
+
+		}
+
+		if params.Include != nil {
+
+			if queryFrag, err := runtime.StyleParamWithOptions("form", true, "include", *params.Include, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationQuery, Type: "string", Format: ""}); err != nil {
+				return nil, err
+			} else {
+				for _, qp := range strings.Split(queryFrag, "&") {
+					rawQueryFragments = append(rawQueryFragments, qp)
+				}
+			}
+
+		}
+
+		if params.Limit != nil {
+
+			if queryFrag, err := runtime.StyleParamWithOptions("form", true, "limit", *params.Limit, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationQuery, Type: "integer", Format: ""}); err != nil {
+				return nil, err
+			} else {
+				for _, qp := range strings.Split(queryFrag, "&") {
+					rawQueryFragments = append(rawQueryFragments, qp)
+				}
+			}
+
+		}
+
+		if params.Continue != nil {
+
+			if queryFrag, err := runtime.StyleParamWithOptions("form", true, "continue", *params.Continue, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationQuery, Type: "string", Format: ""}); err != nil {
+				return nil, err
+			} else {
+				for _, qp := range strings.Split(queryFrag, "&") {
+					rawQueryFragments = append(rawQueryFragments, qp)
+				}
+			}
+
+		}
+
+		if encoded := queryValues.Encode(); encoded != "" {
+			rawQueryFragments = append(rawQueryFragments, encoded)
+		}
+		queryURL.RawQuery = strings.Join(rawQueryFragments, "&")
+	}
+
+	req, err := http.NewRequest(http.MethodPost, queryURL.String(), nil)
+	if err != nil {
+		return nil, err
+	}
+
+	return req, nil
+}
+
 // NewBulkDeleteTargetsRequest constructs an http.Request for the BulkDeleteTargets method
 func NewBulkDeleteTargetsRequest(server string, params *BulkDeleteTargetsParams) (*http.Request, error) {
 	var err error
@@ -40474,6 +43793,18 @@ func NewBulkDeleteTargetsRequest(server string, params *BulkDeleteTargetsParams)
 		if params.Detach != nil {
 
 			if queryFrag, err := runtime.StyleParamWithOptions("form", true, "detach", *params.Detach, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationQuery, Type: "boolean", Format: ""}); err != nil {
+				return nil, err
+			} else {
+				for _, qp := range strings.Split(queryFrag, "&") {
+					rawQueryFragments = append(rawQueryFragments, qp)
+				}
+			}
+
+		}
+
+		if params.Archive != nil {
+
+			if queryFrag, err := runtime.StyleParamWithOptions("form", true, "archive", *params.Archive, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationQuery, Type: "boolean", Format: ""}); err != nil {
 				return nil, err
 			} else {
 				for _, qp := range strings.Split(queryFrag, "&") {
@@ -41280,6 +44611,132 @@ func NewBulkMoveTargetsRequestWithBody(server string, params *BulkMoveTargetsPar
 	return req, nil
 }
 
+// NewBulkUnarchiveTargetsRequest constructs an http.Request for the BulkUnarchiveTargets method
+func NewBulkUnarchiveTargetsRequest(server string, params *BulkUnarchiveTargetsParams) (*http.Request, error) {
+	var err error
+
+	serverURL, err := url.Parse(server)
+	if err != nil {
+		return nil, err
+	}
+
+	operationPath := fmt.Sprintf("/target/unarchive")
+	if operationPath[0] == '/' {
+		operationPath = "." + operationPath
+	}
+
+	queryURL, err := serverURL.Parse(operationPath)
+	if err != nil {
+		return nil, err
+	}
+
+	if params != nil {
+		// queryValues collects non-styled parameters (passthrough, JSON)
+		// that are safe to round-trip through url.Values.Encode().
+		queryValues := queryURL.Query()
+		// rawQueryFragments collects pre-encoded query fragments from
+		// styled parameters, preserving literal commas as delimiters
+		// per the OpenAPI spec (e.g. "color=blue,black,brown").
+		var rawQueryFragments []string
+
+		if params.Where != nil {
+
+			if queryFrag, err := runtime.StyleParamWithOptions("form", true, "where", *params.Where, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationQuery, Type: "string", Format: ""}); err != nil {
+				return nil, err
+			} else {
+				for _, qp := range strings.Split(queryFrag, "&") {
+					rawQueryFragments = append(rawQueryFragments, qp)
+				}
+			}
+
+		}
+
+		if params.Filter != nil {
+
+			if queryFrag, err := runtime.StyleParamWithOptions("form", true, "filter", *params.Filter, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationQuery, Type: "string", Format: ""}); err != nil {
+				return nil, err
+			} else {
+				for _, qp := range strings.Split(queryFrag, "&") {
+					rawQueryFragments = append(rawQueryFragments, qp)
+				}
+			}
+
+		}
+
+		if params.Contains != nil {
+
+			if queryFrag, err := runtime.StyleParamWithOptions("form", true, "contains", *params.Contains, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationQuery, Type: "string", Format: ""}); err != nil {
+				return nil, err
+			} else {
+				for _, qp := range strings.Split(queryFrag, "&") {
+					rawQueryFragments = append(rawQueryFragments, qp)
+				}
+			}
+
+		}
+
+		if params.IncludeHidden != nil {
+
+			if queryFrag, err := runtime.StyleParamWithOptions("form", true, "include_hidden", *params.IncludeHidden, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationQuery, Type: "string", Format: ""}); err != nil {
+				return nil, err
+			} else {
+				for _, qp := range strings.Split(queryFrag, "&") {
+					rawQueryFragments = append(rawQueryFragments, qp)
+				}
+			}
+
+		}
+
+		if params.Include != nil {
+
+			if queryFrag, err := runtime.StyleParamWithOptions("form", true, "include", *params.Include, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationQuery, Type: "string", Format: ""}); err != nil {
+				return nil, err
+			} else {
+				for _, qp := range strings.Split(queryFrag, "&") {
+					rawQueryFragments = append(rawQueryFragments, qp)
+				}
+			}
+
+		}
+
+		if params.Limit != nil {
+
+			if queryFrag, err := runtime.StyleParamWithOptions("form", true, "limit", *params.Limit, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationQuery, Type: "integer", Format: ""}); err != nil {
+				return nil, err
+			} else {
+				for _, qp := range strings.Split(queryFrag, "&") {
+					rawQueryFragments = append(rawQueryFragments, qp)
+				}
+			}
+
+		}
+
+		if params.Continue != nil {
+
+			if queryFrag, err := runtime.StyleParamWithOptions("form", true, "continue", *params.Continue, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationQuery, Type: "string", Format: ""}); err != nil {
+				return nil, err
+			} else {
+				for _, qp := range strings.Split(queryFrag, "&") {
+					rawQueryFragments = append(rawQueryFragments, qp)
+				}
+			}
+
+		}
+
+		if encoded := queryValues.Encode(); encoded != "" {
+			rawQueryFragments = append(rawQueryFragments, encoded)
+		}
+		queryURL.RawQuery = strings.Join(rawQueryFragments, "&")
+	}
+
+	req, err := http.NewRequest(http.MethodPost, queryURL.String(), nil)
+	if err != nil {
+		return nil, err
+	}
+
+	return req, nil
+}
+
 // NewBulkDeleteTriggersRequest constructs an http.Request for the BulkDeleteTriggers method
 func NewBulkDeleteTriggersRequest(server string, params *BulkDeleteTriggersParams) (*http.Request, error) {
 	var err error
@@ -41383,6 +44840,18 @@ func NewBulkDeleteTriggersRequest(server string, params *BulkDeleteTriggersParam
 		if params.Continue != nil {
 
 			if queryFrag, err := runtime.StyleParamWithOptions("form", true, "continue", *params.Continue, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationQuery, Type: "string", Format: ""}); err != nil {
+				return nil, err
+			} else {
+				for _, qp := range strings.Split(queryFrag, "&") {
+					rawQueryFragments = append(rawQueryFragments, qp)
+				}
+			}
+
+		}
+
+		if params.Archive != nil {
+
+			if queryFrag, err := runtime.StyleParamWithOptions("form", true, "archive", *params.Archive, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationQuery, Type: "boolean", Format: ""}); err != nil {
 				return nil, err
 			} else {
 				for _, qp := range strings.Split(queryFrag, "&") {
@@ -42173,6 +45642,132 @@ func NewBulkMoveTriggersRequestWithBody(server string, params *BulkMoveTriggersP
 	}
 
 	req.Header.Add("Content-Type", contentType)
+
+	return req, nil
+}
+
+// NewBulkUnarchiveTriggersRequest constructs an http.Request for the BulkUnarchiveTriggers method
+func NewBulkUnarchiveTriggersRequest(server string, params *BulkUnarchiveTriggersParams) (*http.Request, error) {
+	var err error
+
+	serverURL, err := url.Parse(server)
+	if err != nil {
+		return nil, err
+	}
+
+	operationPath := fmt.Sprintf("/trigger/unarchive")
+	if operationPath[0] == '/' {
+		operationPath = "." + operationPath
+	}
+
+	queryURL, err := serverURL.Parse(operationPath)
+	if err != nil {
+		return nil, err
+	}
+
+	if params != nil {
+		// queryValues collects non-styled parameters (passthrough, JSON)
+		// that are safe to round-trip through url.Values.Encode().
+		queryValues := queryURL.Query()
+		// rawQueryFragments collects pre-encoded query fragments from
+		// styled parameters, preserving literal commas as delimiters
+		// per the OpenAPI spec (e.g. "color=blue,black,brown").
+		var rawQueryFragments []string
+
+		if params.Where != nil {
+
+			if queryFrag, err := runtime.StyleParamWithOptions("form", true, "where", *params.Where, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationQuery, Type: "string", Format: ""}); err != nil {
+				return nil, err
+			} else {
+				for _, qp := range strings.Split(queryFrag, "&") {
+					rawQueryFragments = append(rawQueryFragments, qp)
+				}
+			}
+
+		}
+
+		if params.Filter != nil {
+
+			if queryFrag, err := runtime.StyleParamWithOptions("form", true, "filter", *params.Filter, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationQuery, Type: "string", Format: ""}); err != nil {
+				return nil, err
+			} else {
+				for _, qp := range strings.Split(queryFrag, "&") {
+					rawQueryFragments = append(rawQueryFragments, qp)
+				}
+			}
+
+		}
+
+		if params.Contains != nil {
+
+			if queryFrag, err := runtime.StyleParamWithOptions("form", true, "contains", *params.Contains, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationQuery, Type: "string", Format: ""}); err != nil {
+				return nil, err
+			} else {
+				for _, qp := range strings.Split(queryFrag, "&") {
+					rawQueryFragments = append(rawQueryFragments, qp)
+				}
+			}
+
+		}
+
+		if params.IncludeHidden != nil {
+
+			if queryFrag, err := runtime.StyleParamWithOptions("form", true, "include_hidden", *params.IncludeHidden, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationQuery, Type: "string", Format: ""}); err != nil {
+				return nil, err
+			} else {
+				for _, qp := range strings.Split(queryFrag, "&") {
+					rawQueryFragments = append(rawQueryFragments, qp)
+				}
+			}
+
+		}
+
+		if params.Include != nil {
+
+			if queryFrag, err := runtime.StyleParamWithOptions("form", true, "include", *params.Include, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationQuery, Type: "string", Format: ""}); err != nil {
+				return nil, err
+			} else {
+				for _, qp := range strings.Split(queryFrag, "&") {
+					rawQueryFragments = append(rawQueryFragments, qp)
+				}
+			}
+
+		}
+
+		if params.Limit != nil {
+
+			if queryFrag, err := runtime.StyleParamWithOptions("form", true, "limit", *params.Limit, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationQuery, Type: "integer", Format: ""}); err != nil {
+				return nil, err
+			} else {
+				for _, qp := range strings.Split(queryFrag, "&") {
+					rawQueryFragments = append(rawQueryFragments, qp)
+				}
+			}
+
+		}
+
+		if params.Continue != nil {
+
+			if queryFrag, err := runtime.StyleParamWithOptions("form", true, "continue", *params.Continue, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationQuery, Type: "string", Format: ""}); err != nil {
+				return nil, err
+			} else {
+				for _, qp := range strings.Split(queryFrag, "&") {
+					rawQueryFragments = append(rawQueryFragments, qp)
+				}
+			}
+
+		}
+
+		if encoded := queryValues.Encode(); encoded != "" {
+			rawQueryFragments = append(rawQueryFragments, encoded)
+		}
+		queryURL.RawQuery = strings.Join(rawQueryFragments, "&")
+	}
+
+	req, err := http.NewRequest(http.MethodPost, queryURL.String(), nil)
+	if err != nil {
+		return nil, err
+	}
 
 	return req, nil
 }
@@ -43592,6 +47187,30 @@ func NewBulkUnarchiveUnitsRequest(server string, params *BulkUnarchiveUnitsParam
 		if params.Include != nil {
 
 			if queryFrag, err := runtime.StyleParamWithOptions("form", true, "include", *params.Include, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationQuery, Type: "string", Format: ""}); err != nil {
+				return nil, err
+			} else {
+				for _, qp := range strings.Split(queryFrag, "&") {
+					rawQueryFragments = append(rawQueryFragments, qp)
+				}
+			}
+
+		}
+
+		if params.Limit != nil {
+
+			if queryFrag, err := runtime.StyleParamWithOptions("form", true, "limit", *params.Limit, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationQuery, Type: "integer", Format: ""}); err != nil {
+				return nil, err
+			} else {
+				for _, qp := range strings.Split(queryFrag, "&") {
+					rawQueryFragments = append(rawQueryFragments, qp)
+				}
+			}
+
+		}
+
+		if params.Continue != nil {
+
+			if queryFrag, err := runtime.StyleParamWithOptions("form", true, "continue", *params.Continue, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationQuery, Type: "string", Format: ""}); err != nil {
 				return nil, err
 			} else {
 				for _, qp := range strings.Split(queryFrag, "&") {
@@ -45085,6 +48704,18 @@ func NewBulkDeleteViewsRequest(server string, params *BulkDeleteViewsParams) (*h
 
 		}
 
+		if params.Archive != nil {
+
+			if queryFrag, err := runtime.StyleParamWithOptions("form", true, "archive", *params.Archive, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationQuery, Type: "boolean", Format: ""}); err != nil {
+				return nil, err
+			} else {
+				for _, qp := range strings.Split(queryFrag, "&") {
+					rawQueryFragments = append(rawQueryFragments, qp)
+				}
+			}
+
+		}
+
 		if params.FromBackingUnits != nil {
 
 			if queryFrag, err := runtime.StyleParamWithOptions("form", true, "from_backing_units", *params.FromBackingUnits, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationQuery, Type: "boolean", Format: ""}); err != nil {
@@ -45870,6 +49501,132 @@ func NewBulkMoveViewsRequestWithBody(server string, params *BulkMoveViewsParams,
 	return req, nil
 }
 
+// NewBulkUnarchiveViewsRequest constructs an http.Request for the BulkUnarchiveViews method
+func NewBulkUnarchiveViewsRequest(server string, params *BulkUnarchiveViewsParams) (*http.Request, error) {
+	var err error
+
+	serverURL, err := url.Parse(server)
+	if err != nil {
+		return nil, err
+	}
+
+	operationPath := fmt.Sprintf("/view/unarchive")
+	if operationPath[0] == '/' {
+		operationPath = "." + operationPath
+	}
+
+	queryURL, err := serverURL.Parse(operationPath)
+	if err != nil {
+		return nil, err
+	}
+
+	if params != nil {
+		// queryValues collects non-styled parameters (passthrough, JSON)
+		// that are safe to round-trip through url.Values.Encode().
+		queryValues := queryURL.Query()
+		// rawQueryFragments collects pre-encoded query fragments from
+		// styled parameters, preserving literal commas as delimiters
+		// per the OpenAPI spec (e.g. "color=blue,black,brown").
+		var rawQueryFragments []string
+
+		if params.Where != nil {
+
+			if queryFrag, err := runtime.StyleParamWithOptions("form", true, "where", *params.Where, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationQuery, Type: "string", Format: ""}); err != nil {
+				return nil, err
+			} else {
+				for _, qp := range strings.Split(queryFrag, "&") {
+					rawQueryFragments = append(rawQueryFragments, qp)
+				}
+			}
+
+		}
+
+		if params.Filter != nil {
+
+			if queryFrag, err := runtime.StyleParamWithOptions("form", true, "filter", *params.Filter, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationQuery, Type: "string", Format: ""}); err != nil {
+				return nil, err
+			} else {
+				for _, qp := range strings.Split(queryFrag, "&") {
+					rawQueryFragments = append(rawQueryFragments, qp)
+				}
+			}
+
+		}
+
+		if params.Contains != nil {
+
+			if queryFrag, err := runtime.StyleParamWithOptions("form", true, "contains", *params.Contains, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationQuery, Type: "string", Format: ""}); err != nil {
+				return nil, err
+			} else {
+				for _, qp := range strings.Split(queryFrag, "&") {
+					rawQueryFragments = append(rawQueryFragments, qp)
+				}
+			}
+
+		}
+
+		if params.IncludeHidden != nil {
+
+			if queryFrag, err := runtime.StyleParamWithOptions("form", true, "include_hidden", *params.IncludeHidden, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationQuery, Type: "string", Format: ""}); err != nil {
+				return nil, err
+			} else {
+				for _, qp := range strings.Split(queryFrag, "&") {
+					rawQueryFragments = append(rawQueryFragments, qp)
+				}
+			}
+
+		}
+
+		if params.Include != nil {
+
+			if queryFrag, err := runtime.StyleParamWithOptions("form", true, "include", *params.Include, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationQuery, Type: "string", Format: ""}); err != nil {
+				return nil, err
+			} else {
+				for _, qp := range strings.Split(queryFrag, "&") {
+					rawQueryFragments = append(rawQueryFragments, qp)
+				}
+			}
+
+		}
+
+		if params.Limit != nil {
+
+			if queryFrag, err := runtime.StyleParamWithOptions("form", true, "limit", *params.Limit, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationQuery, Type: "integer", Format: ""}); err != nil {
+				return nil, err
+			} else {
+				for _, qp := range strings.Split(queryFrag, "&") {
+					rawQueryFragments = append(rawQueryFragments, qp)
+				}
+			}
+
+		}
+
+		if params.Continue != nil {
+
+			if queryFrag, err := runtime.StyleParamWithOptions("form", true, "continue", *params.Continue, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationQuery, Type: "string", Format: ""}); err != nil {
+				return nil, err
+			} else {
+				for _, qp := range strings.Split(queryFrag, "&") {
+					rawQueryFragments = append(rawQueryFragments, qp)
+				}
+			}
+
+		}
+
+		if encoded := queryValues.Encode(); encoded != "" {
+			rawQueryFragments = append(rawQueryFragments, encoded)
+		}
+		queryURL.RawQuery = strings.Join(rawQueryFragments, "&")
+	}
+
+	req, err := http.NewRequest(http.MethodPost, queryURL.String(), nil)
+	if err != nil {
+		return nil, err
+	}
+
+	return req, nil
+}
+
 func (c *Client) applyEditors(ctx context.Context, req *http.Request, additionalEditors []RequestEditorFn) error {
 	for _, r := range c.RequestEditors {
 		if err := r(ctx, req); err != nil {
@@ -45940,6 +49697,15 @@ type ClientWithResponsesInterface interface {
 	//
 	// Corresponds with PATCH /_component (the `BulkPatchComponents` operationId).
 	BulkPatchComponentsWithApplicationMergePatchPlusJSONBodyWithResponse(ctx context.Context, params *BulkPatchComponentsParams, body BulkPatchComponentsApplicationMergePatchPlusJSONRequestBody, reqEditors ...RequestEditorFn) (*BulkPatchComponentsResponse, error)
+
+	// BulkUnarchiveComponentsWithResponse Unarchive components
+	//
+	// Unarchive a Component archived by a delete with archive=true. Its backing Unit, archived with it, is unarchived with it. Its Slug is restored from the label ArchivedSlug unless another Component has taken it since, in which case it keeps the Slug the archive gave it, which KeptSlug in the response reports; it is unarchived either way. Refused while its Space is archived, while it was archived with another entity, which unarchiving that one brings back, and while it names an entity that is still archived. Requires Edit permission. Selects archived Components, as if include_hidden named Archived, and leaves alone a selected Component that is not archived.
+	//
+	// Returns a wrapper object for the known response body format(s).
+	//
+	// Corresponds with POST /_component/unarchive (the `BulkUnarchiveComponents` operationId).
+	BulkUnarchiveComponentsWithResponse(ctx context.Context, params *BulkUnarchiveComponentsParams, reqEditors ...RequestEditorFn) (*BulkUnarchiveComponentsResponse, error)
 
 	// BulkDeleteServiceAccountsWithResponse Bulk delete multiple service accounts
 	//
@@ -46012,6 +49778,15 @@ type ClientWithResponsesInterface interface {
 	//
 	// Corresponds with POST /_space (the `BulkCreateSpaces` operationId).
 	BulkCreateSpacesWithApplicationMergePatchPlusJSONBodyWithResponse(ctx context.Context, params *BulkCreateSpacesParams, body BulkCreateSpacesApplicationMergePatchPlusJSONRequestBody, reqEditors ...RequestEditorFn) (*BulkCreateSpacesResponse, error)
+
+	// BulkUnarchiveSpacesWithResponse Unarchive spaces
+	//
+	// Unarchive a Space archived by a delete with archive=true. Its Slug is restored from the label ArchivedSlug unless another Space has taken it since, in which case it keeps the Slug the archive gave it, which KeptSlug in the response reports; it is unarchived either way. A Space archived recursively is unarchived only recursively, which unarchives what its archive archived, and nothing archived before or since. Refused while what it would bring back names an entity that is still archived, such as a Target in another archived Space. ChangeOrders the archive aborted stay aborted. Requires Edit permission. Selects archived Spaces, as if include_hidden named Archived, and leaves alone a selected Space that is not archived.
+	//
+	// Returns a wrapper object for the known response body format(s).
+	//
+	// Corresponds with POST /_space/unarchive (the `BulkUnarchiveSpaces` operationId).
+	BulkUnarchiveSpacesWithResponse(ctx context.Context, params *BulkUnarchiveSpacesParams, reqEditors ...RequestEditorFn) (*BulkUnarchiveSpacesResponse, error)
 
 	// AttestWithBodyWithResponse Record Attestations across Spaces
 	//
@@ -46112,6 +49887,15 @@ type ClientWithResponsesInterface interface {
 	// Corresponds with POST /attribute/move (the `BulkMoveAttributes` operationId).
 	BulkMoveAttributesWithResponse(ctx context.Context, params *BulkMoveAttributesParams, body BulkMoveAttributesJSONRequestBody, reqEditors ...RequestEditorFn) (*BulkMoveAttributesResponse, error)
 
+	// BulkUnarchiveAttributesWithResponse Unarchive attributes
+	//
+	// Unarchive a Attribute archived by a delete with archive=true. Its backing Unit, archived with it, is unarchived with it. Its Slug is restored from the label ArchivedSlug unless another Attribute has taken it since, in which case it keeps the Slug the archive gave it, which KeptSlug in the response reports; it is unarchived either way. Refused while its Space is archived, while it was archived with another entity, which unarchiving that one brings back, and while it names an entity that is still archived. Requires Edit permission. Selects archived Attributes, as if include_hidden named Archived, and leaves alone a selected Attribute that is not archived.
+	//
+	// Returns a wrapper object for the known response body format(s).
+	//
+	// Corresponds with POST /attribute/unarchive (the `BulkUnarchiveAttributes` operationId).
+	BulkUnarchiveAttributesWithResponse(ctx context.Context, params *BulkUnarchiveAttributesParams, reqEditors ...RequestEditorFn) (*BulkUnarchiveAttributesResponse, error)
+
 	// ListAuditEventsWithResponse List AuditEvents
 	//
 	// Returns a wrapper object for the known response body format(s).
@@ -46189,6 +49973,15 @@ type ClientWithResponsesInterface interface {
 	// Corresponds with POST /change_order/refresh_stage (the `BulkRefreshChangeOrderStages` operationId).
 	BulkRefreshChangeOrderStagesWithResponse(ctx context.Context, params *BulkRefreshChangeOrderStagesParams, reqEditors ...RequestEditorFn) (*BulkRefreshChangeOrderStagesResponse, error)
 
+	// BulkUnarchiveChangeOrdersWithResponse Unarchive change orders
+	//
+	// Unarchive a ChangeOrder archived by a delete with archive=true. Its Slug is restored from the label ArchivedSlug unless another ChangeOrder has taken it since, in which case it keeps the Slug the archive gave it, which KeptSlug in the response reports; it is unarchived either way. Refused while its Space is archived, while it was archived with another entity, which unarchiving that one brings back, and while it names an entity that is still archived. Requires Edit permission. Selects archived ChangeOrders, as if include_hidden named Archived, and leaves alone a selected ChangeOrder that is not archived.
+	//
+	// Returns a wrapper object for the known response body format(s).
+	//
+	// Corresponds with POST /change_order/unarchive (the `BulkUnarchiveChangeOrders` operationId).
+	BulkUnarchiveChangeOrdersWithResponse(ctx context.Context, params *BulkUnarchiveChangeOrdersParams, reqEditors ...RequestEditorFn) (*BulkUnarchiveChangeOrdersResponse, error)
+
 	// BulkDeleteChangeSetsWithResponse Bulk delete multiple change sets
 	//
 	// Delete multiple change sets selected by query parameters.
@@ -46260,6 +50053,15 @@ type ClientWithResponsesInterface interface {
 	//
 	// Corresponds with POST /change_set/move (the `BulkMoveChangeSets` operationId).
 	BulkMoveChangeSetsWithResponse(ctx context.Context, params *BulkMoveChangeSetsParams, body BulkMoveChangeSetsJSONRequestBody, reqEditors ...RequestEditorFn) (*BulkMoveChangeSetsResponse, error)
+
+	// BulkUnarchiveChangeSetsWithResponse Unarchive change sets
+	//
+	// Unarchive a ChangeSet archived by a delete with archive=true. Its Slug is restored from the label ArchivedSlug unless another ChangeSet has taken it since, in which case it keeps the Slug the archive gave it, which KeptSlug in the response reports; it is unarchived either way. Refused while its Space is archived, while it was archived with another entity, which unarchiving that one brings back, and while it names an entity that is still archived. Requires Edit permission. Selects archived ChangeSets, as if include_hidden named Archived, and leaves alone a selected ChangeSet that is not archived.
+	//
+	// Returns a wrapper object for the known response body format(s).
+	//
+	// Corresponds with POST /change_set/unarchive (the `BulkUnarchiveChangeSets` operationId).
+	BulkUnarchiveChangeSetsWithResponse(ctx context.Context, params *BulkUnarchiveChangeSetsParams, reqEditors ...RequestEditorFn) (*BulkUnarchiveChangeSetsResponse, error)
 
 	// BulkDeleteChangeWorkflowsWithResponse Bulk delete multiple change workflows
 	//
@@ -46333,6 +50135,15 @@ type ClientWithResponsesInterface interface {
 	// Corresponds with POST /change_workflow/move (the `BulkMoveChangeWorkflows` operationId).
 	BulkMoveChangeWorkflowsWithResponse(ctx context.Context, params *BulkMoveChangeWorkflowsParams, body BulkMoveChangeWorkflowsJSONRequestBody, reqEditors ...RequestEditorFn) (*BulkMoveChangeWorkflowsResponse, error)
 
+	// BulkUnarchiveChangeWorkflowsWithResponse Unarchive change workflows
+	//
+	// Unarchive a ChangeWorkflow archived by a delete with archive=true. Its backing Unit, archived with it, is unarchived with it. Its Slug is restored from the label ArchivedSlug unless another ChangeWorkflow has taken it since, in which case it keeps the Slug the archive gave it, which KeptSlug in the response reports; it is unarchived either way. Refused while its Space is archived, while it was archived with another entity, which unarchiving that one brings back, and while it names an entity that is still archived. Requires Edit permission. Selects archived ChangeWorkflows, as if include_hidden named Archived, and leaves alone a selected ChangeWorkflow that is not archived.
+	//
+	// Returns a wrapper object for the known response body format(s).
+	//
+	// Corresponds with POST /change_workflow/unarchive (the `BulkUnarchiveChangeWorkflows` operationId).
+	BulkUnarchiveChangeWorkflowsWithResponse(ctx context.Context, params *BulkUnarchiveChangeWorkflowsParams, reqEditors ...RequestEditorFn) (*BulkUnarchiveChangeWorkflowsResponse, error)
+
 	// BulkDeleteChannelsWithResponse Bulk delete multiple channels
 	//
 	// Delete multiple channels selected by query parameters.
@@ -46405,6 +50216,15 @@ type ClientWithResponsesInterface interface {
 	// Corresponds with POST /channel/move (the `BulkMoveChannels` operationId).
 	BulkMoveChannelsWithResponse(ctx context.Context, params *BulkMoveChannelsParams, body BulkMoveChannelsJSONRequestBody, reqEditors ...RequestEditorFn) (*BulkMoveChannelsResponse, error)
 
+	// BulkUnarchiveChannelsWithResponse Unarchive channels
+	//
+	// Unarchive a Channel archived by a delete with archive=true. Its backing Unit, archived with it, is unarchived with it. Its Slug is restored from the label ArchivedSlug unless another Channel has taken it since, in which case it keeps the Slug the archive gave it, which KeptSlug in the response reports; it is unarchived either way. Refused while its Space is archived, while it was archived with another entity, which unarchiving that one brings back, and while it names an entity that is still archived. Requires Edit permission. Selects archived Channels, as if include_hidden named Archived, and leaves alone a selected Channel that is not archived.
+	//
+	// Returns a wrapper object for the known response body format(s).
+	//
+	// Corresponds with POST /channel/unarchive (the `BulkUnarchiveChannels` operationId).
+	BulkUnarchiveChannelsWithResponse(ctx context.Context, params *BulkUnarchiveChannelsParams, reqEditors ...RequestEditorFn) (*BulkUnarchiveChannelsResponse, error)
+
 	// ListAllCommandsWithResponse List the commands declared across the Organization
 	//
 	// Returns a wrapper object for the known response body format(s).
@@ -46445,7 +50265,7 @@ type ClientWithResponsesInterface interface {
 	// Returns a wrapper object for the known response body format(s).
 	//
 	// Corresponds with DELETE /component/{component_id} (the `DeleteComponent` operationId).
-	DeleteComponentWithResponse(ctx context.Context, componentId openapi_types.UUID, reqEditors ...RequestEditorFn) (*DeleteComponentResponse, error)
+	DeleteComponentWithResponse(ctx context.Context, componentId openapi_types.UUID, params *DeleteComponentParams, reqEditors ...RequestEditorFn) (*DeleteComponentResponse, error)
 
 	// GetComponentWithResponse Get Component
 	//
@@ -46508,6 +50328,15 @@ type ClientWithResponsesInterface interface {
 	//
 	// Corresponds with POST /component/{component_id}/document (the `UpdateComponentDocument` operationId).
 	UpdateComponentDocumentWithResponse(ctx context.Context, componentId openapi_types.UUID, params *UpdateComponentDocumentParams, body UpdateComponentDocumentJSONRequestBody, reqEditors ...RequestEditorFn) (*UpdateComponentDocumentResponse, error)
+
+	// UnarchiveComponentWithResponse Unarchive a component
+	//
+	// Unarchive a Component archived by a delete with archive=true. Its backing Unit, archived with it, is unarchived with it. Its Slug is restored from the label ArchivedSlug unless another Component has taken it since, in which case it keeps the Slug the archive gave it, which KeptSlug in the response reports; it is unarchived either way. Refused while its Space is archived, while it was archived with another entity, which unarchiving that one brings back, and while it names an entity that is still archived. Requires Edit permission.
+	//
+	// Returns a wrapper object for the known response body format(s).
+	//
+	// Corresponds with POST /component/{component_id}/unarchive (the `UnarchiveComponent` operationId).
+	UnarchiveComponentWithResponse(ctx context.Context, componentId openapi_types.UUID, reqEditors ...RequestEditorFn) (*UnarchiveComponentResponse, error)
 
 	// DemoteWithBodyWithResponse Undo an aborted ChangeOrder in the Spaces it reached
 	//
@@ -46616,6 +50445,15 @@ type ClientWithResponsesInterface interface {
 	//
 	// Corresponds with POST /filter/move (the `BulkMoveFilters` operationId).
 	BulkMoveFiltersWithResponse(ctx context.Context, params *BulkMoveFiltersParams, body BulkMoveFiltersJSONRequestBody, reqEditors ...RequestEditorFn) (*BulkMoveFiltersResponse, error)
+
+	// BulkUnarchiveFiltersWithResponse Unarchive filters
+	//
+	// Unarchive a Filter archived by a delete with archive=true. Its backing Unit, archived with it, is unarchived with it. Its Slug is restored from the label ArchivedSlug unless another Filter has taken it since, in which case it keeps the Slug the archive gave it, which KeptSlug in the response reports; it is unarchived either way. Refused while its Space is archived, while it was archived with another entity, which unarchiving that one brings back, and while it names an entity that is still archived. Requires Edit permission. Selects archived Filters, as if include_hidden named Archived, and leaves alone a selected Filter that is not archived.
+	//
+	// Returns a wrapper object for the known response body format(s).
+	//
+	// Corresponds with POST /filter/unarchive (the `BulkUnarchiveFilters` operationId).
+	BulkUnarchiveFiltersWithResponse(ctx context.Context, params *BulkUnarchiveFiltersParams, reqEditors ...RequestEditorFn) (*BulkUnarchiveFiltersResponse, error)
 
 	// ListOrgFunctionsWithResponse List retrieves a map of Functions across the Organization
 	//
@@ -46771,6 +50609,15 @@ type ClientWithResponsesInterface interface {
 	// Corresponds with POST /invocation/move (the `BulkMoveInvocations` operationId).
 	BulkMoveInvocationsWithResponse(ctx context.Context, params *BulkMoveInvocationsParams, body BulkMoveInvocationsJSONRequestBody, reqEditors ...RequestEditorFn) (*BulkMoveInvocationsResponse, error)
 
+	// BulkUnarchiveInvocationsWithResponse Unarchive invocations
+	//
+	// Unarchive a Invocation archived by a delete with archive=true. Its backing Unit, archived with it, is unarchived with it. Its Slug is restored from the label ArchivedSlug unless another Invocation has taken it since, in which case it keeps the Slug the archive gave it, which KeptSlug in the response reports; it is unarchived either way. Refused while its Space is archived, while it was archived with another entity, which unarchiving that one brings back, and while it names an entity that is still archived. Requires Edit permission. Selects archived Invocations, as if include_hidden named Archived, and leaves alone a selected Invocation that is not archived.
+	//
+	// Returns a wrapper object for the known response body format(s).
+	//
+	// Corresponds with POST /invocation/unarchive (the `BulkUnarchiveInvocations` operationId).
+	BulkUnarchiveInvocationsWithResponse(ctx context.Context, params *BulkUnarchiveInvocationsParams, reqEditors ...RequestEditorFn) (*BulkUnarchiveInvocationsResponse, error)
+
 	// BulkDeleteLinksWithResponse Bulk delete multiple links
 	//
 	// Delete multiple links selected by query parameters.
@@ -46824,6 +50671,15 @@ type ClientWithResponsesInterface interface {
 	//
 	// Corresponds with POST /link (the `BulkCreateLinks` operationId).
 	BulkCreateLinksWithApplicationMergePatchPlusJSONBodyWithResponse(ctx context.Context, params *BulkCreateLinksParams, body BulkCreateLinksApplicationMergePatchPlusJSONRequestBody, reqEditors ...RequestEditorFn) (*BulkCreateLinksResponse, error)
+
+	// BulkUnarchiveLinksWithResponse Unarchive links
+	//
+	// Unarchive a Link archived by a delete with archive=true. Its backing Unit, archived with it, is unarchived with it. Its Slug is restored from the label ArchivedSlug unless another Link has taken it since, in which case it keeps the Slug the archive gave it, which KeptSlug in the response reports; it is unarchived either way. Refused while its Space is archived, while it was archived with another entity, which unarchiving that one brings back, and while it names an entity that is still archived. Requires Edit permission. Selects archived Links, as if include_hidden named Archived, and leaves alone a selected Link that is not archived.
+	//
+	// Returns a wrapper object for the known response body format(s).
+	//
+	// Corresponds with POST /link/unarchive (the `BulkUnarchiveLinks` operationId).
+	BulkUnarchiveLinksWithResponse(ctx context.Context, params *BulkUnarchiveLinksParams, reqEditors ...RequestEditorFn) (*BulkUnarchiveLinksResponse, error)
 
 	// GetMeWithResponse Get the current user's information
 	//
@@ -46989,6 +50845,15 @@ type ClientWithResponsesInterface interface {
 	//
 	// Corresponds with GET /release (the `ListAllReleases` operationId).
 	ListAllReleasesWithResponse(ctx context.Context, params *ListAllReleasesParams, reqEditors ...RequestEditorFn) (*ListAllReleasesResponse, error)
+
+	// BulkUnarchiveReleasesWithResponse Unarchive releases
+	//
+	// Unarchive a Release archived by a delete with archive=true. Its Slug is restored from the label ArchivedSlug unless another Release has taken it since, in which case it keeps the Slug the archive gave it, which KeptSlug in the response reports; it is unarchived either way. Refused while its Space is archived, while it was archived with another entity, which unarchiving that one brings back, and while it names an entity that is still archived. Requires Edit permission. Selects archived Releases, as if include_hidden named Archived, and leaves alone a selected Release that is not archived.
+	//
+	// Returns a wrapper object for the known response body format(s).
+	//
+	// Corresponds with POST /release/unarchive (the `BulkUnarchiveReleases` operationId).
+	BulkUnarchiveReleasesWithResponse(ctx context.Context, params *BulkUnarchiveReleasesParams, reqEditors ...RequestEditorFn) (*BulkUnarchiveReleasesResponse, error)
 
 	// ListAllResourcesWithResponse List of Resources across spaces
 	//
@@ -47345,7 +51210,7 @@ type ClientWithResponsesInterface interface {
 	// Returns a wrapper object for the known response body format(s).
 	//
 	// Corresponds with DELETE /space/{space_id}/attribute/{attribute_id} (the `DeleteAttribute` operationId).
-	DeleteAttributeWithResponse(ctx context.Context, spaceId openapi_types.UUID, attributeId openapi_types.UUID, reqEditors ...RequestEditorFn) (*DeleteAttributeResponse, error)
+	DeleteAttributeWithResponse(ctx context.Context, spaceId openapi_types.UUID, attributeId openapi_types.UUID, params *DeleteAttributeParams, reqEditors ...RequestEditorFn) (*DeleteAttributeResponse, error)
 
 	// GetAttributeWithResponse Get Attribute
 	//
@@ -47408,6 +51273,15 @@ type ClientWithResponsesInterface interface {
 	//
 	// Corresponds with POST /space/{space_id}/attribute/{attribute_id}/document (the `UpdateAttributeDocument` operationId).
 	UpdateAttributeDocumentWithResponse(ctx context.Context, spaceId openapi_types.UUID, attributeId openapi_types.UUID, params *UpdateAttributeDocumentParams, body UpdateAttributeDocumentJSONRequestBody, reqEditors ...RequestEditorFn) (*UpdateAttributeDocumentResponse, error)
+
+	// UnarchiveAttributeWithResponse Unarchive a attribute
+	//
+	// Unarchive a Attribute archived by a delete with archive=true. Its backing Unit, archived with it, is unarchived with it. Its Slug is restored from the label ArchivedSlug unless another Attribute has taken it since, in which case it keeps the Slug the archive gave it, which KeptSlug in the response reports; it is unarchived either way. Refused while its Space is archived, while it was archived with another entity, which unarchiving that one brings back, and while it names an entity that is still archived. Requires Edit permission.
+	//
+	// Returns a wrapper object for the known response body format(s).
+	//
+	// Corresponds with POST /space/{space_id}/attribute/{attribute_id}/unarchive (the `UnarchiveAttribute` operationId).
+	UnarchiveAttributeWithResponse(ctx context.Context, spaceId openapi_types.UUID, attributeId openapi_types.UUID, reqEditors ...RequestEditorFn) (*UnarchiveAttributeResponse, error)
 
 	// ListChangeOrdersWithResponse List ChangeOrders
 	//
@@ -47481,6 +51355,15 @@ type ClientWithResponsesInterface interface {
 	// Corresponds with POST /space/{space_id}/change_order/{change_order_id}/refresh_stage (the `RefreshChangeOrderStage` operationId).
 	RefreshChangeOrderStageWithResponse(ctx context.Context, spaceId openapi_types.UUID, changeOrderId openapi_types.UUID, params *RefreshChangeOrderStageParams, reqEditors ...RequestEditorFn) (*RefreshChangeOrderStageResponse, error)
 
+	// UnarchiveChangeOrderWithResponse Unarchive a change order
+	//
+	// Unarchive a ChangeOrder archived by a delete with archive=true. Its Slug is restored from the label ArchivedSlug unless another ChangeOrder has taken it since, in which case it keeps the Slug the archive gave it, which KeptSlug in the response reports; it is unarchived either way. Refused while its Space is archived, while it was archived with another entity, which unarchiving that one brings back, and while it names an entity that is still archived. Requires Edit permission.
+	//
+	// Returns a wrapper object for the known response body format(s).
+	//
+	// Corresponds with POST /space/{space_id}/change_order/{change_order_id}/unarchive (the `UnarchiveChangeOrder` operationId).
+	UnarchiveChangeOrderWithResponse(ctx context.Context, spaceId openapi_types.UUID, changeOrderId openapi_types.UUID, reqEditors ...RequestEditorFn) (*UnarchiveChangeOrderResponse, error)
+
 	// ListChangeSetsWithResponse List ChangeSets
 	//
 	// Returns a wrapper object for the known response body format(s).
@@ -47544,6 +51427,15 @@ type ClientWithResponsesInterface interface {
 	// Corresponds with PUT /space/{space_id}/change_set/{change_set_id} (the `UpdateChangeSet` operationId).
 	UpdateChangeSetWithResponse(ctx context.Context, spaceId openapi_types.UUID, changeSetId openapi_types.UUID, params *UpdateChangeSetParams, body UpdateChangeSetJSONRequestBody, reqEditors ...RequestEditorFn) (*UpdateChangeSetResponse, error)
 
+	// UnarchiveChangeSetWithResponse Unarchive a change set
+	//
+	// Unarchive a ChangeSet archived by a delete with archive=true. Its Slug is restored from the label ArchivedSlug unless another ChangeSet has taken it since, in which case it keeps the Slug the archive gave it, which KeptSlug in the response reports; it is unarchived either way. Refused while its Space is archived, while it was archived with another entity, which unarchiving that one brings back, and while it names an entity that is still archived. Requires Edit permission.
+	//
+	// Returns a wrapper object for the known response body format(s).
+	//
+	// Corresponds with POST /space/{space_id}/change_set/{change_set_id}/unarchive (the `UnarchiveChangeSet` operationId).
+	UnarchiveChangeSetWithResponse(ctx context.Context, spaceId openapi_types.UUID, changeSetId openapi_types.UUID, reqEditors ...RequestEditorFn) (*UnarchiveChangeSetResponse, error)
+
 	// ListChangeWorkflowsWithResponse List ChangeWorkflows
 	//
 	// Returns a wrapper object for the known response body format(s).
@@ -47570,7 +51462,7 @@ type ClientWithResponsesInterface interface {
 	// Returns a wrapper object for the known response body format(s).
 	//
 	// Corresponds with DELETE /space/{space_id}/change_workflow/{change_workflow_id} (the `DeleteChangeWorkflow` operationId).
-	DeleteChangeWorkflowWithResponse(ctx context.Context, spaceId openapi_types.UUID, changeWorkflowId openapi_types.UUID, reqEditors ...RequestEditorFn) (*DeleteChangeWorkflowResponse, error)
+	DeleteChangeWorkflowWithResponse(ctx context.Context, spaceId openapi_types.UUID, changeWorkflowId openapi_types.UUID, params *DeleteChangeWorkflowParams, reqEditors ...RequestEditorFn) (*DeleteChangeWorkflowResponse, error)
 
 	// GetChangeWorkflowWithResponse Get ChangeWorkflow
 	//
@@ -47634,6 +51526,15 @@ type ClientWithResponsesInterface interface {
 	// Corresponds with POST /space/{space_id}/change_workflow/{change_workflow_id}/document (the `UpdateChangeWorkflowDocument` operationId).
 	UpdateChangeWorkflowDocumentWithResponse(ctx context.Context, spaceId openapi_types.UUID, changeWorkflowId openapi_types.UUID, params *UpdateChangeWorkflowDocumentParams, body UpdateChangeWorkflowDocumentJSONRequestBody, reqEditors ...RequestEditorFn) (*UpdateChangeWorkflowDocumentResponse, error)
 
+	// UnarchiveChangeWorkflowWithResponse Unarchive a change workflow
+	//
+	// Unarchive a ChangeWorkflow archived by a delete with archive=true. Its backing Unit, archived with it, is unarchived with it. Its Slug is restored from the label ArchivedSlug unless another ChangeWorkflow has taken it since, in which case it keeps the Slug the archive gave it, which KeptSlug in the response reports; it is unarchived either way. Refused while its Space is archived, while it was archived with another entity, which unarchiving that one brings back, and while it names an entity that is still archived. Requires Edit permission.
+	//
+	// Returns a wrapper object for the known response body format(s).
+	//
+	// Corresponds with POST /space/{space_id}/change_workflow/{change_workflow_id}/unarchive (the `UnarchiveChangeWorkflow` operationId).
+	UnarchiveChangeWorkflowWithResponse(ctx context.Context, spaceId openapi_types.UUID, changeWorkflowId openapi_types.UUID, reqEditors ...RequestEditorFn) (*UnarchiveChangeWorkflowResponse, error)
+
 	// ListChannelsWithResponse List Channels
 	//
 	// Returns a wrapper object for the known response body format(s).
@@ -47660,7 +51561,7 @@ type ClientWithResponsesInterface interface {
 	// Returns a wrapper object for the known response body format(s).
 	//
 	// Corresponds with DELETE /space/{space_id}/channel/{channel_id} (the `DeleteChannel` operationId).
-	DeleteChannelWithResponse(ctx context.Context, spaceId openapi_types.UUID, channelId openapi_types.UUID, reqEditors ...RequestEditorFn) (*DeleteChannelResponse, error)
+	DeleteChannelWithResponse(ctx context.Context, spaceId openapi_types.UUID, channelId openapi_types.UUID, params *DeleteChannelParams, reqEditors ...RequestEditorFn) (*DeleteChannelResponse, error)
 
 	// GetChannelWithResponse Get Channel
 	//
@@ -47778,6 +51679,15 @@ type ClientWithResponsesInterface interface {
 	// Corresponds with POST /space/{space_id}/channel/{channel_id}/poll (the `PollChannel` operationId).
 	PollChannelWithResponse(ctx context.Context, spaceId openapi_types.UUID, channelId openapi_types.UUID, body PollChannelJSONRequestBody, reqEditors ...RequestEditorFn) (*PollChannelResponse, error)
 
+	// UnarchiveChannelWithResponse Unarchive a channel
+	//
+	// Unarchive a Channel archived by a delete with archive=true. Its backing Unit, archived with it, is unarchived with it. Its Slug is restored from the label ArchivedSlug unless another Channel has taken it since, in which case it keeps the Slug the archive gave it, which KeptSlug in the response reports; it is unarchived either way. Refused while its Space is archived, while it was archived with another entity, which unarchiving that one brings back, and while it names an entity that is still archived. Requires Edit permission.
+	//
+	// Returns a wrapper object for the known response body format(s).
+	//
+	// Corresponds with POST /space/{space_id}/channel/{channel_id}/unarchive (the `UnarchiveChannel` operationId).
+	UnarchiveChannelWithResponse(ctx context.Context, spaceId openapi_types.UUID, channelId openapi_types.UUID, reqEditors ...RequestEditorFn) (*UnarchiveChannelResponse, error)
+
 	// ListCommandsWithResponse List the commands runnable in the Space
 	//
 	// The commands the Space's Channels declare, with each one's signature and the Channel that declares it.
@@ -47883,7 +51793,7 @@ type ClientWithResponsesInterface interface {
 	// Returns a wrapper object for the known response body format(s).
 	//
 	// Corresponds with DELETE /space/{space_id}/filter/{filter_id} (the `DeleteFilter` operationId).
-	DeleteFilterWithResponse(ctx context.Context, spaceId openapi_types.UUID, filterId openapi_types.UUID, reqEditors ...RequestEditorFn) (*DeleteFilterResponse, error)
+	DeleteFilterWithResponse(ctx context.Context, spaceId openapi_types.UUID, filterId openapi_types.UUID, params *DeleteFilterParams, reqEditors ...RequestEditorFn) (*DeleteFilterResponse, error)
 
 	// GetFilterWithResponse Get Filter
 	//
@@ -47946,6 +51856,15 @@ type ClientWithResponsesInterface interface {
 	//
 	// Corresponds with POST /space/{space_id}/filter/{filter_id}/document (the `UpdateFilterDocument` operationId).
 	UpdateFilterDocumentWithResponse(ctx context.Context, spaceId openapi_types.UUID, filterId openapi_types.UUID, params *UpdateFilterDocumentParams, body UpdateFilterDocumentJSONRequestBody, reqEditors ...RequestEditorFn) (*UpdateFilterDocumentResponse, error)
+
+	// UnarchiveFilterWithResponse Unarchive a filter
+	//
+	// Unarchive a Filter archived by a delete with archive=true. Its backing Unit, archived with it, is unarchived with it. Its Slug is restored from the label ArchivedSlug unless another Filter has taken it since, in which case it keeps the Slug the archive gave it, which KeptSlug in the response reports; it is unarchived either way. Refused while its Space is archived, while it was archived with another entity, which unarchiving that one brings back, and while it names an entity that is still archived. Requires Edit permission.
+	//
+	// Returns a wrapper object for the known response body format(s).
+	//
+	// Corresponds with POST /space/{space_id}/filter/{filter_id}/unarchive (the `UnarchiveFilter` operationId).
+	UnarchiveFilterWithResponse(ctx context.Context, spaceId openapi_types.UUID, filterId openapi_types.UUID, reqEditors ...RequestEditorFn) (*UnarchiveFilterResponse, error)
 
 	// ListFunctionsWithResponse List retrieves a map of Functions
 	//
@@ -48012,7 +51931,7 @@ type ClientWithResponsesInterface interface {
 	// Returns a wrapper object for the known response body format(s).
 	//
 	// Corresponds with DELETE /space/{space_id}/invocation/{invocation_id} (the `DeleteInvocation` operationId).
-	DeleteInvocationWithResponse(ctx context.Context, spaceId openapi_types.UUID, invocationId openapi_types.UUID, reqEditors ...RequestEditorFn) (*DeleteInvocationResponse, error)
+	DeleteInvocationWithResponse(ctx context.Context, spaceId openapi_types.UUID, invocationId openapi_types.UUID, params *DeleteInvocationParams, reqEditors ...RequestEditorFn) (*DeleteInvocationResponse, error)
 
 	// GetInvocationWithResponse Get Invocation
 	//
@@ -48076,6 +51995,15 @@ type ClientWithResponsesInterface interface {
 	// Corresponds with POST /space/{space_id}/invocation/{invocation_id}/document (the `UpdateInvocationDocument` operationId).
 	UpdateInvocationDocumentWithResponse(ctx context.Context, spaceId openapi_types.UUID, invocationId openapi_types.UUID, params *UpdateInvocationDocumentParams, body UpdateInvocationDocumentJSONRequestBody, reqEditors ...RequestEditorFn) (*UpdateInvocationDocumentResponse, error)
 
+	// UnarchiveInvocationWithResponse Unarchive a invocation
+	//
+	// Unarchive a Invocation archived by a delete with archive=true. Its backing Unit, archived with it, is unarchived with it. Its Slug is restored from the label ArchivedSlug unless another Invocation has taken it since, in which case it keeps the Slug the archive gave it, which KeptSlug in the response reports; it is unarchived either way. Refused while its Space is archived, while it was archived with another entity, which unarchiving that one brings back, and while it names an entity that is still archived. Requires Edit permission.
+	//
+	// Returns a wrapper object for the known response body format(s).
+	//
+	// Corresponds with POST /space/{space_id}/invocation/{invocation_id}/unarchive (the `UnarchiveInvocation` operationId).
+	UnarchiveInvocationWithResponse(ctx context.Context, spaceId openapi_types.UUID, invocationId openapi_types.UUID, reqEditors ...RequestEditorFn) (*UnarchiveInvocationResponse, error)
+
 	// ListLinksWithResponse List Links
 	//
 	// Returns a wrapper object for the known response body format(s).
@@ -48102,7 +52030,7 @@ type ClientWithResponsesInterface interface {
 	// Returns a wrapper object for the known response body format(s).
 	//
 	// Corresponds with DELETE /space/{space_id}/link/{link_id} (the `DeleteLink` operationId).
-	DeleteLinkWithResponse(ctx context.Context, spaceId openapi_types.UUID, linkId openapi_types.UUID, reqEditors ...RequestEditorFn) (*DeleteLinkResponse, error)
+	DeleteLinkWithResponse(ctx context.Context, spaceId openapi_types.UUID, linkId openapi_types.UUID, params *DeleteLinkParams, reqEditors ...RequestEditorFn) (*DeleteLinkResponse, error)
 
 	// GetLinkWithResponse Get Link
 	//
@@ -48165,6 +52093,15 @@ type ClientWithResponsesInterface interface {
 	//
 	// Corresponds with POST /space/{space_id}/link/{link_id}/document (the `UpdateLinkDocument` operationId).
 	UpdateLinkDocumentWithResponse(ctx context.Context, spaceId openapi_types.UUID, linkId openapi_types.UUID, params *UpdateLinkDocumentParams, body UpdateLinkDocumentJSONRequestBody, reqEditors ...RequestEditorFn) (*UpdateLinkDocumentResponse, error)
+
+	// UnarchiveLinkWithResponse Unarchive a link
+	//
+	// Unarchive a Link archived by a delete with archive=true. Its backing Unit, archived with it, is unarchived with it. Its Slug is restored from the label ArchivedSlug unless another Link has taken it since, in which case it keeps the Slug the archive gave it, which KeptSlug in the response reports; it is unarchived either way. Refused while its Space is archived, while it was archived with another entity, which unarchiving that one brings back, and while it names an entity that is still archived. Requires Edit permission.
+	//
+	// Returns a wrapper object for the known response body format(s).
+	//
+	// Corresponds with POST /space/{space_id}/link/{link_id}/unarchive (the `UnarchiveLink` operationId).
+	UnarchiveLinkWithResponse(ctx context.Context, spaceId openapi_types.UUID, linkId openapi_types.UUID, reqEditors ...RequestEditorFn) (*UnarchiveLinkResponse, error)
 
 	// ListExtendedReleasesWithResponse List ExtendedReleases
 	//
@@ -48252,6 +52189,15 @@ type ClientWithResponsesInterface interface {
 	// Corresponds with GET /space/{space_id}/release/{release_id}/data (the `DownloadReleaseData` operationId).
 	DownloadReleaseDataWithResponse(ctx context.Context, spaceId openapi_types.UUID, releaseId openapi_types.UUID, reqEditors ...RequestEditorFn) (*DownloadReleaseDataResponse, error)
 
+	// UnarchiveReleaseWithResponse Unarchive a release
+	//
+	// Unarchive a Release archived by a delete with archive=true. Its Slug is restored from the label ArchivedSlug unless another Release has taken it since, in which case it keeps the Slug the archive gave it, which KeptSlug in the response reports; it is unarchived either way. Refused while its Space is archived, while it was archived with another entity, which unarchiving that one brings back, and while it names an entity that is still archived. Requires Edit permission.
+	//
+	// Returns a wrapper object for the known response body format(s).
+	//
+	// Corresponds with POST /space/{space_id}/release/{release_id}/unarchive (the `UnarchiveRelease` operationId).
+	UnarchiveReleaseWithResponse(ctx context.Context, spaceId openapi_types.UUID, releaseId openapi_types.UUID, reqEditors ...RequestEditorFn) (*UnarchiveReleaseResponse, error)
+
 	// WithdrawReleaseWithResponse Withdraw the selected Release
 	//
 	// Withdraw the selected Release, clearing its Published flag so it is no longer available for download. The Release itself is retained; delete it to remove it entirely. Withdrawing changes what is served to the cluster behind the release Target, so it requires TargetEditChildren on the Release's Space as well as Edit on the Release.
@@ -48323,6 +52269,15 @@ type ClientWithResponsesInterface interface {
 	//
 	// Corresponds with PUT /space/{space_id}/tag/{tag_id} (the `UpdateTag` operationId).
 	UpdateTagWithResponse(ctx context.Context, spaceId openapi_types.UUID, tagId openapi_types.UUID, params *UpdateTagParams, body UpdateTagJSONRequestBody, reqEditors ...RequestEditorFn) (*UpdateTagResponse, error)
+
+	// UnarchiveTagWithResponse Unarchive a tag
+	//
+	// Unarchive a Tag archived by a delete with archive=true. Its Slug is restored from the label ArchivedSlug unless another Tag has taken it since, in which case it keeps the Slug the archive gave it, which KeptSlug in the response reports; it is unarchived either way. Refused while its Space is archived, while it was archived with another entity, which unarchiving that one brings back, and while it names an entity that is still archived. Requires Edit permission.
+	//
+	// Returns a wrapper object for the known response body format(s).
+	//
+	// Corresponds with POST /space/{space_id}/tag/{tag_id}/unarchive (the `UnarchiveTag` operationId).
+	UnarchiveTagWithResponse(ctx context.Context, spaceId openapi_types.UUID, tagId openapi_types.UUID, reqEditors ...RequestEditorFn) (*UnarchiveTagResponse, error)
 
 	// ListTargetsWithResponse List Targets
 	//
@@ -48414,6 +52369,15 @@ type ClientWithResponsesInterface interface {
 	// Corresponds with POST /space/{space_id}/target/{target_id}/document (the `UpdateTargetDocument` operationId).
 	UpdateTargetDocumentWithResponse(ctx context.Context, spaceId openapi_types.UUID, targetId openapi_types.UUID, params *UpdateTargetDocumentParams, body UpdateTargetDocumentJSONRequestBody, reqEditors ...RequestEditorFn) (*UpdateTargetDocumentResponse, error)
 
+	// UnarchiveTargetWithResponse Unarchive a target
+	//
+	// Unarchive a Target archived by a delete with archive=true. Its backing Unit, archived with it, is unarchived with it. Its Slug is restored from the label ArchivedSlug unless another Target has taken it since, in which case it keeps the Slug the archive gave it, which KeptSlug in the response reports; it is unarchived either way. Refused while its Space is archived, while it was archived with another entity, which unarchiving that one brings back, and while it names an entity that is still archived. Requires Edit permission.
+	//
+	// Returns a wrapper object for the known response body format(s).
+	//
+	// Corresponds with POST /space/{space_id}/target/{target_id}/unarchive (the `UnarchiveTarget` operationId).
+	UnarchiveTargetWithResponse(ctx context.Context, spaceId openapi_types.UUID, targetId openapi_types.UUID, reqEditors ...RequestEditorFn) (*UnarchiveTargetResponse, error)
+
 	// ListTriggersWithResponse List Triggers
 	//
 	// Returns a wrapper object for the known response body format(s).
@@ -48440,7 +52404,7 @@ type ClientWithResponsesInterface interface {
 	// Returns a wrapper object for the known response body format(s).
 	//
 	// Corresponds with DELETE /space/{space_id}/trigger/{trigger_id} (the `DeleteTrigger` operationId).
-	DeleteTriggerWithResponse(ctx context.Context, spaceId openapi_types.UUID, triggerId openapi_types.UUID, reqEditors ...RequestEditorFn) (*DeleteTriggerResponse, error)
+	DeleteTriggerWithResponse(ctx context.Context, spaceId openapi_types.UUID, triggerId openapi_types.UUID, params *DeleteTriggerParams, reqEditors ...RequestEditorFn) (*DeleteTriggerResponse, error)
 
 	// GetTriggerWithResponse Get Trigger
 	//
@@ -48503,6 +52467,24 @@ type ClientWithResponsesInterface interface {
 	//
 	// Corresponds with POST /space/{space_id}/trigger/{trigger_id}/document (the `UpdateTriggerDocument` operationId).
 	UpdateTriggerDocumentWithResponse(ctx context.Context, spaceId openapi_types.UUID, triggerId openapi_types.UUID, params *UpdateTriggerDocumentParams, body UpdateTriggerDocumentJSONRequestBody, reqEditors ...RequestEditorFn) (*UpdateTriggerDocumentResponse, error)
+
+	// UnarchiveTriggerWithResponse Unarchive a trigger
+	//
+	// Unarchive a Trigger archived by a delete with archive=true. Its backing Unit, archived with it, is unarchived with it. Its Slug is restored from the label ArchivedSlug unless another Trigger has taken it since, in which case it keeps the Slug the archive gave it, which KeptSlug in the response reports; it is unarchived either way. Refused while its Space is archived, while it was archived with another entity, which unarchiving that one brings back, and while it names an entity that is still archived. Requires Edit permission.
+	//
+	// Returns a wrapper object for the known response body format(s).
+	//
+	// Corresponds with POST /space/{space_id}/trigger/{trigger_id}/unarchive (the `UnarchiveTrigger` operationId).
+	UnarchiveTriggerWithResponse(ctx context.Context, spaceId openapi_types.UUID, triggerId openapi_types.UUID, reqEditors ...RequestEditorFn) (*UnarchiveTriggerResponse, error)
+
+	// UnarchiveSpaceWithResponse Unarchive a space
+	//
+	// Unarchive a Space archived by a delete with archive=true. Its Slug is restored from the label ArchivedSlug unless another Space has taken it since, in which case it keeps the Slug the archive gave it, which KeptSlug in the response reports; it is unarchived either way. A Space archived recursively is unarchived only recursively, which unarchives what its archive archived, and nothing archived before or since. Refused while what it would bring back names an entity that is still archived, such as a Target in another archived Space. ChangeOrders the archive aborted stay aborted. Requires Edit permission.
+	//
+	// Returns a wrapper object for the known response body format(s).
+	//
+	// Corresponds with POST /space/{space_id}/unarchive (the `UnarchiveSpace` operationId).
+	UnarchiveSpaceWithResponse(ctx context.Context, spaceId openapi_types.UUID, params *UnarchiveSpaceParams, reqEditors ...RequestEditorFn) (*UnarchiveSpaceResponse, error)
 
 	// ListUnitsWithResponse List Units
 	//
@@ -48835,7 +52817,7 @@ type ClientWithResponsesInterface interface {
 	// Returns a wrapper object for the known response body format(s).
 	//
 	// Corresponds with DELETE /space/{space_id}/view/{view_id} (the `DeleteView` operationId).
-	DeleteViewWithResponse(ctx context.Context, spaceId openapi_types.UUID, viewId openapi_types.UUID, reqEditors ...RequestEditorFn) (*DeleteViewResponse, error)
+	DeleteViewWithResponse(ctx context.Context, spaceId openapi_types.UUID, viewId openapi_types.UUID, params *DeleteViewParams, reqEditors ...RequestEditorFn) (*DeleteViewResponse, error)
 
 	// GetViewWithResponse Get View
 	//
@@ -48898,6 +52880,15 @@ type ClientWithResponsesInterface interface {
 	//
 	// Corresponds with POST /space/{space_id}/view/{view_id}/document (the `UpdateViewDocument` operationId).
 	UpdateViewDocumentWithResponse(ctx context.Context, spaceId openapi_types.UUID, viewId openapi_types.UUID, params *UpdateViewDocumentParams, body UpdateViewDocumentJSONRequestBody, reqEditors ...RequestEditorFn) (*UpdateViewDocumentResponse, error)
+
+	// UnarchiveViewWithResponse Unarchive a view
+	//
+	// Unarchive a View archived by a delete with archive=true. Its backing Unit, archived with it, is unarchived with it. Its Slug is restored from the label ArchivedSlug unless another View has taken it since, in which case it keeps the Slug the archive gave it, which KeptSlug in the response reports; it is unarchived either way. Refused while its Space is archived, while it was archived with another entity, which unarchiving that one brings back, and while it names an entity that is still archived. Requires Edit permission.
+	//
+	// Returns a wrapper object for the known response body format(s).
+	//
+	// Corresponds with POST /space/{space_id}/view/{view_id}/unarchive (the `UnarchiveView` operationId).
+	UnarchiveViewWithResponse(ctx context.Context, spaceId openapi_types.UUID, viewId openapi_types.UUID, reqEditors ...RequestEditorFn) (*UnarchiveViewResponse, error)
 
 	// BulkDeleteTagsWithResponse Bulk delete multiple tags
 	//
@@ -48971,6 +52962,15 @@ type ClientWithResponsesInterface interface {
 	// Corresponds with POST /tag/move (the `BulkMoveTags` operationId).
 	BulkMoveTagsWithResponse(ctx context.Context, params *BulkMoveTagsParams, body BulkMoveTagsJSONRequestBody, reqEditors ...RequestEditorFn) (*BulkMoveTagsResponse, error)
 
+	// BulkUnarchiveTagsWithResponse Unarchive tags
+	//
+	// Unarchive a Tag archived by a delete with archive=true. Its Slug is restored from the label ArchivedSlug unless another Tag has taken it since, in which case it keeps the Slug the archive gave it, which KeptSlug in the response reports; it is unarchived either way. Refused while its Space is archived, while it was archived with another entity, which unarchiving that one brings back, and while it names an entity that is still archived. Requires Edit permission. Selects archived Tags, as if include_hidden named Archived, and leaves alone a selected Tag that is not archived.
+	//
+	// Returns a wrapper object for the known response body format(s).
+	//
+	// Corresponds with POST /tag/unarchive (the `BulkUnarchiveTags` operationId).
+	BulkUnarchiveTagsWithResponse(ctx context.Context, params *BulkUnarchiveTagsParams, reqEditors ...RequestEditorFn) (*BulkUnarchiveTagsResponse, error)
+
 	// BulkDeleteTargetsWithResponse Bulk delete multiple targets
 	//
 	// Delete multiple targets selected by query parameters.
@@ -49043,6 +53043,15 @@ type ClientWithResponsesInterface interface {
 	// Corresponds with POST /target/move (the `BulkMoveTargets` operationId).
 	BulkMoveTargetsWithResponse(ctx context.Context, params *BulkMoveTargetsParams, body BulkMoveTargetsJSONRequestBody, reqEditors ...RequestEditorFn) (*BulkMoveTargetsResponse, error)
 
+	// BulkUnarchiveTargetsWithResponse Unarchive targets
+	//
+	// Unarchive a Target archived by a delete with archive=true. Its backing Unit, archived with it, is unarchived with it. Its Slug is restored from the label ArchivedSlug unless another Target has taken it since, in which case it keeps the Slug the archive gave it, which KeptSlug in the response reports; it is unarchived either way. Refused while its Space is archived, while it was archived with another entity, which unarchiving that one brings back, and while it names an entity that is still archived. Requires Edit permission. Selects archived Targets, as if include_hidden named Archived, and leaves alone a selected Target that is not archived.
+	//
+	// Returns a wrapper object for the known response body format(s).
+	//
+	// Corresponds with POST /target/unarchive (the `BulkUnarchiveTargets` operationId).
+	BulkUnarchiveTargetsWithResponse(ctx context.Context, params *BulkUnarchiveTargetsParams, reqEditors ...RequestEditorFn) (*BulkUnarchiveTargetsResponse, error)
+
 	// BulkDeleteTriggersWithResponse Bulk delete multiple triggers
 	//
 	// Delete multiple triggers selected by query parameters.
@@ -49114,6 +53123,15 @@ type ClientWithResponsesInterface interface {
 	//
 	// Corresponds with POST /trigger/move (the `BulkMoveTriggers` operationId).
 	BulkMoveTriggersWithResponse(ctx context.Context, params *BulkMoveTriggersParams, body BulkMoveTriggersJSONRequestBody, reqEditors ...RequestEditorFn) (*BulkMoveTriggersResponse, error)
+
+	// BulkUnarchiveTriggersWithResponse Unarchive triggers
+	//
+	// Unarchive a Trigger archived by a delete with archive=true. Its backing Unit, archived with it, is unarchived with it. Its Slug is restored from the label ArchivedSlug unless another Trigger has taken it since, in which case it keeps the Slug the archive gave it, which KeptSlug in the response reports; it is unarchived either way. Refused while its Space is archived, while it was archived with another entity, which unarchiving that one brings back, and while it names an entity that is still archived. Requires Edit permission. Selects archived Triggers, as if include_hidden named Archived, and leaves alone a selected Trigger that is not archived.
+	//
+	// Returns a wrapper object for the known response body format(s).
+	//
+	// Corresponds with POST /trigger/unarchive (the `BulkUnarchiveTriggers` operationId).
+	BulkUnarchiveTriggersWithResponse(ctx context.Context, params *BulkUnarchiveTriggersParams, reqEditors ...RequestEditorFn) (*BulkUnarchiveTriggersResponse, error)
 
 	// BulkDeleteUnitsWithResponse Bulk delete multiple units
 	//
@@ -49353,6 +53371,15 @@ type ClientWithResponsesInterface interface {
 	//
 	// Corresponds with POST /view/move (the `BulkMoveViews` operationId).
 	BulkMoveViewsWithResponse(ctx context.Context, params *BulkMoveViewsParams, body BulkMoveViewsJSONRequestBody, reqEditors ...RequestEditorFn) (*BulkMoveViewsResponse, error)
+
+	// BulkUnarchiveViewsWithResponse Unarchive views
+	//
+	// Unarchive a View archived by a delete with archive=true. Its backing Unit, archived with it, is unarchived with it. Its Slug is restored from the label ArchivedSlug unless another View has taken it since, in which case it keeps the Slug the archive gave it, which KeptSlug in the response reports; it is unarchived either way. Refused while its Space is archived, while it was archived with another entity, which unarchiving that one brings back, and while it names an entity that is still archived. Requires Edit permission. Selects archived Views, as if include_hidden named Archived, and leaves alone a selected View that is not archived.
+	//
+	// Returns a wrapper object for the known response body format(s).
+	//
+	// Corresponds with POST /view/unarchive (the `BulkUnarchiveViews` operationId).
+	BulkUnarchiveViewsWithResponse(ctx context.Context, params *BulkUnarchiveViewsParams, reqEditors ...RequestEditorFn) (*BulkUnarchiveViewsResponse, error)
 }
 
 // BulkDeleteComponentsResponse200Headers the declared response headers of an HTTP 200 response for BulkDeleteComponents
@@ -49599,6 +53626,124 @@ func (r BulkPatchComponentsResponse) StatusCode() int {
 
 // ContentType is a convenience method to retrieve the Content-Type value from the HTTP response headers
 func (r BulkPatchComponentsResponse) ContentType() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Header.Get("Content-Type")
+	}
+	return ""
+}
+
+// BulkUnarchiveComponentsResponse200Headers the declared response headers of an HTTP 200 response for BulkUnarchiveComponents
+type BulkUnarchiveComponentsResponse200Headers struct {
+	ConfigHubContinue *string
+}
+
+type BulkUnarchiveComponentsResponse struct {
+	Body         []byte
+	HTTPResponse *http.Response
+	// JSON200 the response for an HTTP 200 `application/json` response
+	JSON200 *[]UnarchiveResponse
+	// JSON207 the response for an HTTP 207 `application/json` response
+	JSON207 *[]UnarchiveResponse
+	// JSON400 the response for an HTTP 400 `application/json` response
+	JSON400 *StandardErrorResponse
+	// JSON401 the response for an HTTP 401 `application/json` response
+	JSON401 *StandardErrorResponse
+	// JSON403 the response for an HTTP 403 `application/json` response
+	JSON403 *StandardErrorResponse
+	// JSON404 the response for an HTTP 404 `application/json` response
+	JSON404 *StandardErrorResponse
+	// JSON409 the response for an HTTP 409 `application/json` response
+	JSON409 *StandardErrorResponse
+	// JSON500 the response for an HTTP 500 `application/json` response
+	JSON500 *StandardErrorResponse
+	// JSON503 the response for an HTTP 503 `application/json` response
+	JSON503 *StandardErrorResponse
+	// JSON504 the response for an HTTP 504 `application/json` response
+	JSON504 *StandardErrorResponse
+	// JSONDefault the response for an HTTP default `application/json` response
+	JSONDefault *StandardErrorResponse
+	// Headers200 the parsed response headers for an HTTP 200 response
+	Headers200 *BulkUnarchiveComponentsResponse200Headers
+}
+
+// GetJSON200 returns the response for an HTTP 200 `application/json` response
+func (r BulkUnarchiveComponentsResponse) GetJSON200() *[]UnarchiveResponse {
+	return r.JSON200
+}
+
+// GetJSON207 returns the response for an HTTP 207 `application/json` response
+func (r BulkUnarchiveComponentsResponse) GetJSON207() *[]UnarchiveResponse {
+	return r.JSON207
+}
+
+// GetJSON400 returns the response for an HTTP 400 `application/json` response
+func (r BulkUnarchiveComponentsResponse) GetJSON400() *StandardErrorResponse {
+	return r.JSON400
+}
+
+// GetJSON401 returns the response for an HTTP 401 `application/json` response
+func (r BulkUnarchiveComponentsResponse) GetJSON401() *StandardErrorResponse {
+	return r.JSON401
+}
+
+// GetJSON403 returns the response for an HTTP 403 `application/json` response
+func (r BulkUnarchiveComponentsResponse) GetJSON403() *StandardErrorResponse {
+	return r.JSON403
+}
+
+// GetJSON404 returns the response for an HTTP 404 `application/json` response
+func (r BulkUnarchiveComponentsResponse) GetJSON404() *StandardErrorResponse {
+	return r.JSON404
+}
+
+// GetJSON409 returns the response for an HTTP 409 `application/json` response
+func (r BulkUnarchiveComponentsResponse) GetJSON409() *StandardErrorResponse {
+	return r.JSON409
+}
+
+// GetJSON500 returns the response for an HTTP 500 `application/json` response
+func (r BulkUnarchiveComponentsResponse) GetJSON500() *StandardErrorResponse {
+	return r.JSON500
+}
+
+// GetJSON503 returns the response for an HTTP 503 `application/json` response
+func (r BulkUnarchiveComponentsResponse) GetJSON503() *StandardErrorResponse {
+	return r.JSON503
+}
+
+// GetJSON504 returns the response for an HTTP 504 `application/json` response
+func (r BulkUnarchiveComponentsResponse) GetJSON504() *StandardErrorResponse {
+	return r.JSON504
+}
+
+// GetJSONDefault returns the response for an HTTP default `application/json` response
+func (r BulkUnarchiveComponentsResponse) GetJSONDefault() *StandardErrorResponse {
+	return r.JSONDefault
+}
+
+// GetBody returns the raw response body bytes
+func (r BulkUnarchiveComponentsResponse) GetBody() []byte {
+	return r.Body
+}
+
+// Status returns HTTPResponse.Status
+func (r BulkUnarchiveComponentsResponse) Status() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Status
+	}
+	return http.StatusText(0)
+}
+
+// StatusCode returns HTTPResponse.StatusCode
+func (r BulkUnarchiveComponentsResponse) StatusCode() int {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.StatusCode
+	}
+	return 0
+}
+
+// ContentType is a convenience method to retrieve the Content-Type value from the HTTP response headers
+func (r BulkUnarchiveComponentsResponse) ContentType() string {
 	if r.HTTPResponse != nil {
 		return r.HTTPResponse.Header.Get("Content-Type")
 	}
@@ -50217,6 +54362,124 @@ func (r BulkCreateSpacesResponse) StatusCode() int {
 
 // ContentType is a convenience method to retrieve the Content-Type value from the HTTP response headers
 func (r BulkCreateSpacesResponse) ContentType() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Header.Get("Content-Type")
+	}
+	return ""
+}
+
+// BulkUnarchiveSpacesResponse200Headers the declared response headers of an HTTP 200 response for BulkUnarchiveSpaces
+type BulkUnarchiveSpacesResponse200Headers struct {
+	ConfigHubContinue *string
+}
+
+type BulkUnarchiveSpacesResponse struct {
+	Body         []byte
+	HTTPResponse *http.Response
+	// JSON200 the response for an HTTP 200 `application/json` response
+	JSON200 *[]UnarchiveResponse
+	// JSON207 the response for an HTTP 207 `application/json` response
+	JSON207 *[]UnarchiveResponse
+	// JSON400 the response for an HTTP 400 `application/json` response
+	JSON400 *StandardErrorResponse
+	// JSON401 the response for an HTTP 401 `application/json` response
+	JSON401 *StandardErrorResponse
+	// JSON403 the response for an HTTP 403 `application/json` response
+	JSON403 *StandardErrorResponse
+	// JSON404 the response for an HTTP 404 `application/json` response
+	JSON404 *StandardErrorResponse
+	// JSON409 the response for an HTTP 409 `application/json` response
+	JSON409 *StandardErrorResponse
+	// JSON500 the response for an HTTP 500 `application/json` response
+	JSON500 *StandardErrorResponse
+	// JSON503 the response for an HTTP 503 `application/json` response
+	JSON503 *StandardErrorResponse
+	// JSON504 the response for an HTTP 504 `application/json` response
+	JSON504 *StandardErrorResponse
+	// JSONDefault the response for an HTTP default `application/json` response
+	JSONDefault *StandardErrorResponse
+	// Headers200 the parsed response headers for an HTTP 200 response
+	Headers200 *BulkUnarchiveSpacesResponse200Headers
+}
+
+// GetJSON200 returns the response for an HTTP 200 `application/json` response
+func (r BulkUnarchiveSpacesResponse) GetJSON200() *[]UnarchiveResponse {
+	return r.JSON200
+}
+
+// GetJSON207 returns the response for an HTTP 207 `application/json` response
+func (r BulkUnarchiveSpacesResponse) GetJSON207() *[]UnarchiveResponse {
+	return r.JSON207
+}
+
+// GetJSON400 returns the response for an HTTP 400 `application/json` response
+func (r BulkUnarchiveSpacesResponse) GetJSON400() *StandardErrorResponse {
+	return r.JSON400
+}
+
+// GetJSON401 returns the response for an HTTP 401 `application/json` response
+func (r BulkUnarchiveSpacesResponse) GetJSON401() *StandardErrorResponse {
+	return r.JSON401
+}
+
+// GetJSON403 returns the response for an HTTP 403 `application/json` response
+func (r BulkUnarchiveSpacesResponse) GetJSON403() *StandardErrorResponse {
+	return r.JSON403
+}
+
+// GetJSON404 returns the response for an HTTP 404 `application/json` response
+func (r BulkUnarchiveSpacesResponse) GetJSON404() *StandardErrorResponse {
+	return r.JSON404
+}
+
+// GetJSON409 returns the response for an HTTP 409 `application/json` response
+func (r BulkUnarchiveSpacesResponse) GetJSON409() *StandardErrorResponse {
+	return r.JSON409
+}
+
+// GetJSON500 returns the response for an HTTP 500 `application/json` response
+func (r BulkUnarchiveSpacesResponse) GetJSON500() *StandardErrorResponse {
+	return r.JSON500
+}
+
+// GetJSON503 returns the response for an HTTP 503 `application/json` response
+func (r BulkUnarchiveSpacesResponse) GetJSON503() *StandardErrorResponse {
+	return r.JSON503
+}
+
+// GetJSON504 returns the response for an HTTP 504 `application/json` response
+func (r BulkUnarchiveSpacesResponse) GetJSON504() *StandardErrorResponse {
+	return r.JSON504
+}
+
+// GetJSONDefault returns the response for an HTTP default `application/json` response
+func (r BulkUnarchiveSpacesResponse) GetJSONDefault() *StandardErrorResponse {
+	return r.JSONDefault
+}
+
+// GetBody returns the raw response body bytes
+func (r BulkUnarchiveSpacesResponse) GetBody() []byte {
+	return r.Body
+}
+
+// Status returns HTTPResponse.Status
+func (r BulkUnarchiveSpacesResponse) Status() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Status
+	}
+	return http.StatusText(0)
+}
+
+// StatusCode returns HTTPResponse.StatusCode
+func (r BulkUnarchiveSpacesResponse) StatusCode() int {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.StatusCode
+	}
+	return 0
+}
+
+// ContentType is a convenience method to retrieve the Content-Type value from the HTTP response headers
+func (r BulkUnarchiveSpacesResponse) ContentType() string {
 	if r.HTTPResponse != nil {
 		return r.HTTPResponse.Header.Get("Content-Type")
 	}
@@ -51028,6 +55291,124 @@ func (r BulkMoveAttributesResponse) ContentType() string {
 	return ""
 }
 
+// BulkUnarchiveAttributesResponse200Headers the declared response headers of an HTTP 200 response for BulkUnarchiveAttributes
+type BulkUnarchiveAttributesResponse200Headers struct {
+	ConfigHubContinue *string
+}
+
+type BulkUnarchiveAttributesResponse struct {
+	Body         []byte
+	HTTPResponse *http.Response
+	// JSON200 the response for an HTTP 200 `application/json` response
+	JSON200 *[]UnarchiveResponse
+	// JSON207 the response for an HTTP 207 `application/json` response
+	JSON207 *[]UnarchiveResponse
+	// JSON400 the response for an HTTP 400 `application/json` response
+	JSON400 *StandardErrorResponse
+	// JSON401 the response for an HTTP 401 `application/json` response
+	JSON401 *StandardErrorResponse
+	// JSON403 the response for an HTTP 403 `application/json` response
+	JSON403 *StandardErrorResponse
+	// JSON404 the response for an HTTP 404 `application/json` response
+	JSON404 *StandardErrorResponse
+	// JSON409 the response for an HTTP 409 `application/json` response
+	JSON409 *StandardErrorResponse
+	// JSON500 the response for an HTTP 500 `application/json` response
+	JSON500 *StandardErrorResponse
+	// JSON503 the response for an HTTP 503 `application/json` response
+	JSON503 *StandardErrorResponse
+	// JSON504 the response for an HTTP 504 `application/json` response
+	JSON504 *StandardErrorResponse
+	// JSONDefault the response for an HTTP default `application/json` response
+	JSONDefault *StandardErrorResponse
+	// Headers200 the parsed response headers for an HTTP 200 response
+	Headers200 *BulkUnarchiveAttributesResponse200Headers
+}
+
+// GetJSON200 returns the response for an HTTP 200 `application/json` response
+func (r BulkUnarchiveAttributesResponse) GetJSON200() *[]UnarchiveResponse {
+	return r.JSON200
+}
+
+// GetJSON207 returns the response for an HTTP 207 `application/json` response
+func (r BulkUnarchiveAttributesResponse) GetJSON207() *[]UnarchiveResponse {
+	return r.JSON207
+}
+
+// GetJSON400 returns the response for an HTTP 400 `application/json` response
+func (r BulkUnarchiveAttributesResponse) GetJSON400() *StandardErrorResponse {
+	return r.JSON400
+}
+
+// GetJSON401 returns the response for an HTTP 401 `application/json` response
+func (r BulkUnarchiveAttributesResponse) GetJSON401() *StandardErrorResponse {
+	return r.JSON401
+}
+
+// GetJSON403 returns the response for an HTTP 403 `application/json` response
+func (r BulkUnarchiveAttributesResponse) GetJSON403() *StandardErrorResponse {
+	return r.JSON403
+}
+
+// GetJSON404 returns the response for an HTTP 404 `application/json` response
+func (r BulkUnarchiveAttributesResponse) GetJSON404() *StandardErrorResponse {
+	return r.JSON404
+}
+
+// GetJSON409 returns the response for an HTTP 409 `application/json` response
+func (r BulkUnarchiveAttributesResponse) GetJSON409() *StandardErrorResponse {
+	return r.JSON409
+}
+
+// GetJSON500 returns the response for an HTTP 500 `application/json` response
+func (r BulkUnarchiveAttributesResponse) GetJSON500() *StandardErrorResponse {
+	return r.JSON500
+}
+
+// GetJSON503 returns the response for an HTTP 503 `application/json` response
+func (r BulkUnarchiveAttributesResponse) GetJSON503() *StandardErrorResponse {
+	return r.JSON503
+}
+
+// GetJSON504 returns the response for an HTTP 504 `application/json` response
+func (r BulkUnarchiveAttributesResponse) GetJSON504() *StandardErrorResponse {
+	return r.JSON504
+}
+
+// GetJSONDefault returns the response for an HTTP default `application/json` response
+func (r BulkUnarchiveAttributesResponse) GetJSONDefault() *StandardErrorResponse {
+	return r.JSONDefault
+}
+
+// GetBody returns the raw response body bytes
+func (r BulkUnarchiveAttributesResponse) GetBody() []byte {
+	return r.Body
+}
+
+// Status returns HTTPResponse.Status
+func (r BulkUnarchiveAttributesResponse) Status() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Status
+	}
+	return http.StatusText(0)
+}
+
+// StatusCode returns HTTPResponse.StatusCode
+func (r BulkUnarchiveAttributesResponse) StatusCode() int {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.StatusCode
+	}
+	return 0
+}
+
+// ContentType is a convenience method to retrieve the Content-Type value from the HTTP response headers
+func (r BulkUnarchiveAttributesResponse) ContentType() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Header.Get("Content-Type")
+	}
+	return ""
+}
+
 // ListAuditEventsResponse200Headers the declared response headers of an HTTP 200 response for ListAuditEvents
 type ListAuditEventsResponse200Headers struct {
 	ConfigHubContinue *string
@@ -51812,6 +56193,124 @@ func (r BulkRefreshChangeOrderStagesResponse) ContentType() string {
 	return ""
 }
 
+// BulkUnarchiveChangeOrdersResponse200Headers the declared response headers of an HTTP 200 response for BulkUnarchiveChangeOrders
+type BulkUnarchiveChangeOrdersResponse200Headers struct {
+	ConfigHubContinue *string
+}
+
+type BulkUnarchiveChangeOrdersResponse struct {
+	Body         []byte
+	HTTPResponse *http.Response
+	// JSON200 the response for an HTTP 200 `application/json` response
+	JSON200 *[]UnarchiveResponse
+	// JSON207 the response for an HTTP 207 `application/json` response
+	JSON207 *[]UnarchiveResponse
+	// JSON400 the response for an HTTP 400 `application/json` response
+	JSON400 *StandardErrorResponse
+	// JSON401 the response for an HTTP 401 `application/json` response
+	JSON401 *StandardErrorResponse
+	// JSON403 the response for an HTTP 403 `application/json` response
+	JSON403 *StandardErrorResponse
+	// JSON404 the response for an HTTP 404 `application/json` response
+	JSON404 *StandardErrorResponse
+	// JSON409 the response for an HTTP 409 `application/json` response
+	JSON409 *StandardErrorResponse
+	// JSON500 the response for an HTTP 500 `application/json` response
+	JSON500 *StandardErrorResponse
+	// JSON503 the response for an HTTP 503 `application/json` response
+	JSON503 *StandardErrorResponse
+	// JSON504 the response for an HTTP 504 `application/json` response
+	JSON504 *StandardErrorResponse
+	// JSONDefault the response for an HTTP default `application/json` response
+	JSONDefault *StandardErrorResponse
+	// Headers200 the parsed response headers for an HTTP 200 response
+	Headers200 *BulkUnarchiveChangeOrdersResponse200Headers
+}
+
+// GetJSON200 returns the response for an HTTP 200 `application/json` response
+func (r BulkUnarchiveChangeOrdersResponse) GetJSON200() *[]UnarchiveResponse {
+	return r.JSON200
+}
+
+// GetJSON207 returns the response for an HTTP 207 `application/json` response
+func (r BulkUnarchiveChangeOrdersResponse) GetJSON207() *[]UnarchiveResponse {
+	return r.JSON207
+}
+
+// GetJSON400 returns the response for an HTTP 400 `application/json` response
+func (r BulkUnarchiveChangeOrdersResponse) GetJSON400() *StandardErrorResponse {
+	return r.JSON400
+}
+
+// GetJSON401 returns the response for an HTTP 401 `application/json` response
+func (r BulkUnarchiveChangeOrdersResponse) GetJSON401() *StandardErrorResponse {
+	return r.JSON401
+}
+
+// GetJSON403 returns the response for an HTTP 403 `application/json` response
+func (r BulkUnarchiveChangeOrdersResponse) GetJSON403() *StandardErrorResponse {
+	return r.JSON403
+}
+
+// GetJSON404 returns the response for an HTTP 404 `application/json` response
+func (r BulkUnarchiveChangeOrdersResponse) GetJSON404() *StandardErrorResponse {
+	return r.JSON404
+}
+
+// GetJSON409 returns the response for an HTTP 409 `application/json` response
+func (r BulkUnarchiveChangeOrdersResponse) GetJSON409() *StandardErrorResponse {
+	return r.JSON409
+}
+
+// GetJSON500 returns the response for an HTTP 500 `application/json` response
+func (r BulkUnarchiveChangeOrdersResponse) GetJSON500() *StandardErrorResponse {
+	return r.JSON500
+}
+
+// GetJSON503 returns the response for an HTTP 503 `application/json` response
+func (r BulkUnarchiveChangeOrdersResponse) GetJSON503() *StandardErrorResponse {
+	return r.JSON503
+}
+
+// GetJSON504 returns the response for an HTTP 504 `application/json` response
+func (r BulkUnarchiveChangeOrdersResponse) GetJSON504() *StandardErrorResponse {
+	return r.JSON504
+}
+
+// GetJSONDefault returns the response for an HTTP default `application/json` response
+func (r BulkUnarchiveChangeOrdersResponse) GetJSONDefault() *StandardErrorResponse {
+	return r.JSONDefault
+}
+
+// GetBody returns the raw response body bytes
+func (r BulkUnarchiveChangeOrdersResponse) GetBody() []byte {
+	return r.Body
+}
+
+// Status returns HTTPResponse.Status
+func (r BulkUnarchiveChangeOrdersResponse) Status() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Status
+	}
+	return http.StatusText(0)
+}
+
+// StatusCode returns HTTPResponse.StatusCode
+func (r BulkUnarchiveChangeOrdersResponse) StatusCode() int {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.StatusCode
+	}
+	return 0
+}
+
+// ContentType is a convenience method to retrieve the Content-Type value from the HTTP response headers
+func (r BulkUnarchiveChangeOrdersResponse) ContentType() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Header.Get("Content-Type")
+	}
+	return ""
+}
+
 // BulkDeleteChangeSetsResponse200Headers the declared response headers of an HTTP 200 response for BulkDeleteChangeSets
 type BulkDeleteChangeSetsResponse200Headers struct {
 	ConfigHubContinue *string
@@ -52382,6 +56881,124 @@ func (r BulkMoveChangeSetsResponse) StatusCode() int {
 
 // ContentType is a convenience method to retrieve the Content-Type value from the HTTP response headers
 func (r BulkMoveChangeSetsResponse) ContentType() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Header.Get("Content-Type")
+	}
+	return ""
+}
+
+// BulkUnarchiveChangeSetsResponse200Headers the declared response headers of an HTTP 200 response for BulkUnarchiveChangeSets
+type BulkUnarchiveChangeSetsResponse200Headers struct {
+	ConfigHubContinue *string
+}
+
+type BulkUnarchiveChangeSetsResponse struct {
+	Body         []byte
+	HTTPResponse *http.Response
+	// JSON200 the response for an HTTP 200 `application/json` response
+	JSON200 *[]UnarchiveResponse
+	// JSON207 the response for an HTTP 207 `application/json` response
+	JSON207 *[]UnarchiveResponse
+	// JSON400 the response for an HTTP 400 `application/json` response
+	JSON400 *StandardErrorResponse
+	// JSON401 the response for an HTTP 401 `application/json` response
+	JSON401 *StandardErrorResponse
+	// JSON403 the response for an HTTP 403 `application/json` response
+	JSON403 *StandardErrorResponse
+	// JSON404 the response for an HTTP 404 `application/json` response
+	JSON404 *StandardErrorResponse
+	// JSON409 the response for an HTTP 409 `application/json` response
+	JSON409 *StandardErrorResponse
+	// JSON500 the response for an HTTP 500 `application/json` response
+	JSON500 *StandardErrorResponse
+	// JSON503 the response for an HTTP 503 `application/json` response
+	JSON503 *StandardErrorResponse
+	// JSON504 the response for an HTTP 504 `application/json` response
+	JSON504 *StandardErrorResponse
+	// JSONDefault the response for an HTTP default `application/json` response
+	JSONDefault *StandardErrorResponse
+	// Headers200 the parsed response headers for an HTTP 200 response
+	Headers200 *BulkUnarchiveChangeSetsResponse200Headers
+}
+
+// GetJSON200 returns the response for an HTTP 200 `application/json` response
+func (r BulkUnarchiveChangeSetsResponse) GetJSON200() *[]UnarchiveResponse {
+	return r.JSON200
+}
+
+// GetJSON207 returns the response for an HTTP 207 `application/json` response
+func (r BulkUnarchiveChangeSetsResponse) GetJSON207() *[]UnarchiveResponse {
+	return r.JSON207
+}
+
+// GetJSON400 returns the response for an HTTP 400 `application/json` response
+func (r BulkUnarchiveChangeSetsResponse) GetJSON400() *StandardErrorResponse {
+	return r.JSON400
+}
+
+// GetJSON401 returns the response for an HTTP 401 `application/json` response
+func (r BulkUnarchiveChangeSetsResponse) GetJSON401() *StandardErrorResponse {
+	return r.JSON401
+}
+
+// GetJSON403 returns the response for an HTTP 403 `application/json` response
+func (r BulkUnarchiveChangeSetsResponse) GetJSON403() *StandardErrorResponse {
+	return r.JSON403
+}
+
+// GetJSON404 returns the response for an HTTP 404 `application/json` response
+func (r BulkUnarchiveChangeSetsResponse) GetJSON404() *StandardErrorResponse {
+	return r.JSON404
+}
+
+// GetJSON409 returns the response for an HTTP 409 `application/json` response
+func (r BulkUnarchiveChangeSetsResponse) GetJSON409() *StandardErrorResponse {
+	return r.JSON409
+}
+
+// GetJSON500 returns the response for an HTTP 500 `application/json` response
+func (r BulkUnarchiveChangeSetsResponse) GetJSON500() *StandardErrorResponse {
+	return r.JSON500
+}
+
+// GetJSON503 returns the response for an HTTP 503 `application/json` response
+func (r BulkUnarchiveChangeSetsResponse) GetJSON503() *StandardErrorResponse {
+	return r.JSON503
+}
+
+// GetJSON504 returns the response for an HTTP 504 `application/json` response
+func (r BulkUnarchiveChangeSetsResponse) GetJSON504() *StandardErrorResponse {
+	return r.JSON504
+}
+
+// GetJSONDefault returns the response for an HTTP default `application/json` response
+func (r BulkUnarchiveChangeSetsResponse) GetJSONDefault() *StandardErrorResponse {
+	return r.JSONDefault
+}
+
+// GetBody returns the raw response body bytes
+func (r BulkUnarchiveChangeSetsResponse) GetBody() []byte {
+	return r.Body
+}
+
+// Status returns HTTPResponse.Status
+func (r BulkUnarchiveChangeSetsResponse) Status() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Status
+	}
+	return http.StatusText(0)
+}
+
+// StatusCode returns HTTPResponse.StatusCode
+func (r BulkUnarchiveChangeSetsResponse) StatusCode() int {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.StatusCode
+	}
+	return 0
+}
+
+// ContentType is a convenience method to retrieve the Content-Type value from the HTTP response headers
+func (r BulkUnarchiveChangeSetsResponse) ContentType() string {
 	if r.HTTPResponse != nil {
 		return r.HTTPResponse.Header.Get("Content-Type")
 	}
@@ -52978,6 +57595,124 @@ func (r BulkMoveChangeWorkflowsResponse) ContentType() string {
 	return ""
 }
 
+// BulkUnarchiveChangeWorkflowsResponse200Headers the declared response headers of an HTTP 200 response for BulkUnarchiveChangeWorkflows
+type BulkUnarchiveChangeWorkflowsResponse200Headers struct {
+	ConfigHubContinue *string
+}
+
+type BulkUnarchiveChangeWorkflowsResponse struct {
+	Body         []byte
+	HTTPResponse *http.Response
+	// JSON200 the response for an HTTP 200 `application/json` response
+	JSON200 *[]UnarchiveResponse
+	// JSON207 the response for an HTTP 207 `application/json` response
+	JSON207 *[]UnarchiveResponse
+	// JSON400 the response for an HTTP 400 `application/json` response
+	JSON400 *StandardErrorResponse
+	// JSON401 the response for an HTTP 401 `application/json` response
+	JSON401 *StandardErrorResponse
+	// JSON403 the response for an HTTP 403 `application/json` response
+	JSON403 *StandardErrorResponse
+	// JSON404 the response for an HTTP 404 `application/json` response
+	JSON404 *StandardErrorResponse
+	// JSON409 the response for an HTTP 409 `application/json` response
+	JSON409 *StandardErrorResponse
+	// JSON500 the response for an HTTP 500 `application/json` response
+	JSON500 *StandardErrorResponse
+	// JSON503 the response for an HTTP 503 `application/json` response
+	JSON503 *StandardErrorResponse
+	// JSON504 the response for an HTTP 504 `application/json` response
+	JSON504 *StandardErrorResponse
+	// JSONDefault the response for an HTTP default `application/json` response
+	JSONDefault *StandardErrorResponse
+	// Headers200 the parsed response headers for an HTTP 200 response
+	Headers200 *BulkUnarchiveChangeWorkflowsResponse200Headers
+}
+
+// GetJSON200 returns the response for an HTTP 200 `application/json` response
+func (r BulkUnarchiveChangeWorkflowsResponse) GetJSON200() *[]UnarchiveResponse {
+	return r.JSON200
+}
+
+// GetJSON207 returns the response for an HTTP 207 `application/json` response
+func (r BulkUnarchiveChangeWorkflowsResponse) GetJSON207() *[]UnarchiveResponse {
+	return r.JSON207
+}
+
+// GetJSON400 returns the response for an HTTP 400 `application/json` response
+func (r BulkUnarchiveChangeWorkflowsResponse) GetJSON400() *StandardErrorResponse {
+	return r.JSON400
+}
+
+// GetJSON401 returns the response for an HTTP 401 `application/json` response
+func (r BulkUnarchiveChangeWorkflowsResponse) GetJSON401() *StandardErrorResponse {
+	return r.JSON401
+}
+
+// GetJSON403 returns the response for an HTTP 403 `application/json` response
+func (r BulkUnarchiveChangeWorkflowsResponse) GetJSON403() *StandardErrorResponse {
+	return r.JSON403
+}
+
+// GetJSON404 returns the response for an HTTP 404 `application/json` response
+func (r BulkUnarchiveChangeWorkflowsResponse) GetJSON404() *StandardErrorResponse {
+	return r.JSON404
+}
+
+// GetJSON409 returns the response for an HTTP 409 `application/json` response
+func (r BulkUnarchiveChangeWorkflowsResponse) GetJSON409() *StandardErrorResponse {
+	return r.JSON409
+}
+
+// GetJSON500 returns the response for an HTTP 500 `application/json` response
+func (r BulkUnarchiveChangeWorkflowsResponse) GetJSON500() *StandardErrorResponse {
+	return r.JSON500
+}
+
+// GetJSON503 returns the response for an HTTP 503 `application/json` response
+func (r BulkUnarchiveChangeWorkflowsResponse) GetJSON503() *StandardErrorResponse {
+	return r.JSON503
+}
+
+// GetJSON504 returns the response for an HTTP 504 `application/json` response
+func (r BulkUnarchiveChangeWorkflowsResponse) GetJSON504() *StandardErrorResponse {
+	return r.JSON504
+}
+
+// GetJSONDefault returns the response for an HTTP default `application/json` response
+func (r BulkUnarchiveChangeWorkflowsResponse) GetJSONDefault() *StandardErrorResponse {
+	return r.JSONDefault
+}
+
+// GetBody returns the raw response body bytes
+func (r BulkUnarchiveChangeWorkflowsResponse) GetBody() []byte {
+	return r.Body
+}
+
+// Status returns HTTPResponse.Status
+func (r BulkUnarchiveChangeWorkflowsResponse) Status() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Status
+	}
+	return http.StatusText(0)
+}
+
+// StatusCode returns HTTPResponse.StatusCode
+func (r BulkUnarchiveChangeWorkflowsResponse) StatusCode() int {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.StatusCode
+	}
+	return 0
+}
+
+// ContentType is a convenience method to retrieve the Content-Type value from the HTTP response headers
+func (r BulkUnarchiveChangeWorkflowsResponse) ContentType() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Header.Get("Content-Type")
+	}
+	return ""
+}
+
 // BulkDeleteChannelsResponse200Headers the declared response headers of an HTTP 200 response for BulkDeleteChannels
 type BulkDeleteChannelsResponse200Headers struct {
 	ConfigHubContinue *string
@@ -53562,6 +58297,124 @@ func (r BulkMoveChannelsResponse) StatusCode() int {
 
 // ContentType is a convenience method to retrieve the Content-Type value from the HTTP response headers
 func (r BulkMoveChannelsResponse) ContentType() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Header.Get("Content-Type")
+	}
+	return ""
+}
+
+// BulkUnarchiveChannelsResponse200Headers the declared response headers of an HTTP 200 response for BulkUnarchiveChannels
+type BulkUnarchiveChannelsResponse200Headers struct {
+	ConfigHubContinue *string
+}
+
+type BulkUnarchiveChannelsResponse struct {
+	Body         []byte
+	HTTPResponse *http.Response
+	// JSON200 the response for an HTTP 200 `application/json` response
+	JSON200 *[]UnarchiveResponse
+	// JSON207 the response for an HTTP 207 `application/json` response
+	JSON207 *[]UnarchiveResponse
+	// JSON400 the response for an HTTP 400 `application/json` response
+	JSON400 *StandardErrorResponse
+	// JSON401 the response for an HTTP 401 `application/json` response
+	JSON401 *StandardErrorResponse
+	// JSON403 the response for an HTTP 403 `application/json` response
+	JSON403 *StandardErrorResponse
+	// JSON404 the response for an HTTP 404 `application/json` response
+	JSON404 *StandardErrorResponse
+	// JSON409 the response for an HTTP 409 `application/json` response
+	JSON409 *StandardErrorResponse
+	// JSON500 the response for an HTTP 500 `application/json` response
+	JSON500 *StandardErrorResponse
+	// JSON503 the response for an HTTP 503 `application/json` response
+	JSON503 *StandardErrorResponse
+	// JSON504 the response for an HTTP 504 `application/json` response
+	JSON504 *StandardErrorResponse
+	// JSONDefault the response for an HTTP default `application/json` response
+	JSONDefault *StandardErrorResponse
+	// Headers200 the parsed response headers for an HTTP 200 response
+	Headers200 *BulkUnarchiveChannelsResponse200Headers
+}
+
+// GetJSON200 returns the response for an HTTP 200 `application/json` response
+func (r BulkUnarchiveChannelsResponse) GetJSON200() *[]UnarchiveResponse {
+	return r.JSON200
+}
+
+// GetJSON207 returns the response for an HTTP 207 `application/json` response
+func (r BulkUnarchiveChannelsResponse) GetJSON207() *[]UnarchiveResponse {
+	return r.JSON207
+}
+
+// GetJSON400 returns the response for an HTTP 400 `application/json` response
+func (r BulkUnarchiveChannelsResponse) GetJSON400() *StandardErrorResponse {
+	return r.JSON400
+}
+
+// GetJSON401 returns the response for an HTTP 401 `application/json` response
+func (r BulkUnarchiveChannelsResponse) GetJSON401() *StandardErrorResponse {
+	return r.JSON401
+}
+
+// GetJSON403 returns the response for an HTTP 403 `application/json` response
+func (r BulkUnarchiveChannelsResponse) GetJSON403() *StandardErrorResponse {
+	return r.JSON403
+}
+
+// GetJSON404 returns the response for an HTTP 404 `application/json` response
+func (r BulkUnarchiveChannelsResponse) GetJSON404() *StandardErrorResponse {
+	return r.JSON404
+}
+
+// GetJSON409 returns the response for an HTTP 409 `application/json` response
+func (r BulkUnarchiveChannelsResponse) GetJSON409() *StandardErrorResponse {
+	return r.JSON409
+}
+
+// GetJSON500 returns the response for an HTTP 500 `application/json` response
+func (r BulkUnarchiveChannelsResponse) GetJSON500() *StandardErrorResponse {
+	return r.JSON500
+}
+
+// GetJSON503 returns the response for an HTTP 503 `application/json` response
+func (r BulkUnarchiveChannelsResponse) GetJSON503() *StandardErrorResponse {
+	return r.JSON503
+}
+
+// GetJSON504 returns the response for an HTTP 504 `application/json` response
+func (r BulkUnarchiveChannelsResponse) GetJSON504() *StandardErrorResponse {
+	return r.JSON504
+}
+
+// GetJSONDefault returns the response for an HTTP default `application/json` response
+func (r BulkUnarchiveChannelsResponse) GetJSONDefault() *StandardErrorResponse {
+	return r.JSONDefault
+}
+
+// GetBody returns the raw response body bytes
+func (r BulkUnarchiveChannelsResponse) GetBody() []byte {
+	return r.Body
+}
+
+// Status returns HTTPResponse.Status
+func (r BulkUnarchiveChannelsResponse) Status() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Status
+	}
+	return http.StatusText(0)
+}
+
+// StatusCode returns HTTPResponse.StatusCode
+func (r BulkUnarchiveChannelsResponse) StatusCode() int {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.StatusCode
+	}
+	return 0
+}
+
+// ContentType is a convenience method to retrieve the Content-Type value from the HTTP response headers
+func (r BulkUnarchiveChannelsResponse) ContentType() string {
 	if r.HTTPResponse != nil {
 		return r.HTTPResponse.Header.Get("Content-Type")
 	}
@@ -54594,6 +59447,110 @@ func (r UpdateComponentDocumentResponse) ContentType() string {
 	return ""
 }
 
+type UnarchiveComponentResponse struct {
+	Body         []byte
+	HTTPResponse *http.Response
+	// JSON200 the response for an HTTP 200 `application/json` response
+	JSON200 *UnarchiveResponse
+	// JSON400 the response for an HTTP 400 `application/json` response
+	JSON400 *StandardErrorResponse
+	// JSON401 the response for an HTTP 401 `application/json` response
+	JSON401 *StandardErrorResponse
+	// JSON403 the response for an HTTP 403 `application/json` response
+	JSON403 *StandardErrorResponse
+	// JSON404 the response for an HTTP 404 `application/json` response
+	JSON404 *StandardErrorResponse
+	// JSON409 the response for an HTTP 409 `application/json` response
+	JSON409 *StandardErrorResponse
+	// JSON500 the response for an HTTP 500 `application/json` response
+	JSON500 *StandardErrorResponse
+	// JSON503 the response for an HTTP 503 `application/json` response
+	JSON503 *StandardErrorResponse
+	// JSON504 the response for an HTTP 504 `application/json` response
+	JSON504 *StandardErrorResponse
+	// JSONDefault the response for an HTTP default `application/json` response
+	JSONDefault *StandardErrorResponse
+}
+
+// GetJSON200 returns the response for an HTTP 200 `application/json` response
+func (r UnarchiveComponentResponse) GetJSON200() *UnarchiveResponse {
+	return r.JSON200
+}
+
+// GetJSON400 returns the response for an HTTP 400 `application/json` response
+func (r UnarchiveComponentResponse) GetJSON400() *StandardErrorResponse {
+	return r.JSON400
+}
+
+// GetJSON401 returns the response for an HTTP 401 `application/json` response
+func (r UnarchiveComponentResponse) GetJSON401() *StandardErrorResponse {
+	return r.JSON401
+}
+
+// GetJSON403 returns the response for an HTTP 403 `application/json` response
+func (r UnarchiveComponentResponse) GetJSON403() *StandardErrorResponse {
+	return r.JSON403
+}
+
+// GetJSON404 returns the response for an HTTP 404 `application/json` response
+func (r UnarchiveComponentResponse) GetJSON404() *StandardErrorResponse {
+	return r.JSON404
+}
+
+// GetJSON409 returns the response for an HTTP 409 `application/json` response
+func (r UnarchiveComponentResponse) GetJSON409() *StandardErrorResponse {
+	return r.JSON409
+}
+
+// GetJSON500 returns the response for an HTTP 500 `application/json` response
+func (r UnarchiveComponentResponse) GetJSON500() *StandardErrorResponse {
+	return r.JSON500
+}
+
+// GetJSON503 returns the response for an HTTP 503 `application/json` response
+func (r UnarchiveComponentResponse) GetJSON503() *StandardErrorResponse {
+	return r.JSON503
+}
+
+// GetJSON504 returns the response for an HTTP 504 `application/json` response
+func (r UnarchiveComponentResponse) GetJSON504() *StandardErrorResponse {
+	return r.JSON504
+}
+
+// GetJSONDefault returns the response for an HTTP default `application/json` response
+func (r UnarchiveComponentResponse) GetJSONDefault() *StandardErrorResponse {
+	return r.JSONDefault
+}
+
+// GetBody returns the raw response body bytes
+func (r UnarchiveComponentResponse) GetBody() []byte {
+	return r.Body
+}
+
+// Status returns HTTPResponse.Status
+func (r UnarchiveComponentResponse) Status() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Status
+	}
+	return http.StatusText(0)
+}
+
+// StatusCode returns HTTPResponse.StatusCode
+func (r UnarchiveComponentResponse) StatusCode() int {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.StatusCode
+	}
+	return 0
+}
+
+// ContentType is a convenience method to retrieve the Content-Type value from the HTTP response headers
+func (r UnarchiveComponentResponse) ContentType() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Header.Get("Content-Type")
+	}
+	return ""
+}
+
 type DemoteResponse struct {
 	Body         []byte
 	HTTPResponse *http.Response
@@ -55400,6 +60357,124 @@ func (r BulkMoveFiltersResponse) StatusCode() int {
 
 // ContentType is a convenience method to retrieve the Content-Type value from the HTTP response headers
 func (r BulkMoveFiltersResponse) ContentType() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Header.Get("Content-Type")
+	}
+	return ""
+}
+
+// BulkUnarchiveFiltersResponse200Headers the declared response headers of an HTTP 200 response for BulkUnarchiveFilters
+type BulkUnarchiveFiltersResponse200Headers struct {
+	ConfigHubContinue *string
+}
+
+type BulkUnarchiveFiltersResponse struct {
+	Body         []byte
+	HTTPResponse *http.Response
+	// JSON200 the response for an HTTP 200 `application/json` response
+	JSON200 *[]UnarchiveResponse
+	// JSON207 the response for an HTTP 207 `application/json` response
+	JSON207 *[]UnarchiveResponse
+	// JSON400 the response for an HTTP 400 `application/json` response
+	JSON400 *StandardErrorResponse
+	// JSON401 the response for an HTTP 401 `application/json` response
+	JSON401 *StandardErrorResponse
+	// JSON403 the response for an HTTP 403 `application/json` response
+	JSON403 *StandardErrorResponse
+	// JSON404 the response for an HTTP 404 `application/json` response
+	JSON404 *StandardErrorResponse
+	// JSON409 the response for an HTTP 409 `application/json` response
+	JSON409 *StandardErrorResponse
+	// JSON500 the response for an HTTP 500 `application/json` response
+	JSON500 *StandardErrorResponse
+	// JSON503 the response for an HTTP 503 `application/json` response
+	JSON503 *StandardErrorResponse
+	// JSON504 the response for an HTTP 504 `application/json` response
+	JSON504 *StandardErrorResponse
+	// JSONDefault the response for an HTTP default `application/json` response
+	JSONDefault *StandardErrorResponse
+	// Headers200 the parsed response headers for an HTTP 200 response
+	Headers200 *BulkUnarchiveFiltersResponse200Headers
+}
+
+// GetJSON200 returns the response for an HTTP 200 `application/json` response
+func (r BulkUnarchiveFiltersResponse) GetJSON200() *[]UnarchiveResponse {
+	return r.JSON200
+}
+
+// GetJSON207 returns the response for an HTTP 207 `application/json` response
+func (r BulkUnarchiveFiltersResponse) GetJSON207() *[]UnarchiveResponse {
+	return r.JSON207
+}
+
+// GetJSON400 returns the response for an HTTP 400 `application/json` response
+func (r BulkUnarchiveFiltersResponse) GetJSON400() *StandardErrorResponse {
+	return r.JSON400
+}
+
+// GetJSON401 returns the response for an HTTP 401 `application/json` response
+func (r BulkUnarchiveFiltersResponse) GetJSON401() *StandardErrorResponse {
+	return r.JSON401
+}
+
+// GetJSON403 returns the response for an HTTP 403 `application/json` response
+func (r BulkUnarchiveFiltersResponse) GetJSON403() *StandardErrorResponse {
+	return r.JSON403
+}
+
+// GetJSON404 returns the response for an HTTP 404 `application/json` response
+func (r BulkUnarchiveFiltersResponse) GetJSON404() *StandardErrorResponse {
+	return r.JSON404
+}
+
+// GetJSON409 returns the response for an HTTP 409 `application/json` response
+func (r BulkUnarchiveFiltersResponse) GetJSON409() *StandardErrorResponse {
+	return r.JSON409
+}
+
+// GetJSON500 returns the response for an HTTP 500 `application/json` response
+func (r BulkUnarchiveFiltersResponse) GetJSON500() *StandardErrorResponse {
+	return r.JSON500
+}
+
+// GetJSON503 returns the response for an HTTP 503 `application/json` response
+func (r BulkUnarchiveFiltersResponse) GetJSON503() *StandardErrorResponse {
+	return r.JSON503
+}
+
+// GetJSON504 returns the response for an HTTP 504 `application/json` response
+func (r BulkUnarchiveFiltersResponse) GetJSON504() *StandardErrorResponse {
+	return r.JSON504
+}
+
+// GetJSONDefault returns the response for an HTTP default `application/json` response
+func (r BulkUnarchiveFiltersResponse) GetJSONDefault() *StandardErrorResponse {
+	return r.JSONDefault
+}
+
+// GetBody returns the raw response body bytes
+func (r BulkUnarchiveFiltersResponse) GetBody() []byte {
+	return r.Body
+}
+
+// Status returns HTTPResponse.Status
+func (r BulkUnarchiveFiltersResponse) Status() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Status
+	}
+	return http.StatusText(0)
+}
+
+// StatusCode returns HTTPResponse.StatusCode
+func (r BulkUnarchiveFiltersResponse) StatusCode() int {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.StatusCode
+	}
+	return 0
+}
+
+// ContentType is a convenience method to retrieve the Content-Type value from the HTTP response headers
+func (r BulkUnarchiveFiltersResponse) ContentType() string {
 	if r.HTTPResponse != nil {
 		return r.HTTPResponse.Header.Get("Content-Type")
 	}
@@ -56772,6 +61847,124 @@ func (r BulkMoveInvocationsResponse) ContentType() string {
 	return ""
 }
 
+// BulkUnarchiveInvocationsResponse200Headers the declared response headers of an HTTP 200 response for BulkUnarchiveInvocations
+type BulkUnarchiveInvocationsResponse200Headers struct {
+	ConfigHubContinue *string
+}
+
+type BulkUnarchiveInvocationsResponse struct {
+	Body         []byte
+	HTTPResponse *http.Response
+	// JSON200 the response for an HTTP 200 `application/json` response
+	JSON200 *[]UnarchiveResponse
+	// JSON207 the response for an HTTP 207 `application/json` response
+	JSON207 *[]UnarchiveResponse
+	// JSON400 the response for an HTTP 400 `application/json` response
+	JSON400 *StandardErrorResponse
+	// JSON401 the response for an HTTP 401 `application/json` response
+	JSON401 *StandardErrorResponse
+	// JSON403 the response for an HTTP 403 `application/json` response
+	JSON403 *StandardErrorResponse
+	// JSON404 the response for an HTTP 404 `application/json` response
+	JSON404 *StandardErrorResponse
+	// JSON409 the response for an HTTP 409 `application/json` response
+	JSON409 *StandardErrorResponse
+	// JSON500 the response for an HTTP 500 `application/json` response
+	JSON500 *StandardErrorResponse
+	// JSON503 the response for an HTTP 503 `application/json` response
+	JSON503 *StandardErrorResponse
+	// JSON504 the response for an HTTP 504 `application/json` response
+	JSON504 *StandardErrorResponse
+	// JSONDefault the response for an HTTP default `application/json` response
+	JSONDefault *StandardErrorResponse
+	// Headers200 the parsed response headers for an HTTP 200 response
+	Headers200 *BulkUnarchiveInvocationsResponse200Headers
+}
+
+// GetJSON200 returns the response for an HTTP 200 `application/json` response
+func (r BulkUnarchiveInvocationsResponse) GetJSON200() *[]UnarchiveResponse {
+	return r.JSON200
+}
+
+// GetJSON207 returns the response for an HTTP 207 `application/json` response
+func (r BulkUnarchiveInvocationsResponse) GetJSON207() *[]UnarchiveResponse {
+	return r.JSON207
+}
+
+// GetJSON400 returns the response for an HTTP 400 `application/json` response
+func (r BulkUnarchiveInvocationsResponse) GetJSON400() *StandardErrorResponse {
+	return r.JSON400
+}
+
+// GetJSON401 returns the response for an HTTP 401 `application/json` response
+func (r BulkUnarchiveInvocationsResponse) GetJSON401() *StandardErrorResponse {
+	return r.JSON401
+}
+
+// GetJSON403 returns the response for an HTTP 403 `application/json` response
+func (r BulkUnarchiveInvocationsResponse) GetJSON403() *StandardErrorResponse {
+	return r.JSON403
+}
+
+// GetJSON404 returns the response for an HTTP 404 `application/json` response
+func (r BulkUnarchiveInvocationsResponse) GetJSON404() *StandardErrorResponse {
+	return r.JSON404
+}
+
+// GetJSON409 returns the response for an HTTP 409 `application/json` response
+func (r BulkUnarchiveInvocationsResponse) GetJSON409() *StandardErrorResponse {
+	return r.JSON409
+}
+
+// GetJSON500 returns the response for an HTTP 500 `application/json` response
+func (r BulkUnarchiveInvocationsResponse) GetJSON500() *StandardErrorResponse {
+	return r.JSON500
+}
+
+// GetJSON503 returns the response for an HTTP 503 `application/json` response
+func (r BulkUnarchiveInvocationsResponse) GetJSON503() *StandardErrorResponse {
+	return r.JSON503
+}
+
+// GetJSON504 returns the response for an HTTP 504 `application/json` response
+func (r BulkUnarchiveInvocationsResponse) GetJSON504() *StandardErrorResponse {
+	return r.JSON504
+}
+
+// GetJSONDefault returns the response for an HTTP default `application/json` response
+func (r BulkUnarchiveInvocationsResponse) GetJSONDefault() *StandardErrorResponse {
+	return r.JSONDefault
+}
+
+// GetBody returns the raw response body bytes
+func (r BulkUnarchiveInvocationsResponse) GetBody() []byte {
+	return r.Body
+}
+
+// Status returns HTTPResponse.Status
+func (r BulkUnarchiveInvocationsResponse) Status() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Status
+	}
+	return http.StatusText(0)
+}
+
+// StatusCode returns HTTPResponse.StatusCode
+func (r BulkUnarchiveInvocationsResponse) StatusCode() int {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.StatusCode
+	}
+	return 0
+}
+
+// ContentType is a convenience method to retrieve the Content-Type value from the HTTP response headers
+func (r BulkUnarchiveInvocationsResponse) ContentType() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Header.Get("Content-Type")
+	}
+	return ""
+}
+
 // BulkDeleteLinksResponse200Headers the declared response headers of an HTTP 200 response for BulkDeleteLinks
 type BulkDeleteLinksResponse200Headers struct {
 	ConfigHubContinue *string
@@ -57238,6 +62431,124 @@ func (r BulkCreateLinksResponse) StatusCode() int {
 
 // ContentType is a convenience method to retrieve the Content-Type value from the HTTP response headers
 func (r BulkCreateLinksResponse) ContentType() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Header.Get("Content-Type")
+	}
+	return ""
+}
+
+// BulkUnarchiveLinksResponse200Headers the declared response headers of an HTTP 200 response for BulkUnarchiveLinks
+type BulkUnarchiveLinksResponse200Headers struct {
+	ConfigHubContinue *string
+}
+
+type BulkUnarchiveLinksResponse struct {
+	Body         []byte
+	HTTPResponse *http.Response
+	// JSON200 the response for an HTTP 200 `application/json` response
+	JSON200 *[]UnarchiveResponse
+	// JSON207 the response for an HTTP 207 `application/json` response
+	JSON207 *[]UnarchiveResponse
+	// JSON400 the response for an HTTP 400 `application/json` response
+	JSON400 *StandardErrorResponse
+	// JSON401 the response for an HTTP 401 `application/json` response
+	JSON401 *StandardErrorResponse
+	// JSON403 the response for an HTTP 403 `application/json` response
+	JSON403 *StandardErrorResponse
+	// JSON404 the response for an HTTP 404 `application/json` response
+	JSON404 *StandardErrorResponse
+	// JSON409 the response for an HTTP 409 `application/json` response
+	JSON409 *StandardErrorResponse
+	// JSON500 the response for an HTTP 500 `application/json` response
+	JSON500 *StandardErrorResponse
+	// JSON503 the response for an HTTP 503 `application/json` response
+	JSON503 *StandardErrorResponse
+	// JSON504 the response for an HTTP 504 `application/json` response
+	JSON504 *StandardErrorResponse
+	// JSONDefault the response for an HTTP default `application/json` response
+	JSONDefault *StandardErrorResponse
+	// Headers200 the parsed response headers for an HTTP 200 response
+	Headers200 *BulkUnarchiveLinksResponse200Headers
+}
+
+// GetJSON200 returns the response for an HTTP 200 `application/json` response
+func (r BulkUnarchiveLinksResponse) GetJSON200() *[]UnarchiveResponse {
+	return r.JSON200
+}
+
+// GetJSON207 returns the response for an HTTP 207 `application/json` response
+func (r BulkUnarchiveLinksResponse) GetJSON207() *[]UnarchiveResponse {
+	return r.JSON207
+}
+
+// GetJSON400 returns the response for an HTTP 400 `application/json` response
+func (r BulkUnarchiveLinksResponse) GetJSON400() *StandardErrorResponse {
+	return r.JSON400
+}
+
+// GetJSON401 returns the response for an HTTP 401 `application/json` response
+func (r BulkUnarchiveLinksResponse) GetJSON401() *StandardErrorResponse {
+	return r.JSON401
+}
+
+// GetJSON403 returns the response for an HTTP 403 `application/json` response
+func (r BulkUnarchiveLinksResponse) GetJSON403() *StandardErrorResponse {
+	return r.JSON403
+}
+
+// GetJSON404 returns the response for an HTTP 404 `application/json` response
+func (r BulkUnarchiveLinksResponse) GetJSON404() *StandardErrorResponse {
+	return r.JSON404
+}
+
+// GetJSON409 returns the response for an HTTP 409 `application/json` response
+func (r BulkUnarchiveLinksResponse) GetJSON409() *StandardErrorResponse {
+	return r.JSON409
+}
+
+// GetJSON500 returns the response for an HTTP 500 `application/json` response
+func (r BulkUnarchiveLinksResponse) GetJSON500() *StandardErrorResponse {
+	return r.JSON500
+}
+
+// GetJSON503 returns the response for an HTTP 503 `application/json` response
+func (r BulkUnarchiveLinksResponse) GetJSON503() *StandardErrorResponse {
+	return r.JSON503
+}
+
+// GetJSON504 returns the response for an HTTP 504 `application/json` response
+func (r BulkUnarchiveLinksResponse) GetJSON504() *StandardErrorResponse {
+	return r.JSON504
+}
+
+// GetJSONDefault returns the response for an HTTP default `application/json` response
+func (r BulkUnarchiveLinksResponse) GetJSONDefault() *StandardErrorResponse {
+	return r.JSONDefault
+}
+
+// GetBody returns the raw response body bytes
+func (r BulkUnarchiveLinksResponse) GetBody() []byte {
+	return r.Body
+}
+
+// Status returns HTTPResponse.Status
+func (r BulkUnarchiveLinksResponse) Status() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Status
+	}
+	return http.StatusText(0)
+}
+
+// StatusCode returns HTTPResponse.StatusCode
+func (r BulkUnarchiveLinksResponse) StatusCode() int {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.StatusCode
+	}
+	return 0
+}
+
+// ContentType is a convenience method to retrieve the Content-Type value from the HTTP response headers
+func (r BulkUnarchiveLinksResponse) ContentType() string {
 	if r.HTTPResponse != nil {
 		return r.HTTPResponse.Header.Get("Content-Type")
 	}
@@ -58881,6 +64192,124 @@ func (r ListAllReleasesResponse) StatusCode() int {
 
 // ContentType is a convenience method to retrieve the Content-Type value from the HTTP response headers
 func (r ListAllReleasesResponse) ContentType() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Header.Get("Content-Type")
+	}
+	return ""
+}
+
+// BulkUnarchiveReleasesResponse200Headers the declared response headers of an HTTP 200 response for BulkUnarchiveReleases
+type BulkUnarchiveReleasesResponse200Headers struct {
+	ConfigHubContinue *string
+}
+
+type BulkUnarchiveReleasesResponse struct {
+	Body         []byte
+	HTTPResponse *http.Response
+	// JSON200 the response for an HTTP 200 `application/json` response
+	JSON200 *[]UnarchiveResponse
+	// JSON207 the response for an HTTP 207 `application/json` response
+	JSON207 *[]UnarchiveResponse
+	// JSON400 the response for an HTTP 400 `application/json` response
+	JSON400 *StandardErrorResponse
+	// JSON401 the response for an HTTP 401 `application/json` response
+	JSON401 *StandardErrorResponse
+	// JSON403 the response for an HTTP 403 `application/json` response
+	JSON403 *StandardErrorResponse
+	// JSON404 the response for an HTTP 404 `application/json` response
+	JSON404 *StandardErrorResponse
+	// JSON409 the response for an HTTP 409 `application/json` response
+	JSON409 *StandardErrorResponse
+	// JSON500 the response for an HTTP 500 `application/json` response
+	JSON500 *StandardErrorResponse
+	// JSON503 the response for an HTTP 503 `application/json` response
+	JSON503 *StandardErrorResponse
+	// JSON504 the response for an HTTP 504 `application/json` response
+	JSON504 *StandardErrorResponse
+	// JSONDefault the response for an HTTP default `application/json` response
+	JSONDefault *StandardErrorResponse
+	// Headers200 the parsed response headers for an HTTP 200 response
+	Headers200 *BulkUnarchiveReleasesResponse200Headers
+}
+
+// GetJSON200 returns the response for an HTTP 200 `application/json` response
+func (r BulkUnarchiveReleasesResponse) GetJSON200() *[]UnarchiveResponse {
+	return r.JSON200
+}
+
+// GetJSON207 returns the response for an HTTP 207 `application/json` response
+func (r BulkUnarchiveReleasesResponse) GetJSON207() *[]UnarchiveResponse {
+	return r.JSON207
+}
+
+// GetJSON400 returns the response for an HTTP 400 `application/json` response
+func (r BulkUnarchiveReleasesResponse) GetJSON400() *StandardErrorResponse {
+	return r.JSON400
+}
+
+// GetJSON401 returns the response for an HTTP 401 `application/json` response
+func (r BulkUnarchiveReleasesResponse) GetJSON401() *StandardErrorResponse {
+	return r.JSON401
+}
+
+// GetJSON403 returns the response for an HTTP 403 `application/json` response
+func (r BulkUnarchiveReleasesResponse) GetJSON403() *StandardErrorResponse {
+	return r.JSON403
+}
+
+// GetJSON404 returns the response for an HTTP 404 `application/json` response
+func (r BulkUnarchiveReleasesResponse) GetJSON404() *StandardErrorResponse {
+	return r.JSON404
+}
+
+// GetJSON409 returns the response for an HTTP 409 `application/json` response
+func (r BulkUnarchiveReleasesResponse) GetJSON409() *StandardErrorResponse {
+	return r.JSON409
+}
+
+// GetJSON500 returns the response for an HTTP 500 `application/json` response
+func (r BulkUnarchiveReleasesResponse) GetJSON500() *StandardErrorResponse {
+	return r.JSON500
+}
+
+// GetJSON503 returns the response for an HTTP 503 `application/json` response
+func (r BulkUnarchiveReleasesResponse) GetJSON503() *StandardErrorResponse {
+	return r.JSON503
+}
+
+// GetJSON504 returns the response for an HTTP 504 `application/json` response
+func (r BulkUnarchiveReleasesResponse) GetJSON504() *StandardErrorResponse {
+	return r.JSON504
+}
+
+// GetJSONDefault returns the response for an HTTP default `application/json` response
+func (r BulkUnarchiveReleasesResponse) GetJSONDefault() *StandardErrorResponse {
+	return r.JSONDefault
+}
+
+// GetBody returns the raw response body bytes
+func (r BulkUnarchiveReleasesResponse) GetBody() []byte {
+	return r.Body
+}
+
+// Status returns HTTPResponse.Status
+func (r BulkUnarchiveReleasesResponse) Status() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Status
+	}
+	return http.StatusText(0)
+}
+
+// StatusCode returns HTTPResponse.StatusCode
+func (r BulkUnarchiveReleasesResponse) StatusCode() int {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.StatusCode
+	}
+	return 0
+}
+
+// ContentType is a convenience method to retrieve the Content-Type value from the HTTP response headers
+func (r BulkUnarchiveReleasesResponse) ContentType() string {
 	if r.HTTPResponse != nil {
 		return r.HTTPResponse.Header.Get("Content-Type")
 	}
@@ -62964,6 +68393,110 @@ func (r UpdateAttributeDocumentResponse) ContentType() string {
 	return ""
 }
 
+type UnarchiveAttributeResponse struct {
+	Body         []byte
+	HTTPResponse *http.Response
+	// JSON200 the response for an HTTP 200 `application/json` response
+	JSON200 *UnarchiveResponse
+	// JSON400 the response for an HTTP 400 `application/json` response
+	JSON400 *StandardErrorResponse
+	// JSON401 the response for an HTTP 401 `application/json` response
+	JSON401 *StandardErrorResponse
+	// JSON403 the response for an HTTP 403 `application/json` response
+	JSON403 *StandardErrorResponse
+	// JSON404 the response for an HTTP 404 `application/json` response
+	JSON404 *StandardErrorResponse
+	// JSON409 the response for an HTTP 409 `application/json` response
+	JSON409 *StandardErrorResponse
+	// JSON500 the response for an HTTP 500 `application/json` response
+	JSON500 *StandardErrorResponse
+	// JSON503 the response for an HTTP 503 `application/json` response
+	JSON503 *StandardErrorResponse
+	// JSON504 the response for an HTTP 504 `application/json` response
+	JSON504 *StandardErrorResponse
+	// JSONDefault the response for an HTTP default `application/json` response
+	JSONDefault *StandardErrorResponse
+}
+
+// GetJSON200 returns the response for an HTTP 200 `application/json` response
+func (r UnarchiveAttributeResponse) GetJSON200() *UnarchiveResponse {
+	return r.JSON200
+}
+
+// GetJSON400 returns the response for an HTTP 400 `application/json` response
+func (r UnarchiveAttributeResponse) GetJSON400() *StandardErrorResponse {
+	return r.JSON400
+}
+
+// GetJSON401 returns the response for an HTTP 401 `application/json` response
+func (r UnarchiveAttributeResponse) GetJSON401() *StandardErrorResponse {
+	return r.JSON401
+}
+
+// GetJSON403 returns the response for an HTTP 403 `application/json` response
+func (r UnarchiveAttributeResponse) GetJSON403() *StandardErrorResponse {
+	return r.JSON403
+}
+
+// GetJSON404 returns the response for an HTTP 404 `application/json` response
+func (r UnarchiveAttributeResponse) GetJSON404() *StandardErrorResponse {
+	return r.JSON404
+}
+
+// GetJSON409 returns the response for an HTTP 409 `application/json` response
+func (r UnarchiveAttributeResponse) GetJSON409() *StandardErrorResponse {
+	return r.JSON409
+}
+
+// GetJSON500 returns the response for an HTTP 500 `application/json` response
+func (r UnarchiveAttributeResponse) GetJSON500() *StandardErrorResponse {
+	return r.JSON500
+}
+
+// GetJSON503 returns the response for an HTTP 503 `application/json` response
+func (r UnarchiveAttributeResponse) GetJSON503() *StandardErrorResponse {
+	return r.JSON503
+}
+
+// GetJSON504 returns the response for an HTTP 504 `application/json` response
+func (r UnarchiveAttributeResponse) GetJSON504() *StandardErrorResponse {
+	return r.JSON504
+}
+
+// GetJSONDefault returns the response for an HTTP default `application/json` response
+func (r UnarchiveAttributeResponse) GetJSONDefault() *StandardErrorResponse {
+	return r.JSONDefault
+}
+
+// GetBody returns the raw response body bytes
+func (r UnarchiveAttributeResponse) GetBody() []byte {
+	return r.Body
+}
+
+// Status returns HTTPResponse.Status
+func (r UnarchiveAttributeResponse) Status() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Status
+	}
+	return http.StatusText(0)
+}
+
+// StatusCode returns HTTPResponse.StatusCode
+func (r UnarchiveAttributeResponse) StatusCode() int {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.StatusCode
+	}
+	return 0
+}
+
+// ContentType is a convenience method to retrieve the Content-Type value from the HTTP response headers
+func (r UnarchiveAttributeResponse) ContentType() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Header.Get("Content-Type")
+	}
+	return ""
+}
+
 // ListChangeOrdersResponse200Headers the declared response headers of an HTTP 200 response for ListChangeOrders
 type ListChangeOrdersResponse200Headers struct {
 	ConfigHubContinue *string
@@ -63692,6 +69225,110 @@ func (r RefreshChangeOrderStageResponse) ContentType() string {
 	return ""
 }
 
+type UnarchiveChangeOrderResponse struct {
+	Body         []byte
+	HTTPResponse *http.Response
+	// JSON200 the response for an HTTP 200 `application/json` response
+	JSON200 *UnarchiveResponse
+	// JSON400 the response for an HTTP 400 `application/json` response
+	JSON400 *StandardErrorResponse
+	// JSON401 the response for an HTTP 401 `application/json` response
+	JSON401 *StandardErrorResponse
+	// JSON403 the response for an HTTP 403 `application/json` response
+	JSON403 *StandardErrorResponse
+	// JSON404 the response for an HTTP 404 `application/json` response
+	JSON404 *StandardErrorResponse
+	// JSON409 the response for an HTTP 409 `application/json` response
+	JSON409 *StandardErrorResponse
+	// JSON500 the response for an HTTP 500 `application/json` response
+	JSON500 *StandardErrorResponse
+	// JSON503 the response for an HTTP 503 `application/json` response
+	JSON503 *StandardErrorResponse
+	// JSON504 the response for an HTTP 504 `application/json` response
+	JSON504 *StandardErrorResponse
+	// JSONDefault the response for an HTTP default `application/json` response
+	JSONDefault *StandardErrorResponse
+}
+
+// GetJSON200 returns the response for an HTTP 200 `application/json` response
+func (r UnarchiveChangeOrderResponse) GetJSON200() *UnarchiveResponse {
+	return r.JSON200
+}
+
+// GetJSON400 returns the response for an HTTP 400 `application/json` response
+func (r UnarchiveChangeOrderResponse) GetJSON400() *StandardErrorResponse {
+	return r.JSON400
+}
+
+// GetJSON401 returns the response for an HTTP 401 `application/json` response
+func (r UnarchiveChangeOrderResponse) GetJSON401() *StandardErrorResponse {
+	return r.JSON401
+}
+
+// GetJSON403 returns the response for an HTTP 403 `application/json` response
+func (r UnarchiveChangeOrderResponse) GetJSON403() *StandardErrorResponse {
+	return r.JSON403
+}
+
+// GetJSON404 returns the response for an HTTP 404 `application/json` response
+func (r UnarchiveChangeOrderResponse) GetJSON404() *StandardErrorResponse {
+	return r.JSON404
+}
+
+// GetJSON409 returns the response for an HTTP 409 `application/json` response
+func (r UnarchiveChangeOrderResponse) GetJSON409() *StandardErrorResponse {
+	return r.JSON409
+}
+
+// GetJSON500 returns the response for an HTTP 500 `application/json` response
+func (r UnarchiveChangeOrderResponse) GetJSON500() *StandardErrorResponse {
+	return r.JSON500
+}
+
+// GetJSON503 returns the response for an HTTP 503 `application/json` response
+func (r UnarchiveChangeOrderResponse) GetJSON503() *StandardErrorResponse {
+	return r.JSON503
+}
+
+// GetJSON504 returns the response for an HTTP 504 `application/json` response
+func (r UnarchiveChangeOrderResponse) GetJSON504() *StandardErrorResponse {
+	return r.JSON504
+}
+
+// GetJSONDefault returns the response for an HTTP default `application/json` response
+func (r UnarchiveChangeOrderResponse) GetJSONDefault() *StandardErrorResponse {
+	return r.JSONDefault
+}
+
+// GetBody returns the raw response body bytes
+func (r UnarchiveChangeOrderResponse) GetBody() []byte {
+	return r.Body
+}
+
+// Status returns HTTPResponse.Status
+func (r UnarchiveChangeOrderResponse) Status() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Status
+	}
+	return http.StatusText(0)
+}
+
+// StatusCode returns HTTPResponse.StatusCode
+func (r UnarchiveChangeOrderResponse) StatusCode() int {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.StatusCode
+	}
+	return 0
+}
+
+// ContentType is a convenience method to retrieve the Content-Type value from the HTTP response headers
+func (r UnarchiveChangeOrderResponse) ContentType() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Header.Get("Content-Type")
+	}
+	return ""
+}
+
 // ListChangeSetsResponse200Headers the declared response headers of an HTTP 200 response for ListChangeSets
 type ListChangeSetsResponse200Headers struct {
 	ConfigHubContinue *string
@@ -64310,6 +69947,110 @@ func (r UpdateChangeSetResponse) StatusCode() int {
 
 // ContentType is a convenience method to retrieve the Content-Type value from the HTTP response headers
 func (r UpdateChangeSetResponse) ContentType() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Header.Get("Content-Type")
+	}
+	return ""
+}
+
+type UnarchiveChangeSetResponse struct {
+	Body         []byte
+	HTTPResponse *http.Response
+	// JSON200 the response for an HTTP 200 `application/json` response
+	JSON200 *UnarchiveResponse
+	// JSON400 the response for an HTTP 400 `application/json` response
+	JSON400 *StandardErrorResponse
+	// JSON401 the response for an HTTP 401 `application/json` response
+	JSON401 *StandardErrorResponse
+	// JSON403 the response for an HTTP 403 `application/json` response
+	JSON403 *StandardErrorResponse
+	// JSON404 the response for an HTTP 404 `application/json` response
+	JSON404 *StandardErrorResponse
+	// JSON409 the response for an HTTP 409 `application/json` response
+	JSON409 *StandardErrorResponse
+	// JSON500 the response for an HTTP 500 `application/json` response
+	JSON500 *StandardErrorResponse
+	// JSON503 the response for an HTTP 503 `application/json` response
+	JSON503 *StandardErrorResponse
+	// JSON504 the response for an HTTP 504 `application/json` response
+	JSON504 *StandardErrorResponse
+	// JSONDefault the response for an HTTP default `application/json` response
+	JSONDefault *StandardErrorResponse
+}
+
+// GetJSON200 returns the response for an HTTP 200 `application/json` response
+func (r UnarchiveChangeSetResponse) GetJSON200() *UnarchiveResponse {
+	return r.JSON200
+}
+
+// GetJSON400 returns the response for an HTTP 400 `application/json` response
+func (r UnarchiveChangeSetResponse) GetJSON400() *StandardErrorResponse {
+	return r.JSON400
+}
+
+// GetJSON401 returns the response for an HTTP 401 `application/json` response
+func (r UnarchiveChangeSetResponse) GetJSON401() *StandardErrorResponse {
+	return r.JSON401
+}
+
+// GetJSON403 returns the response for an HTTP 403 `application/json` response
+func (r UnarchiveChangeSetResponse) GetJSON403() *StandardErrorResponse {
+	return r.JSON403
+}
+
+// GetJSON404 returns the response for an HTTP 404 `application/json` response
+func (r UnarchiveChangeSetResponse) GetJSON404() *StandardErrorResponse {
+	return r.JSON404
+}
+
+// GetJSON409 returns the response for an HTTP 409 `application/json` response
+func (r UnarchiveChangeSetResponse) GetJSON409() *StandardErrorResponse {
+	return r.JSON409
+}
+
+// GetJSON500 returns the response for an HTTP 500 `application/json` response
+func (r UnarchiveChangeSetResponse) GetJSON500() *StandardErrorResponse {
+	return r.JSON500
+}
+
+// GetJSON503 returns the response for an HTTP 503 `application/json` response
+func (r UnarchiveChangeSetResponse) GetJSON503() *StandardErrorResponse {
+	return r.JSON503
+}
+
+// GetJSON504 returns the response for an HTTP 504 `application/json` response
+func (r UnarchiveChangeSetResponse) GetJSON504() *StandardErrorResponse {
+	return r.JSON504
+}
+
+// GetJSONDefault returns the response for an HTTP default `application/json` response
+func (r UnarchiveChangeSetResponse) GetJSONDefault() *StandardErrorResponse {
+	return r.JSONDefault
+}
+
+// GetBody returns the raw response body bytes
+func (r UnarchiveChangeSetResponse) GetBody() []byte {
+	return r.Body
+}
+
+// Status returns HTTPResponse.Status
+func (r UnarchiveChangeSetResponse) Status() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Status
+	}
+	return http.StatusText(0)
+}
+
+// StatusCode returns HTTPResponse.StatusCode
+func (r UnarchiveChangeSetResponse) StatusCode() int {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.StatusCode
+	}
+	return 0
+}
+
+// ContentType is a convenience method to retrieve the Content-Type value from the HTTP response headers
+func (r UnarchiveChangeSetResponse) ContentType() string {
 	if r.HTTPResponse != nil {
 		return r.HTTPResponse.Header.Get("Content-Type")
 	}
@@ -65135,6 +70876,110 @@ func (r UpdateChangeWorkflowDocumentResponse) StatusCode() int {
 
 // ContentType is a convenience method to retrieve the Content-Type value from the HTTP response headers
 func (r UpdateChangeWorkflowDocumentResponse) ContentType() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Header.Get("Content-Type")
+	}
+	return ""
+}
+
+type UnarchiveChangeWorkflowResponse struct {
+	Body         []byte
+	HTTPResponse *http.Response
+	// JSON200 the response for an HTTP 200 `application/json` response
+	JSON200 *UnarchiveResponse
+	// JSON400 the response for an HTTP 400 `application/json` response
+	JSON400 *StandardErrorResponse
+	// JSON401 the response for an HTTP 401 `application/json` response
+	JSON401 *StandardErrorResponse
+	// JSON403 the response for an HTTP 403 `application/json` response
+	JSON403 *StandardErrorResponse
+	// JSON404 the response for an HTTP 404 `application/json` response
+	JSON404 *StandardErrorResponse
+	// JSON409 the response for an HTTP 409 `application/json` response
+	JSON409 *StandardErrorResponse
+	// JSON500 the response for an HTTP 500 `application/json` response
+	JSON500 *StandardErrorResponse
+	// JSON503 the response for an HTTP 503 `application/json` response
+	JSON503 *StandardErrorResponse
+	// JSON504 the response for an HTTP 504 `application/json` response
+	JSON504 *StandardErrorResponse
+	// JSONDefault the response for an HTTP default `application/json` response
+	JSONDefault *StandardErrorResponse
+}
+
+// GetJSON200 returns the response for an HTTP 200 `application/json` response
+func (r UnarchiveChangeWorkflowResponse) GetJSON200() *UnarchiveResponse {
+	return r.JSON200
+}
+
+// GetJSON400 returns the response for an HTTP 400 `application/json` response
+func (r UnarchiveChangeWorkflowResponse) GetJSON400() *StandardErrorResponse {
+	return r.JSON400
+}
+
+// GetJSON401 returns the response for an HTTP 401 `application/json` response
+func (r UnarchiveChangeWorkflowResponse) GetJSON401() *StandardErrorResponse {
+	return r.JSON401
+}
+
+// GetJSON403 returns the response for an HTTP 403 `application/json` response
+func (r UnarchiveChangeWorkflowResponse) GetJSON403() *StandardErrorResponse {
+	return r.JSON403
+}
+
+// GetJSON404 returns the response for an HTTP 404 `application/json` response
+func (r UnarchiveChangeWorkflowResponse) GetJSON404() *StandardErrorResponse {
+	return r.JSON404
+}
+
+// GetJSON409 returns the response for an HTTP 409 `application/json` response
+func (r UnarchiveChangeWorkflowResponse) GetJSON409() *StandardErrorResponse {
+	return r.JSON409
+}
+
+// GetJSON500 returns the response for an HTTP 500 `application/json` response
+func (r UnarchiveChangeWorkflowResponse) GetJSON500() *StandardErrorResponse {
+	return r.JSON500
+}
+
+// GetJSON503 returns the response for an HTTP 503 `application/json` response
+func (r UnarchiveChangeWorkflowResponse) GetJSON503() *StandardErrorResponse {
+	return r.JSON503
+}
+
+// GetJSON504 returns the response for an HTTP 504 `application/json` response
+func (r UnarchiveChangeWorkflowResponse) GetJSON504() *StandardErrorResponse {
+	return r.JSON504
+}
+
+// GetJSONDefault returns the response for an HTTP default `application/json` response
+func (r UnarchiveChangeWorkflowResponse) GetJSONDefault() *StandardErrorResponse {
+	return r.JSONDefault
+}
+
+// GetBody returns the raw response body bytes
+func (r UnarchiveChangeWorkflowResponse) GetBody() []byte {
+	return r.Body
+}
+
+// Status returns HTTPResponse.Status
+func (r UnarchiveChangeWorkflowResponse) Status() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Status
+	}
+	return http.StatusText(0)
+}
+
+// StatusCode returns HTTPResponse.StatusCode
+func (r UnarchiveChangeWorkflowResponse) StatusCode() int {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.StatusCode
+	}
+	return 0
+}
+
+// ContentType is a convenience method to retrieve the Content-Type value from the HTTP response headers
+func (r UnarchiveChangeWorkflowResponse) ContentType() string {
 	if r.HTTPResponse != nil {
 		return r.HTTPResponse.Header.Get("Content-Type")
 	}
@@ -66383,6 +72228,110 @@ func (r PollChannelResponse) StatusCode() int {
 
 // ContentType is a convenience method to retrieve the Content-Type value from the HTTP response headers
 func (r PollChannelResponse) ContentType() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Header.Get("Content-Type")
+	}
+	return ""
+}
+
+type UnarchiveChannelResponse struct {
+	Body         []byte
+	HTTPResponse *http.Response
+	// JSON200 the response for an HTTP 200 `application/json` response
+	JSON200 *UnarchiveResponse
+	// JSON400 the response for an HTTP 400 `application/json` response
+	JSON400 *StandardErrorResponse
+	// JSON401 the response for an HTTP 401 `application/json` response
+	JSON401 *StandardErrorResponse
+	// JSON403 the response for an HTTP 403 `application/json` response
+	JSON403 *StandardErrorResponse
+	// JSON404 the response for an HTTP 404 `application/json` response
+	JSON404 *StandardErrorResponse
+	// JSON409 the response for an HTTP 409 `application/json` response
+	JSON409 *StandardErrorResponse
+	// JSON500 the response for an HTTP 500 `application/json` response
+	JSON500 *StandardErrorResponse
+	// JSON503 the response for an HTTP 503 `application/json` response
+	JSON503 *StandardErrorResponse
+	// JSON504 the response for an HTTP 504 `application/json` response
+	JSON504 *StandardErrorResponse
+	// JSONDefault the response for an HTTP default `application/json` response
+	JSONDefault *StandardErrorResponse
+}
+
+// GetJSON200 returns the response for an HTTP 200 `application/json` response
+func (r UnarchiveChannelResponse) GetJSON200() *UnarchiveResponse {
+	return r.JSON200
+}
+
+// GetJSON400 returns the response for an HTTP 400 `application/json` response
+func (r UnarchiveChannelResponse) GetJSON400() *StandardErrorResponse {
+	return r.JSON400
+}
+
+// GetJSON401 returns the response for an HTTP 401 `application/json` response
+func (r UnarchiveChannelResponse) GetJSON401() *StandardErrorResponse {
+	return r.JSON401
+}
+
+// GetJSON403 returns the response for an HTTP 403 `application/json` response
+func (r UnarchiveChannelResponse) GetJSON403() *StandardErrorResponse {
+	return r.JSON403
+}
+
+// GetJSON404 returns the response for an HTTP 404 `application/json` response
+func (r UnarchiveChannelResponse) GetJSON404() *StandardErrorResponse {
+	return r.JSON404
+}
+
+// GetJSON409 returns the response for an HTTP 409 `application/json` response
+func (r UnarchiveChannelResponse) GetJSON409() *StandardErrorResponse {
+	return r.JSON409
+}
+
+// GetJSON500 returns the response for an HTTP 500 `application/json` response
+func (r UnarchiveChannelResponse) GetJSON500() *StandardErrorResponse {
+	return r.JSON500
+}
+
+// GetJSON503 returns the response for an HTTP 503 `application/json` response
+func (r UnarchiveChannelResponse) GetJSON503() *StandardErrorResponse {
+	return r.JSON503
+}
+
+// GetJSON504 returns the response for an HTTP 504 `application/json` response
+func (r UnarchiveChannelResponse) GetJSON504() *StandardErrorResponse {
+	return r.JSON504
+}
+
+// GetJSONDefault returns the response for an HTTP default `application/json` response
+func (r UnarchiveChannelResponse) GetJSONDefault() *StandardErrorResponse {
+	return r.JSONDefault
+}
+
+// GetBody returns the raw response body bytes
+func (r UnarchiveChannelResponse) GetBody() []byte {
+	return r.Body
+}
+
+// Status returns HTTPResponse.Status
+func (r UnarchiveChannelResponse) Status() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Status
+	}
+	return http.StatusText(0)
+}
+
+// StatusCode returns HTTPResponse.StatusCode
+func (r UnarchiveChannelResponse) StatusCode() int {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.StatusCode
+	}
+	return 0
+}
+
+// ContentType is a convenience method to retrieve the Content-Type value from the HTTP response headers
+func (r UnarchiveChannelResponse) ContentType() string {
 	if r.HTTPResponse != nil {
 		return r.HTTPResponse.Header.Get("Content-Type")
 	}
@@ -67928,6 +73877,110 @@ func (r UpdateFilterDocumentResponse) ContentType() string {
 	return ""
 }
 
+type UnarchiveFilterResponse struct {
+	Body         []byte
+	HTTPResponse *http.Response
+	// JSON200 the response for an HTTP 200 `application/json` response
+	JSON200 *UnarchiveResponse
+	// JSON400 the response for an HTTP 400 `application/json` response
+	JSON400 *StandardErrorResponse
+	// JSON401 the response for an HTTP 401 `application/json` response
+	JSON401 *StandardErrorResponse
+	// JSON403 the response for an HTTP 403 `application/json` response
+	JSON403 *StandardErrorResponse
+	// JSON404 the response for an HTTP 404 `application/json` response
+	JSON404 *StandardErrorResponse
+	// JSON409 the response for an HTTP 409 `application/json` response
+	JSON409 *StandardErrorResponse
+	// JSON500 the response for an HTTP 500 `application/json` response
+	JSON500 *StandardErrorResponse
+	// JSON503 the response for an HTTP 503 `application/json` response
+	JSON503 *StandardErrorResponse
+	// JSON504 the response for an HTTP 504 `application/json` response
+	JSON504 *StandardErrorResponse
+	// JSONDefault the response for an HTTP default `application/json` response
+	JSONDefault *StandardErrorResponse
+}
+
+// GetJSON200 returns the response for an HTTP 200 `application/json` response
+func (r UnarchiveFilterResponse) GetJSON200() *UnarchiveResponse {
+	return r.JSON200
+}
+
+// GetJSON400 returns the response for an HTTP 400 `application/json` response
+func (r UnarchiveFilterResponse) GetJSON400() *StandardErrorResponse {
+	return r.JSON400
+}
+
+// GetJSON401 returns the response for an HTTP 401 `application/json` response
+func (r UnarchiveFilterResponse) GetJSON401() *StandardErrorResponse {
+	return r.JSON401
+}
+
+// GetJSON403 returns the response for an HTTP 403 `application/json` response
+func (r UnarchiveFilterResponse) GetJSON403() *StandardErrorResponse {
+	return r.JSON403
+}
+
+// GetJSON404 returns the response for an HTTP 404 `application/json` response
+func (r UnarchiveFilterResponse) GetJSON404() *StandardErrorResponse {
+	return r.JSON404
+}
+
+// GetJSON409 returns the response for an HTTP 409 `application/json` response
+func (r UnarchiveFilterResponse) GetJSON409() *StandardErrorResponse {
+	return r.JSON409
+}
+
+// GetJSON500 returns the response for an HTTP 500 `application/json` response
+func (r UnarchiveFilterResponse) GetJSON500() *StandardErrorResponse {
+	return r.JSON500
+}
+
+// GetJSON503 returns the response for an HTTP 503 `application/json` response
+func (r UnarchiveFilterResponse) GetJSON503() *StandardErrorResponse {
+	return r.JSON503
+}
+
+// GetJSON504 returns the response for an HTTP 504 `application/json` response
+func (r UnarchiveFilterResponse) GetJSON504() *StandardErrorResponse {
+	return r.JSON504
+}
+
+// GetJSONDefault returns the response for an HTTP default `application/json` response
+func (r UnarchiveFilterResponse) GetJSONDefault() *StandardErrorResponse {
+	return r.JSONDefault
+}
+
+// GetBody returns the raw response body bytes
+func (r UnarchiveFilterResponse) GetBody() []byte {
+	return r.Body
+}
+
+// Status returns HTTPResponse.Status
+func (r UnarchiveFilterResponse) Status() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Status
+	}
+	return http.StatusText(0)
+}
+
+// StatusCode returns HTTPResponse.StatusCode
+func (r UnarchiveFilterResponse) StatusCode() int {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.StatusCode
+	}
+	return 0
+}
+
+// ContentType is a convenience method to retrieve the Content-Type value from the HTTP response headers
+func (r UnarchiveFilterResponse) ContentType() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Header.Get("Content-Type")
+	}
+	return ""
+}
+
 type ListFunctionsResponse struct {
 	Body         []byte
 	HTTPResponse *http.Response
@@ -69072,6 +75125,110 @@ func (r UpdateInvocationDocumentResponse) ContentType() string {
 	return ""
 }
 
+type UnarchiveInvocationResponse struct {
+	Body         []byte
+	HTTPResponse *http.Response
+	// JSON200 the response for an HTTP 200 `application/json` response
+	JSON200 *UnarchiveResponse
+	// JSON400 the response for an HTTP 400 `application/json` response
+	JSON400 *StandardErrorResponse
+	// JSON401 the response for an HTTP 401 `application/json` response
+	JSON401 *StandardErrorResponse
+	// JSON403 the response for an HTTP 403 `application/json` response
+	JSON403 *StandardErrorResponse
+	// JSON404 the response for an HTTP 404 `application/json` response
+	JSON404 *StandardErrorResponse
+	// JSON409 the response for an HTTP 409 `application/json` response
+	JSON409 *StandardErrorResponse
+	// JSON500 the response for an HTTP 500 `application/json` response
+	JSON500 *StandardErrorResponse
+	// JSON503 the response for an HTTP 503 `application/json` response
+	JSON503 *StandardErrorResponse
+	// JSON504 the response for an HTTP 504 `application/json` response
+	JSON504 *StandardErrorResponse
+	// JSONDefault the response for an HTTP default `application/json` response
+	JSONDefault *StandardErrorResponse
+}
+
+// GetJSON200 returns the response for an HTTP 200 `application/json` response
+func (r UnarchiveInvocationResponse) GetJSON200() *UnarchiveResponse {
+	return r.JSON200
+}
+
+// GetJSON400 returns the response for an HTTP 400 `application/json` response
+func (r UnarchiveInvocationResponse) GetJSON400() *StandardErrorResponse {
+	return r.JSON400
+}
+
+// GetJSON401 returns the response for an HTTP 401 `application/json` response
+func (r UnarchiveInvocationResponse) GetJSON401() *StandardErrorResponse {
+	return r.JSON401
+}
+
+// GetJSON403 returns the response for an HTTP 403 `application/json` response
+func (r UnarchiveInvocationResponse) GetJSON403() *StandardErrorResponse {
+	return r.JSON403
+}
+
+// GetJSON404 returns the response for an HTTP 404 `application/json` response
+func (r UnarchiveInvocationResponse) GetJSON404() *StandardErrorResponse {
+	return r.JSON404
+}
+
+// GetJSON409 returns the response for an HTTP 409 `application/json` response
+func (r UnarchiveInvocationResponse) GetJSON409() *StandardErrorResponse {
+	return r.JSON409
+}
+
+// GetJSON500 returns the response for an HTTP 500 `application/json` response
+func (r UnarchiveInvocationResponse) GetJSON500() *StandardErrorResponse {
+	return r.JSON500
+}
+
+// GetJSON503 returns the response for an HTTP 503 `application/json` response
+func (r UnarchiveInvocationResponse) GetJSON503() *StandardErrorResponse {
+	return r.JSON503
+}
+
+// GetJSON504 returns the response for an HTTP 504 `application/json` response
+func (r UnarchiveInvocationResponse) GetJSON504() *StandardErrorResponse {
+	return r.JSON504
+}
+
+// GetJSONDefault returns the response for an HTTP default `application/json` response
+func (r UnarchiveInvocationResponse) GetJSONDefault() *StandardErrorResponse {
+	return r.JSONDefault
+}
+
+// GetBody returns the raw response body bytes
+func (r UnarchiveInvocationResponse) GetBody() []byte {
+	return r.Body
+}
+
+// Status returns HTTPResponse.Status
+func (r UnarchiveInvocationResponse) Status() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Status
+	}
+	return http.StatusText(0)
+}
+
+// StatusCode returns HTTPResponse.StatusCode
+func (r UnarchiveInvocationResponse) StatusCode() int {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.StatusCode
+	}
+	return 0
+}
+
+// ContentType is a convenience method to retrieve the Content-Type value from the HTTP response headers
+func (r UnarchiveInvocationResponse) ContentType() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Header.Get("Content-Type")
+	}
+	return ""
+}
+
 // ListLinksResponse200Headers the declared response headers of an HTTP 200 response for ListLinks
 type ListLinksResponse200Headers struct {
 	ConfigHubContinue *string
@@ -69897,6 +76054,110 @@ func (r UpdateLinkDocumentResponse) ContentType() string {
 	return ""
 }
 
+type UnarchiveLinkResponse struct {
+	Body         []byte
+	HTTPResponse *http.Response
+	// JSON200 the response for an HTTP 200 `application/json` response
+	JSON200 *UnarchiveResponse
+	// JSON400 the response for an HTTP 400 `application/json` response
+	JSON400 *StandardErrorResponse
+	// JSON401 the response for an HTTP 401 `application/json` response
+	JSON401 *StandardErrorResponse
+	// JSON403 the response for an HTTP 403 `application/json` response
+	JSON403 *StandardErrorResponse
+	// JSON404 the response for an HTTP 404 `application/json` response
+	JSON404 *StandardErrorResponse
+	// JSON409 the response for an HTTP 409 `application/json` response
+	JSON409 *StandardErrorResponse
+	// JSON500 the response for an HTTP 500 `application/json` response
+	JSON500 *StandardErrorResponse
+	// JSON503 the response for an HTTP 503 `application/json` response
+	JSON503 *StandardErrorResponse
+	// JSON504 the response for an HTTP 504 `application/json` response
+	JSON504 *StandardErrorResponse
+	// JSONDefault the response for an HTTP default `application/json` response
+	JSONDefault *StandardErrorResponse
+}
+
+// GetJSON200 returns the response for an HTTP 200 `application/json` response
+func (r UnarchiveLinkResponse) GetJSON200() *UnarchiveResponse {
+	return r.JSON200
+}
+
+// GetJSON400 returns the response for an HTTP 400 `application/json` response
+func (r UnarchiveLinkResponse) GetJSON400() *StandardErrorResponse {
+	return r.JSON400
+}
+
+// GetJSON401 returns the response for an HTTP 401 `application/json` response
+func (r UnarchiveLinkResponse) GetJSON401() *StandardErrorResponse {
+	return r.JSON401
+}
+
+// GetJSON403 returns the response for an HTTP 403 `application/json` response
+func (r UnarchiveLinkResponse) GetJSON403() *StandardErrorResponse {
+	return r.JSON403
+}
+
+// GetJSON404 returns the response for an HTTP 404 `application/json` response
+func (r UnarchiveLinkResponse) GetJSON404() *StandardErrorResponse {
+	return r.JSON404
+}
+
+// GetJSON409 returns the response for an HTTP 409 `application/json` response
+func (r UnarchiveLinkResponse) GetJSON409() *StandardErrorResponse {
+	return r.JSON409
+}
+
+// GetJSON500 returns the response for an HTTP 500 `application/json` response
+func (r UnarchiveLinkResponse) GetJSON500() *StandardErrorResponse {
+	return r.JSON500
+}
+
+// GetJSON503 returns the response for an HTTP 503 `application/json` response
+func (r UnarchiveLinkResponse) GetJSON503() *StandardErrorResponse {
+	return r.JSON503
+}
+
+// GetJSON504 returns the response for an HTTP 504 `application/json` response
+func (r UnarchiveLinkResponse) GetJSON504() *StandardErrorResponse {
+	return r.JSON504
+}
+
+// GetJSONDefault returns the response for an HTTP default `application/json` response
+func (r UnarchiveLinkResponse) GetJSONDefault() *StandardErrorResponse {
+	return r.JSONDefault
+}
+
+// GetBody returns the raw response body bytes
+func (r UnarchiveLinkResponse) GetBody() []byte {
+	return r.Body
+}
+
+// Status returns HTTPResponse.Status
+func (r UnarchiveLinkResponse) Status() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Status
+	}
+	return http.StatusText(0)
+}
+
+// StatusCode returns HTTPResponse.StatusCode
+func (r UnarchiveLinkResponse) StatusCode() int {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.StatusCode
+	}
+	return 0
+}
+
+// ContentType is a convenience method to retrieve the Content-Type value from the HTTP response headers
+func (r UnarchiveLinkResponse) ContentType() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Header.Get("Content-Type")
+	}
+	return ""
+}
+
 // ListExtendedReleasesResponse200Headers the declared response headers of an HTTP 200 response for ListExtendedReleases
 type ListExtendedReleasesResponse200Headers struct {
 	ConfigHubContinue *string
@@ -70612,6 +76873,110 @@ func (r DownloadReleaseDataResponse) StatusCode() int {
 
 // ContentType is a convenience method to retrieve the Content-Type value from the HTTP response headers
 func (r DownloadReleaseDataResponse) ContentType() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Header.Get("Content-Type")
+	}
+	return ""
+}
+
+type UnarchiveReleaseResponse struct {
+	Body         []byte
+	HTTPResponse *http.Response
+	// JSON200 the response for an HTTP 200 `application/json` response
+	JSON200 *UnarchiveResponse
+	// JSON400 the response for an HTTP 400 `application/json` response
+	JSON400 *StandardErrorResponse
+	// JSON401 the response for an HTTP 401 `application/json` response
+	JSON401 *StandardErrorResponse
+	// JSON403 the response for an HTTP 403 `application/json` response
+	JSON403 *StandardErrorResponse
+	// JSON404 the response for an HTTP 404 `application/json` response
+	JSON404 *StandardErrorResponse
+	// JSON409 the response for an HTTP 409 `application/json` response
+	JSON409 *StandardErrorResponse
+	// JSON500 the response for an HTTP 500 `application/json` response
+	JSON500 *StandardErrorResponse
+	// JSON503 the response for an HTTP 503 `application/json` response
+	JSON503 *StandardErrorResponse
+	// JSON504 the response for an HTTP 504 `application/json` response
+	JSON504 *StandardErrorResponse
+	// JSONDefault the response for an HTTP default `application/json` response
+	JSONDefault *StandardErrorResponse
+}
+
+// GetJSON200 returns the response for an HTTP 200 `application/json` response
+func (r UnarchiveReleaseResponse) GetJSON200() *UnarchiveResponse {
+	return r.JSON200
+}
+
+// GetJSON400 returns the response for an HTTP 400 `application/json` response
+func (r UnarchiveReleaseResponse) GetJSON400() *StandardErrorResponse {
+	return r.JSON400
+}
+
+// GetJSON401 returns the response for an HTTP 401 `application/json` response
+func (r UnarchiveReleaseResponse) GetJSON401() *StandardErrorResponse {
+	return r.JSON401
+}
+
+// GetJSON403 returns the response for an HTTP 403 `application/json` response
+func (r UnarchiveReleaseResponse) GetJSON403() *StandardErrorResponse {
+	return r.JSON403
+}
+
+// GetJSON404 returns the response for an HTTP 404 `application/json` response
+func (r UnarchiveReleaseResponse) GetJSON404() *StandardErrorResponse {
+	return r.JSON404
+}
+
+// GetJSON409 returns the response for an HTTP 409 `application/json` response
+func (r UnarchiveReleaseResponse) GetJSON409() *StandardErrorResponse {
+	return r.JSON409
+}
+
+// GetJSON500 returns the response for an HTTP 500 `application/json` response
+func (r UnarchiveReleaseResponse) GetJSON500() *StandardErrorResponse {
+	return r.JSON500
+}
+
+// GetJSON503 returns the response for an HTTP 503 `application/json` response
+func (r UnarchiveReleaseResponse) GetJSON503() *StandardErrorResponse {
+	return r.JSON503
+}
+
+// GetJSON504 returns the response for an HTTP 504 `application/json` response
+func (r UnarchiveReleaseResponse) GetJSON504() *StandardErrorResponse {
+	return r.JSON504
+}
+
+// GetJSONDefault returns the response for an HTTP default `application/json` response
+func (r UnarchiveReleaseResponse) GetJSONDefault() *StandardErrorResponse {
+	return r.JSONDefault
+}
+
+// GetBody returns the raw response body bytes
+func (r UnarchiveReleaseResponse) GetBody() []byte {
+	return r.Body
+}
+
+// Status returns HTTPResponse.Status
+func (r UnarchiveReleaseResponse) Status() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Status
+	}
+	return http.StatusText(0)
+}
+
+// StatusCode returns HTTPResponse.StatusCode
+func (r UnarchiveReleaseResponse) StatusCode() int {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.StatusCode
+	}
+	return 0
+}
+
+// ContentType is a convenience method to retrieve the Content-Type value from the HTTP response headers
+func (r UnarchiveReleaseResponse) ContentType() string {
 	if r.HTTPResponse != nil {
 		return r.HTTPResponse.Header.Get("Content-Type")
 	}
@@ -71347,6 +77712,110 @@ func (r UpdateTagResponse) StatusCode() int {
 
 // ContentType is a convenience method to retrieve the Content-Type value from the HTTP response headers
 func (r UpdateTagResponse) ContentType() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Header.Get("Content-Type")
+	}
+	return ""
+}
+
+type UnarchiveTagResponse struct {
+	Body         []byte
+	HTTPResponse *http.Response
+	// JSON200 the response for an HTTP 200 `application/json` response
+	JSON200 *UnarchiveResponse
+	// JSON400 the response for an HTTP 400 `application/json` response
+	JSON400 *StandardErrorResponse
+	// JSON401 the response for an HTTP 401 `application/json` response
+	JSON401 *StandardErrorResponse
+	// JSON403 the response for an HTTP 403 `application/json` response
+	JSON403 *StandardErrorResponse
+	// JSON404 the response for an HTTP 404 `application/json` response
+	JSON404 *StandardErrorResponse
+	// JSON409 the response for an HTTP 409 `application/json` response
+	JSON409 *StandardErrorResponse
+	// JSON500 the response for an HTTP 500 `application/json` response
+	JSON500 *StandardErrorResponse
+	// JSON503 the response for an HTTP 503 `application/json` response
+	JSON503 *StandardErrorResponse
+	// JSON504 the response for an HTTP 504 `application/json` response
+	JSON504 *StandardErrorResponse
+	// JSONDefault the response for an HTTP default `application/json` response
+	JSONDefault *StandardErrorResponse
+}
+
+// GetJSON200 returns the response for an HTTP 200 `application/json` response
+func (r UnarchiveTagResponse) GetJSON200() *UnarchiveResponse {
+	return r.JSON200
+}
+
+// GetJSON400 returns the response for an HTTP 400 `application/json` response
+func (r UnarchiveTagResponse) GetJSON400() *StandardErrorResponse {
+	return r.JSON400
+}
+
+// GetJSON401 returns the response for an HTTP 401 `application/json` response
+func (r UnarchiveTagResponse) GetJSON401() *StandardErrorResponse {
+	return r.JSON401
+}
+
+// GetJSON403 returns the response for an HTTP 403 `application/json` response
+func (r UnarchiveTagResponse) GetJSON403() *StandardErrorResponse {
+	return r.JSON403
+}
+
+// GetJSON404 returns the response for an HTTP 404 `application/json` response
+func (r UnarchiveTagResponse) GetJSON404() *StandardErrorResponse {
+	return r.JSON404
+}
+
+// GetJSON409 returns the response for an HTTP 409 `application/json` response
+func (r UnarchiveTagResponse) GetJSON409() *StandardErrorResponse {
+	return r.JSON409
+}
+
+// GetJSON500 returns the response for an HTTP 500 `application/json` response
+func (r UnarchiveTagResponse) GetJSON500() *StandardErrorResponse {
+	return r.JSON500
+}
+
+// GetJSON503 returns the response for an HTTP 503 `application/json` response
+func (r UnarchiveTagResponse) GetJSON503() *StandardErrorResponse {
+	return r.JSON503
+}
+
+// GetJSON504 returns the response for an HTTP 504 `application/json` response
+func (r UnarchiveTagResponse) GetJSON504() *StandardErrorResponse {
+	return r.JSON504
+}
+
+// GetJSONDefault returns the response for an HTTP default `application/json` response
+func (r UnarchiveTagResponse) GetJSONDefault() *StandardErrorResponse {
+	return r.JSONDefault
+}
+
+// GetBody returns the raw response body bytes
+func (r UnarchiveTagResponse) GetBody() []byte {
+	return r.Body
+}
+
+// Status returns HTTPResponse.Status
+func (r UnarchiveTagResponse) Status() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Status
+	}
+	return http.StatusText(0)
+}
+
+// StatusCode returns HTTPResponse.StatusCode
+func (r UnarchiveTagResponse) StatusCode() int {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.StatusCode
+	}
+	return 0
+}
+
+// ContentType is a convenience method to retrieve the Content-Type value from the HTTP response headers
+func (r UnarchiveTagResponse) ContentType() string {
 	if r.HTTPResponse != nil {
 		return r.HTTPResponse.Header.Get("Content-Type")
 	}
@@ -72178,6 +78647,110 @@ func (r UpdateTargetDocumentResponse) ContentType() string {
 	return ""
 }
 
+type UnarchiveTargetResponse struct {
+	Body         []byte
+	HTTPResponse *http.Response
+	// JSON200 the response for an HTTP 200 `application/json` response
+	JSON200 *UnarchiveResponse
+	// JSON400 the response for an HTTP 400 `application/json` response
+	JSON400 *StandardErrorResponse
+	// JSON401 the response for an HTTP 401 `application/json` response
+	JSON401 *StandardErrorResponse
+	// JSON403 the response for an HTTP 403 `application/json` response
+	JSON403 *StandardErrorResponse
+	// JSON404 the response for an HTTP 404 `application/json` response
+	JSON404 *StandardErrorResponse
+	// JSON409 the response for an HTTP 409 `application/json` response
+	JSON409 *StandardErrorResponse
+	// JSON500 the response for an HTTP 500 `application/json` response
+	JSON500 *StandardErrorResponse
+	// JSON503 the response for an HTTP 503 `application/json` response
+	JSON503 *StandardErrorResponse
+	// JSON504 the response for an HTTP 504 `application/json` response
+	JSON504 *StandardErrorResponse
+	// JSONDefault the response for an HTTP default `application/json` response
+	JSONDefault *StandardErrorResponse
+}
+
+// GetJSON200 returns the response for an HTTP 200 `application/json` response
+func (r UnarchiveTargetResponse) GetJSON200() *UnarchiveResponse {
+	return r.JSON200
+}
+
+// GetJSON400 returns the response for an HTTP 400 `application/json` response
+func (r UnarchiveTargetResponse) GetJSON400() *StandardErrorResponse {
+	return r.JSON400
+}
+
+// GetJSON401 returns the response for an HTTP 401 `application/json` response
+func (r UnarchiveTargetResponse) GetJSON401() *StandardErrorResponse {
+	return r.JSON401
+}
+
+// GetJSON403 returns the response for an HTTP 403 `application/json` response
+func (r UnarchiveTargetResponse) GetJSON403() *StandardErrorResponse {
+	return r.JSON403
+}
+
+// GetJSON404 returns the response for an HTTP 404 `application/json` response
+func (r UnarchiveTargetResponse) GetJSON404() *StandardErrorResponse {
+	return r.JSON404
+}
+
+// GetJSON409 returns the response for an HTTP 409 `application/json` response
+func (r UnarchiveTargetResponse) GetJSON409() *StandardErrorResponse {
+	return r.JSON409
+}
+
+// GetJSON500 returns the response for an HTTP 500 `application/json` response
+func (r UnarchiveTargetResponse) GetJSON500() *StandardErrorResponse {
+	return r.JSON500
+}
+
+// GetJSON503 returns the response for an HTTP 503 `application/json` response
+func (r UnarchiveTargetResponse) GetJSON503() *StandardErrorResponse {
+	return r.JSON503
+}
+
+// GetJSON504 returns the response for an HTTP 504 `application/json` response
+func (r UnarchiveTargetResponse) GetJSON504() *StandardErrorResponse {
+	return r.JSON504
+}
+
+// GetJSONDefault returns the response for an HTTP default `application/json` response
+func (r UnarchiveTargetResponse) GetJSONDefault() *StandardErrorResponse {
+	return r.JSONDefault
+}
+
+// GetBody returns the raw response body bytes
+func (r UnarchiveTargetResponse) GetBody() []byte {
+	return r.Body
+}
+
+// Status returns HTTPResponse.Status
+func (r UnarchiveTargetResponse) Status() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Status
+	}
+	return http.StatusText(0)
+}
+
+// StatusCode returns HTTPResponse.StatusCode
+func (r UnarchiveTargetResponse) StatusCode() int {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.StatusCode
+	}
+	return 0
+}
+
+// ContentType is a convenience method to retrieve the Content-Type value from the HTTP response headers
+func (r UnarchiveTargetResponse) ContentType() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Header.Get("Content-Type")
+	}
+	return ""
+}
+
 // ListTriggersResponse200Headers the declared response headers of an HTTP 200 response for ListTriggers
 type ListTriggersResponse200Headers struct {
 	ConfigHubContinue *string
@@ -72997,6 +79570,214 @@ func (r UpdateTriggerDocumentResponse) StatusCode() int {
 
 // ContentType is a convenience method to retrieve the Content-Type value from the HTTP response headers
 func (r UpdateTriggerDocumentResponse) ContentType() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Header.Get("Content-Type")
+	}
+	return ""
+}
+
+type UnarchiveTriggerResponse struct {
+	Body         []byte
+	HTTPResponse *http.Response
+	// JSON200 the response for an HTTP 200 `application/json` response
+	JSON200 *UnarchiveResponse
+	// JSON400 the response for an HTTP 400 `application/json` response
+	JSON400 *StandardErrorResponse
+	// JSON401 the response for an HTTP 401 `application/json` response
+	JSON401 *StandardErrorResponse
+	// JSON403 the response for an HTTP 403 `application/json` response
+	JSON403 *StandardErrorResponse
+	// JSON404 the response for an HTTP 404 `application/json` response
+	JSON404 *StandardErrorResponse
+	// JSON409 the response for an HTTP 409 `application/json` response
+	JSON409 *StandardErrorResponse
+	// JSON500 the response for an HTTP 500 `application/json` response
+	JSON500 *StandardErrorResponse
+	// JSON503 the response for an HTTP 503 `application/json` response
+	JSON503 *StandardErrorResponse
+	// JSON504 the response for an HTTP 504 `application/json` response
+	JSON504 *StandardErrorResponse
+	// JSONDefault the response for an HTTP default `application/json` response
+	JSONDefault *StandardErrorResponse
+}
+
+// GetJSON200 returns the response for an HTTP 200 `application/json` response
+func (r UnarchiveTriggerResponse) GetJSON200() *UnarchiveResponse {
+	return r.JSON200
+}
+
+// GetJSON400 returns the response for an HTTP 400 `application/json` response
+func (r UnarchiveTriggerResponse) GetJSON400() *StandardErrorResponse {
+	return r.JSON400
+}
+
+// GetJSON401 returns the response for an HTTP 401 `application/json` response
+func (r UnarchiveTriggerResponse) GetJSON401() *StandardErrorResponse {
+	return r.JSON401
+}
+
+// GetJSON403 returns the response for an HTTP 403 `application/json` response
+func (r UnarchiveTriggerResponse) GetJSON403() *StandardErrorResponse {
+	return r.JSON403
+}
+
+// GetJSON404 returns the response for an HTTP 404 `application/json` response
+func (r UnarchiveTriggerResponse) GetJSON404() *StandardErrorResponse {
+	return r.JSON404
+}
+
+// GetJSON409 returns the response for an HTTP 409 `application/json` response
+func (r UnarchiveTriggerResponse) GetJSON409() *StandardErrorResponse {
+	return r.JSON409
+}
+
+// GetJSON500 returns the response for an HTTP 500 `application/json` response
+func (r UnarchiveTriggerResponse) GetJSON500() *StandardErrorResponse {
+	return r.JSON500
+}
+
+// GetJSON503 returns the response for an HTTP 503 `application/json` response
+func (r UnarchiveTriggerResponse) GetJSON503() *StandardErrorResponse {
+	return r.JSON503
+}
+
+// GetJSON504 returns the response for an HTTP 504 `application/json` response
+func (r UnarchiveTriggerResponse) GetJSON504() *StandardErrorResponse {
+	return r.JSON504
+}
+
+// GetJSONDefault returns the response for an HTTP default `application/json` response
+func (r UnarchiveTriggerResponse) GetJSONDefault() *StandardErrorResponse {
+	return r.JSONDefault
+}
+
+// GetBody returns the raw response body bytes
+func (r UnarchiveTriggerResponse) GetBody() []byte {
+	return r.Body
+}
+
+// Status returns HTTPResponse.Status
+func (r UnarchiveTriggerResponse) Status() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Status
+	}
+	return http.StatusText(0)
+}
+
+// StatusCode returns HTTPResponse.StatusCode
+func (r UnarchiveTriggerResponse) StatusCode() int {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.StatusCode
+	}
+	return 0
+}
+
+// ContentType is a convenience method to retrieve the Content-Type value from the HTTP response headers
+func (r UnarchiveTriggerResponse) ContentType() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Header.Get("Content-Type")
+	}
+	return ""
+}
+
+type UnarchiveSpaceResponse struct {
+	Body         []byte
+	HTTPResponse *http.Response
+	// JSON200 the response for an HTTP 200 `application/json` response
+	JSON200 *UnarchiveResponse
+	// JSON400 the response for an HTTP 400 `application/json` response
+	JSON400 *StandardErrorResponse
+	// JSON401 the response for an HTTP 401 `application/json` response
+	JSON401 *StandardErrorResponse
+	// JSON403 the response for an HTTP 403 `application/json` response
+	JSON403 *StandardErrorResponse
+	// JSON404 the response for an HTTP 404 `application/json` response
+	JSON404 *StandardErrorResponse
+	// JSON409 the response for an HTTP 409 `application/json` response
+	JSON409 *StandardErrorResponse
+	// JSON500 the response for an HTTP 500 `application/json` response
+	JSON500 *StandardErrorResponse
+	// JSON503 the response for an HTTP 503 `application/json` response
+	JSON503 *StandardErrorResponse
+	// JSON504 the response for an HTTP 504 `application/json` response
+	JSON504 *StandardErrorResponse
+	// JSONDefault the response for an HTTP default `application/json` response
+	JSONDefault *StandardErrorResponse
+}
+
+// GetJSON200 returns the response for an HTTP 200 `application/json` response
+func (r UnarchiveSpaceResponse) GetJSON200() *UnarchiveResponse {
+	return r.JSON200
+}
+
+// GetJSON400 returns the response for an HTTP 400 `application/json` response
+func (r UnarchiveSpaceResponse) GetJSON400() *StandardErrorResponse {
+	return r.JSON400
+}
+
+// GetJSON401 returns the response for an HTTP 401 `application/json` response
+func (r UnarchiveSpaceResponse) GetJSON401() *StandardErrorResponse {
+	return r.JSON401
+}
+
+// GetJSON403 returns the response for an HTTP 403 `application/json` response
+func (r UnarchiveSpaceResponse) GetJSON403() *StandardErrorResponse {
+	return r.JSON403
+}
+
+// GetJSON404 returns the response for an HTTP 404 `application/json` response
+func (r UnarchiveSpaceResponse) GetJSON404() *StandardErrorResponse {
+	return r.JSON404
+}
+
+// GetJSON409 returns the response for an HTTP 409 `application/json` response
+func (r UnarchiveSpaceResponse) GetJSON409() *StandardErrorResponse {
+	return r.JSON409
+}
+
+// GetJSON500 returns the response for an HTTP 500 `application/json` response
+func (r UnarchiveSpaceResponse) GetJSON500() *StandardErrorResponse {
+	return r.JSON500
+}
+
+// GetJSON503 returns the response for an HTTP 503 `application/json` response
+func (r UnarchiveSpaceResponse) GetJSON503() *StandardErrorResponse {
+	return r.JSON503
+}
+
+// GetJSON504 returns the response for an HTTP 504 `application/json` response
+func (r UnarchiveSpaceResponse) GetJSON504() *StandardErrorResponse {
+	return r.JSON504
+}
+
+// GetJSONDefault returns the response for an HTTP default `application/json` response
+func (r UnarchiveSpaceResponse) GetJSONDefault() *StandardErrorResponse {
+	return r.JSONDefault
+}
+
+// GetBody returns the raw response body bytes
+func (r UnarchiveSpaceResponse) GetBody() []byte {
+	return r.Body
+}
+
+// Status returns HTTPResponse.Status
+func (r UnarchiveSpaceResponse) Status() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Status
+	}
+	return http.StatusText(0)
+}
+
+// StatusCode returns HTTPResponse.StatusCode
+func (r UnarchiveSpaceResponse) StatusCode() int {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.StatusCode
+	}
+	return 0
+}
+
+// ContentType is a convenience method to retrieve the Content-Type value from the HTTP response headers
+func (r UnarchiveSpaceResponse) ContentType() string {
 	if r.HTTPResponse != nil {
 		return r.HTTPResponse.Header.Get("Content-Type")
 	}
@@ -76892,6 +83673,110 @@ func (r UpdateViewDocumentResponse) ContentType() string {
 	return ""
 }
 
+type UnarchiveViewResponse struct {
+	Body         []byte
+	HTTPResponse *http.Response
+	// JSON200 the response for an HTTP 200 `application/json` response
+	JSON200 *UnarchiveResponse
+	// JSON400 the response for an HTTP 400 `application/json` response
+	JSON400 *StandardErrorResponse
+	// JSON401 the response for an HTTP 401 `application/json` response
+	JSON401 *StandardErrorResponse
+	// JSON403 the response for an HTTP 403 `application/json` response
+	JSON403 *StandardErrorResponse
+	// JSON404 the response for an HTTP 404 `application/json` response
+	JSON404 *StandardErrorResponse
+	// JSON409 the response for an HTTP 409 `application/json` response
+	JSON409 *StandardErrorResponse
+	// JSON500 the response for an HTTP 500 `application/json` response
+	JSON500 *StandardErrorResponse
+	// JSON503 the response for an HTTP 503 `application/json` response
+	JSON503 *StandardErrorResponse
+	// JSON504 the response for an HTTP 504 `application/json` response
+	JSON504 *StandardErrorResponse
+	// JSONDefault the response for an HTTP default `application/json` response
+	JSONDefault *StandardErrorResponse
+}
+
+// GetJSON200 returns the response for an HTTP 200 `application/json` response
+func (r UnarchiveViewResponse) GetJSON200() *UnarchiveResponse {
+	return r.JSON200
+}
+
+// GetJSON400 returns the response for an HTTP 400 `application/json` response
+func (r UnarchiveViewResponse) GetJSON400() *StandardErrorResponse {
+	return r.JSON400
+}
+
+// GetJSON401 returns the response for an HTTP 401 `application/json` response
+func (r UnarchiveViewResponse) GetJSON401() *StandardErrorResponse {
+	return r.JSON401
+}
+
+// GetJSON403 returns the response for an HTTP 403 `application/json` response
+func (r UnarchiveViewResponse) GetJSON403() *StandardErrorResponse {
+	return r.JSON403
+}
+
+// GetJSON404 returns the response for an HTTP 404 `application/json` response
+func (r UnarchiveViewResponse) GetJSON404() *StandardErrorResponse {
+	return r.JSON404
+}
+
+// GetJSON409 returns the response for an HTTP 409 `application/json` response
+func (r UnarchiveViewResponse) GetJSON409() *StandardErrorResponse {
+	return r.JSON409
+}
+
+// GetJSON500 returns the response for an HTTP 500 `application/json` response
+func (r UnarchiveViewResponse) GetJSON500() *StandardErrorResponse {
+	return r.JSON500
+}
+
+// GetJSON503 returns the response for an HTTP 503 `application/json` response
+func (r UnarchiveViewResponse) GetJSON503() *StandardErrorResponse {
+	return r.JSON503
+}
+
+// GetJSON504 returns the response for an HTTP 504 `application/json` response
+func (r UnarchiveViewResponse) GetJSON504() *StandardErrorResponse {
+	return r.JSON504
+}
+
+// GetJSONDefault returns the response for an HTTP default `application/json` response
+func (r UnarchiveViewResponse) GetJSONDefault() *StandardErrorResponse {
+	return r.JSONDefault
+}
+
+// GetBody returns the raw response body bytes
+func (r UnarchiveViewResponse) GetBody() []byte {
+	return r.Body
+}
+
+// Status returns HTTPResponse.Status
+func (r UnarchiveViewResponse) Status() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Status
+	}
+	return http.StatusText(0)
+}
+
+// StatusCode returns HTTPResponse.StatusCode
+func (r UnarchiveViewResponse) StatusCode() int {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.StatusCode
+	}
+	return 0
+}
+
+// ContentType is a convenience method to retrieve the Content-Type value from the HTTP response headers
+func (r UnarchiveViewResponse) ContentType() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Header.Get("Content-Type")
+	}
+	return ""
+}
+
 // BulkDeleteTagsResponse200Headers the declared response headers of an HTTP 200 response for BulkDeleteTags
 type BulkDeleteTagsResponse200Headers struct {
 	ConfigHubContinue *string
@@ -77462,6 +84347,124 @@ func (r BulkMoveTagsResponse) StatusCode() int {
 
 // ContentType is a convenience method to retrieve the Content-Type value from the HTTP response headers
 func (r BulkMoveTagsResponse) ContentType() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Header.Get("Content-Type")
+	}
+	return ""
+}
+
+// BulkUnarchiveTagsResponse200Headers the declared response headers of an HTTP 200 response for BulkUnarchiveTags
+type BulkUnarchiveTagsResponse200Headers struct {
+	ConfigHubContinue *string
+}
+
+type BulkUnarchiveTagsResponse struct {
+	Body         []byte
+	HTTPResponse *http.Response
+	// JSON200 the response for an HTTP 200 `application/json` response
+	JSON200 *[]UnarchiveResponse
+	// JSON207 the response for an HTTP 207 `application/json` response
+	JSON207 *[]UnarchiveResponse
+	// JSON400 the response for an HTTP 400 `application/json` response
+	JSON400 *StandardErrorResponse
+	// JSON401 the response for an HTTP 401 `application/json` response
+	JSON401 *StandardErrorResponse
+	// JSON403 the response for an HTTP 403 `application/json` response
+	JSON403 *StandardErrorResponse
+	// JSON404 the response for an HTTP 404 `application/json` response
+	JSON404 *StandardErrorResponse
+	// JSON409 the response for an HTTP 409 `application/json` response
+	JSON409 *StandardErrorResponse
+	// JSON500 the response for an HTTP 500 `application/json` response
+	JSON500 *StandardErrorResponse
+	// JSON503 the response for an HTTP 503 `application/json` response
+	JSON503 *StandardErrorResponse
+	// JSON504 the response for an HTTP 504 `application/json` response
+	JSON504 *StandardErrorResponse
+	// JSONDefault the response for an HTTP default `application/json` response
+	JSONDefault *StandardErrorResponse
+	// Headers200 the parsed response headers for an HTTP 200 response
+	Headers200 *BulkUnarchiveTagsResponse200Headers
+}
+
+// GetJSON200 returns the response for an HTTP 200 `application/json` response
+func (r BulkUnarchiveTagsResponse) GetJSON200() *[]UnarchiveResponse {
+	return r.JSON200
+}
+
+// GetJSON207 returns the response for an HTTP 207 `application/json` response
+func (r BulkUnarchiveTagsResponse) GetJSON207() *[]UnarchiveResponse {
+	return r.JSON207
+}
+
+// GetJSON400 returns the response for an HTTP 400 `application/json` response
+func (r BulkUnarchiveTagsResponse) GetJSON400() *StandardErrorResponse {
+	return r.JSON400
+}
+
+// GetJSON401 returns the response for an HTTP 401 `application/json` response
+func (r BulkUnarchiveTagsResponse) GetJSON401() *StandardErrorResponse {
+	return r.JSON401
+}
+
+// GetJSON403 returns the response for an HTTP 403 `application/json` response
+func (r BulkUnarchiveTagsResponse) GetJSON403() *StandardErrorResponse {
+	return r.JSON403
+}
+
+// GetJSON404 returns the response for an HTTP 404 `application/json` response
+func (r BulkUnarchiveTagsResponse) GetJSON404() *StandardErrorResponse {
+	return r.JSON404
+}
+
+// GetJSON409 returns the response for an HTTP 409 `application/json` response
+func (r BulkUnarchiveTagsResponse) GetJSON409() *StandardErrorResponse {
+	return r.JSON409
+}
+
+// GetJSON500 returns the response for an HTTP 500 `application/json` response
+func (r BulkUnarchiveTagsResponse) GetJSON500() *StandardErrorResponse {
+	return r.JSON500
+}
+
+// GetJSON503 returns the response for an HTTP 503 `application/json` response
+func (r BulkUnarchiveTagsResponse) GetJSON503() *StandardErrorResponse {
+	return r.JSON503
+}
+
+// GetJSON504 returns the response for an HTTP 504 `application/json` response
+func (r BulkUnarchiveTagsResponse) GetJSON504() *StandardErrorResponse {
+	return r.JSON504
+}
+
+// GetJSONDefault returns the response for an HTTP default `application/json` response
+func (r BulkUnarchiveTagsResponse) GetJSONDefault() *StandardErrorResponse {
+	return r.JSONDefault
+}
+
+// GetBody returns the raw response body bytes
+func (r BulkUnarchiveTagsResponse) GetBody() []byte {
+	return r.Body
+}
+
+// Status returns HTTPResponse.Status
+func (r BulkUnarchiveTagsResponse) Status() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Status
+	}
+	return http.StatusText(0)
+}
+
+// StatusCode returns HTTPResponse.StatusCode
+func (r BulkUnarchiveTagsResponse) StatusCode() int {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.StatusCode
+	}
+	return 0
+}
+
+// ContentType is a convenience method to retrieve the Content-Type value from the HTTP response headers
+func (r BulkUnarchiveTagsResponse) ContentType() string {
 	if r.HTTPResponse != nil {
 		return r.HTTPResponse.Header.Get("Content-Type")
 	}
@@ -78058,6 +85061,124 @@ func (r BulkMoveTargetsResponse) ContentType() string {
 	return ""
 }
 
+// BulkUnarchiveTargetsResponse200Headers the declared response headers of an HTTP 200 response for BulkUnarchiveTargets
+type BulkUnarchiveTargetsResponse200Headers struct {
+	ConfigHubContinue *string
+}
+
+type BulkUnarchiveTargetsResponse struct {
+	Body         []byte
+	HTTPResponse *http.Response
+	// JSON200 the response for an HTTP 200 `application/json` response
+	JSON200 *[]UnarchiveResponse
+	// JSON207 the response for an HTTP 207 `application/json` response
+	JSON207 *[]UnarchiveResponse
+	// JSON400 the response for an HTTP 400 `application/json` response
+	JSON400 *StandardErrorResponse
+	// JSON401 the response for an HTTP 401 `application/json` response
+	JSON401 *StandardErrorResponse
+	// JSON403 the response for an HTTP 403 `application/json` response
+	JSON403 *StandardErrorResponse
+	// JSON404 the response for an HTTP 404 `application/json` response
+	JSON404 *StandardErrorResponse
+	// JSON409 the response for an HTTP 409 `application/json` response
+	JSON409 *StandardErrorResponse
+	// JSON500 the response for an HTTP 500 `application/json` response
+	JSON500 *StandardErrorResponse
+	// JSON503 the response for an HTTP 503 `application/json` response
+	JSON503 *StandardErrorResponse
+	// JSON504 the response for an HTTP 504 `application/json` response
+	JSON504 *StandardErrorResponse
+	// JSONDefault the response for an HTTP default `application/json` response
+	JSONDefault *StandardErrorResponse
+	// Headers200 the parsed response headers for an HTTP 200 response
+	Headers200 *BulkUnarchiveTargetsResponse200Headers
+}
+
+// GetJSON200 returns the response for an HTTP 200 `application/json` response
+func (r BulkUnarchiveTargetsResponse) GetJSON200() *[]UnarchiveResponse {
+	return r.JSON200
+}
+
+// GetJSON207 returns the response for an HTTP 207 `application/json` response
+func (r BulkUnarchiveTargetsResponse) GetJSON207() *[]UnarchiveResponse {
+	return r.JSON207
+}
+
+// GetJSON400 returns the response for an HTTP 400 `application/json` response
+func (r BulkUnarchiveTargetsResponse) GetJSON400() *StandardErrorResponse {
+	return r.JSON400
+}
+
+// GetJSON401 returns the response for an HTTP 401 `application/json` response
+func (r BulkUnarchiveTargetsResponse) GetJSON401() *StandardErrorResponse {
+	return r.JSON401
+}
+
+// GetJSON403 returns the response for an HTTP 403 `application/json` response
+func (r BulkUnarchiveTargetsResponse) GetJSON403() *StandardErrorResponse {
+	return r.JSON403
+}
+
+// GetJSON404 returns the response for an HTTP 404 `application/json` response
+func (r BulkUnarchiveTargetsResponse) GetJSON404() *StandardErrorResponse {
+	return r.JSON404
+}
+
+// GetJSON409 returns the response for an HTTP 409 `application/json` response
+func (r BulkUnarchiveTargetsResponse) GetJSON409() *StandardErrorResponse {
+	return r.JSON409
+}
+
+// GetJSON500 returns the response for an HTTP 500 `application/json` response
+func (r BulkUnarchiveTargetsResponse) GetJSON500() *StandardErrorResponse {
+	return r.JSON500
+}
+
+// GetJSON503 returns the response for an HTTP 503 `application/json` response
+func (r BulkUnarchiveTargetsResponse) GetJSON503() *StandardErrorResponse {
+	return r.JSON503
+}
+
+// GetJSON504 returns the response for an HTTP 504 `application/json` response
+func (r BulkUnarchiveTargetsResponse) GetJSON504() *StandardErrorResponse {
+	return r.JSON504
+}
+
+// GetJSONDefault returns the response for an HTTP default `application/json` response
+func (r BulkUnarchiveTargetsResponse) GetJSONDefault() *StandardErrorResponse {
+	return r.JSONDefault
+}
+
+// GetBody returns the raw response body bytes
+func (r BulkUnarchiveTargetsResponse) GetBody() []byte {
+	return r.Body
+}
+
+// Status returns HTTPResponse.Status
+func (r BulkUnarchiveTargetsResponse) Status() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Status
+	}
+	return http.StatusText(0)
+}
+
+// StatusCode returns HTTPResponse.StatusCode
+func (r BulkUnarchiveTargetsResponse) StatusCode() int {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.StatusCode
+	}
+	return 0
+}
+
+// ContentType is a convenience method to retrieve the Content-Type value from the HTTP response headers
+func (r BulkUnarchiveTargetsResponse) ContentType() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Header.Get("Content-Type")
+	}
+	return ""
+}
+
 // BulkDeleteTriggersResponse200Headers the declared response headers of an HTTP 200 response for BulkDeleteTriggers
 type BulkDeleteTriggersResponse200Headers struct {
 	ConfigHubContinue *string
@@ -78642,6 +85763,124 @@ func (r BulkMoveTriggersResponse) StatusCode() int {
 
 // ContentType is a convenience method to retrieve the Content-Type value from the HTTP response headers
 func (r BulkMoveTriggersResponse) ContentType() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Header.Get("Content-Type")
+	}
+	return ""
+}
+
+// BulkUnarchiveTriggersResponse200Headers the declared response headers of an HTTP 200 response for BulkUnarchiveTriggers
+type BulkUnarchiveTriggersResponse200Headers struct {
+	ConfigHubContinue *string
+}
+
+type BulkUnarchiveTriggersResponse struct {
+	Body         []byte
+	HTTPResponse *http.Response
+	// JSON200 the response for an HTTP 200 `application/json` response
+	JSON200 *[]UnarchiveResponse
+	// JSON207 the response for an HTTP 207 `application/json` response
+	JSON207 *[]UnarchiveResponse
+	// JSON400 the response for an HTTP 400 `application/json` response
+	JSON400 *StandardErrorResponse
+	// JSON401 the response for an HTTP 401 `application/json` response
+	JSON401 *StandardErrorResponse
+	// JSON403 the response for an HTTP 403 `application/json` response
+	JSON403 *StandardErrorResponse
+	// JSON404 the response for an HTTP 404 `application/json` response
+	JSON404 *StandardErrorResponse
+	// JSON409 the response for an HTTP 409 `application/json` response
+	JSON409 *StandardErrorResponse
+	// JSON500 the response for an HTTP 500 `application/json` response
+	JSON500 *StandardErrorResponse
+	// JSON503 the response for an HTTP 503 `application/json` response
+	JSON503 *StandardErrorResponse
+	// JSON504 the response for an HTTP 504 `application/json` response
+	JSON504 *StandardErrorResponse
+	// JSONDefault the response for an HTTP default `application/json` response
+	JSONDefault *StandardErrorResponse
+	// Headers200 the parsed response headers for an HTTP 200 response
+	Headers200 *BulkUnarchiveTriggersResponse200Headers
+}
+
+// GetJSON200 returns the response for an HTTP 200 `application/json` response
+func (r BulkUnarchiveTriggersResponse) GetJSON200() *[]UnarchiveResponse {
+	return r.JSON200
+}
+
+// GetJSON207 returns the response for an HTTP 207 `application/json` response
+func (r BulkUnarchiveTriggersResponse) GetJSON207() *[]UnarchiveResponse {
+	return r.JSON207
+}
+
+// GetJSON400 returns the response for an HTTP 400 `application/json` response
+func (r BulkUnarchiveTriggersResponse) GetJSON400() *StandardErrorResponse {
+	return r.JSON400
+}
+
+// GetJSON401 returns the response for an HTTP 401 `application/json` response
+func (r BulkUnarchiveTriggersResponse) GetJSON401() *StandardErrorResponse {
+	return r.JSON401
+}
+
+// GetJSON403 returns the response for an HTTP 403 `application/json` response
+func (r BulkUnarchiveTriggersResponse) GetJSON403() *StandardErrorResponse {
+	return r.JSON403
+}
+
+// GetJSON404 returns the response for an HTTP 404 `application/json` response
+func (r BulkUnarchiveTriggersResponse) GetJSON404() *StandardErrorResponse {
+	return r.JSON404
+}
+
+// GetJSON409 returns the response for an HTTP 409 `application/json` response
+func (r BulkUnarchiveTriggersResponse) GetJSON409() *StandardErrorResponse {
+	return r.JSON409
+}
+
+// GetJSON500 returns the response for an HTTP 500 `application/json` response
+func (r BulkUnarchiveTriggersResponse) GetJSON500() *StandardErrorResponse {
+	return r.JSON500
+}
+
+// GetJSON503 returns the response for an HTTP 503 `application/json` response
+func (r BulkUnarchiveTriggersResponse) GetJSON503() *StandardErrorResponse {
+	return r.JSON503
+}
+
+// GetJSON504 returns the response for an HTTP 504 `application/json` response
+func (r BulkUnarchiveTriggersResponse) GetJSON504() *StandardErrorResponse {
+	return r.JSON504
+}
+
+// GetJSONDefault returns the response for an HTTP default `application/json` response
+func (r BulkUnarchiveTriggersResponse) GetJSONDefault() *StandardErrorResponse {
+	return r.JSONDefault
+}
+
+// GetBody returns the raw response body bytes
+func (r BulkUnarchiveTriggersResponse) GetBody() []byte {
+	return r.Body
+}
+
+// Status returns HTTPResponse.Status
+func (r BulkUnarchiveTriggersResponse) Status() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Status
+	}
+	return http.StatusText(0)
+}
+
+// StatusCode returns HTTPResponse.StatusCode
+func (r BulkUnarchiveTriggersResponse) StatusCode() int {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.StatusCode
+	}
+	return 0
+}
+
+// ContentType is a convenience method to retrieve the Content-Type value from the HTTP response headers
+func (r BulkUnarchiveTriggersResponse) ContentType() string {
 	if r.HTTPResponse != nil {
 		return r.HTTPResponse.Header.Get("Content-Type")
 	}
@@ -79363,6 +86602,11 @@ func (r BulkTagUnitsResponse) ContentType() string {
 	return ""
 }
 
+// BulkUnarchiveUnitsResponse200Headers the declared response headers of an HTTP 200 response for BulkUnarchiveUnits
+type BulkUnarchiveUnitsResponse200Headers struct {
+	ConfigHubContinue *string
+}
+
 type BulkUnarchiveUnitsResponse struct {
 	Body         []byte
 	HTTPResponse *http.Response
@@ -79388,6 +86632,8 @@ type BulkUnarchiveUnitsResponse struct {
 	JSON504 *StandardErrorResponse
 	// JSONDefault the response for an HTTP default `application/json` response
 	JSONDefault *StandardErrorResponse
+	// Headers200 the parsed response headers for an HTTP 200 response
+	Headers200 *BulkUnarchiveUnitsResponse200Headers
 }
 
 // GetJSON200 returns the response for an HTTP 200 `application/json` response
@@ -80799,6 +88045,124 @@ func (r BulkMoveViewsResponse) ContentType() string {
 	return ""
 }
 
+// BulkUnarchiveViewsResponse200Headers the declared response headers of an HTTP 200 response for BulkUnarchiveViews
+type BulkUnarchiveViewsResponse200Headers struct {
+	ConfigHubContinue *string
+}
+
+type BulkUnarchiveViewsResponse struct {
+	Body         []byte
+	HTTPResponse *http.Response
+	// JSON200 the response for an HTTP 200 `application/json` response
+	JSON200 *[]UnarchiveResponse
+	// JSON207 the response for an HTTP 207 `application/json` response
+	JSON207 *[]UnarchiveResponse
+	// JSON400 the response for an HTTP 400 `application/json` response
+	JSON400 *StandardErrorResponse
+	// JSON401 the response for an HTTP 401 `application/json` response
+	JSON401 *StandardErrorResponse
+	// JSON403 the response for an HTTP 403 `application/json` response
+	JSON403 *StandardErrorResponse
+	// JSON404 the response for an HTTP 404 `application/json` response
+	JSON404 *StandardErrorResponse
+	// JSON409 the response for an HTTP 409 `application/json` response
+	JSON409 *StandardErrorResponse
+	// JSON500 the response for an HTTP 500 `application/json` response
+	JSON500 *StandardErrorResponse
+	// JSON503 the response for an HTTP 503 `application/json` response
+	JSON503 *StandardErrorResponse
+	// JSON504 the response for an HTTP 504 `application/json` response
+	JSON504 *StandardErrorResponse
+	// JSONDefault the response for an HTTP default `application/json` response
+	JSONDefault *StandardErrorResponse
+	// Headers200 the parsed response headers for an HTTP 200 response
+	Headers200 *BulkUnarchiveViewsResponse200Headers
+}
+
+// GetJSON200 returns the response for an HTTP 200 `application/json` response
+func (r BulkUnarchiveViewsResponse) GetJSON200() *[]UnarchiveResponse {
+	return r.JSON200
+}
+
+// GetJSON207 returns the response for an HTTP 207 `application/json` response
+func (r BulkUnarchiveViewsResponse) GetJSON207() *[]UnarchiveResponse {
+	return r.JSON207
+}
+
+// GetJSON400 returns the response for an HTTP 400 `application/json` response
+func (r BulkUnarchiveViewsResponse) GetJSON400() *StandardErrorResponse {
+	return r.JSON400
+}
+
+// GetJSON401 returns the response for an HTTP 401 `application/json` response
+func (r BulkUnarchiveViewsResponse) GetJSON401() *StandardErrorResponse {
+	return r.JSON401
+}
+
+// GetJSON403 returns the response for an HTTP 403 `application/json` response
+func (r BulkUnarchiveViewsResponse) GetJSON403() *StandardErrorResponse {
+	return r.JSON403
+}
+
+// GetJSON404 returns the response for an HTTP 404 `application/json` response
+func (r BulkUnarchiveViewsResponse) GetJSON404() *StandardErrorResponse {
+	return r.JSON404
+}
+
+// GetJSON409 returns the response for an HTTP 409 `application/json` response
+func (r BulkUnarchiveViewsResponse) GetJSON409() *StandardErrorResponse {
+	return r.JSON409
+}
+
+// GetJSON500 returns the response for an HTTP 500 `application/json` response
+func (r BulkUnarchiveViewsResponse) GetJSON500() *StandardErrorResponse {
+	return r.JSON500
+}
+
+// GetJSON503 returns the response for an HTTP 503 `application/json` response
+func (r BulkUnarchiveViewsResponse) GetJSON503() *StandardErrorResponse {
+	return r.JSON503
+}
+
+// GetJSON504 returns the response for an HTTP 504 `application/json` response
+func (r BulkUnarchiveViewsResponse) GetJSON504() *StandardErrorResponse {
+	return r.JSON504
+}
+
+// GetJSONDefault returns the response for an HTTP default `application/json` response
+func (r BulkUnarchiveViewsResponse) GetJSONDefault() *StandardErrorResponse {
+	return r.JSONDefault
+}
+
+// GetBody returns the raw response body bytes
+func (r BulkUnarchiveViewsResponse) GetBody() []byte {
+	return r.Body
+}
+
+// Status returns HTTPResponse.Status
+func (r BulkUnarchiveViewsResponse) Status() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Status
+	}
+	return http.StatusText(0)
+}
+
+// StatusCode returns HTTPResponse.StatusCode
+func (r BulkUnarchiveViewsResponse) StatusCode() int {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.StatusCode
+	}
+	return 0
+}
+
+// ContentType is a convenience method to retrieve the Content-Type value from the HTTP response headers
+func (r BulkUnarchiveViewsResponse) ContentType() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Header.Get("Content-Type")
+	}
+	return ""
+}
+
 // BulkDeleteComponentsWithResponse Bulk delete multiple components
 //
 // Delete multiple components selected by query parameters.
@@ -80842,6 +88206,21 @@ func (c *ClientWithResponses) BulkPatchComponentsWithApplicationMergePatchPlusJS
 		return nil, err
 	}
 	return ParseBulkPatchComponentsResponse(rsp)
+}
+
+// BulkUnarchiveComponentsWithResponse Unarchive components
+//
+// Unarchive a Component archived by a delete with archive=true. Its backing Unit, archived with it, is unarchived with it. Its Slug is restored from the label ArchivedSlug unless another Component has taken it since, in which case it keeps the Slug the archive gave it, which KeptSlug in the response reports; it is unarchived either way. Refused while its Space is archived, while it was archived with another entity, which unarchiving that one brings back, and while it names an entity that is still archived. Requires Edit permission. Selects archived Components, as if include_hidden named Archived, and leaves alone a selected Component that is not archived.
+//
+// Returns a wrapper object for the known response body format(s).
+//
+// Corresponds with POST /_component/unarchive (the `BulkUnarchiveComponents` operationId).
+func (c *ClientWithResponses) BulkUnarchiveComponentsWithResponse(ctx context.Context, params *BulkUnarchiveComponentsParams, reqEditors ...RequestEditorFn) (*BulkUnarchiveComponentsResponse, error) {
+	rsp, err := c.BulkUnarchiveComponents(ctx, params, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseBulkUnarchiveComponentsResponse(rsp)
 }
 
 // BulkDeleteServiceAccountsWithResponse Bulk delete multiple service accounts
@@ -80962,6 +88341,21 @@ func (c *ClientWithResponses) BulkCreateSpacesWithApplicationMergePatchPlusJSONB
 		return nil, err
 	}
 	return ParseBulkCreateSpacesResponse(rsp)
+}
+
+// BulkUnarchiveSpacesWithResponse Unarchive spaces
+//
+// Unarchive a Space archived by a delete with archive=true. Its Slug is restored from the label ArchivedSlug unless another Space has taken it since, in which case it keeps the Slug the archive gave it, which KeptSlug in the response reports; it is unarchived either way. A Space archived recursively is unarchived only recursively, which unarchives what its archive archived, and nothing archived before or since. Refused while what it would bring back names an entity that is still archived, such as a Target in another archived Space. ChangeOrders the archive aborted stay aborted. Requires Edit permission. Selects archived Spaces, as if include_hidden named Archived, and leaves alone a selected Space that is not archived.
+//
+// Returns a wrapper object for the known response body format(s).
+//
+// Corresponds with POST /_space/unarchive (the `BulkUnarchiveSpaces` operationId).
+func (c *ClientWithResponses) BulkUnarchiveSpacesWithResponse(ctx context.Context, params *BulkUnarchiveSpacesParams, reqEditors ...RequestEditorFn) (*BulkUnarchiveSpacesResponse, error) {
+	rsp, err := c.BulkUnarchiveSpaces(ctx, params, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseBulkUnarchiveSpacesResponse(rsp)
 }
 
 // AttestWithBodyWithResponse Record Attestations across Spaces
@@ -81129,6 +88523,21 @@ func (c *ClientWithResponses) BulkMoveAttributesWithResponse(ctx context.Context
 	return ParseBulkMoveAttributesResponse(rsp)
 }
 
+// BulkUnarchiveAttributesWithResponse Unarchive attributes
+//
+// Unarchive a Attribute archived by a delete with archive=true. Its backing Unit, archived with it, is unarchived with it. Its Slug is restored from the label ArchivedSlug unless another Attribute has taken it since, in which case it keeps the Slug the archive gave it, which KeptSlug in the response reports; it is unarchived either way. Refused while its Space is archived, while it was archived with another entity, which unarchiving that one brings back, and while it names an entity that is still archived. Requires Edit permission. Selects archived Attributes, as if include_hidden named Archived, and leaves alone a selected Attribute that is not archived.
+//
+// Returns a wrapper object for the known response body format(s).
+//
+// Corresponds with POST /attribute/unarchive (the `BulkUnarchiveAttributes` operationId).
+func (c *ClientWithResponses) BulkUnarchiveAttributesWithResponse(ctx context.Context, params *BulkUnarchiveAttributesParams, reqEditors ...RequestEditorFn) (*BulkUnarchiveAttributesResponse, error) {
+	rsp, err := c.BulkUnarchiveAttributes(ctx, params, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseBulkUnarchiveAttributesResponse(rsp)
+}
+
 // ListAuditEventsWithResponse List AuditEvents
 //
 // Returns a wrapper object for the known response body format(s).
@@ -81260,6 +88669,21 @@ func (c *ClientWithResponses) BulkRefreshChangeOrderStagesWithResponse(ctx conte
 	return ParseBulkRefreshChangeOrderStagesResponse(rsp)
 }
 
+// BulkUnarchiveChangeOrdersWithResponse Unarchive change orders
+//
+// Unarchive a ChangeOrder archived by a delete with archive=true. Its Slug is restored from the label ArchivedSlug unless another ChangeOrder has taken it since, in which case it keeps the Slug the archive gave it, which KeptSlug in the response reports; it is unarchived either way. Refused while its Space is archived, while it was archived with another entity, which unarchiving that one brings back, and while it names an entity that is still archived. Requires Edit permission. Selects archived ChangeOrders, as if include_hidden named Archived, and leaves alone a selected ChangeOrder that is not archived.
+//
+// Returns a wrapper object for the known response body format(s).
+//
+// Corresponds with POST /change_order/unarchive (the `BulkUnarchiveChangeOrders` operationId).
+func (c *ClientWithResponses) BulkUnarchiveChangeOrdersWithResponse(ctx context.Context, params *BulkUnarchiveChangeOrdersParams, reqEditors ...RequestEditorFn) (*BulkUnarchiveChangeOrdersResponse, error) {
+	rsp, err := c.BulkUnarchiveChangeOrders(ctx, params, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseBulkUnarchiveChangeOrdersResponse(rsp)
+}
+
 // BulkDeleteChangeSetsWithResponse Bulk delete multiple change sets
 //
 // Delete multiple change sets selected by query parameters.
@@ -81378,6 +88802,21 @@ func (c *ClientWithResponses) BulkMoveChangeSetsWithResponse(ctx context.Context
 		return nil, err
 	}
 	return ParseBulkMoveChangeSetsResponse(rsp)
+}
+
+// BulkUnarchiveChangeSetsWithResponse Unarchive change sets
+//
+// Unarchive a ChangeSet archived by a delete with archive=true. Its Slug is restored from the label ArchivedSlug unless another ChangeSet has taken it since, in which case it keeps the Slug the archive gave it, which KeptSlug in the response reports; it is unarchived either way. Refused while its Space is archived, while it was archived with another entity, which unarchiving that one brings back, and while it names an entity that is still archived. Requires Edit permission. Selects archived ChangeSets, as if include_hidden named Archived, and leaves alone a selected ChangeSet that is not archived.
+//
+// Returns a wrapper object for the known response body format(s).
+//
+// Corresponds with POST /change_set/unarchive (the `BulkUnarchiveChangeSets` operationId).
+func (c *ClientWithResponses) BulkUnarchiveChangeSetsWithResponse(ctx context.Context, params *BulkUnarchiveChangeSetsParams, reqEditors ...RequestEditorFn) (*BulkUnarchiveChangeSetsResponse, error) {
+	rsp, err := c.BulkUnarchiveChangeSets(ctx, params, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseBulkUnarchiveChangeSetsResponse(rsp)
 }
 
 // BulkDeleteChangeWorkflowsWithResponse Bulk delete multiple change workflows
@@ -81500,6 +88939,21 @@ func (c *ClientWithResponses) BulkMoveChangeWorkflowsWithResponse(ctx context.Co
 	return ParseBulkMoveChangeWorkflowsResponse(rsp)
 }
 
+// BulkUnarchiveChangeWorkflowsWithResponse Unarchive change workflows
+//
+// Unarchive a ChangeWorkflow archived by a delete with archive=true. Its backing Unit, archived with it, is unarchived with it. Its Slug is restored from the label ArchivedSlug unless another ChangeWorkflow has taken it since, in which case it keeps the Slug the archive gave it, which KeptSlug in the response reports; it is unarchived either way. Refused while its Space is archived, while it was archived with another entity, which unarchiving that one brings back, and while it names an entity that is still archived. Requires Edit permission. Selects archived ChangeWorkflows, as if include_hidden named Archived, and leaves alone a selected ChangeWorkflow that is not archived.
+//
+// Returns a wrapper object for the known response body format(s).
+//
+// Corresponds with POST /change_workflow/unarchive (the `BulkUnarchiveChangeWorkflows` operationId).
+func (c *ClientWithResponses) BulkUnarchiveChangeWorkflowsWithResponse(ctx context.Context, params *BulkUnarchiveChangeWorkflowsParams, reqEditors ...RequestEditorFn) (*BulkUnarchiveChangeWorkflowsResponse, error) {
+	rsp, err := c.BulkUnarchiveChangeWorkflows(ctx, params, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseBulkUnarchiveChangeWorkflowsResponse(rsp)
+}
+
 // BulkDeleteChannelsWithResponse Bulk delete multiple channels
 //
 // Delete multiple channels selected by query parameters.
@@ -81620,6 +89074,21 @@ func (c *ClientWithResponses) BulkMoveChannelsWithResponse(ctx context.Context, 
 	return ParseBulkMoveChannelsResponse(rsp)
 }
 
+// BulkUnarchiveChannelsWithResponse Unarchive channels
+//
+// Unarchive a Channel archived by a delete with archive=true. Its backing Unit, archived with it, is unarchived with it. Its Slug is restored from the label ArchivedSlug unless another Channel has taken it since, in which case it keeps the Slug the archive gave it, which KeptSlug in the response reports; it is unarchived either way. Refused while its Space is archived, while it was archived with another entity, which unarchiving that one brings back, and while it names an entity that is still archived. Requires Edit permission. Selects archived Channels, as if include_hidden named Archived, and leaves alone a selected Channel that is not archived.
+//
+// Returns a wrapper object for the known response body format(s).
+//
+// Corresponds with POST /channel/unarchive (the `BulkUnarchiveChannels` operationId).
+func (c *ClientWithResponses) BulkUnarchiveChannelsWithResponse(ctx context.Context, params *BulkUnarchiveChannelsParams, reqEditors ...RequestEditorFn) (*BulkUnarchiveChannelsResponse, error) {
+	rsp, err := c.BulkUnarchiveChannels(ctx, params, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseBulkUnarchiveChannelsResponse(rsp)
+}
+
 // ListAllCommandsWithResponse List the commands declared across the Organization
 //
 // Returns a wrapper object for the known response body format(s).
@@ -81690,8 +89159,8 @@ func (c *ClientWithResponses) CreateComponentWithResponse(ctx context.Context, p
 // Returns a wrapper object for the known response body format(s).
 //
 // Corresponds with DELETE /component/{component_id} (the `DeleteComponent` operationId).
-func (c *ClientWithResponses) DeleteComponentWithResponse(ctx context.Context, componentId openapi_types.UUID, reqEditors ...RequestEditorFn) (*DeleteComponentResponse, error) {
-	rsp, err := c.DeleteComponent(ctx, componentId, reqEditors...)
+func (c *ClientWithResponses) DeleteComponentWithResponse(ctx context.Context, componentId openapi_types.UUID, params *DeleteComponentParams, reqEditors ...RequestEditorFn) (*DeleteComponentResponse, error) {
+	rsp, err := c.DeleteComponent(ctx, componentId, params, reqEditors...)
 	if err != nil {
 		return nil, err
 	}
@@ -81806,6 +89275,21 @@ func (c *ClientWithResponses) UpdateComponentDocumentWithResponse(ctx context.Co
 		return nil, err
 	}
 	return ParseUpdateComponentDocumentResponse(rsp)
+}
+
+// UnarchiveComponentWithResponse Unarchive a component
+//
+// Unarchive a Component archived by a delete with archive=true. Its backing Unit, archived with it, is unarchived with it. Its Slug is restored from the label ArchivedSlug unless another Component has taken it since, in which case it keeps the Slug the archive gave it, which KeptSlug in the response reports; it is unarchived either way. Refused while its Space is archived, while it was archived with another entity, which unarchiving that one brings back, and while it names an entity that is still archived. Requires Edit permission.
+//
+// Returns a wrapper object for the known response body format(s).
+//
+// Corresponds with POST /component/{component_id}/unarchive (the `UnarchiveComponent` operationId).
+func (c *ClientWithResponses) UnarchiveComponentWithResponse(ctx context.Context, componentId openapi_types.UUID, reqEditors ...RequestEditorFn) (*UnarchiveComponentResponse, error) {
+	rsp, err := c.UnarchiveComponent(ctx, componentId, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseUnarchiveComponentResponse(rsp)
 }
 
 // DemoteWithBodyWithResponse Undo an aborted ChangeOrder in the Spaces it reached
@@ -81986,6 +89470,21 @@ func (c *ClientWithResponses) BulkMoveFiltersWithResponse(ctx context.Context, p
 		return nil, err
 	}
 	return ParseBulkMoveFiltersResponse(rsp)
+}
+
+// BulkUnarchiveFiltersWithResponse Unarchive filters
+//
+// Unarchive a Filter archived by a delete with archive=true. Its backing Unit, archived with it, is unarchived with it. Its Slug is restored from the label ArchivedSlug unless another Filter has taken it since, in which case it keeps the Slug the archive gave it, which KeptSlug in the response reports; it is unarchived either way. Refused while its Space is archived, while it was archived with another entity, which unarchiving that one brings back, and while it names an entity that is still archived. Requires Edit permission. Selects archived Filters, as if include_hidden named Archived, and leaves alone a selected Filter that is not archived.
+//
+// Returns a wrapper object for the known response body format(s).
+//
+// Corresponds with POST /filter/unarchive (the `BulkUnarchiveFilters` operationId).
+func (c *ClientWithResponses) BulkUnarchiveFiltersWithResponse(ctx context.Context, params *BulkUnarchiveFiltersParams, reqEditors ...RequestEditorFn) (*BulkUnarchiveFiltersResponse, error) {
+	rsp, err := c.BulkUnarchiveFilters(ctx, params, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseBulkUnarchiveFiltersResponse(rsp)
 }
 
 // ListOrgFunctionsWithResponse List retrieves a map of Functions across the Organization
@@ -82250,6 +89749,21 @@ func (c *ClientWithResponses) BulkMoveInvocationsWithResponse(ctx context.Contex
 	return ParseBulkMoveInvocationsResponse(rsp)
 }
 
+// BulkUnarchiveInvocationsWithResponse Unarchive invocations
+//
+// Unarchive a Invocation archived by a delete with archive=true. Its backing Unit, archived with it, is unarchived with it. Its Slug is restored from the label ArchivedSlug unless another Invocation has taken it since, in which case it keeps the Slug the archive gave it, which KeptSlug in the response reports; it is unarchived either way. Refused while its Space is archived, while it was archived with another entity, which unarchiving that one brings back, and while it names an entity that is still archived. Requires Edit permission. Selects archived Invocations, as if include_hidden named Archived, and leaves alone a selected Invocation that is not archived.
+//
+// Returns a wrapper object for the known response body format(s).
+//
+// Corresponds with POST /invocation/unarchive (the `BulkUnarchiveInvocations` operationId).
+func (c *ClientWithResponses) BulkUnarchiveInvocationsWithResponse(ctx context.Context, params *BulkUnarchiveInvocationsParams, reqEditors ...RequestEditorFn) (*BulkUnarchiveInvocationsResponse, error) {
+	rsp, err := c.BulkUnarchiveInvocations(ctx, params, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseBulkUnarchiveInvocationsResponse(rsp)
+}
+
 // BulkDeleteLinksWithResponse Bulk delete multiple links
 //
 // Delete multiple links selected by query parameters.
@@ -82338,6 +89852,21 @@ func (c *ClientWithResponses) BulkCreateLinksWithApplicationMergePatchPlusJSONBo
 		return nil, err
 	}
 	return ParseBulkCreateLinksResponse(rsp)
+}
+
+// BulkUnarchiveLinksWithResponse Unarchive links
+//
+// Unarchive a Link archived by a delete with archive=true. Its backing Unit, archived with it, is unarchived with it. Its Slug is restored from the label ArchivedSlug unless another Link has taken it since, in which case it keeps the Slug the archive gave it, which KeptSlug in the response reports; it is unarchived either way. Refused while its Space is archived, while it was archived with another entity, which unarchiving that one brings back, and while it names an entity that is still archived. Requires Edit permission. Selects archived Links, as if include_hidden named Archived, and leaves alone a selected Link that is not archived.
+//
+// Returns a wrapper object for the known response body format(s).
+//
+// Corresponds with POST /link/unarchive (the `BulkUnarchiveLinks` operationId).
+func (c *ClientWithResponses) BulkUnarchiveLinksWithResponse(ctx context.Context, params *BulkUnarchiveLinksParams, reqEditors ...RequestEditorFn) (*BulkUnarchiveLinksResponse, error) {
+	rsp, err := c.BulkUnarchiveLinks(ctx, params, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseBulkUnarchiveLinksResponse(rsp)
 }
 
 // GetMeWithResponse Get the current user's information
@@ -82629,6 +90158,21 @@ func (c *ClientWithResponses) ListAllReleasesWithResponse(ctx context.Context, p
 		return nil, err
 	}
 	return ParseListAllReleasesResponse(rsp)
+}
+
+// BulkUnarchiveReleasesWithResponse Unarchive releases
+//
+// Unarchive a Release archived by a delete with archive=true. Its Slug is restored from the label ArchivedSlug unless another Release has taken it since, in which case it keeps the Slug the archive gave it, which KeptSlug in the response reports; it is unarchived either way. Refused while its Space is archived, while it was archived with another entity, which unarchiving that one brings back, and while it names an entity that is still archived. Requires Edit permission. Selects archived Releases, as if include_hidden named Archived, and leaves alone a selected Release that is not archived.
+//
+// Returns a wrapper object for the known response body format(s).
+//
+// Corresponds with POST /release/unarchive (the `BulkUnarchiveReleases` operationId).
+func (c *ClientWithResponses) BulkUnarchiveReleasesWithResponse(ctx context.Context, params *BulkUnarchiveReleasesParams, reqEditors ...RequestEditorFn) (*BulkUnarchiveReleasesResponse, error) {
+	rsp, err := c.BulkUnarchiveReleases(ctx, params, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseBulkUnarchiveReleasesResponse(rsp)
 }
 
 // ListAllResourcesWithResponse List of Resources across spaces
@@ -83250,8 +90794,8 @@ func (c *ClientWithResponses) CreateAttributeWithResponse(ctx context.Context, s
 // Returns a wrapper object for the known response body format(s).
 //
 // Corresponds with DELETE /space/{space_id}/attribute/{attribute_id} (the `DeleteAttribute` operationId).
-func (c *ClientWithResponses) DeleteAttributeWithResponse(ctx context.Context, spaceId openapi_types.UUID, attributeId openapi_types.UUID, reqEditors ...RequestEditorFn) (*DeleteAttributeResponse, error) {
-	rsp, err := c.DeleteAttribute(ctx, spaceId, attributeId, reqEditors...)
+func (c *ClientWithResponses) DeleteAttributeWithResponse(ctx context.Context, spaceId openapi_types.UUID, attributeId openapi_types.UUID, params *DeleteAttributeParams, reqEditors ...RequestEditorFn) (*DeleteAttributeResponse, error) {
+	rsp, err := c.DeleteAttribute(ctx, spaceId, attributeId, params, reqEditors...)
 	if err != nil {
 		return nil, err
 	}
@@ -83366,6 +90910,21 @@ func (c *ClientWithResponses) UpdateAttributeDocumentWithResponse(ctx context.Co
 		return nil, err
 	}
 	return ParseUpdateAttributeDocumentResponse(rsp)
+}
+
+// UnarchiveAttributeWithResponse Unarchive a attribute
+//
+// Unarchive a Attribute archived by a delete with archive=true. Its backing Unit, archived with it, is unarchived with it. Its Slug is restored from the label ArchivedSlug unless another Attribute has taken it since, in which case it keeps the Slug the archive gave it, which KeptSlug in the response reports; it is unarchived either way. Refused while its Space is archived, while it was archived with another entity, which unarchiving that one brings back, and while it names an entity that is still archived. Requires Edit permission.
+//
+// Returns a wrapper object for the known response body format(s).
+//
+// Corresponds with POST /space/{space_id}/attribute/{attribute_id}/unarchive (the `UnarchiveAttribute` operationId).
+func (c *ClientWithResponses) UnarchiveAttributeWithResponse(ctx context.Context, spaceId openapi_types.UUID, attributeId openapi_types.UUID, reqEditors ...RequestEditorFn) (*UnarchiveAttributeResponse, error) {
+	rsp, err := c.UnarchiveAttribute(ctx, spaceId, attributeId, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseUnarchiveAttributeResponse(rsp)
 }
 
 // ListChangeOrdersWithResponse List ChangeOrders
@@ -83500,6 +91059,21 @@ func (c *ClientWithResponses) RefreshChangeOrderStageWithResponse(ctx context.Co
 	return ParseRefreshChangeOrderStageResponse(rsp)
 }
 
+// UnarchiveChangeOrderWithResponse Unarchive a change order
+//
+// Unarchive a ChangeOrder archived by a delete with archive=true. Its Slug is restored from the label ArchivedSlug unless another ChangeOrder has taken it since, in which case it keeps the Slug the archive gave it, which KeptSlug in the response reports; it is unarchived either way. Refused while its Space is archived, while it was archived with another entity, which unarchiving that one brings back, and while it names an entity that is still archived. Requires Edit permission.
+//
+// Returns a wrapper object for the known response body format(s).
+//
+// Corresponds with POST /space/{space_id}/change_order/{change_order_id}/unarchive (the `UnarchiveChangeOrder` operationId).
+func (c *ClientWithResponses) UnarchiveChangeOrderWithResponse(ctx context.Context, spaceId openapi_types.UUID, changeOrderId openapi_types.UUID, reqEditors ...RequestEditorFn) (*UnarchiveChangeOrderResponse, error) {
+	rsp, err := c.UnarchiveChangeOrder(ctx, spaceId, changeOrderId, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseUnarchiveChangeOrderResponse(rsp)
+}
+
 // ListChangeSetsWithResponse List ChangeSets
 //
 // Returns a wrapper object for the known response body format(s).
@@ -83617,6 +91191,21 @@ func (c *ClientWithResponses) UpdateChangeSetWithResponse(ctx context.Context, s
 	return ParseUpdateChangeSetResponse(rsp)
 }
 
+// UnarchiveChangeSetWithResponse Unarchive a change set
+//
+// Unarchive a ChangeSet archived by a delete with archive=true. Its Slug is restored from the label ArchivedSlug unless another ChangeSet has taken it since, in which case it keeps the Slug the archive gave it, which KeptSlug in the response reports; it is unarchived either way. Refused while its Space is archived, while it was archived with another entity, which unarchiving that one brings back, and while it names an entity that is still archived. Requires Edit permission.
+//
+// Returns a wrapper object for the known response body format(s).
+//
+// Corresponds with POST /space/{space_id}/change_set/{change_set_id}/unarchive (the `UnarchiveChangeSet` operationId).
+func (c *ClientWithResponses) UnarchiveChangeSetWithResponse(ctx context.Context, spaceId openapi_types.UUID, changeSetId openapi_types.UUID, reqEditors ...RequestEditorFn) (*UnarchiveChangeSetResponse, error) {
+	rsp, err := c.UnarchiveChangeSet(ctx, spaceId, changeSetId, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseUnarchiveChangeSetResponse(rsp)
+}
+
 // ListChangeWorkflowsWithResponse List ChangeWorkflows
 //
 // Returns a wrapper object for the known response body format(s).
@@ -83661,8 +91250,8 @@ func (c *ClientWithResponses) CreateChangeWorkflowWithResponse(ctx context.Conte
 // Returns a wrapper object for the known response body format(s).
 //
 // Corresponds with DELETE /space/{space_id}/change_workflow/{change_workflow_id} (the `DeleteChangeWorkflow` operationId).
-func (c *ClientWithResponses) DeleteChangeWorkflowWithResponse(ctx context.Context, spaceId openapi_types.UUID, changeWorkflowId openapi_types.UUID, reqEditors ...RequestEditorFn) (*DeleteChangeWorkflowResponse, error) {
-	rsp, err := c.DeleteChangeWorkflow(ctx, spaceId, changeWorkflowId, reqEditors...)
+func (c *ClientWithResponses) DeleteChangeWorkflowWithResponse(ctx context.Context, spaceId openapi_types.UUID, changeWorkflowId openapi_types.UUID, params *DeleteChangeWorkflowParams, reqEditors ...RequestEditorFn) (*DeleteChangeWorkflowResponse, error) {
+	rsp, err := c.DeleteChangeWorkflow(ctx, spaceId, changeWorkflowId, params, reqEditors...)
 	if err != nil {
 		return nil, err
 	}
@@ -83779,6 +91368,21 @@ func (c *ClientWithResponses) UpdateChangeWorkflowDocumentWithResponse(ctx conte
 	return ParseUpdateChangeWorkflowDocumentResponse(rsp)
 }
 
+// UnarchiveChangeWorkflowWithResponse Unarchive a change workflow
+//
+// Unarchive a ChangeWorkflow archived by a delete with archive=true. Its backing Unit, archived with it, is unarchived with it. Its Slug is restored from the label ArchivedSlug unless another ChangeWorkflow has taken it since, in which case it keeps the Slug the archive gave it, which KeptSlug in the response reports; it is unarchived either way. Refused while its Space is archived, while it was archived with another entity, which unarchiving that one brings back, and while it names an entity that is still archived. Requires Edit permission.
+//
+// Returns a wrapper object for the known response body format(s).
+//
+// Corresponds with POST /space/{space_id}/change_workflow/{change_workflow_id}/unarchive (the `UnarchiveChangeWorkflow` operationId).
+func (c *ClientWithResponses) UnarchiveChangeWorkflowWithResponse(ctx context.Context, spaceId openapi_types.UUID, changeWorkflowId openapi_types.UUID, reqEditors ...RequestEditorFn) (*UnarchiveChangeWorkflowResponse, error) {
+	rsp, err := c.UnarchiveChangeWorkflow(ctx, spaceId, changeWorkflowId, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseUnarchiveChangeWorkflowResponse(rsp)
+}
+
 // ListChannelsWithResponse List Channels
 //
 // Returns a wrapper object for the known response body format(s).
@@ -83823,8 +91427,8 @@ func (c *ClientWithResponses) CreateChannelWithResponse(ctx context.Context, spa
 // Returns a wrapper object for the known response body format(s).
 //
 // Corresponds with DELETE /space/{space_id}/channel/{channel_id} (the `DeleteChannel` operationId).
-func (c *ClientWithResponses) DeleteChannelWithResponse(ctx context.Context, spaceId openapi_types.UUID, channelId openapi_types.UUID, reqEditors ...RequestEditorFn) (*DeleteChannelResponse, error) {
-	rsp, err := c.DeleteChannel(ctx, spaceId, channelId, reqEditors...)
+func (c *ClientWithResponses) DeleteChannelWithResponse(ctx context.Context, spaceId openapi_types.UUID, channelId openapi_types.UUID, params *DeleteChannelParams, reqEditors ...RequestEditorFn) (*DeleteChannelResponse, error) {
+	rsp, err := c.DeleteChannel(ctx, spaceId, channelId, params, reqEditors...)
 	if err != nil {
 		return nil, err
 	}
@@ -84031,6 +91635,21 @@ func (c *ClientWithResponses) PollChannelWithResponse(ctx context.Context, space
 	return ParsePollChannelResponse(rsp)
 }
 
+// UnarchiveChannelWithResponse Unarchive a channel
+//
+// Unarchive a Channel archived by a delete with archive=true. Its backing Unit, archived with it, is unarchived with it. Its Slug is restored from the label ArchivedSlug unless another Channel has taken it since, in which case it keeps the Slug the archive gave it, which KeptSlug in the response reports; it is unarchived either way. Refused while its Space is archived, while it was archived with another entity, which unarchiving that one brings back, and while it names an entity that is still archived. Requires Edit permission.
+//
+// Returns a wrapper object for the known response body format(s).
+//
+// Corresponds with POST /space/{space_id}/channel/{channel_id}/unarchive (the `UnarchiveChannel` operationId).
+func (c *ClientWithResponses) UnarchiveChannelWithResponse(ctx context.Context, spaceId openapi_types.UUID, channelId openapi_types.UUID, reqEditors ...RequestEditorFn) (*UnarchiveChannelResponse, error) {
+	rsp, err := c.UnarchiveChannel(ctx, spaceId, channelId, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseUnarchiveChannelResponse(rsp)
+}
+
 // ListCommandsWithResponse List the commands runnable in the Space
 //
 // The commands the Space's Channels declare, with each one's signature and the Channel that declares it.
@@ -84208,8 +91827,8 @@ func (c *ClientWithResponses) CreateFilterWithResponse(ctx context.Context, spac
 // Returns a wrapper object for the known response body format(s).
 //
 // Corresponds with DELETE /space/{space_id}/filter/{filter_id} (the `DeleteFilter` operationId).
-func (c *ClientWithResponses) DeleteFilterWithResponse(ctx context.Context, spaceId openapi_types.UUID, filterId openapi_types.UUID, reqEditors ...RequestEditorFn) (*DeleteFilterResponse, error) {
-	rsp, err := c.DeleteFilter(ctx, spaceId, filterId, reqEditors...)
+func (c *ClientWithResponses) DeleteFilterWithResponse(ctx context.Context, spaceId openapi_types.UUID, filterId openapi_types.UUID, params *DeleteFilterParams, reqEditors ...RequestEditorFn) (*DeleteFilterResponse, error) {
+	rsp, err := c.DeleteFilter(ctx, spaceId, filterId, params, reqEditors...)
 	if err != nil {
 		return nil, err
 	}
@@ -84326,6 +91945,21 @@ func (c *ClientWithResponses) UpdateFilterDocumentWithResponse(ctx context.Conte
 	return ParseUpdateFilterDocumentResponse(rsp)
 }
 
+// UnarchiveFilterWithResponse Unarchive a filter
+//
+// Unarchive a Filter archived by a delete with archive=true. Its backing Unit, archived with it, is unarchived with it. Its Slug is restored from the label ArchivedSlug unless another Filter has taken it since, in which case it keeps the Slug the archive gave it, which KeptSlug in the response reports; it is unarchived either way. Refused while its Space is archived, while it was archived with another entity, which unarchiving that one brings back, and while it names an entity that is still archived. Requires Edit permission.
+//
+// Returns a wrapper object for the known response body format(s).
+//
+// Corresponds with POST /space/{space_id}/filter/{filter_id}/unarchive (the `UnarchiveFilter` operationId).
+func (c *ClientWithResponses) UnarchiveFilterWithResponse(ctx context.Context, spaceId openapi_types.UUID, filterId openapi_types.UUID, reqEditors ...RequestEditorFn) (*UnarchiveFilterResponse, error) {
+	rsp, err := c.UnarchiveFilter(ctx, spaceId, filterId, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseUnarchiveFilterResponse(rsp)
+}
+
 // ListFunctionsWithResponse List retrieves a map of Functions
 //
 // Returns a wrapper object for the known response body format(s).
@@ -84439,8 +92073,8 @@ func (c *ClientWithResponses) CreateInvocationWithResponse(ctx context.Context, 
 // Returns a wrapper object for the known response body format(s).
 //
 // Corresponds with DELETE /space/{space_id}/invocation/{invocation_id} (the `DeleteInvocation` operationId).
-func (c *ClientWithResponses) DeleteInvocationWithResponse(ctx context.Context, spaceId openapi_types.UUID, invocationId openapi_types.UUID, reqEditors ...RequestEditorFn) (*DeleteInvocationResponse, error) {
-	rsp, err := c.DeleteInvocation(ctx, spaceId, invocationId, reqEditors...)
+func (c *ClientWithResponses) DeleteInvocationWithResponse(ctx context.Context, spaceId openapi_types.UUID, invocationId openapi_types.UUID, params *DeleteInvocationParams, reqEditors ...RequestEditorFn) (*DeleteInvocationResponse, error) {
+	rsp, err := c.DeleteInvocation(ctx, spaceId, invocationId, params, reqEditors...)
 	if err != nil {
 		return nil, err
 	}
@@ -84557,6 +92191,21 @@ func (c *ClientWithResponses) UpdateInvocationDocumentWithResponse(ctx context.C
 	return ParseUpdateInvocationDocumentResponse(rsp)
 }
 
+// UnarchiveInvocationWithResponse Unarchive a invocation
+//
+// Unarchive a Invocation archived by a delete with archive=true. Its backing Unit, archived with it, is unarchived with it. Its Slug is restored from the label ArchivedSlug unless another Invocation has taken it since, in which case it keeps the Slug the archive gave it, which KeptSlug in the response reports; it is unarchived either way. Refused while its Space is archived, while it was archived with another entity, which unarchiving that one brings back, and while it names an entity that is still archived. Requires Edit permission.
+//
+// Returns a wrapper object for the known response body format(s).
+//
+// Corresponds with POST /space/{space_id}/invocation/{invocation_id}/unarchive (the `UnarchiveInvocation` operationId).
+func (c *ClientWithResponses) UnarchiveInvocationWithResponse(ctx context.Context, spaceId openapi_types.UUID, invocationId openapi_types.UUID, reqEditors ...RequestEditorFn) (*UnarchiveInvocationResponse, error) {
+	rsp, err := c.UnarchiveInvocation(ctx, spaceId, invocationId, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseUnarchiveInvocationResponse(rsp)
+}
+
 // ListLinksWithResponse List Links
 //
 // Returns a wrapper object for the known response body format(s).
@@ -84601,8 +92250,8 @@ func (c *ClientWithResponses) CreateLinkWithResponse(ctx context.Context, spaceI
 // Returns a wrapper object for the known response body format(s).
 //
 // Corresponds with DELETE /space/{space_id}/link/{link_id} (the `DeleteLink` operationId).
-func (c *ClientWithResponses) DeleteLinkWithResponse(ctx context.Context, spaceId openapi_types.UUID, linkId openapi_types.UUID, reqEditors ...RequestEditorFn) (*DeleteLinkResponse, error) {
-	rsp, err := c.DeleteLink(ctx, spaceId, linkId, reqEditors...)
+func (c *ClientWithResponses) DeleteLinkWithResponse(ctx context.Context, spaceId openapi_types.UUID, linkId openapi_types.UUID, params *DeleteLinkParams, reqEditors ...RequestEditorFn) (*DeleteLinkResponse, error) {
+	rsp, err := c.DeleteLink(ctx, spaceId, linkId, params, reqEditors...)
 	if err != nil {
 		return nil, err
 	}
@@ -84717,6 +92366,21 @@ func (c *ClientWithResponses) UpdateLinkDocumentWithResponse(ctx context.Context
 		return nil, err
 	}
 	return ParseUpdateLinkDocumentResponse(rsp)
+}
+
+// UnarchiveLinkWithResponse Unarchive a link
+//
+// Unarchive a Link archived by a delete with archive=true. Its backing Unit, archived with it, is unarchived with it. Its Slug is restored from the label ArchivedSlug unless another Link has taken it since, in which case it keeps the Slug the archive gave it, which KeptSlug in the response reports; it is unarchived either way. Refused while its Space is archived, while it was archived with another entity, which unarchiving that one brings back, and while it names an entity that is still archived. Requires Edit permission.
+//
+// Returns a wrapper object for the known response body format(s).
+//
+// Corresponds with POST /space/{space_id}/link/{link_id}/unarchive (the `UnarchiveLink` operationId).
+func (c *ClientWithResponses) UnarchiveLinkWithResponse(ctx context.Context, spaceId openapi_types.UUID, linkId openapi_types.UUID, reqEditors ...RequestEditorFn) (*UnarchiveLinkResponse, error) {
+	rsp, err := c.UnarchiveLink(ctx, spaceId, linkId, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseUnarchiveLinkResponse(rsp)
 }
 
 // ListExtendedReleasesWithResponse List ExtendedReleases
@@ -84865,6 +92529,21 @@ func (c *ClientWithResponses) DownloadReleaseDataWithResponse(ctx context.Contex
 	return ParseDownloadReleaseDataResponse(rsp)
 }
 
+// UnarchiveReleaseWithResponse Unarchive a release
+//
+// Unarchive a Release archived by a delete with archive=true. Its Slug is restored from the label ArchivedSlug unless another Release has taken it since, in which case it keeps the Slug the archive gave it, which KeptSlug in the response reports; it is unarchived either way. Refused while its Space is archived, while it was archived with another entity, which unarchiving that one brings back, and while it names an entity that is still archived. Requires Edit permission.
+//
+// Returns a wrapper object for the known response body format(s).
+//
+// Corresponds with POST /space/{space_id}/release/{release_id}/unarchive (the `UnarchiveRelease` operationId).
+func (c *ClientWithResponses) UnarchiveReleaseWithResponse(ctx context.Context, spaceId openapi_types.UUID, releaseId openapi_types.UUID, reqEditors ...RequestEditorFn) (*UnarchiveReleaseResponse, error) {
+	rsp, err := c.UnarchiveRelease(ctx, spaceId, releaseId, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseUnarchiveReleaseResponse(rsp)
+}
+
 // WithdrawReleaseWithResponse Withdraw the selected Release
 //
 // Withdraw the selected Release, clearing its Published flag so it is no longer available for download. The Release itself is retained; delete it to remove it entirely. Withdrawing changes what is served to the cluster behind the release Target, so it requires TargetEditChildren on the Release's Space as well as Edit on the Release.
@@ -84995,6 +92674,21 @@ func (c *ClientWithResponses) UpdateTagWithResponse(ctx context.Context, spaceId
 		return nil, err
 	}
 	return ParseUpdateTagResponse(rsp)
+}
+
+// UnarchiveTagWithResponse Unarchive a tag
+//
+// Unarchive a Tag archived by a delete with archive=true. Its Slug is restored from the label ArchivedSlug unless another Tag has taken it since, in which case it keeps the Slug the archive gave it, which KeptSlug in the response reports; it is unarchived either way. Refused while its Space is archived, while it was archived with another entity, which unarchiving that one brings back, and while it names an entity that is still archived. Requires Edit permission.
+//
+// Returns a wrapper object for the known response body format(s).
+//
+// Corresponds with POST /space/{space_id}/tag/{tag_id}/unarchive (the `UnarchiveTag` operationId).
+func (c *ClientWithResponses) UnarchiveTagWithResponse(ctx context.Context, spaceId openapi_types.UUID, tagId openapi_types.UUID, reqEditors ...RequestEditorFn) (*UnarchiveTagResponse, error) {
+	rsp, err := c.UnarchiveTag(ctx, spaceId, tagId, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseUnarchiveTagResponse(rsp)
 }
 
 // ListTargetsWithResponse List Targets
@@ -85159,6 +92853,21 @@ func (c *ClientWithResponses) UpdateTargetDocumentWithResponse(ctx context.Conte
 	return ParseUpdateTargetDocumentResponse(rsp)
 }
 
+// UnarchiveTargetWithResponse Unarchive a target
+//
+// Unarchive a Target archived by a delete with archive=true. Its backing Unit, archived with it, is unarchived with it. Its Slug is restored from the label ArchivedSlug unless another Target has taken it since, in which case it keeps the Slug the archive gave it, which KeptSlug in the response reports; it is unarchived either way. Refused while its Space is archived, while it was archived with another entity, which unarchiving that one brings back, and while it names an entity that is still archived. Requires Edit permission.
+//
+// Returns a wrapper object for the known response body format(s).
+//
+// Corresponds with POST /space/{space_id}/target/{target_id}/unarchive (the `UnarchiveTarget` operationId).
+func (c *ClientWithResponses) UnarchiveTargetWithResponse(ctx context.Context, spaceId openapi_types.UUID, targetId openapi_types.UUID, reqEditors ...RequestEditorFn) (*UnarchiveTargetResponse, error) {
+	rsp, err := c.UnarchiveTarget(ctx, spaceId, targetId, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseUnarchiveTargetResponse(rsp)
+}
+
 // ListTriggersWithResponse List Triggers
 //
 // Returns a wrapper object for the known response body format(s).
@@ -85203,8 +92912,8 @@ func (c *ClientWithResponses) CreateTriggerWithResponse(ctx context.Context, spa
 // Returns a wrapper object for the known response body format(s).
 //
 // Corresponds with DELETE /space/{space_id}/trigger/{trigger_id} (the `DeleteTrigger` operationId).
-func (c *ClientWithResponses) DeleteTriggerWithResponse(ctx context.Context, spaceId openapi_types.UUID, triggerId openapi_types.UUID, reqEditors ...RequestEditorFn) (*DeleteTriggerResponse, error) {
-	rsp, err := c.DeleteTrigger(ctx, spaceId, triggerId, reqEditors...)
+func (c *ClientWithResponses) DeleteTriggerWithResponse(ctx context.Context, spaceId openapi_types.UUID, triggerId openapi_types.UUID, params *DeleteTriggerParams, reqEditors ...RequestEditorFn) (*DeleteTriggerResponse, error) {
+	rsp, err := c.DeleteTrigger(ctx, spaceId, triggerId, params, reqEditors...)
 	if err != nil {
 		return nil, err
 	}
@@ -85319,6 +93028,36 @@ func (c *ClientWithResponses) UpdateTriggerDocumentWithResponse(ctx context.Cont
 		return nil, err
 	}
 	return ParseUpdateTriggerDocumentResponse(rsp)
+}
+
+// UnarchiveTriggerWithResponse Unarchive a trigger
+//
+// Unarchive a Trigger archived by a delete with archive=true. Its backing Unit, archived with it, is unarchived with it. Its Slug is restored from the label ArchivedSlug unless another Trigger has taken it since, in which case it keeps the Slug the archive gave it, which KeptSlug in the response reports; it is unarchived either way. Refused while its Space is archived, while it was archived with another entity, which unarchiving that one brings back, and while it names an entity that is still archived. Requires Edit permission.
+//
+// Returns a wrapper object for the known response body format(s).
+//
+// Corresponds with POST /space/{space_id}/trigger/{trigger_id}/unarchive (the `UnarchiveTrigger` operationId).
+func (c *ClientWithResponses) UnarchiveTriggerWithResponse(ctx context.Context, spaceId openapi_types.UUID, triggerId openapi_types.UUID, reqEditors ...RequestEditorFn) (*UnarchiveTriggerResponse, error) {
+	rsp, err := c.UnarchiveTrigger(ctx, spaceId, triggerId, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseUnarchiveTriggerResponse(rsp)
+}
+
+// UnarchiveSpaceWithResponse Unarchive a space
+//
+// Unarchive a Space archived by a delete with archive=true. Its Slug is restored from the label ArchivedSlug unless another Space has taken it since, in which case it keeps the Slug the archive gave it, which KeptSlug in the response reports; it is unarchived either way. A Space archived recursively is unarchived only recursively, which unarchives what its archive archived, and nothing archived before or since. Refused while what it would bring back names an entity that is still archived, such as a Target in another archived Space. ChangeOrders the archive aborted stay aborted. Requires Edit permission.
+//
+// Returns a wrapper object for the known response body format(s).
+//
+// Corresponds with POST /space/{space_id}/unarchive (the `UnarchiveSpace` operationId).
+func (c *ClientWithResponses) UnarchiveSpaceWithResponse(ctx context.Context, spaceId openapi_types.UUID, params *UnarchiveSpaceParams, reqEditors ...RequestEditorFn) (*UnarchiveSpaceResponse, error) {
+	rsp, err := c.UnarchiveSpace(ctx, spaceId, params, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseUnarchiveSpaceResponse(rsp)
 }
 
 // ListUnitsWithResponse List Units
@@ -85903,8 +93642,8 @@ func (c *ClientWithResponses) CreateViewWithResponse(ctx context.Context, spaceI
 // Returns a wrapper object for the known response body format(s).
 //
 // Corresponds with DELETE /space/{space_id}/view/{view_id} (the `DeleteView` operationId).
-func (c *ClientWithResponses) DeleteViewWithResponse(ctx context.Context, spaceId openapi_types.UUID, viewId openapi_types.UUID, reqEditors ...RequestEditorFn) (*DeleteViewResponse, error) {
-	rsp, err := c.DeleteView(ctx, spaceId, viewId, reqEditors...)
+func (c *ClientWithResponses) DeleteViewWithResponse(ctx context.Context, spaceId openapi_types.UUID, viewId openapi_types.UUID, params *DeleteViewParams, reqEditors ...RequestEditorFn) (*DeleteViewResponse, error) {
+	rsp, err := c.DeleteView(ctx, spaceId, viewId, params, reqEditors...)
 	if err != nil {
 		return nil, err
 	}
@@ -86019,6 +93758,21 @@ func (c *ClientWithResponses) UpdateViewDocumentWithResponse(ctx context.Context
 		return nil, err
 	}
 	return ParseUpdateViewDocumentResponse(rsp)
+}
+
+// UnarchiveViewWithResponse Unarchive a view
+//
+// Unarchive a View archived by a delete with archive=true. Its backing Unit, archived with it, is unarchived with it. Its Slug is restored from the label ArchivedSlug unless another View has taken it since, in which case it keeps the Slug the archive gave it, which KeptSlug in the response reports; it is unarchived either way. Refused while its Space is archived, while it was archived with another entity, which unarchiving that one brings back, and while it names an entity that is still archived. Requires Edit permission.
+//
+// Returns a wrapper object for the known response body format(s).
+//
+// Corresponds with POST /space/{space_id}/view/{view_id}/unarchive (the `UnarchiveView` operationId).
+func (c *ClientWithResponses) UnarchiveViewWithResponse(ctx context.Context, spaceId openapi_types.UUID, viewId openapi_types.UUID, reqEditors ...RequestEditorFn) (*UnarchiveViewResponse, error) {
+	rsp, err := c.UnarchiveView(ctx, spaceId, viewId, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseUnarchiveViewResponse(rsp)
 }
 
 // BulkDeleteTagsWithResponse Bulk delete multiple tags
@@ -86141,6 +93895,21 @@ func (c *ClientWithResponses) BulkMoveTagsWithResponse(ctx context.Context, para
 	return ParseBulkMoveTagsResponse(rsp)
 }
 
+// BulkUnarchiveTagsWithResponse Unarchive tags
+//
+// Unarchive a Tag archived by a delete with archive=true. Its Slug is restored from the label ArchivedSlug unless another Tag has taken it since, in which case it keeps the Slug the archive gave it, which KeptSlug in the response reports; it is unarchived either way. Refused while its Space is archived, while it was archived with another entity, which unarchiving that one brings back, and while it names an entity that is still archived. Requires Edit permission. Selects archived Tags, as if include_hidden named Archived, and leaves alone a selected Tag that is not archived.
+//
+// Returns a wrapper object for the known response body format(s).
+//
+// Corresponds with POST /tag/unarchive (the `BulkUnarchiveTags` operationId).
+func (c *ClientWithResponses) BulkUnarchiveTagsWithResponse(ctx context.Context, params *BulkUnarchiveTagsParams, reqEditors ...RequestEditorFn) (*BulkUnarchiveTagsResponse, error) {
+	rsp, err := c.BulkUnarchiveTags(ctx, params, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseBulkUnarchiveTagsResponse(rsp)
+}
+
 // BulkDeleteTargetsWithResponse Bulk delete multiple targets
 //
 // Delete multiple targets selected by query parameters.
@@ -86261,6 +94030,21 @@ func (c *ClientWithResponses) BulkMoveTargetsWithResponse(ctx context.Context, p
 	return ParseBulkMoveTargetsResponse(rsp)
 }
 
+// BulkUnarchiveTargetsWithResponse Unarchive targets
+//
+// Unarchive a Target archived by a delete with archive=true. Its backing Unit, archived with it, is unarchived with it. Its Slug is restored from the label ArchivedSlug unless another Target has taken it since, in which case it keeps the Slug the archive gave it, which KeptSlug in the response reports; it is unarchived either way. Refused while its Space is archived, while it was archived with another entity, which unarchiving that one brings back, and while it names an entity that is still archived. Requires Edit permission. Selects archived Targets, as if include_hidden named Archived, and leaves alone a selected Target that is not archived.
+//
+// Returns a wrapper object for the known response body format(s).
+//
+// Corresponds with POST /target/unarchive (the `BulkUnarchiveTargets` operationId).
+func (c *ClientWithResponses) BulkUnarchiveTargetsWithResponse(ctx context.Context, params *BulkUnarchiveTargetsParams, reqEditors ...RequestEditorFn) (*BulkUnarchiveTargetsResponse, error) {
+	rsp, err := c.BulkUnarchiveTargets(ctx, params, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseBulkUnarchiveTargetsResponse(rsp)
+}
+
 // BulkDeleteTriggersWithResponse Bulk delete multiple triggers
 //
 // Delete multiple triggers selected by query parameters.
@@ -86379,6 +94163,21 @@ func (c *ClientWithResponses) BulkMoveTriggersWithResponse(ctx context.Context, 
 		return nil, err
 	}
 	return ParseBulkMoveTriggersResponse(rsp)
+}
+
+// BulkUnarchiveTriggersWithResponse Unarchive triggers
+//
+// Unarchive a Trigger archived by a delete with archive=true. Its backing Unit, archived with it, is unarchived with it. Its Slug is restored from the label ArchivedSlug unless another Trigger has taken it since, in which case it keeps the Slug the archive gave it, which KeptSlug in the response reports; it is unarchived either way. Refused while its Space is archived, while it was archived with another entity, which unarchiving that one brings back, and while it names an entity that is still archived. Requires Edit permission. Selects archived Triggers, as if include_hidden named Archived, and leaves alone a selected Trigger that is not archived.
+//
+// Returns a wrapper object for the known response body format(s).
+//
+// Corresponds with POST /trigger/unarchive (the `BulkUnarchiveTriggers` operationId).
+func (c *ClientWithResponses) BulkUnarchiveTriggersWithResponse(ctx context.Context, params *BulkUnarchiveTriggersParams, reqEditors ...RequestEditorFn) (*BulkUnarchiveTriggersResponse, error) {
+	rsp, err := c.BulkUnarchiveTriggers(ctx, params, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseBulkUnarchiveTriggersResponse(rsp)
 }
 
 // BulkDeleteUnitsWithResponse Bulk delete multiple units
@@ -86782,6 +94581,21 @@ func (c *ClientWithResponses) BulkMoveViewsWithResponse(ctx context.Context, par
 	return ParseBulkMoveViewsResponse(rsp)
 }
 
+// BulkUnarchiveViewsWithResponse Unarchive views
+//
+// Unarchive a View archived by a delete with archive=true. Its backing Unit, archived with it, is unarchived with it. Its Slug is restored from the label ArchivedSlug unless another View has taken it since, in which case it keeps the Slug the archive gave it, which KeptSlug in the response reports; it is unarchived either way. Refused while its Space is archived, while it was archived with another entity, which unarchiving that one brings back, and while it names an entity that is still archived. Requires Edit permission. Selects archived Views, as if include_hidden named Archived, and leaves alone a selected View that is not archived.
+//
+// Returns a wrapper object for the known response body format(s).
+//
+// Corresponds with POST /view/unarchive (the `BulkUnarchiveViews` operationId).
+func (c *ClientWithResponses) BulkUnarchiveViewsWithResponse(ctx context.Context, params *BulkUnarchiveViewsParams, reqEditors ...RequestEditorFn) (*BulkUnarchiveViewsResponse, error) {
+	rsp, err := c.BulkUnarchiveViews(ctx, params, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseBulkUnarchiveViewsResponse(rsp)
+}
+
 // ParseBulkDeleteComponentsResponse parses an HTTP response from a BulkDeleteComponentsWithResponse call
 func ParseBulkDeleteComponentsResponse(rsp *http.Response) (*BulkDeleteComponentsResponse, error) {
 	bodyBytes, err := io.ReadAll(rsp.Body)
@@ -87001,6 +94815,115 @@ func ParseBulkPatchComponentsResponse(rsp *http.Response) (*BulkPatchComponentsR
 	switch {
 	case rsp.StatusCode == 200:
 		var headers BulkPatchComponentsResponse200Headers
+		if values := rsp.Header.Values("ConfigHub-Continue"); len(values) > 0 {
+			var value string
+			if err := runtime.BindStyledParameterWithOptions("simple", "ConfigHub-Continue", values[0], &value, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: false, Type: "string", Format: ""}); err != nil {
+				return nil, err
+			}
+			headers.ConfigHubContinue = &value
+		}
+		response.Headers200 = &headers
+	}
+
+	return response, nil
+}
+
+// ParseBulkUnarchiveComponentsResponse parses an HTTP response from a BulkUnarchiveComponentsWithResponse call
+func ParseBulkUnarchiveComponentsResponse(rsp *http.Response) (*BulkUnarchiveComponentsResponse, error) {
+	bodyBytes, err := io.ReadAll(rsp.Body)
+	defer func() { _ = rsp.Body.Close() }()
+	if err != nil {
+		return nil, err
+	}
+
+	response := &BulkUnarchiveComponentsResponse{
+		Body:         bodyBytes,
+		HTTPResponse: rsp,
+	}
+
+	switch {
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 200:
+		var dest []UnarchiveResponse
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON200 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 207:
+		var dest []UnarchiveResponse
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON207 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 400:
+		var dest StandardErrorResponse
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON400 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 401:
+		var dest StandardErrorResponse
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON401 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 403:
+		var dest StandardErrorResponse
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON403 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 404:
+		var dest StandardErrorResponse
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON404 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 409:
+		var dest StandardErrorResponse
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON409 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 500:
+		var dest StandardErrorResponse
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON500 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 503:
+		var dest StandardErrorResponse
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON503 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 504:
+		var dest StandardErrorResponse
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON504 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && true:
+		var dest StandardErrorResponse
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSONDefault = &dest
+
+	}
+
+	switch {
+	case rsp.StatusCode == 200:
+		var headers BulkUnarchiveComponentsResponse200Headers
 		if values := rsp.Header.Values("ConfigHub-Continue"); len(values) > 0 {
 			var value string
 			if err := runtime.BindStyledParameterWithOptions("simple", "ConfigHub-Continue", values[0], &value, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: false, Type: "string", Format: ""}); err != nil {
@@ -87574,6 +95497,115 @@ func ParseBulkCreateSpacesResponse(rsp *http.Response) (*BulkCreateSpacesRespons
 	switch {
 	case rsp.StatusCode == 200:
 		var headers BulkCreateSpacesResponse200Headers
+		if values := rsp.Header.Values("ConfigHub-Continue"); len(values) > 0 {
+			var value string
+			if err := runtime.BindStyledParameterWithOptions("simple", "ConfigHub-Continue", values[0], &value, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: false, Type: "string", Format: ""}); err != nil {
+				return nil, err
+			}
+			headers.ConfigHubContinue = &value
+		}
+		response.Headers200 = &headers
+	}
+
+	return response, nil
+}
+
+// ParseBulkUnarchiveSpacesResponse parses an HTTP response from a BulkUnarchiveSpacesWithResponse call
+func ParseBulkUnarchiveSpacesResponse(rsp *http.Response) (*BulkUnarchiveSpacesResponse, error) {
+	bodyBytes, err := io.ReadAll(rsp.Body)
+	defer func() { _ = rsp.Body.Close() }()
+	if err != nil {
+		return nil, err
+	}
+
+	response := &BulkUnarchiveSpacesResponse{
+		Body:         bodyBytes,
+		HTTPResponse: rsp,
+	}
+
+	switch {
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 200:
+		var dest []UnarchiveResponse
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON200 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 207:
+		var dest []UnarchiveResponse
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON207 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 400:
+		var dest StandardErrorResponse
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON400 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 401:
+		var dest StandardErrorResponse
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON401 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 403:
+		var dest StandardErrorResponse
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON403 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 404:
+		var dest StandardErrorResponse
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON404 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 409:
+		var dest StandardErrorResponse
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON409 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 500:
+		var dest StandardErrorResponse
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON500 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 503:
+		var dest StandardErrorResponse
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON503 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 504:
+		var dest StandardErrorResponse
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON504 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && true:
+		var dest StandardErrorResponse
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSONDefault = &dest
+
+	}
+
+	switch {
+	case rsp.StatusCode == 200:
+		var headers BulkUnarchiveSpacesResponse200Headers
 		if values := rsp.Header.Values("ConfigHub-Continue"); len(values) > 0 {
 			var value string
 			if err := runtime.BindStyledParameterWithOptions("simple", "ConfigHub-Continue", values[0], &value, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: false, Type: "string", Format: ""}); err != nil {
@@ -88317,6 +96349,115 @@ func ParseBulkMoveAttributesResponse(rsp *http.Response) (*BulkMoveAttributesRes
 	return response, nil
 }
 
+// ParseBulkUnarchiveAttributesResponse parses an HTTP response from a BulkUnarchiveAttributesWithResponse call
+func ParseBulkUnarchiveAttributesResponse(rsp *http.Response) (*BulkUnarchiveAttributesResponse, error) {
+	bodyBytes, err := io.ReadAll(rsp.Body)
+	defer func() { _ = rsp.Body.Close() }()
+	if err != nil {
+		return nil, err
+	}
+
+	response := &BulkUnarchiveAttributesResponse{
+		Body:         bodyBytes,
+		HTTPResponse: rsp,
+	}
+
+	switch {
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 200:
+		var dest []UnarchiveResponse
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON200 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 207:
+		var dest []UnarchiveResponse
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON207 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 400:
+		var dest StandardErrorResponse
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON400 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 401:
+		var dest StandardErrorResponse
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON401 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 403:
+		var dest StandardErrorResponse
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON403 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 404:
+		var dest StandardErrorResponse
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON404 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 409:
+		var dest StandardErrorResponse
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON409 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 500:
+		var dest StandardErrorResponse
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON500 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 503:
+		var dest StandardErrorResponse
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON503 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 504:
+		var dest StandardErrorResponse
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON504 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && true:
+		var dest StandardErrorResponse
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSONDefault = &dest
+
+	}
+
+	switch {
+	case rsp.StatusCode == 200:
+		var headers BulkUnarchiveAttributesResponse200Headers
+		if values := rsp.Header.Values("ConfigHub-Continue"); len(values) > 0 {
+			var value string
+			if err := runtime.BindStyledParameterWithOptions("simple", "ConfigHub-Continue", values[0], &value, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: false, Type: "string", Format: ""}); err != nil {
+				return nil, err
+			}
+			headers.ConfigHubContinue = &value
+		}
+		response.Headers200 = &headers
+	}
+
+	return response, nil
+}
+
 // ParseListAuditEventsResponse parses an HTTP response from a ListAuditEventsWithResponse call
 func ParseListAuditEventsResponse(rsp *http.Response) (*ListAuditEventsResponse, error) {
 	bodyBytes, err := io.ReadAll(rsp.Body)
@@ -89032,6 +97173,115 @@ func ParseBulkRefreshChangeOrderStagesResponse(rsp *http.Response) (*BulkRefresh
 	return response, nil
 }
 
+// ParseBulkUnarchiveChangeOrdersResponse parses an HTTP response from a BulkUnarchiveChangeOrdersWithResponse call
+func ParseBulkUnarchiveChangeOrdersResponse(rsp *http.Response) (*BulkUnarchiveChangeOrdersResponse, error) {
+	bodyBytes, err := io.ReadAll(rsp.Body)
+	defer func() { _ = rsp.Body.Close() }()
+	if err != nil {
+		return nil, err
+	}
+
+	response := &BulkUnarchiveChangeOrdersResponse{
+		Body:         bodyBytes,
+		HTTPResponse: rsp,
+	}
+
+	switch {
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 200:
+		var dest []UnarchiveResponse
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON200 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 207:
+		var dest []UnarchiveResponse
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON207 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 400:
+		var dest StandardErrorResponse
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON400 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 401:
+		var dest StandardErrorResponse
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON401 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 403:
+		var dest StandardErrorResponse
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON403 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 404:
+		var dest StandardErrorResponse
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON404 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 409:
+		var dest StandardErrorResponse
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON409 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 500:
+		var dest StandardErrorResponse
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON500 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 503:
+		var dest StandardErrorResponse
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON503 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 504:
+		var dest StandardErrorResponse
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON504 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && true:
+		var dest StandardErrorResponse
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSONDefault = &dest
+
+	}
+
+	switch {
+	case rsp.StatusCode == 200:
+		var headers BulkUnarchiveChangeOrdersResponse200Headers
+		if values := rsp.Header.Values("ConfigHub-Continue"); len(values) > 0 {
+			var value string
+			if err := runtime.BindStyledParameterWithOptions("simple", "ConfigHub-Continue", values[0], &value, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: false, Type: "string", Format: ""}); err != nil {
+				return nil, err
+			}
+			headers.ConfigHubContinue = &value
+		}
+		response.Headers200 = &headers
+	}
+
+	return response, nil
+}
+
 // ParseBulkDeleteChangeSetsResponse parses an HTTP response from a BulkDeleteChangeSetsWithResponse call
 func ParseBulkDeleteChangeSetsResponse(rsp *http.Response) (*BulkDeleteChangeSetsResponse, error) {
 	bodyBytes, err := io.ReadAll(rsp.Body)
@@ -89552,6 +97802,115 @@ func ParseBulkMoveChangeSetsResponse(rsp *http.Response) (*BulkMoveChangeSetsRes
 		}
 		response.JSONDefault = &dest
 
+	}
+
+	return response, nil
+}
+
+// ParseBulkUnarchiveChangeSetsResponse parses an HTTP response from a BulkUnarchiveChangeSetsWithResponse call
+func ParseBulkUnarchiveChangeSetsResponse(rsp *http.Response) (*BulkUnarchiveChangeSetsResponse, error) {
+	bodyBytes, err := io.ReadAll(rsp.Body)
+	defer func() { _ = rsp.Body.Close() }()
+	if err != nil {
+		return nil, err
+	}
+
+	response := &BulkUnarchiveChangeSetsResponse{
+		Body:         bodyBytes,
+		HTTPResponse: rsp,
+	}
+
+	switch {
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 200:
+		var dest []UnarchiveResponse
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON200 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 207:
+		var dest []UnarchiveResponse
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON207 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 400:
+		var dest StandardErrorResponse
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON400 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 401:
+		var dest StandardErrorResponse
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON401 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 403:
+		var dest StandardErrorResponse
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON403 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 404:
+		var dest StandardErrorResponse
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON404 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 409:
+		var dest StandardErrorResponse
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON409 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 500:
+		var dest StandardErrorResponse
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON500 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 503:
+		var dest StandardErrorResponse
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON503 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 504:
+		var dest StandardErrorResponse
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON504 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && true:
+		var dest StandardErrorResponse
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSONDefault = &dest
+
+	}
+
+	switch {
+	case rsp.StatusCode == 200:
+		var headers BulkUnarchiveChangeSetsResponse200Headers
+		if values := rsp.Header.Values("ConfigHub-Continue"); len(values) > 0 {
+			var value string
+			if err := runtime.BindStyledParameterWithOptions("simple", "ConfigHub-Continue", values[0], &value, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: false, Type: "string", Format: ""}); err != nil {
+				return nil, err
+			}
+			headers.ConfigHubContinue = &value
+		}
+		response.Headers200 = &headers
 	}
 
 	return response, nil
@@ -90096,6 +98455,115 @@ func ParseBulkMoveChangeWorkflowsResponse(rsp *http.Response) (*BulkMoveChangeWo
 	return response, nil
 }
 
+// ParseBulkUnarchiveChangeWorkflowsResponse parses an HTTP response from a BulkUnarchiveChangeWorkflowsWithResponse call
+func ParseBulkUnarchiveChangeWorkflowsResponse(rsp *http.Response) (*BulkUnarchiveChangeWorkflowsResponse, error) {
+	bodyBytes, err := io.ReadAll(rsp.Body)
+	defer func() { _ = rsp.Body.Close() }()
+	if err != nil {
+		return nil, err
+	}
+
+	response := &BulkUnarchiveChangeWorkflowsResponse{
+		Body:         bodyBytes,
+		HTTPResponse: rsp,
+	}
+
+	switch {
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 200:
+		var dest []UnarchiveResponse
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON200 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 207:
+		var dest []UnarchiveResponse
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON207 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 400:
+		var dest StandardErrorResponse
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON400 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 401:
+		var dest StandardErrorResponse
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON401 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 403:
+		var dest StandardErrorResponse
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON403 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 404:
+		var dest StandardErrorResponse
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON404 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 409:
+		var dest StandardErrorResponse
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON409 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 500:
+		var dest StandardErrorResponse
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON500 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 503:
+		var dest StandardErrorResponse
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON503 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 504:
+		var dest StandardErrorResponse
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON504 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && true:
+		var dest StandardErrorResponse
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSONDefault = &dest
+
+	}
+
+	switch {
+	case rsp.StatusCode == 200:
+		var headers BulkUnarchiveChangeWorkflowsResponse200Headers
+		if values := rsp.Header.Values("ConfigHub-Continue"); len(values) > 0 {
+			var value string
+			if err := runtime.BindStyledParameterWithOptions("simple", "ConfigHub-Continue", values[0], &value, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: false, Type: "string", Format: ""}); err != nil {
+				return nil, err
+			}
+			headers.ConfigHubContinue = &value
+		}
+		response.Headers200 = &headers
+	}
+
+	return response, nil
+}
+
 // ParseBulkDeleteChannelsResponse parses an HTTP response from a BulkDeleteChannelsWithResponse call
 func ParseBulkDeleteChannelsResponse(rsp *http.Response) (*BulkDeleteChannelsResponse, error) {
 	bodyBytes, err := io.ReadAll(rsp.Body)
@@ -90630,6 +99098,115 @@ func ParseBulkMoveChannelsResponse(rsp *http.Response) (*BulkMoveChannelsRespons
 		}
 		response.JSONDefault = &dest
 
+	}
+
+	return response, nil
+}
+
+// ParseBulkUnarchiveChannelsResponse parses an HTTP response from a BulkUnarchiveChannelsWithResponse call
+func ParseBulkUnarchiveChannelsResponse(rsp *http.Response) (*BulkUnarchiveChannelsResponse, error) {
+	bodyBytes, err := io.ReadAll(rsp.Body)
+	defer func() { _ = rsp.Body.Close() }()
+	if err != nil {
+		return nil, err
+	}
+
+	response := &BulkUnarchiveChannelsResponse{
+		Body:         bodyBytes,
+		HTTPResponse: rsp,
+	}
+
+	switch {
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 200:
+		var dest []UnarchiveResponse
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON200 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 207:
+		var dest []UnarchiveResponse
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON207 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 400:
+		var dest StandardErrorResponse
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON400 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 401:
+		var dest StandardErrorResponse
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON401 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 403:
+		var dest StandardErrorResponse
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON403 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 404:
+		var dest StandardErrorResponse
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON404 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 409:
+		var dest StandardErrorResponse
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON409 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 500:
+		var dest StandardErrorResponse
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON500 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 503:
+		var dest StandardErrorResponse
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON503 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 504:
+		var dest StandardErrorResponse
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON504 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && true:
+		var dest StandardErrorResponse
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSONDefault = &dest
+
+	}
+
+	switch {
+	case rsp.StatusCode == 200:
+		var headers BulkUnarchiveChannelsResponse200Headers
+		if values := rsp.Header.Values("ConfigHub-Continue"); len(values) > 0 {
+			var value string
+			if err := runtime.BindStyledParameterWithOptions("simple", "ConfigHub-Continue", values[0], &value, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: false, Type: "string", Format: ""}); err != nil {
+				return nil, err
+			}
+			headers.ConfigHubContinue = &value
+		}
+		response.Headers200 = &headers
 	}
 
 	return response, nil
@@ -91523,6 +100100,95 @@ func ParseUpdateComponentDocumentResponse(rsp *http.Response) (*UpdateComponentD
 	return response, nil
 }
 
+// ParseUnarchiveComponentResponse parses an HTTP response from a UnarchiveComponentWithResponse call
+func ParseUnarchiveComponentResponse(rsp *http.Response) (*UnarchiveComponentResponse, error) {
+	bodyBytes, err := io.ReadAll(rsp.Body)
+	defer func() { _ = rsp.Body.Close() }()
+	if err != nil {
+		return nil, err
+	}
+
+	response := &UnarchiveComponentResponse{
+		Body:         bodyBytes,
+		HTTPResponse: rsp,
+	}
+
+	switch {
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 200:
+		var dest UnarchiveResponse
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON200 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 400:
+		var dest StandardErrorResponse
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON400 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 401:
+		var dest StandardErrorResponse
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON401 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 403:
+		var dest StandardErrorResponse
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON403 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 404:
+		var dest StandardErrorResponse
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON404 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 409:
+		var dest StandardErrorResponse
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON409 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 500:
+		var dest StandardErrorResponse
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON500 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 503:
+		var dest StandardErrorResponse
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON503 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 504:
+		var dest StandardErrorResponse
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON504 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && true:
+		var dest StandardErrorResponse
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSONDefault = &dest
+
+	}
+
+	return response, nil
+}
+
 // ParseDemoteResponse parses an HTTP response from a DemoteWithResponse call
 func ParseDemoteResponse(rsp *http.Response) (*DemoteResponse, error) {
 	bodyBytes, err := io.ReadAll(rsp.Body)
@@ -92249,6 +100915,115 @@ func ParseBulkMoveFiltersResponse(rsp *http.Response) (*BulkMoveFiltersResponse,
 		}
 		response.JSONDefault = &dest
 
+	}
+
+	return response, nil
+}
+
+// ParseBulkUnarchiveFiltersResponse parses an HTTP response from a BulkUnarchiveFiltersWithResponse call
+func ParseBulkUnarchiveFiltersResponse(rsp *http.Response) (*BulkUnarchiveFiltersResponse, error) {
+	bodyBytes, err := io.ReadAll(rsp.Body)
+	defer func() { _ = rsp.Body.Close() }()
+	if err != nil {
+		return nil, err
+	}
+
+	response := &BulkUnarchiveFiltersResponse{
+		Body:         bodyBytes,
+		HTTPResponse: rsp,
+	}
+
+	switch {
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 200:
+		var dest []UnarchiveResponse
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON200 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 207:
+		var dest []UnarchiveResponse
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON207 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 400:
+		var dest StandardErrorResponse
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON400 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 401:
+		var dest StandardErrorResponse
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON401 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 403:
+		var dest StandardErrorResponse
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON403 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 404:
+		var dest StandardErrorResponse
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON404 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 409:
+		var dest StandardErrorResponse
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON409 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 500:
+		var dest StandardErrorResponse
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON500 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 503:
+		var dest StandardErrorResponse
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON503 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 504:
+		var dest StandardErrorResponse
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON504 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && true:
+		var dest StandardErrorResponse
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSONDefault = &dest
+
+	}
+
+	switch {
+	case rsp.StatusCode == 200:
+		var headers BulkUnarchiveFiltersResponse200Headers
+		if values := rsp.Header.Values("ConfigHub-Continue"); len(values) > 0 {
+			var value string
+			if err := runtime.BindStyledParameterWithOptions("simple", "ConfigHub-Continue", values[0], &value, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: false, Type: "string", Format: ""}); err != nil {
+				return nil, err
+			}
+			headers.ConfigHubContinue = &value
+		}
+		response.Headers200 = &headers
 	}
 
 	return response, nil
@@ -93455,6 +102230,115 @@ func ParseBulkMoveInvocationsResponse(rsp *http.Response) (*BulkMoveInvocationsR
 	return response, nil
 }
 
+// ParseBulkUnarchiveInvocationsResponse parses an HTTP response from a BulkUnarchiveInvocationsWithResponse call
+func ParseBulkUnarchiveInvocationsResponse(rsp *http.Response) (*BulkUnarchiveInvocationsResponse, error) {
+	bodyBytes, err := io.ReadAll(rsp.Body)
+	defer func() { _ = rsp.Body.Close() }()
+	if err != nil {
+		return nil, err
+	}
+
+	response := &BulkUnarchiveInvocationsResponse{
+		Body:         bodyBytes,
+		HTTPResponse: rsp,
+	}
+
+	switch {
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 200:
+		var dest []UnarchiveResponse
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON200 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 207:
+		var dest []UnarchiveResponse
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON207 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 400:
+		var dest StandardErrorResponse
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON400 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 401:
+		var dest StandardErrorResponse
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON401 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 403:
+		var dest StandardErrorResponse
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON403 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 404:
+		var dest StandardErrorResponse
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON404 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 409:
+		var dest StandardErrorResponse
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON409 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 500:
+		var dest StandardErrorResponse
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON500 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 503:
+		var dest StandardErrorResponse
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON503 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 504:
+		var dest StandardErrorResponse
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON504 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && true:
+		var dest StandardErrorResponse
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSONDefault = &dest
+
+	}
+
+	switch {
+	case rsp.StatusCode == 200:
+		var headers BulkUnarchiveInvocationsResponse200Headers
+		if values := rsp.Header.Values("ConfigHub-Continue"); len(values) > 0 {
+			var value string
+			if err := runtime.BindStyledParameterWithOptions("simple", "ConfigHub-Continue", values[0], &value, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: false, Type: "string", Format: ""}); err != nil {
+				return nil, err
+			}
+			headers.ConfigHubContinue = &value
+		}
+		response.Headers200 = &headers
+	}
+
+	return response, nil
+}
+
 // ParseBulkDeleteLinksResponse parses an HTTP response from a BulkDeleteLinksWithResponse call
 func ParseBulkDeleteLinksResponse(rsp *http.Response) (*BulkDeleteLinksResponse, error) {
 	bodyBytes, err := io.ReadAll(rsp.Body)
@@ -93880,6 +102764,115 @@ func ParseBulkCreateLinksResponse(rsp *http.Response) (*BulkCreateLinksResponse,
 		}
 		response.JSONDefault = &dest
 
+	}
+
+	return response, nil
+}
+
+// ParseBulkUnarchiveLinksResponse parses an HTTP response from a BulkUnarchiveLinksWithResponse call
+func ParseBulkUnarchiveLinksResponse(rsp *http.Response) (*BulkUnarchiveLinksResponse, error) {
+	bodyBytes, err := io.ReadAll(rsp.Body)
+	defer func() { _ = rsp.Body.Close() }()
+	if err != nil {
+		return nil, err
+	}
+
+	response := &BulkUnarchiveLinksResponse{
+		Body:         bodyBytes,
+		HTTPResponse: rsp,
+	}
+
+	switch {
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 200:
+		var dest []UnarchiveResponse
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON200 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 207:
+		var dest []UnarchiveResponse
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON207 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 400:
+		var dest StandardErrorResponse
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON400 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 401:
+		var dest StandardErrorResponse
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON401 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 403:
+		var dest StandardErrorResponse
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON403 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 404:
+		var dest StandardErrorResponse
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON404 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 409:
+		var dest StandardErrorResponse
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON409 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 500:
+		var dest StandardErrorResponse
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON500 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 503:
+		var dest StandardErrorResponse
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON503 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 504:
+		var dest StandardErrorResponse
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON504 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && true:
+		var dest StandardErrorResponse
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSONDefault = &dest
+
+	}
+
+	switch {
+	case rsp.StatusCode == 200:
+		var headers BulkUnarchiveLinksResponse200Headers
+		if values := rsp.Header.Values("ConfigHub-Continue"); len(values) > 0 {
+			var value string
+			if err := runtime.BindStyledParameterWithOptions("simple", "ConfigHub-Continue", values[0], &value, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: false, Type: "string", Format: ""}); err != nil {
+				return nil, err
+			}
+			headers.ConfigHubContinue = &value
+		}
+		response.Headers200 = &headers
 	}
 
 	return response, nil
@@ -95281,6 +104274,115 @@ func ParseListAllReleasesResponse(rsp *http.Response) (*ListAllReleasesResponse,
 	switch {
 	case rsp.StatusCode == 200:
 		var headers ListAllReleasesResponse200Headers
+		if values := rsp.Header.Values("ConfigHub-Continue"); len(values) > 0 {
+			var value string
+			if err := runtime.BindStyledParameterWithOptions("simple", "ConfigHub-Continue", values[0], &value, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: false, Type: "string", Format: ""}); err != nil {
+				return nil, err
+			}
+			headers.ConfigHubContinue = &value
+		}
+		response.Headers200 = &headers
+	}
+
+	return response, nil
+}
+
+// ParseBulkUnarchiveReleasesResponse parses an HTTP response from a BulkUnarchiveReleasesWithResponse call
+func ParseBulkUnarchiveReleasesResponse(rsp *http.Response) (*BulkUnarchiveReleasesResponse, error) {
+	bodyBytes, err := io.ReadAll(rsp.Body)
+	defer func() { _ = rsp.Body.Close() }()
+	if err != nil {
+		return nil, err
+	}
+
+	response := &BulkUnarchiveReleasesResponse{
+		Body:         bodyBytes,
+		HTTPResponse: rsp,
+	}
+
+	switch {
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 200:
+		var dest []UnarchiveResponse
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON200 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 207:
+		var dest []UnarchiveResponse
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON207 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 400:
+		var dest StandardErrorResponse
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON400 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 401:
+		var dest StandardErrorResponse
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON401 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 403:
+		var dest StandardErrorResponse
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON403 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 404:
+		var dest StandardErrorResponse
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON404 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 409:
+		var dest StandardErrorResponse
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON409 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 500:
+		var dest StandardErrorResponse
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON500 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 503:
+		var dest StandardErrorResponse
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON503 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 504:
+		var dest StandardErrorResponse
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON504 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && true:
+		var dest StandardErrorResponse
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSONDefault = &dest
+
+	}
+
+	switch {
+	case rsp.StatusCode == 200:
+		var headers BulkUnarchiveReleasesResponse200Headers
 		if values := rsp.Header.Values("ConfigHub-Continue"); len(values) > 0 {
 			var value string
 			if err := runtime.BindStyledParameterWithOptions("simple", "ConfigHub-Continue", values[0], &value, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: false, Type: "string", Format: ""}); err != nil {
@@ -98864,6 +107966,95 @@ func ParseUpdateAttributeDocumentResponse(rsp *http.Response) (*UpdateAttributeD
 	return response, nil
 }
 
+// ParseUnarchiveAttributeResponse parses an HTTP response from a UnarchiveAttributeWithResponse call
+func ParseUnarchiveAttributeResponse(rsp *http.Response) (*UnarchiveAttributeResponse, error) {
+	bodyBytes, err := io.ReadAll(rsp.Body)
+	defer func() { _ = rsp.Body.Close() }()
+	if err != nil {
+		return nil, err
+	}
+
+	response := &UnarchiveAttributeResponse{
+		Body:         bodyBytes,
+		HTTPResponse: rsp,
+	}
+
+	switch {
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 200:
+		var dest UnarchiveResponse
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON200 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 400:
+		var dest StandardErrorResponse
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON400 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 401:
+		var dest StandardErrorResponse
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON401 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 403:
+		var dest StandardErrorResponse
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON403 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 404:
+		var dest StandardErrorResponse
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON404 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 409:
+		var dest StandardErrorResponse
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON409 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 500:
+		var dest StandardErrorResponse
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON500 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 503:
+		var dest StandardErrorResponse
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON503 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 504:
+		var dest StandardErrorResponse
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON504 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && true:
+		var dest StandardErrorResponse
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSONDefault = &dest
+
+	}
+
+	return response, nil
+}
+
 // ParseListChangeOrdersResponse parses an HTTP response from a ListChangeOrdersWithResponse call
 func ParseListChangeOrdersResponse(rsp *http.Response) (*ListChangeOrdersResponse, error) {
 	bodyBytes, err := io.ReadAll(rsp.Body)
@@ -99493,6 +108684,95 @@ func ParseRefreshChangeOrderStageResponse(rsp *http.Response) (*RefreshChangeOrd
 	return response, nil
 }
 
+// ParseUnarchiveChangeOrderResponse parses an HTTP response from a UnarchiveChangeOrderWithResponse call
+func ParseUnarchiveChangeOrderResponse(rsp *http.Response) (*UnarchiveChangeOrderResponse, error) {
+	bodyBytes, err := io.ReadAll(rsp.Body)
+	defer func() { _ = rsp.Body.Close() }()
+	if err != nil {
+		return nil, err
+	}
+
+	response := &UnarchiveChangeOrderResponse{
+		Body:         bodyBytes,
+		HTTPResponse: rsp,
+	}
+
+	switch {
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 200:
+		var dest UnarchiveResponse
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON200 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 400:
+		var dest StandardErrorResponse
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON400 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 401:
+		var dest StandardErrorResponse
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON401 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 403:
+		var dest StandardErrorResponse
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON403 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 404:
+		var dest StandardErrorResponse
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON404 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 409:
+		var dest StandardErrorResponse
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON409 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 500:
+		var dest StandardErrorResponse
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON500 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 503:
+		var dest StandardErrorResponse
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON503 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 504:
+		var dest StandardErrorResponse
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON504 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && true:
+		var dest StandardErrorResponse
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSONDefault = &dest
+
+	}
+
+	return response, nil
+}
+
 // ParseListChangeSetsResponse parses an HTTP response from a ListChangeSetsWithResponse call
 func ParseListChangeSetsResponse(rsp *http.Response) (*ListChangeSetsResponse, error) {
 	bodyBytes, err := io.ReadAll(rsp.Body)
@@ -99960,6 +109240,95 @@ func ParseUpdateChangeSetResponse(rsp *http.Response) (*UpdateChangeSetResponse,
 	switch {
 	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 200:
 		var dest ChangeSet
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON200 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 400:
+		var dest StandardErrorResponse
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON400 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 401:
+		var dest StandardErrorResponse
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON401 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 403:
+		var dest StandardErrorResponse
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON403 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 404:
+		var dest StandardErrorResponse
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON404 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 409:
+		var dest StandardErrorResponse
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON409 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 500:
+		var dest StandardErrorResponse
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON500 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 503:
+		var dest StandardErrorResponse
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON503 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 504:
+		var dest StandardErrorResponse
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON504 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && true:
+		var dest StandardErrorResponse
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSONDefault = &dest
+
+	}
+
+	return response, nil
+}
+
+// ParseUnarchiveChangeSetResponse parses an HTTP response from a UnarchiveChangeSetWithResponse call
+func ParseUnarchiveChangeSetResponse(rsp *http.Response) (*UnarchiveChangeSetResponse, error) {
+	bodyBytes, err := io.ReadAll(rsp.Body)
+	defer func() { _ = rsp.Body.Close() }()
+	if err != nil {
+		return nil, err
+	}
+
+	response := &UnarchiveChangeSetResponse{
+		Body:         bodyBytes,
+		HTTPResponse: rsp,
+	}
+
+	switch {
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 200:
+		var dest UnarchiveResponse
 		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
 			return nil, err
 		}
@@ -100671,6 +110040,95 @@ func ParseUpdateChangeWorkflowDocumentResponse(rsp *http.Response) (*UpdateChang
 	switch {
 	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 200:
 		var dest ChangeWorkflow
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON200 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 400:
+		var dest StandardErrorResponse
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON400 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 401:
+		var dest StandardErrorResponse
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON401 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 403:
+		var dest StandardErrorResponse
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON403 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 404:
+		var dest StandardErrorResponse
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON404 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 409:
+		var dest StandardErrorResponse
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON409 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 500:
+		var dest StandardErrorResponse
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON500 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 503:
+		var dest StandardErrorResponse
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON503 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 504:
+		var dest StandardErrorResponse
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON504 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && true:
+		var dest StandardErrorResponse
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSONDefault = &dest
+
+	}
+
+	return response, nil
+}
+
+// ParseUnarchiveChangeWorkflowResponse parses an HTTP response from a UnarchiveChangeWorkflowWithResponse call
+func ParseUnarchiveChangeWorkflowResponse(rsp *http.Response) (*UnarchiveChangeWorkflowResponse, error) {
+	bodyBytes, err := io.ReadAll(rsp.Body)
+	defer func() { _ = rsp.Body.Close() }()
+	if err != nil {
+		return nil, err
+	}
+
+	response := &UnarchiveChangeWorkflowResponse{
+		Body:         bodyBytes,
+		HTTPResponse: rsp,
+	}
+
+	switch {
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 200:
+		var dest UnarchiveResponse
 		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
 			return nil, err
 		}
@@ -101749,6 +111207,95 @@ func ParsePollChannelResponse(rsp *http.Response) (*PollChannelResponse, error) 
 			return nil, err
 		}
 		response.JSON204 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 400:
+		var dest StandardErrorResponse
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON400 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 401:
+		var dest StandardErrorResponse
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON401 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 403:
+		var dest StandardErrorResponse
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON403 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 404:
+		var dest StandardErrorResponse
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON404 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 409:
+		var dest StandardErrorResponse
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON409 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 500:
+		var dest StandardErrorResponse
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON500 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 503:
+		var dest StandardErrorResponse
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON503 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 504:
+		var dest StandardErrorResponse
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON504 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && true:
+		var dest StandardErrorResponse
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSONDefault = &dest
+
+	}
+
+	return response, nil
+}
+
+// ParseUnarchiveChannelResponse parses an HTTP response from a UnarchiveChannelWithResponse call
+func ParseUnarchiveChannelResponse(rsp *http.Response) (*UnarchiveChannelResponse, error) {
+	bodyBytes, err := io.ReadAll(rsp.Body)
+	defer func() { _ = rsp.Body.Close() }()
+	if err != nil {
+		return nil, err
+	}
+
+	response := &UnarchiveChannelResponse{
+		Body:         bodyBytes,
+		HTTPResponse: rsp,
+	}
+
+	switch {
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 200:
+		var dest UnarchiveResponse
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON200 = &dest
 
 	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 400:
 		var dest StandardErrorResponse
@@ -103144,6 +112691,95 @@ func ParseUpdateFilterDocumentResponse(rsp *http.Response) (*UpdateFilterDocumen
 	return response, nil
 }
 
+// ParseUnarchiveFilterResponse parses an HTTP response from a UnarchiveFilterWithResponse call
+func ParseUnarchiveFilterResponse(rsp *http.Response) (*UnarchiveFilterResponse, error) {
+	bodyBytes, err := io.ReadAll(rsp.Body)
+	defer func() { _ = rsp.Body.Close() }()
+	if err != nil {
+		return nil, err
+	}
+
+	response := &UnarchiveFilterResponse{
+		Body:         bodyBytes,
+		HTTPResponse: rsp,
+	}
+
+	switch {
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 200:
+		var dest UnarchiveResponse
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON200 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 400:
+		var dest StandardErrorResponse
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON400 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 401:
+		var dest StandardErrorResponse
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON401 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 403:
+		var dest StandardErrorResponse
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON403 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 404:
+		var dest StandardErrorResponse
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON404 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 409:
+		var dest StandardErrorResponse
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON409 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 500:
+		var dest StandardErrorResponse
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON500 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 503:
+		var dest StandardErrorResponse
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON503 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 504:
+		var dest StandardErrorResponse
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON504 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && true:
+		var dest StandardErrorResponse
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSONDefault = &dest
+
+	}
+
+	return response, nil
+}
+
 // ParseListFunctionsResponse parses an HTTP response from a ListFunctionsWithResponse call
 func ParseListFunctionsResponse(rsp *http.Response) (*ListFunctionsResponse, error) {
 	bodyBytes, err := io.ReadAll(rsp.Body)
@@ -104129,6 +113765,95 @@ func ParseUpdateInvocationDocumentResponse(rsp *http.Response) (*UpdateInvocatio
 	return response, nil
 }
 
+// ParseUnarchiveInvocationResponse parses an HTTP response from a UnarchiveInvocationWithResponse call
+func ParseUnarchiveInvocationResponse(rsp *http.Response) (*UnarchiveInvocationResponse, error) {
+	bodyBytes, err := io.ReadAll(rsp.Body)
+	defer func() { _ = rsp.Body.Close() }()
+	if err != nil {
+		return nil, err
+	}
+
+	response := &UnarchiveInvocationResponse{
+		Body:         bodyBytes,
+		HTTPResponse: rsp,
+	}
+
+	switch {
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 200:
+		var dest UnarchiveResponse
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON200 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 400:
+		var dest StandardErrorResponse
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON400 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 401:
+		var dest StandardErrorResponse
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON401 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 403:
+		var dest StandardErrorResponse
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON403 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 404:
+		var dest StandardErrorResponse
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON404 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 409:
+		var dest StandardErrorResponse
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON409 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 500:
+		var dest StandardErrorResponse
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON500 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 503:
+		var dest StandardErrorResponse
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON503 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 504:
+		var dest StandardErrorResponse
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON504 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && true:
+		var dest StandardErrorResponse
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSONDefault = &dest
+
+	}
+
+	return response, nil
+}
+
 // ParseListLinksResponse parses an HTTP response from a ListLinksWithResponse call
 func ParseListLinksResponse(rsp *http.Response) (*ListLinksResponse, error) {
 	bodyBytes, err := io.ReadAll(rsp.Body)
@@ -104840,6 +114565,95 @@ func ParseUpdateLinkDocumentResponse(rsp *http.Response) (*UpdateLinkDocumentRes
 	return response, nil
 }
 
+// ParseUnarchiveLinkResponse parses an HTTP response from a UnarchiveLinkWithResponse call
+func ParseUnarchiveLinkResponse(rsp *http.Response) (*UnarchiveLinkResponse, error) {
+	bodyBytes, err := io.ReadAll(rsp.Body)
+	defer func() { _ = rsp.Body.Close() }()
+	if err != nil {
+		return nil, err
+	}
+
+	response := &UnarchiveLinkResponse{
+		Body:         bodyBytes,
+		HTTPResponse: rsp,
+	}
+
+	switch {
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 200:
+		var dest UnarchiveResponse
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON200 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 400:
+		var dest StandardErrorResponse
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON400 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 401:
+		var dest StandardErrorResponse
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON401 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 403:
+		var dest StandardErrorResponse
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON403 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 404:
+		var dest StandardErrorResponse
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON404 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 409:
+		var dest StandardErrorResponse
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON409 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 500:
+		var dest StandardErrorResponse
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON500 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 503:
+		var dest StandardErrorResponse
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON503 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 504:
+		var dest StandardErrorResponse
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON504 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && true:
+		var dest StandardErrorResponse
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSONDefault = &dest
+
+	}
+
+	return response, nil
+}
+
 // ParseListExtendedReleasesResponse parses an HTTP response from a ListExtendedReleasesWithResponse call
 func ParseListExtendedReleasesResponse(rsp *http.Response) (*ListExtendedReleasesResponse, error) {
 	bodyBytes, err := io.ReadAll(rsp.Body)
@@ -105462,6 +115276,95 @@ func ParseDownloadReleaseDataResponse(rsp *http.Response) (*DownloadReleaseDataR
 	return response, nil
 }
 
+// ParseUnarchiveReleaseResponse parses an HTTP response from a UnarchiveReleaseWithResponse call
+func ParseUnarchiveReleaseResponse(rsp *http.Response) (*UnarchiveReleaseResponse, error) {
+	bodyBytes, err := io.ReadAll(rsp.Body)
+	defer func() { _ = rsp.Body.Close() }()
+	if err != nil {
+		return nil, err
+	}
+
+	response := &UnarchiveReleaseResponse{
+		Body:         bodyBytes,
+		HTTPResponse: rsp,
+	}
+
+	switch {
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 200:
+		var dest UnarchiveResponse
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON200 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 400:
+		var dest StandardErrorResponse
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON400 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 401:
+		var dest StandardErrorResponse
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON401 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 403:
+		var dest StandardErrorResponse
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON403 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 404:
+		var dest StandardErrorResponse
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON404 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 409:
+		var dest StandardErrorResponse
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON409 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 500:
+		var dest StandardErrorResponse
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON500 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 503:
+		var dest StandardErrorResponse
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON503 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 504:
+		var dest StandardErrorResponse
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON504 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && true:
+		var dest StandardErrorResponse
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSONDefault = &dest
+
+	}
+
+	return response, nil
+}
+
 // ParseWithdrawReleaseResponse parses an HTTP response from a WithdrawReleaseWithResponse call
 func ParseWithdrawReleaseResponse(rsp *http.Response) (*WithdrawReleaseResponse, error) {
 	bodyBytes, err := io.ReadAll(rsp.Body)
@@ -106025,6 +115928,95 @@ func ParseUpdateTagResponse(rsp *http.Response) (*UpdateTagResponse, error) {
 	switch {
 	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 200:
 		var dest Tag
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON200 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 400:
+		var dest StandardErrorResponse
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON400 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 401:
+		var dest StandardErrorResponse
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON401 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 403:
+		var dest StandardErrorResponse
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON403 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 404:
+		var dest StandardErrorResponse
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON404 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 409:
+		var dest StandardErrorResponse
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON409 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 500:
+		var dest StandardErrorResponse
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON500 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 503:
+		var dest StandardErrorResponse
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON503 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 504:
+		var dest StandardErrorResponse
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON504 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && true:
+		var dest StandardErrorResponse
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSONDefault = &dest
+
+	}
+
+	return response, nil
+}
+
+// ParseUnarchiveTagResponse parses an HTTP response from a UnarchiveTagWithResponse call
+func ParseUnarchiveTagResponse(rsp *http.Response) (*UnarchiveTagResponse, error) {
+	bodyBytes, err := io.ReadAll(rsp.Body)
+	defer func() { _ = rsp.Body.Close() }()
+	if err != nil {
+		return nil, err
+	}
+
+	response := &UnarchiveTagResponse{
+		Body:         bodyBytes,
+		HTTPResponse: rsp,
+	}
+
+	switch {
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 200:
+		var dest UnarchiveResponse
 		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
 			return nil, err
 		}
@@ -106809,6 +116801,95 @@ func ParseUpdateTargetDocumentResponse(rsp *http.Response) (*UpdateTargetDocumen
 	return response, nil
 }
 
+// ParseUnarchiveTargetResponse parses an HTTP response from a UnarchiveTargetWithResponse call
+func ParseUnarchiveTargetResponse(rsp *http.Response) (*UnarchiveTargetResponse, error) {
+	bodyBytes, err := io.ReadAll(rsp.Body)
+	defer func() { _ = rsp.Body.Close() }()
+	if err != nil {
+		return nil, err
+	}
+
+	response := &UnarchiveTargetResponse{
+		Body:         bodyBytes,
+		HTTPResponse: rsp,
+	}
+
+	switch {
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 200:
+		var dest UnarchiveResponse
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON200 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 400:
+		var dest StandardErrorResponse
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON400 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 401:
+		var dest StandardErrorResponse
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON401 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 403:
+		var dest StandardErrorResponse
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON403 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 404:
+		var dest StandardErrorResponse
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON404 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 409:
+		var dest StandardErrorResponse
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON409 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 500:
+		var dest StandardErrorResponse
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON500 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 503:
+		var dest StandardErrorResponse
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON503 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 504:
+		var dest StandardErrorResponse
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON504 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && true:
+		var dest StandardErrorResponse
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSONDefault = &dest
+
+	}
+
+	return response, nil
+}
+
 // ParseListTriggersResponse parses an HTTP response from a ListTriggersWithResponse call
 func ParseListTriggersResponse(rsp *http.Response) (*ListTriggersResponse, error) {
 	bodyBytes, err := io.ReadAll(rsp.Body)
@@ -107447,6 +117528,184 @@ func ParseUpdateTriggerDocumentResponse(rsp *http.Response) (*UpdateTriggerDocum
 	switch {
 	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 200:
 		var dest Trigger
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON200 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 400:
+		var dest StandardErrorResponse
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON400 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 401:
+		var dest StandardErrorResponse
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON401 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 403:
+		var dest StandardErrorResponse
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON403 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 404:
+		var dest StandardErrorResponse
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON404 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 409:
+		var dest StandardErrorResponse
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON409 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 500:
+		var dest StandardErrorResponse
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON500 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 503:
+		var dest StandardErrorResponse
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON503 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 504:
+		var dest StandardErrorResponse
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON504 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && true:
+		var dest StandardErrorResponse
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSONDefault = &dest
+
+	}
+
+	return response, nil
+}
+
+// ParseUnarchiveTriggerResponse parses an HTTP response from a UnarchiveTriggerWithResponse call
+func ParseUnarchiveTriggerResponse(rsp *http.Response) (*UnarchiveTriggerResponse, error) {
+	bodyBytes, err := io.ReadAll(rsp.Body)
+	defer func() { _ = rsp.Body.Close() }()
+	if err != nil {
+		return nil, err
+	}
+
+	response := &UnarchiveTriggerResponse{
+		Body:         bodyBytes,
+		HTTPResponse: rsp,
+	}
+
+	switch {
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 200:
+		var dest UnarchiveResponse
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON200 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 400:
+		var dest StandardErrorResponse
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON400 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 401:
+		var dest StandardErrorResponse
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON401 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 403:
+		var dest StandardErrorResponse
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON403 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 404:
+		var dest StandardErrorResponse
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON404 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 409:
+		var dest StandardErrorResponse
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON409 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 500:
+		var dest StandardErrorResponse
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON500 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 503:
+		var dest StandardErrorResponse
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON503 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 504:
+		var dest StandardErrorResponse
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON504 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && true:
+		var dest StandardErrorResponse
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSONDefault = &dest
+
+	}
+
+	return response, nil
+}
+
+// ParseUnarchiveSpaceResponse parses an HTTP response from a UnarchiveSpaceWithResponse call
+func ParseUnarchiveSpaceResponse(rsp *http.Response) (*UnarchiveSpaceResponse, error) {
+	bodyBytes, err := io.ReadAll(rsp.Body)
+	defer func() { _ = rsp.Body.Close() }()
+	if err != nil {
+		return nil, err
+	}
+
+	response := &UnarchiveSpaceResponse{
+		Body:         bodyBytes,
+		HTTPResponse: rsp,
+	}
+
+	switch {
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 200:
+		var dest UnarchiveResponse
 		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
 			return nil, err
 		}
@@ -110875,6 +121134,95 @@ func ParseUpdateViewDocumentResponse(rsp *http.Response) (*UpdateViewDocumentRes
 	return response, nil
 }
 
+// ParseUnarchiveViewResponse parses an HTTP response from a UnarchiveViewWithResponse call
+func ParseUnarchiveViewResponse(rsp *http.Response) (*UnarchiveViewResponse, error) {
+	bodyBytes, err := io.ReadAll(rsp.Body)
+	defer func() { _ = rsp.Body.Close() }()
+	if err != nil {
+		return nil, err
+	}
+
+	response := &UnarchiveViewResponse{
+		Body:         bodyBytes,
+		HTTPResponse: rsp,
+	}
+
+	switch {
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 200:
+		var dest UnarchiveResponse
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON200 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 400:
+		var dest StandardErrorResponse
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON400 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 401:
+		var dest StandardErrorResponse
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON401 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 403:
+		var dest StandardErrorResponse
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON403 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 404:
+		var dest StandardErrorResponse
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON404 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 409:
+		var dest StandardErrorResponse
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON409 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 500:
+		var dest StandardErrorResponse
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON500 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 503:
+		var dest StandardErrorResponse
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON503 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 504:
+		var dest StandardErrorResponse
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON504 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && true:
+		var dest StandardErrorResponse
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSONDefault = &dest
+
+	}
+
+	return response, nil
+}
+
 // ParseBulkDeleteTagsResponse parses an HTTP response from a BulkDeleteTagsWithResponse call
 func ParseBulkDeleteTagsResponse(rsp *http.Response) (*BulkDeleteTagsResponse, error) {
 	bodyBytes, err := io.ReadAll(rsp.Body)
@@ -111395,6 +121743,115 @@ func ParseBulkMoveTagsResponse(rsp *http.Response) (*BulkMoveTagsResponse, error
 		}
 		response.JSONDefault = &dest
 
+	}
+
+	return response, nil
+}
+
+// ParseBulkUnarchiveTagsResponse parses an HTTP response from a BulkUnarchiveTagsWithResponse call
+func ParseBulkUnarchiveTagsResponse(rsp *http.Response) (*BulkUnarchiveTagsResponse, error) {
+	bodyBytes, err := io.ReadAll(rsp.Body)
+	defer func() { _ = rsp.Body.Close() }()
+	if err != nil {
+		return nil, err
+	}
+
+	response := &BulkUnarchiveTagsResponse{
+		Body:         bodyBytes,
+		HTTPResponse: rsp,
+	}
+
+	switch {
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 200:
+		var dest []UnarchiveResponse
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON200 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 207:
+		var dest []UnarchiveResponse
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON207 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 400:
+		var dest StandardErrorResponse
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON400 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 401:
+		var dest StandardErrorResponse
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON401 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 403:
+		var dest StandardErrorResponse
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON403 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 404:
+		var dest StandardErrorResponse
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON404 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 409:
+		var dest StandardErrorResponse
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON409 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 500:
+		var dest StandardErrorResponse
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON500 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 503:
+		var dest StandardErrorResponse
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON503 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 504:
+		var dest StandardErrorResponse
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON504 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && true:
+		var dest StandardErrorResponse
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSONDefault = &dest
+
+	}
+
+	switch {
+	case rsp.StatusCode == 200:
+		var headers BulkUnarchiveTagsResponse200Headers
+		if values := rsp.Header.Values("ConfigHub-Continue"); len(values) > 0 {
+			var value string
+			if err := runtime.BindStyledParameterWithOptions("simple", "ConfigHub-Continue", values[0], &value, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: false, Type: "string", Format: ""}); err != nil {
+				return nil, err
+			}
+			headers.ConfigHubContinue = &value
+		}
+		response.Headers200 = &headers
 	}
 
 	return response, nil
@@ -111939,6 +122396,115 @@ func ParseBulkMoveTargetsResponse(rsp *http.Response) (*BulkMoveTargetsResponse,
 	return response, nil
 }
 
+// ParseBulkUnarchiveTargetsResponse parses an HTTP response from a BulkUnarchiveTargetsWithResponse call
+func ParseBulkUnarchiveTargetsResponse(rsp *http.Response) (*BulkUnarchiveTargetsResponse, error) {
+	bodyBytes, err := io.ReadAll(rsp.Body)
+	defer func() { _ = rsp.Body.Close() }()
+	if err != nil {
+		return nil, err
+	}
+
+	response := &BulkUnarchiveTargetsResponse{
+		Body:         bodyBytes,
+		HTTPResponse: rsp,
+	}
+
+	switch {
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 200:
+		var dest []UnarchiveResponse
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON200 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 207:
+		var dest []UnarchiveResponse
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON207 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 400:
+		var dest StandardErrorResponse
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON400 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 401:
+		var dest StandardErrorResponse
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON401 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 403:
+		var dest StandardErrorResponse
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON403 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 404:
+		var dest StandardErrorResponse
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON404 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 409:
+		var dest StandardErrorResponse
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON409 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 500:
+		var dest StandardErrorResponse
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON500 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 503:
+		var dest StandardErrorResponse
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON503 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 504:
+		var dest StandardErrorResponse
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON504 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && true:
+		var dest StandardErrorResponse
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSONDefault = &dest
+
+	}
+
+	switch {
+	case rsp.StatusCode == 200:
+		var headers BulkUnarchiveTargetsResponse200Headers
+		if values := rsp.Header.Values("ConfigHub-Continue"); len(values) > 0 {
+			var value string
+			if err := runtime.BindStyledParameterWithOptions("simple", "ConfigHub-Continue", values[0], &value, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: false, Type: "string", Format: ""}); err != nil {
+				return nil, err
+			}
+			headers.ConfigHubContinue = &value
+		}
+		response.Headers200 = &headers
+	}
+
+	return response, nil
+}
+
 // ParseBulkDeleteTriggersResponse parses an HTTP response from a BulkDeleteTriggersWithResponse call
 func ParseBulkDeleteTriggersResponse(rsp *http.Response) (*BulkDeleteTriggersResponse, error) {
 	bodyBytes, err := io.ReadAll(rsp.Body)
@@ -112473,6 +123039,115 @@ func ParseBulkMoveTriggersResponse(rsp *http.Response) (*BulkMoveTriggersRespons
 		}
 		response.JSONDefault = &dest
 
+	}
+
+	return response, nil
+}
+
+// ParseBulkUnarchiveTriggersResponse parses an HTTP response from a BulkUnarchiveTriggersWithResponse call
+func ParseBulkUnarchiveTriggersResponse(rsp *http.Response) (*BulkUnarchiveTriggersResponse, error) {
+	bodyBytes, err := io.ReadAll(rsp.Body)
+	defer func() { _ = rsp.Body.Close() }()
+	if err != nil {
+		return nil, err
+	}
+
+	response := &BulkUnarchiveTriggersResponse{
+		Body:         bodyBytes,
+		HTTPResponse: rsp,
+	}
+
+	switch {
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 200:
+		var dest []UnarchiveResponse
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON200 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 207:
+		var dest []UnarchiveResponse
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON207 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 400:
+		var dest StandardErrorResponse
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON400 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 401:
+		var dest StandardErrorResponse
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON401 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 403:
+		var dest StandardErrorResponse
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON403 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 404:
+		var dest StandardErrorResponse
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON404 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 409:
+		var dest StandardErrorResponse
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON409 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 500:
+		var dest StandardErrorResponse
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON500 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 503:
+		var dest StandardErrorResponse
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON503 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 504:
+		var dest StandardErrorResponse
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON504 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && true:
+		var dest StandardErrorResponse
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSONDefault = &dest
+
+	}
+
+	switch {
+	case rsp.StatusCode == 200:
+		var headers BulkUnarchiveTriggersResponse200Headers
+		if values := rsp.Header.Values("ConfigHub-Continue"); len(values) > 0 {
+			var value string
+			if err := runtime.BindStyledParameterWithOptions("simple", "ConfigHub-Continue", values[0], &value, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: false, Type: "string", Format: ""}); err != nil {
+				return nil, err
+			}
+			headers.ConfigHubContinue = &value
+		}
+		response.Headers200 = &headers
 	}
 
 	return response, nil
@@ -113218,6 +123893,19 @@ func ParseBulkUnarchiveUnitsResponse(rsp *http.Response) (*BulkUnarchiveUnitsRes
 		}
 		response.JSONDefault = &dest
 
+	}
+
+	switch {
+	case rsp.StatusCode == 200:
+		var headers BulkUnarchiveUnitsResponse200Headers
+		if values := rsp.Header.Values("ConfigHub-Continue"); len(values) > 0 {
+			var value string
+			if err := runtime.BindStyledParameterWithOptions("simple", "ConfigHub-Continue", values[0], &value, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: false, Type: "string", Format: ""}); err != nil {
+				return nil, err
+			}
+			headers.ConfigHubContinue = &value
+		}
+		response.Headers200 = &headers
 	}
 
 	return response, nil
@@ -114417,6 +125105,115 @@ func ParseBulkMoveViewsResponse(rsp *http.Response) (*BulkMoveViewsResponse, err
 		}
 		response.JSONDefault = &dest
 
+	}
+
+	return response, nil
+}
+
+// ParseBulkUnarchiveViewsResponse parses an HTTP response from a BulkUnarchiveViewsWithResponse call
+func ParseBulkUnarchiveViewsResponse(rsp *http.Response) (*BulkUnarchiveViewsResponse, error) {
+	bodyBytes, err := io.ReadAll(rsp.Body)
+	defer func() { _ = rsp.Body.Close() }()
+	if err != nil {
+		return nil, err
+	}
+
+	response := &BulkUnarchiveViewsResponse{
+		Body:         bodyBytes,
+		HTTPResponse: rsp,
+	}
+
+	switch {
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 200:
+		var dest []UnarchiveResponse
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON200 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 207:
+		var dest []UnarchiveResponse
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON207 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 400:
+		var dest StandardErrorResponse
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON400 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 401:
+		var dest StandardErrorResponse
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON401 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 403:
+		var dest StandardErrorResponse
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON403 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 404:
+		var dest StandardErrorResponse
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON404 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 409:
+		var dest StandardErrorResponse
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON409 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 500:
+		var dest StandardErrorResponse
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON500 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 503:
+		var dest StandardErrorResponse
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON503 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 504:
+		var dest StandardErrorResponse
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON504 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && true:
+		var dest StandardErrorResponse
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSONDefault = &dest
+
+	}
+
+	switch {
+	case rsp.StatusCode == 200:
+		var headers BulkUnarchiveViewsResponse200Headers
+		if values := rsp.Header.Values("ConfigHub-Continue"); len(values) > 0 {
+			var value string
+			if err := runtime.BindStyledParameterWithOptions("simple", "ConfigHub-Continue", values[0], &value, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: false, Type: "string", Format: ""}); err != nil {
+				return nil, err
+			}
+			headers.ConfigHubContinue = &value
+		}
+		response.Headers200 = &headers
 	}
 
 	return response, nil

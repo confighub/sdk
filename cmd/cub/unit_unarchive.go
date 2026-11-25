@@ -85,28 +85,34 @@ func runBulkUnitUnarchive() error {
 	if responses == nil {
 		return fmt.Errorf("unexpected status code %d or no response data", res.StatusCode())
 	}
-	renderPayload(responses)
+	return displayBulkUnarchiveResults("unit", *responses)
+}
+
+// displayBulkUnarchiveResults reports a bulk unarchive: each entity that failed, and each that kept
+// the slug made from its ID, or every one with --verbose.
+func displayBulkUnarchiveResults(entityName string, responses []goclientnew.UnarchiveResponse) error {
+	renderPayload(&responses)
 	failed := 0
-	for _, response := range *responses {
+	for _, response := range responses {
 		if response.Error != nil {
 			failed++
 			if !quiet && !isAlternativeOutput() {
-				displayBulkFailure("unarchive", "unit", response.Error)
+				displayBulkFailure("unarchive", entityName, response.Error)
 			}
 			continue
 		}
 		if !quiet && !isAlternativeOutput() && (verbose || response.KeptSlug != "") {
-			fmt.Printf("Successfully unarchived unit: %s%s\n", response.Message, keptSlugNote(response))
+			fmt.Printf("Successfully unarchived %s: %s%s\n", entityName, response.Message, keptSlugNote(response))
 		}
 	}
 	if !quiet && !isAlternativeOutput() {
-		fmt.Printf("\nBulk unarchive operation completed:\n  Success: %d unit(s)\n", len(*responses)-failed)
+		fmt.Printf("\nBulk unarchive operation completed:\n  Success: %d %s(s)\n", len(responses)-failed, entityName)
 		if failed > 0 {
-			fmt.Printf("  Failed: %d unit(s)\n", failed)
+			fmt.Printf("  Failed: %d %s(s)\n", failed, entityName)
 		}
 	}
 	if failed > 0 {
-		return fmt.Errorf("bulk unarchive partially failed: %d succeeded, %d failed", len(*responses)-failed, failed)
+		return fmt.Errorf("bulk unarchive partially failed: %d succeeded, %d failed", len(responses)-failed, failed)
 	}
 	return nil
 }

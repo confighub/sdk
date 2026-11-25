@@ -16,6 +16,11 @@ var attributeDeleteCmd = &cobra.Command{
 	Short: "Delete an attribute or multiple attributes",
 	Long: getCommandHelp(`Delete an attribute or multiple attributes using bulk operations.
 
+--archive keeps the attribute rather than deleting it: it stays, hidden with the reason Archived and
+named by a slug made from its ID, with its backing unit archived with it, until it is unarchived
+with cub attribute unarchive. No space uses it while it is archived. Delete an archived attribute to
+delete it for good.
+
 Single attribute delete:
 `+"```"+`
   cub attribute delete my-attr
@@ -48,6 +53,7 @@ var (
 
 func init() {
 	addStandardDeleteFlags(attributeDeleteCmd)
+	addArchiveFlag(attributeDeleteCmd)
 	addPruneFlag(attributeDeleteCmd, "Attribute")
 	enableWhereFlag(attributeDeleteCmd)
 	enableFilterFlag(attributeDeleteCmd)
@@ -101,6 +107,7 @@ func runBulkAttributeDelete() error {
 	}
 	params.IncludeHidden = includeHiddenParam()
 	params.FromBackingUnits = fromBackingUnitsParam()
+	params.Archive = archiveParam()
 	if filterID != "" {
 		params.Filter = &filterID
 	}
@@ -124,12 +131,13 @@ func attributeDeleteCmdRun(cmd *cobra.Command, args []string) error {
 	if err != nil {
 		return err
 	}
-	deleteRes, err := cubClientNew.DeleteAttributeWithResponse(ctx, attrDetails.Attribute.SpaceID, attrDetails.Attribute.AttributeID)
+	deleteRes, err := cubClientNew.DeleteAttributeWithResponse(ctx, attrDetails.Attribute.SpaceID, attrDetails.Attribute.AttributeID,
+		&goclientnew.DeleteAttributeParams{Archive: archiveParam()})
 	if cubapi.IsAPIError(err, deleteRes) {
 		return cubapi.InterpretErrorGeneric(err, deleteRes)
 	}
 
-	displayDeleteResults("attribute", args[0], attrDetails.Attribute.AttributeID.String(), deleteRes)
+	displayDeleteOrArchiveResults("attribute", args[0], attrDetails.Attribute.AttributeID.String(), deleteRes)
 	return nil
 }
 

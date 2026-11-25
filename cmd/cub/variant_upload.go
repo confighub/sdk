@@ -796,19 +796,30 @@ func confirmUploadEmpties(preview *goclientnew.UploadResult, usedStdin bool) err
 			}
 		}
 	}
+	// The bundle arrived on stdin, so there is no console left to ask on.
+	noConsole := ""
+	if usedStdin {
+		noConsole = "the bundle was read from stdin, so there is no input left to confirm on"
+	}
+	return confirmEmpties(emptied, "the bundle", noConsole)
+}
+
+// confirmEmpties lists the Units an upload would empty, as what no longer has
+// their resources, and asks before going ahead. noConsole, when set, says why
+// there is no one to ask, and refuses.
+func confirmEmpties(emptied []string, what, noConsole string) error {
 	if len(emptied) == 0 {
 		return nil
 	}
 
-	tprint("This upload empties %d Unit(s) whose resources are no longer in the bundle:", len(emptied))
+	tprint("This upload empties %d Unit(s) whose resources are no longer in %s:", len(emptied), what)
 	for _, slug := range emptied {
 		tprint("  - %s", slug)
 	}
 	tprint("Their resources are withdrawn from the cluster by the next Release. Nothing is deleted.")
 
-	// The bundle arrived on stdin, so there is no console left to ask on.
-	if usedStdin {
-		return fmt.Errorf("refusing to empty %d Unit(s): the bundle was read from stdin, so there is no input left to confirm on; pass --yes", len(emptied))
+	if noConsole != "" {
+		return fmt.Errorf("refusing to empty %d Unit(s): %s; pass --yes", len(emptied), noConsole)
 	}
 	tprint("")
 	fmt.Print("Continue? [y/N]: ")

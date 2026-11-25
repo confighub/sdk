@@ -22,12 +22,22 @@ those first, with their units, in one request, so that a deployment and the base
 cloned from go together; a unit with a delete gate still stops it unless --force is given,
 and a reference from outside the component stops it unless --detach is given.
 
+--archive keeps the component rather than deleting it: it stays, hidden with the reason
+Archived and named by a slug made from its ID, with its backing unit archived with it,
+until it is unarchived with cub component unarchive. With --recursive, its variants are
+archived first, recursively, as cub space delete --recursive --archive archives a space;
+without it, a component that live spaces name is not archived.
+
 Examples:
 `+"```"+`
   cub component delete my-app
 
   # Delete a component together with every one of its variants
   cub component delete --recursive my-app
+
+  # Archive a component and its variants, and unarchive them
+  cub component delete --recursive --archive my-app
+  cub component unarchive --recursive id5f0c1d2e-0a4b-4c3d-9e8f-7a6b5c4d3e2f
 
   # Delete the components whose backing Units are empty, keeping the Units
   cub component delete --from-backing-units --where "Labels.team = 'platform'"
@@ -50,6 +60,7 @@ func init() {
 	componentDeleteCmd.Flags().BoolVar(&componentDeleteArgs.force, "force", false,
 		"with --recursive, delete the variants' units even if some have delete gates")
 	addDetachFlag(componentDeleteCmd)
+	addArchiveFlag(componentDeleteCmd)
 	componentCmd.AddCommand(componentDeleteCmd)
 }
 
@@ -68,8 +79,12 @@ func deleteComponentVariants(componentSlug string, componentID goclientnew.UUID)
 		return nil
 	}
 	if !quiet {
+		verb := "Deleting"
+		if deleteArchive {
+			verb = "Archiving"
+		}
 		for _, name := range variantNames(spaces) {
-			tprintRaw("Deleting variant " + componentSlug + "/" + name + "...")
+			tprintRaw(verb + " variant " + componentSlug + "/" + name + "...")
 		}
 	}
 	whereClause := "ComponentID = '" + componentID.String() + "'"
@@ -84,6 +99,7 @@ func deleteComponentVariants(componentSlug string, componentID goclientnew.UUID)
 		params.RecursiveForce = &recursiveParam
 	}
 	params.Detach = detachParam()
+	params.Archive = archiveParam()
 	bulkRes, err := cubClientNew.BulkDeleteSpacesWithResponse(ctx, params)
 	if cubapi.IsAPIError(err, bulkRes) {
 		return cubapi.InterpretErrorGeneric(err, bulkRes)
@@ -95,6 +111,7 @@ func runBulkComponentDelete() error {
 	params := &goclientnew.BulkDeleteComponentsParams{Where: &where}
 	params.IncludeHidden = includeHiddenParam()
 	params.FromBackingUnits = fromBackingUnitsParam()
+	params.Archive = archiveParam()
 	bulkRes, err := cubClientNew.BulkDeleteComponentsWithResponse(ctx, params)
 	if cubapi.IsAPIError(err, bulkRes) {
 		return cubapi.InterpretErrorGeneric(err, bulkRes)
@@ -122,10 +139,11 @@ func componentDeleteCmdRun(cmd *cobra.Command, args []string) error {
 			return err
 		}
 	}
-	deleteRes, err := cubClientNew.DeleteComponentWithResponse(ctx, componentID)
+	deleteRes, err := cubClientNew.DeleteComponentWithResponse(ctx, componentID,
+		&goclientnew.DeleteComponentParams{Archive: archiveParam()})
 	if cubapi.IsAPIError(err, deleteRes) {
 		return cubapi.InterpretErrorGeneric(err, deleteRes)
 	}
-	displayDeleteResults("component", args[0], componentID.String(), deleteRes)
+	displayDeleteOrArchiveResults("component", args[0], componentID.String(), deleteRes)
 	return nil
 }

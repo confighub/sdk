@@ -129,6 +129,9 @@ func deleteOperationName() string {
 	if backingUnitArgs.fromBackingUnits {
 		return "prune"
 	}
+	if deleteArchive {
+		return "archive"
+	}
 	return "delete"
 }
 

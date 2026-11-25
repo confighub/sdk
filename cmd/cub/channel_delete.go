@@ -17,6 +17,11 @@ var channelDeleteCmd = &cobra.Command{
 	Args:  cobra.MaximumNArgs(1),
 	Long: getCommandHelp(`Delete a Channel, with its command runs. With no name, delete every channel --where selects.
 
+--archive keeps the channel rather than deleting it: it stays, hidden with the reason Archived and
+named by a slug made from its ID, with its backing unit archived with it, until it is unarchived
+with cub channel unarchive. No one can claim it or run a command on it while it is archived, and it
+is refused while a command run on it is in flight. Delete an archived channel to delete it for good.
+
 A Channel with a run still in flight is not deleted: cancel its Pending runs with
 `+"`cub commandrun cancel`"+`, and wait for its Delivered runs to complete or time out.
 
@@ -35,6 +40,7 @@ Examples:
 
 func init() {
 	addStandardDeleteFlags(channelDeleteCmd)
+	addArchiveFlag(channelDeleteCmd)
 	enableOptionalSpace(channelDeleteCmd)
 	enableWhereFlag(channelDeleteCmd)
 	channelCmd.AddCommand(channelDeleteCmd)
@@ -47,6 +53,7 @@ func channelDeleteCmdRun(_ *cobra.Command, args []string) error {
 		}
 		params := &goclientnew.BulkDeleteChannelsParams{Where: &where}
 		params.IncludeHidden = includeHiddenParam()
+		params.Archive = archiveParam()
 		bulkRes, err := cubClientNew.BulkDeleteChannelsWithResponse(ctx, params)
 		if cubapi.IsAPIError(err, bulkRes) {
 			return cubapi.InterpretErrorGeneric(err, bulkRes)
@@ -60,10 +67,11 @@ func channelDeleteCmdRun(_ *cobra.Command, args []string) error {
 	if err != nil {
 		return err
 	}
-	deleteRes, err := cubClientNew.DeleteChannelWithResponse(ctx, channel.Channel.SpaceID, channel.Channel.ChannelID)
+	deleteRes, err := cubClientNew.DeleteChannelWithResponse(ctx, channel.Channel.SpaceID, channel.Channel.ChannelID,
+		&goclientnew.DeleteChannelParams{Archive: archiveParam()})
 	if cubapi.IsAPIError(err, deleteRes) {
 		return cubapi.InterpretErrorGeneric(err, deleteRes)
 	}
-	displayDeleteResults("channel", args[0], channel.Channel.ChannelID.String(), deleteRes)
+	displayDeleteOrArchiveResults("channel", args[0], channel.Channel.ChannelID.String(), deleteRes)
 	return nil
 }

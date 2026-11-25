@@ -445,17 +445,11 @@ func clusterAttachRun(out io.Writer, opts clusterAttachOptions) (err error) {
 		return err
 	}
 	var k8sbotRepository string
-	var k8sbotInstaller *PluginCommand
 	if !opts.noK8sbot {
 		if k8sbotRepository, err = clusterK8sbotRepository(opts.registry); err != nil {
 			return err
 		}
-		if opts.k8sbotInstaller {
-			if k8sbotInstaller, err = clusterFindInstaller(); err != nil {
-				return err
-			}
-		}
-		if err := clusterK8sbotCheckBaseKind(opts.controller, k8sbotInstaller != nil); err != nil {
+		if err := clusterK8sbotCheckBaseKind(opts.controller, opts.k8sbotInstaller); err != nil {
 			return err
 		}
 		mode, err := clusterChooseK8sbotBase(out, opts.controller, opts.k8sbotBase)
@@ -530,7 +524,7 @@ func clusterAttachRun(out io.Writer, opts clusterAttachOptions) (err error) {
 				targetID:         inst.targetID,
 				k8sbotBase:       opts.k8sbotBase,
 				k8sbotRepository: k8sbotRepository,
-				k8sbotInstaller:  k8sbotInstaller,
+				k8sbotInstaller:  opts.k8sbotInstaller,
 				secretsDir:       secretsDir,
 			}, addRollback)
 		}

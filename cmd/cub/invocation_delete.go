@@ -16,6 +16,11 @@ var invocationDeleteCmd = &cobra.Command{
 	Short: "Delete an invocation or multiple invocations",
 	Long: getCommandHelp(`Delete an invocation or multiple invocations using bulk operations.
 
+--archive keeps the invocation rather than deleting it: it stays, hidden with the reason Archived
+and named by a slug made from its ID, with its backing unit archived with it, until it is unarchived
+with cub invocation unarchive. It is refused while a live trigger, link or change order runs it.
+Delete an archived invocation to delete it for good.
+
 Single invocation delete:
 `+"```"+`
   cub invocation delete my-invocation
@@ -51,6 +56,7 @@ var (
 
 func init() {
 	addStandardDeleteFlags(invocationDeleteCmd)
+	addArchiveFlag(invocationDeleteCmd)
 	addPruneFlag(invocationDeleteCmd, "Invocation")
 	enableWhereFlag(invocationDeleteCmd)
 	enableFilterFlag(invocationDeleteCmd)
@@ -112,6 +118,7 @@ func runBulkInvocationDelete() error {
 	}
 	params.IncludeHidden = includeHiddenParam()
 	params.FromBackingUnits = fromBackingUnitsParam()
+	params.Archive = archiveParam()
 	if filterID != "" {
 		params.Filter = &filterID
 	}
@@ -138,12 +145,13 @@ func invocationDeleteCmdRun(cmd *cobra.Command, args []string) error {
 	if err != nil {
 		return err
 	}
-	deleteRes, err := cubClientNew.DeleteInvocationWithResponse(ctx, invocationDetails.Invocation.SpaceID, invocationDetails.Invocation.InvocationID)
+	deleteRes, err := cubClientNew.DeleteInvocationWithResponse(ctx, invocationDetails.Invocation.SpaceID, invocationDetails.Invocation.InvocationID,
+		&goclientnew.DeleteInvocationParams{Archive: archiveParam()})
 	if cubapi.IsAPIError(err, deleteRes) {
 		return cubapi.InterpretErrorGeneric(err, deleteRes)
 	}
 
-	displayDeleteResults("invocation", args[0], invocationDetails.Invocation.InvocationID.String(), deleteRes)
+	displayDeleteOrArchiveResults("invocation", args[0], invocationDetails.Invocation.InvocationID.String(), deleteRes)
 	return nil
 }
 

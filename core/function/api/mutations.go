@@ -93,7 +93,7 @@ type MutationInfo struct {
 	// locally, and is deprecated and no longer read there: a local override is an Override
 	// guard, on the Unit's PathAnnotations. Values stored before that are kept as they were.
 	Protected bool   `json:",omitempty" description:"In the protection argument of the patch-mutations and reset functions, that the operation must leave the path alone. On a Unit's stored MutationSources, deprecated and no longer read: a local override a merge must not overwrite is an Override guard, in the Unit's PathAnnotations. True on paths stored as local overrides before that"`
-	Value     string `description:"Removed configuration data if MutationType is Delete and otherwise the new data"`
+	Value     string `description:"Removed configuration data if MutationType is Delete and otherwise the new data. Empty on the resource-level entry of a Unit's or Revision's stored MutationSources, which records which Mutation added, replaced or deleted a resource but not its body: read the body from the data of that Mutation's Revision, or of the Revision before it for a Delete"`
 	Patch     string `json:",omitempty" description:"Line-level patch for multi-line string updates, in unified diff format. When present on an Update, PatchMutations applies this to the target value instead of replacing with Value. Falls back to Value if the patch cannot be applied cleanly."`
 }
 

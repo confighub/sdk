@@ -43,7 +43,7 @@ the body, which carries the server's error.`,
 
   # A PATCH, which takes a JSON merge patch rather than JSON
   echo '{}' | cub api PATCH unit --content-type application/merge-patch+json --data - \
-    --query "where=SpaceID = '$SPACE_ID'" --query upgrade=true --query dry_run=true`,
+    --query "where=SpaceID = '$SPACE_ID' AND UpstreamUnitID IS NOT NULL" --query upgrade=true --query dry_run=true`,
 	Args: cobra.ExactArgs(2),
 	RunE: apiCmdRun,
 }

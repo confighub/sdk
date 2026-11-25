@@ -92,12 +92,6 @@ func clusterK8sbotInstallRun(out io.Writer, name, k8sbotBase, registry string, w
 	if err != nil {
 		return err
 	}
-	var installer *PluginCommand
-	if withInstaller {
-		if installer, err = clusterFindInstaller(); err != nil {
-			return err
-		}
-	}
 	if _, err := exec.LookPath("kubectl"); err != nil {
 		return fmt.Errorf("kubectl not found on PATH")
 	}
@@ -143,7 +137,7 @@ func clusterK8sbotInstallRun(out io.Writer, name, k8sbotBase, registry string, w
 	if err != nil {
 		return fmt.Errorf("cluster space %q: find its OCI target %q: %w", space.SpaceSlug, clusterTargetSlug, err)
 	}
-	if err := clusterK8sbotCheckBaseKind(space.Controller, installer != nil); err != nil {
+	if err := clusterK8sbotCheckBaseKind(space.Controller, withInstaller); err != nil {
 		return err
 	}
 	mode, err := clusterChooseK8sbotBase(out, space.Controller, k8sbotBase)
@@ -163,7 +157,7 @@ func clusterK8sbotInstallRun(out io.Writer, name, k8sbotBase, registry string, w
 		targetID:         target.TargetID,
 		k8sbotBase:       mode,
 		k8sbotRepository: repository,
-		k8sbotInstaller:  installer,
+		k8sbotInstaller:  withInstaller,
 		standalone:       true,
 		secretsDir:       clusterSecretsDirFor(secretsDirFlag, name),
 	}, rollback.add); err != nil {

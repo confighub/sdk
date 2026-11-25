@@ -16,6 +16,11 @@ var targetDeleteCmd = &cobra.Command{
 	Short: "Delete a target or multiple targets",
 	Long: getCommandHelp(`Delete a target or multiple targets using bulk operations.
 
+--archive keeps the target rather than deleting it: it stays, hidden with the reason Archived and
+named by a slug made from its ID, with its backing unit archived with it, until it is unarchived
+with cub target unarchive. It is refused while a space releases to it, unless --detach clears that,
+and while a channel subscribes to it. Delete an archived target to delete it for good.
+
 Single target delete:
 `+"```"+`
   cub target delete my-target
@@ -54,6 +59,7 @@ var (
 
 func init() {
 	addStandardDeleteFlags(targetDeleteCmd)
+	addArchiveFlag(targetDeleteCmd)
 	addPruneFlag(targetDeleteCmd, "Target")
 	enableWhereFlag(targetDeleteCmd)
 	enableFilterFlag(targetDeleteCmd)
@@ -120,6 +126,7 @@ func runBulkTargetDelete() error {
 	}
 	params.IncludeHidden = includeHiddenParam()
 	params.FromBackingUnits = fromBackingUnitsParam()
+	params.Archive = archiveParam()
 	if filterID != "" {
 		params.Filter = &filterID
 	}
@@ -149,11 +156,11 @@ func targetDeleteCmdRun(cmd *cobra.Command, args []string) error {
 	}
 
 	deleteRes, err := cubClientNew.DeleteTargetWithResponse(ctx, targetDetails.Target.SpaceID, targetDetails.Target.TargetID,
-		&goclientnew.DeleteTargetParams{Detach: detachParam()})
+		&goclientnew.DeleteTargetParams{Detach: detachParam(), Archive: archiveParam()})
 	if cubapi.IsAPIError(err, deleteRes) {
 		return cubapi.InterpretErrorGeneric(err, deleteRes)
 	}
-	displayDeleteResults("target", args[0], targetDetails.Target.TargetID.String(), deleteRes)
+	displayDeleteOrArchiveResults("target", args[0], targetDetails.Target.TargetID.String(), deleteRes)
 	return nil
 }
 

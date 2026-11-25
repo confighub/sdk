@@ -16,6 +16,12 @@ var tagDeleteCmd = &cobra.Command{
 	Short: "Delete a tag or multiple tags",
 	Long: getCommandHelp(`Delete a tag or multiple tags using bulk operations.
 
+--archive keeps the tag rather than deleting it: it stays, hidden with the reason Archived and named
+by a slug made from its ID, until it is unarchived with cub tag unarchive. The marks it left on
+revisions stay. It is refused, as a delete is, while a change set or change order names it; a tag a
+change set, change order or release made is archived with its owner. Delete an archived tag to
+delete it for good.
+
 Single tag delete:
 `+"```"+`
   cub tag delete my-tag
@@ -62,6 +68,7 @@ func init() {
 	enableFilterFlag(tagDeleteCmd)
 	tagDeleteCmd.Flags().StringSliceVar(&tagDeleteIdentifiers, "tag", []string{}, "target specific tags by slug or UUID for bulk delete (can be repeated or comma-separated)")
 	addDetachFlag(tagDeleteCmd)
+	addArchiveFlag(tagDeleteCmd)
 	tagCmd.AddCommand(tagDeleteCmd)
 }
 
@@ -122,6 +129,7 @@ func runBulkTagDelete() error {
 		params.Filter = &filterID
 	}
 	params.Detach = detachParam()
+	params.Archive = archiveParam()
 
 	// Call the bulk delete API
 	bulkRes, err := cubClientNew.BulkDeleteTagsWithResponse(ctx, params)
@@ -146,12 +154,12 @@ func tagDeleteCmdRun(cmd *cobra.Command, args []string) error {
 		return err
 	}
 	deleteRes, err := cubClientNew.DeleteTagWithResponse(ctx, tagDetails.Tag.SpaceID, tagDetails.Tag.TagID,
-		&goclientnew.DeleteTagParams{Detach: detachParam()})
+		&goclientnew.DeleteTagParams{Detach: detachParam(), Archive: archiveParam()})
 	if cubapi.IsAPIError(err, deleteRes) {
 		return cubapi.InterpretErrorGeneric(err, deleteRes)
 	}
 
-	displayDeleteResults("tag", args[0], tagDetails.Tag.TagID.String(), deleteRes)
+	displayDeleteOrArchiveResults("tag", args[0], tagDetails.Tag.TagID.String(), deleteRes)
 	return nil
 }
 

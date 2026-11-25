@@ -239,11 +239,6 @@ func clusterUpRun(out io.Writer, opts clusterUpOptions) error {
 		if _, err := clusterK8sbotRepository(opts.registry); err != nil {
 			return err
 		}
-		if opts.k8sbotInstaller {
-			if _, err := clusterFindInstaller(); err != nil {
-				return err
-			}
-		}
 		if err := clusterK8sbotCheckBaseKind(opts.controller, opts.k8sbotInstaller); err != nil {
 			return err
 		}

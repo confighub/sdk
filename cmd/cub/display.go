@@ -612,6 +612,15 @@ func displayArchiveResults(entityName, slug, id string, response any) {
 	renderPayload(response)
 }
 
+// displayDeleteOrArchiveResults reports a single delete, or with --archive, an archive.
+func displayDeleteOrArchiveResults(entityName, slug, id string, response any) {
+	if deleteArchive {
+		displayArchiveResults(entityName, slug, id, response)
+		return
+	}
+	displayDeleteResults(entityName, slug, id, response)
+}
+
 // displayBulkDeleteResults handles the display of bulk delete operation results
 func displayBulkDeleteResults(responses200 *[]goclientnew.DeleteResponse, responses207 *[]goclientnew.DeleteResponse, statusCode int, entityName, operationName, contextInfo string) error {
 	var responses *[]goclientnew.DeleteResponse

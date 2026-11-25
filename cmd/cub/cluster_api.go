@@ -7,7 +7,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"maps"
-	"net/http"
+	"slices"
 	"strings"
 	"time"
 
@@ -685,40 +685,50 @@ func clusterWaitUnitTriggers(spaceID, unitID uuid.UUID) error {
 // at /space/<slug> with tag "latest".
 //
 // A Space several commands publish, such as a cluster's apps Space, can hold a
-// Unit another command created a moment ago, whose Triggers are still being
-// evaluated. The server refuses to release it, so the publish is tried again
-// while any Unit of the Space is awaiting its Triggers.
+// Unit another command created a moment ago, whose Triggers have yet to reach a
+// verdict. The server waits for them, for a while, and then refuses to release
+// it, naming the awaiting/triggers gate; a server that does not wait refuses at
+// once. So the publish is tried again while the refusal names that gate. Only the
+// refusal can say so: Triggers settle in well under a second, so a read of the
+// Space after the refusal often finds nothing awaiting, and the refusal would
+// be taken for a verdict.
 func clusterPublishRelease(spaceID uuid.UUID) error {
-	publish := func() (int, error) {
+	publish := func() (bool, error) {
 		res, err := cubClientNew.PublishReleaseWithResponse(ctx, spaceID, goclientnew.PublishReleaseJSONRequestBody{})
 		if cubapi.IsAPIError(err, res) {
-			status := 0
-			if res != nil {
-				status = res.StatusCode()
-			}
-			return status, cubapi.InterpretErrorGeneric(err, res)
+			return err == nil && res.JSON422 != nil && refusalAwaitsTriggers(res.JSON422.Error),
+				cubapi.InterpretErrorGeneric(err, res)
 		}
-		return http.StatusOK, nil
+		return false, nil
 	}
-	awaiting := func() (bool, error) {
-		units, err := apiListUnits(spaceID.String(), "ValidationErrors.awaiting/triggers = true", "UnitID")
-		return len(units) > 0, err
-	}
-	return clusterPublishOnceTriggersSettle(publish, awaiting, 30*time.Second, time.Second)
+	return clusterPublishOnceTriggersSettle(publish, 30*time.Second, time.Second)
 }
 
-// clusterPublishOnceTriggersSettle calls publish, which returns the response's
-// status, until it succeeds, fails with anything but 422, or fails with no Unit
-// awaiting its Triggers: that refusal is a verdict, and is returned. It gives up
-// after timeout and returns the last refusal.
-func clusterPublishOnceTriggersSettle(publish func() (int, error), awaiting func() (bool, error), timeout, interval time.Duration) error {
+// refusalAwaitsTriggers reports whether a publish was refused over a Unit whose
+// Triggers have yet to reach a verdict: the refusal's Validation Errors item
+// lists the awaiting/triggers gate. Any other gate it lists may be one those
+// Triggers are about to clear, so the refusal is not yet a verdict either way.
+func refusalAwaitsTriggers(refusal *goclientnew.ResponseError) bool {
+	if refusal == nil || refusal.ErrorMetadata == nil {
+		return false
+	}
+	for _, item := range refusal.ErrorMetadata.Items {
+		if item.Item == "Validation Errors" && slices.Contains(strings.Split(item.Description, ","), "awaiting/triggers") {
+			return true
+		}
+	}
+	return false
+}
+
+// clusterPublishOnceTriggersSettle calls publish until it succeeds or fails with
+// a refusal that is not waiting on Triggers, which it returns. publish reports
+// whether its refusal was waiting on Triggers. It gives up after timeout and
+// returns the last refusal.
+func clusterPublishOnceTriggersSettle(publish func() (bool, error), timeout, interval time.Duration) error {
 	deadline := time.Now().Add(timeout)
 	for {
-		status, err := publish()
-		if err == nil || status != http.StatusUnprocessableEntity || time.Now().After(deadline) {
-			return err
-		}
-		if pending, listErr := awaiting(); listErr != nil || !pending {
+		awaitingTriggers, err := publish()
+		if err == nil || !awaitingTriggers || time.Now().After(deadline) {
 			return err
 		}
 		select {
