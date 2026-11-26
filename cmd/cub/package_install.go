@@ -85,10 +85,10 @@ Secrets; then the directory is kept and named.`,
   cub package install k8sbot --space k8sbot-base --select argocd --namespace confighubbot
 
   # Upgrade it to a given version, keeping its answers.
-  cub package install k8sbot:0.1.7 --space k8sbot-base
+  cub package install k8sbot:v0.2.13 --space k8sbot-base
 
   # Install a package from another registry, answering an input.
-  cub package install oci://ghcr.io/example/packages/app:1.2.0 --space app \
+  cub package install oci://ghcr.io/example/packages/app:v1.2.0 --space app \
     --namespace app --input replicas=3`,
 	Args: cobra.ExactArgs(1),
 	RunE: packageInstallCmdRun,

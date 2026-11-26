@@ -234,7 +234,7 @@ given. Installing again re-enters the Space's earlier install, so it upgrades:
 
 ```
 cub package install k8sbot --space k8sbot-base --select argocd --namespace confighubbot
-cub package install k8sbot:0.2.12 --space k8sbot-base
+cub package install k8sbot:v0.2.13 --space k8sbot-base
 ```
 
 Each install keeps an installer record in its Space. List the installs in the organization, or show
