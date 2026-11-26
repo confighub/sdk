@@ -97,12 +97,6 @@ func clearanceJSON(merge bool) (string, error) {
 	return string(encoded), nil
 }
 
-// addPersistentClearanceFlag is addClearanceFlag for a command whose subcommands all write
-// configuration data.
-func addPersistentClearanceFlag(cmd *cobra.Command) {
-	cmd.PersistentFlags().StringArrayVar(&changeClearance, "clearance", nil, clearanceFlagUsage+clearanceDefaultUsage)
-}
-
 // triggerClearance holds the --clearance flag on trigger create and update. Separate from
 // changeClearance because a Trigger's clearance is stored on the Trigger and applies to every
 // run of it, where the others describe one operation.

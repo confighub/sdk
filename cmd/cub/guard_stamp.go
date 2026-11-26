@@ -88,12 +88,6 @@ func addGuardFlag(cmd *cobra.Command) {
 	cmd.Flags().StringArrayVar(&changeGuards, "guard", nil, guardFlagUsage)
 }
 
-// addPersistentGuardFlag is addGuardFlag for a command whose subcommands all write configuration
-// data.
-func addPersistentGuardFlag(cmd *cobra.Command) {
-	cmd.PersistentFlags().StringArrayVar(&changeGuards, "guard", nil, guardFlagUsage)
-}
-
 const inheritedGuardFlagUsage = "inherited guard to record on the paths this change writes, as KEY=VALUE (repeatable): unlike --guard, a clone of the unit receives it and a merge carries it to the units downstream. --clearance has to cover it, as it covers --guard, and a key may not be given to both"
 
 // changeInheritedGuards holds --inherited-guard, the --guard of guards that travel downstream.
@@ -103,12 +97,6 @@ var changeInheritedGuards []string
 // through the update or invoke APIs, which are the ones that take it.
 func addInheritedGuardFlag(cmd *cobra.Command) {
 	cmd.Flags().StringArrayVar(&changeInheritedGuards, "inherited-guard", nil, inheritedGuardFlagUsage)
-}
-
-// addPersistentInheritedGuardFlag is addInheritedGuardFlag for a command whose subcommands all
-// write configuration data.
-func addPersistentInheritedGuardFlag(cmd *cobra.Command) {
-	cmd.PersistentFlags().StringArrayVar(&changeInheritedGuards, "inherited-guard", nil, inheritedGuardFlagUsage)
 }
 
 // inheritedGuardsJSON is guardsJSON for --inherited-guard.

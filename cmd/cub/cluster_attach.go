@@ -39,7 +39,6 @@ var clusterAttachArgs struct {
 	noK8sbot          bool
 	k8sbotBase        string
 	registry          string
-	k8sbotInstaller   bool
 	noPlaceholderGate bool
 	prune             bool
 	secretsDir        string
@@ -279,7 +278,7 @@ func init() {
 	clusterAttachCmd.Flags().BoolVar(&clusterAttachArgs.noK8sbot, "no-k8sbot", false, "skip installing k8sbot (the event-driven Argo CD sync, Sveltos redeploy, or Flux reconciliation, bot); 'cub cluster k8sbot-install' installs it later")
 	clusterAttachCmd.Flags().StringVar(&clusterAttachArgs.k8sbotBase, "k8sbot-base", "", clusterK8sbotBaseFlagUsage)
 	clusterAttachCmd.Flags().StringVar(&clusterAttachArgs.registry, "registry", "", clusterRegistryFlagUsage)
-	clusterAttachCmd.Flags().BoolVar(&clusterAttachArgs.k8sbotInstaller, "k8sbot-installer", false, clusterK8sbotInstallerFlagUsage)
+	clusterAddK8sbotInstallerFlag(clusterAttachCmd)
 	clusterAttachCmd.Flags().BoolVar(&clusterAttachArgs.noPlaceholderGate, "no-placeholder-gate", false, "skip the default vet-placeholders Trigger, allowing Releases with unfilled confighubplaceholder values to be published to this cluster")
 	clusterAttachCmd.Flags().StringVar(&clusterAttachArgs.secretsDir, "secrets-dir", "", clusterSecretsDirFlagUsage)
 	clusterAttachCmd.Flags().BoolVar(&clusterAttachArgs.existingSecrets, "existing-secrets", false, "use the service account argo-<name> and the credentials Secrets a secret store keeps in the cluster, checking each, instead of creating the service account and applying new credentials")
@@ -305,7 +304,6 @@ type clusterAttachOptions struct {
 	noK8sbot          bool
 	k8sbotBase        string
 	registry          string
-	k8sbotInstaller   bool
 	noPlaceholderGate bool
 	prune             bool
 	// secretsDir is --secrets-dir as given; clusterSecretsDirFor makes the
@@ -346,7 +344,6 @@ func clusterAttachCmdRun(cmd *cobra.Command, args []string) error {
 		noK8sbot:          clusterAttachArgs.noK8sbot,
 		k8sbotBase:        clusterAttachArgs.k8sbotBase,
 		registry:          clusterAttachArgs.registry,
-		k8sbotInstaller:   clusterAttachArgs.k8sbotInstaller,
 		noPlaceholderGate: clusterAttachArgs.noPlaceholderGate,
 		prune:             clusterAttachArgs.prune,
 		secretsDir:        clusterAttachArgs.secretsDir,
@@ -449,7 +446,7 @@ func clusterAttachRun(out io.Writer, opts clusterAttachOptions) (err error) {
 		if k8sbotRepository, err = clusterK8sbotRepository(opts.registry); err != nil {
 			return err
 		}
-		if err := clusterK8sbotCheckBaseKind(opts.controller, opts.k8sbotInstaller); err != nil {
+		if err := clusterK8sbotCheckBaseKind(opts.controller); err != nil {
 			return err
 		}
 		mode, err := clusterChooseK8sbotBase(out, opts.controller, opts.k8sbotBase)
@@ -524,7 +521,6 @@ func clusterAttachRun(out io.Writer, opts clusterAttachOptions) (err error) {
 				targetID:         inst.targetID,
 				k8sbotBase:       opts.k8sbotBase,
 				k8sbotRepository: k8sbotRepository,
-				k8sbotInstaller:  opts.k8sbotInstaller,
 				secretsDir:       secretsDir,
 			}, addRollback)
 		}

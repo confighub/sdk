@@ -182,10 +182,6 @@ func saveFunctions(functions functionsByEntity) error {
 	return os.WriteFile(path, functionSpec, 0644)
 }
 
-func removeFunctions() error {
-	return os.Remove(functionSpecFilePath())
-}
-
 // listAndMaybeSaveFunctions fetches functions and caches them locally only when the
 // result is the full builtin listing: no --where / --toolchain filtering and no
 // --channel. Only the builtin entry is read back to register function commands,

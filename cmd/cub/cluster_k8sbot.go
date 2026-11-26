@@ -31,9 +31,8 @@ import (
 // is a ConfigHub bot that listens on a Channel and force-syncs the
 // corresponding Argo CD Application the moment a deploy happens, closing Argo's
 // reconcile-interval gap. It is delivered like
-// any other component: a shared base installed from the deployment its release
-// image carries, or with --k8sbot-installer from its installer package, and a
-// per-cluster downstream variant. The child Argo Application that
+// any other component: a shared base installed from its installer package, and
+// a per-cluster downstream variant. The child Argo Application that
 // makes k8sbot live is created the way `cub variant create --target` creates
 // one — the cluster's OCI target carries the confighub.com/apps-space
 // annotation, so creating the k8sbot variant against it adds the Application
@@ -133,8 +132,8 @@ const (
 
 // clusterK8sbotRepository reads --registry: "ghcr", "gcr", or the prefix of a
 // mirror holding k8sbot's image as <prefix>/k8sbot. Empty is ghcr. It returns
-// the image repository, without a tag. k8sbot's deployment is read from the
-// newest release there, and runs k8sbot from the same repository.
+// the image repository, without a tag. k8sbot's installer package is read from
+// beside it (clusterK8sbotPackageRepository), and runs k8sbot from it.
 func clusterK8sbotRepository(registry string) (string, error) {
 	switch registry {
 	case "", "ghcr", "ghcr.io":
@@ -151,11 +150,7 @@ func clusterK8sbotRepository(registry string) (string, error) {
 
 // clusterRegistryFlagUsage is the --registry help of the commands that install
 // k8sbot.
-const clusterRegistryFlagUsage = "where to pull k8sbot's image from: ghcr, gcr, or a mirror prefix holding <prefix>/k8sbot, and <prefix>/packages/k8sbot for --k8sbot-installer (default ghcr)"
-
-// clusterK8sbotInstallerFlagUsage is the --k8sbot-installer help of the
-// commands that install k8sbot.
-const clusterK8sbotInstallerFlagUsage = "install k8sbot's shared base Space with ConfigHub's installer, from its installer package, rather than from the deployment its image carries"
+const clusterRegistryFlagUsage = "where to pull k8sbot's installer package and image from: ghcr, gcr, or a mirror prefix holding <prefix>/packages/k8sbot and <prefix>/k8sbot (default ghcr)"
 
 // clusterK8sbotBaseFlagUsage is the --k8sbot-base help of the commands that
 // install k8sbot.
@@ -195,9 +190,6 @@ type clusterK8sbotSpec struct {
 	// k8sbotRepository is the image repository k8sbot is pulled from, as
 	// clusterK8sbotRepository read --registry.
 	k8sbotRepository string
-	// k8sbotInstaller installs k8sbot's base with ConfigHub's installer, from
-	// k8sbot's installer package, rather than from k8sbot's image.
-	k8sbotInstaller bool
 	// standalone is true for `cub cluster k8sbot-install` on a cluster attached
 	// already: its root runs, so the stage marks the target as k8sbot's,
 	// records the bot on the cluster Space, and republishes the apps Space
@@ -385,7 +377,6 @@ func clusterInstallK8sbot(out io.Writer, spec clusterK8sbotSpec, registerRollbac
 		kubeconfigPath:       spec.kubeconfigPath,
 		baseMode:             spec.k8sbotBase,
 		repository:           spec.k8sbotRepository,
-		installer:            spec.k8sbotInstaller,
 	}); err != nil {
 		return err
 	}
@@ -610,39 +601,6 @@ stringData:
 `, clusterK8sbotSecret, clusterK8sbotNamespace, bytes.TrimSpace(privateKey))
 }
 
-// clusterK8sbotManifestPath is where k8sbot's image carries its deployment
-// for a controller.
-func clusterK8sbotManifestPath(controller string) string {
-	switch controller {
-	case clusterControllerSveltos:
-		return "/manifests/sveltos.yaml"
-	case clusterControllerFlux:
-		return "/manifests/flux.yaml"
-	}
-	return "/manifests/argocd.yaml"
-}
-
-// clusterK8sbotManifests reads k8sbot's deployment for a controller from the
-// newest k8sbot release in repository, without running the image. The
-// deployment runs the release it ships in, from ghcr.io; it is returned running
-// it from repository.
-func clusterK8sbotManifests(controller, repository string, out io.Writer) (manifests []byte, ref string, err error) {
-	tag, err := ocibundle.NewestRelease(ctx, repository, clusterK8sbotPullOptions())
-	if err != nil {
-		return nil, "", fmt.Errorf("find k8sbot's newest release: %w", err)
-	}
-	ref = repository + ":" + tag
-	fmt.Fprintf(out, "Reading k8sbot's deployment from %s...\n", ref)
-	manifests, _, err = ocibundle.ReadImageFile(ctx, ref, clusterK8sbotManifestPath(controller), clusterK8sbotPullOptions())
-	if err != nil {
-		return nil, "", fmt.Errorf("read k8sbot's deployment: %w", err)
-	}
-	if repository != clusterK8sbotGHCR {
-		manifests = bytes.ReplaceAll(manifests, []byte("image: "+clusterK8sbotGHCR+":"), []byte("image: "+repository+":"))
-	}
-	return manifests, ref, nil
-}
-
 // clusterK8sbotPackageComponent is the installer package's component for a
 // controller.
 func clusterK8sbotPackageComponent(controller string) string {
@@ -723,7 +681,6 @@ type clusterK8sbotOptions struct {
 	kubeconfigPath       string
 	baseMode             string // clusterK8sbotBaseUpdate or clusterK8sbotBaseClone, from clusterChooseK8sbotBase
 	repository           string // k8sbot's image repository, from clusterK8sbotRepository
-	installer            bool   // install the base with ConfigHub's installer, from k8sbot's installer package, rather than from k8sbot's image
 }
 
 // clusterDeployK8sbot deploys k8sbot for a freshly attached cluster: k8sbot
@@ -742,49 +699,23 @@ type clusterK8sbotOptions struct {
 // returns, so that the root app-of-apps' first sync already includes k8sbot.
 func clusterDeployK8sbot(out io.Writer, o clusterK8sbotOptions) error {
 	k8sbotSpace := clusterK8sbotComponent + "-" + o.clusterName
-	baseVariant, baseSpace := clusterK8sbotBase(o.controller)
+	_, baseSpace := clusterK8sbotBase(o.controller)
 
-	// 1. Ensure the shared base component exists. With --k8sbot-base clone an
-	// existing base is not updated.
-	switch {
-	case o.installer:
-		// The installer's upload is create-or-update, and reads the base's
-		// earlier answers from its installer record.
-		if o.baseMode == clusterK8sbotBaseClone {
-			exists, err := clusterSpaceExists(baseSpace)
-			if err != nil {
-				return err
-			}
-			if exists {
-				fmt.Fprintf(out, "Cloning the existing k8sbot base %q as it is...\n", baseSpace)
-				break
-			}
-		}
-		if err := clusterK8sbotInstallBase(out, o.controller, o.repository); err != nil {
-			return fmt.Errorf("install k8sbot base component: %w", err)
-		}
-	default:
-		// Installed from the deployment k8sbot's newest release carries for
-		// this controller. An upload is create-or-update, so updating a base
-		// another cluster already installed changes only what differs. Either
-		// way the base is checked first for Units no upload owns that define
-		// k8sbot's resources, since a variant cloned from it would apply both.
-		manifests, ref, err := clusterK8sbotManifests(o.controller, o.repository, out)
+	// 1. Ensure the shared base component exists. The installer's upload is
+	// create-or-update, and reads the base's earlier answers from its installer
+	// record. With --k8sbot-base clone an existing base is not updated.
+	cloneAsIs := false
+	if o.baseMode == clusterK8sbotBaseClone {
+		exists, err := clusterSpaceExists(baseSpace)
 		if err != nil {
 			return err
 		}
-		upload := clusterK8sbotBaseUpload(baseVariant, baseSpace, manifests, ref)
-		if err := clusterK8sbotCheckBase(baseSpace, upload); err != nil {
-			return err
-		}
-		if o.baseMode == clusterK8sbotBaseClone {
-			fmt.Fprintf(out, "Cloning the existing k8sbot base %q as it is...\n", baseSpace)
-			break
-		}
-		fmt.Fprintln(out, "Installing k8sbot base component...")
-		if err := clusterK8sbotUploadBase(upload); err != nil {
-			return fmt.Errorf("install k8sbot base component: %w", err)
-		}
+		cloneAsIs = exists
+	}
+	if cloneAsIs {
+		fmt.Fprintf(out, "Cloning the existing k8sbot base %q as it is...\n", baseSpace)
+	} else if err := clusterK8sbotInstallBase(out, o.controller, o.repository); err != nil {
+		return fmt.Errorf("install k8sbot base component: %w", err)
 	}
 
 	// 2. Per-cluster downstream variant, cloned from the base and bound to this
@@ -821,7 +752,7 @@ func clusterDeployK8sbot(out io.Writer, o clusterK8sbotOptions) error {
 	// key stays a secretKeyRef to the Secret clusterBootstrapServiceAccount
 	// applied out of band.
 	fmt.Fprintln(out, "Configuring k8sbot (CONFIGHUB_URL, CONFIGHUB_CHANNEL, CONFIGHUB_TARGET)...")
-	if err := clusterConfigureK8sbot(space.SpaceID, o.installer, map[string]string{
+	if err := clusterConfigureK8sbot(space.SpaceID, map[string]string{
 		"CONFIGHUB_URL":     o.apiURLForContainer,
 		"CONFIGHUB_CHANNEL": channelRef,
 		"CONFIGHUB_TARGET":  o.ociTargetRef,
@@ -866,30 +797,28 @@ func clusterDeployK8sbot(out io.Writer, o clusterK8sbotOptions) error {
 // clusterConfigureK8sbot sets variables of k8sbot's environment in its
 // variant: the Deployment's env, which set-env upserts. k8sbot's installer
 // package through 0.2.8 kept them in the k8sbot-env AppConfig Unit instead,
-// which ConfigHub renders into the ConfigMap the Deployment reads, so from the
-// installer they are set there when the variant has that Unit.
+// which ConfigHub renders into the ConfigMap the Deployment reads, so they are
+// set there when the variant has that Unit.
 //
 // The variables are set in one invocation, so the Unit gets one Revision for
 // all of them.
-func clusterConfigureK8sbot(k8sbotSpaceID uuid.UUID, fromInstaller bool, env map[string]string) error {
+func clusterConfigureK8sbot(k8sbotSpaceID uuid.UUID, env map[string]string) error {
 	names := slices.Sorted(maps.Keys(env))
-	if fromInstaller {
-		var fns []api.FunctionInvocation
-		for _, name := range names {
-			fns = append(fns, api.FunctionInvocation{FunctionName: "set-string-path", Arguments: []api.FunctionArgument{
-				{Value: clusterK8sbotEnvConfigSchema}, {Value: name}, {Value: env[name]},
-			}})
-		}
-		found, err := clusterInvokeK8sbotUnit(k8sbotSpaceID, clusterK8sbotEnvUnitSlug, string(workerapi.ToolchainAppConfigEnv), fns)
-		if err != nil || found {
-			return err
-		}
+	var fns []api.FunctionInvocation
+	for _, name := range names {
+		fns = append(fns, api.FunctionInvocation{FunctionName: "set-string-path", Arguments: []api.FunctionArgument{
+			{Value: clusterK8sbotEnvConfigSchema}, {Value: name}, {Value: env[name]},
+		}})
+	}
+	found, err := clusterInvokeK8sbotUnit(k8sbotSpaceID, clusterK8sbotEnvUnitSlug, string(workerapi.ToolchainAppConfigEnv), fns)
+	if err != nil || found {
+		return err
 	}
 	args := []api.FunctionArgument{{Value: clusterK8sbotContainer}}
 	for _, name := range names {
 		args = append(args, api.FunctionArgument{Value: name + "=" + env[name]})
 	}
-	found, err := clusterInvokeK8sbotUnit(k8sbotSpaceID, clusterK8sbotUnitSlug, cubapi.DefaultToolchainType,
+	found, err = clusterInvokeK8sbotUnit(k8sbotSpaceID, clusterK8sbotUnitSlug, cubapi.DefaultToolchainType,
 		[]api.FunctionInvocation{{FunctionName: "set-env", Arguments: args}})
 	if err != nil {
 		return err
@@ -976,12 +905,12 @@ func clusterChooseK8sbotBase(out io.Writer, controller, flag string) (string, er
 	}
 }
 
-// clusterK8sbotCheckBaseKind refuses an existing base installed the other way
-// than this install: with the installer, which leaves its hidden installer
-// record in the base, or from k8sbot's image, which leaves k8sbot's
-// Deployment Unit and no record. The two installs write different Units, so
-// one over the other would leave both. It runs with the other preconditions.
-func clusterK8sbotCheckBaseKind(controller string, withInstaller bool) error {
+// clusterK8sbotCheckBaseKind refuses an existing base that an earlier cub
+// installed from the deployment k8sbot's image carries, which leaves k8sbot's
+// Deployment Unit and no installer record. The installer writes different
+// Units, so installing over it would leave both. It runs with the other
+// preconditions.
+func clusterK8sbotCheckBaseKind(controller string) error {
 	_, baseSpace := clusterK8sbotBase(controller)
 	exists, err := clusterSpaceExists(baseSpace)
 	if err != nil || !exists {
@@ -994,15 +923,12 @@ func clusterK8sbotCheckBaseKind(controller string, withInstaller bool) error {
 	spaceID := space.Space.SpaceID.String()
 	_, err = resolveUnit(clusterK8sbotRecordUnitSlug, spaceID, "UnitID")
 	hasRecord := err == nil
-	switch {
-	case withInstaller && !hasRecord:
-		if _, err := resolveUnit(clusterK8sbotUnitSlug, spaceID, "UnitID"); err == nil {
-			return fmt.Errorf("k8sbot base %q was installed from k8sbot's image, not with the installer; install without --k8sbot-installer, or delete the base (cub space delete --recursive %s) to install it with the installer", baseSpace, baseSpace)
-		}
-	case !withInstaller && hasRecord:
-		return fmt.Errorf("k8sbot base %q was installed with the installer; install with --k8sbot-installer, or delete the base (cub space delete --recursive %s) to install it from k8sbot's image", baseSpace, baseSpace)
+	_, err = resolveUnit(clusterK8sbotUnitSlug, spaceID, "UnitID")
+	hasDeployment := err == nil
+	if hasRecord || !hasDeployment {
+		return nil
 	}
-	return nil
+	return fmt.Errorf("k8sbot base %q was installed by an earlier cub from k8sbot's image; cub now installs k8sbot from its installer package. Delete the base, detaching the clusters cloned from it, which keep running k8sbot as they are (cub space delete --recursive --detach %s), and run again", baseSpace, baseSpace)
 }
 
 // clusterK8sbotBaseImage is the image k8sbot's Deployment names in the base
@@ -1050,74 +976,6 @@ func clusterK8sbotImageIn(data string) string {
 		}
 	}
 	return ""
-}
-
-// clusterK8sbotCheckBase refuses a base Space holding Units that define
-// k8sbot's resources but that no upload of k8sbot owns, such as the single
-// Unit an early installer wrote. An upload never writes or empties such a Unit,
-// so it would sit beside the upload's own, and a variant cloned from the base
-// would apply both. The check is a dry run of the upload, whose plan reports
-// exactly those Units.
-func clusterK8sbotCheckBase(baseSpace string, upload goclientnew.UploadRequest) error {
-	plan, err := cubapi.Upload(ctx, cubClient, upload, true)
-	if err != nil {
-		return fmt.Errorf("check k8sbot base %q: %w", baseSpace, err)
-	}
-	strays := map[string][]string{}
-	for _, c := range plan.Components {
-		for _, s := range c.Spaces {
-			for _, d := range s.Duplicates {
-				for _, o := range d.Others {
-					if !slices.Contains(strays[o.SpaceSlug], o.UnitSlug) {
-						strays[o.SpaceSlug] = append(strays[o.SpaceSlug], o.UnitSlug)
-					}
-				}
-			}
-		}
-	}
-	if len(strays) == 0 {
-		return nil
-	}
-	spaces := make([]string, 0, len(strays))
-	for space := range strays {
-		spaces = append(spaces, space)
-	}
-	slices.Sort(spaces)
-	var b strings.Builder
-	fmt.Fprintf(&b, "k8sbot base %q has Units that define k8sbot's resources but were not uploaded as k8sbot, so a cluster cloned from it would run two copies of k8sbot. Delete them and run again:", baseSpace)
-	for _, space := range spaces {
-		slices.Sort(strays[space])
-		for _, unit := range strays[space] {
-			fmt.Fprintf(&b, "\n  cub unit delete --space %s %s", space, unit)
-		}
-	}
-	return fmt.Errorf("%s", b.String())
-}
-
-// clusterK8sbotBaseUpload is the upload of k8sbot's deployment, read from
-// image ref, into its shared base Space, as `cub variant upload --component
-// k8sbot --variant <base>` makes it.
-func clusterK8sbotBaseUpload(baseVariant, baseSpace string, manifests []byte, ref string) goclientnew.UploadRequest {
-	return goclientnew.UploadRequest{
-		Components:  []goclientnew.UploadComponentRequest{{Name: clusterK8sbotComponent, Space: baseSpace}},
-		SpaceLabels: map[string]string{"Variant": baseVariant},
-		Files:       []goclientnew.UploadRequestFile{{Path: "stdin.yaml", Content: string(manifests)}},
-		Source:      &goclientnew.UploadSourceInfo{Ref: ref, Client: "cub", ClientVersion: Version},
-	}
-}
-
-// clusterK8sbotUploadBase writes k8sbot's base. It empties, without asking,
-// the Units of resources k8sbot's release no longer has, as `cub variant
-// upload --yes` does: the base holds only k8sbot's own deployment, so what a
-// release dropped is meant to leave every cluster cloned from it.
-func clusterK8sbotUploadBase(upload goclientnew.UploadRequest) error {
-	result, err := cubapi.Upload(ctx, cubClient, upload, false)
-	if err != nil {
-		return err
-	}
-	reportUploadResult(result)
-	reportUploadRevert(result)
-	return nil
 }
 
 // clusterCreateK8sbotVariant clones k8sbot's base into the cluster's variant,

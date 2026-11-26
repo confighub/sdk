@@ -192,8 +192,8 @@ func globalPreRun(cmd *cobra.Command, args []string) error {
 }
 
 func main() {
-	// Rendering an installer package (cub package install, cub cluster up
-	// --k8sbot-installer) runs kustomize, whose transform step re-executes this
+	// Rendering an installer package (cub package install, and cub cluster up
+	// installing k8sbot) runs kustomize, whose transform step re-executes this
 	// binary; this is that run.
 	installer.RunTransformerIfRequested()
 

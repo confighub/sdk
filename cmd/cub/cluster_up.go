@@ -23,7 +23,6 @@ var clusterUpArgs struct {
 	noK8sbot          bool
 	k8sbotBase        string
 	registry          string
-	k8sbotInstaller   bool
 	noPlaceholderGate bool
 	controllerVersion string
 	prune             bool
@@ -105,7 +104,7 @@ func init() {
 	clusterUpCmd.Flags().BoolVar(&clusterUpArgs.noK8sbot, "no-k8sbot", false, "skip installing k8sbot (the event-driven Argo CD sync, Sveltos redeploy, or Flux reconciliation, bot); 'cub cluster k8sbot-install' installs it later")
 	clusterUpCmd.Flags().StringVar(&clusterUpArgs.k8sbotBase, "k8sbot-base", "", clusterK8sbotBaseFlagUsage)
 	clusterUpCmd.Flags().StringVar(&clusterUpArgs.registry, "registry", "", clusterRegistryFlagUsage)
-	clusterUpCmd.Flags().BoolVar(&clusterUpArgs.k8sbotInstaller, "k8sbot-installer", false, clusterK8sbotInstallerFlagUsage)
+	clusterAddK8sbotInstallerFlag(clusterUpCmd)
 	clusterUpCmd.Flags().BoolVar(&clusterUpArgs.noPlaceholderGate, "no-placeholder-gate", false, "skip the default vet-placeholders Trigger, allowing Releases with unfilled confighubplaceholder values to be published to this cluster")
 	clusterUpCmd.Flags().StringVar(&clusterUpArgs.controllerVersion, "controller-version", "", "controller release to install (default: argo "+clusterArgoDefaultVersion+", sveltos "+clusterSveltosVersion+", flux "+clusterFluxVersion+"; Argo CD must be v3.1 or later, which oci:// sources need)")
 	clusterUpCmd.Flags().BoolVar(&clusterUpArgs.prune, "prune", false, "let the controller delete what a removed deployment deployed: the root prunes deployments whose Units leave the apps space (Sveltos's always does), and deployments created later prune what they deployed")
@@ -121,7 +120,6 @@ type clusterUpOptions struct {
 	noK8sbot          bool
 	k8sbotBase        string
 	registry          string
-	k8sbotInstaller   bool
 	noPlaceholderGate bool
 	controllerVersion string
 	prune             bool
@@ -145,7 +143,6 @@ func clusterUpCmdRun(cmd *cobra.Command, args []string) error {
 		noK8sbot:          clusterUpArgs.noK8sbot,
 		k8sbotBase:        clusterUpArgs.k8sbotBase,
 		registry:          clusterUpArgs.registry,
-		k8sbotInstaller:   clusterUpArgs.k8sbotInstaller,
 		noPlaceholderGate: clusterUpArgs.noPlaceholderGate,
 		controllerVersion: clusterUpArgs.controllerVersion,
 		prune:             clusterUpArgs.prune,
@@ -239,7 +236,7 @@ func clusterUpRun(out io.Writer, opts clusterUpOptions) error {
 		if _, err := clusterK8sbotRepository(opts.registry); err != nil {
 			return err
 		}
-		if err := clusterK8sbotCheckBaseKind(opts.controller, opts.k8sbotInstaller); err != nil {
+		if err := clusterK8sbotCheckBaseKind(opts.controller); err != nil {
 			return err
 		}
 		mode, err := clusterChooseK8sbotBase(out, opts.controller, opts.k8sbotBase)
@@ -295,7 +292,6 @@ func clusterUpRun(out io.Writer, opts clusterUpOptions) error {
 		noK8sbot:          opts.noK8sbot,
 		k8sbotBase:        opts.k8sbotBase,
 		registry:          opts.registry,
-		k8sbotInstaller:   opts.k8sbotInstaller,
 		noPlaceholderGate: opts.noPlaceholderGate,
 		prune:             opts.prune,
 		origin:            clusterOriginKind,

@@ -13,10 +13,9 @@ import (
 )
 
 var clusterK8sbotInstallArgs struct {
-	k8sbotBase      string
-	registry        string
-	k8sbotInstaller bool
-	secretsDir      string
+	k8sbotBase string
+	registry   string
+	secretsDir string
 }
 
 var clusterK8sbotInstallCmd = &cobra.Command{
@@ -35,12 +34,10 @@ Release's live status, and stores facts about the cluster on its target.
 
 In ConfigHub:
 
-  k8sbot-base         k8sbot's shared base Space, installed from the deployment
-                      for the controller that k8sbot's newest release image
-                      carries, or with --k8sbot-installer, with ConfigHub's
-                      installer from k8sbot's installer package
-                      ("k8sbot-sveltos-base" and "k8sbot-flux-base" for
-                      Sveltos and Flux). When it exists already, --k8sbot-base
+  k8sbot-base         k8sbot's shared base Space, installed with ConfigHub's
+                      installer from the newest release of k8sbot's installer
+                      package ("k8sbot-sveltos-base" and "k8sbot-flux-base"
+                      for Sveltos and Flux). When it exists already, --k8sbot-base
                       says whether to update it first or clone it as it is.
   k8sbot-<name>       the cluster's downstream variant of it, released to the
                       cluster's target, whose deployment "cub variant create"
@@ -74,20 +71,19 @@ k8sbot. Deployments that already exist keep polling every minute.
 func init() {
 	clusterK8sbotInstallCmd.Flags().StringVar(&clusterK8sbotInstallArgs.k8sbotBase, "k8sbot-base", "", clusterK8sbotBaseFlagUsage)
 	clusterK8sbotInstallCmd.Flags().StringVar(&clusterK8sbotInstallArgs.registry, "registry", "", clusterRegistryFlagUsage)
-	clusterK8sbotInstallCmd.Flags().BoolVar(&clusterK8sbotInstallArgs.k8sbotInstaller, "k8sbot-installer", false, clusterK8sbotInstallerFlagUsage)
+	clusterAddK8sbotInstallerFlag(clusterK8sbotInstallCmd)
 	clusterK8sbotInstallCmd.Flags().StringVar(&clusterK8sbotInstallArgs.secretsDir, "secrets-dir", "", clusterSecretsDirFlagUsage)
 	clusterCmd.AddCommand(clusterK8sbotInstallCmd)
 }
 
 func clusterK8sbotInstallCmdRun(cmd *cobra.Command, args []string) error {
 	a := clusterK8sbotInstallArgs
-	return clusterK8sbotInstallRun(cmd.OutOrStdout(), args[0], a.k8sbotBase, a.registry, a.k8sbotInstaller, a.secretsDir)
+	return clusterK8sbotInstallRun(cmd.OutOrStdout(), args[0], a.k8sbotBase, a.registry, a.secretsDir)
 }
 
 // clusterK8sbotInstallRun installs k8sbot in a cluster attached without it.
-// withInstaller installs its base with ConfigHub's installer. secretsDirFlag is
-// --secrets-dir.
-func clusterK8sbotInstallRun(out io.Writer, name, k8sbotBase, registry string, withInstaller bool, secretsDirFlag string) (err error) {
+// secretsDirFlag is --secrets-dir.
+func clusterK8sbotInstallRun(out io.Writer, name, k8sbotBase, registry, secretsDirFlag string) (err error) {
 	repository, err := clusterK8sbotRepository(registry)
 	if err != nil {
 		return err
@@ -137,7 +133,7 @@ func clusterK8sbotInstallRun(out io.Writer, name, k8sbotBase, registry string, w
 	if err != nil {
 		return fmt.Errorf("cluster space %q: find its OCI target %q: %w", space.SpaceSlug, clusterTargetSlug, err)
 	}
-	if err := clusterK8sbotCheckBaseKind(space.Controller, withInstaller); err != nil {
+	if err := clusterK8sbotCheckBaseKind(space.Controller); err != nil {
 		return err
 	}
 	mode, err := clusterChooseK8sbotBase(out, space.Controller, k8sbotBase)
@@ -157,7 +153,6 @@ func clusterK8sbotInstallRun(out io.Writer, name, k8sbotBase, registry string, w
 		targetID:         target.TargetID,
 		k8sbotBase:       mode,
 		k8sbotRepository: repository,
-		k8sbotInstaller:  withInstaller,
 		standalone:       true,
 		secretsDir:       clusterSecretsDirFor(secretsDirFlag, name),
 	}, rollback.add); err != nil {
@@ -175,4 +170,13 @@ func clusterK8sbotInstallRun(out io.Writer, name, k8sbotBase, registry string, w
 	fmt.Fprintf(out, "\nk8sbot installed.\n  cluster:  %s\n  k8sbot:   %s (%s)\n  channel:  %s/%s\n  identity: service account %s\n",
 		name, k8sbotSlug, kind, space.SpaceSlug, clusterK8sbotChannelSlug, clusterServiceAccountSlug(name))
 	return nil
+}
+
+// clusterAddK8sbotInstallerFlag keeps --k8sbot-installer accepted, and doing
+// nothing, on the commands that install k8sbot, so scripts written while the
+// installer package was opt-in still run.
+func clusterAddK8sbotInstallerFlag(cmd *cobra.Command) {
+	var ignored bool
+	cmd.Flags().BoolVar(&ignored, "k8sbot-installer", false, "")
+	_ = cmd.Flags().MarkDeprecated("k8sbot-installer", "k8sbot is always installed from its installer package")
 }

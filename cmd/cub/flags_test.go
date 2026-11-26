@@ -237,12 +237,6 @@ func TestNoFlagShadowsAParentsPersistentFlag(t *testing.T) {
 	var visit func(cmd *cobra.Command)
 	visit = func(cmd *cobra.Command) {
 		for _, child := range cmd.Commands() {
-			// The commands under cub run are made from the cached function list, whose
-			// parameters, such as resource-type, can share a name with a cub run flag.
-			// They are not registered where no list is cached, as under CI.
-			if child == runCmd {
-				continue
-			}
 			visit(child)
 		}
 		for parent := cmd.Parent(); parent != nil; parent = parent.Parent() {
