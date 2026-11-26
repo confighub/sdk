@@ -45,6 +45,7 @@ var channelCustomColumnDependencies = map[string][]string{}
 
 func init() {
 	addStandardListFlags(channelListCmd)
+	enableArchivedFlag(channelListCmd)
 	enableWherePermissionFlag(channelListCmd)
 	enableListPagingFlags(channelListCmd)
 	enableViewFlag(channelListCmd)
@@ -99,7 +100,7 @@ func displayExtendedChannelList(channels []*goclientnew.ExtendedChannel) {
 	}
 	table := tableView()
 	if !noheader {
-		table.SetHeader([]string{"Name", "Space", "Condition", "Last-Seen", "Position", "Commands"})
+		table.SetHeader(withArchivedSlugHeader([]string{"Name", "Space", "Condition", "Last-Seen", "Position", "Commands"}))
 	}
 	for _, channel := range channels {
 		spaceSlug := ""
@@ -110,14 +111,14 @@ func displayExtendedChannelList(channels []*goclientnew.ExtendedChannel) {
 		if !channel.Channel.LastSeenAt.IsZero() {
 			lastSeen = channel.Channel.LastSeenAt.Format("2006-01-02 15:04:05")
 		}
-		table.Append([]string{
+		table.Append(withArchivedSlug([]string{
 			channel.Channel.Slug,
 			spaceSlug,
 			string(channel.Channel.Condition),
 			lastSeen,
 			fmt.Sprintf("%d", channel.Channel.EventPosition),
 			commandNamesToString(channel.Channel.Commands),
-		})
+		}, channel.Channel.Labels))
 	}
 	table.Render()
 }

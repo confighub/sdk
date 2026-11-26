@@ -57,9 +57,12 @@ type VariantSpec struct {
 	ChangeDescription string
 	// Syncback also links each clone back to its upstream unit with a MergeUnits link.
 	Syncback bool
-	// IncludeOutgoingLinksWhere selects which of the upstream units' links to units in other
-	// Spaces are copied onto the clones.
+	// IncludeOutgoingLinksWhere selects which of the upstream units' links to units outside the
+	// cloned set are copied onto the clones.
 	IncludeOutgoingLinksWhere string
+	// UnitWhere selects which of the upstream's units to clone, as a where expression over
+	// Units. Empty clones every one.
+	UnitWhere string
 	// IncludeHidden also clones hidden units: these HiddenReasons, comma-separated, or "*".
 	IncludeHidden string
 	// AllowExists accepts a Space or unit that is already there instead of failing.
@@ -186,7 +189,7 @@ func cloneVariantSpace(ctx context.Context, c *Client, spec VariantSpec, upstrea
 }
 
 func cloneVariantUnits(ctx context.Context, c *Client, spec VariantSpec, upstreamID, spaceID goclientnew.UUID) ([]goclientnew.UnitCreateOrUpdateResponse, int, error) {
-	where := NewWhere("").SpaceID(upstreamID).String()
+	where := NewWhere("").SpaceID(upstreamID).And(spec.UnitWhere).String()
 	whereSpace := NewWhere("").SpaceID(spaceID).String()
 	include := "TargetID,UpstreamUnitID,SpaceID"
 	if spec.Diff {

@@ -62,6 +62,7 @@ var changesetCustomColumnDependencies = map[string][]string{}
 
 func init() {
 	addStandardListFlags(changesetListCmd)
+	enableArchivedFlag(changesetListCmd)
 	enableWherePermissionFlag(changesetListCmd)
 	enableListPagingFlags(changesetListCmd)
 	enableViewFlag(changesetListCmd)
@@ -105,7 +106,7 @@ func displayChangeSetList(changesets []*goclientnew.ExtendedChangeSet) {
 			header = append(header, "Start-Tag", "End-Tag")
 		}
 		header = append(header, "Description")
-		table.SetHeader(header)
+		table.SetHeader(withArchivedSlugHeader(header))
 	}
 	for _, cs := range changesets {
 		changeset := cs.ChangeSet
@@ -132,7 +133,7 @@ func displayChangeSetList(changesets []*goclientnew.ExtendedChangeSet) {
 		}
 		row = append(row, truncateWithEllipsis(changeset.Description, defaultColumnWidth))
 
-		table.Append(row)
+		table.Append(withArchivedSlug(row, changeset.Labels))
 	}
 	table.Render()
 }

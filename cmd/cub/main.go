@@ -177,6 +177,7 @@ func globalPreRun(cmd *cobra.Command, args []string) error {
 	if err := applyDebugFlag(); err != nil {
 		return err
 	}
+	applyArchivedFlag()
 	if err := applyContextOverride(); err != nil {
 		return err
 	}

@@ -79,6 +79,7 @@ var (
 
 func init() {
 	addStandardListFlags(filterListCmd)
+	enableArchivedFlag(filterListCmd)
 	enableWherePermissionFlag(filterListCmd)
 	enableListPagingFlags(filterListCmd)
 
@@ -119,7 +120,7 @@ func displayFilterList(filters []*goclientnew.ExtendedFilter) {
 	}
 	table := tableView()
 	if !noheader {
-		table.SetHeader([]string{"Name", "Space", "From", "Where", "Where-Data", "Resource-Type", "From-Space"})
+		table.SetHeader(withArchivedSlugHeader([]string{"Name", "Space", "From", "Where", "Where-Data", "Resource-Type", "From-Space"}))
 	}
 	for _, f := range filters {
 		filter := f.Filter
@@ -141,7 +142,7 @@ func displayFilterList(filters []*goclientnew.ExtendedFilter) {
 		whereDisplay := truncateWithEllipsis(filter.Where, defaultColumnWidth)
 		whereDataDisplay := truncateWithEllipsis(filter.WhereData, maxWhereDataWidth)
 
-		table.Append([]string{
+		table.Append(withArchivedSlug([]string{
 			filter.Slug,
 			spaceSlug,
 			filter.From,
@@ -149,7 +150,7 @@ func displayFilterList(filters []*goclientnew.ExtendedFilter) {
 			whereDataDisplay,
 			filter.ResourceType,
 			fromSpaceSlug,
-		})
+		}, filter.Labels))
 	}
 	table.Render()
 }

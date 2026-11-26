@@ -64,6 +64,7 @@ Other functional areas include:
 - `auth`, `context`, `completion`, `version`, and `upgrade`, which replaces cub with its latest release
 - `function` and `run`, which invoke functions
 - `variant`, which works on the variants of a Component as a whole
+- `draft`, which drafts a change to a Space in a Space of its own, then lands it
 - `package`, which installs installer packages, such as `k8sbot`, into a Space
 - `apply`, which creates and updates entities from YAML documents
 - `k8s`, which reads the Kubernetes resources in Units and talks to clusters
@@ -234,6 +235,14 @@ given. Installing again re-enters the Space's earlier install, so it upgrades:
 ```
 cub package install k8sbot --space k8sbot-base --select argocd --namespace confighubbot
 cub package install k8sbot:0.2.12 --space k8sbot-base
+```
+
+Each install keeps an installer record in its Space. List the installs in the organization, or show
+what one installed: its package, components, inputs and dependencies:
+
+```
+cub package list
+cub package show --space k8sbot-base
 ```
 
 ### Links

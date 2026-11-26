@@ -154,6 +154,7 @@ var spaceListArgs struct {
 
 func init() {
 	addStandardListFlags(spaceListCmd)
+	enableArchivedFlag(spaceListCmd)
 	enableWherePermissionFlag(spaceListCmd)
 	spaceListCmd.Flags().StringVar(&spaceListArgs.component, "component", "", "only list Spaces that are Variants of the Component with this slug; ANDed with --where")
 	spaceListArgs.spaceLabels = addStandardLabelFilterFlags(spaceListCmd, "Space", standardSpaceLabels)
@@ -240,7 +241,7 @@ func displayExtendedSpaceList(extendedSpaces []*goclientnew.ExtendedSpace) {
 		if wide {
 			header = append(header, wideSpaceCountColumns...)
 		}
-		table.SetHeader(header)
+		table.SetHeader(withArchivedSlugHeader(header))
 	}
 	for _, extendedSpace := range extendedSpaces {
 		row := []string{extendedSpace.Space.Slug, spaceComponentSlug(extendedSpace)}
@@ -251,7 +252,7 @@ func displayExtendedSpaceList(extendedSpaces []*goclientnew.ExtendedSpace) {
 		if wide {
 			row = append(row, wideSpaceCounts(extendedSpace)...)
 		}
-		table.Append(row)
+		table.Append(withArchivedSlug(row, extendedSpace.Space.Labels))
 	}
 	table.Render()
 }

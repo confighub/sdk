@@ -481,6 +481,10 @@ func buildSelectList(entity string, columnsSpec []string, include string, defaul
 	for _, field := range baseFields {
 		fieldsMap[field] = true
 	}
+	// The default columns of --archived add the Archived-Slug column, read from Labels.
+	if listArchived && len(columnsSpec) == 0 {
+		fieldsMap["Labels"] = true
+	}
 
 	// Add include fields
 	if include != "" {

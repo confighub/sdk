@@ -82,6 +82,7 @@ var changeorderCustomColumnDependencies = map[string][]string{
 
 func init() {
 	addStandardListFlags(changeorderListCmd)
+	enableArchivedFlag(changeorderListCmd)
 	enableWherePermissionFlag(changeorderListCmd)
 	enableListPagingFlags(changeorderListCmd)
 	enableViewFlag(changeorderListCmd)
@@ -125,7 +126,7 @@ func displayChangeOrderList(changeorders []*goclientnew.ExtendedChangeOrder) {
 			header = append(header, "Start-Tag", "End-Tag")
 		}
 		header = append(header, "Description", "Aborted-Reason")
-		table.SetHeader(header)
+		table.SetHeader(withArchivedSlugHeader(header))
 	}
 	for _, cs := range changeorders {
 		changeorder := cs.ChangeOrder
@@ -163,7 +164,7 @@ func displayChangeOrderList(changeorders []*goclientnew.ExtendedChangeOrder) {
 			truncateWithEllipsis(changeorder.AbortedReason, defaultColumnWidth),
 		)
 
-		table.Append(row)
+		table.Append(withArchivedSlug(row, changeorder.Labels))
 	}
 	table.Render()
 }

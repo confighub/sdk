@@ -82,6 +82,7 @@ var releaseDistinctOn string
 
 func init() {
 	addStandardListFlags(releaseListCmd)
+	enableArchivedFlag(releaseListCmd)
 	enableWherePermissionFlag(releaseListCmd)
 	enableListPagingFlags(releaseListCmd)
 	releaseListCmd.Flags().StringVar(&releaseDistinctOn, "distinct-on", "",

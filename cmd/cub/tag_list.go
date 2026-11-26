@@ -64,6 +64,7 @@ var tagCustomColumnDependencies = map[string][]string{}
 
 func init() {
 	addStandardListFlags(tagListCmd)
+	enableArchivedFlag(tagListCmd)
 	enableWherePermissionFlag(tagListCmd)
 	enableListPagingFlags(tagListCmd)
 	enableViewFlag(tagListCmd)
@@ -99,7 +100,7 @@ func displayTagList(tags []*goclientnew.ExtendedTag) {
 	}
 	table := tableView()
 	if !noheader {
-		table.SetHeader([]string{"Name", "Space", "ChangeSet", "Display-Name", "Created-At"})
+		table.SetHeader(withArchivedSlugHeader([]string{"Name", "Space", "ChangeSet", "Display-Name", "Created-At"}))
 	}
 	for _, t := range tags {
 		tag := t.Tag
@@ -118,13 +119,13 @@ func displayTagList(tags []*goclientnew.ExtendedTag) {
 			changeSetDisplay = tag.ChangeSetID.String()
 		}
 
-		table.Append([]string{
+		table.Append(withArchivedSlug([]string{
 			tag.Slug,
 			spaceSlug,
 			changeSetDisplay,
 			tag.DisplayName,
 			tag.CreatedAt.Format("2006-01-02 15:04:05"),
-		})
+		}, tag.Labels))
 	}
 	table.Render()
 }

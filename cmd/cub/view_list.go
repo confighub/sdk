@@ -67,6 +67,7 @@ var viewCustomColumnDependencies = map[string][]string{}
 
 func init() {
 	addStandardListFlags(viewListCmd)
+	enableArchivedFlag(viewListCmd)
 	enableWherePermissionFlag(viewListCmd)
 	enableListPagingFlags(viewListCmd)
 	enableViewFlag(viewListCmd)
@@ -119,7 +120,7 @@ func displayViewList(views []*goclientnew.ExtendedView) {
 	}
 	table := tableView()
 	if !noheader {
-		table.SetHeader([]string{"Name", "Space", "Filter", "Columns", "Group-By", "Order-By"})
+		table.SetHeader(withArchivedSlugHeader([]string{"Name", "Space", "Filter", "Columns", "Group-By", "Order-By"}))
 	}
 	for _, v := range views {
 		view := v.View
@@ -142,14 +143,14 @@ func displayViewList(views []*goclientnew.ExtendedView) {
 			orderByDisplay = fmt.Sprintf("%s %s", view.OrderBy, view.OrderByDirection)
 		}
 
-		table.Append([]string{
+		table.Append(withArchivedSlug([]string{
 			view.Slug,
 			spaceSlug,
 			filterSlug,
 			columnsDisplay,
 			view.GroupBy,
 			orderByDisplay,
-		})
+		}, view.Labels))
 	}
 	table.Render()
 }

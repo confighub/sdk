@@ -72,6 +72,7 @@ var invocationCustomColumnDependencies = map[string][]string{}
 
 func init() {
 	addStandardListFlags(invocationListCmd)
+	enableArchivedFlag(invocationListCmd)
 	enableWherePermissionFlag(invocationListCmd)
 	enableListPagingFlags(invocationListCmd)
 	enableViewFlag(invocationListCmd)
@@ -107,7 +108,7 @@ func displayInvocationList(invocations []*goclientnew.ExtendedInvocation) {
 	}
 	table := tableView()
 	if !noheader {
-		table.SetHeader([]string{"Name", "Space", "Channel", "Toolchain-Type", "Functions"})
+		table.SetHeader(withArchivedSlugHeader([]string{"Name", "Space", "Channel", "Toolchain-Type", "Functions"}))
 	}
 	for _, i := range invocations {
 		invocation := i.Invocation
@@ -121,13 +122,13 @@ func displayInvocationList(invocations []*goclientnew.ExtendedInvocation) {
 		} else if selectedSpaceID != "*" {
 			spaceSlug = selectedSpaceSlug
 		}
-		table.Append([]string{
+		table.Append(withArchivedSlug([]string{
 			invocation.Slug,
 			spaceSlug,
 			channelSlug,
 			invocation.ToolchainType,
 			functionInvocationsSummary(invocation.FunctionInvocations),
-		})
+		}, invocation.Labels))
 	}
 	table.Render()
 }

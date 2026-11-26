@@ -84,6 +84,7 @@ var linkCustomColumnDependencies = map[string][]string{}
 
 func init() {
 	addStandardListFlags(linkListCmd)
+	enableArchivedFlag(linkListCmd)
 	enableWherePermissionFlag(linkListCmd)
 	enableListPagingFlags(linkListCmd)
 	enableViewFlag(linkListCmd)
@@ -124,7 +125,7 @@ func displayLinkList(extendedLinks []*goclientnew.ExtendedLink) {
 		if wide {
 			header = append(header, "Upstream-Merged-Rev", "Downstream-Merged-Rev", "Upstream-Link-ID")
 		}
-		table.SetHeader(header)
+		table.SetHeader(withArchivedSlugHeader(header))
 	}
 	for _, extendedLink := range extendedLinks {
 		link := extendedLink.Link
@@ -175,7 +176,7 @@ func displayLinkList(extendedLinks []*goclientnew.ExtendedLink) {
 				upstreamLinkID,
 			)
 		}
-		table.Append(row)
+		table.Append(withArchivedSlug(row, link.Labels))
 	}
 	table.Render()
 }

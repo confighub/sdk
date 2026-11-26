@@ -5,6 +5,7 @@ package main
 
 import (
 	"fmt"
+	"maps"
 
 	"github.com/confighub/sdk/core/cubapi"
 	goclientnew "github.com/confighub/sdk/core/openapi/goclient-new"
@@ -211,6 +212,7 @@ func init() {
 	unitListCmd.Flags().BoolVar(&triggersPassed, "triggers-passed", false, "return units passing trigger validation (default: return failing units)")
 	unitListCmd.Flags().BoolVar(&includeUnreleasable, "include-unreleasable", false, "with --variant, also list the Unreleasable units, which a Release of the variant's space does not publish, such as AppConfig units")
 	enableViewFlag(unitListCmd)
+	enableArchivedFlag(unitListCmd)
 	unitCmd.AddCommand(unitListCmd)
 }
 
@@ -218,8 +220,9 @@ func unitListCmdRun(cmd *cobra.Command, args []string) error {
 	var err error
 	viewID := listViewFor("cub unit list")
 
-	// A variant is what a Release of its space publishes, so that is what --variant lists.
-	if variantFlag != "" && !includeUnreleasable {
+	// A variant is what a Release of its space publishes, so that is what --variant lists. An
+	// archived unit is unreleasable, so --archived lists the variant's archived units.
+	if variantFlag != "" && !includeUnreleasable && !listArchived {
 		where = cubapi.NewWhere(where).And("Unreleasable = false").String()
 	} else if includeUnreleasable && variantFlag == "" {
 		return fmt.Errorf("--include-unreleasable applies to --variant: without it, every unit is listed")
@@ -267,7 +270,13 @@ func getExtendedUnitSlug(extendedUnit *goclientnew.ExtendedUnit) string {
 }
 
 func displayExtendedUnitList(units []*goclientnew.ExtendedUnit) {
-	DisplayListGeneric(units, effectiveColumns(), defaultUnitColumns, unitAliases, unitCustomColumns)
+	columns, aliases := defaultUnitColumns, unitAliases
+	if listArchived {
+		columns = withArchivedSlugHeader(columns)
+		aliases = maps.Clone(unitAliases)
+		aliases["Archived-Slug"] = "Labels." + archivedSlugLabel
+	}
+	DisplayListGeneric(units, effectiveColumns(), columns, aliases, unitCustomColumns)
 }
 
 func apiListUnits(spaceID string, whereFilter string, selectParam string) ([]*goclientnew.Unit, error) {

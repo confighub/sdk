@@ -4,45 +4,32 @@
 package main
 
 import (
-	"context"
 	"errors"
 	"fmt"
 	"io"
 	"os"
 	"path/filepath"
-	"regexp"
 	"strings"
 
+	installerapi "github.com/confighub/installer/pkg/api"
 	"github.com/confighub/installer/pkg/installer"
-	"github.com/confighub/sdk/core/ocibundle"
 	"github.com/spf13/cobra"
 	"golang.org/x/term"
-	"oras.land/oras-go/v2/registry/remote/credentials"
 )
 
 var packageCmd = &cobra.Command{
 	Use:   "package",
-	Short: "Install packages into ConfigHub",
-	Long: `Install packages into ConfigHub.
+	Short: "Install packages into ConfigHub, and show what is installed",
+	Long: `Install packages into ConfigHub, and show what is installed.
 
 A package is an installer package: a base and optional components of
 Kubernetes configuration, with inputs that are answered at install time. cub
-links ConfigHub's installer, so nothing else needs installing. Authoring and
-publishing packages is the installer's job (cub installer, or the installer
-binary).`,
+links ConfigHub's installer, so nothing else needs installing. Each install
+keeps an installer record in its Space, which install reads back to upgrade it,
+and show and list read to say what is installed. Authoring and publishing
+packages is the installer's job (cub installer, or the installer binary).`,
 	PersistentPreRunE: globalPreRun,
 }
-
-// packageRepositoryPrefix is where ConfigHub publishes packages: a bare
-// package name is a repository under it.
-const packageRepositoryPrefix = "ghcr.io/confighub/packages/"
-
-// packageNameRegexp is a bare package name, optionally with a version:
-// k8sbot, or k8sbot:0.1.6.
-var packageNameRegexp = regexp.MustCompile(`^[a-z0-9][a-z0-9._-]*(:[A-Za-z0-9._-]+)?$`)
-
-// packageNewestRelease finds a repository's newest release; tests replace it.
-var packageNewestRelease = ocibundle.NewestRelease
 
 type packageInstallFlags struct {
 	space          string
@@ -72,7 +59,7 @@ later install reads back.
 
 <package> is one of:
   <name>[:<version>]   a package ConfigHub publishes, from
-                       ` + packageRepositoryPrefix + `<name>; without a
+                       ` + installerapi.PackageRepository + `/<name>; without a
                        version, its newest release
   oci://<ref>          a package in any OCI registry
   <dir> or <file.tgz>  a package on this machine, written as a path: with a
@@ -131,10 +118,7 @@ func init() {
 
 func packageInstallCmdRun(cmd *cobra.Command, args []string) error {
 	a := packageInstallArgs
-	ref, public, err := resolvePackageRef(ctx, args[0])
-	if err != nil {
-		return err
-	}
+	ref := args[0]
 	inputs, err := keyValueFlags("--input", a.inputs)
 	if err != nil {
 		return err
@@ -144,7 +128,7 @@ func packageInstallCmdRun(cmd *cobra.Command, args []string) error {
 		return err
 	}
 
-	inst, err := newCubInstaller(os.Stdout, public)
+	inst, err := newCubInstaller(os.Stdout)
 	if err != nil {
 		return err
 	}
@@ -204,66 +188,33 @@ func packageInstallCmdRun(cmd *cobra.Command, args []string) error {
 	return nil
 }
 
-// newCubInstaller is the installer cub runs packages with: through cub's
-// client, printing to out. A public package is read anonymously, so an
-// expired registry login can't refuse it; any other with the credentials
-// Docker stores. The installer's own settings still apply: the signing policy
-// it enforces on what it pulls, and the cosign binary that checks it.
-func newCubInstaller(out io.Writer, public bool) (*installer.Installer, error) {
-	policy, err := installer.LoadSigningPolicy(os.Getenv("INSTALLER_SIGNING_POLICY"))
+// newCubInstaller is the installer cub runs packages with.
+func newCubInstaller(out io.Writer) (*installer.Installer, error) {
+	opts, err := cubInstallerOptions(out)
 	if err != nil {
 		return nil, err
 	}
-	opts := installer.Options{
+	return installer.New(opts)
+}
+
+// cubInstallerOptions run the installer through cub's client, printing to
+// out. Registries are read with the credentials Docker stores, except
+// ConfigHub's own packages, which the installer reads anonymously. The
+// installer's own settings still apply: the signing policy it enforces on
+// what it pulls, and the cosign binary that checks it.
+func cubInstallerOptions(out io.Writer) (installer.Options, error) {
+	policy, err := installer.LoadSigningPolicy(os.Getenv("INSTALLER_SIGNING_POLICY"))
+	if err != nil {
+		return installer.Options{}, err
+	}
+	return installer.Options{
 		ConfigHub:     cubClient,
 		Out:           out,
 		ErrOut:        os.Stderr,
 		SigningPolicy: policy,
 		CosignBinary:  os.Getenv("INSTALLER_COSIGN_BIN"),
 		ClientVersion: Version,
-	}
-	if public {
-		opts.Registry.Credentials = credentials.NewMemoryStore()
-	}
-	return installer.New(opts)
-}
-
-// resolvePackageRef turns the package argument into what the installer pulls,
-// and says whether it is one of ConfigHub's public packages.
-func resolvePackageRef(ctx context.Context, arg string) (string, bool, error) {
-	if strings.HasPrefix(arg, ocibundle.Scheme) {
-		return arg, false, nil
-	}
-	// A path is written as one, so a directory that happens to share a
-	// package's name (a checkout of k8sbot, say) never stands in for the
-	// published package.
-	if isPackagePath(arg) {
-		if _, err := os.Stat(arg); err != nil {
-			return "", false, fmt.Errorf("package %s: %w; a package in a registry is written oci://<ref>", arg, err)
-		}
-		abs, err := filepath.Abs(arg)
-		return abs, false, err
-	}
-	if !packageNameRegexp.MatchString(arg) {
-		return "", false, fmt.Errorf("%q is not a package: name one ConfigHub publishes, as <name>[:<version>], or give an oci:// reference, a directory, or a .tgz", arg)
-	}
-	name, version, _ := strings.Cut(arg, ":")
-	repository := packageRepositoryPrefix + name
-	if version == "" {
-		newest, err := packageNewestRelease(ctx, repository, ocibundle.Options{UserAgent: "cub/" + Version, PlainHTTPLoopback: true})
-		if err != nil {
-			return "", false, fmt.Errorf("find the newest release of package %s: %w", name, err)
-		}
-		version = newest
-	}
-	return ocibundle.Scheme + repository + ":" + version, true, nil
-}
-
-// isPackagePath reports whether the package argument is written as a path on
-// this machine: with a path separator, starting with ".", or naming a .tgz.
-func isPackagePath(arg string) bool {
-	return strings.ContainsRune(arg, '/') || strings.ContainsRune(arg, filepath.Separator) ||
-		strings.HasPrefix(arg, ".") || strings.HasSuffix(arg, ".tgz")
+	}, nil
 }
 
 // keyValueFlags reads name=value flag values, split at the first "=".

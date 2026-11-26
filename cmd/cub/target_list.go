@@ -89,6 +89,7 @@ var targetListArgs struct {
 
 func init() {
 	addStandardListFlags(targetListCmd)
+	enableArchivedFlag(targetListCmd)
 	enableWherePermissionFlag(targetListCmd)
 	targetListArgs.targetLabels = addStandardLabelFilterFlags(targetListCmd, "Target", standardTargetLabels)
 	enableListPagingFlags(targetListCmd)
@@ -127,7 +128,7 @@ func displayTargetList(exTargets []*goclientnew.ExtendedTarget) {
 		if wide {
 			header = append(header, clusterAnnotationTargetUI)
 		}
-		table.SetHeader(header)
+		table.SetHeader(withArchivedSlugHeader(header))
 	}
 	for _, exTarget := range exTargets {
 		row := []string{exTarget.Target.Slug, exTarget.Target.SpaceSlug}
@@ -138,7 +139,7 @@ func displayTargetList(exTargets []*goclientnew.ExtendedTarget) {
 		if wide {
 			row = append(row, exTarget.Target.Annotations[clusterAnnotationTargetUI])
 		}
-		table.Append(row)
+		table.Append(withArchivedSlug(row, exTarget.Target.Labels))
 	}
 	table.Render()
 }

@@ -58,6 +58,7 @@ var attributeCustomColumnDependencies = map[string][]string{}
 
 func init() {
 	addStandardListFlags(attributeListCmd)
+	enableArchivedFlag(attributeListCmd)
 	enableWherePermissionFlag(attributeListCmd)
 	enableListPagingFlags(attributeListCmd)
 	enableViewFlag(attributeListCmd)
@@ -93,7 +94,7 @@ func displayAttributeList(attrs []*goclientnew.ExtendedAttribute) {
 	}
 	table := tableView()
 	if !noheader {
-		table.SetHeader([]string{"Name", "Space", "Toolchain-Type", "Data-Type", "Description"})
+		table.SetHeader(withArchivedSlugHeader([]string{"Name", "Space", "Toolchain-Type", "Data-Type", "Description"}))
 	}
 	for _, a := range attrs {
 		attr := a.Attribute
@@ -107,13 +108,13 @@ func displayAttributeList(attrs []*goclientnew.ExtendedAttribute) {
 		if len(desc) > 60 {
 			desc = desc[:57] + "..."
 		}
-		table.Append([]string{
+		table.Append(withArchivedSlug([]string{
 			attr.Slug,
 			spaceSlug,
 			attr.ToolchainType,
 			attr.DataType,
 			desc,
-		})
+		}, attr.Labels))
 	}
 	table.Render()
 }

@@ -87,6 +87,7 @@ func init() {
 	enableListPagingFlags(componentListCmd)
 	addStandardListDisplayFlags(componentListCmd)
 	enableViewFlag(componentListCmd)
+	enableArchivedFlag(componentListCmd)
 	componentCmd.AddCommand(componentListCmd)
 }
 
@@ -166,22 +167,22 @@ func displayComponentEntityList(components []*goclientnew.ExtendedComponent) {
 	failOnError(err)
 	table := tableView()
 	if !noheader {
-		table.SetHeader([]string{"Name", "Require-Workflow", "Require-Tracking", "#Allowed-Workflows", "Owner", "Variants"})
+		table.SetHeader(withArchivedSlugHeader([]string{"Name", "Require-Workflow", "Require-Tracking", "#Allowed-Workflows", "Owner", "Variants"}))
 	}
 	rows := make([][]string, 0, len(components))
 	for _, c := range components {
 		component := c.Component
 		spaces := byComponent[component.ComponentID]
-		rows = append(rows, []string{
+		rows = append(rows, withArchivedSlug([]string{
 			component.Slug,
 			fmt.Sprintf("%t", component.RequireChangeWorkflow),
 			fmt.Sprintf("%t", component.RequireChangeTracking),
 			fmt.Sprintf("%d", len(component.AllowedChangeWorkflowIDs)),
 			componentOwner(component.Labels, spaces),
 			strings.Join(variantNames(spaces), ", "),
-		})
+		}, component.Labels))
 	}
-	width := lastColumnWidth(rows, []string{"Name", "Require-Workflow", "Require-Tracking", "#Allowed-Workflows", "Owner", "Variants"}, terminalWidth())
+	width := lastColumnWidth(rows, withArchivedSlugHeader([]string{"Name", "Require-Workflow", "Require-Tracking", "#Allowed-Workflows", "Owner", "Variants"}), terminalWidth())
 	for _, row := range rows {
 		row[len(row)-1] = wrapList(row[len(row)-1], width)
 		table.Append(row)

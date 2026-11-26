@@ -134,6 +134,7 @@ func triggerPriorityColumn(trigger *goclientnew.Trigger) string {
 
 func init() {
 	addStandardListFlags(triggerListCmd)
+	enableArchivedFlag(triggerListCmd)
 	enableWherePermissionFlag(triggerListCmd)
 	enableListPagingFlags(triggerListCmd)
 	enableViewFlag(triggerListCmd)
@@ -173,7 +174,7 @@ func displayTriggerList(triggers []*goclientnew.ExtendedTrigger) {
 	}
 	table := tableView()
 	if !noheader {
-		table.SetHeader([]string{"Name", "Space", "Pack", "Validating", "Disabled", "Warn", "Priority", "Controls", "Invocation"})
+		table.SetHeader(withArchivedSlugHeader([]string{"Name", "Space", "Pack", "Validating", "Disabled", "Warn", "Priority", "Controls", "Invocation"}))
 	}
 	for _, t := range triggers {
 		trigger := t.Trigger
@@ -187,7 +188,7 @@ func displayTriggerList(triggers []*goclientnew.ExtendedTrigger) {
 		if t.Invocation != nil {
 			invocationSlug = t.Invocation.Slug
 		}
-		table.Append([]string{
+		table.Append(withArchivedSlug([]string{
 			trigger.Slug,
 			spaceSlug,
 			trigger.Labels[constants.PackLabel],
@@ -197,7 +198,7 @@ func displayTriggerList(triggers []*goclientnew.ExtendedTrigger) {
 			triggerPriorityColumn(trigger),
 			cubapi.FormatControls(cubapi.TriggerControls(trigger.Annotations)),
 			invocationSlug,
-		})
+		}, trigger.Labels))
 	}
 	table.Render()
 }

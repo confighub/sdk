@@ -5,6 +5,7 @@ package main
 
 import (
 	"encoding/json"
+	"slices"
 	"testing"
 
 	goclientnew "github.com/confighub/sdk/core/openapi/goclient-new"
@@ -259,4 +260,60 @@ func TestNoFlagShadowsAParentsPersistentFlag(t *testing.T) {
 		}
 	}
 	visit(rootCmd)
+}
+
+func TestApplyArchivedFlag(t *testing.T) {
+	previousArchived, previousIncludeHidden, previousWhere := listArchived, includeHidden, where
+	t.Cleanup(func() { listArchived, includeHidden, where = previousArchived, previousIncludeHidden, previousWhere })
+
+	for _, tt := range []struct {
+		name                         string
+		archived                     bool
+		includeHidden, where         string
+		wantIncludeHidden, wantWhere string
+	}{
+		{"not given", false, "BackingUnit", "Slug = 'a'", "BackingUnit", "Slug = 'a'"},
+		{"alone", true, "", "", "Archived", "HiddenReason = 'Archived'"},
+		{"with any reason", true, "*", "", "*,Archived", "HiddenReason = 'Archived'"},
+		{"with another reason", true, "BackingUnit", "", "BackingUnit,Archived", "HiddenReason = 'Archived'"},
+		{"with Archived already", true, "BackingUnit,Archived", "", "BackingUnit,Archived", "HiddenReason = 'Archived'"},
+		{"ANDed with --where", true, "", "Labels.ArchivedSlug = 'web'", "Archived", "Labels.ArchivedSlug = 'web' AND HiddenReason = 'Archived'"},
+	} {
+		t.Run(tt.name, func(t *testing.T) {
+			listArchived, includeHidden, where = tt.archived, tt.includeHidden, tt.where
+			applyArchivedFlag()
+			if includeHidden != tt.wantIncludeHidden {
+				t.Errorf("--include-hidden = %q, want %q", includeHidden, tt.wantIncludeHidden)
+			}
+			if where != tt.wantWhere {
+				t.Errorf("--where = %q, want %q", where, tt.wantWhere)
+			}
+		})
+	}
+}
+
+func TestWithArchivedSlug(t *testing.T) {
+	previous := listArchived
+	t.Cleanup(func() { listArchived = previous })
+	header := []string{"Name", "Space"}
+	labels := map[string]string{archivedSlugLabel: "web"}
+
+	listArchived = false
+	if got := withArchivedSlugHeader(header); !slices.Equal(got, header) {
+		t.Errorf("header without --archived = %v", got)
+	}
+	if got := withArchivedSlug([]string{"web", "s"}, labels); !slices.Equal(got, []string{"web", "s"}) {
+		t.Errorf("row without --archived = %v", got)
+	}
+
+	listArchived = true
+	if got := withArchivedSlugHeader(header); !slices.Equal(got, []string{"Name", "Archived-Slug", "Space"}) {
+		t.Errorf("header with --archived = %v", got)
+	}
+	if !slices.Equal(header, []string{"Name", "Space"}) {
+		t.Errorf("the header passed in was changed: %v", header)
+	}
+	if got := withArchivedSlug([]string{"idX", "s"}, labels); !slices.Equal(got, []string{"idX", "web", "s"}) {
+		t.Errorf("row with --archived = %v", got)
+	}
 }

@@ -63,6 +63,7 @@ var changeWorkflowCustomColumnDependencies = map[string][]string{}
 
 func init() {
 	addStandardListFlags(changeworkflowListCmd)
+	enableArchivedFlag(changeworkflowListCmd)
 	enableWherePermissionFlag(changeworkflowListCmd)
 	enableListPagingFlags(changeworkflowListCmd)
 	enableViewFlag(changeworkflowListCmd)
@@ -117,7 +118,7 @@ func displayChangeWorkflowList(changeWorkflows []*goclientnew.ExtendedChangeWork
 	}
 	table := tableView()
 	if !noheader {
-		table.SetHeader([]string{"Name", "Space", "Stages", "Final-Gates"})
+		table.SetHeader(withArchivedSlugHeader([]string{"Name", "Space", "Stages", "Final-Gates"}))
 	}
 	for _, cw := range changeWorkflows {
 		changeWorkflow := cw.ChangeWorkflow
@@ -128,12 +129,12 @@ func displayChangeWorkflowList(changeWorkflows []*goclientnew.ExtendedChangeWork
 			spaceSlug = selectedSpaceSlug
 		}
 
-		table.Append([]string{
+		table.Append(withArchivedSlug([]string{
 			changeWorkflow.Slug,
 			spaceSlug,
 			formatChangeWorkflowStagesForDisplay(changeWorkflow.Stages),
 			strings.Join(changeWorkflowFinalPrerequisites(changeWorkflow.Final), ", "),
-		})
+		}, changeWorkflow.Labels))
 	}
 	table.Render()
 }

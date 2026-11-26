@@ -23,6 +23,7 @@ import (
 	"github.com/confighub/sdk/core/workerapi"
 	"github.com/google/uuid"
 	"golang.org/x/term"
+	"oras.land/oras-go/v2/registry/remote/credentials"
 	"sigs.k8s.io/yaml"
 )
 
@@ -670,8 +671,14 @@ func clusterK8sbotInstallBase(out io.Writer, controller, repository string) erro
 	}
 	defer os.RemoveAll(workDir)
 
-	// Read anonymously, as the newest release was: the package is public.
-	inst, err := newCubInstaller(out, true)
+	// Read anonymously, as the newest release was: the package is public,
+	// on gcr.io as on ghcr.io.
+	instOpts, err := cubInstallerOptions(out)
+	if err != nil {
+		return err
+	}
+	instOpts.Registry.Credentials = credentials.NewMemoryStore()
+	inst, err := installer.New(instOpts)
 	if err != nil {
 		return err
 	}

@@ -6,6 +6,7 @@ package main
 import (
 	"fmt"
 	"github.com/confighub/sdk/core/cubapi"
+	"slices"
 	"strings"
 	"time"
 
@@ -334,6 +335,52 @@ func enableWherePermissionFlag(cmd *cobra.Command) {
 func enableIncludeHiddenFlag(cmd *cobra.Command) {
 	cmd.Flags().StringVar(&includeHidden, "include-hidden", "", "Also select hidden entities, to list or to act on: those hidden for the given HiddenReasons, comma-separated, as in --include-hidden=BackingUnit, or for any reason but Archived when given no value or \"*\". ConfigHub/YAML Units, which hold the configuration of other entities, are hidden with the reason BackingUnit. Archived entities are selected only when the reasons name Archived, as in --include-hidden=Archived or --include-hidden='*,Archived'. A --where naming entities by Slug or ID lists them whether hidden or not, but a bulk operation acts on archived ones only when --include-hidden names Archived")
 	cmd.Flags().Lookup("include-hidden").NoOptDefVal = "*"
+}
+
+// listArchived is --archived, on the lists of the entity types whose deletes take --archive.
+var listArchived bool
+
+// archivedSlugLabel is the label holding the Slug an archived entity had, which the archive
+// replaced with id<uuid>.
+const archivedSlugLabel = "ArchivedSlug"
+
+// enableArchivedFlag adds --archived to the list of an entity type whose deletes take --archive.
+func enableArchivedFlag(cmd *cobra.Command) {
+	cmd.Flags().BoolVar(&listArchived, "archived", false, "List only archived entities, those a delete with --archive hid, with the Slug each had before it was archived. A shorthand for --include-hidden=Archived --where \"HiddenReason = 'Archived'\", ANDed with any --where. An archived entity is named id<uuid> until it is unarchived")
+}
+
+// applyArchivedFlag turns --archived into the --include-hidden and --where it is a shorthand for,
+// before the command reads them.
+func applyArchivedFlag() {
+	if !listArchived {
+		return
+	}
+	if includeHidden == "" {
+		includeHidden = archivedReason
+	} else if !slices.Contains(strings.Split(includeHidden, ","), archivedReason) {
+		includeHidden += "," + archivedReason
+	}
+	where = cubapi.NewWhere(where).And("HiddenReason = '" + archivedReason + "'").String()
+}
+
+// archivedReason is the HiddenReason of an archived entity.
+const archivedReason = "Archived"
+
+// withArchivedSlugHeader adds the Archived-Slug column after a list table's first, Name, column
+// when --archived lists archived entities, whose Names are id<uuid>.
+func withArchivedSlugHeader(header []string) []string {
+	if !listArchived {
+		return header
+	}
+	return slices.Insert(slices.Clone(header), 1, "Archived-Slug")
+}
+
+// withArchivedSlug adds the Archived-Slug cell to a row of a table withArchivedSlugHeader headed.
+func withArchivedSlug(row []string, labels map[string]string) []string {
+	if !listArchived {
+		return row
+	}
+	return slices.Insert(row, 1, labels[archivedSlugLabel])
 }
 
 // includeHiddenParam is the include_hidden parameter --include-hidden asks for, or nil.

@@ -127,6 +127,12 @@ cub changeorder get --space web-base bump-image
 cub unit blame --space web-dev backend --path image
 cub unit path --space web-dev backend REF
 
+# Draft a change without locking the Space, review it, and land it as one ChangeSet
+cub draft create web-base memory --where "Slug = 'backend'"
+cub function set --space web-base-draft-memory --unit backend --dry-run -o mutations set-replicas 3
+cub draft diff web-base/memory
+cub draft land web-base/memory --dry-run
+
 # Undo: take back a change and keep what came after, back out a ChangeOrder, or restore one Unit
 cub variant revert ChangeSet:web-base/tls-rollout --dry-run -o mutations
 cub unit revert --space web-dev backend HeadRevisionNum --dry-run -o mutations
