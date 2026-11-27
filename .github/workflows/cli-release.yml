@@ -42,6 +42,10 @@ jobs:
       # go-licenses needs a native GOROOT. Fail loudly if the installed Go is
       # older than the module's toolchain line instead of auto-downloading one.
       GOTOOLCHAIN: local
+      # The sdk modules were tagged minutes ago and sum.golang.org may not
+      # know them yet. Skip the checksum database for them, as make all-prep
+      # does for the build.
+      GOPRIVATE: github.com/confighub/sdk
     steps:
       - name: Check out repository
         uses: actions/checkout@v4
