@@ -113,9 +113,11 @@ manifest records the name, so it can only be set here.
 Publishing a Space that is unchanged since its latest published Release succeeds
 without creating a Release, and reports "No change".
 
-A Release that would bundle no Units is refused when the Space's latest published
-Release bundles some: a GitOps controller pulling the Space deletes everything the
-previous Release deployed, and reports success.
+A GitOps controller that prunes deletes what a Unit deployed once a Release no longer
+carries its configuration: the Unit has been emptied, deleted or made Unreleasable. So a
+deployment is taken down by emptying every Unit, or making each Unreleasable, and
+publishing; the Release may bundle no Units at all. "cub variant diff <variant>
+Release:<number>" shows what the Space holds now against what a Release bundled.
 
 Examples:
 `+"```"+`
@@ -136,6 +138,12 @@ Examples:
 
   # Roll a released change order back: restore what preceded it, and release that
   cub unit update --patch --space my-space --restore Before:ChangeOrder:bump-base-image
+  cub release publish my-space
+
+  # Take a deployment down: empty each Unit from an empty file, compare with Release 7, and publish
+  : > empty.yaml
+  cub unit update --space my-space my-unit empty.yaml
+  cub variant diff my-space Release:7
   cub release publish my-space
 
   # Publish with metadata, and a gate that blocks deleting the Release

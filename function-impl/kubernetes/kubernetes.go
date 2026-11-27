@@ -48,6 +48,9 @@ func attributeDescriptors() map[api.AttributeName]yamlkit.AttributeDescriptor {
 		// Provided at a ConfigMap's own annotation and needed at a pod template's, which is
 		// why its paths state their own role rather than taking the descriptor's.
 		attributeNameConfigMapHash: {DataType: api.DataTypeString, Enricher: configMapHashEnricher},
+		// The content that hash is computed over, which set-hash and get-hash read to tell a
+		// ConfigMap with nothing to hash from a resource the paths do not apply to.
+		api.AttributeNameHashedContent: {DataType: api.DataTypeYAML},
 
 		// A hostname is declared at each path holding one; the subdomain and the domain within
 		// it are registered at a suffix of that path, through a regexp accessor that splits the value.

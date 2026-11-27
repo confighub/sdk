@@ -1048,6 +1048,8 @@ attribute	traefik.io/v1alpha1/IngressRouteTCP	resource-name	spec.routes.*.servic
 attribute	traefik.io/v1alpha1/IngressRouteTCP	resource-name	spec.tls.secretName		v1/Secret
 attribute	traefik.io/v1alpha1/IngressRouteUDP	resource-name	spec.routes.*.services.*.name		v1/Service
 attribute	v1/ConfigMap	configmap-hash	metadata.annotations.confighub~1com/Hash	
+attribute	v1/ConfigMap	hashed-content	binaryData	
+attribute	v1/ConfigMap	hashed-content	data	
 attribute	v1/Node	resource-name	spec.configSource.configMap.name		v1/ConfigMap
 attribute	v1/PersistentVolume	immutable	spec.nodeAffinity	
 attribute	v1/PersistentVolume	immutable	spec.persistentVolumeSource	

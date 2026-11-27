@@ -94,6 +94,11 @@ const (
 	AttributeNameSubdomain               = AttributeName("subdomain")
 	AttributeNameLabelValue              = AttributeName("label-value")
 	AttributeNameAnnotationValue         = AttributeName("annotation-value")
+
+	// AttributeNameHashedContent is the attribute declaring the paths holding the content a
+	// resource type's hash is computed over, for a type that provides its hash to the
+	// resources using it: data and binaryData on a Kubernetes ConfigMap.
+	AttributeNameHashedContent = AttributeName("hashed-content")
 )
 
 // PropertyKeyResourceType is the needs/provides property naming the resource type a reference

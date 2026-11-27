@@ -47,7 +47,7 @@ func registerSetHash(fh handler.FunctionRegistry, converter configkit.ConfigConv
 			// On a Kubernetes ConfigMap the annotation it writes is the provided path of the
 			// configmap-hash attribute, which render-configmap writes too: set-hash is how a
 			// ConfigMap authored as Kubernetes/YAML offers the hash Needs/Provides delivers.
-			Description:           "Computes a SHA-256 hash of all values at the specified paths and stores it at the resource provider's context path for Hash: the confighub.com/Hash annotation for Kubernetes. On a ConfigMap, that annotation is the hash Needs/Provides offers to the pod templates that need it, in hash.confighub.com/<configmap> or confighub.com/Hash, so a change to the ConfigMap rolls the pods. It applies to every resource that has the path, of any type, so narrow it with a where-resource filter",
+			Description:           "Computes a SHA-256 hash of all values at the specified paths and stores it at the resource provider's context path for Hash: the confighub.com/Hash annotation for Kubernetes. On a ConfigMap, that annotation is the hash Needs/Provides offers to the pod templates that need it, in hash.confighub.com/<configmap> or confighub.com/Hash, so a change to the ConfigMap rolls the pods. It applies to every resource that has the path, of any type, so narrow it with a where-resource filter. A ConfigMap with no data and no binaryData gets the hash of no values when data, binaryData or both are the paths hashed",
 			FunctionType:          api.FunctionTypeCustom,
 			AffectedResourceTypes: []api.ResourceType{api.ResourceTypeAny},
 		},
@@ -89,7 +89,7 @@ func registerGetHash(fh handler.FunctionRegistry, converter configkit.ConfigConv
 			// left alone: the hash is computed from the upstream data while a Link resolves
 			// and written to the downstream Unit, rather than kept in the resource it
 			// describes, where it is a revision behind whatever it is hashing.
-			Description:           "Computes a SHA-256 hash of all values at the specified paths and returns it, without modifying the configuration data. Returns the same hash set-hash stores. Use as an UpstreamGetter on a TransformPaths Link to propagate a content hash to another Unit. It reads every resource that has the path, of any type, so narrow it with a where-resource filter.",
+			Description:           "Computes a SHA-256 hash of all values at the specified paths and returns it, without modifying the configuration data. Returns the same hash set-hash stores, including the hash of no values for a ConfigMap with no data and no binaryData when data, binaryData or both are the paths hashed. Use as an UpstreamGetter on a TransformPaths Link to propagate a content hash to another Unit. It reads every resource that has the path, of any type, so narrow it with a where-resource filter.",
 			FunctionType:          api.FunctionTypeCustom,
 			AffectedResourceTypes: []api.ResourceType{api.ResourceTypeAny},
 		},
@@ -124,10 +124,45 @@ func hashPaths(resourceProvider yamlkit.ResourceProvider, args []api.FunctionArg
 	return merged, nil
 }
 
+// hasHashOfNoValues reports whether a resource with no values at the paths being hashed still
+// has a hash, the hash of no values. It does when the paths are declared as hashed content of
+// its type, as data and binaryData are for a Kubernetes ConfigMap, and it has no values at any
+// of the type's hashed content. A ConfigMap holding only binaryData therefore has no hash of
+// its data alone: a fixed hash would stay the same through every change to what it holds.
+func hasHashOfNoValues(
+	doc *gaby.YamlDoc,
+	resourceProvider yamlkit.ResourceProvider,
+	resourceType api.ResourceType,
+	args []api.FunctionArgument,
+	options *api.FunctionOptions,
+) (bool, error) {
+	content := yamlkit.GetPathRegistryForAttributeName(resourceProvider, api.AttributeNameHashedContent)[resourceType]
+	if len(content) == 0 {
+		return false, nil
+	}
+	for _, arg := range args {
+		path, _ := arg.Value.(string)
+		if _, declared := content[api.UnresolvedPath(path)]; !declared {
+			return false, nil
+		}
+	}
+	contentPaths := api.ResourceTypeToPathToVisitorInfoType{resourceType: content}
+	values, err := yamlkit.GetPathsAnyType(gaby.Container{doc}, contentPaths, []any{}, resourceProvider, api.DataTypeNone, false, false, options)
+	if err != nil {
+		return false, err
+	}
+	return len(values) == 0, nil
+}
+
 // hashValuesAtPath computes the hash of the values at resourceTypeToPaths within one resource.
 // found is false when the resource has no values at the path, which is not an error: a
 // document holding resources of several types is expected to have some the path does not
 // apply to.
+//
+// A resource with no values in any of its type's hashed content has a hash when that content
+// is what is being hashed, the hash of no values: a ConfigMap without data or binaryData is
+// still used by pod templates, whose hash annotations would otherwise never be filled. Hashing
+// any other path leaves it alone, as it does a resource of any other type.
 //
 // set-hash and get-hash share this, so what a Unit stores and what a Link propagates are the
 // same hash of the same values.
@@ -135,6 +170,8 @@ func hashValuesAtPath(
 	doc *gaby.YamlDoc,
 	resourceTypeToPaths api.ResourceTypeToPathToVisitorInfoType,
 	resourceProvider yamlkit.ResourceProvider,
+	resourceInfo *api.ResourceInfo,
+	args []api.FunctionArgument,
 	options *api.FunctionOptions,
 ) (hash string, found bool, err error) {
 	singleDoc := gaby.Container{doc}
@@ -143,7 +180,13 @@ func hashValuesAtPath(
 		return "", false, err
 	}
 	if len(values) == 0 {
-		return "", false, nil
+		if resourceInfo == nil {
+			return "", false, nil
+		}
+		hashed, err := hasHashOfNoValues(doc, resourceProvider, resourceInfo.ResourceType, args, options)
+		if err != nil || !hashed {
+			return "", false, err
+		}
 	}
 
 	// Sort by path for deterministic hashing
@@ -177,7 +220,7 @@ func GenericFnSetHash(
 	}
 
 	visitor := func(doc *gaby.YamlDoc, output any, _ int, resourceInfo *api.ResourceInfo) (any, []error) {
-		hash, found, err := hashValuesAtPath(doc, resourceTypeToPaths, resourceProvider, options)
+		hash, found, err := hashValuesAtPath(doc, resourceTypeToPaths, resourceProvider, resourceInfo, args, options)
 		if err != nil {
 			return output, []error{err}
 		}
@@ -215,7 +258,7 @@ func GenericFnGetHash(
 	visitor := func(doc *gaby.YamlDoc, output any, _ int, resourceInfo *api.ResourceInfo) (any, []error) {
 		accumulated := output.(api.AttributeValueList)
 
-		hash, found, err := hashValuesAtPath(doc, resourceTypeToPaths, resourceProvider, options)
+		hash, found, err := hashValuesAtPath(doc, resourceTypeToPaths, resourceProvider, resourceInfo, args, options)
 		if err != nil {
 			return output, []error{err}
 		}

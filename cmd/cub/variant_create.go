@@ -158,8 +158,9 @@ The Argo CD Application never deletes anything unless it has prune: a resource w
 emptied stays running, and deleting the Application leaves what it deployed running. --prune gives
 it prune and Argo's resources finalizer, so an emptied unit's resource is deleted by the next
 release, and so is everything the deployment deployed when its Application is deleted. A cluster
-from "cub cluster up --prune" gives every deployment both without the flag. An empty release
-then deletes the whole deployment, so publish with care. On a Flux cluster the same holds for the
+from "cub cluster up --prune" gives every deployment both without the flag. A release with every
+unit emptied, or one bundling no units, then deletes the whole deployment, so publish with care:
+"cub variant diff <new-space> Release:<number>" shows what would change against a release. On a Flux cluster the same holds for the
 Kustomization: it prunes what it applied only with --prune, or on a cluster from "cub cluster up
 --controller flux --prune". On a Sveltos cluster the ClusterProfile withdraws what it deployed
 when it is deleted only with --prune, or on a cluster from "cub cluster up --controller sveltos

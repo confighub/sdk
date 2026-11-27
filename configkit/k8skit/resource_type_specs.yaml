@@ -1570,6 +1570,11 @@ resourceTypes:
     attributes:
       configmap-hash:
         - {path: metadata.annotations.confighub~1com/Hash, provided: true}
+      # What the hash above is a hash of. A ConfigMap with neither still has a hash, the
+      # hash of no values, so that the pod templates using it get one.
+      hashed-content:
+        - {path: data}
+        - {path: binaryData}
 
   # -------------------------------------------------------------------------------
   # Types below declare only what they are -- their scope, and where they belong in an apply
