@@ -3,7 +3,7 @@ module github.com/confighub/sdk/configkit/propkit
 go 1.26.0
 
 require (
-	github.com/confighub/sdk/core v0.0.0
+	github.com/confighub/sdk/core v0.11.24
 	github.com/stretchr/testify v1.11.1
 	gopkg.in/yaml.v3 v3.0.1
 	sigs.k8s.io/kustomize/kyaml v0.20.1
@@ -46,4 +46,3 @@ require (
 	sigs.k8s.io/yaml v1.5.0 // indirect
 )
 
-replace github.com/confighub/sdk/core => ../../core
